@@ -1,11 +1,12 @@
 import { ImageCodingModelSchema } from './schema';
 import { RichText, Hint as HintType, makeHint } from '../types';
 import { Maybe } from 'tsmonad';
-import { toSimpleText } from 'data/content/text';
 import { Identifiable } from 'data/content/model/other';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import { toSimpleText } from 'components/editing/utils';
+import { Descendant } from 'slate';
 
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -18,7 +19,7 @@ export class ICActions {
   static editStem(content: RichText) {
     return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.stem.content = content;
-      const previewText = toSimpleText({ children: content });
+      const previewText = toSimpleText(content);
       draftState.authoring.previewText = previewText;
     };
   }
@@ -73,9 +74,9 @@ export class ICActions {
     };
   }
 
-  static editFeedback(score: number, content: RichText) {
+  static editFeedback(score: number, content: Descendant[]) {
     return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
-      draftState.feedback[score].content = content;
+      draftState.feedback[score].content = content as RichText;
     };
   }
 

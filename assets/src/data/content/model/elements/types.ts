@@ -1,8 +1,7 @@
 import { RichText } from 'components/activities/types';
 import { MediaDisplayMode } from 'data/content/model/other';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
-import { BaseElement, Element, Node, Descendant, Text } from 'slate';
-import { schema } from '../schema';
+import { BaseElement, Descendant, Text } from 'slate';
 import { Identifiable } from '../other';
 
 interface SlateElement<Children extends Descendant[]> extends BaseElement, Identifiable {
@@ -11,18 +10,15 @@ interface SlateElement<Children extends Descendant[]> extends BaseElement, Ident
 
 export type ModelElement = TopLevel | Block | Inline;
 
-type TopLevel = TextElement | List | Media | Table | Math | Code | Blockquote;
+type TopLevel = TextBlock | List | Media | Table | Math | Code | Blockquote;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
 type Inline = Hyperlink | Popup | InputRef;
 
-type TextElement = Paragraph | Heading;
+type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
 type List = OrderedList | UnorderedList;
 type Media = Image | YouTube | Audio | Webpage;
 type TableCell = TableHeader | TableData;
-
-export const isModelElement = (n: Node): n is ModelElement =>
-  Element.isElement(n) && typeof n.type === 'string' && n.type in schema;
 
 type HeadingChildren = Text[];
 export interface Paragraph extends SlateElement<(InputRef | Text)[]> {

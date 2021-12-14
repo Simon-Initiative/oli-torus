@@ -1,8 +1,9 @@
-import { Transforms, Editor as SlateEditor } from 'slate';
+import { Transforms, Editor as SlateEditor, Element } from 'slate';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { isActiveList, isActive, isTopLevel } from 'components/editing/utils';
+import guid from 'utils/guid';
 
-const listCommandMaker = (listType: string): Command => {
+const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
   return {
     execute: (context, editor) => {
       SlateEditor.withoutNormalizing(editor, () => {
@@ -11,7 +12,7 @@ const listCommandMaker = (listType: string): Command => {
         // Not a list, create one
         if (!active) {
           Transforms.setNodes(editor, { type: 'li' });
-          Transforms.wrapNodes(editor, { type: listType, children: [] });
+          Transforms.wrapNodes(editor, { type: listType, id: guid(), children: [] });
           return;
         }
 
@@ -21,7 +22,7 @@ const listCommandMaker = (listType: string): Command => {
             editor,
             { type: listType },
             {
-              match: (n) => n.type === (listType === 'ol' ? 'ul' : 'ol'),
+              match: (n) => Element.isElement(n) && n.type === (listType === 'ol' ? 'ul' : 'ol'),
               mode: 'all',
             },
           );
@@ -30,7 +31,7 @@ const listCommandMaker = (listType: string): Command => {
 
         // Is a list, unwrap it
         Transforms.unwrapNodes(editor, {
-          match: (n) => n.type === 'ul' || n.type === 'ol',
+          match: (n) => Element.isElement(n) && (n.type === 'ul' || n.type === 'ol'),
           split: true,
           mode: 'all',
         });

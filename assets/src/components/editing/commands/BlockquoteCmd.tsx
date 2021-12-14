@@ -1,17 +1,20 @@
-import { Transforms, Editor } from 'slate';
+import { Transforms, Editor, Element } from 'slate';
 import { isTopLevel, isActive } from 'components/editing/utils';
 import { CommandDesc, Command } from 'components/editing/commands/interfaces';
+import guid from 'utils/guid';
 
 const command: Command = {
   execute: (context, editor) => {
     Editor.withoutNormalizing(editor, () => {
       const active = isActive(editor, 'blockquote');
       if (active) {
-        return Transforms.unwrapNodes(editor, { match: (n) => n.type === 'blockquote' });
+        return Transforms.unwrapNodes(editor, {
+          match: (n) => Element.isElement(n) && n.type === 'blockquote',
+        });
       }
 
       Transforms.setNodes(editor, { type: 'p' });
-      Transforms.wrapNodes(editor, { type: 'blockquote', children: [] });
+      Transforms.wrapNodes(editor, { type: 'blockquote', id: guid(), children: [] });
     });
   },
   precondition: (editor) => {

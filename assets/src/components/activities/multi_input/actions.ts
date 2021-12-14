@@ -15,7 +15,6 @@ import {
   makeUndoable,
   Part,
   PostUndoable,
-  RichText,
   Stem,
 } from 'components/activities/types';
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/utils';
@@ -25,17 +24,12 @@ import { getCorrectResponse, Responses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
 import { InputRef } from 'data/content/model/elements/types';
-import { Editor as SlateEditor, Element, Operation } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { Descendant, Editor, Element, Operation } from 'slate';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
 export const MultiInputActions = {
-  editStemAndPreviewText(
-    content: RichText,
-    editor: SlateEditor & ReactEditor,
-    operations: Operation[],
-  ) {
+  editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
 

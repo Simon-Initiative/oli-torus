@@ -1,7 +1,6 @@
 import React from 'react';
 import { useSlate } from 'slate-react';
-import { CommandContext } from '../../models/interfaces';
-import { CommandDesc } from '../../commands/interfaces';
+import { CommandContext, CommandDesc } from '../../commands/interfaces';
 import { ToolbarButton, DropdownToolbarButton } from 'components/editing/toolbars/common';
 
 export type HoveringToolbarProps = {

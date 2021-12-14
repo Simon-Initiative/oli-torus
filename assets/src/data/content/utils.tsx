@@ -1,3 +1,4 @@
+import { toSimpleText } from 'components/editing/utils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { MediaDisplayMode } from 'data/content/model/other';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
@@ -5,7 +6,6 @@ import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
 import { Element, Text } from 'slate';
 import { StructuredContent } from './resource';
-import { toSimpleText } from './text';
 
 // float_left and float_right no longer supported as options
 export function displayModelToClassName(display: MediaDisplayMode | undefined) {

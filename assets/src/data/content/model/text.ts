@@ -11,15 +11,4 @@ export enum Marks {
   'sup',
 }
 
-export type FormattedText = {
-  text: string;
-
-  em?: true;
-  strong?: true;
-  mark?: true;
-  del?: true;
-  var?: true;
-  code?: true;
-  sub?: true;
-  sup?: true;
-};
+export type FormattedText = Record<'text', string> & Partial<Record<Mark, true>>;

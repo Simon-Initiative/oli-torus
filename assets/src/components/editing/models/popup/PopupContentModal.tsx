@@ -67,7 +67,7 @@ export const PopupContentModal = (props: Props) => {
               editMode={true}
               projectSlug={props.commandContext.projectSlug}
               value={content}
-              onEdit={(content) => setContent(content)}
+              onEdit={(content) => setContent(content as RichText)}
             />
           </div>
         </div>

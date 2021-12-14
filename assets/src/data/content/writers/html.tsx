@@ -32,6 +32,7 @@ import {
   Webpage,
   YouTube,
 } from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 import React from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
@@ -58,7 +59,7 @@ export class HtmlParser implements WriterImpl {
       sup: (e) => <sup>{e}</sup>,
     };
     return Object.keys(textEntity)
-      .filter((attr) => textEntity[attr] === true)
+      .filter((attr: Mark | 'text') => textEntity[attr] === true)
       .map((attr) => supportedMarkTags[attr])
       .filter((mark) => mark)
       .reduce((acc, mark) => mark(acc), <>{text}</>);

@@ -1,7 +1,9 @@
+import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model/elements/types';
 import { schema } from 'data/content/model/schema';
 import { Mark, Marks } from 'data/content/model/text';
 import {
+  Descendant,
   Editor,
   Element,
   InsertNodeOperation,
@@ -100,22 +102,18 @@ export function marksInPartOfSelection(editor: Editor) {
 }
 
 // Extracts the text from a hierarchy of nodes
-export function toSimpleText(node: Node): string {
+export function toSimpleText(nodes: RichText | Descendant[]): string;
+export function toSimpleText(node: Node): string;
+export function toSimpleText(node: Node | RichText | Descendant[]): string {
+  if (Array.isArray(node)) return toSimpleTextHelper({ children: node } as ModelElement, '');
   return toSimpleTextHelper(node, '');
 }
 
 function toSimpleTextHelper(node: Node, text: string): string {
-  if (Text.isText(node)) return node.text;
-  if (!Element.isElement(node)) return '';
-  return (node.children as Array<any>).reduce((p: string, c: any) => {
-    let updatedText = p;
-    if (c.text) {
-      updatedText += c.text;
-    }
-    if (c.children) {
-      return toSimpleTextHelper(c, updatedText);
-    }
-    return updatedText;
+  if (Text.isText(node)) return text + node.text;
+  return [...node.children].reduce((p, c) => {
+    if (Text.isText(c)) return p + c.text;
+    return toSimpleTextHelper(c, p);
   }, text);
 }
 

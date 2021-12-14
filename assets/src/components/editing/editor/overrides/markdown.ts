@@ -5,9 +5,9 @@ import {
 } from 'components/editing/commands/ListsCmd';
 import { commandDesc as codeCmd } from 'components/editing/commands/BlockcodeCmd';
 import { commandDesc as quoteCmd } from 'components/editing/commands/BlockquoteCmd';
-import { CommandContext } from 'components/editing/models/interfaces';
 import { ReactEditor } from 'slate-react';
 import { isTopLevel } from 'components/editing/utils';
+import { CommandContext } from 'components/editing/commands/interfaces';
 
 const SHORTCUTS = {
   '#': 'h1',
@@ -30,7 +30,7 @@ export const withMarkdown = (context: CommandContext) => (editor: Editor & React
   editor.insertText = (text) => {
     const { selection } = editor;
 
-    const setNodes = (type: string) => {
+    const setNodes = (type: 'h1' | 'h2') => {
       Transforms.setNodes(editor, { type }, { match: (n) => Editor.isBlock(editor, n) });
     };
 

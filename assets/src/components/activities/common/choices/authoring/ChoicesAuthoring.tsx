@@ -1,18 +1,19 @@
 import React from 'react';
-import { Choice, makeContent, RichText } from 'components/activities/types';
+import { Choice, makeContent } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import './ChoicesAuthoring.scss';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
-import { toSimpleText } from 'data/content/text';
+import { toSimpleText } from 'components/editing/utils';
+import { Descendant } from 'slate';
 
 interface Props {
   icon: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
   choices: Choice[];
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
-  onEdit: (id: string, content: RichText) => void;
+  onEdit: (id: string, content: Descendant[]) => void;
   onRemove: (id: string) => void;
   simpleText?: boolean;
 }
@@ -40,7 +41,7 @@ export const Choices: React.FC<Props> = ({
                   <input
                     className="form-control"
                     placeholder="Answer choice"
-                    value={toSimpleText({ children: choice.content })}
+                    value={toSimpleText(choice.content)}
                     onChange={(e) => onEdit(choice.id, makeContent(e.target.value).content)}
                   />
                 ) : (

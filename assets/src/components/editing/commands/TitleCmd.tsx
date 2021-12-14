@@ -1,5 +1,4 @@
-import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Editor, Element, Transforms } from 'slate';
 import { getNearestBlock, isActive, isTopLevel } from '../utils';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 
@@ -14,9 +13,9 @@ const parentTextTypes = {
   h6: true,
 };
 
-const selectedType = (editor: ReactEditor) =>
+const selectedType = (editor: Editor) =>
   getNearestBlock(editor).caseOf({
-    just: (n) => ((parentTextTypes as any)[n.type as string] ? (n.type as string) : 'p'),
+    just: (n) => (Element.isElement(n) && (parentTextTypes as any)[n.type] ? n.type : 'p'),
     nothing: () => 'p',
   });
 
@@ -40,7 +39,7 @@ const command: Command = {
     Transforms.setNodes(
       editor,
       { type: nextType },
-      { match: (n) => (parentTextTypes as any)[n.type as string] },
+      { match: (n) => Element.isElement(n) && (parentTextTypes as any)[n.type] },
     );
   },
   precondition: (editor) => {
@@ -48,7 +47,7 @@ const command: Command = {
   },
 };
 
-const icon = (editor: ReactEditor) => {
+const icon = (editor: Editor) => {
   const type = selectedType(editor);
   switch (type) {
     case 'h1':

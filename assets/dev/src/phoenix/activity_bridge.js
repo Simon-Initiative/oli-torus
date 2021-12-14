@@ -1,0 +1,157 @@
+import * as Persistence from 'data/persistence/activity';
+import { valueOr, removeEmpty } from 'utils/common';
+import { defaultActivityState } from 'data/activities/utils';
+function makeRequest(url, method, body, continuation) {
+    const params = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+    };
+    window
+        .fetch(url, params)
+        .then((response) => response.json())
+        .then((result) => continuation(result))
+        .catch((error) => continuation(undefined, error));
+}
+export const initActivityBridge = (elementId) => {
+    const div = document.getElementById(elementId);
+    div.addEventListener('saveActivity', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`, 'PATCH', { partInputs: e.detail.payload }, e.detail.continuation);
+    }, false);
+    div.addEventListener('submitActivity', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`, 'PUT', { partInputs: e.detail.payload }, e.detail.continuation);
+    }, false);
+    div.addEventListener('resetActivity', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}`, 'POST', {}, e.detail.continuation);
+    }, false);
+    div.addEventListener('savePart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`, 'PATCH', { response: e.detail.payload }, e.detail.continuation);
+    }, false);
+    div.addEventListener('submitPart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`, 'PUT', { response: e.detail.payload }, e.detail.continuation);
+    }, false);
+    div.addEventListener('resetPart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}`, 'POST', {}, e.detail.continuation);
+    }, false);
+    div.addEventListener('requestHint', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/part_attempt/${e.detail.partAttemptGuid}/hint`, 'GET', undefined, e.detail.continuation);
+    }, false);
+    div.addEventListener('submitEvaluations', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        makeRequest(`/api/v1/state/course/${e.detail.sectionSlug}/activity_attempt/${e.detail.attemptGuid}/evaluations`, 'PUT', { evaluations: e.detail.payload }, e.detail.continuation);
+    }, false);
+};
+const key = (activityAttemptGuid, partAttemptGuid) => activityAttemptGuid + '|' + partAttemptGuid;
+export const initPreviewActivityBridge = (elementId) => {
+    // map to keep track the number of hints requested for each part
+    const hintRequestCounts = {};
+    const div = document.getElementById(elementId);
+    function getPart(model, id) {
+        return model.authoring.parts.find((p) => p.id === id);
+    }
+    function submit(e) {
+        const props = e.detail.props;
+        const continuation = e.detail.continuation;
+        const partInputs = e.detail.payload;
+        Persistence.evaluate(props.model, partInputs).then((result) => {
+            const actions = result.evaluations.map((e) => {
+                var _a, _b;
+                if ('error' in e) {
+                    return {
+                        part_id: e.part_id,
+                        error: e.error,
+                    };
+                }
+                return {
+                    type: 'FeedbackAction',
+                    attempt_guid: e.part_id,
+                    out_of: (_a = e.result) === null || _a === void 0 ? void 0 : _a.out_of,
+                    score: (_b = e.result) === null || _b === void 0 ? void 0 : _b.score,
+                    feedback: e.feedback,
+                };
+            });
+            continuation({ type: 'success', actions }, undefined);
+        });
+    }
+    // IMPLEMENT THESE HANDLERS LATER IF NEEDED IN THE FUTURE
+    // div.addEventListener('saveActivity', (e: any) => {}, false);
+    // div.addEventListener('savePart', (e: any) => {}, false);
+    // div.addEventListener('resetPart', (e: any) => {}, false);
+    div.addEventListener('submitActivity', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        submit(e);
+    }, false);
+    div.addEventListener('resetActivity', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const props = e.detail.props;
+        const continuation = e.detail.continuation;
+        const partId = e.detail.partAttemptGuid;
+        Persistence.transform(props.model).then((result) => {
+            const model = result.transformed === null ? props.model : result.transformed;
+            // reset the number of hints requested for this part
+            hintRequestCounts[key(e.detail.attemptGuid, e.detail.partAttemptGuid)] = 0;
+            const attemptState = defaultActivityState(model);
+            continuation({ type: 'success', model, attemptState }, undefined);
+        });
+    }, false);
+    div.addEventListener('submitPart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        submit(e);
+    }, false);
+    div.addEventListener('requestHint', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hintKey = key(e.detail.attemptGuid, e.detail.partAttemptGuid);
+        const props = e.detail.props;
+        const continuation = e.detail.continuation;
+        const partInputs = e.detail.payload;
+        const partId = e.detail.partAttemptGuid;
+        const model = props.model;
+        const hints = removeEmpty(getPart(model, partId).hints);
+        const nextHintIndex = valueOr(hintRequestCounts[hintKey], 0);
+        const hasMoreHints = hints.length > nextHintIndex + 1;
+        const hint = hints[nextHintIndex];
+        const response = {
+            type: 'success',
+            hint,
+            hasMoreHints,
+        };
+        // keep track the number of hints requested for this part
+        hintRequestCounts[hintKey] = valueOr(hintRequestCounts[hintKey], 0) + 1;
+        continuation(response, undefined);
+    }, false);
+    div.addEventListener('submitEvaluations', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const continuation = e.detail.continuation;
+        const clientEvaluations = e.detail.payload;
+        const evaluatedParts = clientEvaluations.map((clientEval) => {
+            return {
+                type: 'EvaluatedPart',
+                out_of: clientEval.out_of,
+                score: clientEval.score,
+                feedback: clientEval.feedback,
+            };
+        });
+        continuation({ type: 'success', actions: evaluatedParts }, undefined);
+    });
+};
+//# sourceMappingURL=activity_bridge.js.map

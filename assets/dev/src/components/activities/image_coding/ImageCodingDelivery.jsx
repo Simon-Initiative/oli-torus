@@ -1,0 +1,257 @@
+import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
+import { DeliveryElement, } from '../DeliveryElement';
+import { Stem } from '../common/DisplayedStem';
+import { Hints } from '../common/DisplayedHints';
+import { Reset } from '../common/Reset';
+import { Evaluation } from '../common/delivery/evaluation/Evaluation';
+import { Evaluator } from './Evaluator';
+import { lastPart } from './utils';
+import { defaultWriterContext } from 'data/content/writers/context';
+import { ImageCodeEditor } from './sections/ImageCodeEditor';
+const ImageCoding = (props) => {
+    const [model, setModel] = useState(props.model);
+    const [attemptState, setAttemptState] = useState(props.state);
+    const [hints, setHints] = useState(props.state.parts[0].hints);
+    const [hasMoreHints, setHasMoreHints] = useState(props.state.parts[0].hasMoreHints);
+    const [input, setInput] = useState(attemptState.parts[0].response ? attemptState.parts[0].response.input : model.starterCode);
+    const { stem, resourceURLs } = model;
+    // runtime evaluation state:
+    const [output, setOutput] = useState('');
+    const [error, setError] = useState('');
+    const [ranCode, setRanCode] = useState(false);
+    let currentOutput = output;
+    const isEvaluated = attemptState.score !== null;
+    const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+    // tslint:disable-next-line:prefer-array-literal
+    const resourceRefs = useRef(new Array(resourceURLs.length));
+    const canvasRef = useRef(null);
+    const canvasRef2 = useRef(null);
+    const resultRef = useRef(null);
+    const solnRef = useRef(null);
+    const loadCSV = (url, i) => {
+        fetch(url, { mode: 'cors' })
+            .then((resp) => {
+            if (!resp.ok) {
+                throw new Error('failed to load ' + lastPart(url) + ': ' + resp.statusText);
+            }
+            return resp.text();
+        })
+            .then((text) => (resourceRefs.current[i] = text))
+            .catch((e) => {
+            throw new Error('failed to load ' + lastPart(url) + ': ' + e);
+        });
+    };
+    const loadImage = (url, i) => {
+        const img = new Image();
+        // Owing to a flaw in S3, we get CORS errors when image is loaded from cache if cached
+        // copy was obtainedf rom an earlier non-CORS request. Appending unique query string is
+        // a simple hack to force fresh load.
+        img.src = url + '?t=' + new Date().getTime();
+        img.crossOrigin = 'anonymous';
+        // save references in parallel array. Elements never need to be attached to DOM.
+        resourceRefs.current[i] = img;
+    };
+    // effect hook to initiate fetching of resources, executes once on first render
+    useEffect(() => {
+        resourceURLs.map((url, i) => {
+            url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
+        });
+    }, []);
+    const onInputChange = (input) => {
+        setInput(input);
+        props.onSaveActivity(attemptState.attemptGuid, [
+            { attemptGuid: attemptState.parts[0].attemptGuid, response: { input } },
+        ]);
+    };
+    const onSubmit = () => {
+        const isCorrect = solutionCorrect();
+        // get attributes for a ClientEvaluation
+        const score = isCorrect ? 1 : 0;
+        const outOf = 1;
+        const feedback = model.feedback[score];
+        const partState = attemptState.parts[0];
+        props
+            .onSubmitEvaluations(attemptState.attemptGuid, [
+            { attemptGuid: partState.attemptGuid, score, outOf, feedback, response: { input } },
+        ])
+            .then((response) => {
+            if (response.actions.length > 0) {
+                const action = response
+                    .actions[0];
+                const { error } = action;
+                const parts = [Object.assign({}, partState, { feedback, error })];
+                const updated = Object.assign({}, attemptState, { score, outOf, parts });
+                setAttemptState(updated);
+            }
+        });
+    };
+    const onRequestHint = () => {
+        props
+            .onRequestHint(attemptState.attemptGuid, attemptState.parts[0].attemptGuid)
+            .then((state) => {
+            if (state.hint !== undefined) {
+                setHints([...hints, state.hint]);
+            }
+            setHasMoreHints(state.hasMoreHints);
+        });
+    };
+    const onReset = () => {
+        props.onResetActivity(attemptState.attemptGuid).then((state) => {
+            setAttemptState(state.attemptState);
+            setModel(state.model);
+            setHints([]);
+            setHasMoreHints(props.state.parts[0].hasMoreHints);
+            // Do we want reset to reload starter code, discarding changes?
+            // setInput(model.starterCode);
+            clearOutput();
+            setRanCode(false);
+        });
+    };
+    const updateOutput = (s) => {
+        // update local var so we can use it until next render
+        currentOutput = s;
+        setOutput(s);
+    };
+    const clearOutput = () => {
+        updateOutput('');
+        setError('');
+        // collapse result canvas
+        if (resultRef.current) {
+            resultRef.current.width = 0;
+            resultRef.current.height = 0;
+        }
+    };
+    const appendOutput = (s) => {
+        updateOutput(currentOutput + s);
+    };
+    const onRun = () => {
+        // clear output for new run
+        clearOutput();
+        const ctx = {
+            getCanvas,
+            getResource,
+            getResult,
+            appendOutput,
+            solutionRun: false,
+        };
+        const e = Evaluator.execute(input, ctx);
+        if (e != null) {
+            setError(e.message);
+        }
+        setRanCode(true);
+    };
+    const usesImages = () => {
+        return resourceURLs.some((url) => !url.endsWith('csv'));
+    };
+    const solutionCorrect = () => {
+        return usesImages() ? imageCorrect() : textCorrect();
+    };
+    const textCorrect = () => {
+        return new RegExp(model.regex).test(output);
+    };
+    const imageCorrect = () => {
+        // evaluate solution code if needed to "print" result image to solnCanvas.
+        // only needs to be done once, setting solnCanvas.width > 0
+        const ctx = {
+            getCanvas,
+            getResource,
+            getResult,
+            appendOutput,
+            solutionRun: true,
+        };
+        const solnCanvas = getResult(true);
+        if (solnCanvas && solnCanvas.width === 0) {
+            const e = Evaluator.execute(model.solutionCode, ctx);
+            if (e != null) {
+                setError(e.message);
+            }
+        }
+        const diff = Evaluator.getResultDiff(ctx);
+        return diff < model.tolerance;
+    };
+    const evaluationSummary = isEvaluated ? (<Evaluation key="evaluation" attemptState={attemptState} context={writerContext}/>) : null;
+    const reset = isEvaluated && !props.graded ? (<div className="d-flex">
+        <div className="flex-fill"></div>
+        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset}/>
+      </div>) : null;
+    const ungradedDetails = props.graded
+        ? null
+        : [
+            evaluationSummary,
+            <Hints key="hints" onClick={onRequestHint} hints={hints} context={writerContext} hasMoreHints={hasMoreHints} isEvaluated={isEvaluated}/>,
+        ];
+    const renderOutput = () => {
+        if (output === '') {
+            return null;
+        }
+        return <p>{output}</p>;
+    };
+    const errorMsg = () => {
+        if (!error) {
+            return null;
+        }
+        return (<p>
+        <span style={{ color: 'red' }}>Error: </span>
+        {error}
+      </p>);
+    };
+    const getCanvas = (n = 0) => {
+        // we currently only need exactly two temp canvases, one for src and
+        // one for destination of offscreen transformation.
+        return n === 0 ? canvasRef.current : canvasRef2.current;
+    };
+    const getResource = (name) => {
+        const i = resourceURLs.findIndex((url) => lastPart(url) === name);
+        if (i < 0 || i >= resourceRefs.current.length) {
+            return null;
+        }
+        return resourceRefs.current[i];
+    };
+    const getResult = (solution) => {
+        return solution ? solnRef.current : resultRef.current;
+    };
+    const maybeSubmitButton = model.isExample ? null : (<button className="btn btn-primary mt-2 float-right" disabled={isEvaluated || !ranCode} onClick={onSubmit}>
+      Submit
+    </button>);
+    const runButton = (<button className="btn btn-primary mt-2 float-left" disabled={isEvaluated} onClick={onRun}>
+      Run
+    </button>);
+    return (<div className="activity short-answer-activity">
+      <div className="activity-content">
+        <Stem stem={stem} context={writerContext}/>
+
+        <div>
+          <ImageCodeEditor value={input} disabled={isEvaluated} onChange={onInputChange}/>
+          {runButton} {maybeSubmitButton}
+        </div>
+
+        {/* implementation relies on 2 hidden canvases for image operations */}
+        <canvas ref={canvasRef} style={{ display: 'none' }}/>
+        <canvas ref={canvasRef2} style={{ display: 'none' }}/>
+
+        <div style={{ whiteSpace: 'pre-wrap' }}>
+          <h5>Output:</h5>
+          {renderOutput()}
+          {errorMsg()}
+          {/* output canvases for student and (hidden) correct solution */}
+          <canvas ref={resultRef} height="0" width="0"/>
+          <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0"/>
+        </div>
+
+        {!model.isExample && ungradedDetails}
+      </div>
+      {reset}
+    </div>);
+};
+// Defines the web component, a simple wrapper over our React component above
+export class ImageCodingDelivery extends DeliveryElement {
+    render(mountPoint, props) {
+        ReactDOM.render(<ImageCoding {...props}/>, mountPoint);
+    }
+}
+// Register the web component:
+// eslint-disable-next-line
+const manifest = require('./manifest.json');
+window.customElements.define(manifest.delivery.element, ImageCodingDelivery);
+//# sourceMappingURL=ImageCodingDelivery.jsx.map

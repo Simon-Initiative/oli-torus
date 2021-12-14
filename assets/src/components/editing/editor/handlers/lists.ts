@@ -1,5 +1,4 @@
-import { Transforms, Range, Node, Point, Path, Editor as SlateEditor, Element } from 'slate';
-import * as ContentModel from 'data/content/model/elements/types';
+import { Transforms, Range, Node, Point, Path, Editor as SlateEditor, Element, Text } from 'slate';
 import { KeyboardEvent } from 'react';
 import { OrderedList, UnorderedList } from 'data/content/model/elements/types';
 import { ListItem } from '../../../../data/content/model/elements/types';
@@ -106,7 +105,11 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
     if (match) {
       const [node, path] = match;
 
-      if (node.children.length === 1 && node.children[0].text === '') {
+      if (
+        node.children.length === 1 &&
+        Text.isText(node.children[0]) &&
+        node.children[0].text === ''
+      ) {
         const parentMatch = SlateEditor.parent(editor, path);
         const [parent, parentPath] = parentMatch;
         const grandParentMatch = SlateEditor.parent(editor, parentPath);

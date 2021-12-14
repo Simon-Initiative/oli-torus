@@ -1,5 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Editor, Element, Range } from 'slate';
+import { Editor, Element, Range, Text } from 'slate';
 import {
   getHighestTopLevel,
   getNearestBlock,
@@ -7,7 +7,7 @@ import {
   isTopLevel,
 } from 'components/editing/utils';
 
-export function shouldShowInsertionToolbar(editor: ReactEditor) {
+export function shouldShowInsertionToolbar(editor: Editor) {
   const { selection } = editor;
   if (!selection) return false;
   const isSelectionCollapsed = ReactEditor.isFocused(editor) && Range.isCollapsed(selection);
@@ -15,14 +15,17 @@ export function shouldShowInsertionToolbar(editor: ReactEditor) {
   const isInParagraph =
     [
       ...Editor.nodes(editor, {
-        match: (n) => Element.isElement(n) && n.type === 'p' && n.children[0].text === '',
+        match: (n) => {
+          if (!Element.isElement(n) || n.type !== 'p') return false;
+          return Text.isText(n.children[0]) && n.children[0].text === '';
+        },
       }),
     ].length > 0;
 
   const isTopLevelOrInTable =
     isTopLevel(editor) ||
     getHighestTopLevel(editor).caseOf({
-      just: (n) => n.type === 'table',
+      just: (n) => Element.isElement(n) && n.type === 'table',
       nothing: () => false,
     });
 
@@ -31,7 +34,7 @@ export function shouldShowInsertionToolbar(editor: ReactEditor) {
   return isSelectionCollapsed && isInValidParents;
 }
 
-export function positionInsertion(el: HTMLElement, editor: ReactEditor) {
+export function positionInsertion(el: HTMLElement, editor: Editor) {
   getNearestBlock(editor).lift((block) => {
     el.style.position = 'absolute';
     el.style.opacity = '1';
@@ -44,7 +47,9 @@ export function positionInsertion(el: HTMLElement, editor: ReactEditor) {
       const topLevelNode = $(ReactEditor.toDOMNode(editor, topLevel));
       el.style.left = topLevelNode.position().left - 10 + 'px';
       if (isActive(editor, ['table'])) {
-        const [match] = Editor.nodes(editor, { match: (n) => n.type === 'tr' });
+        const [match] = Editor.nodes(editor, {
+          match: (n) => Element.isElement(n) && n.type === 'tr',
+        });
         if (!match) {
           return;
         }

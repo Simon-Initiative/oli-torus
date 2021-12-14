@@ -1,14 +1,15 @@
 import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
-import { RichText, Hint } from '../types';
+import { Hint } from '../types';
 import { Description } from 'components/misc/Description';
 import { CloseButton } from 'components/misc/CloseButton';
 import { ProjectSlug } from 'data/types';
+import { Descendant } from 'slate';
 
 interface HintsProps {
   onaddCognitiveHint: () => void;
-  onEditHint: (id: string, content: RichText) => void;
+  onEditHint: (id: string, content: Descendant[]) => void;
   onRemoveHint: (id: string) => void;
   projectSlug: ProjectSlug;
   hints: Hint[];

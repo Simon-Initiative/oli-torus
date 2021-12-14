@@ -1,0 +1,108 @@
+import ScreenAuthor from 'components/activities/adaptive/components/authoring/ScreenAuthor';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Modal, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import guid from 'utils/guid';
+import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+const ActionFeedbackEditor = ({ action, onDelete, onChange, }) => {
+    var _a;
+    const [fakeFeedback, setFakeFeedback] = useState('');
+    const uuid = guid();
+    const [feedback, setFeedback] = useState(((_a = action.params) === null || _a === void 0 ? void 0 : _a.feedback) || {});
+    const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+    useEffect(() => {
+        var _a;
+        setFeedback(((_a = action.params) === null || _a === void 0 ? void 0 : _a.feedback) || {});
+    }, [action.params]);
+    useEffect(() => {
+        var _a;
+        (_a = feedback.partsLayout) === null || _a === void 0 ? void 0 : _a.forEach((part) => {
+            var _a, _b;
+            return (_b = (_a = part.custom) === null || _a === void 0 ? void 0 : _a.nodes) === null || _b === void 0 ? void 0 : _b.forEach((node) => {
+                const feedbackText = getFeedbackTextFromNode(node);
+                setFakeFeedback(feedbackText);
+            });
+        });
+    }, [feedback]);
+    const getFeedbackTextFromNode = (node) => {
+        var _a;
+        let nodeText = '';
+        if ((node === null || node === void 0 ? void 0 : node.tag) === 'text') {
+            nodeText = node.text;
+        }
+        else if (((_a = node === null || node === void 0 ? void 0 : node.children) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+            nodeText = getFeedbackTextFromNode(node === null || node === void 0 ? void 0 : node.children[0]);
+        }
+        else {
+            nodeText = 'unknown';
+        }
+        return nodeText;
+    };
+    const [showEditor, setShowEditor] = useState(false);
+    const handleShowFeedbackClick = () => {
+        // console.log('show feedback editor');
+        setShowEditor(true);
+    };
+    const handleCancelEdit = useCallback(() => {
+        // TODO: this revert causes infinite loop
+        // setFeedback(action.params?.feedback || {});
+        setShowEditor(false);
+    }, [feedback]);
+    const handleSaveEdit = useCallback(() => {
+        setShowEditor(false);
+        onChange({ feedback });
+    }, [feedback]);
+    const handleScreenAuthorChange = (screen) => {
+        // console.log('ActionFeedbackEditor Screen Author Change', { screen });
+        setFeedback(screen);
+    };
+    return (<div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
+      <label className="sr-only" htmlFor={`action-feedback-${uuid}`}>
+        show feedback
+      </label>
+      <div className="input-group input-group-sm flex-grow-1">
+        <div className="input-group-prepend">
+          <div className="input-group-text" onClick={handleShowFeedbackClick} style={{ cursor: 'pointer' }}>
+            <i className="fa fa-comment mr-1"/>
+            Show Feedback
+          </div>
+        </div>
+        <input type="text" className="form-control form-control-sm" id={`action-feedback-${uuid}`} placeholder="Enter feedback" disabled={false} onClick={handleShowFeedbackClick} value={fakeFeedback} 
+    // onChange={(e) => setFakeFeedback(e.target.value)}
+    // onBlur={(e) => handleTargetChange(e)}
+    title={fakeFeedback}/>
+      </div>
+      <OverlayTrigger placement="top" delay={{ show: 150, hide: 150 }} overlay={<Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+            Delete Action
+          </Tooltip>}>
+        <span>
+          <button className="btn btn-link p-0 ml-1" onClick={() => setShowConfirmDelete(true)}>
+            <i className="fa fa-trash-alt"/>
+          </button>
+        </span>
+      </OverlayTrigger>
+      <Modal dialogClassName="modal-90w" show={showEditor} onHide={handleCancelEdit}>
+        <Modal.Header closeButton={true}>
+          <h3 className="modal-title">Feedback</h3>
+        </Modal.Header>
+        <Modal.Body>
+          <ScreenAuthor screen={feedback} onChange={handleScreenAuthorChange}/>
+        </Modal.Body>
+        <Modal.Footer>
+          <button className="btn btn-secondary" onClick={handleCancelEdit}>
+            Cancel
+          </button>
+          <button className="btn btn-danger" onClick={handleSaveEdit}>
+            Save
+          </button>
+        </Modal.Footer>
+      </Modal>
+      {showConfirmDelete && (<ConfirmDelete show={showConfirmDelete} elementType="Action" elementName="this feedback action" deleteHandler={() => {
+                onDelete(action);
+                setShowConfirmDelete(false);
+            }} cancelHandler={() => {
+                setShowConfirmDelete(false);
+            }}/>)}
+    </div>);
+};
+export default ActionFeedbackEditor;
+//# sourceMappingURL=ActionFeedbackEditor.jsx.map

@@ -1,0 +1,1 @@
+{"version":3,"file":"layouts.js","sourceRoot":"","sources":["../../../../../src/apps/delivery/layouts/layouts.ts"],"names":[],"mappings":"","sourcesContent":["export interface LayoutProps {\n  previewMode: boolean;\n  pageTitle: string;\n  pageContent: any; // TODO: PageContent?\n}\n"]}

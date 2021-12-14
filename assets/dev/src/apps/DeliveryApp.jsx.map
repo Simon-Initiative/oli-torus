@@ -1,0 +1,1 @@
+{"version":3,"file":"DeliveryApp.jsx","sourceRoot":"","sources":["../../../src/apps/DeliveryApp.tsx"],"names":[],"mappings":"AAAA,OAAO,QAAQ,MAAM,qBAAqB,CAAC;AAC3C,OAAO,EAAE,iBAAiB,EAAE,MAAM,OAAO,CAAC;AAE1C,iBAAiB,CAAC,QAAQ,CAAC,CAAC","sourcesContent":["import Delivery from './delivery/Delivery';\nimport { defineApplication } from './app';\n\ndefineApplication(Delivery);\n"]}

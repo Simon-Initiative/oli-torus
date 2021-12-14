@@ -1,0 +1,36 @@
+export var CodeLanguages;
+(function (CodeLanguages) {
+    CodeLanguages[CodeLanguages["none"] = 0] = "none";
+    CodeLanguages[CodeLanguages["python"] = 1] = "python";
+    CodeLanguages[CodeLanguages["java"] = 2] = "java";
+    CodeLanguages[CodeLanguages["javascript"] = 3] = "javascript";
+    CodeLanguages[CodeLanguages["cpp"] = 4] = "cpp";
+    CodeLanguages[CodeLanguages["c"] = 5] = "c";
+    CodeLanguages[CodeLanguages["c0"] = 6] = "c0";
+    CodeLanguages[CodeLanguages["c#"] = 7] = "c#";
+    CodeLanguages[CodeLanguages["erlang"] = 8] = "erlang";
+    CodeLanguages[CodeLanguages["elixir"] = 9] = "elixir";
+    CodeLanguages[CodeLanguages["lisp"] = 10] = "lisp";
+    CodeLanguages[CodeLanguages["ml"] = 11] = "ml";
+    CodeLanguages[CodeLanguages["sql"] = 12] = "sql";
+    CodeLanguages[CodeLanguages["perl"] = 13] = "perl";
+    CodeLanguages[CodeLanguages["php"] = 14] = "php";
+    CodeLanguages[CodeLanguages["r"] = 15] = "r";
+    CodeLanguages[CodeLanguages["scala"] = 16] = "scala";
+    CodeLanguages[CodeLanguages["swift"] = 17] = "swift";
+    CodeLanguages[CodeLanguages["ruby"] = 18] = "ruby";
+    CodeLanguages[CodeLanguages["ocaml"] = 19] = "ocaml";
+    CodeLanguages[CodeLanguages["haskell"] = 20] = "haskell";
+    CodeLanguages[CodeLanguages["rust"] = 21] = "rust";
+    CodeLanguages[CodeLanguages["golang"] = 22] = "golang";
+    CodeLanguages[CodeLanguages["text"] = 23] = "text";
+    CodeLanguages[CodeLanguages["xml"] = 24] = "xml";
+    CodeLanguages[CodeLanguages["html"] = 25] = "html";
+    CodeLanguages[CodeLanguages["assembly"] = 26] = "assembly";
+    CodeLanguages[CodeLanguages["kotlin"] = 27] = "kotlin";
+    CodeLanguages[CodeLanguages["f#"] = 28] = "f#";
+    CodeLanguages[CodeLanguages["typescript"] = 29] = "typescript";
+    CodeLanguages[CodeLanguages["dart"] = 30] = "dart";
+    CodeLanguages[CodeLanguages["clojure"] = 31] = "clojure";
+})(CodeLanguages || (CodeLanguages = {}));
+//# sourceMappingURL=other.js.map
