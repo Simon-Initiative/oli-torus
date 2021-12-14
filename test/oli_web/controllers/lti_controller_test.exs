@@ -92,6 +92,44 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # form contains a required text input for deployment id
+      assert html_response(conn, 200) =~
+               "<input class=\"deployment_id form-control \" id=\"pending_registration_deployment_id\" name=\"pending_registration[deployment_id]\" placeholder=\"Deployment ID\" type=\"text\" required>"
+    end
+
+    test "registration form prepopulates deployment_id if it was included in oidc params", %{
+      conn: conn,
+      registration: registration
+    } do
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => "http://invalid.edu",
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch",
+        "lti_deployment_id" => "prepopulated_deployment_id"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # validate still works when a user is already logged in
+      user = user_fixture()
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # form contains a hidden input with value "prepopulated_deployment_id"
+      assert html_response(conn, 200) =~ "value=\"prepopulated_deployment_id\""
     end
 
     test "show registration page when deployment doesnt exist", %{
@@ -136,6 +174,9 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # known deployment id is pre-populated and embedded in the form
+      assert html_response(conn, 200) =~ "value=\"#{deployment.deployment_id}\""
     end
 
     test "launch successful for valid params with no email", %{

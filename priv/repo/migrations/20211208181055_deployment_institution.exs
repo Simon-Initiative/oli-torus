@@ -18,6 +18,8 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
       add :deployment_id, :string
     end
 
+    flush()
+
     {deployment_institution, institution_brand} =
       from(d in "lti_1p3_deployments",
         join: r in "lti_1p3_registrations",
@@ -50,6 +52,8 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
       Repo.update_all(institution_query, set: [default_brand_id: brand_id])
     end)
 
+    flush()
+
     alter table(:lti_1p3_registrations) do
       remove :institution_id, references(:institutions)
       remove :brand_id, references(:brands)
@@ -64,14 +68,16 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
       add :brand_id, references(:institutions)
     end
 
+    flush()
+
     # restore institution_id and brand_id to registration from deployment and institution's brand
-    from(r in "lit_1p3_registrations",
+    from(r in "lti_1p3_registrations",
       join: d in "lti_1p3_deployments",
       on: d.registration_id == r.id,
       join: i in "institutions",
       on: i.id == d.institution_id,
       join: b in "brands",
-      on: b.id == i.brand_id,
+      on: b.id == i.default_brand_id,
       select: %{id: r.id, institution_id: i.id, brand_id: b.id}
     )
     |> Repo.all()
@@ -82,6 +88,8 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
       registration = from(r in "lti_1p3_registrations", where: r.id == ^id)
       Repo.update_all(registration, set: [institution_id: institution_id, brand_id: brand_id])
     end)
+
+    flush()
 
     alter table(:institutions) do
       remove :default_brand_id, references(:brands)
