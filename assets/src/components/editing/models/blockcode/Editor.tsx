@@ -1,8 +1,9 @@
 import React from 'react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
+import { CodeLanguages } from 'data/content/model/other';
 
 export type CodeProps = EditorProps<ContentModel.Code>;
 
@@ -29,8 +30,8 @@ export const CodeEditor = (props: CodeProps) => {
             value={model.language}
             onChange={(value) => updateProperty(value, 'language')}
             editor={editor}
-            options={Object.keys(ContentModel.CodeLanguages)
-              .filter((k) => typeof ContentModel.CodeLanguages[k as any] === 'number')
+            options={Object.keys(CodeLanguages)
+              .filter((k: any) => typeof CodeLanguages[k] === 'number')
               .sort()}
           />
         </div>

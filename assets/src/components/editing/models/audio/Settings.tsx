@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as ContentModel from 'data/content/model';
-import { CommandContext } from 'components/editing/models/interfaces';
+import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { selectAudio } from 'components/editing/commands/AudioCmd';
+import { CommandContext } from 'components/editing/commands/interfaces';
 
 type AudioSettingsProps = {
   model: ContentModel.Audio;
@@ -76,7 +76,7 @@ export const AudioSettings = (props: AudioSettingsProps) => {
             <div className="input-group-append">
               <button
                 onClick={() =>
-                  selectAudio(props.commandContext.projectSlug, model).then((img) => null)
+                  selectAudio(props.commandContext.projectSlug, model).then((_img) => null)
                 }
                 // setSrc(img.src)
                 className="btn btn-outline-primary"

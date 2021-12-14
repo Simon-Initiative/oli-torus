@@ -5,7 +5,7 @@ import { InputRefToolbar } from 'components/activities/multi_input/sections/Inpu
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/commands/interfaces';
 import { elementsRemoved } from 'components/editing/utils';
-import { InputRef } from 'data/content/model';
+import { InputRef } from 'data/content/model/elements/types';
 import React from 'react';
 import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';

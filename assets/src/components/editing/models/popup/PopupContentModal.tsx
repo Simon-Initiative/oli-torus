@@ -2,7 +2,7 @@ import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/commands/interfaces';
 import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { ReactEditor, useSelected, useFocused } from 'slate-react';
 import { Transforms } from 'slate';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { displayModelToClassName } from 'data/content/utils';

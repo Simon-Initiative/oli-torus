@@ -5,7 +5,7 @@ import { PopupContentModal } from 'components/editing/models/popup/PopupContentM
 import { updateModel } from 'components/editing/models/utils';
 import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
 import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { centeredAbove } from 'data/content/utils';
 import React from 'react';
 import { Range } from 'slate';

@@ -1,4 +1,4 @@
-import { schema } from 'data/content/model';
+import { schema } from 'data/content/model/schema';
 import { Editor, Element } from 'slate';
 
 export const withInlines = (editor: Editor) => {

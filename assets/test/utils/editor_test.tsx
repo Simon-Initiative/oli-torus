@@ -5,8 +5,9 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { Editable, Slate, withReact } from 'slate-react';
 import { createEditor, Descendant, Element } from 'slate';
-import { InputRef, Mark, ModelElement, Paragraph } from 'data/content/model';
 import { editorFor, markFor } from 'components/editing/editor/modelEditorDispatch';
+import { ModelElement, InputRef, Paragraph } from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 
 const exampleContent = require('../writer/example_content.json');
 

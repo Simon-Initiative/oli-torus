@@ -1,15 +1,10 @@
-import { Mark, ModelElement } from 'data/content/model';
+import { ModelElement } from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createEditor, Editor as SlateEditor, Operation } from 'slate';
+import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { withHistory } from 'slate-history';
-import {
-  Editable,
-  ReactEditor,
-  RenderElementProps,
-  RenderLeafProps,
-  Slate,
-  withReact,
-} from 'slate-react';
+import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
+import guid from 'utils/guid';
 import { CommandContext, ToolbarItem } from '../commands/interfaces';
 import { formatMenuCommands } from '../toolbars/formatting/items';
 import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
@@ -31,13 +26,9 @@ import { withVoids } from './overrides/voids';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
-  onEdit: (
-    value: ModelElement[],
-    editor: SlateEditor & ReactEditor,
-    operations: Operation[],
-  ) => void;
+  onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   // The content to display
-  value: ModelElement[];
+  value: Descendant[];
   // The insertion toolbar configuration
   toolbarItems: ToolbarItem[];
   // Whether or not editing is allowed
@@ -47,6 +38,7 @@ export type EditorProps = {
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
+  children?: React.ReactNode;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -64,19 +56,19 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   );
 }
 
-export const Editor: React.FC<EditorProps> = React.memo((props) => {
+export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
+  const [installed, setInstalled] = useState(false);
 
   const commandContext = props.commandContext;
 
-  const editor: ReactEditor & SlateEditor = useMemo(
+  const editor = useMemo(
     () =>
       withMarkdown(commandContext)(
         withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
       ),
     [],
   );
-  const [installed, setInstalled] = useState(false);
 
   // Install the custom normalizer, only once
   useEffect(() => {
@@ -111,7 +103,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
     return <span {...attributes}>{markup}</span>;
   }, []);
 
-  const onChange = (value: ModelElement[]) => {
+  const onChange = (value: Descendant[]) => {
     const { operations } = editor;
 
     // Determine if this onChange was due to an actual content change.
@@ -121,28 +113,12 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
     }
   };
 
-  const normalizedValue =
-    props.value.length === 0 ? [{ type: 'p', children: [{ text: '' }] }] : props.value;
+  const normalizedValue: Descendant[] =
+    props.value.length === 0 ? [{ type: 'p', id: guid(), children: [{ text: '' }] }] : props.value;
 
   return (
     <React.Fragment>
-      <Slate
-        editor={editor}
-        value={normalizedValue}
-        onChange={onChange}
-        onFocus={emptyOnFocus}
-        onPaste={async (
-          e: React.ClipboardEvent<HTMLDivElement>,
-          editor: SlateEditor,
-          // eslint-disable-next-line
-          next: Function,
-        ) => {
-          setIsPerformingAsyncAction(true);
-          await onPaste(editor, e, props.commandContext.projectSlug);
-          setIsPerformingAsyncAction(false);
-          next();
-        }}
-      >
+      <Slate editor={editor} value={normalizedValue} onChange={onChange}>
         {props.children}
         <InsertionToolbar
           isPerformingAsyncAction={isPerformingAsyncAction}
@@ -167,6 +143,21 @@ export const Editor: React.FC<EditorProps> = React.memo((props) => {
             props.placeholder === undefined ? 'Enter some content here...' : props.placeholder
           }
           onKeyDown={onKeyDown}
+          onFocus={emptyOnFocus}
+          onPaste={
+            () => {}
+            //   async (
+            //   e: React.ClipboardEvent<HTMLDivElement>,
+            //   editor: SlateEditor,
+            //   // eslint-disable-next-line
+            //   next: Function,
+            // ) => {
+            //   setIsPerformingAsyncAction(true);
+            //   await onPaste(editor, e, props.commandContext.projectSlug);
+            //   setIsPerformingAsyncAction(false);
+            //   next();
+            // }
+          }
         />
       </Slate>
     </React.Fragment>

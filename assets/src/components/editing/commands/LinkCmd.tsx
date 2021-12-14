@@ -1,19 +1,21 @@
-import * as ContentModel from 'data/content/model';
-import { Transforms, Editor } from 'slate';
+import { Transforms, Editor, Element } from 'slate';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { isActive } from '../utils';
+import { link } from 'data/content/model/elements/factories';
 
 const command: Command = {
-  execute: (context, editor, _params) => {
+  execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;
 
     if (isActive(editor, 'a')) {
-      return Transforms.unwrapNodes(editor, { match: (node) => node.type === 'a' });
+      return Transforms.unwrapNodes(editor, {
+        match: (node) => Element.isElement(node) && node.type === 'a',
+      });
     }
 
     const href = Editor.string(editor, selection);
-    Transforms.wrapNodes(editor, ContentModel.link(href), { split: true });
+    Transforms.wrapNodes(editor, link(href), { split: true });
   },
   precondition: (editor) => {
     return !isActive(editor, ['code']);

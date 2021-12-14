@@ -1,6 +1,7 @@
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
-import * as ContentModel from 'data/content/model';
-import { Transforms } from 'slate';
+import { popup } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
+import { Element, Transforms } from 'slate';
 import { isActive } from '../utils';
 
 const command: Command = {
@@ -9,10 +10,12 @@ const command: Command = {
     if (!selection) return;
 
     if (isActive(editor, 'popup')) {
-      return Transforms.unwrapNodes(editor, { match: (node) => node.type === 'popup' });
+      return Transforms.unwrapNodes(editor, {
+        match: (node) => Element.isElement(node) && node.type === 'popup',
+      });
     }
 
-    Transforms.wrapNodes(editor, ContentModel.popup(), { split: true });
+    Transforms.wrapNodes(editor, popup(), { split: true });
   },
   precondition: (_editor) => {
     return true;

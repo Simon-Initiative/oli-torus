@@ -2,8 +2,8 @@ import React, { useState, useRef } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { ReactEditor } from 'slate-react';
 import { Transforms, Editor, Location } from 'slate';
-import { ModelElement } from 'data/content/model';
 import { cursorAtEndOfInput, cursorAtBeginningOfInput } from 'components/editing/utils';
+import { ModelElement } from 'data/content/model/elements/types';
 
 // Reusable components for settings UIs
 
@@ -47,7 +47,7 @@ interface SelectProps {
   value: string | undefined;
   onChange: (s: string) => void;
   options: string[];
-  editor: ReactEditor;
+  editor: Editor;
   style?: React.CSSProperties;
 }
 
@@ -62,7 +62,7 @@ export const Select = (props: SelectProps) => {
       ref={ref as any}
       className="form-control form-control-sm mb-2"
       value={value}
-      onBlur={(e) => ReactEditor.deselect(editor)}
+      onBlur={(_e) => ReactEditor.deselect(editor)}
       onChange={(e) => {
         setValue(e.target.value);
         onChange(e.target.value);
@@ -81,7 +81,7 @@ interface InputProps {
   value: string | undefined;
   onChange: (s: string) => void;
   placeholder: string;
-  editor: ReactEditor;
+  editor: Editor;
   model: ModelElement;
   editMode: boolean;
 }
@@ -102,7 +102,7 @@ export const Input = (props: InputProps) => {
         setValue(e.target.value);
         onChange(e.target.value);
       }}
-      onBlur={(e) => ReactEditor.deselect(editor)}
+      onBlur={(_e) => ReactEditor.deselect(editor)}
       onKeyDown={(e) => {
         const input = ref.current;
         if (!input) {

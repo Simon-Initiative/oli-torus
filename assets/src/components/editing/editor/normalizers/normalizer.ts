@@ -1,5 +1,6 @@
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
-import { p, schema, SchemaConfig } from 'data/content/model';
+import { p } from 'data/content/model/elements/factories';
+import { SchemaConfig, schema } from 'data/content/model/schema';
 import * as Immutable from 'immutable';
 import { Editor as SlateEditor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
@@ -44,7 +45,7 @@ export function installNormalizer(
       if (SlateEditor.isEditor(node)) {
         const last = node.children[node.children.length - 1];
 
-        if (last.type !== 'p') {
+        if (!Element.isElement(last) || last.type !== 'p') {
           Transforms.insertNodes(editor, p(), { mode: 'highest', at: SlateEditor.end(editor, []) });
         }
         return; // Return here is necessary to enable multi-pass normalization
@@ -90,14 +91,12 @@ export function installNormalizer(
 
         if (nextItem !== undefined) {
           const [nextNode] = nextItem;
+          if (Element.isElement(node) && Element.isElement(nextNode)) {
+            if (spacesRequiredBetween.has(nextNode.type) && spacesRequiredBetween.has(node.type)) {
+              Transforms.insertNodes(editor, p(), { mode: 'highest', at: Path.next(path) });
 
-          if (
-            spacesRequiredBetween.has(nextNode.type as any) &&
-            spacesRequiredBetween.has(node.type as any)
-          ) {
-            Transforms.insertNodes(editor, p(), { mode: 'highest', at: Path.next(path) });
-
-            return; // Return here necessary to enable multi-pass normalization
+              return; // Return here necessary to enable multi-pass normalization
+            }
           }
         }
       }

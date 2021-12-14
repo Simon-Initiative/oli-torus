@@ -24,8 +24,8 @@ import { List } from 'data/activities/model/list';
 import { getCorrectResponse, Responses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
-import { InputRef } from 'data/content/model';
-import { Editor as SlateEditor, Operation } from 'slate';
+import { InputRef } from 'data/content/model/elements/types';
+import { Editor as SlateEditor, Element, Operation } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
@@ -55,8 +55,9 @@ export const MultiInputActions = {
         operations.find(
           (op) =>
             op.type === 'insert_node' &&
+            Element.isElement(op.node) &&
             op.node.type === 'input_ref' &&
-            model.inputs.find((input) => input.id === op.node.id),
+            model.inputs.find((input) => input.id === (op.node as InputRef).id),
         )
       ) {
         // duplicate input id, do nothing

@@ -4,7 +4,7 @@ import { EditLink } from 'components/editing/models/link/EditLink';
 import { LinkablePages } from 'components/editing/models/link/utils';
 import { updateModel } from 'components/editing/models/utils';
 import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { centeredAbove } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';

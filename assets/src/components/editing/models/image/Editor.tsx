@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useFocused, useSelected, ReactEditor } from 'slate-react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from '../settings/Settings';
 import { Transforms } from 'slate';

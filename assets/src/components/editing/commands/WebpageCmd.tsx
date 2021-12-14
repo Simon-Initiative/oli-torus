@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Transforms } from 'slate';
-import * as ContentModel from 'data/content/model';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { useState } from 'react';
 import * as Settings from 'components/editing/models/settings/Settings';
+import { webpage } from 'data/content/model/elements/factories';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -40,8 +40,8 @@ const WebpageCreation = (props: WebpageCreationProps) => {
 };
 
 export function selectWebpage(): Promise<string | null> {
-  return new Promise((resolve, reject) => {
-    const selected = { src: null };
+  return new Promise((resolve, _reject) => {
+    const selected: { src: null | string } = { src: null };
 
     const mediaLibrary = (
       <ModalSelection
@@ -58,7 +58,7 @@ export function selectWebpage(): Promise<string | null> {
             resolve(src);
           }}
           onChange={(src: string) => {
-            selected.src = src as any;
+            selected.src = src;
           }}
         />
       </ModalSelection>
@@ -69,8 +69,9 @@ export function selectWebpage(): Promise<string | null> {
 }
 
 const command: Command = {
-  execute: (context, editor) => {
-    const at = editor.selection as any;
+  execute: (_context, editor) => {
+    const at = editor.selection;
+    if (!at) return;
 
     selectWebpage().then((selectedSrc) => {
       if (selectedSrc !== null) {
@@ -79,11 +80,11 @@ const command: Command = {
           src = 'https://' + src;
         }
 
-        Transforms.insertNodes(editor, ContentModel.webpage(src), { at });
+        Transforms.insertNodes(editor, webpage(src), { at });
       }
     });
   },
-  precondition: (editor) => {
+  precondition: (_editor) => {
     return true;
   },
 };

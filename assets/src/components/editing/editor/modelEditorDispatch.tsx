@@ -5,7 +5,8 @@ import { TableEditor } from 'components/editing/models/table/TableEditor';
 import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { ThEditor } from 'components/editing/models/table/ThEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 import * as React from 'react';
 import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
@@ -91,7 +92,7 @@ export function editorFor(
   }
 }
 
-export function markFor(mark: ContentModel.Mark, children: any): JSX.Element {
+export function markFor(mark: Mark, children: any): JSX.Element {
   switch (mark) {
     case 'em':
       return <em>{children}</em>;

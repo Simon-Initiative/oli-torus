@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import * as ContentModel from 'data/content/model';
-import { CommandContext } from 'components/editing/models/interfaces';
+import * as ContentModel from 'data/content/model/elements/types';
 import guid from 'utils/guid';
 import * as Settings from 'components/editing/models/settings/Settings';
+import { CommandContext } from 'components/editing/commands/interfaces';
 
 type CodeSettingsProps = {
   model: ContentModel.Code;
@@ -26,13 +26,6 @@ export const CodeSettings = (props: CodeSettingsProps) => {
       (window as any).$('[data-toggle="tooltip"]').tooltip();
     }
   });
-
-  // const onRemove = () => {
-  //   ($('#remove-button') as any).tooltip('hide');
-
-  //   const path = ReactEdito.findPath(editor, model);
-  //   Transforms.removeNodes(editor, { at: path });
-  // };
 
   const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
 

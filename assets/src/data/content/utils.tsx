@@ -1,8 +1,9 @@
-import { ContentItem, ContentTypes } from 'data/content/writers/writer';
+import { ModelElement } from 'data/content/model/elements/types';
+import { MediaDisplayMode } from 'data/content/model/other';
+import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
 import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
-import { Text } from 'slate';
-import { isModelElement, MediaDisplayMode, ModelElement } from './model';
+import { Element, Text } from 'slate';
 import { StructuredContent } from './resource';
 import { toSimpleText } from './text';
 
@@ -79,16 +80,21 @@ const contentBfs = (
   }
 
   cb(content);
-
-  if (Array.isArray(content.children)) {
-    return contentBfs(content.children, cb);
+  if (isContentItem(content) || Element.isElement(content)) {
+    const children = content.children;
+    if (Array.isArray(children)) {
+      return contentBfs(
+        (children as Array<ModelElement>).filter((c: ModelElement) => c.type !== 'input_ref'),
+        cb,
+      );
+    }
   }
 };
 
 export const elementsOfType = (content: ContentTypes, type: string): ModelElement[] => {
   const elements: ModelElement[] = [];
   contentBfs(content, (elem) => {
-    if (isModelElement(elem) && elem.type === type) {
+    if (Element.isElement(elem) && elem.type === type) {
       elements.push(elem);
     }
   });

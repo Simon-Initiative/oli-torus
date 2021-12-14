@@ -1,12 +1,13 @@
 import React, { useEffect, useRef } from 'react';
 import { ReactEditor } from 'slate-react';
-import { Transforms, Editor, Path } from 'slate';
-import * as ContentModel from 'data/content/model';
+import { Transforms, Editor, Path, Element } from 'slate';
+import * as ContentModel from 'data/content/model/elements/factories';
+import { TableData, TableHeader, TableRow } from 'data/content/model/elements/types';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
-  editor: ReactEditor;
-  model: ContentModel.TableData | ContentModel.TableHeader;
+  editor: Editor;
+  model: TableData | TableHeader;
 }
 export const DropdownMenu = (props: Props) => {
   const ref = useRef();
@@ -35,7 +36,7 @@ export const DropdownMenu = (props: Props) => {
     for (let i = 0; i < count; i += 1) {
       tds.push(ContentModel.td(''));
     }
-    const row: ContentModel.TableRow = ContentModel.tr(tds);
+    const row: TableRow = ContentModel.tr(tds);
 
     Transforms.insertNodes(editor, row, { at: parentPath });
   };
@@ -49,7 +50,7 @@ export const DropdownMenu = (props: Props) => {
     for (let i = 0; i < count; i += 1) {
       tds.push(ContentModel.td(''));
     }
-    const row: ContentModel.TableRow = ContentModel.tr(tds);
+    const row: TableRow = ContentModel.tr(tds);
     Transforms.insertNodes(editor, row, { at: Path.next(parentPath) });
   };
 
@@ -102,7 +103,9 @@ export const DropdownMenu = (props: Props) => {
   };
 
   const onDeleteTable = () => {
-    const [tableEntry] = Editor.nodes(editor, { match: (n) => n.type === 'table' });
+    const [tableEntry] = Editor.nodes(editor, {
+      match: (n) => Element.isElement(n) && n.type === 'table',
+    });
     if (!tableEntry) return;
     const [, path] = tableEntry;
     Transforms.removeNodes(editor, { at: path });

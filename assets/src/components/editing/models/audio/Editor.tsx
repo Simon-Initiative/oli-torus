@@ -1,10 +1,9 @@
 import React from 'react';
 import { updateModel, getEditMode } from '../utils';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
-// eslint-disable-next-line
-export interface AudioProps extends EditorProps<ContentModel.Audio> { }
+export interface AudioProps extends EditorProps<ContentModel.Audio> {}
 export const AudioEditor = (props: AudioProps) => {
   const { attributes, children, editor, model } = props;
 

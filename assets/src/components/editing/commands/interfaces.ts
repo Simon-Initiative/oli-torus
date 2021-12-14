@@ -1,15 +1,16 @@
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
-import { ID, InputRef } from 'data/content/model';
-import { ReactEditor } from 'slate-react';
+import { InputRef } from 'data/content/model/elements/types';
+import { ID } from 'data/content/model/other';
+import { Editor } from 'slate';
 
 // For toolbar buttons
 export type CommandDesc = {
   type: 'CommandDesc';
-  icon: (editor: ReactEditor) => string;
+  icon: (editor: Editor) => string;
   command: Command;
-  description: (editor: ReactEditor) => string;
+  description: (editor: Editor) => string;
   // active: is the item in the cursor's selection
-  active?: (editor: ReactEditor) => boolean;
+  active?: (editor: Editor) => boolean;
 };
 
 export interface CommandContext {
@@ -25,16 +26,16 @@ export interface CommandContext {
 export type Command = {
   // precondition: must be satisfied for the command to be enabled
   // (prevents commands from violating model constraints)
-  precondition: (editor: ReactEditor) => boolean;
+  precondition: (editor: Editor) => boolean;
   // execute: run when the command is called (usually to create an element and insert it)
   // eslint-disable-next-line
-  execute: (context: CommandContext, editor: ReactEditor, params?: Object) => void;
+  execute: (context: CommandContext, editor: Editor, params?: Object) => void;
   // obtainParameters: allow the command to gather additional info before running the command
   // (for example, show a size picker for table insertion)
   // Returns a JSX element that will be inserted in a popover
   obtainParameters?: (
     context: CommandContext,
-    editor: ReactEditor,
+    editor: Editor,
     onDone: (params: any) => void,
     onCancel: () => void,
   ) => JSX.Element;

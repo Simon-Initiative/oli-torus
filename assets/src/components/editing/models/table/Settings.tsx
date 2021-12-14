@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as ContentModel from 'data/content/model';
-import { CommandContext } from 'components/editing/models/interfaces';
+import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
+import { CommandContext } from 'components/editing/commands/interfaces';
 
 type TableSettingsProps = {
   model: ContentModel.Table;

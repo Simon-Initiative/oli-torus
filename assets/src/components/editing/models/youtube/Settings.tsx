@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import * as ContentModel from 'data/content/model';
-import { CommandContext } from 'components/editing/models/interfaces';
+import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { CUTE_OTTERS } from './Editor';
+import { CommandContext } from 'components/editing/commands/interfaces';
 
 const onVisit = (href: string) => {
   window.open(href, '_blank');
@@ -11,15 +11,6 @@ const onVisit = (href: string) => {
 const onCopy = (href: string) => {
   navigator.clipboard.writeText(href);
 };
-
-// const onRemove = () => {
-//   ($('#remove-button') as any).tooltip('hide');
-
-//   const path = ReactEditor.findPath(editor, model);
-//   Transforms.removeNodes(editor, { at: path });
-
-//   setIsPopoverOpen(false);
-// };
 
 type YouTubeSettingsProps = {
   model: ContentModel.YouTube;

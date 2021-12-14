@@ -1,8 +1,7 @@
 import { Editor } from 'slate';
-import { Mark } from 'data/content/model';
-import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from './interfaces';
-import { marksInEntireSelection, isMarkActive, marksInPartOfSelection } from '../utils';
+import { isMarkActive } from '../utils';
+import { Mark } from 'data/content/model/text';
 
 interface CommandWrapperProps {
   icon: string;
@@ -12,7 +11,7 @@ interface CommandWrapperProps {
   active?: CommandDesc['active'];
   precondition?: Command['precondition'];
 }
-export function toggleMark(editor: ReactEditor, mark: Mark) {
+export function toggleMark(editor: Editor, mark: Mark) {
   const isActive = isMarkActive(editor, mark);
 
   if (isActive) {
@@ -52,8 +51,8 @@ function createCommandDesc({
     description: () => description,
     ...(active ? { active } : {}),
     command: {
-      execute: (context, editor: ReactEditor) => execute(context, editor),
-      ...(precondition ? { precondition } : { precondition: (editor) => true }),
+      execute: (context, editor: Editor) => execute(context, editor),
+      ...(precondition ? { precondition } : { precondition: (_editor) => true }),
     },
   };
 }

@@ -1,11 +1,12 @@
 import { Transforms } from 'slate';
-import * as ContentModel from 'data/content/model';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { isActive } from '../utils';
+import { code } from 'data/content/model/elements/factories';
 
 const command: Command = {
-  execute: (context, editor) => {
-    Transforms.insertNodes(editor, ContentModel.code(), { at: editor.selection as any });
+  execute: (_context, editor) => {
+    if (!editor.selection) return;
+    Transforms.insertNodes(editor, code(), { at: editor.selection });
   },
   precondition: (editor) => {
     return !isActive(editor, 'table');

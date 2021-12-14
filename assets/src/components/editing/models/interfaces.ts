@@ -1,7 +1,6 @@
-import { ReactEditor } from 'slate-react';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
+import { Editor } from 'slate';
 import { CommandContext } from '../commands/interfaces';
-export { CommandContext } from '../commands/interfaces';
 
 // This is the interface that all editing components must implement.
 // Note the lack of an onEdit callback. The components instead directly
@@ -13,7 +12,7 @@ export { CommandContext } from '../commands/interfaces';
 export interface EditorProps<T extends ContentModel.ModelElement> {
   commandContext: CommandContext;
   model: T; // The model (like an image, or youtube)
-  editor: ReactEditor; // The slate instance containing this editor component
+  editor: Editor; // The slate instance containing this editor component
   attributes: any; // Slate attributes that must be rendering as part of the
   // top level dom element that the component renders.
   children: any; // The child elements that the component must render.

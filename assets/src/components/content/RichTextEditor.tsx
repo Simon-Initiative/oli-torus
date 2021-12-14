@@ -1,5 +1,4 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { RichText } from 'components/activities/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { CommandContext } from 'components/editing/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
@@ -7,16 +6,15 @@ import { NormalizerContext } from 'components/editing/editor/normalizers/normali
 import { getToolbarForContentType } from 'components/editing/toolbars/insertion/items';
 import { ProjectSlug } from 'data/types';
 import React from 'react';
-import { Editor as SlateEditor, Operation } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { classNames } from 'utils/classNames';
 
 type Props = {
   projectSlug: ProjectSlug;
   editMode: boolean;
   className?: string;
-  value: RichText;
-  onEdit: (value: RichText, editor: SlateEditor & ReactEditor, operations: Operation[]) => void;
+  value: Descendant[];
+  onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   placeholder?: string;
   onRequestMedia?: any;
   style?: React.CSSProperties;

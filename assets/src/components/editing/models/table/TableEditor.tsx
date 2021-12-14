@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { updateModel, getEditMode } from 'components/editing/models/utils';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from 'components/editing/models/settings/Settings';
 
 // eslint-disable-next-line
-interface Props extends EditorProps<ContentModel.Table> { }
+interface Props extends EditorProps<ContentModel.Table> {}
 export const TableEditor = (props: Props) => {
   const { attributes, children, editor, model } = props;
 

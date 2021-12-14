@@ -31,7 +31,7 @@ import {
   UnorderedList,
   Webpage,
   YouTube,
-} from 'data/content/model';
+} from 'data/content/model/elements/types';
 import React from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';

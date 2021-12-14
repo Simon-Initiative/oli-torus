@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFocused, useSelected, useSlate } from 'slate-react';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import { DropdownMenu } from './DropdownMenu';
 

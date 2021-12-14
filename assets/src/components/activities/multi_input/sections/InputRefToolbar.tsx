@@ -1,13 +1,13 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { inputRef } from 'data/content/model';
+import { inputRef } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Editor, Transforms } from 'slate';
-import { ReactEditor, useEditor } from 'slate-react';
+import { ReactEditor, useSlateStatic } from 'slate-react';
 interface InputRefToolbar {
   setEditor: React.Dispatch<React.SetStateAction<ReactEditor & Editor>>;
 }
 export const InputRefToolbar: React.FC<InputRefToolbar> = (props) => {
-  const editor = useEditor();
+  const editor = useSlateStatic();
 
   React.useEffect(() => {
     props.setEditor(editor);

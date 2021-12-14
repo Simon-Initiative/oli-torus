@@ -1,11 +1,11 @@
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
+import { ModelElement } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
 import guid from 'utils/guid';
 import { ActivityEditContext } from './activity';
-import { ModelElement } from './model';
 
 export type PageContent = {
   model: ResourceContent[];

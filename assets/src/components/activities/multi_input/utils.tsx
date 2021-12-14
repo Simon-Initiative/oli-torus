@@ -15,7 +15,8 @@ import {
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
-import { InputRef, inputRef, Paragraph } from 'data/content/model';
+import { inputRef } from 'data/content/model/elements/factories';
+import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import React from 'react';
 import { clone } from 'utils/common';
@@ -133,7 +134,9 @@ function ensureHasInput(model: MultiInputSchema) {
   const part = makePart(Responses.forTextInput(), [makeHint('')]);
   const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
-  const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
+  const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
+    | Paragraph
+    | undefined;
   firstParagraph?.children.push(ref);
   firstParagraph?.children.push({ text: '' });
 
@@ -209,7 +212,9 @@ function matchInputsToParts(model: MultiInputSchema) {
     });
     part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
+    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
+      | Paragraph
+      | undefined;
     firstParagraph?.children.push(ref);
     firstParagraph?.children.push({ text: '' });
   });
@@ -235,7 +240,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
 
   unmatchedInputs.forEach((input: MultiInput) => {
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
+    const firstParagraph = model.stem.content.find((e) => e.type === 'p') as Paragraph | undefined;
     firstParagraph?.children.push({ ...inputRef(), id: input.id });
     firstParagraph?.children.push({ text: '' });
   });

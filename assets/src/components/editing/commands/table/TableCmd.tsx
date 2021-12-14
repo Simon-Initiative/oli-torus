@@ -1,13 +1,13 @@
-import { ReactEditor } from 'slate-react';
 import { CommandDesc, Command } from 'components/editing/commands/interfaces';
-import { Transforms } from 'slate';
-import { td, tr, table } from 'data/content/model';
+import { Editor, Transforms } from 'slate';
+import { td, tr, table } from 'data/content/model/elements/factories';
 import { SizePicker } from 'components/editing/commands/table/SizePicker';
 import { isTopLevel } from 'components/editing/utils';
 
 const command: Command = {
-  execute: (context: any, editor: ReactEditor, params: any) => {
-    const at = editor.selection as any;
+  execute: (_context: any, editor: Editor, params: any) => {
+    const at = editor.selection;
+    if (!at) return;
     const rows: any = [];
 
     for (let i = 0; i < params.rows; i += 1) {
@@ -22,11 +22,11 @@ const command: Command = {
     Transforms.insertNodes(editor, t, { at });
     Transforms.deselect(editor);
   },
-  precondition: (editor: ReactEditor) => {
+  precondition: (editor: Editor) => {
     return isTopLevel(editor);
   },
   // eslint-disable-next-line
-  obtainParameters: (context, editor, onDone, onCancel) => {
+  obtainParameters: (_context, _editor, onDone, onCancel) => {
     // eslint-disable-next-line
     return <SizePicker onTableCreate={(rows, columns) => onDone({ rows, columns })} />;
   },

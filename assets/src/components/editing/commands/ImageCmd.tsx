@@ -1,13 +1,12 @@
 import React from 'react';
-import { Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { Editor, Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
-import guid from 'utils/guid';
+import { image } from 'data/content/model/elements/factories';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -48,14 +47,10 @@ export function selectImage(
 }
 
 const libraryCommand: Command = {
-  execute: (context, editor: ReactEditor) => {
+  execute: (context, editor) => {
     const at = editor.selection;
     selectImage(context.projectSlug, undefined).then((src) =>
-      Transforms.insertNodes(
-        editor,
-        { type: 'img', src, guid: guid(), children: [] },
-        at ? { at } : undefined,
-      ),
+      Transforms.insertNodes(editor, image(src), at ? { at } : undefined),
     );
   },
   precondition: (_editor) => {
@@ -65,7 +60,7 @@ const libraryCommand: Command = {
 
 function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | boolean>) {
   const customEventCommand: Command = {
-    execute: (context, editor: ReactEditor) => {
+    execute: (context, editor: Editor) => {
       const at = editor.selection;
 
       const request = {
@@ -75,13 +70,7 @@ function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | b
 
       onRequestMedia(request).then((r) => {
         if (typeof r === 'string') {
-          const img = {
-            type: 'img',
-            src: r as string,
-            id: guid(),
-            children: [],
-          };
-          Transforms.insertNodes(editor, img, at ? { at } : undefined);
+          Transforms.insertNodes(editor, image(r), at ? { at } : undefined);
         }
       });
     },

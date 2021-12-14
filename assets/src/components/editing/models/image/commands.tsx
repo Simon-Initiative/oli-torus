@@ -2,7 +2,7 @@ import { modalActions } from 'actions/modal';
 import { selectImage } from 'components/editing/commands/ImageCmd';
 import { CommandDesc } from 'components/editing/commands/interfaces';
 import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import * as React from 'react';
 import { useState } from 'react';
 import { Maybe } from 'tsmonad';

@@ -1,7 +1,7 @@
 import { Transforms, Editor as SlateEditor } from 'slate';
-import * as ContentModel from 'data/content/model';
 import { uploadFiles } from 'components/media/manager/upload';
 import guid from 'utils/guid';
+import { image } from 'data/content/model/elements/factories';
 
 export const onPaste = async (
   editor: SlateEditor,
@@ -30,7 +30,5 @@ export const onPaste = async (
     .then((uploadedFiles) =>
       uploadedFiles.map((file: any) => file.url).filter((url: string | undefined) => !!url),
     )
-    .then((urls) =>
-      urls.forEach((url: string) => Transforms.insertNodes(editor, ContentModel.image(url))),
-    );
+    .then((urls) => urls.forEach((url: string) => Transforms.insertNodes(editor, image(url))));
 };

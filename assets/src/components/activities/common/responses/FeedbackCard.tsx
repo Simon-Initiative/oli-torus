@@ -1,4 +1,4 @@
-import { ID } from 'data/content/model';
+import { ID } from 'data/content/model/other';
 import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Feedback, RichText } from 'components/activities/types';

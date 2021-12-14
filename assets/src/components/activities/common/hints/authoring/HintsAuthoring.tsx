@@ -4,7 +4,7 @@ import { HintCard } from 'components/activities/common/hints/authoring/HintCard'
 import { Hint, RichText } from 'components/activities/types';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { Card } from 'components/misc/Card';
-import { ID } from 'data/content/model';
+import { ID } from 'data/content/model/other';
 import React from 'react';
 
 interface HintsAuthoringProps {

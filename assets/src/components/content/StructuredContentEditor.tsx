@@ -1,5 +1,5 @@
 import React from 'react';
-import { Node } from 'slate';
+import { Descendant } from 'slate';
 import { StructuredContent } from 'data/content/resource';
 import { Editor } from 'components/editing/editor/Editor';
 import { ProjectSlug } from 'data/types';
@@ -16,21 +16,22 @@ export type StructuredContentEditor = {
 
 // The resource editor for content
 export const StructuredContentEditor = (props: StructuredContentEditor) => {
-  const { content, toolbarItems, editMode, projectSlug } = props;
-
-  const onEdit = (children: Node[]) => {
-    props.onEdit(Object.assign({}, content, { children }));
-  };
+  const onEdit = React.useCallback(
+    (children: Descendant[]) => {
+      props.onEdit(Object.assign({}, props.content, { children }));
+    },
+    [props.content, props.onEdit],
+  );
 
   return (
     <ErrorBoundary>
       <Editor
         className="structured-content"
-        commandContext={{ projectSlug }}
-        editMode={editMode}
-        value={content.children}
+        commandContext={{ projectSlug: props.projectSlug }}
+        editMode={props.editMode}
+        value={props.content.children}
         onEdit={onEdit}
-        toolbarItems={toolbarItems}
+        toolbarItems={props.toolbarItems}
       />
     </ErrorBoundary>
   );

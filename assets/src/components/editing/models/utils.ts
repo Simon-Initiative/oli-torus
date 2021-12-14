@@ -1,6 +1,6 @@
-import * as ContentModel from 'data/content/model';
+import * as ContentModel from 'data/content/model/elements/types';
 import { ReactEditor } from 'slate-react';
-import { Transforms } from 'slate';
+import { Editor, Transforms } from 'slate';
 
 /**
  * Updates a model element that is contained in a slate data model hierarchy.
@@ -9,7 +9,7 @@ import { Transforms } from 'slate';
  * @param changes a partial object containing the changes that are to be applied to the model
  */
 export function updateModel<T extends ContentModel.ModelElement>(
-  editor: ReactEditor,
+  editor: Editor,
   model: T,
   changes: Partial<T>,
 ) {
