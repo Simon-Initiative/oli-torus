@@ -149,7 +149,7 @@ defmodule Oli.Delivery.Paywall do
 
   @doc """
   Given a section (blueprint or enrollable), calculate the cost to use it for
-  a specific insitution, taking into account any product-wide and product-specific discounts
+  a specific institution, taking into account any product-wide and product-specific discounts
   this instituttion has.
 
   Returns {:ok, %Money{}} or {:error, reason}
