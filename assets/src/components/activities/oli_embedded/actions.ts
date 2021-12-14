@@ -37,8 +37,9 @@ export class OliEmbeddedActions {
   }
 
   static removePart(partId: string) {
+    console.log("Remove part " + partId);
     return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
-      if(draftState.authoring.parts.length > 2){
+      if(draftState.authoring.parts.length > 1){
         draftState.authoring.parts = draftState.authoring.parts.filter(p => p.id !== partId);
       }
     };

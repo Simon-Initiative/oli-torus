@@ -14,7 +14,7 @@ defmodule Oli.ActivitiesTest do
 
       # BS: seems better to just get the object and check enabled but not sure how
       assert Enum.member?(project_activities, %{
-              id: 3,
+              id: 5,
               authoring_element: "oli-image-coding-authoring",
               delivery_element: "oli-image-coding-delivery",
               enabled: true,
@@ -32,7 +32,7 @@ defmodule Oli.ActivitiesTest do
       project_activities = Activities.activities_for_project(project)
 
       assert Enum.member?(project_activities, %{
-              id: 3,
+              id: 5,
               authoring_element: "oli-image-coding-authoring",
               delivery_element: "oli-image-coding-delivery",
               enabled: false,

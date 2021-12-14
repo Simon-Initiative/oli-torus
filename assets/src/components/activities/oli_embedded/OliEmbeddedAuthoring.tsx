@@ -95,9 +95,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     dispatch(OliEmbeddedActions.addNewPart());
   }
 
-  useEffect(() => {
-  }, []);
-
   const id = guid();
 
   return (
@@ -161,7 +158,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
               <div className="col col-sm-2">
                 Part {i+1}
               </div>
-              <div className="col col-lg-2">
+              <div className="col col-lg-3">
                 {part.id}
               </div>
               <div className="col col-lg-2">

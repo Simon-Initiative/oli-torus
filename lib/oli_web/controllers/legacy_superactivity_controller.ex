@@ -1,5 +1,6 @@
 defmodule OliWeb.LegacySuperactivityController do
   use OliWeb, :controller
+  require Logger
 
   alias XmlBuilder
 
@@ -9,7 +10,7 @@ defmodule OliWeb.LegacySuperactivityController do
     AttemptHistory,
     FileRecord,
     FileDirectory
-    }
+  }
 
   #  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Sections
@@ -26,15 +27,16 @@ defmodule OliWeb.LegacySuperactivityController do
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
     user = conn.assigns.current_user
 
-    activity_attempt =
-      Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
-      |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
+    activity_attempt = Attempts.get_latest_activity_attempt(
+                         Attempts.get_activity_attempt_by(attempt_guid: attempt_guid).resource_attempt_id)
+                       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
     part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
 
     %{"base" => base, "src" => src} = activity_attempt.transformed_model
 
     context = %{
+      attempt_guid: activity_attempt.attempt_guid,
       src_url: "https://#{conn.host}/superactivity/#{base}/#{src}",
       activity_type: activity_attempt.revision.activity_type.slug,
       server_url: "https://#{conn.host}/jcourse/superactivity/server",
@@ -67,6 +69,12 @@ defmodule OliWeb.LegacySuperactivityController do
         |> put_resp_content_type("text/text")
         |> send_resp(code, error)
     end
+  end
+
+  def file_not_found(conn, _params) do
+    conn
+    |> put_status(404)
+    |> text("File Not Found")
   end
 
   defp fetch_context(host, user, attempt_guid) do
@@ -121,19 +129,11 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  def file_not_found(conn, _params) do
-    conn
-    |> put_status(404)
-    |> text("File Not Found")
-  end
-
   defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
     xml =
-      SuperActivityClient.setup(
-        %{
-          context: context
-        }
-      )
+      SuperActivityClient.setup(%{
+        context: context
+      })
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 
@@ -141,13 +141,10 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "beginSession" do
-    #        IO.inspect(context, limit: :infinity)
     xml =
-      SuperActivitySession.setup(
-        %{
-          context: context
-        }
-      )
+      SuperActivitySession.setup(%{
+        context: context
+      })
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 
@@ -160,14 +157,6 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, params) when command_name === "startAttempt" do
-    # commandName: startAttempt
-    # resourceTypeID: x-cmu-phil-syntaxlab
-    # activityMode: delivery
-    # authenticationToken: s=c272df717f00000136fc40e39ca2e317&u=rgachuhi&h=8217d014dba6099bf9445eba90b6536e
-    # userGuid: rgachuhi
-    # activityContextGuid: 58b3ceea7f0000011018b00c8bc72b87
-    # activityGuid: 58b3cee97f0000011e90a274d3df8b5f
-
     case context.activity_attempt.date_evaluated do
       nil ->
         attempt_history(context)
@@ -180,7 +169,6 @@ defmodule OliWeb.LegacySuperactivityController do
                seed_state_from_previous
              ) do
           {:ok, {attempt_state, _model}} ->
-            IO.inspect attempt_state
 
             attempt_history(fetch_context(context.host, context.user, attempt_state.attemptGuid))
 
@@ -196,33 +184,47 @@ defmodule OliWeb.LegacySuperactivityController do
          %{"scoreValue" => score_value, "scoreId" => score_type} = params
        )
        when command_name === "scoreAttempt" do
+    part_attempt =
+      case Map.get(params, "partId") do
+        nil ->
+          # Assumes custom has a single part if partId is absent from request parameters
+          Enum.at(context.activity_attempt.part_attempts, 0)
 
-    part_attempt = case Map.get(params, "partId") do
-      nil ->
-        # Assumes custom has a single part if partId is not one of the request parameters
-        Enum.at(context.activity_attempt.part_attempts, 0)
-      part_id -> Enum.filter(context.activity_attempt.part_attempts, fn p -> part_id === p.part_id end)
-    end
+        part_id ->
+          Enum.filter(context.activity_attempt.part_attempts, fn p -> part_id === p.part_id end)
+      end
 
-    # :TODO: oli legacy allows for custom activities to supply arbitrary score types.
-    # :TODO: Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
+    # oli legacy allows for custom activities to supply arbitrary score types.
+    # Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
 
     case purse_score(score_type, score_value) do
       {:non_numeric, score_value} ->
-        custom_scores = Map.merge(context.activity_attempt.custom_scores, %{score_type => score_value})
-        Attempts.update_activity_attempt(context.activity_attempt, %{custom_scores: custom_scores})
-      {:numeric, score, out_of} -> eval_numeric_score(context, score, out_of, part_attempt)
-    end
+        custom_scores =
+          Map.merge(context.activity_attempt.custom_scores, %{score_type => score_value})
 
+        Attempts.update_activity_attempt(context.activity_attempt, %{custom_scores: custom_scores})
+
+      {:numeric, score, out_of} ->
+        eval_numeric_score(context, score, out_of, part_attempt)
+    end
   end
 
   defp process_command(command_name, context, _params) when command_name === "endAttempt" do
-    attempt_history(context)
+    case finalize_activity_attempt(context) do
+      {:ok, _} ->
+        attempt_history(
+          fetch_context(context.host, context.user, context.activity_attempt.attempt_guid)
+        )
+
+      {:error, message} ->
+        Logger.error("Error when processing help message #{inspect(message)}")
+        {:error, "server error", 500}
+    end
   end
 
   defp process_command(command_name, context, _params) when command_name === "loadUserSyllabus" do
     #    summary = Summary.get_summary(context.section.slug, context.user)
-    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
+#    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
 
     #    page_nodes =
     #      hierarchy
@@ -233,7 +235,7 @@ defmodule OliWeb.LegacySuperactivityController do
     #          Oli.Resources.ResourceType.get_id_by_type("page")
     #      end)
 
-    IO.inspect(hierarchy, limit: :infinity)
+#    IO.inspect(hierarchy, limit: :infinity)
     {:error, "command not supported", 400}
   end
 
@@ -251,59 +253,61 @@ defmodule OliWeb.LegacySuperactivityController do
          } = params
        )
        when command_name === "writeFileRecord" do
+    {:ok, save_file} =
+      case context.activity_attempt.date_evaluated do
+        nil ->
+          file_info = %{
+            attempt_guid: attempt_guid,
+            user_id: user_id,
+            content: content,
+            mime_type: mime_type,
+            byte_encoding: byte_encoding,
+            activity_type: activity_type,
+            file_name: file_name
+          }
 
-    {:ok, save_file} = case context.activity_attempt.date_evaluated do
-      nil ->
-        IO.inspect "prong 1"
-        file_info = %{
-          attempt_guid: attempt_guid,
-          user_id: user_id,
-          content: content,
-          mime_type: mime_type,
-          byte_encoding: byte_encoding,
-          activity_type: activity_type,
-          file_name: file_name
-        }
+          attempt_number = Map.get(params, "attemptNumber")
 
-        attempt_number = Map.get(params, "attemptNumber")
+          file_info =
+            if attempt_number != nil do
+              Map.merge(file_info, %{attempt_number: attempt_number})
+            else
+              file_info
+            end
 
-        file_info =
-          if attempt_number != nil do
-            Map.merge(file_info, %{attempt_number: attempt_number})
-          else
-            file_info
-          end
+          ActivityLifecycle.save_activity_attempt_state_file(file_info)
 
-        ActivityLifecycle.save_activity_attempt_state_file(file_info)
-      _ ->
-        IO.inspect "prong 2"
-        attempt_number = Map.get(params, "attemptNumber")
+        _ ->
+          attempt_number = Map.get(params, "attemptNumber")
 
-        save_file = ActivityLifecycle.get_activity_attempt_save_file(
-          attempt_guid,
-          user_id,
-          attempt_number,
-          file_name
-        )
-        {:ok, save_file}
-    end
+          save_file =
+            ActivityLifecycle.get_activity_attempt_save_file(
+              attempt_guid,
+              user_id,
+              attempt_number,
+              file_name
+            )
+
+          {:ok, save_file}
+      end
 
     case save_file do
-      nil -> {:error, "file not found", 404}
-      _ -> xml =
-             FileRecord.setup(
-               %{
-                 context: context,
-                 date_created: DateTime.to_unix(save_file.inserted_at),
-                 file_name: save_file.file_name,
-                 guid: save_file.file_guid
-               }
-             )
-             |> XmlBuilder.document()
-             |> XmlBuilder.generate()
-           {:ok, xml}
-    end
+      nil ->
+        {:error, "file not found", 404}
 
+      _ ->
+        xml =
+          FileRecord.setup(%{
+            context: context,
+            date_created: DateTime.to_unix(save_file.inserted_at),
+            file_name: save_file.file_name,
+            guid: save_file.file_guid
+          })
+          |> XmlBuilder.document()
+          |> XmlBuilder.generate()
+
+        {:ok, xml}
+    end
   end
 
   defp process_command(
@@ -335,11 +339,9 @@ defmodule OliWeb.LegacySuperactivityController do
   defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
     # :TODO: no op?
     xml =
-      FileDirectory.setup(
-        %{
-          context: context
-        }
-      )
+      FileDirectory.setup(%{
+        context: context
+      })
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 
@@ -350,98 +352,144 @@ defmodule OliWeb.LegacySuperactivityController do
     {:error, "command not supported", 400}
   end
 
+  defp finalize_activity_attempt(context) do
+    case context.activity_attempt.date_evaluated do
+      nil ->
+        part_attempts = Attempts.get_latest_part_attempts(context.activity_attempt.attempt_guid)
 
-  defp eval_numeric_score(context, score, out_of, part_attempt) do
+        # Ensures all parts are evaluated before rolling up the part scores into activity score
+        # Note that by default assign 0 out of 100 is assumed for any part not already evaluated
+        client_evaluations =
+          Enum.reduce(part_attempts, [], fn p, acc ->
+            case p.date_evaluated do
+              nil -> acc ++ [create_evaluation(0, 100, p)]
+              _ -> acc
+            end
+          end)
+
+        Repo.transaction(fn ->
+          if length(client_evaluations) > 0 do
+            ActivityEvaluation.apply_super_activity_evaluation(
+              context.section.slug,
+              context.activity_attempt.attempt_guid,
+              client_evaluations
+            )
+          end
+
+          ActivityEvaluation.rollup_part_attempt_evaluations(
+            context.activity_attempt.attempt_guid
+          )
+        end)
+
+      _ -> {:ok, "activty already finalized"}
+    end
+  end
+
+  defp create_evaluation(score, out_of, part_attempt) do
     {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "some-feedback"})
 
-    client_evaluations = [
-      %{
-        attempt_guid: part_attempt.attempt_guid,
-        client_evaluation: %ClientEvaluation{
-          input: %StudentInput{
-            input: "some-input"
-          },
-          score: score,
-          out_of: out_of,
-          feedback: feedback
-        }
+    %{
+      attempt_guid: part_attempt.attempt_guid,
+      client_evaluation: %ClientEvaluation{
+        input: %StudentInput{
+          input: "some-input"
+        },
+        score: score,
+        out_of: out_of,
+        feedback: feedback
       }
+    }
+  end
+
+  defp eval_numeric_score(context, score, out_of, part_attempt) do
+    client_evaluations = [
+      create_evaluation(score, out_of, part_attempt)
     ]
 
-    case ActivityEvaluation.apply_client_evaluation(
+    case ActivityEvaluation.apply_super_activity_evaluation(
            context.section.slug,
            context.activity_attempt.attempt_guid,
            client_evaluations
          ) do
       {:ok, _evaluations} ->
-        attempt_history(fetch_context(context.host, context.user, context.activity_attempt.attempt_guid))
-      #        attempt_history(context)
-      {:error, _} ->
+        attempt_history(
+          fetch_context(context.host, context.user, context.activity_attempt.attempt_guid)
+        )
+
+      {:error, message} ->
+        Logger.error("The error when applying client evaluation #{message}")
         {:error, "server error", 500}
     end
   end
 
   defp purse_score(score_type, score_value) do
-    # 'completed','true'
-    # 'count','1'
-    # 'feedback','.false'
-    # 'grade','.99'
-    # 'percent','0'
-    # 'percentScore','100'
-    # 'posttest1Score','0'
-    # 'posttest2Score','0'
-    # 'pretestScore','0'
-    # 'problem1Completed','true'
-    # 'problem2Completed','true'
-    # 'problem3Completed','true'
-    # 'score','2/2'
-    # 'status','Submitted'
-    # 'visited','true'
     case score_type do
-      "completed" -> {:non_numeric, score_value}
-      "count" -> {:non_numeric, score_value}
-      "feedback" -> {:non_numeric, score_value}
+      "completed" ->
+        {:non_numeric, score_value}
+
+      "count" ->
+        {:non_numeric, score_value}
+
+      "feedback" ->
+        {:non_numeric, score_value}
+
       "grade" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score * 100, 100}
+
       "percent" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score * 100, 100}
+
       "percentScore" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score, 100}
+
       "posttest1Score" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score * 100, 100}
+
       "posttest2Score" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score * 100, 100}
+
       "pretestScore" ->
         {score, _} = Float.parse(score_value)
         {:numeric, score * 100, 100}
-      "problem1Completed" -> {:non_numeric, score_value}
-      "problem2Completed" -> {:non_numeric, score_value}
-      "problem3Completed" -> {:non_numeric, score_value}
+
+      "problem1Completed" ->
+        {:non_numeric, score_value}
+
+      "problem2Completed" ->
+        {:non_numeric, score_value}
+
+      "problem3Completed" ->
+        {:non_numeric, score_value}
+
       "score" ->
         case String.split(score_value, ",", trim: true) do
           [numerator, denominator] ->
             {score, _} = Float.parse(numerator)
             {out_of, _} = Float.parse(denominator)
             {:numeric, score, out_of}
-          _ -> {:non_numeric, score_value}
+
+          _ ->
+            {:non_numeric, score_value}
         end
-      "status" -> {:non_numeric, score_value}
-      "visited" -> {:non_numeric, score_value}
+
+      "status" ->
+        {:non_numeric, score_value}
+
+      "visited" ->
+        {:non_numeric, score_value}
     end
   end
 
   defp attempt_history(context) do
     xml =
-      AttemptHistory.setup(
-        %{
-          context: context
-        }
-      )
+      AttemptHistory.setup(%{
+        context: context
+      })
       |> XmlBuilder.document()
       |> XmlBuilder.generate()
 

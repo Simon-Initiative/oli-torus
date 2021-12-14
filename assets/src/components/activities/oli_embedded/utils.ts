@@ -29,6 +29,11 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
         scoringStrategy: ScoringStrategy.average,
         responses: [],
         hints: [],
+      },{
+        id: guid(),
+        scoringStrategy: ScoringStrategy.average,
+        responses: [],
+        hints: [],
       }],
       previewText: '',
     },
