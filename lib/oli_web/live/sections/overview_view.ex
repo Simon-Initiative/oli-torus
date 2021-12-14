@@ -75,6 +75,7 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     <Groups>
       <Group label="Overview" description="Overview of this course section">
+        <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
       </Group>
