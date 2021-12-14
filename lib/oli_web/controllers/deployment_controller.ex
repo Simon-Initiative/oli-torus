@@ -2,40 +2,50 @@ defmodule OliWeb.DeploymentController do
   use OliWeb, :controller
 
   alias Oli.Institutions
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
   alias OliWeb.Common.{Breadcrumb}
 
-  def root_breadcrumbs(institution_id, name) do
-    OliWeb.InstitutionController.root_breadcrumbs() ++
+  def root_breadcrumbs(registration_id) do
+    OliWeb.RegistrationController.root_breadcrumbs() ++
       [
         Breadcrumb.new(%{
-          full_title: "Registrations",
-          link: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
+          full_title: "#{registration_id}",
+          link: Routes.registration_path(OliWeb.Endpoint, :show, registration_id)
         }),
         Breadcrumb.new(%{
           full_title: "Deployments",
-          link: Routes.institution_path(OliWeb.Endpoint, :show, institution_id)
-        }),
+          link: Routes.registration_path(OliWeb.Endpoint, :show, registration_id)
+        })
+      ]
+  end
+
+  def breadcrumbs(registration_id, name) do
+    root_breadcrumbs(registration_id) ++
+      [
         Breadcrumb.new(%{
           full_title: name
         })
       ]
   end
 
-  def new(conn, %{"institution_id" => institution_id, "registration_id" => registration_id}) do
+  defp available_institutions() do
+    Institutions.list_institutions()
+    |> Enum.map(fn i -> {i.name, i.id} end)
+  end
+
+  def new(conn, %{"registration_id" => registration_id}) do
     changeset = Institutions.change_deployment(%Deployment{registration_id: registration_id})
 
     render(conn, "new.html",
       changeset: changeset,
-      institution_id: institution_id,
       registration_id: registration_id,
-      breadcrumbs: root_breadcrumbs(institution_id, "New"),
+      breadcrumbs: breadcrumbs(registration_id, "New"),
+      available_institutions: available_institutions(),
       title: "Create Deployment"
     )
   end
 
   def create(conn, %{
-        "institution_id" => institution_id,
         "registration_id" => registration_id,
         "deployment" => deployment_params
       }) do
@@ -47,21 +57,20 @@ defmodule OliWeb.DeploymentController do
       {:ok, _deployment} ->
         conn
         |> put_flash(:info, "Deployment created successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+        |> redirect(to: Routes.registration_path(conn, :show, registration_id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html",
           changeset: changeset,
-          institution_id: institution_id,
           registration_id: registration_id,
-          breadcrumbs: root_breadcrumbs(institution_id, "New"),
+          breadcrumbs: breadcrumbs(registration_id, "New"),
+          available_institutions: available_institutions(),
           title: "Create Deployment"
         )
     end
   end
 
   def edit(conn, %{
-        "institution_id" => institution_id,
         "registration_id" => registration_id,
         "id" => id
       }) do
@@ -71,15 +80,14 @@ defmodule OliWeb.DeploymentController do
     render(conn, "edit.html",
       deployment: deployment,
       changeset: changeset,
-      institution_id: institution_id,
       registration_id: registration_id,
-      breadcrumbs: root_breadcrumbs(institution_id, "Edit"),
+      breadcrumbs: breadcrumbs(registration_id, "Edit"),
+      available_institutions: available_institutions(),
       title: "Edit Deployment"
     )
   end
 
   def update(conn, %{
-        "institution_id" => institution_id,
         "registration_id" => registration_id,
         "id" => id,
         "deployment" => deployment_params
@@ -90,23 +98,22 @@ defmodule OliWeb.DeploymentController do
       {:ok, _deployment} ->
         conn
         |> put_flash(:info, "Deployment updated successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+        |> redirect(to: Routes.registration_path(conn, :show, registration_id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
           deployment: deployment,
           changeset: changeset,
-          institution_id: institution_id,
-          breadcrumbs: root_breadcrumbs(institution_id, "Edit"),
+          breadcrumbs: breadcrumbs(registration_id, "Edit"),
           registration_id: registration_id,
+          available_institutions: available_institutions(),
           title: "Edit Deployment"
         )
     end
   end
 
   def delete(conn, %{
-        "institution_id" => institution_id,
-        "registration_id" => _registration_id,
+        "registration_id" => registration_id,
         "id" => id
       }) do
     deployment = Institutions.get_deployment!(id)
@@ -114,6 +121,6 @@ defmodule OliWeb.DeploymentController do
 
     conn
     |> put_flash(:info, "Deployment deleted successfully.")
-    |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+    |> redirect(to: Routes.registration_path(conn, :show, registration_id))
   end
 end

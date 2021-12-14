@@ -161,7 +161,7 @@ defmodule Oli.TestHelpers do
     params =
       attrs
       |> Enum.into(%{
-        deployment_id: "some deployment_id"
+        deployment_id: "1"
       })
 
     {:ok, deployment} = Institutions.create_deployment(params)

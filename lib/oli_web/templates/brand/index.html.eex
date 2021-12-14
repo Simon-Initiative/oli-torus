@@ -19,7 +19,7 @@
         </tr>
       </thead>
       <tbody>
-    <%= for {brand, r_count, s_count} <- @brands do %>
+    <%= for {brand, i_count, s_count} <- @brands do %>
         <tr>
           <td><%= brand.name %></td>
 
@@ -29,7 +29,7 @@
 
           <td>
             <div><%= s_count %> Sections</div>
-            <div><%= r_count %> Registrations</div>
+            <div><%= i_count %> Institutions</div>
           </td>
 
           <td class="text-nowrap">

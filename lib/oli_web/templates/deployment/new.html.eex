@@ -1,9 +1,3 @@
-<span>
-  <%= link to: Routes.institution_path(@conn, :show, @institution_id) do %>
-    <i class="las la-arrow-left"></i> Back
-  <% end %>
-</span>
-
 <%= render OliWeb.SharedView, "_box_form_container.html", Map.put(assigns, :title, "Create Deployment") do %>
-  <%= render "form.html", Map.put(assigns, :action, Routes.institution_registration_deployment_path(@conn, :create,  @institution_id, @registration_id)) %>
+  <%= render "form.html", Map.put(assigns, :action, Routes.registration_deployment_path(@conn, :create, @registration_id)) %>
 <% end %>

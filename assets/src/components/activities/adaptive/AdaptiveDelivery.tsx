@@ -121,7 +121,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           attemptState: props.state,
           parts,
         });
-      }, 2000);
+      }, 10000);
     });
     sharedPromiseMap.set(props.model.id, { promise, resolve, reject });
 
