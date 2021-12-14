@@ -42,10 +42,7 @@ import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { getSequenceLineage, SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 
-const getInitializeValuesForPart = (part: any, currentActivityTree: any) => {
-  const ownerActivity = currentActivityTree?.find(
-    (activity: any) => !!activity.content.partsLayout.find((p: any) => p.id === part.id),
-  );
+const getInitializeValuesForPart = (part: any, ownerId: string) => {
   const PartClass = customElements.get(part.type);
   if (PartClass) {
     // TODO: cache the instance data somewhere so we don't do this every time
@@ -55,7 +52,7 @@ const getInitializeValuesForPart = (part: any, currentActivityTree: any) => {
       const modifiedInitDefaults: ApplyStateOperation[] = initDefaults.map(
         (defaultValue: { key: string; value: any; type: CapiVariableTypes }) => {
           const updatedInit: ApplyStateOperation = {
-            target: `${ownerActivity.id}|stage.${part.id}.${defaultValue.key}`,
+            target: `${ownerId}|stage.${part.id}.${defaultValue.key}`,
             operator: '=',
             value: defaultValue.value,
             type: defaultValue.type,
@@ -174,7 +171,7 @@ export const initializeActivity = createAsyncThunk(
           // if there are layers above the bank, we need to ignore it. we should not reset them as well. We only reset the question bank
           if (activity.id === parentBank.custom.layerRef || activity.id === bankActivity.id) {
             activity.content?.partsLayout.forEach((p: any) => {
-              const script = getInitializeValuesForPart(p, currentActivityTree);
+              const script = getInitializeValuesForPart(p, activity.id);
               if (script?.length) {
                 quetionBankResetScript.push(...script);
               }
