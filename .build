@@ -221,6 +221,7 @@ Oli.Lti.LineItem.html
 Oli.Lti.Membership.html
 Oli.Lti.Score.html
 Oli.Lti_1p3.PlatformInstances.html
+Oli.Lti_1p3.Tool.Deployment.html
 Oli.Lti_1p3.Tool.Registration.html
 Oli.Mailer.html
 Oli.PartComponents.Manifest.html
@@ -627,8 +628,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-b92503ccd1.js
-dist/sidebar_items-07f5f4c1d4.js
+dist/search_items-91ac801b2e.js
+dist/sidebar_items-e8fe2be31b.js
 index.html
 license.html
 readme.html

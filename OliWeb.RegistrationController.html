@@ -10,7 +10,7 @@
     <title>OliWeb.RegistrationController — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-07f5f4c1d4.js"></script>
+    <script src="dist/sidebar_items-e8fe2be31b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,7 +112,14 @@ OliWeb.RegistrationController <small class="app-vsn">(OLI Torus v0.17.0)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#available_brands/1">available_brands(institution_id)</a>
+    <a href="#breadcrumbs/2">breadcrumbs(action, name)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#breadcrumbs/3">breadcrumbs(action, id, name)</a>
 
   </div>
 
@@ -140,21 +147,28 @@ OliWeb.RegistrationController <small class="app-vsn">(OLI Torus v0.17.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#edit_breadcrumbs/2">edit_breadcrumbs(institution_id, id)</a>
+    <a href="#index/2">index(conn, params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#new/2">new(conn, map)</a>
+    <a href="#new/2">new(conn, params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#root_breadcrumbs/3">root_breadcrumbs(institution_id, action, name)</a>
+    <a href="#root_breadcrumbs/0">root_breadcrumbs()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#show/2">show(conn, map)</a>
 
   </div>
 
@@ -181,16 +195,38 @@ OliWeb.RegistrationController <small class="app-vsn">(OLI Torus v0.17.0)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="available_brands/1">
+<section class="detail" id="breadcrumbs/2">
 
   <div class="detail-header">
-    <a href="#available_brands/1" class="detail-link" title="Link to this function">
+    <a href="#breadcrumbs/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">available_brands(institution_id)</h1>
+    <h1 class="signature">breadcrumbs(action, name)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L19" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="breadcrumbs/3">
+
+  <div class="detail-header">
+    <a href="#breadcrumbs/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">breadcrumbs(action, id, name)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L29" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -212,7 +248,7 @@ Functions
     </a>
     <h1 class="signature">create(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L70" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L58" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -234,7 +270,7 @@ Functions
     </a>
     <h1 class="signature">delete(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L134" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L123" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -256,7 +292,7 @@ Functions
     </a>
     <h1 class="signature">edit(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L95" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L89" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -269,16 +305,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="edit_breadcrumbs/2">
+<section class="detail" id="index/2">
 
   <div class="detail-header">
-    <a href="#edit_breadcrumbs/2" class="detail-link" title="Link to this function">
+    <a href="#index/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">edit_breadcrumbs(institution_id, id)</h1>
+    <h1 class="signature">index(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L22" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -298,9 +334,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">new(conn, map)</h1>
+    <h1 class="signature">new(conn, params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L48" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -313,16 +349,38 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="root_breadcrumbs/3">
+<section class="detail" id="root_breadcrumbs/0">
 
   <div class="detail-header">
-    <a href="#root_breadcrumbs/3" class="detail-link" title="Link to this function">
+    <a href="#root_breadcrumbs/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">root_breadcrumbs(institution_id, action, name)</h1>
+    <h1 class="signature">root_breadcrumbs()</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L9" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="show/2">
+
+  <div class="detail-header">
+    <a href="#show/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">show(conn, map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L80" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -344,7 +402,7 @@ Functions
     </a>
     <h1 class="signature">update(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L109" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/registration_controller.ex#L101" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
