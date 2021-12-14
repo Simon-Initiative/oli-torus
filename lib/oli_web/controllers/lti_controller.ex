@@ -289,12 +289,23 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: pending_registration_attrs["issuer"],
-          client_id: pending_registration_attrs["client_id"]
+          client_id: pending_registration_attrs["client_id"],
+          deployment_id: pending_registration_attrs["deployment_id"]
         )
     end
   end
 
   defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
+    show_registration_page(conn, issuer, client_id, deployment_id)
+  end
+
+  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
+    registration = Institutions.get_registration!(registration_id)
+
+    show_registration_page(conn, registration.issuer, registration.client_id, deployment_id)
+  end
+
+  defp show_registration_page(conn, issuer, client_id, deployment_id) do
     case Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
         conn
@@ -315,12 +326,6 @@ defmodule OliWeb.LtiController do
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
     end
-  end
-
-  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
-    registration = Institutions.get_registration!(registration_id)
-
-    handle_invalid_registration(conn, registration.issuer, registration.client_id, deployment_id)
   end
 
   defp handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key) do

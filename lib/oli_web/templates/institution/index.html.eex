@@ -226,12 +226,17 @@
 
                   <div class="form-label-group">
                     <%= text_input f, :issuer, class: "form-control ", readonly: true %>
-                    <%= label f, :key_set_url, "Issuer", class: "control-label" %>
+                    <%= label f, :issuer, "Issuer", class: "control-label" %>
                   </div>
 
                   <div class="form-label-group">
                     <%= text_input f, :client_id, class: "form-control ", readonly: true %>
-                    <%= label f, :key_set_url, "Issuer", class: "control-label" %>
+                    <%= label f, :client_id, "Client ID", class: "control-label" %>
+                  </div>
+
+                  <div class="form-label-group">
+                    <%= text_input f, :deployment_id, class: "form-control ", readonly: true %>
+                    <%= label f, :deployment_id, "Deployment ID", class: "control-label" %>
                   </div>
 
                   <div class="form-label-group">
