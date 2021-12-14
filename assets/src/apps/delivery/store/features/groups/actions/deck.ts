@@ -42,7 +42,10 @@ import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { getSequenceLineage, SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 
-const getInitializeValuesForPart = (part: any, ownerId: string) => {
+const getInitializeValuesForPart = (part: any, currentActivityTree: any) => {
+  const ownerActivity = currentActivityTree?.find(
+    (activity: any) => !!activity.content.partsLayout.find((p: any) => p.id === part.id),
+  );
   const PartClass = customElements.get(part.type);
   if (PartClass) {
     // TODO: cache the instance data somewhere so we don't do this every time
@@ -52,7 +55,7 @@ const getInitializeValuesForPart = (part: any, ownerId: string) => {
       const modifiedInitDefaults: ApplyStateOperation[] = initDefaults.map(
         (defaultValue: { key: string; value: any; type: CapiVariableTypes }) => {
           const updatedInit: ApplyStateOperation = {
-            target: `${ownerId}|stage.${part.id}.${defaultValue.key}`,
+            target: `${ownerActivity.id}|stage.${part.id}.${defaultValue.key}`,
             operator: '=',
             value: defaultValue.value,
             type: defaultValue.type,
@@ -163,15 +166,19 @@ export const initializeActivity = createAsyncThunk(
     const quetionBankResetScript: ApplyStateOperation[] = [];
     if (isQuestionBankActivity && currentActivityTree) {
       // question bank children cannot be nested, so the parent must be the bank
-      // TODO: QUESTION: if there are layers above the bank, should we reset them as well??
       const parentBank = currentSequenceLineage[currentSequenceLineage.length - 1];
       // in delivery activity id is sequence id
       const bankActivity = selectActivityById(rootState, parentBank.custom.sequenceId);
       if (bankActivity) {
-        bankActivity.content?.partsLayout.forEach((p: any) => {
-          const script = getInitializeValuesForPart(p, parentBank.custom.sequenceId);
-          if (script?.length) {
-            quetionBankResetScript.push(...script);
+        currentActivityTree.forEach((activity) => {
+          // if there are layers above the bank, we need to ignore it. we should not reset them as well. We only reset the question bank
+          if (activity.id === parentBank.custom.layerRef || activity.id === bankActivity.id) {
+            activity.content?.partsLayout.forEach((p: any) => {
+              const script = getInitializeValuesForPart(p, currentActivityTree);
+              if (script?.length) {
+                quetionBankResetScript.push(...script);
+              }
+            });
           }
         });
       }
