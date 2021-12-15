@@ -21,7 +21,7 @@ $(function() {
     checkbox.trigger("change")
   });
 
-  // prevent clicking of actual checkbox to fire tr.source click event
+  // prevent clicking of actual checkbox from firing the tr.source click event
   $('input[name="source_id"]').on('click', function(e) {
     e.stopPropagation();
   });
