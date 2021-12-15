@@ -14,6 +14,7 @@
 - Move LTI 1.3 registrations listing to live view table with search, sorting and paging
 - Fix LMS course section creation to properly set the blueprint reference
 - Fix a bug where immediately removing a new activity leaves it visible to the system
+- Fix a bug where null deployment id results in empty string in pending registration form 
 
 ### Enhancements
 
