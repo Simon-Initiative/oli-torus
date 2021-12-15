@@ -172,6 +172,6 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp empty_institution(),
     do: %Institution{
-      id: "invalid id used only to fulfill query requirement"
+      id: -1
     }
 end
