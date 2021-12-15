@@ -1,9 +1,4 @@
 <div class="container">
-  <span>
-    <%= link to: index_path(@route) do %>
-      <i class="las la-arrow-left"></i> Back
-    <% end %>
-  </span>
   <h3 class="my-3">
     <%= @section.title %>
     <%= link "Edit Details", to: get_path([@route, :edit, @section]), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
@@ -33,9 +28,9 @@
         <td>
           <%= case @section.start_date do %>
             <% nil -> %>
-            <span class="text-secondary font-italic">None</span>
+              <span class="text-secondary font-italic">None</span>
             <% start_date -> %>
-            <%= start_date %>
+              <%= dt(start_date) %>
           <% end %>
         </td>
       </tr>
@@ -44,9 +39,9 @@
         <td>
           <%= case @section.end_date do %>
             <% nil -> %>
-            <span class="text-secondary font-italic">None</span>
+              <span class="text-secondary font-italic">None</span>
             <% end_date -> %>
-            <%= end_date %>
+              <%= dt(end_date) %>
           <% end %>
         </td>
       </tr>

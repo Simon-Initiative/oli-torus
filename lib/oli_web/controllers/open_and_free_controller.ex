@@ -8,6 +8,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb}
   alias Lti_1p3.Tool.{ContextRoles}
+  alias Oli.Branding
 
   plug :add_assigns
 
@@ -28,22 +29,30 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def new(conn, %{"source_id" => id}) do
-    source =
+    {source, source_label, source_param_name} =
       case id do
         "product:" <> id ->
-          Sections.get_section!(String.to_integer(id))
+          {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
 
         "publication:" <> id ->
           publication =
             Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
 
-          publication.project
+          {publication.project, "Source Project", :project_slug}
       end
+
+    available_brands =
+      Branding.list_brands()
+      |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
     render(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
       changeset: Sections.change_independent_learner_section(%Section{registration_open: true}),
-      source: source
+      source: source,
+      source_label: source_label,
+      source_param_name: source_param_name,
+      available_brands: available_brands,
+      timezones: Predefined.timezones()
     )
   end
 
@@ -164,10 +173,15 @@ defmodule OliWeb.OpenAndFreeController do
       Sections.get_section_preloaded!(id)
       |> convert_utc_to_section_tz()
 
+    available_brands =
+      Branding.list_brands()
+      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
     render(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
+      available_brands: available_brands,
       timezones: Predefined.timezones()
     )
   end
@@ -203,9 +217,6 @@ defmodule OliWeb.OpenAndFreeController do
         )
     end
   end
-
-
-
 
   ###
   ### Helpers
@@ -283,7 +294,7 @@ defmodule OliWeb.OpenAndFreeController do
 
         start_date ->
           start_date
-          |> Timex.parse!("%m/%d/%Y %l:%M %p", :strftime)
+          |> Timex.parse!("{ISO:Extended}")
           |> Timex.to_datetime(section_timezone)
           |> Timex.Timezone.convert(utc_timezone)
       end
@@ -295,7 +306,7 @@ defmodule OliWeb.OpenAndFreeController do
 
         end_date ->
           end_date
-          |> Timex.parse!("%m/%d/%Y %l:%M %p", :strftime)
+          |> Timex.parse!("{ISO:Extended}")
           |> Timex.to_datetime(section_timezone)
           |> Timex.Timezone.convert(utc_timezone)
       end
@@ -316,7 +327,7 @@ defmodule OliWeb.OpenAndFreeController do
 
     end_date =
       case end_date do
-        end_date when end_date == nil or end_date == "" -> start_date
+        end_date when end_date == nil or end_date == "" -> end_date
         end_date -> Timex.Timezone.convert(end_date, timezone)
       end
 
