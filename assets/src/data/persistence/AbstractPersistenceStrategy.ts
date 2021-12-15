@@ -70,6 +70,8 @@ export abstract class AbstractPersistenceStrategy implements PersistenceStrategy
    */
   abstract doDestroy(): boolean;
 
+  abstract flushPendingChanges(releaseLock: boolean): void;
+
   /**
    * Indicate to the persistence strategy that it is being shutdown and that it
    * should clean up any resources and flush any pending changes immediately.
