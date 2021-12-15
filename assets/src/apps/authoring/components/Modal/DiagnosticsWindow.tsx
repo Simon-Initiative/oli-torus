@@ -1,34 +1,14 @@
 import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
-import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import { DiagnosticMessage } from './DiagnosticMessage';
+import { DiagnosticTypes } from './DiagnosticTypes';
+
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-
-const FixIdButton: React.FC<{ suggestion: string; onClick: (val: string) => void }> = ({
-  suggestion,
-  onClick,
-}) => {
-  const txtRef = React.useRef<HTMLInputElement>(null);
-
-  const handleClick = () => {
-    if (txtRef.current) {
-      const newVal = txtRef.current.value;
-      onClick(newVal);
-    }
-  };
-
-  return (
-    <>
-      <input ref={txtRef} type="text" defaultValue={suggestion} />
-      <button className="btn btn-sm btn-primary" onClick={handleClick}>
-        Apply
-      </button>
-    </>
-  );
-};
+import { DiagnosticSolution } from './DiagnosticSolution';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -53,23 +33,26 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   };
 
   let errorTotals = '';
-  if (error.duplicates.length) {
-    errorTotals += `${error.duplicates.length} components with duplicate IDs found.\n`;
+  const dupes = error.problems.filter((p: any) => p.type === 'duplicate');
+  const pattern = error.problems.filter((p: any) => p.type === 'pattern');
+  const broken = error.problems.filter((p: any) => p.type === 'broken');
+  if (dupes.length) {
+    errorTotals += `${dupes.length} components with duplicate IDs found.\n`;
   }
-  if (error.problems.length) {
-    errorTotals += `${error.problems.length} components with problematic IDs found.\n`;
+  if (pattern.length) {
+    errorTotals += `${pattern.length} components with problematic IDs found.\n`;
+  }
+  if (broken.length) {
+    errorTotals += `${broken.length} components with broken paths found.\n`;
   }
 
-  const handleProblemFix = async (problem: any, fixed: string) => {
-    /* console.log('fixing', problem, fixed); */
-    const activityId = problem.owner.resourceId;
-    const partId = problem.id;
-    const changes = { id: fixed };
+  const handleProblemFix = async (fixed: string, problem: any) => {
+    console.log(problem, fixed);
 
     await dispatch(setCurrentSelection(''));
-    const result = await dispatch(updatePart({ activityId, partId, changes }));
+    const result = await dispatch(problem.createUpdater(problem, fixed));
 
-    /* console.log('handleProblemFix', result); */
+    console.log('handleProblemFix', result);
 
     // TODO: something if it fails
     onApplyFix();
@@ -88,42 +71,28 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
           <ListGroup.Item>{errorTotals}</ListGroup.Item>
         </ListGroup>
       </ListGroup.Item>
-      {error.duplicates.map((duplicate: any) => (
-        <ListGroup.Item key={duplicate.owner.resourceId}>
-          <ListGroup horizontal>
-            <ListGroup.Item>
-              A {duplicate.type} component with the ID &quot;<strong>{duplicate.id}</strong>&quot;
-              located on
-            </ListGroup.Item>
-            <ListGroup.Item
-              action
-              onClick={() => handleClickScreen(duplicate.owner.custom.sequenceId)}
-            >
-              {getOwnerName(duplicate)}
-            </ListGroup.Item>
-            {!isReadOnlyMode && (
-              <ListGroup.Item>
-                <FixIdButton
-                  suggestion={duplicate.suggestedFix}
-                  onClick={(val) => handleProblemFix(duplicate, val)}
-                />
-              </ListGroup.Item>
-            )}
-          </ListGroup>
-        </ListGroup.Item>
-      ))}
       {error.problems.map((problem: any) => (
         <ListGroup.Item key={problem.owner.resourceId}>
           <ListGroup horizontal>
             <ListGroup.Item>
-              A {problem.type} component with the ID &quot;<strong>{problem.id}</strong>&quot;, has
-              problematic characters. It is best to use alphanumeric characters only.
+              <DiagnosticMessage problem={problem} />
             </ListGroup.Item>
+            {problem.type === DiagnosticTypes.DUPLICATE && (
+              <Fragment>
+                <ListGroup.Item
+                  action
+                  onClick={() => handleClickScreen(problem.owner.custom.sequenceId)}
+                >
+                  {getOwnerName(problem)}
+                </ListGroup.Item>
+              </Fragment>
+            )}
             {!isReadOnlyMode && (
               <ListGroup.Item>
-                <FixIdButton
+                <DiagnosticSolution
+                  problem={problem}
                   suggestion={problem.suggestedFix}
-                  onClick={(val) => handleProblemFix(problem, val)}
+                  onClick={(val) => handleProblemFix(val, problem)}
                 />
               </ListGroup.Item>
             )}
