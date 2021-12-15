@@ -394,8 +394,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     console.log({ initStateFacts });
 
     const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
-      console.log({ key });
-
       let target = key;
       if (target.indexOf('stage') === 0) {
         const lstVar = target.split('.');
