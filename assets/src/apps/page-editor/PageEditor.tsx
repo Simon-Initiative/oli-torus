@@ -307,6 +307,14 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
         item,
       };
 
+      // If what we are removing is an activity reference, we need to flush any
+      // pending saves to force the server to see the addition of this activity,
+      // in the case where this removal hits in the same deferred persistence
+      // window.
+      if (item.type === 'activity-reference') {
+        this.persistence.flushPendingChanges(false);
+      }
+
       const content = this.state.content.delete(key);
       this.update({ content });
       this.onPostUndoable(key, undoable);
