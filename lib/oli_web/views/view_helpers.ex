@@ -102,10 +102,10 @@ defmodule OliWeb.ViewHelpers do
 
   def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
 
-  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
-    # ensure local_tz is a valid timezone
-    if Timex.Timezone.exists?(local_tz) do
-      {:localized, Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))}
+  def maybe_localized_datetime(%DateTime{} = datetime, timezone) when is_binary(timezone) do
+    # ensure timezone is a valid
+    if Timex.Timezone.exists?(timezone) do
+      {:localized, Timex.Timezone.convert(datetime, Timex.Timezone.get(timezone, Timex.now()))}
     else
       datetime
     end
