@@ -23,10 +23,13 @@ defmodule OliWeb.Common.Table.Common do
     end
   end
 
-  def render_short_date(_, item, %ColumnSpec{name: name}) do
+  def render_date(assigns, item, %ColumnSpec{name: name}) do
     case Map.get(item, name) do
-      nil -> ""
-      d -> Timex.format!(d, "%Y-%m-%d", :strftime)
+      nil ->
+        ""
+
+      d ->
+        OliWeb.ViewHelpers.dt(d, Map.get(assigns, :local_tz))
     end
   end
 
@@ -36,7 +39,7 @@ defmodule OliWeb.Common.Table.Common do
     if show_relative_dates do
       &render_relative_date/3
     else
-      &render_short_date/3
+      &render_date/3
     end
   end
 end

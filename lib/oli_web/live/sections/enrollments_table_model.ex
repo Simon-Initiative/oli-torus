@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       %ColumnSpec{
         name: :enrollment_date,
         label: "Enrolled On",
-        render_fn: &OliWeb.Common.Table.Common.render_short_date/3
+        render_fn: &OliWeb.Common.Table.Common.render_date/3
       },
       %ColumnSpec{
         name: :unenroll,
@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             %ColumnSpec{
               name: :payment_date,
               label: "Paid On",
-              render_fn: &OliWeb.Common.Table.Common.render_short_date/3
+              render_fn: &OliWeb.Common.Table.Common.render_date/3
             }
           ]
       else

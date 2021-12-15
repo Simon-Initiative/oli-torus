@@ -273,12 +273,12 @@ defmodule OliWeb.Router do
     get("/keep-alive", StaticPageController, :keep_alive)
 
     scope "/communities" do
-      pipe_through [:community_admin]
+      pipe_through([:community_admin])
 
       live("/", CommunityLive.IndexView)
 
       scope "/:community_id" do
-        pipe_through [:authorize_community]
+        pipe_through([:authorize_community])
 
         live("/", CommunityLive.ShowView)
         live("/members", CommunityLive.MembersIndexView)
@@ -766,16 +766,19 @@ defmodule OliWeb.Router do
     resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
-    # Publishing Institutions and Registrations
-    resources "/institutions", InstitutionController do
-      resources "/registrations", RegistrationController, except: [:index, :show] do
-        resources("/deployments", DeploymentController, except: [:index, :show])
-      end
+    # Institutions, LTI Registrations and Deployments
+    resources("/institutions", InstitutionController)
+
+    live("/registrations", Admin.RegistrationsView)
+
+    resources("/registrations", RegistrationController, except: [:index]) do
+      resources("/deployments", DeploymentController, except: [:index, :show])
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
     delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
+    # Communities
     live("/communities/new", CommunityLive.NewView)
 
     # Course Ingestion

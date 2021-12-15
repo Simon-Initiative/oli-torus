@@ -47,16 +47,8 @@
     <%= error_tag f, :auth_server %>
   </div>
 
-  <div class="text-secondary my-2">Brand</div>
-  <div class="form-label-group">
-    <%= select f, :brand_id, @available_brands, prompt: "Select Brand", class: "form-control " <> error_class(f, :brand_id, "is-invalid"),
-      autofocus: focusHelper(f, :brand_id) %>
-    <%= error_tag f, :brand_id %>
-  </div>
-
-  <%= hidden_input f, :institution_id, value: @institution_id  %>
-
   <div>
     <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+    <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
   </div>
 <% end %>
