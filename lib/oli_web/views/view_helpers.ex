@@ -84,10 +84,12 @@ defmodule OliWeb.ViewHelpers do
       iex> dt(datetime)
       "January 1, 2022 at 4:59:59 AM UTC"
   """
-  def dt(datetime, conn_or_local_tz \\ nil) do
+  def dt(datetime, opts \\ []) do
+    maybe_conn_or_local_tz = Keyword.get(opts, :conn, Keyword.get(opts, :local_tz))
+
     datetime
-    |> local_datetime(conn_or_local_tz)
-    |> format_datetime()
+    |> maybe_localized_datetime(maybe_conn_or_local_tz)
+    |> format_datetime(opts)
   end
 
   @doc """
@@ -95,16 +97,15 @@ defmodule OliWeb.ViewHelpers do
   session timezone information is set and updated on the timezone api call every
   time a page is loaded.
   """
-  def local_datetime(%DateTime{} = datetime, %Plug.Conn{} = conn) do
-    local_datetime(datetime, Plug.Conn.get_session(conn, "local_tz"))
-  end
+  def maybe_localized_datetime(%DateTime{} = datetime, %Plug.Conn{} = conn),
+    do: maybe_localized_datetime(datetime, Plug.Conn.get_session(conn, "local_tz"))
 
-  def local_datetime(%DateTime{} = datetime, nil), do: datetime
+  def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
 
-  def local_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
+  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
     # ensure local_tz is a valid timezone
-    if Enum.find(Oli.Predefined.timezones(), fn {_d, tz} -> local_tz == tz end) do
-      Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))
+    if Timex.Timezone.exists?(local_tz) do
+      {:localized, Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))}
     else
       datetime
     end
@@ -114,7 +115,7 @@ defmodule OliWeb.ViewHelpers do
   Formats a datetime by converting it to a string. If the timezone attached is UTC, then
   it is assumed this datetime has not been localized and the timezone is included.
 
-  Precision of the datetime can be set to :date, :minutes, or :seconds (default)
+  Precision of the datetime can be set to :date, :minutes, or :minutes (default)
 
   ## Examples
       iex> dt(datetime)
@@ -130,10 +131,20 @@ defmodule OliWeb.ViewHelpers do
       "December 31, 2021 at 11:59 PM"
 
   """
-  def format_datetime(%DateTime{time_zone: time_zone} = datetime, precision \\ :seconds) do
+  def format_datetime(maybe_localized_datetime, opts \\ [])
+
+  def format_datetime({:localized, %DateTime{} = datetime}, opts) do
+    # default to showing no timezone if the datetime has been localized
+    format_datetime(datetime, Keyword.put_new(opts, :show_timezone, false))
+  end
+
+  def format_datetime(%DateTime{} = datetime, opts) do
+    precision = Keyword.get(opts, :precision, :minutes)
+    show_timezone = Keyword.get(opts, :show_timezone, true)
+
     # show the timezone if the datetime hasnt been converted to a local timezone
     maybe_timezone =
-      if time_zone == Timex.Timezone.get(:utc, Timex.now()) do
+      if show_timezone do
         " {Zabbr}"
       else
         ""

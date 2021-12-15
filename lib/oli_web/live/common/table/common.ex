@@ -29,7 +29,7 @@ defmodule OliWeb.Common.Table.Common do
         ""
 
       d ->
-        OliWeb.ViewHelpers.dt(d, Map.get(assigns, :local_tz))
+        OliWeb.ViewHelpers.dt(d, local_tz: Map.get(assigns, :local_tz))
     end
   end
 

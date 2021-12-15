@@ -20,6 +20,24 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
+  defp available_brands() do
+    Branding.list_brands()
+    |> Enum.map(fn brand -> {brand.name, brand.id} end)
+  end
+
+  defp source_info(source_id) do
+    case source_id do
+      "product:" <> id ->
+        {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
+
+      "publication:" <> id ->
+        publication =
+          Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
+
+        {publication.project, "Source Project", :project_slug}
+    end
+  end
+
   def index(conn, _params) do
     render(conn, "index.html",
       sections: Sections.list_open_and_free_sections(),
@@ -28,22 +46,8 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
-  def new(conn, %{"source_id" => id}) do
-    {source, source_label, source_param_name} =
-      case id do
-        "product:" <> id ->
-          {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
-
-        "publication:" <> id ->
-          publication =
-            Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
-
-          {publication.project, "Source Project", :project_slug}
-      end
-
-    available_brands =
-      Branding.list_brands()
-      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+  def new(conn, %{"source_id" => source_id}) do
+    {source, source_label, source_param_name} = source_info(source_id)
 
     render(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
@@ -51,7 +55,7 @@ defmodule OliWeb.OpenAndFreeController do
       source: source,
       source_label: source_label,
       source_param_name: source_param_name,
-      available_brands: available_brands,
+      available_brands: available_brands(),
       timezones: Predefined.timezones()
     )
   end
@@ -91,9 +95,16 @@ defmodule OliWeb.OpenAndFreeController do
             Sections.change_independent_learner_section(%Section{})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
+          {source, source_label, source_param_name} = source_info(section_params["source_id"])
+
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+            source: source,
+            source_label: source_label,
+            source_param_name: source_param_name,
+            available_brands: available_brands(),
+            timezones: Predefined.timezones()
           )
       end
     else
@@ -102,9 +113,16 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
+        {source, source_label, source_param_name} = source_info(section_params["source_id"])
+
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+          source: source,
+          source_label: source_label,
+          source_param_name: source_param_name,
+          available_brands: available_brands(),
+          timezones: Predefined.timezones()
         )
     end
   end
@@ -138,9 +156,16 @@ defmodule OliWeb.OpenAndFreeController do
           |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
 
         {:error, %Ecto.Changeset{} = changeset} ->
+          {source, source_label, source_param_name} = source_info(section_params["source_id"])
+
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+            source: source,
+            source_label: source_label,
+            source_param_name: source_param_name,
+            available_brands: available_brands(),
+            timezones: Predefined.timezones()
           )
       end
     else
@@ -149,9 +174,16 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
 
+        {source, source_label, source_param_name} = source_info(section_params["source_id"])
+
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+          source: source,
+          source_label: source_label,
+          source_param_name: source_param_name,
+          available_brands: available_brands(),
+          timezones: Predefined.timezones()
         )
     end
   end
@@ -173,15 +205,11 @@ defmodule OliWeb.OpenAndFreeController do
       Sections.get_section_preloaded!(id)
       |> convert_utc_to_section_tz()
 
-    available_brands =
-      Branding.list_brands()
-      |> Enum.map(fn brand -> {brand.name, brand.id} end)
-
     render(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
-      available_brands: available_brands,
+      available_brands: available_brands(),
       timezones: Predefined.timezones()
     )
   end
@@ -213,6 +241,7 @@ defmodule OliWeb.OpenAndFreeController do
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
+          available_brands: available_brands(),
           timezones: Predefined.timezones()
         )
     end
