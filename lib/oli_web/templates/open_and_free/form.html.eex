@@ -8,7 +8,7 @@
   <% # Only show source if creating a new section (not editing) %>
   <%= if @action == Routes.admin_open_and_free_path(@conn, :create)
       || @action == Routes.independent_sections_path(@conn, :create) do %>
-    <%= hidden_input f, :source_id, value: @source.id %>
+    <%= hidden_input f, :source_id, value: @source_id %>
 
     <div class="form-label-group">
       <%= hidden_input f, @source_param_name, value: @source.slug %>

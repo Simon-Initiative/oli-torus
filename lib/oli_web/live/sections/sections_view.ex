@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.SectionsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
     sections =
@@ -60,7 +60,7 @@ defmodule OliWeb.Sections.SectionsView do
 
     total_count = determine_total(sections)
 
-    {:ok, table_model} = SectionsTableModel.new(sections)
+    {:ok, table_model} = SectionsTableModel.new(sections, Map.get(session, "local_tz"))
 
     {:ok,
      assign(socket,
