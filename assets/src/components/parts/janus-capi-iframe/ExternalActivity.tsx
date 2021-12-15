@@ -516,10 +516,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (simLife.ready) {
       return;
     }
-    simLife.ready = true;
-    const updateSimLife = { ...simLife };
-    updateSimLife.ready = true;
-    setSimLife(updateSimLife);
     // should / will sim send onReady more than once??
     const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
@@ -531,6 +527,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       simLife.init = true;
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
     }
+    simLife.ready = true;
+    const updateSimLife = { ...simLife };
+    updateSimLife.ready = true;
+    setSimLife(updateSimLife);
     return;
   };
 
@@ -869,6 +869,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         key: baseKey,
         value,
       });
+      const typeOfValue = typeof value;
+      if (cVar.type === CapiVariableTypes.ARRAY) {
+        const isMultidimensional = cVar.value.filter(Array.isArray).length;
+        if (isMultidimensional && typeOfValue === 'string') {
+          cVar.value = JSON.stringify(cVar.value);
+        }
+      }
       formatted[baseKey] = cVar;
       //hack for Small world type SIMs
       if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
