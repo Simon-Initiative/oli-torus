@@ -38,7 +38,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   data is_admin, :boolean, default: false
   data changeset, :any, default: Project.changeset(%Project{title: ""})
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
     is_admin = Accounts.is_admin?(author)
 
@@ -65,7 +65,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(author, projects, is_admin)
+    {:ok, table_model} = TableModel.new(author, projects, is_admin, Map.get(session, "local_tz"))
 
     total_count = determine_total(projects)
 

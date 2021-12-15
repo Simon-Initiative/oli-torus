@@ -3,7 +3,7 @@ defmodule OliWeb.Products.Payments.TableModel do
 
   use Surface.LiveComponent
 
-  def new(payments) do
+  def new(payments, local_tz) do
     SortableTableModel.new(
       rows: payments,
       column_specs: [
@@ -42,7 +42,10 @@ defmodule OliWeb.Products.Payments.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:unique_id]
+      id_field: [:unique_id],
+      data: %{
+        local_tz: local_tz
+      }
     )
   end
 
@@ -117,17 +120,17 @@ defmodule OliWeb.Products.Payments.TableModel do
      end, direction}
   end
 
-  def render_gen_date_column(_, %{payment: payment}, _) do
+  def render_gen_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
     case payment.generation_date do
       nil -> ""
-      d -> Timex.format!(d, "{RFC1123}")
+      d -> OliWeb.ViewHelpers.dt(d, local_tz)
     end
   end
 
-  def render_app_date_column(_, %{payment: payment}, _) do
+  def render_app_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
     case payment.application_date do
       nil -> ""
-      d -> Timex.format!(d, "{RFC1123}")
+      d -> OliWeb.ViewHelpers.dt(d, local_tz)
     end
   end
 
