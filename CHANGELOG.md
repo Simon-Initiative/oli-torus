@@ -12,6 +12,10 @@
 - Fix Open and Free section creation when done through the admin panel
 - Fix an issue where LTI 1.3 deployments should represent individual institutions
 - Move LTI 1.3 registrations listing to live view table with search, sorting and paging
+- Fix LMS course section creation to properly set the blueprint reference
+- Fix a bug where null deployment id results in empty string in pending registration form
+- Fix a bug where immediately removing a new activity leaves it visible to the system
+- Fix an issue where selecting the actual checkbox in select source list doesn't work
 
 ### Enhancements
 

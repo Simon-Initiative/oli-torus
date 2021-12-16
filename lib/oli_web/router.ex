@@ -716,15 +716,20 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
-
-    get("/", DeliveryController, :index)
-    get("/select_project", DeliveryController, :select_project)
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     get("/link_account", DeliveryController, :link_account)
     post("/link_account", DeliveryController, :process_link_account_user)
     get("/create_and_link_account", DeliveryController, :create_and_link_account)
     post("/create_and_link_account", DeliveryController, :process_create_and_link_account_user)
+  end
+
+  scope "/course", OliWeb do
+    pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
+
+    get("/", DeliveryController, :index)
+    get("/select_project", DeliveryController, :select_project)
+
     post("/research_consent", DeliveryController, :research_consent)
 
     post("/", DeliveryController, :create_section)
