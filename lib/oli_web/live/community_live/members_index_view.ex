@@ -90,16 +90,30 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
            user_id: id
          }) do
       {:ok, _community_account} ->
-        socket = put_flash(socket, :info, "Community member successfully removed.")
-
         members = Groups.list_community_members(socket.assigns.community_id)
         {:ok, table_model} = MembersTableModel.new(members)
 
+        socket =
+          put_flash(socket, :info, "Community member successfully removed.")
+          |> assign(
+            members: members,
+            table_model: table_model,
+            total_count: length(members)
+          )
+
         {:noreply,
-         assign(socket,
-           members: members,
-           table_model: table_model,
-           total_count: length(members)
+         push_patch(socket,
+           to:
+             @table_push_patch_path.(
+               socket,
+               get_patch_params(
+                 socket.assigns.table_model,
+                 socket.assigns.offset,
+                 socket.assigns.query,
+                 socket.assigns.filter
+               )
+             ),
+           replace: true
          )}
 
       {:error, _error} ->
