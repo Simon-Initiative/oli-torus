@@ -394,23 +394,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     console.log({ initStateFacts });
 
     const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
-      let target = key;
-      if (target.indexOf('stage') === 0) {
-        const lstVar = target.split('.');
-        if (lstVar?.length > 1) {
-          const ownerActivity = currentActivityTree?.find(
-            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
-          );
-          target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
-        }
-      }
-      const originalValue = snapshot[target];
-      const typeOfOriginalValue = typeof originalValue;
-      const evaluatedValue =
-        typeOfOriginalValue === 'string' && initStateFacts[key] !== CapiVariableTypes.MATH_EXPR
-          ? templatizeText(originalValue, snapshot, defaultGlobalEnv, true)
-          : originalValue;
-      acc[key] = evaluatedValue;
+      acc[key] = snapshot[key];
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
