@@ -186,8 +186,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp override_out_of(out_of, %{"advancedDelivery" => true, "custom" => %{"totalScore" => max}}) do
-    case max do
+  defp override_out_of(out_of, %{
+         "advancedDelivery" => true,
+         "custom" => %{"totalScore" => total_score}
+       }) do
+    case total_score do
       value when is_binary(value) ->
         case Float.parse(value) do
           {v, _} -> v
@@ -200,6 +203,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       _ ->
         out_of
     end
+    |> max(1.0)
   end
 
   defp override_out_of(out_of, _), do: out_of
