@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.18.0 (2021-12-16)
+
 ### Bug Fixes
 
 - Fix a bug that prevented editing internal links when only one other page exists
