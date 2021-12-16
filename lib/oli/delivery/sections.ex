@@ -771,40 +771,6 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
-  def retrieve_visible_sources(user, institution) do
-    all =
-      case user.author do
-        nil ->
-          {Oli.Delivery.Sections.Blueprint.available_products(),
-           Publishing.available_publications()}
-
-        author ->
-          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-           Publishing.available_publications(author, institution)}
-      end
-      |> then(fn {products, publications} ->
-        filtered =
-          Enum.filter(publications, fn p -> p.published end)
-          |> then(fn publications ->
-            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-              products,
-              publications
-            )
-          end)
-
-        filtered ++ products
-      end)
-
-    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
-  end
-
-  defp get_title(pub_or_prod) do
-    case Map.get(pub_or_prod, :title) do
-      nil -> pub_or_prod.project.title
-      title -> title
-    end
-  end
-
   @doc """
   Returns a map of project_id to the latest available publication for that project
   if a newer publication is available.
