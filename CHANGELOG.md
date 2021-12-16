@@ -24,6 +24,7 @@
 - Add support for configurable vendor properties
 - Allow default brand to be changed via release env var
 - Display course section and course project slug identifiers
+- Allow sections created from free products to have their payment settings edited
 
 ## 0.17.0 (2021-11-30)
 
