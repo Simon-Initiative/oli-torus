@@ -174,7 +174,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
 
       # Adaptive graded pages can specify a "totalScore" which overrides the calcualted
       # out_of
-      out_of = override_out_of(out_of, resource_attempt.revision)
+      out_of = override_out_of(out_of, resource_attempt.revision.content)
 
       update_resource_attempt(resource_attempt, %{
         score: score,
@@ -186,9 +186,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp override_out_of(out_of, %{
-         content: %{"advancedDelivery" => true, "custom" => %{"totalScore" => max}}
-       }) do
+  defp override_out_of(out_of, %{"advancedDelivery" => true, "custom" => %{"totalScore" => max}}) do
     case max do
       value when is_binary(value) ->
         case Float.parse(value) do
