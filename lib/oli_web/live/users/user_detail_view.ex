@@ -87,7 +87,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <section class="mb-2">
               <heading>
                 <p>Enable Independent Section Creation</p>
-                <small>This ability allows delivery users to create and deliver "Independent" sections through OLI without a connected LMS, either Open and Free or limited to students who enroll through an invitation link.</small>
+                <small>Allow this user to create "Independent" sections and enroll students via invitation link without an LMS</small>
               </heading>
               <div class="form-control">
                 <Field name={:can_create_sections}>
