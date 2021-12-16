@@ -16,6 +16,7 @@
 - Fix a bug where null deployment id results in empty string in pending registration form
 - Fix a bug where immediately removing a new activity leaves it visible to the system
 - Fix an issue where selecting the actual checkbox in select source list doesn't work
+- Updates the labelling of options in the project visibility view
 
 ### Enhancements
 
