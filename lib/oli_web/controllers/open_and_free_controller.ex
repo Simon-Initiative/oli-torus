@@ -8,6 +8,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb}
   alias Lti_1p3.Tool.{ContextRoles}
+  alias Oli.Branding
 
   plug :add_assigns
 
@@ -19,6 +20,24 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
+  defp available_brands() do
+    Branding.list_brands()
+    |> Enum.map(fn brand -> {brand.name, brand.id} end)
+  end
+
+  defp source_info(source_id) do
+    case source_id do
+      "product:" <> id ->
+        {Sections.get_section!(String.to_integer(id)), "Source Product", :product_slug}
+
+      "publication:" <> id ->
+        publication =
+          Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
+
+        {publication.project, "Source Project", :project_slug}
+    end
+  end
+
   def index(conn, _params) do
     render(conn, "index.html",
       sections: Sections.list_open_and_free_sections(),
@@ -27,23 +46,18 @@ defmodule OliWeb.OpenAndFreeController do
     )
   end
 
-  def new(conn, %{"source_id" => id}) do
-    source =
-      case id do
-        "product:" <> id ->
-          Sections.get_section!(String.to_integer(id))
-
-        "publication:" <> id ->
-          publication =
-            Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
-
-          publication.project
-      end
+  def new(conn, %{"source_id" => source_id}) do
+    {source, source_label, source_param_name} = source_info(source_id)
 
     render(conn, "new.html",
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
       changeset: Sections.change_independent_learner_section(%Section{registration_open: true}),
-      source: source
+      source_id: source_id,
+      source: source,
+      source_label: source_label,
+      source_param_name: source_param_name,
+      available_brands: available_brands(),
+      timezones: Predefined.timezones()
     )
   end
 
@@ -57,7 +71,7 @@ defmodule OliWeb.OpenAndFreeController do
            section_params,
          blueprint <- Sections.get_section_by_slug(product_slug) do
       {utc_start_date, utc_end_date} =
-        parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+        Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
 
       section_params =
         to_atom_keys(section_params)
@@ -82,9 +96,18 @@ defmodule OliWeb.OpenAndFreeController do
             Sections.change_independent_learner_section(%Section{})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
+          source_id = section_params["source_id"]
+          {source, source_label, source_param_name} = source_info(source_id)
+
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+            source_id: source_id,
+            source: source,
+            source_label: source_label,
+            source_param_name: source_param_name,
+            available_brands: available_brands(),
+            timezones: Predefined.timezones()
           )
       end
     else
@@ -93,9 +116,18 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
+        source_id = section_params["source_id"]
+        {source, source_label, source_param_name} = source_info(source_id)
+
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+          source_id: source_id,
+          source: source,
+          source_label: source_label,
+          source_param_name: source_param_name,
+          available_brands: available_brands(),
+          timezones: Predefined.timezones()
         )
     end
   end
@@ -111,7 +143,7 @@ defmodule OliWeb.OpenAndFreeController do
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
          publication <- Publishing.get_latest_published_publication_by_slug(project_slug) do
       {utc_start_date, utc_end_date} =
-        parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+        Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
 
       section_params =
         section_params
@@ -128,10 +160,19 @@ defmodule OliWeb.OpenAndFreeController do
           |> put_flash(:info, "Section created successfully.")
           |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
 
-        {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset} ->
+          source_id = section_params["source_id"]
+          {source, source_label, source_param_name} = source_info(source_id)
+
           render(conn, "new.html",
             changeset: changeset,
-            breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+            breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+            source_id: source_id,
+            source: source,
+            source_label: source_label,
+            source_param_name: source_param_name,
+            available_brands: available_brands(),
+            timezones: Predefined.timezones()
           )
       end
     else
@@ -140,9 +181,18 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:project_id, "invalid project")
 
+        source_id = section_params["source_id"]
+        {source, source_label, source_param_name} = source_info(source_id)
+
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: set_breadcrumbs() |> new_breadcrumb()
+          breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
+          source_id: source_id,
+          source: source,
+          source_label: source_label,
+          source_param_name: source_param_name,
+          available_brands: available_brands(),
+          timezones: Predefined.timezones()
         )
     end
   end
@@ -150,7 +200,7 @@ defmodule OliWeb.OpenAndFreeController do
   def show(conn, %{"id" => id}) do
     section =
       Sections.get_section_preloaded!(id)
-      |> convert_utc_to_section_tz()
+      |> Sections.localize_section_start_end_datetimes()
 
     render(conn, "show.html",
       section: section,
@@ -162,12 +212,13 @@ defmodule OliWeb.OpenAndFreeController do
   def edit(conn, %{"id" => id}) do
     section =
       Sections.get_section_preloaded!(id)
-      |> convert_utc_to_section_tz()
+      |> Sections.localize_section_start_end_datetimes()
 
     render(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
+      available_brands: available_brands(),
       timezones: Predefined.timezones()
     )
   end
@@ -181,7 +232,7 @@ defmodule OliWeb.OpenAndFreeController do
     section = Sections.get_section_preloaded!(id)
 
     {utc_start_date, utc_end_date} =
-      parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+      Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
 
     section_params =
       section_params
@@ -199,13 +250,11 @@ defmodule OliWeb.OpenAndFreeController do
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
+          available_brands: available_brands(),
           timezones: Predefined.timezones()
         )
     end
   end
-
-
-
 
   ###
   ### Helpers
@@ -272,75 +321,26 @@ defmodule OliWeb.OpenAndFreeController do
     end)
   end
 
-  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
-    section_timezone = Timex.Timezone.get(from_timezone)
-    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
-
-    utc_start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
-          start_date
-
-        start_date ->
-          start_date
-          |> Timex.parse!("%m/%d/%Y %l:%M %p", :strftime)
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    utc_end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
-          end_date
-
-        end_date ->
-          end_date
-          |> Timex.parse!("%m/%d/%Y %l:%M %p", :strftime)
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    {utc_start_date, utc_end_date}
-  end
-
-  defp convert_utc_to_section_tz(
-         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
-       ) do
-    timezone = Timex.Timezone.get(timezone, Timex.now())
-
-    start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" -> start_date
-        start_date -> Timex.Timezone.convert(start_date, timezone)
-      end
-
-    end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" -> start_date
-        end_date -> Timex.Timezone.convert(end_date, timezone)
-      end
-
-    section
-    |> Map.put(:start_date, start_date)
-    |> Map.put(:end_date, end_date)
-  end
-
   defp create_from_product(conn, blueprint, section_params) do
     Repo.transaction(fn ->
-      {:ok, section} = Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params)
-      {:ok, _maybe_enrollment} = enroll(conn, section)
-
-      section
+      with {:ok, section} <- Oli.Delivery.Sections.Blueprint.duplicate(blueprint, section_params),
+           {:ok, _maybe_enrollment} <- enroll(conn, section) do
+        section
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
     end)
   end
 
   defp create_from_publication(conn, publication, section_params) do
     Repo.transaction(fn ->
-      {:ok, section} = Sections.create_section(section_params)
-      {:ok, section} = Sections.create_section_resources(section, publication)
-      {:ok, _enrollment} = enroll(conn, section)
-
-      section
+      with {:ok, section} <- Sections.create_section(section_params),
+           {:ok, section} <- Sections.create_section_resources(section, publication),
+           {:ok, _enrollment} <- enroll(conn, section) do
+        section
+      else
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
     end)
   end
 
