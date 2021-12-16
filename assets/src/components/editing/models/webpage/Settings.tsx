@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 
 const onVisit = (href: string) => {
   window.open(href, '_blank');
@@ -15,7 +15,7 @@ type YouTubeSettingsProps = {
   model: ContentModel.YouTube;
   onEdit: (model: ContentModel.YouTube) => void;
   onRemove: () => void;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
   editMode: boolean;
 };
 

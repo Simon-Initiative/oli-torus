@@ -1,9 +1,10 @@
 import { Transforms, Editor, Element } from 'slate';
-import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { isActive } from '../utils';
 import { link } from 'data/content/model/elements/factories';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
-const command: Command = {
+const command: ButtonCommand = {
   execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;
@@ -22,10 +23,9 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc = toolbarButtonDesc({
   icon: () => 'insert_link',
   description: () => 'Link (⌘L)',
-  command,
+  ...command,
   active: (e) => isActive(e, 'a'),
-};
+});

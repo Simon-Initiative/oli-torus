@@ -1,8 +1,8 @@
 import { friendlyType } from 'components/activities/multi_input/utils';
 import { initCommands } from 'components/editing/models/inputref/commands';
 import { EditorProps } from 'components/editing/models/interfaces';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import { HoveringToolbar } from 'components/editing/toolbar/HoveringToolbar';
+import { DynamicFormattingToolbar } from 'components/editing/toolbar/formatting/DynamicFormattingToolbar';
 import * as ContentModel from 'data/content/model/elements/types';
 import { centeredAbove } from 'data/content/utils';
 import React from 'react';
@@ -57,7 +57,7 @@ export const InputRefEditor = (props: InputRefProps) => {
       target={target}
       contentLocation={centeredAbove}
     >
-      <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
+      <DynamicFormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
     </HoveringToolbar>
   );
 

@@ -1,17 +1,17 @@
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
+import { Spacer, SimpleButton, DropdownButton } from 'components/editing/toolbar/common';
+import { ToolbarItem, ButtonContext } from 'components/editing/toolbar/interfaces';
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { useFocused, useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
-import { CommandContext, ToolbarItem } from '../../commands/interfaces';
-import { DropdownToolbarButton, hideToolbar, showToolbar, Spacer, ToolbarButton } from '../common';
-import { positionInsertion, shouldShowInsertionToolbar } from './utils';
+import { shouldShowInsertionToolbar } from './utils';
 
 type InsertionToolbarProps = {
   isPerformingAsyncAction: boolean;
   toolbarItems: ToolbarItem[];
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
 };
 
 function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: InsertionToolbarProps) {
@@ -30,28 +30,28 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+  // useEffect(() => {
+  //   const el = ref.current;
+  //   if (!el) return;
 
-    const reposition = () => positionInsertion(el, editor);
-    if (!isPopoverOpen) {
-      hideToolbar(el);
-    }
+  //   const reposition = () => positionInsertion(el, editor);
+  //   if (!isPopoverOpen) {
+  //     hideToolbar(el);
+  //   }
 
-    if (isPopoverOpen || (focused && shouldShowInsertionToolbar(editor))) {
-      reposition();
-      showToolbar(el);
-    } else {
-      hideToolbar(el);
-    }
+  //   if (isPopoverOpen || (focused && shouldShowInsertionToolbar(editor))) {
+  //     reposition();
+  //     showToolbar(el);
+  //   } else {
+  //     hideToolbar(el);
+  //   }
 
-    window.addEventListener('resize', reposition);
-    return () => {
-      hideToolbar(el);
-      window.removeEventListener('resize', reposition);
-    };
-  });
+  //   window.addEventListener('resize', reposition);
+  //   return () => {
+  //     hideToolbar(el);
+  //     window.removeEventListener('resize', reposition);
+  //   };
+  // });
 
   if (!isPopoverOpen && !shouldShowInsertionToolbar(editor)) {
     return null;
@@ -89,7 +89,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
                 <div className="btn-group btn-group-vertical btn-group-sm" role="group">
                   {[
                     ...toolbarItems.map((t, i) => {
-                      if (t.type !== 'CommandDesc') {
+                      if (t.type !== 'ToolbarButtonDesc') {
                         return <Spacer key={'spacer-' + i} />;
                       }
                       if (!t.command.precondition(editor)) {
@@ -100,7 +100,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
                         style: 'btn-dark',
                         key: t.description(editor),
                         icon: t.icon(editor),
-                        tooltip: t.description(editor),
+                        description: t.description(editor),
                         command: t.command,
                         context: props.commandContext,
                         parentElement: id,
@@ -108,10 +108,10 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
                       };
 
                       if (t.command.obtainParameters === undefined) {
-                        return <ToolbarButton {...shared} />;
+                        return <SimpleButton {...shared} />;
                       }
                       // eslint-disable-next-line
-                      return <DropdownToolbarButton {...shared} />;
+                      return <DropdownButton {...shared} />;
                     }),
                   ].filter((x) => x)}
                 </div>

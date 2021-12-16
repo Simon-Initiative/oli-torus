@@ -1,13 +1,13 @@
+import { DropdownButton, SimpleButton } from 'components/editing/toolbar/common';
+import { ButtonContext, ToolbarButtonDesc } from 'components/editing/toolbar/interfaces';
 import React from 'react';
 import { useSlate } from 'slate-react';
-import { CommandContext, CommandDesc } from '../../commands/interfaces';
-import { ToolbarButton, DropdownToolbarButton } from 'components/editing/toolbars/common';
 
 export type HoveringToolbarProps = {
-  commandContext: CommandContext;
-  commandDescs: CommandDesc[][];
+  commandContext: ButtonContext;
+  commandDescs: ToolbarButtonDesc[][];
 };
-export const FormattingToolbar = (props: HoveringToolbarProps) => {
+export const DynamicFormattingToolbar = (props: HoveringToolbarProps) => {
   const editor = useSlate();
 
   const buttonGroups = props.commandDescs.reduce((acc: JSX.Element[][], cmdDescs) => {
@@ -31,9 +31,9 @@ export const FormattingToolbar = (props: HoveringToolbarProps) => {
 
       return acc.concat([
         cmdDesc.command.obtainParameters === undefined ? (
-          <ToolbarButton {...shared} />
+          <SimpleButton {...shared} />
         ) : (
-          <DropdownToolbarButton {...shared} />
+          <DropdownButton {...shared} />
         ),
       ]);
     }, []);

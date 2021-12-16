@@ -4,9 +4,10 @@ import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/Medi
 import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
-import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { image } from 'data/content/model/elements/factories';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -46,7 +47,7 @@ export function selectImage(
   });
 }
 
-const libraryCommand: Command = {
+const libraryCommand: ButtonCommand = {
   execute: (context, editor) => {
     const at = editor.selection;
     selectImage(context.projectSlug, undefined).then((src) =>
@@ -59,8 +60,8 @@ const libraryCommand: Command = {
 };
 
 function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | boolean>) {
-  const customEventCommand: Command = {
-    execute: (context, editor: Editor) => {
+  const customEventCommand: ButtonCommand = {
+    execute: (_context, editor: Editor) => {
       const at = editor.selection;
 
       const request = {
@@ -82,14 +83,11 @@ function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | b
 }
 
 export function getCommand(onRequestMedia: any) {
-  const commandDesc: CommandDesc = {
-    type: 'CommandDesc',
+  return toolbarButtonDesc({
     icon: () => 'image',
     description: () => 'Image',
-    command:
-      onRequestMedia === null || onRequestMedia === undefined
-        ? libraryCommand
-        : createCustomEventCommand(onRequestMedia),
-  };
-  return commandDesc;
+    ...(onRequestMedia === null || onRequestMedia === undefined
+      ? libraryCommand
+      : createCustomEventCommand(onRequestMedia)),
+  });
 }

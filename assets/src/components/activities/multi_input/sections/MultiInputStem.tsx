@@ -3,7 +3,7 @@ import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 import { elementsRemoved } from 'components/editing/utils';
 import { InputRef } from 'data/content/model/elements/types';
 import React from 'react';
@@ -18,7 +18,7 @@ interface Props {
 export const MultiInputStem: React.FC<Props> = (props) => {
   const { model, dispatch, projectSlug } = useAuthoringElementContext<MultiInputSchema>();
 
-  const commandContext: CommandContext = {
+  const commandContext: ButtonContext = {
     projectSlug,
     inputRefContext: {
       setInputType: (id, type) => dispatch(MultiInputActions.setInputType(id, type)),

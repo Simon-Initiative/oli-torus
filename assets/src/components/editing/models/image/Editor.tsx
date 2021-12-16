@@ -5,11 +5,11 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/models/interfaces';
 import * as Settings from '../settings/Settings';
 import { Transforms } from 'slate';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
+import { HoveringToolbar } from 'components/editing/toolbar/HoveringToolbar';
 import { initCommands } from './commands';
 import { centeredAbove, displayModelToClassName } from 'data/content/utils';
 import { Resizer } from 'components/misc/resizer/Resizer';
+import { DynamicFormattingToolbar } from 'components/editing/toolbar/formatting/DynamicFormattingToolbar';
 
 export interface ImageProps extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: ImageProps): JSX.Element => {
@@ -67,7 +67,7 @@ export const ImageEditor = (props: ImageProps): JSX.Element => {
           }
           contentLocation={centeredAbove}
         >
-          <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
+          <DynamicFormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
         </HoveringToolbar>
 
         <figcaption contentEditable={false}>

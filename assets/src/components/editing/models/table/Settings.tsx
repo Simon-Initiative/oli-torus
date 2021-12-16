@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 
 type TableSettingsProps = {
   model: ContentModel.Table;
   onEdit: (model: ContentModel.Table) => void;
   onRemove: () => void;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
   editMode: boolean;
 };
 

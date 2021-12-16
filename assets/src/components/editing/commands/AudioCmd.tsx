@@ -6,8 +6,9 @@ import ModalSelection from 'components/modal/ModalSelection';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
-import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 import { audio } from 'data/content/model/elements/factories';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -46,7 +47,7 @@ export function selectAudio(
   });
 }
 
-const libraryCommand: Command = {
+const libraryCommand: ButtonCommand = {
   execute: (context, editor: Editor) => {
     const at = editor.selection as any;
     selectAudio(context.projectSlug, audio()).then((audio) =>
@@ -59,7 +60,7 @@ const libraryCommand: Command = {
 };
 
 function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | boolean>) {
-  const customEventCommand: Command = {
+  const customEventCommand: ButtonCommand = {
     execute: (_context, editor: Editor) => {
       const at = editor.selection;
       if (!at) return;
@@ -83,14 +84,11 @@ function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | b
 }
 
 export function getCommand(onRequestMedia: any) {
-  const commandDesc: CommandDesc = {
-    type: 'CommandDesc',
+  return toolbarButtonDesc({
     icon: () => 'audiotrack',
     description: () => 'Audio Clip',
-    command:
-      onRequestMedia === null || onRequestMedia === undefined
-        ? libraryCommand
-        : createCustomEventCommand(onRequestMedia),
-  };
-  return commandDesc;
+    ...(onRequestMedia === null || onRequestMedia === undefined
+      ? libraryCommand
+      : createCustomEventCommand(onRequestMedia)),
+  });
 }

@@ -1,9 +1,10 @@
 import { Transforms, Editor, Element } from 'slate';
 import { isTopLevel, isActive } from 'components/editing/utils';
-import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import guid from 'utils/guid';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
-const command: Command = {
+const command: ButtonCommand = {
   execute: (context, editor) => {
     Editor.withoutNormalizing(editor, () => {
       const active = isActive(editor, 'blockquote');
@@ -22,10 +23,9 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc = toolbarButtonDesc({
   icon: () => 'format_quote',
   description: () => 'Quote (> )',
-  command,
+  ...command,
   active: (e) => isActive(e, 'blockquote'),
-};
+});

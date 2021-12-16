@@ -1,16 +1,16 @@
 import { modalActions } from 'actions/modal';
-import { createButtonCommandDesc } from 'components/editing/commands/commands';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 import { EditorProps } from 'components/editing/models/interfaces';
 import { PopupContentModal } from 'components/editing/models/popup/PopupContentModal';
 import { updateModel } from 'components/editing/models/utils';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import { HoveringToolbar } from 'components/editing/toolbar/HoveringToolbar';
 import * as ContentModel from 'data/content/model/elements/types';
 import { centeredAbove } from 'data/content/utils';
 import React from 'react';
 import { Range } from 'slate';
 import { useFocused, useSelected } from 'slate-react';
 import './Editor.scss';
+import { DynamicFormattingToolbar } from 'components/editing/toolbar/formatting/DynamicFormattingToolbar';
 
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
@@ -25,9 +25,9 @@ export const PopupEditor = (props: Props) => {
 
   const commands = [
     [
-      createButtonCommandDesc({
-        icon: 'edit',
-        description: 'Edit content',
+      toolbarButtonDesc({
+        icon: () => 'edit',
+        description: () => 'Edit content',
         execute: (_context, _editor, _params) => {
           const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
           const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -68,7 +68,7 @@ export const PopupEditor = (props: Props) => {
       }
       contentLocation={centeredAbove}
     >
-      <FormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
+      <DynamicFormattingToolbar commandDescs={commands} commandContext={props.commandContext} />
     </HoveringToolbar>
   );
 };

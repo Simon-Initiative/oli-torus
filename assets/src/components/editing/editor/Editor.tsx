@@ -5,12 +5,7 @@ import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slat
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import guid from 'utils/guid';
-import { CommandContext, ToolbarItem } from '../commands/interfaces';
-import { formatMenuCommands } from '../toolbars/formatting/items';
-import { FormattingToolbar } from '../toolbars/formatting/Toolbar';
-import { shouldShowFormattingToolbar } from '../toolbars/formatting/utils';
-import { HoveringToolbar } from '../toolbars/HoveringToolbar';
-import { InsertionToolbar } from '../toolbars/insertion/Toolbar';
+import { InsertionToolbar } from '../toolbar/insertion/Toolbar';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onPaste } from './handlers/paste';
@@ -23,6 +18,9 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
+import { formattingItems } from 'components/editing/toolbar/toolbarItems';
+import { ToolbarItem, ButtonContext } from 'components/editing/toolbar/interfaces';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -33,7 +31,7 @@ export type EditorProps = {
   toolbarItems: ToolbarItem[];
   // Whether or not editing is allowed
   editMode: boolean;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
   normalizerContext?: NormalizerContext;
   className?: string;
   style?: React.CSSProperties;
@@ -120,18 +118,11 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate editor={editor} value={normalizedValue} onChange={onChange}>
         {props.children}
-        <InsertionToolbar
-          isPerformingAsyncAction={isPerformingAsyncAction}
-          toolbarItems={props.toolbarItems}
-          commandContext={props.commandContext}
-        />
 
-        <HoveringToolbar isOpen={shouldShowFormattingToolbar}>
-          <FormattingToolbar
-            commandDescs={formatMenuCommands}
-            commandContext={props.commandContext}
-          />
-        </HoveringToolbar>
+        <Toolbar
+          items={formattingItems.concat(props.toolbarItems)}
+          context={props.commandContext}
+        />
 
         <Editable
           style={props.style}

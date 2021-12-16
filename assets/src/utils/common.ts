@@ -156,3 +156,10 @@ export const parseNumString = (item: string): string | number => {
 // Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]
 export const zip = <T, U>(xs1: T[], xs2: U[]): [T, U][] =>
   xs1.reduce((acc, x, i) => (i > xs2.length - 1 ? acc : acc.concat([[x, xs2[i]]])), [] as [T, U][]);
+
+// Intersperse an element e between the items in arr. e can be a function, in which
+// case the current x in arr and the index are provided to create the interspersed element.
+export const intersperse = (arr: any[], e: any): any[] =>
+  arr
+    .flatMap((x: any, i: number, xs: any[]) => [typeof e === 'function' ? e(x, i, xs) : e, x])
+    .slice(1);

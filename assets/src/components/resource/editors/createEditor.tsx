@@ -3,7 +3,7 @@ import { ActivityReference, ResourceContent, ResourceContext } from 'data/conten
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
-import { getToolbarForContentType } from '../../editing/toolbars/insertion/items';
+import { getToolbarForContentType } from '../../editing/toolbar/toolbarItems';
 import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';

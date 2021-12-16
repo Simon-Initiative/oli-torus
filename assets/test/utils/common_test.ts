@@ -1,4 +1,5 @@
 import {
+  intersperse,
   isNumber,
   isString,
   isStringArray,
@@ -139,5 +140,16 @@ describe('zip', () => {
     ]);
     expect(zip(xs1, xs4)).toEqual([]);
     expect(zip(xs4, xs1)).toEqual([]);
+  });
+
+  describe('intersperse', () => {
+    const xs1 = [1, 2, 3, 4, 5];
+    const xs2: any[] = [];
+    const xs3 = ['a', 'b', ['c']];
+    it('should intersperse', () => {
+      expect(intersperse(xs1, '|')).toEqual([1, '|', 2, '|', 3, '|', 4, '|', 5]);
+      expect(intersperse(xs2, '|')).toEqual([]);
+      expect(intersperse(xs3, '|')).toEqual(['a', '|', 'b', '|', ['c']]);
+    });
   });
 });

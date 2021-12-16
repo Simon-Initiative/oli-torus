@@ -1,9 +1,9 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { CommandContext } from 'components/editing/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
 import { NormalizerContext } from 'components/editing/editor/normalizers/normalizer';
-import { getToolbarForContentType } from 'components/editing/toolbars/insertion/items';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
+import { getToolbarForContentType } from 'components/editing/toolbar/toolbarItems';
 import { ProjectSlug } from 'data/types';
 import React from 'react';
 import { Descendant, Editor as SlateEditor, Operation } from 'slate';
@@ -18,7 +18,7 @@ type Props = {
   placeholder?: string;
   onRequestMedia?: any;
   style?: React.CSSProperties;
-  commandContext?: CommandContext;
+  commandContext?: ButtonContext;
   normalizerContext?: NormalizerContext;
   preventLargeContent?: boolean;
 };

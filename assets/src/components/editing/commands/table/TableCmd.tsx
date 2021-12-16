@@ -1,11 +1,12 @@
-import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Editor, Transforms } from 'slate';
 import { td, tr, table } from 'data/content/model/elements/factories';
 import { SizePicker } from 'components/editing/commands/table/SizePicker';
 import { isTopLevel } from 'components/editing/utils';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
-const command: Command = {
-  execute: (_context: any, editor: Editor, params: any) => {
+const command: ButtonCommand = {
+  execute: (_context, editor: Editor, params: any) => {
     const at = editor.selection;
     if (!at) return;
     const rows: any = [];
@@ -32,9 +33,8 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc = toolbarButtonDesc({
   icon: () => 'grid_on',
   description: () => 'Table',
-  command,
-};
+  ...command,
+});

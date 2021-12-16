@@ -1,5 +1,4 @@
 import React from 'react';
-import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Transforms } from 'slate';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
@@ -8,6 +7,8 @@ import * as Settings from 'components/editing/models/settings/Settings';
 import { getQueryVariableFromString } from 'utils/params';
 import { CUTE_OTTERS } from '../models/youtube/Editor';
 import { youtube } from 'data/content/model/elements/factories';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -80,7 +81,7 @@ export function selectYouTube(): Promise<string | null> {
   });
 }
 
-const command: Command = {
+const command: ButtonCommand = {
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
@@ -106,9 +107,8 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc = toolbarButtonDesc({
   icon: () => 'play_circle_filled',
   description: () => 'YouTube',
-  command,
-};
+  ...command,
+});

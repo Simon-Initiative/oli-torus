@@ -1,7 +1,7 @@
 import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
-import { CommandContext } from 'components/editing/commands/interfaces';
-import { FullScreenModal } from 'components/editing/toolbars/FullScreenModal';
+import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
@@ -10,7 +10,7 @@ interface Props {
   onDone: (changes: Partial<ContentModel.Popup>) => void;
   onCancel: () => void;
   model: ContentModel.Popup;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
 }
 export const PopupContentModal = (props: Props) => {
   const [content, setContent] = React.useState<RichText>(props.model.content);

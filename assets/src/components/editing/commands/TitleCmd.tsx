@@ -1,6 +1,7 @@
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
+import { ButtonCommand, ToolbarButtonDesc } from 'components/editing/toolbar/interfaces';
 import { Editor, Element, Transforms } from 'slate';
 import { getNearestBlock, isActive, isTopLevel } from '../utils';
-import { Command, CommandDesc } from 'components/editing/commands/interfaces';
 
 const parentTextTypes = {
   p: true,
@@ -19,7 +20,7 @@ const selectedType = (editor: Editor) =>
     nothing: () => 'p',
   });
 
-const command: Command = {
+const command: ButtonCommand = {
   execute: (context, editor) => {
     const nextType = ((selected) => {
       switch (selected) {
@@ -59,10 +60,9 @@ const icon = (editor: Editor) => {
   }
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc: ToolbarButtonDesc = toolbarButtonDesc({
   icon,
   description: () => 'Title (# or ##)',
-  command,
+  ...command,
   active: (editor) => isActive(editor, ['h1', 'h2']),
-};
+});

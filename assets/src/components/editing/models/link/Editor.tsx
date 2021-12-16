@@ -3,7 +3,7 @@ import { DisplayLink } from 'components/editing/models/link/DisplayLink';
 import { EditLink } from 'components/editing/models/link/EditLink';
 import { LinkablePages } from 'components/editing/models/link/utils';
 import { updateModel } from 'components/editing/models/utils';
-import { HoveringToolbar } from 'components/editing/toolbars/HoveringToolbar';
+import { HoveringToolbar } from 'components/editing/toolbar/HoveringToolbar';
 import * as ContentModel from 'data/content/model/elements/types';
 import { centeredAbove } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';

@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { CommandDesc, Command } from 'components/editing/commands/interfaces';
 import { Transforms } from 'slate';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { useState } from 'react';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { webpage } from 'data/content/model/elements/factories';
+import { ButtonCommand } from 'components/editing/toolbar/interfaces';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
 
 const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
 const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
@@ -68,7 +69,7 @@ export function selectWebpage(): Promise<string | null> {
   });
 }
 
-const command: Command = {
+const command: ButtonCommand = {
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
@@ -89,9 +90,8 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
-  type: 'CommandDesc',
+export const commandDesc = toolbarButtonDesc({
   icon: () => 'public',
   description: () => 'Webpage',
-  command,
-};
+  ...command,
+});

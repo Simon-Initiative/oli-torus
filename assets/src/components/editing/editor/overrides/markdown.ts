@@ -7,7 +7,7 @@ import { commandDesc as codeCmd } from 'components/editing/commands/BlockcodeCmd
 import { commandDesc as quoteCmd } from 'components/editing/commands/BlockquoteCmd';
 import { ReactEditor } from 'slate-react';
 import { isTopLevel } from 'components/editing/utils';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 
 const SHORTCUTS = {
   '#': 'h1',
@@ -21,7 +21,7 @@ const SHORTCUTS = {
   '``': 'code',
 };
 
-export const withMarkdown = (context: CommandContext) => (editor: Editor & ReactEditor) => {
+export const withMarkdown = (context: ButtonContext) => (editor: Editor & ReactEditor) => {
   const { insertText } = editor;
   const blockTrigger = ' ';
   const codeTrigger = '`';

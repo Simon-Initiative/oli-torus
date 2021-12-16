@@ -48,3 +48,34 @@
     background: rgba(255, 255, 255, 0.2);
   }
 }
+
+
+.editor__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+
+  &Button {
+    color: $dark;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      background-color: $light;
+    }
+
+    &:focus {
+      outline: 2px solid $primary;
+    }
+  }
+
+  .button-separator {
+    display: flex;
+    width: 1px;
+    color: $light;
+    height: calc(100% - 6px);
+    margin: 0 8px;
+  }
+}

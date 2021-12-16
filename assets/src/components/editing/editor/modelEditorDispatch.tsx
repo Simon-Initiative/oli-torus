@@ -5,12 +5,12 @@ import { TableEditor } from 'components/editing/models/table/TableEditor';
 import { TdEditor } from 'components/editing/models/table/TdEditor';
 import { ThEditor } from 'components/editing/models/table/ThEditor';
 import { TrEditor } from 'components/editing/models/table/TrEditor';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import * as React from 'react';
 import { Editor } from 'slate';
 import { ReactEditor } from 'slate-react';
-import { CommandContext } from '../commands/interfaces';
 import { AudioEditor } from '../models/audio/Editor';
 import { CodeBlockLine, CodeEditor } from '../models/blockcode/Editor';
 import { BlockQuoteEditor } from '../models/blockquote/Editor';
@@ -23,7 +23,7 @@ export function editorFor(
   element: ContentModel.ModelElement,
   props: any,
   editor: ReactEditor & Editor,
-  commandContext: CommandContext,
+  commandContext: ButtonContext,
 ): JSX.Element {
   const { attributes, children } = props;
 

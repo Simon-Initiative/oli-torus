@@ -1,6 +1,6 @@
-import { createButtonCommandDesc } from 'components/editing/commands/commands';
-import { CommandContext } from 'components/editing/commands/interfaces';
-import { FormattingToolbar } from 'components/editing/toolbars/formatting/Toolbar';
+import { toolbarButtonDesc } from 'components/editing/toolbar/commands';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
+import { DynamicFormattingToolbar } from 'components/editing/toolbar/formatting/DynamicFormattingToolbar';
 import * as Persistence from 'data/persistence/resource';
 import React, { useEffect } from 'react';
 import {
@@ -15,7 +15,7 @@ type Props = {
   href: string;
   pages: LinkablePages;
   setPages: React.Dispatch<React.SetStateAction<LinkablePages>>;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
 
   selectedPage: Persistence.Page | null;
   setSelectedPage: React.Dispatch<React.SetStateAction<Persistence.Page | null>>;
@@ -70,26 +70,27 @@ export const DisplayLink = (props: Props) => {
           setPages(result);
         }
       })
-      .catch((e) => setPages({ type: 'Uninitialized' }));
+      .catch((_e) => setPages({ type: 'Uninitialized' }));
   };
 
   const linkCommands = [
     [
-      createButtonCommandDesc({
-        icon: '',
-        description: isInternalLink(href) ? (selectedPage ? selectedPage.title : 'Link') : href,
+      toolbarButtonDesc({
+        icon: () => '',
+        description: () =>
+          isInternalLink(href) ? (selectedPage ? selectedPage.title : 'Link') : href,
         execute: () => onVisit(href),
       }),
     ],
     [
-      createButtonCommandDesc({
-        icon: 'content_copy',
-        description: 'Copy link',
+      toolbarButtonDesc({
+        icon: () => 'content_copy',
+        description: () => 'Copy link',
         execute: () => onCopy(href),
       }),
-      createButtonCommandDesc({
-        icon: 'edit',
-        description: 'Edit link',
+      toolbarButtonDesc({
+        icon: () => 'edit',
+        description: () => 'Edit link',
         execute: () => {
           setEditLink(true);
         },
@@ -98,7 +99,7 @@ export const DisplayLink = (props: Props) => {
   ];
 
   const loadingCommand = [
-    [createButtonCommandDesc({ icon: '', description: 'Loading...', execute: fetchPages })],
+    [toolbarButtonDesc({ icon: () => '', description: () => 'Loading...', execute: fetchPages })],
   ];
 
   useEffect(() => {
@@ -110,7 +111,7 @@ export const DisplayLink = (props: Props) => {
   return (
     <div className="hovering-toolbar">
       <div className="btn-group btn-group-sm" role="group">
-        <FormattingToolbar
+        <DynamicFormattingToolbar
           commandDescs={pages.type === 'success' ? linkCommands : loadingCommand}
           commandContext={commandContext}
         />

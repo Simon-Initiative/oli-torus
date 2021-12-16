@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as Settings from 'components/editing/models/settings/Settings';
 import { selectAudio } from 'components/editing/commands/AudioCmd';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { ButtonContext } from 'components/editing/toolbar/interfaces';
 
 type AudioSettingsProps = {
   model: ContentModel.Audio;
   onEdit: (model: ContentModel.Audio) => void;
   onRemove: () => void;
-  commandContext: CommandContext;
+  commandContext: ButtonContext;
   editMode: boolean;
 };
 
