@@ -5,7 +5,7 @@
     <%= if Sections.is_independent_instructor?(@user) do %>
       <div class="d-flex flex-row mb-2">
         <div>
-          <%= link "New Independent Section", to: Routes.select_source_path(OliWeb.Endpoint, :independent_learner), class: "btn btn-md btn-outline-primary" %>
+          <%= link "New Section", to: Routes.select_source_path(OliWeb.Endpoint, :independent_learner), class: "btn btn-md btn-outline-primary" %>
         </div>
       </div>
     <% end %>

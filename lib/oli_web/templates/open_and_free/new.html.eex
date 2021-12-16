@@ -1,5 +1,5 @@
 <div class="container">
-  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: "Create Open and Free Section", bs_col_class: "col-sm-12 col-md-8 col-lg-6 mx-auto"}) do %>
+  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: "Create Section", bs_col_class: "col-sm-12 col-md-8 col-lg-6 mx-auto"}) do %>
     <%= render "form.html", Map.merge(assigns, %{action: get_path([@route, :create]), submit_text: "Create", cancel: index_path(@route)}) %>
   <% end %>
 </div>
