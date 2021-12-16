@@ -155,7 +155,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
-    # fetch the resoure attempt, with the pinned revision preloaded
+    # fetch the resource attempt, with the pinned revision preloaded
     resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
     if resource_attempt.date_evaluated == nil do
