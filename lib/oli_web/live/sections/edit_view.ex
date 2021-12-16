@@ -109,7 +109,7 @@ defmodule OliWeb.Sections.EditView do
     |> Map.put("end_date", utc_end_date)
   end
 
-  # An user can make paywall edits if any of the following are true:
+  # A user can make paywall edits if any of the following are true:
   # 1. They are logged in as an admin user
   # 2. The course section being edited was not created from a product
   # 3. The course section being edited was created from a product that does not require payment
