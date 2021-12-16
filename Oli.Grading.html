@@ -128,6 +128,8 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p>
 
   </div>
 
+    <div class="summary-synopsis"><p>Determines the maximum point value that can be obtained for a page.</p></div>
+
 </div>
 <div class="summary-row">
   <div class="summary-signature">
@@ -232,7 +234,7 @@ Functions
     </a>
     <h1 class="signature">determine_page_out_of(section_slug, revision)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L213" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L223" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -242,7 +244,10 @@ Functions
 
   <section class="docstring">
 
-
+<p>Determines the maximum point value that can be obtained for a page.</p><p>Two implementations exist, one for adaptive pages and one for regular pages. The
+adaptive implementation reads the &quot;totalScore&quot; key that should be present under the
+&quot;custom&quot; key.</p><p>The basic implementation counts the activities present (including those from
+activity bank selections).</p>
   </section>
 </section>
 <section class="detail" id="export_csv/1">
@@ -276,7 +281,7 @@ Functions
     </a>
     <h1 class="signature">fetch_graded_pages(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L286" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L299" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -298,7 +303,7 @@ Functions
     </a>
     <h1 class="signature">fetch_resource_accesses(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L265" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L278" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -320,7 +325,7 @@ Functions
     </a>
     <h1 class="signature">fetch_students(section_slug)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L257" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/grading.ex#L270" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
