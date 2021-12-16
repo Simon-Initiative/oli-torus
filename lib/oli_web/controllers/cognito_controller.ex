@@ -69,11 +69,8 @@ defmodule OliWeb.CognitoController do
     jwt_header = id_token
     |> Joken.peek_header()
 
-    io("jwt_header", jwt_header)
-
     jwt_payload = id_token
     |> JOSE.JWT.peek_payload()
-    io("jwt_payload", jwt_payload)
 
     issuer = Map.get(jwt_payload.fields, "iss")
 
@@ -82,7 +79,6 @@ defmodule OliWeb.CognitoController do
         case Repo.get_by(SsoJwks, kid: Map.get(result, "kid")) do
           nil ->
             jwks = get_cognito_jwks(issuer)
-            io("jwks from cognito", jwks)
 
             sso_jwks = Enum.map(elem(jwks.keys, 1), fn(s) -> get_sso_jwks(s) end)
 
