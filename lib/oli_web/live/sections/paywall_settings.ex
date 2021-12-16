@@ -18,7 +18,6 @@ defmodule OliWeb.Sections.PaywallSettings do
 
   prop changeset, :any, required: true
   prop disabled, :boolean, required: true
-  prop is_admin, :boolean, required: true
 
   defp strategies do
     [

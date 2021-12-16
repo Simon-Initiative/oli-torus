@@ -37,6 +37,8 @@ defmodule OliWeb.Sections.EditView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
+        section = Oli.Repo.preload(section, :blueprint)
+
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
@@ -64,7 +66,7 @@ defmodule OliWeb.Sections.EditView do
         {#else}
           <LtiSettings section={@section}/>
         {/if}
-        <PaywallSettings is_admin={@is_admin} changeset={@changeset} disabled={!can_change_payment?(@section)}/>
+        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
       </Groups>
     </Form>
     """
@@ -107,7 +109,11 @@ defmodule OliWeb.Sections.EditView do
     |> Map.put("end_date", utc_end_date)
   end
 
-  defp can_change_payment?(section) do
-    is_nil(section.blueprint_id)
+  # An user can make paywall edits if any of the following are true:
+  # 1. They are logged in as an admin user
+  # 2. The course section being edited was not created from a product
+  # 3. The course section being edited was created from a product that does not require payment
+  defp can_change_payment?(section, is_admin?) do
+    is_admin? or is_nil(section.blueprint_id) or !section.blueprint.requires_payment
   end
 end
