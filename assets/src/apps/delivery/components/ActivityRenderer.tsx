@@ -391,10 +391,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
 
     updateGlobalState(snapshot, initStateFacts);
-    console.log({ initStateFacts });
-
     const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
-      acc[key] = snapshot[key];
+      let target = key;
+      if (target.indexOf('stage') === 0) {
+        const lstVar = target.split('.');
+        if (lstVar?.length > 1) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
+        }
+      }
+      acc[key] = snapshot[target];
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
