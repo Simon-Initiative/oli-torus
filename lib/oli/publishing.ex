@@ -15,6 +15,8 @@ defmodule Oli.Publishing do
   alias Oli.Publishing
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Authoring.Authors.AuthorProject
+  alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Groups
 
   def get_publication_id_for_resource(section_slug, resource_id) do
     spp =
@@ -197,6 +199,169 @@ defmodule Oli.Publishing do
         select: pub
 
     Repo.all(query)
+  end
+
+  @doc """
+  Get all the available publications and products based on:
+    - User's linked author
+    - User's institution
+    - User's permission to access global content
+
+  ## Examples
+
+      iex> list_available_publications_and_products(nil, nil, false)
+      []
+
+      iex> list_available_publications_and_products(123, 1, true)
+      [{%Publication{project: %Project{}}, %Section{}}, ...]
+  """
+  def list_available_publications_and_products(nil, nil, false), do: []
+
+  def list_available_publications_and_products(author, institution, include_global) do
+    by_visibility =
+      case {author, institution} do
+        {nil, nil} ->
+          dynamic([project, _, _, _, _, _], ^include_global and project.visibility == :global)
+
+        {%Author{id: a_id}, nil} ->
+          dynamic(
+            [project, _, _, _, author, project_visibility],
+            (^include_global and project.visibility == :global) or author.id == ^a_id or
+              (project.visibility == :selected and project_visibility.author_id == ^a_id)
+          )
+
+        {nil, %Institution{id: i_id}} ->
+          dynamic(
+            [project, _, _, _, _, project_visibility],
+            (^include_global and project.visibility == :global) or
+              (project.visibility == :selected and project_visibility.institution_id == ^i_id)
+          )
+
+        {%Author{id: a_id}, %Institution{id: i_id}} ->
+          dynamic(
+            [project, _, _, _, author, project_visibility],
+            (^include_global and project.visibility == :global) or author.id == ^a_id or
+              (project.visibility == :selected and project_visibility.author_id == ^a_id) or
+              (project.visibility == :selected and project_visibility.institution_id == ^i_id)
+          )
+      end
+
+    from(
+      project in Project,
+      left_join: section in Section,
+      on: project.id == section.base_project_id and section.type == :blueprint,
+      join: last_publication in subquery(last_publication_query()),
+      on:
+        last_publication.project_id == project.id or
+          last_publication.project_id == section.base_project_id,
+      join: publication in Publication,
+      on: publication.id == last_publication.id,
+      left_join: author in assoc(project, :authors),
+      left_join: project_visibility in ProjectVisibility,
+      on: project.id == project_visibility.project_id,
+      where: not is_nil(publication.published) and project.status == :active,
+      where: ^by_visibility,
+      select: {%{publication | project: project}, section},
+      distinct: true
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Retrieves all the publications a user can see:
+    - Associated to a community assigned to their institution
+    - Associated to a community they are assigned as a user
+    - If they have a linked author account
+      - They are an author of the publication
+      - An author has made publication visible to their institution
+      - Another author has shared publication with them
+    - Global -> will see them when they are not associated to any community, or one of the associated communities allows it
+
+  ## Examples
+
+      iex> retrieve_visible_publications(%User{}, %Institution{})
+      [%Publication{project: %Project{}}, ...]
+
+      iex> retrieve_visible_publications(%User{}, %Institution{})
+      []
+  """
+  def retrieve_visible_publications(user, institution) do
+    (Groups.list_community_associated_publications(user.id, institution) ++
+       available_publications(
+         user.author,
+         institution,
+         can_access_global_content(user, institution)
+       ))
+    |> Enum.uniq()
+    |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+  end
+
+  @doc """
+  Retrieves all the publications and products an user can see:
+    - Associated to a community assigned to their institution
+    - Associated to a community they are assigned as a user
+    - If they have a linked author account
+      - They are an author of the publication/product
+      - An author has made publication/product visible to their institution
+      - Another author has shared publication/product with them
+    - Global -> will see them when they are not associated to any community, or one of the associated communities allows it
+
+  ## Examples
+
+      iex> retrieve_visible_sources(%User{}, %Institution{})
+      [%Publication{project: %Project{}}, %Section{}, ...]
+
+      iex> retrieve_visible_sources(%User{}, %Institution{})
+      []
+  """
+  def retrieve_visible_sources(user, institution) do
+    sources =
+      Groups.list_community_associated_publications_and_products(user.id, institution) ++
+        list_available_publications_and_products(
+          user.author,
+          institution,
+          can_access_global_content(user, institution)
+        )
+
+    {publication_list, section_list} =
+      Enum.reduce(
+        sources,
+        {[], []},
+        fn
+          {publication, nil}, {publication_list, section_list} ->
+            {[publication | publication_list], section_list}
+
+          {%Publication{project: nil}, section}, {publication_list, section_list} ->
+            {publication_list, [section | section_list]}
+
+          {publication, section}, {publication_list, section_list} ->
+            {[publication | publication_list], [section | section_list]}
+        end
+      )
+
+    filtered_publications =
+      Blueprint.filter_for_free_projects(
+        section_list,
+        publication_list
+      )
+
+    (filtered_publications ++ section_list)
+    |> Enum.uniq()
+    |> Enum.sort_by(fn r -> get_title(r) end, :asc)
+  end
+
+  defp can_access_global_content(user, institution) do
+    associated_communities = Groups.list_associated_communities(user.id, institution)
+
+    associated_communities == [] or
+      Enum.any?(associated_communities, fn community -> community.global_access end)
+  end
+
+  defp get_title(pub_or_prod) do
+    case Map.get(pub_or_prod, :title) do
+      nil -> pub_or_prod.project.title
+      title -> title
+    end
   end
 
   @doc """

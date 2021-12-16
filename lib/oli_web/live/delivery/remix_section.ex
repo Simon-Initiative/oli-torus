@@ -84,7 +84,7 @@ defmodule OliWeb.Delivery.RemixSection do
       |> Repo.preload(:institution)
 
     available_publications =
-      Sections.retrieve_visible_publications(current_user, section.institution)
+      Publishing.retrieve_visible_publications(current_user, section.institution)
 
     # only permit instructor or admin level access
 

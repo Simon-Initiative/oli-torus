@@ -2,8 +2,8 @@ defmodule OliWeb.Delivery.SelectSource do
   use Surface.LiveView
 
   alias Oli.Accounts
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -138,7 +138,7 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   defp retrieve_all_sources(:independent_learner, session) do
-    Sections.retrieve_visible_sources(
+    Publishing.retrieve_visible_sources(
       session["current_user_id"]
       |> Accounts.get_user!(preload: [:author]),
       nil
