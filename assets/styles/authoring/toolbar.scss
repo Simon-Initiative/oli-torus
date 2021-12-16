@@ -1,4 +1,4 @@
-@import "authoring/variables";
+@import 'authoring/variables';
 
 .react-tiny-popover-container {
   z-index: $z-overlay-3;
@@ -49,33 +49,46 @@
   }
 }
 
-
 .editor__toolbar {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 34px;
 
-  &Button {
-    color: $dark;
+  &Button.btn.btn-xs {
+    color: $toolbar-button;
     border-radius: 4px;
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    padding: 0.2rem;
+    margin: 0 1px;
 
     &:hover {
       background-color: $light;
     }
 
+    &.active {
+      color: $light;
+      background-color: $toolbar-button;
+    }
+
     &:focus {
       outline: 2px solid $primary;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      &:hover {
+        background-color: inherit;
+      }
     }
   }
 
   .button-separator {
     display: flex;
     width: 1px;
-    color: $light;
-    height: calc(100% - 6px);
+    background-color: $light;
+    height: calc(100% - 12px);
     margin: 0 8px;
   }
 }

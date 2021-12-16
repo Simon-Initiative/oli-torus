@@ -1,7 +1,8 @@
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
-import { Spacer, SimpleButton, DropdownButton } from 'components/editing/toolbar/common';
+import { SimpleButton } from 'components/editing/toolbar/buttons/SimpleButton';
+import { ToolbarDropdown } from 'components/editing/toolbar/buttons/ToolbarDropdown';
 import { ToolbarItem, ButtonContext } from 'components/editing/toolbar/interfaces';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ArrowContainer, Popover } from 'react-tiny-popover';
 import { useFocused, useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
@@ -111,7 +112,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
                         return <SimpleButton {...shared} />;
                       }
                       // eslint-disable-next-line
-                      return <DropdownButton {...shared} />;
+                      return <ToolbarDropdown {...shared} />;
                     }),
                   ].filter((x) => x)}
                 </div>
@@ -132,3 +133,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
   );
 }, insertionAreEqual);
 InsertionToolbar.displayName = 'InsertionToolbar';
+
+const Spacer = () => {
+  return <span style={{ minWidth: '5px', maxWidth: '5px' }} />;
+};

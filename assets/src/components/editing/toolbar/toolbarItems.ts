@@ -33,13 +33,25 @@ const code = format({
   description: () => 'Code (⌘;)',
   precondition: (editor) => !isActive(editor, ['code']),
 });
+const superscript = format({
+  icon: () => 'superscript',
+  mark: 'sup',
+  description: () => 'Superscript',
+  precondition: (editor) => !isActive(editor, ['sup']),
+});
+const subscript = format({
+  icon: () => 'subscript',
+  mark: 'sub',
+  description: () => 'Subscript',
+  precondition: (editor) => !isActive(editor, ['sub']),
+});
 
 export const formattingItems: ToolbarItem[] = [
   bold,
   italic,
-  link,
+  superscript,
+  subscript,
   code,
-  popup,
 
   DIVIDER,
 
@@ -49,6 +61,8 @@ export const formattingItems: ToolbarItem[] = [
   DIVIDER,
 
   title,
+  link,
+  popup,
   blockquote,
 ];
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { ButtonContext, ToolbarItem } from 'components/editing/toolbar/interfaces';
-import { DropdownButton, SimpleButton } from 'components/editing/toolbar/common';
-import './toolbar.scss';
 import { Editor } from 'slate';
+import { VerticalSpacer } from 'components/editing/toolbar/buttons/spacers';
+import { SimpleButton } from 'components/editing/toolbar/buttons/SimpleButton';
+import { ToolbarDropdown } from 'components/editing/toolbar/buttons/ToolbarDropdown';
 
 export type Props = {
   context: ButtonContext;
@@ -12,23 +13,17 @@ export type Props = {
 export const Toolbar = (props: Props) => {
   const editor = useSlate();
 
-  console.log('updating');
-
-  if (
-    !ReactEditor.isFocused(editor) ||
-    ReactEditor.toDOMNode(editor, editor) !== document.activeElement
-  )
-    return null;
+  if (!shouldShowToolbar(editor)) return null;
 
   return (
     <div className="editor__toolbar">
       {props.items.map((item, i) => {
-        if (item.type === 'GroupDivider') return <VerticalSeparator key={`spacer-${i}`} />;
+        if (item.type === 'GroupDivider') return <VerticalSpacer key={`spacer-${i}`} />;
 
         const { icon, command, description, active, renderMode } = item;
 
         const btnProps = {
-          active: active && active(editor),
+          active: active?.(editor),
           icon: icon(editor),
           command: command,
           context: props.context,
@@ -36,15 +31,11 @@ export const Toolbar = (props: Props) => {
           key: i,
         };
 
-        if (!command.precondition(editor)) return null;
         if (renderMode === 'Simple') return <SimpleButton {...btnProps} />;
-        return <DropdownButton {...btnProps} key={i} />;
+        return <ToolbarDropdown {...btnProps} key={i} />;
       })}
     </div>
   );
 };
 
-interface VSProps {
-  key: string;
-}
-const VerticalSeparator = ({ key }: VSProps) => <div key={key} className="button-separator"></div>;
+const shouldShowToolbar = (editor: Editor) => ReactEditor.isFocused(editor);

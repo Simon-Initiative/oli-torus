@@ -1,4 +1,4 @@
-export const classNames = (names: string | (string | null | undefined)[]) => {
+export const classNames = (names: string | (string | null | undefined | boolean)[]) => {
   if (typeof names === 'string') {
     return names.trim();
   }

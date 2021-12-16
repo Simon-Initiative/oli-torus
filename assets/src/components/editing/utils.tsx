@@ -73,7 +73,8 @@ export function textNodesInSelection(editor: Editor) {
 }
 
 export function isMarkActive(editor: Editor, mark: Mark): boolean {
-  return marksInPartOfSelection(editor).includes(mark);
+  const marks = Editor.marks(editor);
+  return marks ? !!marks[mark] : false;
 }
 
 // Returns a Mark[] that apply to the entire current selection
@@ -88,17 +89,6 @@ export function marksInEntireSelection(editor: Editor) {
   return Object.entries(marks)
     .filter(([, v]) => v === textNodes.length)
     .map(([k]) => k as Mark);
-}
-
-// Returns a Mark[] of all marks that exist in any part of the current selection
-export function marksInPartOfSelection(editor: Editor) {
-  const marks: any = {};
-  textNodesInSelection(editor).forEach((text) => {
-    Object.keys(text)
-      .filter((k) => k in Marks)
-      .forEach((mark) => (marks[mark] = true));
-  });
-  return Object.keys(marks);
 }
 
 // Extracts the text from a hierarchy of nodes

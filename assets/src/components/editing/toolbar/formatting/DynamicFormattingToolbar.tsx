@@ -1,4 +1,5 @@
-import { DropdownButton, SimpleButton } from 'components/editing/toolbar/common';
+import { ToolbarDropdown } from 'components/editing/toolbar/buttons/ToolbarDropdown';
+import { SimpleButton } from 'components/editing/toolbar/buttons/SimpleButton';
 import { ButtonContext, ToolbarButtonDesc } from 'components/editing/toolbar/interfaces';
 import React from 'react';
 import { useSlate } from 'slate-react';
@@ -33,7 +34,7 @@ export const DynamicFormattingToolbar = (props: HoveringToolbarProps) => {
         cmdDesc.command.obtainParameters === undefined ? (
           <SimpleButton {...shared} />
         ) : (
-          <DropdownButton {...shared} />
+          <ToolbarDropdown {...shared} />
         ),
       ]);
     }, []);
