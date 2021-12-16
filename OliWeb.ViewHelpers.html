@@ -10,7 +10,7 @@
     <title>OliWeb.ViewHelpers — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-bbb53db595.js"></script>
+    <script src="dist/sidebar_items-d3c82f58bb.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -119,12 +119,19 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.17.0)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#dt/2">dt(datetime, conn_or_local_tz \\ nil)</a>
+    <a href="#dt/2">dt(datetime, opts \\ [])</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Converts a datetime to a specific timezone based on a user's session or specified timezone
 and returns a formatted string.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#dt/3">dt(datetime, conn, opts)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -138,7 +145,7 @@ and returns a formatted string.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#format_datetime/2">format_datetime(datetime, precision \\ :seconds)</a>
+    <a href="#format_datetime/2">format_datetime(maybe_localized_datetime, opts \\ [])</a>
 
   </div>
 
@@ -169,7 +176,7 @@ it is assumed this datetime has not been localized and the timezone is included.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#local_datetime/2">local_datetime(datetime, conn)</a>
+    <a href="#maybe_localized_datetime/2">maybe_localized_datetime(datetime, conn)</a>
 
   </div>
 
@@ -218,7 +225,7 @@ Functions
     </a>
     <h1 class="signature">brand_logo_html(conn_or_brand, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L11" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L13" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -240,9 +247,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">dt(datetime, conn_or_local_tz \\ nil)</h1>
+    <h1 class="signature">dt(datetime, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L95" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -258,17 +265,45 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
   <a href="#dt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6091700525-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="6091700525-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="0949369791-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6091700525-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="6091700525-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="0949369791-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6091700525-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="6091700525-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="0949369791-3">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="6091700525-4">(</span><span class="n">datetime</span><span class="p" data-group-id="6091700525-4">)</span><span class="w">
-</span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-4">(</span><span class="n">datetime</span><span class="p" data-group-id="0949369791-4">)</span><span class="w">
+</span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-5">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="0949369791-5">)</span><span class="w">
+</span><span class="s">&quot;January 1, 2022&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0949369791-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="0949369791-6">)</span><span class="w">
+</span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="dt/3">
+
+  <div class="detail-header">
+    <a href="#dt/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">dt(datetime, conn, opts)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L115" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="external_link/2">
@@ -282,7 +317,7 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
     </a>
     <h1 class="signature">external_link(text, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L41" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -304,9 +339,9 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">format_datetime(datetime, precision \\ :seconds)</h1>
+    <h1 class="signature">format_datetime(maybe_localized_datetime, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L133" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -317,21 +352,31 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
   <section class="docstring">
 
 <p>Formats a datetime by converting it to a string. If the timezone attached is UTC, then
-it is assumed this datetime has not been localized and the timezone is included.</p><p>Precision of the datetime can be set to :date, :minutes, or :seconds (default)</p><h2 id="format_datetime/2-examples" class="section-heading">
+it is assumed this datetime has not been localized and the timezone is included.</p><p>Precision of the datetime can be set to :date, :minutes, or :minutes (default)</p><h2 id="format_datetime/2-examples" class="section-heading">
   <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7634088194-1">(</span><span class="n">datetime</span><span class="p" data-group-id="7634088194-1">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7634088194-2">(</span><span class="n">datetime_utc</span><span class="p" data-group-id="7634088194-2">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-1">(</span><span class="n">datetime</span><span class="p" data-group-id="7649844827-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7634088194-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="7634088194-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-2">(</span><span class="p" data-group-id="7649844827-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="7649844827-3">}</span><span class="p" data-group-id="7649844827-2">)</span><span class="w">
+</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-4">(</span><span class="p" data-group-id="7649844827-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="7649844827-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="7649844827-4">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7634088194-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="7634088194-4">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-6">(</span><span class="p" data-group-id="7649844827-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="7649844827-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="7649844827-6">)</span><span class="w">
+</span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-8">(</span><span class="p" data-group-id="7649844827-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="7649844827-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="7649844827-8">)</span><span class="w">
+</span><span class="s">&quot;8 minutes ago&quot;</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="7649844827-10">)</span><span class="w">
+</span><span class="s">&quot;5 hours ago&quot;</span><span class="w">
+
+</span><span class="c1"># author has preference show_relative_dates set to true</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="7649844827-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="7649844827-11">)</span><span class="w">
+</span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
   </section>
 </section>
 <section class="detail" id="is_admin?/2">
@@ -343,7 +388,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_admin?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L53" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L55" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -365,7 +410,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_section_instructor?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -387,7 +432,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_section_instructor_or_admin?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L45" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -400,16 +445,16 @@ it is assumed this datetime has not been localized and the timezone is included.
 
   </section>
 </section>
-<section class="detail" id="local_datetime/2">
+<section class="detail" id="maybe_localized_datetime/2">
 
   <div class="detail-header">
-    <a href="#local_datetime/2" class="detail-link" title="Link to this function">
+    <a href="#maybe_localized_datetime/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">local_datetime(datetime, conn)</h1>
+    <h1 class="signature">maybe_localized_datetime(datetime, conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L98" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L130" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -433,7 +478,7 @@ time a page is loaded.</p>
     </a>
     <h1 class="signature">maybe_section_slug(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L57" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L59" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -455,7 +500,7 @@ time a page is loaded.</p>
     </a>
     <h1 class="signature">preview_mode(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L34" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

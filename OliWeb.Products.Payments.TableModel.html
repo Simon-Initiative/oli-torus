@@ -10,7 +10,7 @@
     <title>OliWeb.Products.Payments.TableModel — OLI Torus v0.17.0</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-bbb53db595.js"></script>
+    <script src="dist/sidebar_items-d3c82f58bb.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -130,7 +130,7 @@ OliWeb.Products.Payments.TableModel <small class="app-vsn">(OLI Torus v0.17.0)</
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#new/1">new(payments)</a>
+    <a href="#new/2">new(payments, local_tz)</a>
 
   </div>
 
@@ -146,7 +146,7 @@ OliWeb.Products.Payments.TableModel <small class="app-vsn">(OLI Torus v0.17.0)</
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render_app_date_column/3">render_app_date_column(_, map, _)</a>
+    <a href="#render_app_date_column/3">render_app_date_column(map1, map2, _)</a>
 
   </div>
 
@@ -160,7 +160,7 @@ OliWeb.Products.Payments.TableModel <small class="app-vsn">(OLI Torus v0.17.0)</
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#render_gen_date_column/3">render_gen_date_column(_, map, _)</a>
+    <a href="#render_gen_date_column/3">render_gen_date_column(map1, map2, _)</a>
 
   </div>
 
@@ -237,14 +237,14 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="new/1">
+<section class="detail" id="new/2">
 
   <div class="detail-header">
-    <a href="#new/1" class="detail-link" title="Link to this function">
+    <a href="#new/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">new(payments)</h1>
+    <h1 class="signature">new(payments, local_tz)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L6" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -268,7 +268,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L134" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L137" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -288,9 +288,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render_app_date_column(_, map, _)</h1>
+    <h1 class="signature">render_app_date_column(map1, map2, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L127" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L130" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -312,7 +312,7 @@ Functions
     </a>
     <h1 class="signature">render_details_column(assigns, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L90" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -332,9 +332,9 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">render_gen_date_column(_, map, _)</h1>
+    <h1 class="signature">render_gen_date_column(map1, map2, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L120" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L123" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -356,7 +356,7 @@ Functions
     </a>
     <h1 class="signature">render_section_column(_, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L49" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L52" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -378,7 +378,7 @@ Functions
     </a>
     <h1 class="signature">render_type_column(assigns, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L73" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -400,7 +400,7 @@ Functions
     </a>
     <h1 class="signature">render_user_column(_, map, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L56" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L59" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -422,7 +422,7 @@ Functions
     </a>
     <h1 class="signature">sort(direction, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L99" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L102" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -444,7 +444,7 @@ Functions
     </a>
     <h1 class="signature">sort_date(direction, spec)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L108" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/products/payments/tabel_model.ex#L111" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
