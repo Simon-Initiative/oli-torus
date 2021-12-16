@@ -369,6 +369,7 @@ defmodule OliWeb.DeliveryController do
           context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
+          blueprint_id: blueprint.id,
           amount: amount
         })
 

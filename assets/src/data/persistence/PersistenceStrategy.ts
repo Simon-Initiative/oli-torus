@@ -38,4 +38,6 @@ export interface PersistenceStrategy {
   destroy: () => void;
 
   getLockResult: () => LockResult;
+
+  flushPendingChanges: (releaseLock: boolean) => void;
 }

@@ -266,7 +266,11 @@ const DeckLayoutFooter: React.FC = () => {
     const hasNavigation = actionsByType.navigation.length > 0;
 
     if (actionsByType.mutateState.length) {
-      const mutationsModified = actionsByType.mutateState.map((op: any) => {
+      //Need to filter 'session.currentQuestionScore' mutation because we are already performed all the scoring logic in rules engine
+      const mutations = actionsByType.mutateState.filter(
+        (action: any) => action.params.target !== 'session.currentQuestionScore',
+      );
+      const mutationsModified = mutations.map((op: any) => {
         let scopedTarget = op.params.target;
 
         if (scopedTarget.indexOf('stage') === 0) {
@@ -302,7 +306,7 @@ const DeckLayoutFooter: React.FC = () => {
         (currentActivityTree || []).map((a) => a.id),
       );
       // instead of sending the entire enapshot, taking latest values from store and sending that as mutate state in all the components
-      const mutatedObjects = actionsByType.mutateState.reduce((collect: any, op: any) => {
+      const mutatedObjects = mutations.reduce((collect: any, op: any) => {
         let target = op.params.target;
         if (target.indexOf('stage') === 0) {
           const lstVar = op.params.target.split('.');

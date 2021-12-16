@@ -13,14 +13,13 @@ defmodule OliWeb.DeploymentControllerTest do
   describe "new deployment" do
     setup [:create_fixtures]
 
-    test "renders form", %{conn: conn, registration: registration, institution: institution} do
+    test "renders form", %{conn: conn, registration: registration} do
       conn =
         get(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :new,
-            institution.id,
             registration.id
           )
         )
@@ -32,7 +31,7 @@ defmodule OliWeb.DeploymentControllerTest do
   describe "create deployment" do
     setup [:create_fixtures]
 
-    test "redirects to institution_path :show when data is valid", %{
+    test "redirects to registration_path :show when data is valid", %{
       conn: conn,
       admin: admin,
       registration: registration,
@@ -41,16 +40,15 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         post(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :create,
-            institution.id,
             registration.id
           ),
-          deployment: @create_attrs
+          deployment: Map.put(@create_attrs, :institution_id, institution.id)
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+      assert redirected_to(conn) == Routes.registration_path(conn, :show, registration.id)
 
       # validate the new deployment exists on the institution details page
       conn =
@@ -58,21 +56,19 @@ defmodule OliWeb.DeploymentControllerTest do
         |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
       conn = get(conn, Routes.institution_path(conn, :show, institution.id))
-      assert html_response(conn, 200) =~ "<li>\nsome deployment_id"
+      assert html_response(conn, 200) =~ "some deployment_id"
     end
 
     test "renders errors when data is invalid", %{
       conn: conn,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
       conn =
         post(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :create,
-            institution.id,
             registration.id
           ),
           deployment: @invalid_attrs
@@ -88,16 +84,14 @@ defmodule OliWeb.DeploymentControllerTest do
     test "renders form for editing chosen deployment", %{
       conn: conn,
       deployment: deployment,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
       conn =
         get(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :edit,
-            institution.id,
             registration.id,
             deployment
           )
@@ -120,17 +114,16 @@ defmodule OliWeb.DeploymentControllerTest do
       conn =
         put(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :update,
-            institution.id,
             registration.id,
             deployment
           ),
           deployment: @update_attrs
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+      assert redirected_to(conn) == Routes.registration_path(conn, :show, registration.id)
 
       conn =
         recycle(conn)
@@ -143,16 +136,14 @@ defmodule OliWeb.DeploymentControllerTest do
     test "renders errors when data is invalid", %{
       conn: conn,
       deployment: deployment,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
       conn =
         put(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :update,
-            institution.id,
             registration.id,
             deployment
           ),
@@ -169,22 +160,20 @@ defmodule OliWeb.DeploymentControllerTest do
     test "deletes chosen deployment", %{
       conn: conn,
       deployment: deployment,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
       conn =
         delete(
           conn,
-          Routes.institution_registration_deployment_path(
+          Routes.registration_deployment_path(
             conn,
             :delete,
-            institution.id,
             registration.id,
             deployment
           )
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+      assert redirected_to(conn) == Routes.registration_path(conn, :show, registration.id)
 
       assert_raise Ecto.NoResultsError, fn ->
         Institutions.get_institution!(deployment.id)
@@ -205,8 +194,10 @@ defmodule OliWeb.DeploymentControllerTest do
 
     jwk = jwk_fixture()
     institution = institution_fixture()
-    registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-    deployment = deployment_fixture(%{registration_id: registration.id})
+    registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+    deployment =
+      deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
     # sign admin author in
     conn =

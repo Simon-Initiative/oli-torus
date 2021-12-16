@@ -21,6 +21,11 @@ $(function() {
     checkbox.trigger("change")
   });
 
+  // prevent clicking of actual checkbox from firing the tr.source click event
+  $('input[name="source_id"]').on('click', function(e) {
+    e.stopPropagation();
+  });
+
   // handle selection change
   $('input[name="source_id"]').on('change', function() {
     $('input[name="source_id"]').not(this).prop('checked', false);

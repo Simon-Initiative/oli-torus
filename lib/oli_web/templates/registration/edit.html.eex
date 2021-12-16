@@ -1,9 +1,3 @@
-<span>
-  <%= link to: Routes.institution_path(@conn, :show, @institution_id) do %>
-    <i class="las la-arrow-left"></i> Back
-  <% end %>
-</span>
-
 <%= render OliWeb.SharedView, "_box_form_container.html", Map.put(assigns, :title, "Edit Registration") do %>
-  <%= render "form.html", Map.put(assigns, :action, Routes.institution_registration_path(@conn, :update, @institution_id, @registration)) %>
+  <%= render "form.html", Map.merge(assigns, %{action: Routes.registration_path(@conn, :update, @registration), cancel_path: Routes.registration_path(@conn, :show, @registration)}) %>
 <% end %>

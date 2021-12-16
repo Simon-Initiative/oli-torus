@@ -68,13 +68,13 @@ defmodule OliWeb.Delivery.SelectSource do
     Routes.select_source_path(socket, socket.assigns.live_action, params)
   end
 
-  def mount(_params, %{"current_user_id" => user_id}, socket) do
+  def mount(_params, session, socket) do
     # SelectSource used in two routes.
     # live_action is :independent_learner or :admin
     route = socket.assigns.live_action
 
     sources =
-      retrieve_all_sources(route, user_id)
+      retrieve_all_sources(route, maybe_get_author(session))
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
     total_count = length(sources)
@@ -124,14 +124,27 @@ defmodule OliWeb.Delivery.SelectSource do
 
   use OliWeb.Common.SortableTable.TableHandlers
 
-  defp retrieve_all_sources(route, user_id) do
-    author =
-      user_id
-      |> Accounts.get_user!(preload: [:author])
-      |> Map.get(:author)
+  # This route is used in both authoring and delivery.
+  # A user may have a linked author account or it may not.
+  # We check the session for the author_id or user_id which
+  # are both set by plugs in the router.
+  defp maybe_get_author(session) do
+    cond do
+      Map.has_key?(session, "current_author_id") ->
+        Accounts.get_author!(session["current_author_id"])
 
+      Map.has_key?(session, "current_user_id") ->
+        session["current_user_id"]
+        |> Accounts.get_user!(preload: [:author])
+        |> Map.get(:author)
+
+      true ->
+        nil
+    end
+  end
+
+  defp retrieve_all_sources(route, author) do
     products = get_products(route, author)
-
     project_publications = get_publications(route, author, products)
 
     project_publications ++ products
@@ -159,6 +172,6 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp empty_institution(),
     do: %Institution{
-      id: "invalid id used only to fulfill query requirement"
+      id: -1
     }
 end

@@ -1,0 +1,75 @@
+<div class="container">
+
+  <div class="my-3 d-flex">
+    <div class="flex-fill"></div>
+    <%= link "Edit Details", to: Routes.registration_path(@conn, :edit, @registration.id), class: "btn btn-sm btn-outline-primary ml-2" %>
+
+    <%= link to: Routes.registration_path(@conn, :delete, @registration.id),
+        method: :delete,
+        class: "btn btn-sm btn-outline-danger ml-2",
+        data: [confirm: "Are you sure you want to permanently delete this registration? \"#{@registration.issuer} - #{@registration.client_id}\""] do %>
+        <i class="lar la-trash-alt"></i> Delete
+    <% end %>
+  </div>
+
+  <table class="table">
+    <tbody>
+        <tr>
+        <td><strong>Issuer:</strong></td>
+        <td><%= @registration.issuer %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Client ID:</strong></td>
+        <td><%= @registration.client_id %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Keyset URL:</strong></td>
+        <td><%= @registration.key_set_url %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Auth Token URL:</strong></td>
+        <td><%= @registration.auth_token_url %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Auth Login URL:</strong></td>
+        <td><%= @registration.auth_login_url %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Auth Server URL:</strong></td>
+        <td><%= @registration.auth_server %></td>
+        </tr>
+
+        <tr>
+        <td><strong>Deployments:</strong></td>
+        <td>
+            <%= for deployment <- @registration.deployments do %>
+            <ul>
+                <li id="<%= "deployment-#{deployment.id}" %>">
+                <%= deployment.deployment_id %>
+                <%= link to: Routes.registration_deployment_path(@conn, :edit, @registration.id, deployment.id),
+                    class: "btn btn-xs btn-primary ml-2 float-right" do %>
+                    <i class="lar la-trash-alt"></i> Edit
+                <% end %>
+
+                <%= link to: Routes.registration_deployment_path(@conn, :delete, @registration.id, deployment.id),
+                    method: :delete,
+                    class: "btn btn-xs btn-danger ml-2 float-right",
+                    data: [confirm: "Are you sure you want to delete this deployment? \"#{deployment.deployment_id}\""] do %>
+                    <i class="lar la-trash-alt"></i> Delete
+                <% end %>
+                </li>
+            </ul>
+            <% end %>
+
+            <%= link "Add a Deployment", to: Routes.registration_deployment_path(@conn, :new, @registration.id), class: "btn btn-sm btn-outline-primary" %>
+        </td>
+        </tr>
+
+    </tbody>
+  </table>
+</div>

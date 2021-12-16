@@ -11,6 +11,7 @@ defmodule Oli.Institutions.PendingRegistration do
 
     field :issuer, :string
     field :client_id, :string
+    field :deployment_id, :string
     field :key_set_url, :string
     field :auth_token_url, :string
     field :auth_login_url, :string
@@ -30,6 +31,7 @@ defmodule Oli.Institutions.PendingRegistration do
       :timezone,
       :issuer,
       :client_id,
+      :deployment_id,
       :key_set_url,
       :auth_token_url,
       :auth_login_url,
@@ -70,6 +72,13 @@ defmodule Oli.Institutions.PendingRegistration do
       :auth_token_url,
       :auth_login_url,
       :auth_server
+    ])
+  end
+
+  def deployment_attrs(%Oli.Institutions.PendingRegistration{} = pending_registration) do
+    Map.from_struct(pending_registration)
+    |> Map.take([
+      :deployment_id
     ])
   end
 end
