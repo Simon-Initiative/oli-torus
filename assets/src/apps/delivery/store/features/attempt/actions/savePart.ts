@@ -4,6 +4,7 @@ import {
   defaultGlobalEnv,
   evalScript,
   getAssignStatements,
+  getValue,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
@@ -21,6 +22,7 @@ export const savePartState = createAsyncThunk(
     const rootState = getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
+    const attemptNumber = getValue('session.attemptNumber', defaultGlobalEnv);
 
     // update redux state to match optimistically
     const attemptRecord = selectById(rootState, attemptGuid);
@@ -29,6 +31,7 @@ export const savePartState = createAsyncThunk(
       if (partAttemptRecord) {
         const updated = {
           ...attemptRecord,
+          attemptNumber: attemptNumber,
           parts: attemptRecord.parts.map((p) => {
             const result = { ...p };
             if (p.attemptGuid === partAttemptRecord.attemptGuid) {

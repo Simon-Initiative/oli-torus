@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.18.1 (2021-12-17)
+
+### Bug Fixes
+
+- Fix a bug where open and free sections could not be created from products
+- Fix a bug where payment codes were not displayed
+
+### Enhancements
+
+## 0.18.0 (2021-12-16)
+
 ### Bug Fixes
 
 - Fix a bug that prevented editing internal links when only one other page exists
@@ -13,8 +24,10 @@
 - Fix an issue where LTI 1.3 deployments should represent individual institutions
 - Move LTI 1.3 registrations listing to live view table with search, sorting and paging
 - Fix LMS course section creation to properly set the blueprint reference
+- Fix a bug where null deployment id results in empty string in pending registration form
 - Fix a bug where immediately removing a new activity leaves it visible to the system
-- Fix a bug where null deployment id results in empty string in pending registration form 
+- Fix an issue where selecting the actual checkbox in select source list doesn't work
+- Updates the labelling of options in the project visibility view
 
 ### Enhancements
 
@@ -23,6 +36,7 @@
 - Add support for configurable vendor properties
 - Allow default brand to be changed via release env var
 - Display course section and course project slug identifiers
+- Allow sections created from free products to have their payment settings edited
 
 ## 0.17.0 (2021-11-30)
 

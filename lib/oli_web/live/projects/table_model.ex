@@ -4,7 +4,7 @@ defmodule OliWeb.Projects.TableModel do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(author, sections, include_status?) do
+  def new(author, sections, include_status?, local_tz) do
     column_specs =
       [
         %ColumnSpec{
@@ -15,7 +15,7 @@ defmodule OliWeb.Projects.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: OliWeb.Common.Table.Common.author_preference_date_renderer(author)
+          render_fn: &OliWeb.Common.Table.Common.render_date/3
         },
         %ColumnSpec{
           name: :name,
@@ -39,7 +39,11 @@ defmodule OliWeb.Projects.TableModel do
       rows: sections,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        local_tz: local_tz,
+        author: author
+      }
     )
   end
 

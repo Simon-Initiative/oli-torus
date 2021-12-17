@@ -39,6 +39,90 @@ defmodule Oli.GradingTest do
       })
     end
 
+    test "determine_page_out_of/2 correctly determines the adaptive max out of", %{
+      section: section,
+      revision1: r
+    } do
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 1.0
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 1.0
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => "2.0"}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 2.0
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => "not a number"}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 1.0
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => 5}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 5
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => 5.4}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 5.4
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => %{"something" => "else"}}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 1.0
+
+      r = %{
+        r
+        | content: %{
+            "advancedDelivery" => true,
+            "custom" => %{"totalScore" => 0.0}
+          }
+      }
+
+      assert Grading.determine_page_out_of(section.slug, r) == 1.0
+    end
+
     test "returns valid gradebook for section", %{
       section: section,
       revision1: revision1,

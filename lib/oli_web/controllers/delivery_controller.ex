@@ -92,7 +92,7 @@ defmodule OliWeb.DeliveryController do
 
     render(conn, "select_project.html",
       author: user.author,
-      sources: Sections.retrieve_visible_sources(user, institution),
+      sources: Publishing.retrieve_visible_sources(user, institution),
       remix: Map.get(params, "remix", "false")
     )
   end
