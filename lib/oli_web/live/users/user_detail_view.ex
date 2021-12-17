@@ -4,7 +4,6 @@ defmodule OliWeb.Users.UsersDetailView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
   use OliWeb.Common.Modal
-  alias Oli.Delivery.Sections
 
   import OliWeb.Common.Properties.Utils
   import OliWeb.Common.Utils
@@ -17,8 +16,6 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Pow.UserContext
   alias OliWeb.Users.Actions
-  alias Lti_1p3.Tool.PlatformRoles
-  alias Lti_1p3.DataProviders.EctoProvider.Marshaler
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -26,8 +23,6 @@ defmodule OliWeb.Users.UsersDetailView do
     DeleteAccountModal,
     ConfirmEmailModal
   }
-
-  @institution_instructor PlatformRoles.get_role(:institution_instructor)
 
   prop author, :any
   data breadcrumbs, :any
@@ -83,35 +78,23 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly label="Last Name" value={@user.family_name}/>
             <ReadOnly label="Email" value={@user.email}/>
             <ReadOnly label="Guest" value={boolean(@user.guest)}/>
-            <div class="form-control mb-2">
+            <div class="form-control mb-3">
               <Field name={:independent_learner}>
                 <Checkbox/>
                 <Label class="form-check-label mr-2">Independent Learner</Label>
               </Field>
             </div>
 
-            <section>
+            <section class="mb-2">
               <heading>
-                <p>Enable LMS-Lite Section Creation <small>(check both)</small></p>
+                <p>Enable Independent Section Creation</p>
+                <small>Allow this user to create "Independent" sections and enroll students via invitation link without an LMS</small>
               </heading>
-              <div class="form-row align-items-center">
-                <div class="col-sm-6">
-                  <div class="form-control mb-2">
-                    <Field name={:can_create_sections}>
-                      <Checkbox />
-                      <Label class="form-check-label mr-2">Can Create Sections?</Label>
-                    </Field>
-                  </div>
-                </div>
-
-                <div class="col-sm-6">
-                  <div class="form-control mb-2">
-                    <Field name={:institution_instructor}>
-                      <Checkbox value={Sections.is_institution_instructor?(@user)} />
-                      <Label class="form-check-label mr-2">Institution Instructor</Label>
-                    </Field>
-                  </div>
-                </div>
+              <div class="form-control">
+                <Field name={:can_create_sections}>
+                  <Checkbox />
+                  <Label class="form-check-label mr-2">Can Create Sections</Label>
+                </Field>
               </div>
             </section>
 
@@ -263,30 +246,8 @@ defmodule OliWeb.Users.UsersDetailView do
     Accounts.get_user!(id, preload: [:platform_roles])
   end
 
-  def maybe_change_platform_roles(user_changeset, %{"institution_instructor" => "true"}) do
-    user_changeset
-    |> Ecto.Changeset.put_assoc(:platform_roles, [
-      Marshaler.to(@institution_instructor)
-      | user_changeset.data.platform_roles
-    ])
-  end
-
-  # Remove
-  def maybe_change_platform_roles(user_changeset, %{"institution_instructor" => "false"}) do
-    user_changeset
-    |> Ecto.Changeset.put_assoc(
-      :platform_roles,
-      Enum.filter(user_changeset.data.platform_roles, fn role ->
-        role.id != @institution_instructor.id
-      end)
-    )
-  end
-
-  def maybe_change_platform_roles(user_changeset, _), do: user_changeset
-
   def user_changeset(user, attrs \\ %{}) do
     User.noauth_changeset(user, attrs)
-    |> maybe_change_platform_roles(attrs)
     |> Map.put(:action, :update)
   end
 

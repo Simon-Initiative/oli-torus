@@ -63,7 +63,7 @@ defmodule Oli.Authoring.Course do
       on:
         project.id ==
           community_visibility.project_id and community_visibility.community_id == ^community_id,
-      where: is_nil(community_visibility.id),
+      where: is_nil(community_visibility.id) and project.status == :active,
       select: project
     )
     |> Repo.all()

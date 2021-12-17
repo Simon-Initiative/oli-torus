@@ -114,16 +114,30 @@ defmodule OliWeb.CommunityLive.Associated.NewView do
 
     case Groups.create_community_visibility(attrs) do
       {:ok, _community_visibility} ->
-        socket = put_flash(socket, :info, "Association to #{type} successfully added.")
-
         sources = retrieve_all_sources(socket.assigns.community_id)
         {:ok, table_model} = TableModel.new(sources)
 
+        socket =
+          put_flash(socket, :info, "Association to #{type} successfully added.")
+          |> assign(
+            sources: sources,
+            table_model: table_model,
+            total_count: length(sources)
+          )
+
         {:noreply,
-         assign(socket,
-           sources: sources,
-           table_model: table_model,
-           total_count: length(sources)
+         push_patch(socket,
+           to:
+             @table_push_patch_path.(
+               socket,
+               get_patch_params(
+                 socket.assigns.table_model,
+                 socket.assigns.offset,
+                 socket.assigns.query,
+                 socket.assigns.filter
+               )
+             ),
+           replace: true
          )}
 
       {:error, %Ecto.Changeset{}} ->

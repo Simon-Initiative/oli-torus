@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.18.1 (2021-12-17)
+
+### Bug Fixes
+
+- Fix a bug where open and free sections could not be created from products
+- Fix a bug where payment codes were not displayed
+
+### Enhancements
+
+## 0.18.0 (2021-12-16)
+
 ### Bug Fixes
 
 - Fix a bug that prevented editing internal links when only one other page exists

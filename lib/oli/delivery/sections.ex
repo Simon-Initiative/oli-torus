@@ -147,10 +147,9 @@ defmodule Oli.Delivery.Sections do
 
   @doc """
   Can a user create independent, enrollable sections through OLI's LMS?
-  (user has the institution instructor platform role and user.can_create_sections is true)
   """
   def is_independent_instructor?(%User{} = user) do
-    is_institution_instructor?(user) && user.can_create_sections
+    user.can_create_sections
   end
 
   @doc """
