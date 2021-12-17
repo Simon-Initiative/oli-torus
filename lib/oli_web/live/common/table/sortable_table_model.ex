@@ -43,17 +43,41 @@ defmodule OliWeb.Common.Table.SortableTableModel do
             event_suffix: "",
             # the field used to identify uniquely a row item
             id_field: nil,
-            # extra data a view can push down to custom sorts or renderers
+
+            # optional extra data a view can push down to custom sorts or renderers that will be merged with
+            # table assigns
             data: %{}
 
-  def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field) do
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field
+      ),
+      do:
+        new(
+          rows: rows,
+          column_specs: column_specs,
+          event_suffix: event_suffix,
+          id_field: id_field,
+          data: %{}
+        )
+
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        data: data
+      ) do
     model =
       %__MODULE__{
         rows: rows,
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: hd(column_specs)
+        sort_by_spec: hd(column_specs),
+        data: data
       }
       |> sort
 
@@ -67,6 +91,26 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         id_field: id_field,
         sort_by_spec: sort_by_spec,
         sort_order: sort_order
+      ),
+      do:
+        new(
+          rows: rows,
+          column_specs: column_specs,
+          event_suffix: event_suffix,
+          id_field: id_field,
+          sort_by_spec: sort_by_spec,
+          sort_order: sort_order,
+          data: %{}
+        )
+
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order,
+        data: data
       ) do
     model =
       %__MODULE__{
@@ -75,7 +119,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         event_suffix: event_suffix,
         id_field: id_field,
         sort_by_spec: sort_by_spec,
-        sort_order: sort_order
+        sort_order: sort_order,
+        data: data
       }
       |> sort
 
@@ -176,7 +221,7 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> sort
   end
 
-  def render_date_column(_, %{inserted_at: inserted_at}, _) do
+  def render_inserted_at_column(_, %{inserted_at: inserted_at}, _) do
     Timex.format!(inserted_at, "{relative}", :relative)
   end
 
