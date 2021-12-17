@@ -1,5 +1,6 @@
 defmodule OliWeb.Users.UsersDetailView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :surface_view
+
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
   use OliWeb.Common.Modal

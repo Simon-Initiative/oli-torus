@@ -1,5 +1,5 @@
 defmodule OliWeb.RevisionHistory.Table do
-  use Phoenix.LiveComponent
+  use OliWeb, :live_component
 
   defp publication_state(assigns, revision_id) do
     publication = assigns.publication
@@ -22,12 +22,6 @@ defmodule OliWeb.RevisionHistory.Table do
     end
   end
 
-  defp time(assigns, time) do
-    ~L"""
-    <span><%= Timex.format!(time, "{relative}", :relative)%></span>
-    """
-  end
-
   def render(assigns) do
     range = Range.new(assigns.page_offset, assigns.page_offset + assigns.page_size)
     to_display = Enum.slice(assigns.revisions, range)
@@ -46,8 +40,8 @@ defmodule OliWeb.RevisionHistory.Table do
         <% end %>
         <td><%= rev.id %></td>
         <td><%= Map.get(assigns.tree, rev.id).project_id %></td>
-        <td><%= time(assigns, rev.inserted_at) %></td>
-        <td><%= time(assigns, rev.updated_at) %></td>
+        <td><%= date(rev.inserted_at) %></td>
+        <td><%= date(rev.updated_at) %></td>
         <td><%= rev.author.email %></td>
         <td><%= rev.slug %></td>
         <td><%= publication_state(assigns, rev.id) %></td>

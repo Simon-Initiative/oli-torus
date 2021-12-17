@@ -1,6 +1,7 @@
 defmodule OliWeb.Common.Table.Common do
-  alias OliWeb.Common.Table.ColumnSpec
+  import Oli.Utils.Time
 
+  alias OliWeb.Common.Table.ColumnSpec
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
@@ -19,7 +20,7 @@ defmodule OliWeb.Common.Table.Common do
   def render_relative_date(_, item, %ColumnSpec{name: name}) do
     case Map.get(item, name) do
       nil -> ""
-      d -> Timex.format!(d, "{relative}", :relative)
+      d -> date(d, precision: :relative)
     end
   end
 
@@ -32,7 +33,7 @@ defmodule OliWeb.Common.Table.Common do
         ""
 
       d ->
-        OliWeb.ViewHelpers.dt(d, local_tz: local_tz, author: author)
+        Oli.Utils.Time.date(d, local_tz: local_tz, author: author)
     end
   end
 

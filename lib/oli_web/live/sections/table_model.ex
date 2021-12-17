@@ -85,42 +85,36 @@ defmodule OliWeb.Sections.SectionsTableModel do
      end, direction}
   end
 
-  def custom_render(assigns, section, %ColumnSpec{name: name}) do
-    case name do
-      :title ->
-        ~F"""
-        <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
-        """
+  def custom_render(assigns, section, %ColumnSpec{name: :title}) do
+    ~F"""
+    <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}>{section.title}</a>
+    """
+  end
 
-      :type ->
-        if section.open_and_free do
-          "Open"
-        else
-          "LMS"
-        end
+  def custom_render(_assigns, section, %ColumnSpec{name: :type}) do
+    if section.open_and_free do
+      "Open"
+    else
+      "LMS"
+    end
+  end
 
-      :requires_payment ->
-        if section.requires_payment do
-          case Money.to_string(section.amount) do
-            {:ok, m} -> m
-            _ -> "Yes"
-          end
-        else
-          "None"
-        end
+  def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
+    if section.requires_payment do
+      case Money.to_string(section.amount) do
+        {:ok, m} -> m
+        _ -> "Yes"
+      end
+    else
+      "None"
+    end
+  end
 
-      :institution ->
-        if section.open_and_free do
-          ""
-        else
-          section.institution.name
-        end
-
-      _ ->
-        case Map.get(section, name) do
-          nil -> ""
-          d -> Timex.format!(d, "%Y-%m-%d", :strftime)
-        end
+  def custom_render(_assigns, section, %ColumnSpec{name: :institution}) do
+    if section.open_and_free do
+      ""
+    else
+      section.institution.name
     end
   end
 

@@ -2,6 +2,7 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
   import Oli.Utils
+  import Oli.Utils.Time
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
@@ -254,7 +255,7 @@ defmodule OliWeb.LtiController do
                 %{
                   "type" => "mrkdwn",
                   "text" =>
-                    "*Date:*\n#{pending_registration.inserted_at |> Timex.format!("{RFC822}")}"
+                    "*Date:*\n#{pending_registration.inserted_at |> date()}"
                 }
               ]
             },

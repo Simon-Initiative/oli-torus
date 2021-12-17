@@ -1,7 +1,7 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   use Surface.LiveComponent
 
-  import OliWeb.ViewHelpers
+  import Oli.Utils.Time
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Link}
@@ -94,10 +94,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
 
     ~F"""
       <div :if={start_datetime}>
-        Start: {dt(start_datetime, local_tz: local_tz)}
+        Start: {date(start_datetime, local_tz: local_tz)}
       </div>
       <div :if={end_datetime}>
-        End: {dt(end_datetime, local_tz: local_tz)}
+        End: {date(end_datetime, local_tz: local_tz)}
       </div>
     """
   end

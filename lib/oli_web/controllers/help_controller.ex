@@ -1,6 +1,6 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
-  import OliWeb.ViewHelpers
+  import Oli.Utils.Time
 
   require Logger
 
@@ -79,7 +79,7 @@ defmodule OliWeb.HelpController do
           %{
             "account_email" => email,
             "account_name" => given_name <> " " <> family_name,
-            "account_created" => dt(current_user.inserted_at, conn: conn)
+            "account_created" => date(current_user.inserted_at)
           }
         )
       }

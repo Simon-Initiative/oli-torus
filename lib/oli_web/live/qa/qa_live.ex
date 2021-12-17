@@ -3,7 +3,8 @@ defmodule OliWeb.Qa.QaLive do
   LiveView implementation of QA view.
   """
 
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :live_view
+
   import Phoenix.HTML.Link
 
   alias Oli.Authoring.Course
@@ -17,13 +18,22 @@ defmodule OliWeb.Qa.QaLive do
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster.Subscriber
 
-  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
+  def mount(
+        %{"project_id" => project_slug},
+        %{"current_author_id" => author_id} = session,
+        socket
+      ) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
+    local_tz = Map.get(session, "local_tz")
 
     subscribe(project.slug)
 
-    {:ok, assign(socket, State.initialize_state(author, project, read_current_review(project)))}
+    {:ok,
+     assign(
+       socket,
+       State.initialize_state(author, project, read_current_review(project), local_tz)
+     )}
   end
 
   # spin up subscriptions for running of reviews and dismissal of warnings
@@ -151,7 +161,7 @@ defmodule OliWeb.Qa.QaLive do
         <div class="row mt-4">
           <div class="col-12">
             <p class="mb-3">
-              Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> Timex.format!("{relative}", :relative) %></strong>,
+              Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> date(local_tz: @local_tz, author: @author) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>

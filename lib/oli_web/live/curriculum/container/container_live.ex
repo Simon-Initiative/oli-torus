@@ -38,7 +38,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   def mount(
         %{"project_id" => project_slug} = params,
-        %{"current_author_id" => author_id},
+        %{"current_author_id" => author_id} = session,
         socket
       ) do
     root_container = AuthoringResolver.root_container(project_slug)
@@ -77,8 +77,11 @@ defmodule OliWeb.Curriculum.ContainerLive do
               "Basic"
           end
 
+        local_tz = Map.get(session, "local_tz")
+
         {:ok,
          assign(socket,
+           local_tz: local_tz,
            children: children,
            active: :curriculum,
            breadcrumbs:

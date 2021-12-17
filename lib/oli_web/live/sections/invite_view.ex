@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.InviteView do
     {#if length(@invitations) > 0}
       <div class="list-group">
       {#for invitation <- @invitations}
-        <Invitation invitation={invitation} delete="request_delete"/>
+        <Invitation id={invitation.id} invitation={invitation} delete="request_delete"/>
       {/for}
       </div>
     {/if}

@@ -1,7 +1,7 @@
 defmodule Oli.Plugs.MaybeGatedResource do
   import Plug.Conn
   import Phoenix.Controller
-  import OliWeb.ViewHelpers
+  import Oli.Utils.Time
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing.DeliveryResolver
@@ -57,7 +57,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
   defp format_datetime_fn(conn) do
     fn datetime ->
-      dt(datetime, conn: conn)
+      date(datetime, conn)
     end
   end
 end

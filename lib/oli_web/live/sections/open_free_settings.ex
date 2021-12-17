@@ -14,9 +14,10 @@ defmodule OliWeb.Sections.OpenFreeSettings do
   def timezone_localized_datetime(nil, _timezone), do: nil
 
   def timezone_localized_datetime(%DateTime{} = datetime, timezone) do
-    case OliWeb.ViewHelpers.maybe_localized_datetime(datetime, timezone) do
+    case Oli.Utils.Time.maybe_localized_datetime(datetime, timezone) do
       {:localized, datetime} ->
         datetime
+
       datetime ->
         datetime
     end

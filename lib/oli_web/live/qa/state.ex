@@ -49,12 +49,13 @@ defmodule OliWeb.Qa.State do
     }
   end
 
-  def initialize_state(author, project, initial_review) do
+  def initialize_state(author, project, initial_review, local_tz \\ nil) do
     changes =
       Keyword.merge(
         [
           project: project,
-          author: author
+          author: author,
+          local_tz: local_tz
         ],
         new_review_ran(@default_state, initial_review)
       )
