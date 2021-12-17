@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Bug Fixes
+
+- Fix a bug where open and free sections could not be created from products
+
+### Enhancements
+
 ## 0.18.0 (2021-12-16)
 
 ### Bug Fixes
