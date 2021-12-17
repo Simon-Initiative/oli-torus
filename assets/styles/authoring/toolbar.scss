@@ -52,14 +52,15 @@
 .editor__toolbar {
   display: flex;
   align-items: center;
+  flex-flow: row wrap;
   justify-content: center;
-  height: 34px;
+  min-height: 34px;
 
   &Button.btn.btn-xs {
     color: $toolbar-button;
     border-radius: 4px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     padding: 0.2rem;
     margin: 0 1px;
 

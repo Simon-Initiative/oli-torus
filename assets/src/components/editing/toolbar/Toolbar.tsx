@@ -1,22 +1,22 @@
 import React from 'react';
-import { ReactEditor, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 import { ButtonContext, ToolbarItem } from 'components/editing/toolbar/interfaces';
-import { Editor } from 'slate';
 import { VerticalSpacer } from 'components/editing/toolbar/buttons/spacers';
 import { SimpleButton } from 'components/editing/toolbar/buttons/SimpleButton';
 import { ToolbarDropdown } from 'components/editing/toolbar/buttons/ToolbarDropdown';
 
 export type Props = {
+  isFocused: boolean;
   context: ButtonContext;
   items: ToolbarItem[];
 };
 export const Toolbar = (props: Props) => {
   const editor = useSlate();
 
-  if (!shouldShowToolbar(editor)) return null;
+  if (!props.isFocused) return null;
 
   return (
-    <div className="editor__toolbar">
+    <div className="editor__toolbar" onMouseDown={(e) => e.preventDefault()}>
       {props.items.map((item, i) => {
         if (item.type === 'GroupDivider') return <VerticalSpacer key={`spacer-${i}`} />;
 
@@ -37,5 +37,3 @@ export const Toolbar = (props: Props) => {
     </div>
   );
 };
-
-const shouldShowToolbar = (editor: Editor) => ReactEditor.isFocused(editor);

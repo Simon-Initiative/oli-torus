@@ -25,6 +25,7 @@ interface ToolbarButtonDescProps {
   icon: ToolbarButtonDesc['icon'];
   description: ToolbarButtonDesc['description'];
   active?: ToolbarButtonDesc['active'];
+  renderMode?: ToolbarButtonDesc['renderMode'];
 
   execute: ButtonCommand['execute'];
   precondition?: ButtonCommand['precondition'];
@@ -35,10 +36,11 @@ export const toolbarButtonDesc = ({
   active,
   execute,
   precondition,
+  renderMode,
 }: ToolbarButtonDescProps): ToolbarButtonDesc => {
   return {
     type: 'ToolbarButtonDesc',
-    renderMode: 'Simple',
+    renderMode: renderMode || 'Simple',
     icon,
     description,
     ...(active ? { active } : {}),

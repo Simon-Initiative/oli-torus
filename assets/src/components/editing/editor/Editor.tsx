@@ -1,11 +1,16 @@
-import { ModelElement } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { withHistory } from 'slate-history';
-import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
+import {
+  Editable,
+  ReactEditor,
+  RenderElementProps,
+  RenderLeafProps,
+  Slate,
+  withReact,
+} from 'slate-react';
 import guid from 'utils/guid';
-import { InsertionToolbar } from '../toolbar/insertion/Toolbar';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onPaste } from './handlers/paste';
@@ -39,12 +44,6 @@ export type EditorProps = {
   children?: React.ReactNode;
 };
 
-// Necessary to work around FireFox focus and selection issues with Slate
-// https://github.com/ianstormtaylor/slate/issues/1984
-function emptyOnFocus() {
-  return;
-}
-
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   return (
     prevProps.editMode === nextProps.editMode &&
@@ -57,12 +56,11 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
 export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
   const [isPerformingAsyncAction, setIsPerformingAsyncAction] = useState(false);
   const [installed, setInstalled] = useState(false);
-
-  const commandContext = props.commandContext;
+  const [isFocused, setIsFocused] = useState(false);
 
   const editor = useMemo(
     () =>
-      withMarkdown(commandContext)(
+      withMarkdown(props.commandContext)(
         withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
       ),
     [],
@@ -77,12 +75,9 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
   }, [installed]);
 
   const renderElement = useCallback(
-    (props: RenderElementProps) => {
-      const model = props.element as ModelElement;
-
-      return editorFor(model, props, editor, commandContext);
-    },
-    [commandContext],
+    (elementProps: RenderElementProps) =>
+      editorFor(elementProps.element, elementProps, editor, props.commandContext),
+    [props.commandContext],
   );
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -90,7 +85,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     listOnKeyDown(editor, e);
     quoteOnKeyDown(editor, e);
     titleOnKeyDown(editor, e);
-    hotkeyHandler(editor, e.nativeEvent, commandContext);
+    hotkeyHandler(editor, e.nativeEvent, props.commandContext);
   }, []);
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
@@ -120,11 +115,14 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
         {props.children}
 
         <Toolbar
+          isFocused={isFocused}
           items={formattingItems.concat(props.toolbarItems)}
           context={props.commandContext}
         />
 
         <Editable
+          onFocus={(_e) => setIsFocused(true)}
+          onBlur={(_e) => setIsFocused(false)}
           style={props.style}
           className={'slate-editor overflow-auto' + (props.className ? ' ' + props.className : '')}
           readOnly={!props.editMode}
@@ -134,7 +132,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
             props.placeholder === undefined ? 'Enter some content here...' : props.placeholder
           }
           onKeyDown={onKeyDown}
-          onFocus={emptyOnFocus}
           onPaste={
             () => {}
             //   async (

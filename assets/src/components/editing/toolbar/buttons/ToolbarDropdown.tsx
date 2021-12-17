@@ -11,9 +11,14 @@ export const ToolbarDropdown = (props: ToolbarButtonProps) => {
   const onMouseDown = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault();
-      props.command.execute(props.context, editor);
+      // props.command.obtainParameters?.(
+      //   props.context,
+      //   editor,
+      //   (params) => props.command.execute(props.context, editor, params),
+      //   () => {},
+      // );
     },
-    [props.command.execute, editor],
+    [props.command, editor],
   );
 
   const tooltip = React.useCallback(
@@ -27,6 +32,19 @@ export const ToolbarDropdown = (props: ToolbarButtonProps) => {
     [props.icon, props.description],
   );
 
+  const overlay = React.useCallback((overlayProps: OverlayInjectedProps) => {
+    return (
+      <Tooltip id={props.icon} {...overlayProps}>
+        {props.command.obtainParameters?.(
+          props.context,
+          editor,
+          (params) => props.command.execute(props.context, editor, params),
+          () => {},
+        )}
+      </Tooltip>
+    );
+  }, []);
+
   const content = React.useMemo(
     () => buttonContent(props.icon, props.description),
     [props.icon, props.description],
@@ -37,7 +55,7 @@ export const ToolbarDropdown = (props: ToolbarButtonProps) => {
       key={props.description}
       placement={props.position || 'top'}
       delay={{ show: 250, hide: 0 }}
-      overlay={tooltip}
+      overlay={overlay}
     >
       <DropdownButton title={props.description}>
         <Dropdown.Item

@@ -11,6 +11,9 @@ export const SimpleButton = (props: ToolbarButtonProps) => {
   const onMouseDown = React.useCallback(
     (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault();
+      if (props.command.obtainParameters) {
+        return;
+      }
       props.command.execute(props.context, editor);
     },
     [props.command.execute, editor],
@@ -18,7 +21,16 @@ export const SimpleButton = (props: ToolbarButtonProps) => {
 
   const tooltip = React.useCallback(
     (overlayProps: OverlayInjectedProps) => {
-      return (
+      return props.command.obtainParameters ? (
+        <div {...overlayProps}>
+          {props.command.obtainParameters(
+            props.context,
+            editor,
+            (params) => props.command.execute(props.context, editor, params),
+            () => {},
+          )}
+        </div>
+      ) : (
         <Tooltip id={props.icon} {...overlayProps}>
           {props.description}
         </Tooltip>

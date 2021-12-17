@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Descendant } from 'slate';
 import { StructuredContent } from 'data/content/resource';
 import { Editor } from 'components/editing/editor/Editor';
@@ -17,17 +17,17 @@ export type StructuredContentEditor = {
 // The resource editor for content
 export const StructuredContentEditor = (props: StructuredContentEditor) => {
   const onEdit = React.useCallback(
-    (children: Descendant[]) => {
-      props.onEdit(Object.assign({}, props.content, { children }));
-    },
+    (children: Descendant[]) => props.onEdit(Object.assign({}, props.content, { children })),
     [props.content, props.onEdit],
   );
+
+  const commandContext = useMemo(() => ({ projectSlug: props.projectSlug }), []);
 
   return (
     <ErrorBoundary>
       <Editor
         className="structured-content"
-        commandContext={{ projectSlug: props.projectSlug }}
+        commandContext={commandContext}
         editMode={props.editMode}
         value={props.content.children}
         onEdit={onEdit}
