@@ -123,14 +123,14 @@ defmodule OliWeb.Products.Payments.TableModel do
   def render_gen_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
     case payment.generation_date do
       nil -> ""
-      d -> OliWeb.ViewHelpers.dt(d, local_tz)
+      d -> OliWeb.ViewHelpers.dt(d, local_tz: local_tz)
     end
   end
 
   def render_app_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
     case payment.application_date do
       nil -> ""
-      d -> OliWeb.ViewHelpers.dt(d, local_tz)
+      d -> OliWeb.ViewHelpers.dt(d, local_tz: local_tz)
     end
   end
 

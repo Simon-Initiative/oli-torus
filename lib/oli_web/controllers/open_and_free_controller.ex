@@ -96,7 +96,7 @@ defmodule OliWeb.OpenAndFreeController do
             Sections.change_independent_learner_section(%Section{})
             |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-          source_id = section_params["source_id"]
+          source_id = section_params[:source_id]
           {source, source_label, source_param_name} = source_info(source_id)
 
           render(conn, "new.html",
@@ -116,7 +116,7 @@ defmodule OliWeb.OpenAndFreeController do
           Sections.change_independent_learner_section(%Section{})
           |> Ecto.Changeset.add_error(:title, "invalid settings")
 
-        source_id = section_params["source_id"]
+        source_id = section_params[:source_id]
         {source, source_label, source_param_name} = source_info(source_id)
 
         render(conn, "new.html",
