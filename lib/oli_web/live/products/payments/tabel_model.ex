@@ -1,9 +1,9 @@
 defmodule OliWeb.Products.Payments.TableModel do
+  use OliWeb, :surface_component
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
 
-  use Surface.LiveComponent
-
-  def new(payments, local_tz) do
+  def new(payments, context) do
     SortableTableModel.new(
       rows: payments,
       column_specs: [
@@ -44,7 +44,7 @@ defmodule OliWeb.Products.Payments.TableModel do
       event_suffix: "",
       id_field: [:unique_id],
       data: %{
-        local_tz: local_tz
+        context: context
       }
     )
   end
@@ -120,13 +120,12 @@ defmodule OliWeb.Products.Payments.TableModel do
      end, direction}
   end
 
-  def render_gen_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
-    Oli.Utils.Time.date(payment.generation_date, local_tz: local_tz)
+  def render_gen_date_column(%{context: context}, %{payment: payment}, _) do
+    date(payment.generation_date, context)
   end
 
-  def render_app_date_column(%{local_tz: local_tz}, %{payment: payment}, _) do
-    Oli.Utils.Time.date(payment.application_date, local_tz: local_tz)
-    end
+  def render_app_date_column(%{context: context}, %{payment: payment}, _) do
+    date(payment.application_date, context)
   end
 
   def render(assigns) do

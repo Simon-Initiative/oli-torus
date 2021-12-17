@@ -2,13 +2,12 @@ defmodule OliWeb.Qa.QaLive do
   @moduledoc """
   LiveView implementation of QA view.
   """
-
   use OliWeb, :live_view
 
   import Phoenix.HTML.Link
 
+  alias OliWeb.Common.SessionContext
   alias Oli.Authoring.Course
-  alias Oli.Accounts.Author
   alias Oli.Qa
   alias OliWeb.Qa.WarningFilter
   alias OliWeb.Qa.WarningSummary
@@ -20,19 +19,18 @@ defmodule OliWeb.Qa.QaLive do
 
   def mount(
         %{"project_id" => project_slug},
-        %{"current_author_id" => author_id} = session,
+        %{"current_author_id" => _} = session,
         socket
       ) do
-    author = Repo.get(Author, author_id)
+    context = SessionContext.init(session)
     project = Course.get_project_by_slug(project_slug)
-    local_tz = Map.get(session, "local_tz")
 
     subscribe(project.slug)
 
     {:ok,
      assign(
        socket,
-       State.initialize_state(author, project, read_current_review(project), local_tz)
+       State.initialize_state(context, project, read_current_review(project))
      )}
   end
 
@@ -161,7 +159,7 @@ defmodule OliWeb.Qa.QaLive do
         <div class="row mt-4">
           <div class="col-12">
             <p class="mb-3">
-              Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> date(local_tz: @local_tz, author: @author) %></strong>,
+              Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> date(@context) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>

@@ -18,7 +18,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   Takes a list of %HierarchyNode{}, a map of resource_ids to %ResourceAccess{} structs, and the
   section and user to construct the table model.
   """
-  def new(page_nodes, resource_accesses, section, user, local_tz) do
+  def new(page_nodes, resource_accesses, section, user, context) do
     rows =
       Enum.with_index(page_nodes, fn node, index ->
         ra = Map.get(resource_accesses, node.revision.resource_id)
@@ -122,7 +122,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
         event_suffix: "",
         id_field: [:index],
         data: %{
-          local_tz: local_tz
+          context: context
         }
       )
 
@@ -150,7 +150,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
     """
   end
 
-  def custom_render(assigns, row, %ColumnSpec{name: :score}) do
+  def custom_render(_assigns, row, %ColumnSpec{name: :score}) do
     if row.type == "Graded" and !is_nil(row.score) do
       "#{row.score} / #{row.out_of}"
     else
@@ -158,7 +158,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
     end
   end
 
-  def custom_render(assigns, row, %ColumnSpec{name: :number_accesses}) do
+  def custom_render(_assigns, row, %ColumnSpec{name: :number_accesses}) do
     if row.number_accesses == 0 do
       ""
     else
@@ -166,7 +166,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
     end
   end
 
-  def custom_render(assigns, row, %ColumnSpec{name: :number_attempts}) do
+  def custom_render(_assigns, row, %ColumnSpec{name: :number_attempts}) do
     if row.number_attempts == 0 do
       ""
     else

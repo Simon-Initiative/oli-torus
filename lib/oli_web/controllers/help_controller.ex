@@ -1,6 +1,7 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
-  import Oli.Utils.Time
+
+  import OliWeb.Common.FormatDateTime
 
   require Logger
 

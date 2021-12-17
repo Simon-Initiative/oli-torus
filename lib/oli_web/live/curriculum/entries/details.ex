@@ -9,10 +9,10 @@ defmodule OliWeb.Curriculum.DetailsLive do
     ~L"""
     <div class="entry-section d-flex flex-column col-4">
       <small class="text-muted">
-        Created <%= date(@child.resource.inserted_at, local_tz: @local_tz, author: @author) %>
+        Created <%= date(@child.resource.inserted_at, @context) %>
       </small>
       <small class="text-muted">
-        Updated <%= date(@child.inserted_at, local_tz: @local_tz, author: @author) %> by <%= @child.author.name %>
+        Updated <%= date(@child.inserted_at, @context) %> by <%= @child.author.name %>
       </small>
     </div>
     """

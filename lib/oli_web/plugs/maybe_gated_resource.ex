@@ -1,7 +1,7 @@
 defmodule Oli.Plugs.MaybeGatedResource do
   import Plug.Conn
   import Phoenix.Controller
-  import Oli.Utils.Time
+  import OliWeb.Common.FormatDateTime
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Publishing.DeliveryResolver

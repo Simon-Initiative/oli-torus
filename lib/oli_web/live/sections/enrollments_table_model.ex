@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def new(users, section, local_tz) do
+  def new(users, section, context) do
     base_columns = [
       %ColumnSpec{name: :name, label: "Name", render_fn: &__MODULE__.render_name_column/3},
       %ColumnSpec{
@@ -51,7 +51,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         event_suffix: "",
         id_field: [:id],
         data: %{
-          local_tz: local_tz
+          context: context
         }
       )
 

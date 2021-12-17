@@ -1,5 +1,9 @@
 defmodule OliWeb.Progress.StudentView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+
+  import OliWeb.Common.Utils
+  import OliWeb.Common.Params
+
   alias OliWeb.Common.{Breadcrumb}
   alias OliWeb.Common.TextSearch
   alias OliWeb.Router.Helpers, as: Routes
@@ -7,8 +11,7 @@ defmodule OliWeb.Progress.StudentView do
   alias OliWeb.Common.SortableTable.Table
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.Mount
-  import OliWeb.Common.Utils
-  import OliWeb.Common.Params
+  alias OliWeb.Common.SessionContext
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
@@ -43,6 +46,8 @@ defmodule OliWeb.Progress.StudentView do
         Mount.handle_error(socket, {:error, e})
 
       {:ok, user} ->
+        context = SessionContext.init(session)
+
         case Mount.for(section_slug, session) do
           {:error, e} ->
             Mount.handle_error(socket, {:error, e})
@@ -65,13 +70,12 @@ defmodule OliWeb.Progress.StudentView do
                   Oli.Resources.ResourceType.get_id_by_type("page")
               end)
 
-            local_tz = Map.get(session, :local_tz)
-
             {:ok, table_model} =
-              StudentTabelModel.new(page_nodes, resource_accesses, section, user, local_tz)
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user, context)
 
             {:ok,
              assign(socket,
+               context: context,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,
@@ -102,7 +106,7 @@ defmodule OliWeb.Progress.StudentView do
         socket.assigns.resource_accesses,
         socket.assigns.section,
         socket.assigns.user,
-        socket.assigns.local_tz
+        socket.assigns.context
       )
 
     # Updating from params is what will apply the sort

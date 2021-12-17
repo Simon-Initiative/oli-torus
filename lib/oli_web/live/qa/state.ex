@@ -1,4 +1,5 @@
 defmodule OliWeb.Qa.State do
+  alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Breadcrumb
 
   @default_filters MapSet.new(["pedagogy", "content", "accessibility", "equity"])
@@ -49,13 +50,17 @@ defmodule OliWeb.Qa.State do
     }
   end
 
-  def initialize_state(author, project, initial_review, local_tz \\ nil) do
+  def initialize_state(
+        %SessionContext{author: author} = context,
+        project,
+        initial_review
+      ) do
     changes =
       Keyword.merge(
         [
           project: project,
           author: author,
-          local_tz: local_tz
+          context: context
         ],
         new_review_ran(@default_state, initial_review)
       )

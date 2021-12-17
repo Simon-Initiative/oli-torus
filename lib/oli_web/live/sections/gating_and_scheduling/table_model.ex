@@ -1,7 +1,5 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
-  use Surface.LiveComponent
-
-  import Oli.Utils.Time
+  use OliWeb, :surface_component
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Link}
@@ -80,7 +78,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        assigns,
+        %{context: context} = assigns,
         %GatingCondition{
           type: :schedule,
           data: %GatingConditionData{
@@ -90,14 +88,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
         },
         _
       ) do
-    local_tz = Map.get(assigns, :local_tz)
-
     ~F"""
       <div :if={start_datetime}>
-        Start: {date(start_datetime, local_tz: local_tz)}
+        Start: {date(start_datetime, context)}
       </div>
       <div :if={end_datetime}>
-        End: {date(end_datetime, local_tz: local_tz)}
+        End: {date(end_datetime, context)}
       </div>
     """
   end

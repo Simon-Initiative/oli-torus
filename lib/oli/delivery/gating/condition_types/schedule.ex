@@ -3,7 +3,6 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
   Schedule strategy provides a temporal based gating condition. A schedule condition
   can define a start and/or end datetime for a resource to be available.
   """
-  import Oli.Utils.Time
 
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Gating.GatingConditionData
@@ -52,7 +51,11 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
     revision = DeliveryResolver.from_resource_id(section.slug, resource_id)
     now = DateTime.utc_now()
 
-    format_datetime = Keyword.get(opts, :format_datetime, &date/1)
+    format_datetime =
+      case Keyword.get(opts, :format_datetime) do
+        nil -> throw("format_datetime opt is required")
+        format_datetime -> format_datetime
+      end
 
     cond do
       start_datetime != nil && DateTime.compare(start_datetime, now) != :lt ->

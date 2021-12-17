@@ -222,10 +222,7 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   end
 
   def render_inserted_at_column(assigns, %{inserted_at: inserted_at}, _) do
-    author = Map.get(assigns, :author)
-    local_tz = Map.get(assigns, :local_tz)
-
-    date(inserted_at, local_tz: local_tz, author: author)
+    date(inserted_at, Map.get(assigns, :context))
   end
 
   def render_link_column(assigns, label, route_path, class \\ "") do

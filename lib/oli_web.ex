@@ -119,8 +119,9 @@ defmodule OliWeb do
 
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
-      alias OliWeb.Router.Helpers, as: Routes
+
       import OliWeb.ViewHelpers
+      import OliWeb.Common.FormatDateTime
 
       import Oli.Accounts,
         only: [
@@ -131,8 +132,9 @@ defmodule OliWeb do
         ]
 
       import Oli.Utils
-      import Oli.Utils.Time
       import Oli.Branding
+
+      alias OliWeb.Router.Helpers, as: Routes
     end
   end
 

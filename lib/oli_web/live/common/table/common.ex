@@ -1,9 +1,9 @@
 defmodule OliWeb.Common.Table.Common do
-  import Oli.Utils.Time
+  import OliWeb.Common.FormatDateTime
 
-  alias OliWeb.Common.Table.ColumnSpec
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias OliWeb.Common.Table.ColumnSpec
 
   def sort_date(direction, spec) do
     {fn r ->
@@ -18,23 +18,11 @@ defmodule OliWeb.Common.Table.Common do
   end
 
   def render_relative_date(_, item, %ColumnSpec{name: name}) do
-    case Map.get(item, name) do
-      nil -> ""
-      d -> date(d, precision: :relative)
-    end
+    date(Map.get(item, name), precision: :relative)
   end
 
   def render_date(assigns, item, %ColumnSpec{name: name}) do
-    author = Map.get(assigns, :author)
-    local_tz = Map.get(assigns, :local_tz)
-
-    case Map.get(item, name) do
-      nil ->
-        ""
-
-      d ->
-        Oli.Utils.Time.date(d, local_tz: local_tz, author: author)
-    end
+    date(Map.get(item, name), Map.get(assigns, :context))
   end
 
   def author_preference_date_renderer(%Author{} = author) do

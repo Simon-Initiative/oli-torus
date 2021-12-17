@@ -2,7 +2,7 @@ defmodule OliWeb.Delivery.Updates.Utils do
   use Phoenix.HTML
 
   import Phoenix.LiveView.Helpers
-  import Oli.Utils.Time
+  import OliWeb.Common.FormatDateTime
 
   alias Oli.Publishing.Publication
 
