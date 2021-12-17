@@ -21,16 +21,19 @@ export const SimpleButton = (props: ToolbarButtonProps) => {
 
   const tooltip = React.useCallback(
     (overlayProps: OverlayInjectedProps) => {
-      return props.command.obtainParameters ? (
-        <div {...overlayProps}>
-          {props.command.obtainParameters(
-            props.context,
-            editor,
-            (params) => props.command.execute(props.context, editor, params),
-            () => {},
-          )}
-        </div>
-      ) : (
+      if (!props.command.precondition(editor)) return null;
+      if (props.command.obtainParameters)
+        return (
+          <div {...overlayProps}>
+            {props.command.obtainParameters(
+              props.context,
+              editor,
+              (params) => props.command.execute(props.context, editor, params),
+              () => {},
+            )}
+          </div>
+        );
+      return (
         <Tooltip id={props.icon} {...overlayProps}>
           {props.description}
         </Tooltip>
