@@ -24,12 +24,15 @@ defmodule OliWeb.Common.Table.Common do
   end
 
   def render_date(assigns, item, %ColumnSpec{name: name}) do
+    author = Map.get(assigns, :author)
+    local_tz = Map.get(assigns, :local_tz)
+
     case Map.get(item, name) do
       nil ->
         ""
 
       d ->
-        OliWeb.ViewHelpers.dt(d, Map.get(assigns, :local_tz))
+        OliWeb.ViewHelpers.dt(d, local_tz: local_tz, author: author)
     end
   end
 

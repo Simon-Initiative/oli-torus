@@ -65,8 +65,10 @@ defmodule OliWeb.Progress.StudentView do
                   Oli.Resources.ResourceType.get_id_by_type("page")
               end)
 
+            local_tz = Map.get(session, :local_tz)
+
             {:ok, table_model} =
-              StudentTabelModel.new(page_nodes, resource_accesses, section, user)
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user, local_tz)
 
             {:ok,
              assign(socket,
@@ -99,7 +101,8 @@ defmodule OliWeb.Progress.StudentView do
         filtered_page_nodes,
         socket.assigns.resource_accesses,
         socket.assigns.section,
-        socket.assigns.user
+        socket.assigns.user,
+        socket.assigns.local_tz
       )
 
     # Updating from params is what will apply the sort

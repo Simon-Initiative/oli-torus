@@ -79,7 +79,7 @@ defmodule OliWeb.HelpController do
           %{
             "account_email" => email,
             "account_name" => given_name <> " " <> family_name,
-            "account_created" => dt(current_user.inserted_at, conn)
+            "account_created" => dt(current_user.inserted_at, conn: conn)
           }
         )
       }

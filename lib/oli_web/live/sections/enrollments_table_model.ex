@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def new(users, section) do
+  def new(users, section, local_tz) do
     base_columns = [
       %ColumnSpec{name: :name, label: "Name", render_fn: &__MODULE__.render_name_column/3},
       %ColumnSpec{
@@ -49,7 +49,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         rows: users,
         column_specs: column_specs,
         event_suffix: "",
-        id_field: [:id]
+        id_field: [:id],
+        data: %{
+          local_tz: local_tz
+        }
       )
 
     {:ok, Map.put(model, :data, %{section_slug: section.slug})}
