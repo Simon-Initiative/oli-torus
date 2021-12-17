@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Fix a bug where open and free sections could not be created from products
+- Fix a bug where payment codes were not displayed
 
 ### Enhancements
 
