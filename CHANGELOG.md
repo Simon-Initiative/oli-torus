@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.18.1 (2021-12-17)
+
 ### Bug Fixes
 
 - Fix a bug where open and free sections could not be created from products
