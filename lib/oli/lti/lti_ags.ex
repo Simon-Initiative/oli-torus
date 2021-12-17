@@ -29,7 +29,7 @@ defmodule Oli.Lti.LTI_AGS do
     url = "#{line_item.id}/scores"
     body = score |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+    with {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in [200, 201] <-
            http().post(url, body, headers(access_token)),
          {:ok, result} <- Jason.decode(body) do
       {:ok, result}
@@ -66,7 +66,7 @@ defmodule Oli.Lti.LTI_AGS do
     prefixed_resource_id = LineItem.to_resource_id(resource_id)
     request_url = "#{line_items_service_url}?resource_id=#{prefixed_resource_id}&limit=1"
 
-    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+    with {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in [200, 201] <-
            http().get(request_url, headers(access_token)),
          {:ok, result} <- Jason.decode(body) do
       case result do
@@ -150,7 +150,7 @@ defmodule Oli.Lti.LTI_AGS do
 
     body = line_item |> Jason.encode!()
 
-    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
+    with {:ok, %HTTPoison.Response{status_code: code, body: body}} when code in [200, 201] <-
            http().post(line_items_service_url, body, headers(access_token)),
          {:ok, result} <- Jason.decode(body) do
       {:ok, to_line_item(result)}

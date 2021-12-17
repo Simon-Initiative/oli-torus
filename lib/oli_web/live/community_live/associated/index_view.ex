@@ -90,16 +90,30 @@ defmodule OliWeb.CommunityLive.Associated.IndexView do
 
     case Groups.delete_community_visibility(id) do
       {:ok, _community_visibility} ->
-        socket = put_flash(socket, :info, "Association successfully removed.")
-
         associations = Groups.list_community_visibilities(socket.assigns.community_id)
         {:ok, table_model} = TableModel.new(associations, :id, "remove")
 
+        socket =
+          put_flash(socket, :info, "Association successfully removed.")
+          |> assign(
+            associations: associations,
+            table_model: table_model,
+            total_count: length(associations)
+          )
+
         {:noreply,
-         assign(socket,
-           associations: associations,
-           table_model: table_model,
-           total_count: length(associations)
+         push_patch(socket,
+           to:
+             @table_push_patch_path.(
+               socket,
+               get_patch_params(
+                 socket.assigns.table_model,
+                 socket.assigns.offset,
+                 socket.assigns.query,
+                 socket.assigns.filter
+               )
+             ),
+           replace: true
          )}
 
       {:error, %Ecto.Changeset{}} ->
