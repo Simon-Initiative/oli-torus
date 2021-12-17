@@ -8,7 +8,7 @@ import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { DiagnosticSolution } from './DiagnosticSolution';
+import { FixIdButton, FixBrokenPathButton, createUpdater } from './DiagnosticSolution';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -47,10 +47,8 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   }
 
   const handleProblemFix = async (fixed: string, problem: any) => {
-    console.log(problem, fixed);
-
     await dispatch(setCurrentSelection(''));
-    const result = await dispatch(problem.createUpdater(problem, fixed));
+    const result = await dispatch(createUpdater(problem.type)(problem, fixed));
 
     console.log('handleProblemFix', result);
 
@@ -78,19 +76,16 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
               <DiagnosticMessage problem={problem} />
             </ListGroup.Item>
             {problem.type === DiagnosticTypes.DUPLICATE && (
-              <Fragment>
-                <ListGroup.Item
-                  action
-                  onClick={() => handleClickScreen(problem.owner.custom.sequenceId)}
-                >
-                  {getOwnerName(problem)}
-                </ListGroup.Item>
-              </Fragment>
+              <ListGroup.Item
+                action
+                onClick={() => handleClickScreen(problem.owner.custom.sequenceId)}
+              >
+                {getOwnerName(problem)}
+              </ListGroup.Item>
             )}
             {!isReadOnlyMode && (
               <ListGroup.Item>
-                <DiagnosticSolution
-                  problem={problem}
+                <FixIdButton
                   suggestion={problem.suggestedFix}
                   onClick={(val) => handleProblemFix(val, problem)}
                 />
@@ -118,7 +113,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     dispatch(setShowDiagnosticsWindow({ show: false }));
   };
 
-  const handleValidatePartIdsClick = async () => {
+  const handleValidateClick = async () => {
     const result = await dispatch(validatePartIds({}));
     if ((result as any).meta.requestStatus === 'fulfilled') {
       if ((result as any).payload.errors.length > 0) {
@@ -145,10 +140,10 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
           <h3 className="modal-title">Lesson Diagnostics</h3>
         </Modal.Header>
         <Modal.Body>
-          <div>
+          <div className="advanced-authoring startup">
             <ul>
               <li>
-                Validate Part Ids <button onClick={handleValidatePartIdsClick}>Execute</button>
+                Validate Part Ids <button onClick={handleValidateClick}>Execute</button>
               </li>
             </ul>
           </div>

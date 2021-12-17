@@ -9,7 +9,6 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { DiagnosticTypes } from 'apps/authoring/components/Modal/DiagnosticTypes';
-import { updateId, updateTarget } from 'apps/authoring/components/Modal/DiagnosticSolution';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -48,32 +47,29 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
       type,
       item,
       owner: problemSequence || item.owner,
-      suggestedFix: generateSuggestion(item.id, blackList),
-      createUpdater: item.createUpdater || updateId,
+      suggestedFix: generateSuggestion(item.id, blackList)
     };
   });
 
 export const validators = [
   {
     type: DiagnosticTypes.DUPLICATE,
-    validate: (activity: any) => {
-      return activity.authoring.parts.filter(
+    validate: (activity: any) =>
+      activity.authoring.parts.filter(
         (ref: any) => activity.authoring.parts.filter((ref2: any) => ref2.id === ref.id).length > 1,
-      );
-    },
+      ),
   },
   {
     type: DiagnosticTypes.PATTERN,
-    validate: (activity: any) => {
-      return activity.authoring.parts.filter(
+    validate: (activity: any) =>
+      activity.authoring.parts.filter(
         (ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id),
-      );
-    },
+      ),
   },
   {
     type: DiagnosticTypes.BROKEN,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
-      return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
+    validate: (activity: any, hierarchy: any, sequence: any[]) =>
+      activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'navigation') {
             if (action?.params?.target && action.params.target !== 'next') {
@@ -82,7 +78,6 @@ export const validators = [
                   ...rule,
                   owner: sequence.find((s) => s.resourceId === activity.id),
                   suggestedFix: `Screen does not exist, fix navigate to.`,
-                  createUpdater: updateTarget,
                 };
               }
             }
@@ -90,8 +85,7 @@ export const validators = [
           return null;
         });
         return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
-      }, []);
-    },
+      }, []),
   },
 ];
 
@@ -104,19 +98,18 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
     const sequence = selectSequence(rootState as any);
     const hierarchy = getHierarchy(sequence);
 
-    console.log(rootState);
-
     // console.log('validatePartIds', { allActivities });
 
     const errors: DiagnosticError[] = [];
 
     allActivities.forEach((activity) => {
-      const foundProblems = validators.reduce((probs: any, validator: any) => {
-        return {
+      const foundProblems = validators.reduce(
+        (probs: any, validator: any) => ({
           ...probs,
           [validator.type]: validator.validate(activity, hierarchy, sequence),
-        };
-      }, {});
+        }),
+        {},
+      );
 
       const countProblems = Object.keys(foundProblems).reduce(
         (c: number, current: any) => foundProblems[current].length + c,

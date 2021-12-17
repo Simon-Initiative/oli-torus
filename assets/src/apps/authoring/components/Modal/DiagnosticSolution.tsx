@@ -1,19 +1,21 @@
 import React, { Fragment } from 'React';
 import { clone } from 'utils/common';
+import guid from 'utils/guid';
 import { findReferencedActivitiesInConditions } from 'adaptivity/rules-engine';
 import { DiagnosticTypes } from './DiagnosticTypes';
 import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { findInSequence } from '../../../delivery/store/features/groups/actions/sequence';
+import ScreenDropdownTemplate from '../PropertyEditor/custom/ScreenDropdownTemplate';
 
-export interface Solution {
-  problem: any;
+export interface SolutionProps {
+  problem?: any;
   suggestion: string;
   onClick: (val: string) => void;
 }
 
-export const FixIdButton: React.FC<Solution> = ({ suggestion, onClick }) => {
-  const txtRef = React.createRef<HTMLInputElement>();
+export const FixIdButton: React.FC<SolutionProps> = ({ suggestion, onClick }: SolutionProps) => {
+  const txtRef = React.useRef<HTMLInputElement>(null);
 
   const handleClick = () => {
     if (txtRef.current && onClick) {
@@ -32,8 +34,14 @@ export const FixIdButton: React.FC<Solution> = ({ suggestion, onClick }) => {
   );
 };
 
-export const FixBrokenPathButton: React.FC<Solution> = ({ suggestion, onClick }) => {
+export const FixBrokenPathButton: React.FC<SolutionProps> = ({ onClick }: SolutionProps) => {
   const txtRef = React.createRef<HTMLInputElement>();
+
+  // const [target, setTarget] = React.useState('invalid');
+
+  const target = 'invalid';
+
+  const uuid = guid();
 
   const handleClick = () => {
     if (txtRef.current && onClick) {
@@ -42,27 +50,59 @@ export const FixBrokenPathButton: React.FC<Solution> = ({ suggestion, onClick })
     }
   };
 
+  const onChangeHandler = (sequenceId: string) => {
+    console.log('onChange picker', sequenceId);
+    onClick(sequenceId);
+    // setTarget(sequenceId || 'invalid');
+  };
+
   return (
-    <>
-      Fix Broken Path
-      <input ref={txtRef} type="text" defaultValue={suggestion} />
-      <button className="btn btn-sm btn-primary" onClick={handleClick}>
+    <div className="aa-action d-flex mb-2 form-inline align-items-center flex-nowrap">
+      <label className="sr-only" htmlFor={`action-navigation-${uuid}`}>
+        SequenceId
+      </label>
+      <div className="input-group input-group-sm flex-grow-1">
+        <div className="input-group-prepend">
+          <div className="input-group-text">
+            <i className="fa fa-compass mr-1" />
+            Navigate To
+          </div>
+        </div>
+        <ScreenDropdownTemplate
+          id={`action-navigation-${uuid}`}
+          label=""
+          value={target}
+          onChange={onChangeHandler}
+          dropDownCSSClass="adaptivityDropdown form-control"
+          buttonCSSClass="form-control-sm"
+        />
+      </div>
+      <button className="btn btn-sm btn-primary ml-2" onClick={handleClick}>
         Apply
       </button>
-    </>
+    </div>
   );
 };
 
-export const Solutions: { [type: string]: React.FC<Solution> } = {
-  [DiagnosticTypes.PATTERN]: FixIdButton,
-  [DiagnosticTypes.DUPLICATE]: FixIdButton,
-  [DiagnosticTypes.BROKEN]: FixBrokenPathButton,
-};
-
-export const DiagnosticSolution: React.FC<Solution> = (props) => {
-  const Solution = Solutions[props.problem.type] || Fragment;
-
-  return <Solution {...props} />;
+export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps) => {
+  const { problem } = props;
+  const { type = DiagnosticTypes.DEFAULT } = problem;
+  let action;
+  switch (type) {
+    case DiagnosticTypes.DUPLICATE:
+      action = <FixIdButton {...props} />;
+      break;
+    case DiagnosticTypes.PATTERN:
+      action = <FixIdButton {...props} />;
+      break;
+    case DiagnosticTypes.BROKEN:
+      action = <FixBrokenPathButton {...props} />;
+      break;
+    default:
+      action = <Fragment />;
+      break;
+  }
+  return <Fragment>{action}</Fragment>;
 };
 
 export const updateId = (problem: any, fixed: string) => {
@@ -72,19 +112,14 @@ export const updateId = (problem: any, fixed: string) => {
   return updatePart({ activityId, partId, changes });
 };
 
-export const updateTarget = (problem: any, fix: string) => {
-  // console.log('updateTarget', problem, fix);
-  return handleRuleChange({}, problem.item, problem.sequence);
-};
-
 const handleRuleChange = (rule: any, activity: any, sequence: any) => {
   const existing = activity?.authoring.rules.find((r: any) => r.id === rule.id);
   const diff = JSON.stringify(rule) !== JSON.stringify(existing);
-  /* console.log('RULE CHANGE: ', {
+  console.log('RULE CHANGE: ', {
     rule,
     existing,
     diff,
-  }); */
+  });
   if (!existing) {
     console.warn("rule not found, shouldn't happen!!!");
     return;
@@ -129,3 +164,12 @@ const handleRuleChange = (rule: any, activity: any, sequence: any) => {
     return saveActivity({ activity: activityClone });
   }
 };
+
+const updaters = {
+  [DiagnosticTypes.DUPLICATE]: updateId,
+  [DiagnosticTypes.PATTERN]: updateId,
+  [DiagnosticTypes.BROKEN]: handleRuleChange,
+  [DiagnosticTypes.DEFAULT]: () => {},
+};
+
+export const createUpdater = (type: DiagnosticTypes): any => updaters[type];
