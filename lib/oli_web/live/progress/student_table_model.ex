@@ -18,7 +18,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   Takes a list of %HierarchyNode{}, a map of resource_ids to %ResourceAccess{} structs, and the
   section and user to construct the table model.
   """
-  def new(page_nodes, resource_accesses, section, user) do
+  def new(page_nodes, resource_accesses, section, user, local_tz) do
     rows =
       Enum.with_index(page_nodes, fn node, index ->
         ra = Map.get(resource_accesses, node.revision.resource_id)
@@ -110,17 +110,20 @@ defmodule OliWeb.Progress.StudentTabelModel do
             name: :updated_at,
             label: "First Visited",
             render_fn: &__MODULE__.custom_render/3,
-            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+            sort_fn: &OliWeb.Common.Table.Common.render_date/3
           },
           %ColumnSpec{
             name: :updated_at,
             label: "Last Visited",
             render_fn: &__MODULE__.custom_render/3,
-            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+            sort_fn: &OliWeb.Common.Table.Common.render_date/3
           }
         ],
         event_suffix: "",
-        id_field: [:index]
+        id_field: [:index],
+        data: %{
+          local_tz: local_tz
+        }
       )
 
     {:ok, Map.put(model, :data, %{section_slug: section.slug, user_id: user.id})}

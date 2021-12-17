@@ -133,24 +133,10 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Determines if a user is a platform (institution) instructor.
-  """
-  def is_institution_instructor?(%User{} = user) do
-    PlatformRoles.has_roles?(
-      Repo.preload(user, :platform_roles),
-      [
-        PlatformRoles.get_role(:institution_instructor)
-      ],
-      :any
-    )
-  end
-
-  @doc """
   Can a user create independent, enrollable sections through OLI's LMS?
-  (user has the institution instructor platform role and user.can_create_sections is true)
   """
   def is_independent_instructor?(%User{} = user) do
-    is_institution_instructor?(user) && user.can_create_sections
+    user.can_create_sections
   end
 
   @doc """
@@ -771,40 +757,6 @@ defmodule Oli.Delivery.Sections do
     create_section_resources(section, publication)
   end
 
-  def retrieve_visible_sources(user, institution) do
-    all =
-      case user.author do
-        nil ->
-          {Oli.Delivery.Sections.Blueprint.available_products(),
-           Publishing.available_publications()}
-
-        author ->
-          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-           Publishing.available_publications(author, institution)}
-      end
-      |> then(fn {products, publications} ->
-        filtered =
-          Enum.filter(publications, fn p -> p.published end)
-          |> then(fn publications ->
-            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-              products,
-              publications
-            )
-          end)
-
-        filtered ++ products
-      end)
-
-    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
-  end
-
-  defp get_title(pub_or_prod) do
-    case Map.get(pub_or_prod, :title) do
-      nil -> pub_or_prod.project.title
-      title -> title
-    end
-  end
-
   @doc """
   Returns a map of project_id to the latest available publication for that project
   if a newer publication is available.
@@ -1361,4 +1313,66 @@ defmodule Oli.Delivery.Sections do
 
     resource_type_id == container or resource_type_id == page
   end
+
+  @doc """
+  Parses a ISO 8601 formatted local timestamps to DateTimes if they are not empty or nil.
+
+  Returns a tuple containing the start and end datetimes in UTC: {utc_start_date, utc_end_date}
+  """
+  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
+    section_timezone = Timex.Timezone.get(from_timezone)
+    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
+
+    utc_start_date =
+      case start_date do
+        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
+          start_date
+
+        start_date ->
+          start_date
+          |> Timex.parse!("{ISO:Extended}")
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    utc_end_date =
+      case end_date do
+        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
+          end_date
+
+        end_date ->
+          end_date
+          |> Timex.parse!("{ISO:Extended}")
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    {utc_start_date, utc_end_date}
+  end
+
+  @doc """
+  Converts a section's start_date and end_date to the gievn timezone's local datetimes
+  """
+  def localize_section_start_end_datetimes(
+         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+       ) do
+    timezone = Timex.Timezone.get(timezone, Timex.now())
+
+    start_date =
+      case start_date do
+        start_date when start_date == nil or start_date == "" -> start_date
+        start_date -> Timex.Timezone.convert(start_date, timezone)
+      end
+
+    end_date =
+      case end_date do
+        end_date when end_date == nil or end_date == "" -> end_date
+        end_date -> Timex.Timezone.convert(end_date, timezone)
+      end
+
+    section
+    |> Map.put(:start_date, start_date)
+    |> Map.put(:end_date, end_date)
+  end
+
 end

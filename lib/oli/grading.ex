@@ -210,33 +210,25 @@ defmodule Oli.Grading do
     {gradebook, column_labels}
   end
 
-  def determine_page_out_of(section_slug, %Revision{
+  @doc """
+  Determines the maximum point value that can be obtained for a page.
+
+  Two implementations exist, one for adaptive pages and one for regular pages. The
+  adaptive implementation reads the "totalScore" key that should be present under the
+  "custom" key.
+
+  The basic implementation counts the activities present (including those from
+  activity bank selections).
+  """
+  def determine_page_out_of(_section_slug, %Revision{
         content: %{"advancedDelivery" => true} = content
       }) do
-    scoreable_activity_ids =
-      Oli.Resources.PageContent.flat_filter(content, fn e ->
-        case Map.get(e, "type", nil) do
-          nil -> false
-          "activity-reference" -> true
-          _ -> false
-        end
-      end)
-      |> Enum.filter(fn ref ->
-        case Map.get(ref, "custom", %{}) do
-          %{"isLayer" => true} -> false
-          %{"isBank" => true} -> false
-          _ -> true
-        end
-      end)
-      |> Enum.map(fn e -> e["activity_id"] end)
-
-    Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, scoreable_activity_ids)
-    |> Enum.reduce(0, fn activity, part_count ->
-      part_count + Enum.count(activity.content["authoring"]["parts"])
-    end)
+    read_total_score(content)
+    |> ensure_valid_number()
+    |> max(1.0)
   end
 
-  def determine_page_out_of(_, %Revision{content: %{"model" => model}}) do
+  def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
     Enum.reduce(model, 0, fn e, count ->
       case e["type"] do
         "activity-reference" ->
@@ -252,7 +244,28 @@ defmodule Oli.Grading do
           count
       end
     end)
+    |> max(1.0)
   end
+
+  # reads the "custom / totalScore" nested key in a robust manner, with a default
+  # value of 1.0.
+  defp read_total_score(content) do
+    Map.get(content, "custom", %{"totalScore" => 1.0})
+    |> Map.get("totalScore", 1.0)
+  end
+
+  # ensure the read total score is a number, converting from a string and
+  # ignoring other constructs (imagine a JSON object here instead)
+  defp ensure_valid_number(value) when is_binary(value) do
+    case Float.parse(value) do
+      {f, _} -> f
+      _ -> 1.0
+    end
+  end
+
+  defp ensure_valid_number(value) when is_integer(value), do: value
+  defp ensure_valid_number(value) when is_float(value), do: value
+  defp ensure_valid_number(_), do: 1.0
 
   def fetch_students(section_slug) do
     Sections.list_enrollments(section_slug)

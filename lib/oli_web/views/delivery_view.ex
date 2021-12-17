@@ -54,7 +54,7 @@ defmodule OliWeb.DeliveryView do
   def user_role_is_student(conn, user) do
     case user_role(conn.assigns[:section], user) do
       :open_and_free ->
-        true
+        !Sections.is_independent_instructor?(user)
 
       :student ->
         true
@@ -70,7 +70,7 @@ defmodule OliWeb.DeliveryView do
   def user_role_text(conn, user) do
     case user_role(conn.assigns[:section], user) do
       :open_and_free ->
-        "Open and Free"
+        "Independent"
 
       :administrator ->
         "Administrator"

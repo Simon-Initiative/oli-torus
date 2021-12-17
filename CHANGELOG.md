@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.18.0 (2021-12-16)
+
 ### Bug Fixes
 
 - Fix a bug that prevented editing internal links when only one other page exists
@@ -16,6 +18,7 @@
 - Fix a bug where null deployment id results in empty string in pending registration form
 - Fix a bug where immediately removing a new activity leaves it visible to the system
 - Fix an issue where selecting the actual checkbox in select source list doesn't work
+- Updates the labelling of options in the project visibility view
 
 ### Enhancements
 
@@ -24,6 +27,7 @@
 - Add support for configurable vendor properties
 - Allow default brand to be changed via release env var
 - Display course section and course project slug identifiers
+- Allow sections created from free products to have their payment settings edited
 
 ## 0.17.0 (2021-11-30)
 

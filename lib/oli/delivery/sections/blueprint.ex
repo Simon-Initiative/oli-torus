@@ -355,7 +355,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
       on:
         section.id ==
           community_visibility.section_id and community_visibility.community_id == ^community_id,
-      where: is_nil(community_visibility.id),
+      where: is_nil(community_visibility.id) and section.type == :blueprint,
       select: section
     )
     |> Repo.all()

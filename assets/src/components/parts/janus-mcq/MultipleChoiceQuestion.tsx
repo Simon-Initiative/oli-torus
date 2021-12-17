@@ -408,6 +408,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     layoutType,
     height,
     overrideHeight = false,
+    verticalGap,
   } = model;
 
   useEffect(() => {
@@ -851,6 +852,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           disabled={!enabled}
           multipleSelection={multipleSelection}
           columns={columns}
+          verticalGap={verticalGap}
         />
       ))}
     </div>
