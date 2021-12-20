@@ -39,3 +39,5 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
 
   return <Message {...props} />;
 };
+
+export default DiagnosticMessage;

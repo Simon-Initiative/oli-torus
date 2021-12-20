@@ -8,7 +8,7 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import { DiagnosticTypes } from 'apps/authoring/components/Modal/DiagnosticTypes';
+import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -47,7 +47,7 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
       type,
       item,
       owner: problemSequence || item.owner,
-      suggestedFix: generateSuggestion(item.id, blackList)
+      suggestedFix: generateSuggestion(item.id, blackList),
     };
   });
 

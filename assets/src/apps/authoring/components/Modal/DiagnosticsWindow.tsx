@@ -1,14 +1,16 @@
 import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
-import { DiagnosticMessage } from './DiagnosticMessage';
-import { DiagnosticTypes } from './DiagnosticTypes';
+import DiagnosticMessage from './diagnostics/DiagnosticMessage';
+import { DiagnosticTypes } from './diagnostics/DiagnosticTypes';
 
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { FixIdButton, FixBrokenPathButton, createUpdater } from './DiagnosticSolution';
+import { createUpdater } from './diagnostics/actions';
+import DiagnosticSolution from './diagnostics/DiagnosticSolution';
+import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -16,6 +18,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
 }) => {
   const dispatch = useDispatch();
   const isReadOnlyMode = useSelector(selectReadOnly);
+  const currentActivities = useSelector(selectAllActivities);
 
   const handleClickScreen = (sequenceId: string) => {
     dispatch(setCurrentActivityFromSequence(sequenceId));
@@ -48,9 +51,9 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
 
   const handleProblemFix = async (fixed: string, problem: any) => {
     await dispatch(setCurrentSelection(''));
-    const result = await dispatch(createUpdater(problem.type)(problem, fixed));
-
-    console.log('handleProblemFix', result);
+    const updater = createUpdater(problem.type)(problem, fixed, currentActivities);
+    console.log(updater);
+    const result = await dispatch(updater);
 
     // TODO: something if it fails
     onApplyFix();
@@ -72,7 +75,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
       {error.problems.map((problem: any) => (
         <ListGroup.Item key={problem.owner.resourceId}>
           <ListGroup horizontal>
-            <ListGroup.Item>
+            <ListGroup.Item className="flex-grow-1">
               <DiagnosticMessage problem={problem} />
             </ListGroup.Item>
             {problem.type === DiagnosticTypes.DUPLICATE && (
@@ -85,9 +88,10 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
             )}
             {!isReadOnlyMode && (
               <ListGroup.Item>
-                <FixIdButton
+                <DiagnosticSolution
+                  type={problem.type}
                   suggestion={problem.suggestedFix}
-                  onClick={(val) => handleProblemFix(val, problem)}
+                  onClick={(val: any) => handleProblemFix(val, problem)}
                 />
               </ListGroup.Item>
             )}
@@ -135,15 +139,23 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
 
   return (
     <Fragment>
-      <Modal show={true} size="xl" onHide={handleClose}>
+      <Modal
+        show={true}
+        size="xl"
+        onHide={handleClose}
+        dialogClassName="diagnostic-modal advanced-authoring"
+      >
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Lesson Diagnostics</h3>
         </Modal.Header>
         <Modal.Body>
-          <div className="advanced-authoring startup">
+          <div className=" startup">
             <ul>
               <li>
-                Validate Part Ids <button onClick={handleValidateClick}>Execute</button>
+                Validate Part Ids
+                <button className="btn btn-sm btn-primary ml-2" onClick={handleValidateClick}>
+                  Execute
+                </button>
               </li>
             </ul>
           </div>
