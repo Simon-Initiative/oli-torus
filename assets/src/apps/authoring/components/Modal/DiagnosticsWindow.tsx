@@ -52,7 +52,6 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   const handleProblemFix = async (fixed: string, problem: any) => {
     await dispatch(setCurrentSelection(''));
     const updater = createUpdater(problem.type)(problem, fixed, currentActivities);
-    console.log(updater);
     const result = await dispatch(updater);
 
     // TODO: something if it fails

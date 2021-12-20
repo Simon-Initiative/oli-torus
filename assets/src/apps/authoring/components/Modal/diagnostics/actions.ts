@@ -34,11 +34,11 @@ export const updatePath = (problem: any, fixed: string, activities: any) => {
   const existing = activity?.authoring.rules.find((r: any) => r.id === ruleClone.id);
 
   const diff = JSON.stringify(ruleClone) !== JSON.stringify(existing);
-  console.log('RULE CHANGE: ', {
+  /*console.log('RULE CHANGE: ', {
     ruleClone,
     existing,
     diff,
-  });
+  });*/
   if (!existing) {
     console.warn("rule not found, shouldn't happen!!!");
     return;

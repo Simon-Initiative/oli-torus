@@ -17,7 +17,7 @@ export const FixBrokenPathButton: React.FC<SolutionProps> = ({
   };
 
   const onChangeHandler = (sequenceId: string) => {
-    console.log('onChange picker', sequenceId);
+    // console.log('onChange picker', sequenceId);
     // onClick(sequenceId);
     setTarget(sequenceId || 'invalid');
   };
