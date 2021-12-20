@@ -26,7 +26,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                socket,
                get_patch_params(
                  socket.assigns.table_model,
-                 socket.assigns.offset,
+                 0,
                  socket.assigns.query,
                  Map.get(socket.assigns, :filter, %{})
                )
@@ -43,7 +43,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                socket,
                get_patch_params(
                  socket.assigns.table_model,
-                 socket.assigns.offset,
+                 0,
                  "",
                  Map.get(socket.assigns, :filter, %{})
                )
@@ -108,7 +108,7 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
                socket,
                get_patch_params(
                  socket.assigns.table_model,
-                 socket.assigns.offset,
+                 0,
                  socket.assigns.query,
                  filter
                )
