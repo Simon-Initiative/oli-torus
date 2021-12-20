@@ -92,7 +92,7 @@ defmodule OliWeb.DeliveryController do
 
     render(conn, "select_project.html",
       author: user.author,
-      sources: Sections.retrieve_visible_sources(user, institution),
+      sources: Publishing.retrieve_visible_sources(user, institution),
       remix: Map.get(params, "remix", "false")
     )
   end
@@ -369,6 +369,7 @@ defmodule OliWeb.DeliveryController do
           context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
+          blueprint_id: blueprint.id,
           amount: amount
         })
 

@@ -148,26 +148,26 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Given a section blueprint (aka a product), calculate the cost to use this product for
-  a specific insituttion, taking into account any product-wide and product-specific discounts
+  Given a section (blueprint or enrollable), calculate the cost to use it for
+  a specific institution, taking into account any product-wide and product-specific discounts
   this instituttion has.
 
   Returns {:ok, %Money{}} or {:error, reason}
   """
   def calculate_product_cost(
-        %Section{type: :blueprint, requires_payment: false},
+        %Section{requires_payment: false},
         _
       ),
       do: {:ok, Money.new(:USD, 0)}
 
   def calculate_product_cost(
-        %Section{type: :blueprint, requires_payment: true, amount: amount},
+        %Section{requires_payment: true, amount: amount},
         nil
       ),
       do: {:ok, amount}
 
   def calculate_product_cost(
-        %Section{type: :blueprint, requires_payment: true, id: id, amount: amount},
+        %Section{requires_payment: true, id: id, amount: amount},
         %Institution{id: institution_id}
       ) do
     discounts =

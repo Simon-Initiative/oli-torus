@@ -2,9 +2,6 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [value_or: 2]
 
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-
   alias Oli.Accounts.{
     User,
     Author,
@@ -15,6 +12,8 @@ defmodule Oli.Accounts do
   }
 
   alias Oli.Groups.CommunityAccount
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   def browse_users(
         %Paging{limit: limit, offset: offset},

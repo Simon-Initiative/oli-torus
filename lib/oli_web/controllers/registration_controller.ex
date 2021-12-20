@@ -11,7 +11,7 @@ defmodule OliWeb.RegistrationController do
       [
         Breadcrumb.new(%{
           full_title: "LTI 1.3 Registrations",
-          link: Routes.registration_path(OliWeb.Endpoint, :index)
+          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)
         })
       ]
   end
@@ -126,6 +126,6 @@ defmodule OliWeb.RegistrationController do
 
     conn
     |> put_flash(:info, "Registration deleted successfully.")
-    |> redirect(to: Routes.registration_path(conn, :index))
+    |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView))
   end
 end

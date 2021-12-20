@@ -716,15 +716,20 @@ defmodule OliWeb.Router do
   end
 
   scope "/course", OliWeb do
-    pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
-
-    get("/", DeliveryController, :index)
-    get("/select_project", DeliveryController, :select_project)
+    pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
     get("/link_account", DeliveryController, :link_account)
     post("/link_account", DeliveryController, :process_link_account_user)
     get("/create_and_link_account", DeliveryController, :create_and_link_account)
     post("/create_and_link_account", DeliveryController, :process_create_and_link_account_user)
+  end
+
+  scope "/course", OliWeb do
+    pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
+
+    get("/", DeliveryController, :index)
+    get("/select_project", DeliveryController, :select_project)
+
     post("/research_consent", DeliveryController, :research_consent)
 
     post("/", DeliveryController, :create_section)
@@ -766,16 +771,19 @@ defmodule OliWeb.Router do
     resources("/open_and_free", OpenAndFreeController, as: :admin_open_and_free)
     live("/open_and_free/:section_slug/remix", Delivery.RemixSection, as: :open_and_free_remix)
 
-    # Publishing Institutions and Registrations
+    # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController)
 
-    resources("/registrations", RegistrationController) do
+    live("/registrations", Admin.RegistrationsView)
+
+    resources("/registrations", RegistrationController, except: [:index]) do
       resources("/deployments", DeploymentController, except: [:index, :show])
     end
 
     put("/approve_registration", InstitutionController, :approve_registration)
     delete("/pending_registration/:id", InstitutionController, :remove_registration)
 
+    # Communities
     live("/communities/new", CommunityLive.NewView)
 
     # Course Ingestion

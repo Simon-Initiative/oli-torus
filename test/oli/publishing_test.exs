@@ -1,6 +1,8 @@
 defmodule Oli.PublishingTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Authoring.Course
   alias Oli.Publishing
   alias Oli.Publishing.Publication
@@ -11,6 +13,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Locks
   alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Delivery.Sections.Section
 
   def create_activity(parts, author, project, page_revision, obj_resource_id) do
     # Create a two part activity where each part is tied to one of the objectives above
@@ -469,6 +472,260 @@ defmodule Oli.PublishingTest do
       Publishing.insert_visibility(%{project_id: project.id, institution_id: institution.id})
       assert Publishing.available_publications(author3, institution) |> length == 2
       assert Publishing.available_publications(author2, institution) |> length == 2
+    end
+  end
+
+  describe "publishing retrieve visible publications" do
+    test "retrieve_visible_publications/2 returns empty when there are no publications for existing projects" do
+      user = insert(:user)
+      institution = insert(:institution)
+      insert(:project)
+
+      assert [] == Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns global publications when user can access (no communities)" do
+      user = insert(:user)
+      institution = insert(:institution)
+      %Publication{id: publication_id} = insert(:publication)
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns publications created by its linked author" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :authors, authors: [user.author])
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns publications associated to its linked author" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :selected)
+
+      insert(:project_author_visibility, %{
+        project_id: project.id,
+        author_id: user.author.id
+      })
+
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns publications associated to its institution" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :selected)
+
+      insert(:project_institution_visibility, %{
+        project_id: project.id,
+        institution_id: institution.id
+      })
+
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns empty because user's community doesn't allow global" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community, %{global_access: false})
+      insert(:community_member_account, %{user: user, community: community})
+
+      # global project
+      project = insert(:project)
+      insert(:publication, %{project: project})
+
+      assert [] = Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns global publications because some user's community allows it" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community_a = insert(:community)
+      community_b = insert(:community, %{global_access: false})
+      insert(:community_member_account, %{user: user, community: community_a})
+      insert(:community_member_account, %{user: user, community: community_b})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns user's communities publications" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community)
+      insert(:community_member_account, %{user: user, community: community})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      insert(:community_visibility, %{community: community, project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+
+    test "retrieve_visible_publications/2 returns institutions's communities publications" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community, %{global_access: false})
+      insert(:community_institution, %{institution: institution, community: community})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      insert(:community_visibility, %{community: community, project: project})
+
+      assert [%Publication{id: ^publication_id}] =
+               Publishing.retrieve_visible_publications(user, institution)
+    end
+  end
+
+  describe "publishing retrieve visible sources (publications and products)" do
+    test "retrieve_visible_sources/2 returns empty when there are no publications/products for existing projects" do
+      user = insert(:user)
+      institution = insert(:institution)
+      insert(:project)
+
+      assert [] == Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns global publications/products when user can access (no communities)" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      assert [
+               %Publication{id: ^publication_id},
+               %Section{id: ^product_id}
+             ] = Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns publications/products created by its linked author" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :authors, authors: [user.author])
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns publications/products associated to its linked author" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :selected)
+
+      insert(:project_author_visibility, %{
+        project_id: project.id,
+        author_id: user.author.id
+      })
+
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns publications/products associated to its institution" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, visibility: :selected)
+
+      insert(:project_institution_visibility, %{
+        project_id: project.id,
+        institution_id: institution.id
+      })
+
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns empty because user's community doesn't allow global" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community, %{global_access: false})
+      insert(:community_member_account, %{user: user, community: community})
+
+      # global project
+      project = insert(:project)
+      insert(:publication, %{project: project})
+      insert(:section, %{base_project: project})
+
+      assert [] = Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns global publications/products because some user's community allows it" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community_a = insert(:community)
+      community_b = insert(:community, %{global_access: false})
+      insert(:community_member_account, %{user: user, community: community_a})
+      insert(:community_member_account, %{user: user, community: community_b})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns user's communities publications/products" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community)
+      insert(:community_member_account, %{user: user, community: community})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = insert(:section, %{base_project: project})
+
+      insert(:community_visibility, %{community: community, project: project})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
+    end
+
+    test "retrieve_visible_sources/2 returns institutions's communities publications/products" do
+      user = insert(:user)
+      institution = insert(:institution)
+      community = insert(:community, %{global_access: false})
+      insert(:community_institution, %{institution: institution, community: community})
+
+      # global project
+      project = insert(:project)
+      %Publication{id: publication_id} = insert(:publication, %{project: project})
+      %Section{id: product_id} = section = insert(:section, %{base_project: project})
+
+      insert(:community_project_visibility, %{community: community, project: project})
+      insert(:community_product_visibility, %{community: community, section: section})
+
+      assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
+               Publishing.retrieve_visible_sources(user, institution)
     end
   end
 end

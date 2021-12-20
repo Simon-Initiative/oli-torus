@@ -155,6 +155,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+    # fetch the resource attempt, with the pinned revision preloaded
     resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
     if resource_attempt.date_evaluated == nil do
@@ -171,6 +172,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           {score + p.score, out_of + p.out_of}
         end)
 
+      # Adaptive graded pages can specify a "totalScore" which overrides the calcualted
+      # out_of
+      out_of = override_out_of(out_of, resource_attempt.revision.content)
+
       update_resource_attempt(resource_attempt, %{
         score: score,
         out_of: out_of,
@@ -180,6 +185,28 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       {:error, {:already_submitted}}
     end
   end
+
+  defp override_out_of(out_of, %{
+         "advancedDelivery" => true,
+         "custom" => %{"totalScore" => total_score}
+       }) do
+    case total_score do
+      value when is_binary(value) ->
+        case Float.parse(value) do
+          {v, _} -> v
+          _ -> out_of
+        end
+
+      value when is_float(value) or is_integer(value) ->
+        value
+
+      _ ->
+        out_of
+    end
+    |> max(1.0)
+  end
+
+  defp override_out_of(out_of, _), do: out_of
 
   defp roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)

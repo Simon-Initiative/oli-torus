@@ -168,8 +168,9 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         : await dispatch(releaseEditingLock()),
     );
 
-    setTimeout(() => {
-      if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
+    let initTimeout: any = null;
+    if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
+      initTimeout = setTimeout(() => {
         if (props.content) {
           const appConfig = {
             paths: props.paths,
@@ -181,16 +182,21 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           };
           dispatch(initializeFromContext({ context: props.content, config: appConfig }));
         }
-
         setIsAppVisible(true);
-      }
-    }, 500);
-    setTimeout(() => {
+      }, 500);
+    }
+    const loadingTimeout = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
 
     return () => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
     };
   }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
 

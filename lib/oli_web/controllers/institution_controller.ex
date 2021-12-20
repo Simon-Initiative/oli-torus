@@ -166,7 +166,13 @@ defmodule OliWeb.InstitutionController do
       ) do
     issuer = pending_registration_attrs["issuer"]
     client_id = pending_registration_attrs["client_id"]
-    deployment_id = pending_registration_attrs["deployment_id"]
+
+    # handle the case where deployment_id is nil in the html form, causing this attr
+    # to be and empty string
+    deployment_id = case pending_registration_attrs["deployment_id"] do
+      "" -> nil
+      deployment_id -> deployment_id
+    end
 
     case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->

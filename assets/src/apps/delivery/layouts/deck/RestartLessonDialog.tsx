@@ -68,7 +68,11 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         <div className="modal-body">
           <div className="type"></div>
           <div className="message">
-            <p>Are you sure you want to restart and begin from the first screen?</p>
+            <p>
+              {graded
+                ? 'Are you sure you want to restart? This will end your current attempt and allow you to begin the lesson from the first screen.'
+                : 'Are you sure you want to restart and begin from the first screen?'}
+            </p>
           </div>
         </div>
         <div className="modal-footer">

@@ -37,6 +37,8 @@ defmodule OliWeb.Sections.EditView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
+        section = Oli.Repo.preload(section, :blueprint)
+
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
@@ -64,7 +66,7 @@ defmodule OliWeb.Sections.EditView do
         {#else}
           <LtiSettings section={@section}/>
         {/if}
-        <PaywallSettings is_admin={@is_admin} changeset={@changeset} disabled={!can_change_payment?(@section)}/>
+        <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
       </Groups>
     </Form>
     """
@@ -94,40 +96,9 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
-    section_timezone = Timex.Timezone.get(from_timezone)
-    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
-
-    utc_start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
-          start_date
-
-        start_date ->
-          start_date
-          |> Timex.parse!("%Y-%m-%d", :strftime)
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    utc_end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
-          end_date
-
-        end_date ->
-          end_date
-          |> Timex.parse!("%Y-%m-%d", :strftime)
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    {utc_start_date, utc_end_date}
-  end
-
   defp convert_dates(params) do
     {utc_start_date, utc_end_date} =
-      parse_and_convert_start_end_dates_to_utc(
+      Sections.parse_and_convert_start_end_dates_to_utc(
         params["start_date"],
         params["end_date"],
         params["timezone"]
@@ -138,7 +109,11 @@ defmodule OliWeb.Sections.EditView do
     |> Map.put("end_date", utc_end_date)
   end
 
-  defp can_change_payment?(section) do
-    is_nil(section.blueprint_id)
+  # A user can make paywall edits if any of the following are true:
+  # 1. They are logged in as an admin user
+  # 2. The course section being edited was not created from a product
+  # 3. The course section being edited was created from a product that does not require payment
+  defp can_change_payment?(section, is_admin?) do
+    is_admin? or is_nil(section.blueprint_id) or !section.blueprint.requires_payment
   end
 end

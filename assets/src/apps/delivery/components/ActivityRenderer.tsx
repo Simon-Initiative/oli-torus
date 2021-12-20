@@ -38,6 +38,7 @@ import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import { templatizeText } from './TextParser';
+import { CapiVariableTypes } from 'adaptivity/capi';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -370,7 +371,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
     const payloadData = {} as any;
-    stateFacts.map((fact: string) => {
+    Object.keys(stateFacts).map((fact: string) => {
       // EverApp Information
       if (fact.startsWith('app.')) {
         const data = fact.split('.');
@@ -390,8 +391,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const { snapshot } = await onRequestLatestState();
 
     updateGlobalState(snapshot, initStateFacts);
-
-    const finalInitSnapshot = initStateFacts.reduce((acc: any, key: string) => {
+    const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
       let target = key;
       if (target.indexOf('stage') === 0) {
         const lstVar = target.split('.');
@@ -402,13 +402,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-      const originalValue = snapshot[target];
-      const typeOfOriginalValue = typeof originalValue;
-      const evaluatedValue =
-        typeOfOriginalValue === 'string'
-          ? templatizeText(originalValue, snapshot, defaultGlobalEnv, true)
-          : originalValue;
-      acc[key] = evaluatedValue;
+      acc[key] = snapshot[target];
       return acc;
     }, {});
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
