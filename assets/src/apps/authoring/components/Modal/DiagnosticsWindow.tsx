@@ -151,7 +151,7 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
           <div className=" startup">
             <ul>
               <li>
-                Validate Part Ids
+                Validate Lesson
                 <button className="btn btn-sm btn-primary ml-2" onClick={handleValidateClick}>
                   Execute
                 </button>
