@@ -1,10 +1,13 @@
 import { setShowScoringOverview } from 'apps/authoring/store/app/slice';
-import { selectState } from 'apps/authoring/store/page/slice';
+import { savePage } from 'apps/authoring/store/page/actions/savePage';
+import { selectState, updatePage } from 'apps/authoring/store/page/slice';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
-import React, { Fragment, useEffect } from 'react';
+import { debounce } from 'lodash';
+import React, { Fragment, useCallback, useEffect } from 'react';
 import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
+import { clone } from 'utils/common';
 
 const ScoringOverview: React.FC<{
   onClose?: () => void;
@@ -15,53 +18,104 @@ const ScoringOverview: React.FC<{
   const allActivities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
-  const scoredActivities =
-    sequence && allActivities
-      ? sequence.reduce((acc: any[], sequenceItem) => {
-          if (sequenceItem.custom.isLayer || sequenceItem.custom.isBank) {
-            return acc;
-          }
-          const activity = allActivities.find((a) => a.id === sequenceItem.resourceId);
-          if (!activity) {
-            return acc;
-          }
-          const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
+  const [scoredActivities, setScoredActivities] = React.useState([]);
 
-          if (maxScore > 0) {
-            acc.push({
-              sequenceId: sequenceItem.custom.sequenceId,
-              sequenceName: sequenceItem.custom.sequenceName,
-              resourceId: sequenceItem.resourceId,
-              maxScore,
-              scoreType: trapStateScoreScheme ? 'Trap State' : `Attempts (${maxAttempt})`,
-            });
-          }
+  useEffect(() => {
+    if (!sequence || !allActivities) {
+      return;
+    }
+    const scored = sequence.reduce((acc: any[], sequenceItem) => {
+      if (sequenceItem.custom.isLayer || sequenceItem.custom.isBank) {
+        return acc;
+      }
+      const activity = allActivities.find((a) => a.id === sequenceItem.resourceId);
+      if (!activity) {
+        return acc;
+      }
+      const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
 
-          return acc;
-        }, [])
-      : [];
+      if (maxScore > 0) {
+        acc.push({
+          sequenceId: sequenceItem.custom.sequenceId,
+          sequenceName: sequenceItem.custom.sequenceName,
+          resourceId: sequenceItem.resourceId,
+          maxScore,
+          scoreType: trapStateScoreScheme ? 'Trap State' : `Attempts (${maxAttempt})`,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    setScoredActivities(scored);
+  }, [allActivities, sequence]);
 
   const [enableLessonMax, setEnableLessonMax] = React.useState<boolean>(false);
   const [lessonMax, setLessonMax] = React.useState<number>(0);
   const [scoreSum, setScoreSum] = React.useState<number>(0);
+
+  const handleEnableMaxChanged = React.useCallback(
+    async (e: any) => {
+      const checked = e.target.checked;
+      setEnableLessonMax(checked);
+      const customClone = clone(page.custom);
+      customClone.scoreFixed = checked;
+      if (checked) {
+        customClone.totalScore = customClone.maxScore || lessonMax;
+        setLessonMax(customClone.maxScore);
+      } else {
+        customClone.totalScore = scoreSum;
+        // don't change the scoreMax so that it can be around for revert if they uncheck it
+      }
+      debounceSavePage(customClone);
+    },
+    [page, enableLessonMax, lessonMax, scoreSum],
+  );
+
+  const debounceSavePage = useCallback(
+    debounce(
+      (custom) => {
+        console.log('debounceSavePage', custom);
+        dispatch(savePage({ custom }));
+        dispatch(updatePage({ custom }));
+      },
+      500,
+      { trailing: true },
+    ),
+    [],
+  );
+
+  const handleMaxChanged = React.useCallback(
+    async (e: any) => {
+      const newValue = parseFloat(e.target.value);
+      console.log('lesson max changed', newValue);
+      setLessonMax(newValue);
+      const customClone = clone(page.custom);
+      if (enableLessonMax) {
+        customClone.maxScore = newValue;
+        customClone.totalScore = newValue;
+        debounceSavePage(customClone);
+      }
+    },
+    [page, enableLessonMax, lessonMax, scoreSum],
+  );
 
   useEffect(() => {
     if (!page) {
       return;
     }
     let enableMax = false;
-    if (typeof page.custom.lessonMax === 'boolean') {
-      enableMax = page.custom.lessonMax;
-    } else if (typeof page.custom.scoreFixed === 'boolean') {
+    if (typeof page.custom.scoreFixed === 'boolean') {
       enableMax = page.custom.scoreFixed;
     }
 
     setEnableLessonMax(enableMax);
 
-    if (enableMax) {
-      const max = page.custom.lessonMax || page.custom.totalScore || 0;
-      setLessonMax(max);
+    let max = page.custom.totalScore || 0;
+    if (enableLessonMax && page.custom.maxScore) {
+      max = page.custom.maxScore;
     }
+    setLessonMax(max);
   }, [page]);
 
   useEffect(() => {
@@ -69,10 +123,11 @@ const ScoringOverview: React.FC<{
       return acc + activity.maxScore;
     }, 0);
     setScoreSum(sum);
-    if (enableLessonMax) {
-      const max = page.custom.lessonMax || page.custom.totalScore || scoreSum;
-      setLessonMax(max);
+    let max = scoreSum;
+    if (enableLessonMax && page.custom.maxScore) {
+      max = page.custom.maxScore;
     }
+    setLessonMax(max);
   }, [scoredActivities, enableLessonMax]);
 
   const handleClose = () => {
@@ -118,19 +173,13 @@ const ScoringOverview: React.FC<{
           <InputGroup className="mb-3">
             <InputGroup.Prepend>
               <InputGroup.Text>Lesson Max</InputGroup.Text>
-              <InputGroup.Checkbox
-                onChange={(e: any) => {
-                  setEnableLessonMax(e.target.checked);
-                }}
-              />
+              <InputGroup.Checkbox checked={enableLessonMax} onChange={handleEnableMaxChanged} />
             </InputGroup.Prepend>
             <FormControl
               type="number"
               readOnly={!enableLessonMax}
               value={lessonMax}
-              onChange={(e) => {
-                setLessonMax(parseFloat(e.target.value));
-              }}
+              onChange={handleMaxChanged}
             />
           </InputGroup>
         </Modal.Body>
