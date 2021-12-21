@@ -112,7 +112,7 @@ export const adaptivitySchema = ({ currentModel }: { currentModel: any }) => {
   adaptivitySchema.showCorrect = CapiVariableTypes.BOOLEAN;
   adaptivitySchema.showHints = CapiVariableTypes.BOOLEAN;
 
-  if (elementData.length > 0) {
+  if (elementData?.length > 0) {
     elementData.forEach((element: Record<string, unknown>, index: number) => {
       adaptivitySchema[`Input ${index + 1}.Value`] = CapiVariableTypes.STRING;
       adaptivitySchema[`Input ${index + 1}.Correct`] = CapiVariableTypes.BOOLEAN;
