@@ -1,4 +1,4 @@
-import React, { Fragment } from 'React';
+import React, { Fragment } from 'react';
 
 import { DiagnosticTypes } from './DiagnosticTypes';
 import FixIdButton from './FixIdButton';

@@ -1,18 +1,18 @@
-import React from 'React';
+import React from 'react';
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export interface Message {
   problem: any;
 }
 
-export const DupeMessage: React.FC<Message> = ({ problem }) => (
+export const DupeMessage: React.FC<Message> = ({ problem }: Message) => (
   <span>
     A {problem.item.type} component with the ID &quot;
     <strong>{problem.item.id} </strong> &quot;located on
   </span>
 );
 
-export const PatternMessage: React.FC<Message> = ({ problem }) => (
+export const PatternMessage: React.FC<Message> = ({ problem }: Message) => (
   <span>
     A {problem.item.type} component with the ID &quot;
     <strong>{problem.item.id}</strong>&quot;, has problematic characters. It is best to use
@@ -20,7 +20,7 @@ export const PatternMessage: React.FC<Message> = ({ problem }) => (
   </span>
 );
 
-export const BrokenMessage: React.FC<Message> = ({ problem }) => (
+export const BrokenMessage: React.FC<Message> = ({ problem }: Message) => (
   <span>
     A {problem.item.type} component with the ID &quot;
     <strong>{problem.item.id}</strong>&quot;, has a broken path.
