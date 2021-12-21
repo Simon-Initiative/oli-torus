@@ -719,6 +719,15 @@ $panel-section-title-bar-color: #e8ebed;
   }
 }
 
+.modal-dialog.diagnostic-modal {
+  &.advanced-authoring {
+    opacity: 1;
+  }
+  .dropdown-toggle:after {
+    display: none;
+  }
+}
+
 .canvas-dots {
   background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAJElEQVQoU2M8cOLif2MdFQZCgPHzl6//CSkCyY8qxBtKRAcPAJ9FJplIpKVIAAAAAElFTkSuQmCC)
     repeat;
