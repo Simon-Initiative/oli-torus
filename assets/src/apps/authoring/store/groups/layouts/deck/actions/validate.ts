@@ -87,7 +87,6 @@ export const validators = [
         return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
       }, []),
   },
-  
   /*{
     type: DiagnosticTypes.INVALID_VALUE,
     validate: (activity: any, hierarchy: any, sequence: any[]) =>

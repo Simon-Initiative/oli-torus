@@ -28,7 +28,7 @@ defmodule OliWeb.HelpControllerTest do
             cookies_enabled: "true",
             full_name: "Help Me",
             email: "help@example.edu",
-            subject: "help_tech",
+            subject: "help_login",
             message: "Lorem Ipsum is simply dummy text of the printing and typesetting industry."
           },
           "g-recaptcha-response": "any"
