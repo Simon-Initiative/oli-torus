@@ -147,7 +147,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     };
   }, []);
 
-  const partsInit = useCallback(
+  const partInit = useCallback(
     async (partId: string) => {
       const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       const partsInitStatus = sharedInitMap.get(props.model.id);
@@ -212,7 +212,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         payload.expressions,
       );
     }
-    const { snapshot, context, env } = await partsInit(payload.id.toString());
+    const { snapshot, context, env } = await partInit(payload.id.toString());
     // TODO: something with save result? check for errors?
     return { snapshot, context, env, expressionResult };
   };
