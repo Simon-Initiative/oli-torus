@@ -350,7 +350,7 @@ defmodule OliWeb.LtiController do
                picture: lti_params["picture"],
                website: lti_params["website"],
                email: lti_params["email"],
-               email_verified: lti_params["email_verified"],
+               email_verified: true,
                gender: lti_params["gender"],
                birthdate: lti_params["birthdate"],
                zoneinfo: lti_params["zoneinfo"],

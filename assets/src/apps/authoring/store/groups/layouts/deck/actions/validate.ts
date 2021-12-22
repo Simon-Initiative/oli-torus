@@ -8,6 +8,20 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
+
+export interface DiagnosticProblem {
+  owner: unknown;
+  type: string;
+  // getSuggestion: () => any;
+  // getSolution: (resolution: unknown) => () => void;
+  suggestedFix: string;
+  item: any;
+}
+export interface DiagnosticError {
+  activity: unknown;
+  problems: DiagnosticProblem[];
+}
 
 // generate a suggestion for the id based on the input id that is only alpha numeric or underscores
 const generateSuggestion = (id: string, dupBlacklist: string[] = []): string => {
@@ -26,6 +40,55 @@ const generateSuggestion = (id: string, dupBlacklist: string[] = []): string => 
   return newId;
 };
 
+const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[]) =>
+  list.map((item: any) => {
+    const problemSequence = seq.find((s) => s.custom.sequenceId === item.owner);
+    return {
+      type,
+      item,
+      owner: problemSequence || item.owner,
+      suggestedFix: generateSuggestion(item.id, blackList),
+    };
+  });
+
+export const validators = [
+  {
+    type: DiagnosticTypes.DUPLICATE,
+    validate: (activity: any) =>
+      activity.authoring.parts.filter(
+        (ref: any) => activity.authoring.parts.filter((ref2: any) => ref2.id === ref.id).length > 1,
+      ),
+  },
+  {
+    type: DiagnosticTypes.PATTERN,
+    validate: (activity: any) =>
+      activity.authoring.parts.filter(
+        (ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id),
+      ),
+  },
+  {
+    type: DiagnosticTypes.BROKEN,
+    validate: (activity: any, hierarchy: any, sequence: any[]) =>
+      activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
+        const brokenActions = rule.event.params.actions.map((action: any) => {
+          if (action.type === 'navigation') {
+            if (action?.params?.target && action.params.target !== 'next') {
+              if (!findInHierarchy(hierarchy, action.params.target)) {
+                return {
+                  ...rule,
+                  owner: sequence.find((s) => s.resourceId === activity.id),
+                  suggestedFix: `Screen does not exist, fix navigate to.`,
+                };
+              }
+            }
+          }
+          return null;
+        });
+        return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
+      }, []),
+  },
+];
+
 export const validatePartIds = createAsyncThunk<any, any, any>(
   `${AppSlice}/validatePartIds`,
   async (payload, { getState, fulfillWithValue }) => {
@@ -35,21 +98,25 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
     const sequence = selectSequence(rootState as any);
     const hierarchy = getHierarchy(sequence);
 
-    /* console.log('validatePartIds', { allActivities }); */
+    // console.log('validatePartIds', { allActivities });
 
-    const errors: any[] = [];
+    const errors: DiagnosticError[] = [];
 
     allActivities.forEach((activity) => {
-      const duplicates = activity.authoring.parts.filter((ref: any) => {
-        return activity.authoring.parts.filter((ref2: any) => ref2.id === ref.id).length > 1;
-      });
+      const foundProblems = validators.reduce(
+        (probs: any, validator: any) => ({
+          ...probs,
+          [validator.type]: validator.validate(activity, hierarchy, sequence),
+        }),
+        {},
+      );
 
-      // also find problematic ids that are not alphanumeric or have underscores, colons, or spaces
-      const problematicIds = activity.authoring.parts.filter((ref: any) => {
-        return !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id);
-      });
+      const countProblems = Object.keys(foundProblems).reduce(
+        (c: number, current: any) => foundProblems[current].length + c,
+        0,
+      );
 
-      if (duplicates.length > 0 || problematicIds.length > 0) {
+      if (countProblems > 0) {
         const activitySequence = sequence.find((s) => s.resourceId === activity.id);
 
         // id blacklist should include all parent ids, and all children ids
@@ -62,31 +129,20 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
           .map((s) => allActivities.find((a) => a.id === s.resourceId))
           .map((a) => a?.authoring.parts.map((ref: any) => ref.id))
           .reduce((acc, cur) => acc.concat(cur), []);
-        console.log('blacklists: ', { lineageBlacklist, childrenBlackList });
+        //console.log('blacklists: ', { lineageBlacklist, childrenBlackList });
         const testBlackList = Array.from(new Set([...lineageBlacklist, ...childrenBlackList]));
 
-        const dupErrors = duplicates.map((dup: any) => {
-          const dupSequence = sequence.find((s) => s.custom.sequenceId === dup.owner);
-          return {
-            ...dup,
-            owner: dupSequence,
-            suggestedFix: generateSuggestion(dup.id, testBlackList),
-          };
-        });
-        const problemIdErrors = problematicIds.map((problematicId: any) => {
-          const problematicIdSequence = sequence.find(
-            (s) => s.custom.sequenceId === problematicId.owner,
-          );
-          return {
-            ...problematicId,
-            owner: problematicIdSequence,
-            suggestedFix: generateSuggestion(problematicId.id, testBlackList),
-          };
-        });
+        const problems = Object.keys(foundProblems).reduce(
+          (errs: any[], currentErr: any) => [
+            ...errs,
+            ...mapErrorProblems(foundProblems[currentErr], currentErr, sequence, testBlackList),
+          ],
+          [],
+        );
+
         errors.push({
           activity: activitySequence,
-          duplicates: dupErrors,
-          problems: problemIdErrors,
+          problems,
         });
       }
     });
