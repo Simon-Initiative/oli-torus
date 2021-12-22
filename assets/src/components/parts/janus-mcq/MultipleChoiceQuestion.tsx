@@ -560,7 +560,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
               // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (sSelectedChoices !== undefined) {
+              if (sSelectedChoices !== undefined && sSelectedChoices.length) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
                 const selectedArray = parseArray(sSelectedChoices);
@@ -576,7 +576,11 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
               // this is for setting *multiple* choices being selected by the text value
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
-              if (sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
+              if (
+                sSelectedChoicesText !== undefined &&
+                sSelectedChoicesText.length &&
+                !hasDoneSelectedChoice
+              ) {
                 hasDoneMultiple = true;
                 const selectedArray = parseArray(sSelectedChoicesText);
                 if (Array.isArray(selectedArray)) {
