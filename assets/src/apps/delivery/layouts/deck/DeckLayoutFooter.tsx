@@ -6,6 +6,7 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  extractAllExpressionsFromText,
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
@@ -35,7 +36,10 @@ import {
   navigateToNextActivity,
   navigateToPrevActivity,
 } from '../../store/features/groups/actions/deck';
-import { selectCurrentActivityTree } from '../../store/features/groups/selectors/deck';
+import {
+  selectCurrentActivityTree,
+  selectSequence,
+} from '../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
   selectIsLegacyTheme,
@@ -45,6 +49,7 @@ import {
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
 import HistoryNavigation from './components/HistoryNavigation';
+import { getPartOwnerVariableId } from './DeckLayoutView';
 
 export const handleValueExpression = (
   currentActivityTree: any[] | null,
@@ -169,7 +174,7 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-
+  const sequence = useSelector(selectSequence);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -272,7 +277,14 @@ const DeckLayoutFooter: React.FC = () => {
       );
       const mutationsModified = mutations.map((op: any) => {
         let scopedTarget = op.params.target;
-
+        let updatedText = op.params.value;
+        if (updatedText.toString().indexOf('stage.') !== -1) {
+          const expressions = extractAllExpressionsFromText(updatedText);
+          expressions.forEach((exp: any) => {
+            const target = getPartOwnerVariableId(exp, sequence);
+            updatedText = updatedText.replaceAll(exp, target.newExpression);
+          });
+        }
         if (scopedTarget.indexOf('stage') === 0) {
           const lstVar = scopedTarget.split('.');
 
@@ -288,7 +300,7 @@ const DeckLayoutFooter: React.FC = () => {
         const globalOp: ApplyStateOperation = {
           target: scopedTarget,
           operator: op.params.operator,
-          value: handleValueExpression(currentActivityTree, op.params.value, op.params.operator),
+          value: handleValueExpression(currentActivityTree, updatedText, op.params.operator),
           targetType: op.params.targetType || op.params.type,
         };
         return globalOp;

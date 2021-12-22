@@ -43,6 +43,32 @@ const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   return injected ? <style>{injected}</style> : null;
 };
 
+const getActualOwnerDetails = (expression: string, sequence: any) => {
+  const [activityId, part] = expression.split('|');
+  const activitySequence = sequence.find((entry: any) => entry?.custom?.sequenceId === activityId);
+  const activityLayerId = activitySequence?.custom?.layerRef;
+  let expressionValue = getValue(expression, defaultGlobalEnv);
+  let updatedExpression = expression;
+  if (expressionValue == undefined) {
+    expressionValue = getValue(activityLayerId + '|' + part, defaultGlobalEnv);
+    if (expressionValue !== undefined) {
+      updatedExpression = activityLayerId + '|' + part;
+    } else if (activityLayerId) {
+      updatedExpression = activityLayerId + '|' + part;
+      updatedExpression = getActualOwnerDetails(updatedExpression, sequence);
+    }
+  }
+  return updatedExpression;
+};
+
+export const getPartOwnerVariableId = (expression: string, sequence: any) => {
+  if (expression.indexOf('stage.') === -1) {
+    return { expression, newExpression: expression };
+  }
+  const updatedExpression = getActualOwnerDetails(expression, sequence);
+  return { expression, newExpression: updatedExpression };
+};
+
 const sharedActivityInit = new Map();
 let sharedActivityPromise: any;
 
@@ -317,24 +343,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     attemptGuid: string,
     expressions: string[],
   ) => {
-    const gotit = expressions.map((expression) => {
-      if (expression.indexOf('stage.') === 0) {
-        return { expression, newExpression: expression };
-      }
-      const [activityId, part] = expression.split('|');
-      const activitySequence = sequence.find((entry) => entry?.custom?.sequenceId === activityId);
-      const activityLayerId = activitySequence?.custom?.layerRef;
-      let expressionValue = getValue(expression, defaultGlobalEnv);
-      let updatedExpression = expression;
-      if (expressionValue == undefined) {
-        expressionValue = getValue(activityLayerId + '|' + part, defaultGlobalEnv);
-        if (expressionValue !== undefined) {
-          updatedExpression = activityLayerId + '|' + part;
-        }
-      }
-      return { expression, newExpression: updatedExpression };
+    const allExpressions = expressions.map((expression) => {
+      return getPartOwnerVariableId(expression, sequence);
     });
-    return gotit;
+    return allExpressions;
   };
 
   const handleActivitySavePart = async (

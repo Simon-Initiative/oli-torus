@@ -1,6 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
+import { templatizeText } from 'apps/delivery/components/TextParser';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
+import { getPartOwnerVariableId } from 'apps/delivery/layouts/deck/DeckLayoutView';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
@@ -15,6 +17,7 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   evalScript,
+  extractAllExpressionsFromText,
   getAssignScript,
   getEnvState,
 } from '../../../../../../adaptivity/scripting';
@@ -133,23 +136,37 @@ export const initializeActivity = createAsyncThunk(
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: Record<string, string> = {};
     const globalizedInitState = initState.map((s: any) => {
+      let updatedText = s.value;
+      if (updatedText.toString().indexOf('stage.') !== -1) {
+        const expressions = extractAllExpressionsFromText(updatedText);
+        expressions.forEach((exp: any) => {
+          const target = getPartOwnerVariableId(exp, sequence);
+          updatedText = updatedText.replaceAll(exp, target.newExpression);
+        });
+      }
       arrInitFacts[s.target] = s.type;
       if (s.target.indexOf('stage.') !== 0) {
-        return { ...s };
+        return { ...s, value: updatedText };
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
       if (s.type === CapiVariableTypes.MATH_EXPR) {
-        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+        return { ...s, target: `${ownerActivity.id}|${s.target}`, value: updatedText };
       }
-      const modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
+      const modifiedValue = handleValueExpression(currentActivityTree, updatedText, s.operator);
+      const typeOfOriginalValue = typeof modifiedValue;
+      const evaluatedValue =
+        typeOfOriginalValue === 'string'
+          ? templatizeText(modifiedValue, defaultGlobalEnv, defaultGlobalEnv, true)
+          : modifiedValue;
+
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
-        return { ...s, value: modifiedValue };
+        return { ...s, value: evaluatedValue };
       }
-      return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
+      return { ...s, target: `${ownerActivity.id}|${s.target}`, value: evaluatedValue };
     });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
