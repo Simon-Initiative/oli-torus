@@ -115,7 +115,14 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
 # Configure help
-config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
+# HELP_PROVIDER env var must be a string representing an existing provider module, such as "EmailHelp"
+help_provider =
+  case System.get_env("HELP_PROVIDER") do
+    nil -> Oli.Help.Providers.EmailHelp
+    provider -> Module.concat([Oli, Help, Providers, provider])
+  end
+
+config :oli, :help, dispatcher: help_provider
 
 config :lti_1p3,
   provider: Lti_1p3.DataProviders.EctoProvider,
@@ -124,7 +131,7 @@ config :lti_1p3,
     schemas: [
       user: Oli.Accounts.User,
       registration: Oli.Lti_1p3.Tool.Registration,
-      deployment: Oli.Lti_1p3.Tool.Deployment,
+      deployment: Oli.Lti_1p3.Tool.Deployment
     ]
   ]
 
