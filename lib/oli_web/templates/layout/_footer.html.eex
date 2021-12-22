@@ -1,10 +1,11 @@
 <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
+<% privacy_policies_url = Application.fetch_env!(:oli, :privacy_policies)[:url]  %>
 
 <footer>
   <div class="container">
     <div class="row">
       <div class="col-sm text-left">
-        <a href='javascript:;' onclick="OLI.selectCookiePreferences()">Cookie Preferences</a>
+        <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
       </div>
       <div class="col-sm text-center">
       </div>
@@ -14,6 +15,6 @@
     </div>
   </div>
   <script>
-    OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>'));
+    OLI.onReady(() => OLI.retrieveCookies('<%= Routes.cookie_consent_path(@conn, :retrieve) %>', {privacyPoliciesUrl: '<%= privacy_policies_url %>'}));
   </script>
 </footer>

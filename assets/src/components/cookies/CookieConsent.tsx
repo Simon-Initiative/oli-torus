@@ -1,10 +1,13 @@
 import React from 'react';
 import ModalSelection from 'components/modal/ModalSelection';
 import { consentOptions, setCookies } from 'components/cookies/utils';
-import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
+import {
+  selectCookiePreferences,
+  CookiePreferencesProps,
+} from 'components/cookies/CookiePreferences';
 import ReactDOM from 'react-dom';
 
-export const CookieConsent = () => {
+export const CookieConsent = (cookiePreferences: CookiePreferencesProps) => {
   return (
     <div className="form-inline">
       <p>
@@ -14,13 +17,13 @@ export const CookieConsent = () => {
         Preferences&quot;
       </p>
       <p>
-        <a href="https://www.cmu.edu/legal/privacy-notice.html">Privacy Notice</a>
+        <a href={cookiePreferences.privacyPoliciesUrl}>Privacy Notice</a>
       </p>
     </div>
   );
 };
 
-export function selectCookieConsent(): void {
+export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): void {
   const footer = (
     <>
       <button
@@ -38,7 +41,7 @@ export function selectCookieConsent(): void {
         className="btn btn-outline-primary"
         onClick={() => {
           dismiss();
-          selectCookiePreferences();
+          selectCookiePreferences(cookiePreferences);
         }}
       >
         Cookie Preferences
@@ -53,7 +56,7 @@ export function selectCookieConsent(): void {
         dismiss();
       }}
     >
-      <CookieConsent />
+      <CookieConsent privacyPoliciesUrl={cookiePreferences.privacyPoliciesUrl} />
     </ModalSelection>
   );
 
