@@ -63,6 +63,11 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => Promise<Success>;
+  onInitPart: (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    expressions: string[],
+  ) => Promise<Success>;
   onSubmitPart: (
     attemptGuid: string,
     partAttemptGuid: string,
@@ -98,7 +103,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     partResponses: PartResponse[],
   ) => Promise<EvaluationResponse>;
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
-
+  onInitPart: (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    expressions: string[],
+  ) => Promise<Success>;
   onSavePart: (
     attemptGuid: string,
     partAttemptGuid: string,
@@ -151,6 +160,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
 
     this.onReady = (attemptGuid: string) => this.dispatch('activityReady', attemptGuid, undefined);
     this.onResize = (attemptGuid: string) => this.dispatch('resizePart', attemptGuid, undefined);
+    this.onInitPart = (attemptGuid: string, partAttemptGuid: string, expression: string[]) =>
+      this.dispatch('partInit', attemptGuid, partAttemptGuid, expression);
   }
 
   static get observedAttributes() {
@@ -213,6 +224,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitEvaluations: this.onSubmitEvaluations,
       onReady: this.onReady,
       onResize: this.onResize,
+      onInitPart: this.onInitPart,
       userId,
       notify: this._notify,
       mountPoint: this.mountPoint,

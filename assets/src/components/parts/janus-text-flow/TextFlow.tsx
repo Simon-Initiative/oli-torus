@@ -1,3 +1,4 @@
+import { extractExpressionFromText } from 'adaptivity/scripting';
 import chroma from 'chroma-js';
 import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -50,6 +51,7 @@ export const renderFlow = (
   fontSize?: any,
   specialTag?: string,
   env?: Environment,
+  expressions?: any,
 ) => {
   // clone styles
   const styles: any = { ...treeNode.style };
@@ -66,6 +68,7 @@ export const renderFlow = (
   } else if (styles?.baselineShift === 'subscript') {
     customTag = 'sub';
   }
+
   return (
     <Markup
       key={key}
@@ -77,6 +80,7 @@ export const renderFlow = (
       text={treeNode.text}
       state={state}
       env={env}
+      expressions={expressions}
     >
       {treeNode.children &&
         treeNode.children.map((child, index) => {
@@ -88,6 +92,7 @@ export const renderFlow = (
             fontSize,
             customTag,
             env,
+            expressions,
           );
         })}
     </Markup>
@@ -98,6 +103,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [state, setState] = useState<any>({});
   const [model, setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
+  const [expressions, setExpressions] = useState<any[]>([]);
   const [scriptEnv, setScriptEnv] = useState<any>();
   const id: string = props.id;
 
@@ -111,14 +117,37 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     }
     props.onResize({ id: `${id}`, settings: styleChanges });
   };
+  const getTextExpressions = (nodes: any) => {
+    let optionText = '';
+    if (nodes?.text) {
+      optionText = extractExpressionFromText(nodes.text);
+    } else if (nodes.children) {
+      optionText = nodes.children?.map((childrennTree: MarkupTree) => {
+        return getTextExpressions(childrennTree || []);
+      });
+    }
+    return typeof optionText === 'object' ? optionText[0] : optionText;
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
+    const pNodes = pModel?.nodes || [];
+    let tree: MarkupTree[] = [];
+    if (pNodes && typeof pNodes === 'string') {
+      tree = JSON.parse(pNodes as string) as MarkupTree[];
+    } else if (Array.isArray(pNodes)) {
+      tree = pNodes;
+    }
+    const allExpression = tree?.map((subtree: MarkupTree) => {
+      return getTextExpressions(subtree || []);
+    });
+
+    const finalExppression = allExpression.filter((expression) => expression);
 
     const initResult = await props.onInit({
       id,
       responses: [],
+      expressions: finalExppression,
     });
-
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
@@ -127,6 +156,13 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
       // make a child scope so that any textflow scripts can't affect the parent
       const flowEnv = new Environment(initResult.env);
       setScriptEnv(flowEnv);
+    }
+    if (initResult?.expressionResult?.length) {
+      setExpressions((existingExpression) =>
+        existingExpression?.length
+          ? [existingExpression, ...initResult.expressionResult]
+          : initResult.expressionResult,
+      );
     }
     handleStylingChanges();
     setReady(true);
@@ -275,6 +311,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
           fontSize,
           undefined,
           scriptEnv,
+          expressions,
         ),
       )}
     </div>

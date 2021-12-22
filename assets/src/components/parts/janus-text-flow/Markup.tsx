@@ -28,6 +28,7 @@ const Markup: React.FC<any> = ({
   customCssClass = '',
   displayRawText = false,
   env = new Environment(),
+  expressions,
 }) => {
   /*eslint-enable */
   const el = useRef<any>(null);
@@ -64,7 +65,11 @@ const Markup: React.FC<any> = ({
   let processedText = text;
   // allow (authoring usually) skipping the template processing
   if (!displayRawText) {
-    processedText = templatizeText(text, state, env);
+    let updatedText = text;
+    expressions.forEach((exp: Record<string, string>) => {
+      updatedText = text.replaceAll(exp.expression, exp.newExpression);
+    });
+    processedText = templatizeText(updatedText, state, env);
   }
 
   // eslint-disable-next-line

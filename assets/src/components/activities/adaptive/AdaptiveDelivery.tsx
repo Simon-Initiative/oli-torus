@@ -147,7 +147,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     };
   }, []);
 
-  const partInit = useCallback(
+  const partsInit = useCallback(
     async (partId: string) => {
       const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       const partsInitStatus = sharedInitMap.get(props.model.id);
@@ -192,16 +192,29 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     [parts, adaptivityDomain],
   );
 
-  const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
-    /* console.log('onPartInit', payload); */
+  const handlePartInit = async (payload: {
+    id: string | number;
+    responses: any[];
+    expressions?: string[];
+  }) => {
     // a part should send initial state values
     if (payload.responses.length) {
       const saveResults = await handlePartSave(payload);
     }
-
-    const { snapshot, context, env } = await partInit(payload.id.toString());
+    let expressionResult: any = [];
+    if (payload.expressions && payload.expressions.length) {
+      const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+      // part attempt guid should be located in currentAttemptState.parts matched to id
+      const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
+      expressionResult = await props.onInitPart(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        payload.expressions,
+      );
+    }
+    const { snapshot, context, env } = await partsInit(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot, context, env };
+    return { snapshot, context, env, expressionResult };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {

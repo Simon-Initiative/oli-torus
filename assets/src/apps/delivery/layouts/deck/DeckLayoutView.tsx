@@ -26,6 +26,7 @@ import { initializeActivity } from '../../store/features/groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
+  selectSequence,
 } from '../../store/features/groups/selectors/deck';
 import { selectEnableHistory, selectUserName, setScore } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
@@ -49,6 +50,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const dispatch = useDispatch();
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
+  const sequence = useSelector(selectSequence);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
@@ -310,6 +312,31 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return true;
   };
 
+  const handlePartInit = async (
+    activityId: string | number,
+    attemptGuid: string,
+    expressions: string[],
+  ) => {
+    const gotit = expressions.map((expression) => {
+      if (expression.indexOf('stage.') === 0) {
+        return { expression, newExpression: expression };
+      }
+      const [activityId, part] = expression.split('|');
+      const activitySequence = sequence.find((entry) => entry?.custom?.sequenceId === activityId);
+      const activityLayerId = activitySequence?.custom?.layerRef;
+      let expressionValue = getValue(expression, defaultGlobalEnv);
+      let updatedExpression = expression;
+      if (expressionValue == undefined) {
+        expressionValue = getValue(activityLayerId + '|' + part, defaultGlobalEnv);
+        if (expressionValue !== undefined) {
+          updatedExpression = activityLayerId + '|' + part;
+        }
+      }
+      return { expression, newExpression: updatedExpression };
+    });
+    return gotit;
+  };
+
   const handleActivitySavePart = async (
     activityId: string | number,
     attemptGuid: string,
@@ -471,6 +498,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           onActivitySubmitPart={handleActivitySubmitPart}
           onActivityReady={handleActivityReady}
           onRequestLatestState={handleActivityRequestLatestState}
+          onActivityPartInit={handlePartInit}
         />
       );
     });

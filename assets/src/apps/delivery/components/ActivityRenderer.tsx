@@ -54,6 +54,7 @@ interface ActivityRendererProps {
   onActivityReady?: any;
   onRequestLatestState?: any;
   adaptivityDomain?: string; // currently 'stage' or 'app'
+  onActivityPartInit?: any;
 }
 
 const defaultHandler = async () => {
@@ -83,6 +84,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityResetPart = defaultHandler,
   onActivitySubmitEvaluations = defaultHandler,
   onActivityReady = defaultHandler,
+  onActivityPartInit = defaultHandler,
   onRequestLatestState = async () => ({ snapshot: {} }),
   adaptivityDomain = 'stage',
 }) => {
@@ -194,6 +196,16 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     return result;
   };
 
+  const onInitPart = async (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    expressions: string[],
+  ) => {
+    const result = await onActivityPartInit(attemptGuid, partAttemptGuid, expressions);
+
+    return result;
+  };
+
   const onSubmitPart = async (
     attemptGuid: string,
     partAttemptGuid: string,
@@ -260,6 +272,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     resizePart: onResize,
     getUserData: readUserData,
     setUserData: saveUserData,
+    partInit: onInitPart,
   };
 
   const [isReady, setIsReady] = useState(false);
@@ -482,6 +495,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     onResize,
     onSetData: saveUserData,
     onGetData: readUserData,
+    onInitPart,
   };
 
   // don't render until we're already listening!
