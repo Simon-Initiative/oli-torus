@@ -87,6 +87,14 @@ export const validators = [
         return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
       }, []),
   },
+  
+  /*{
+    type: DiagnosticTypes.INVALID_VALUE,
+    validate: (activity: any, hierarchy: any, sequence: any[]) =>
+      activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
+        return brokenColl;
+      }, []),
+  },*/
 ];
 
 export const validatePartIds = createAsyncThunk<any, any, any>(
@@ -102,7 +110,7 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
 
     const errors: DiagnosticError[] = [];
 
-    allActivities.forEach((activity) => {
+    allActivities.forEach((activity: any) => {
       const foundProblems = validators.reduce(
         (probs: any, validator: any) => ({
           ...probs,
@@ -110,6 +118,10 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
         }),
         {},
       );
+
+      if (activity.activitySlug === 'welcome') {
+        console.log(activity);
+      }
 
       const countProblems = Object.keys(foundProblems).reduce(
         (c: number, current: any) => foundProblems[current].length + c,

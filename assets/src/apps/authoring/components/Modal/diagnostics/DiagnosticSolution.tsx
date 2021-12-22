@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 
 import { DiagnosticTypes } from './DiagnosticTypes';
-import FixIdButton from './FixIdButton';
+import { FixIdButton } from './FixIdButton';
 import { FixBrokenPathButton } from './FixBrokenPathButton';
 import { SolutionProps } from './SolutionProps';
 
