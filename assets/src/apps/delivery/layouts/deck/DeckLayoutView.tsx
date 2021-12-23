@@ -313,7 +313,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
           mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
         },
       });
-      console.log('calling dispatch(setInitPhaseComplete(true));');
 
       dispatch(setInitPhaseComplete(true));
     }
