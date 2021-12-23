@@ -151,6 +151,7 @@ export const initializeActivity = createAsyncThunk(
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
+    console.log({ initState, globalizedInitState });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
