@@ -63,11 +63,6 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => Promise<Success>;
-  onInitPart: (
-    attemptGuid: string,
-    partAttemptGuid: string,
-    expressions: string[],
-  ) => Promise<Success>;
   onSubmitPart: (
     attemptGuid: string,
     partAttemptGuid: string,
@@ -80,6 +75,11 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   ) => Promise<EvaluationResponse>;
   onReady?: (attemptGuid: string) => Promise<Success>;
   onResize?: (attemptGuid: string) => Promise<Success>;
+  onInitPart?: (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    expressions: string[],
+  ) => Promise<Success>;
 }
 
 // An abstract delivery web component, designed to delegate to
