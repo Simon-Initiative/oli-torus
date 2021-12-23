@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
 import { templatizeText } from 'apps/delivery/components/TextParser';
+import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -7,6 +8,7 @@ import {
   bulkApplyState,
   defaultGlobalEnv,
   extractAllExpressionsFromText,
+  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
@@ -44,6 +46,7 @@ import {
   selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
+  selectPreviewMode,
   setScore,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
@@ -175,6 +178,7 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const sequence = useSelector(selectSequence);
+  const isPreviewMode = useSelector(selectPreviewMode);
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
   const [displayFeedback, setDisplayFeedback] = useState(false);
@@ -314,6 +318,20 @@ const DeckLayoutFooter: React.FC = () => {
         score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
       });
 
+      const everAppUpdates = mutationsModified.filter((op: ApplyStateOperation) => {
+        return op.target.indexOf('app') === 0;
+      });
+      if (everAppUpdates.length) {
+        const envState = getEnvState(defaultGlobalEnv);
+        const everAppState = everAppUpdates.reduce((acc: any, op: ApplyStateOperation) => {
+          const [, everAppId] = op.target.split('.');
+          acc[everAppId] = acc[everAppId] || {};
+          acc[everAppId][op.target.replace(`app.${everAppId}.`, '')] = envState[op.target];
+          return acc;
+        }, {});
+        updateGlobalUserState(everAppState, isPreviewMode);
+      }
+
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
       );
@@ -410,7 +428,7 @@ const DeckLayoutFooter: React.FC = () => {
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
-  }, [lastCheckResults]);
+  }, [lastCheckResults, isPreviewMode]);
 
   const checkHandler = () => {
     setIsLoading(true);

@@ -19,19 +19,25 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
   const { action, allowDelete, onChange, onDelete } = props;
   const sequence = useSelector(selectSequence);
   const selectedSequence = findInSequence(sequence, action?.params?.target);
-  const [target, setTarget] = useState(selectedSequence?.custom.sequenceId || 'invalid');
+  const sequenceId =
+    action?.params?.target === 'next' ? action.params.target : selectedSequence?.custom.sequenceId;
+  const [target, setTarget] = useState(sequenceId || 'invalid');
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const uuid = guid();
 
   // When the 'Navigate to' Option is changed
   useEffect(() => {
-    setTarget(selectedSequence?.custom.sequenceId || 'invalid');
-  }, [selectedSequence]);
+    const sequenceId =
+      action?.params?.target === 'next'
+        ? action.params.target
+        : selectedSequence?.custom.sequenceId;
+    setTarget(sequenceId || 'invalid');
+  }, [selectedSequence, action]);
 
   const onChangeHandler = (sequenceId: string) => {
     // console.log('onChange picker', sequenceId);
-    onChange({ target: sequenceId || 'invalid' });
-    setTarget(sequenceId || 'invalid');
+    onChange({ target: sequenceId || 'next' });
+    setTarget(sequenceId || 'next');
   };
 
   return (
