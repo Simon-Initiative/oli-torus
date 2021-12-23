@@ -202,7 +202,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       const saveResults = await handlePartSave(payload);
     }
     let expressionResult: any = [];
-    if (payload.expressions && payload.expressions.length) {
+    if (payload.expressions && payload.expressions.length && props.onInitPart) {
       const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       // part attempt guid should be located in currentAttemptState.parts matched to id
       const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
