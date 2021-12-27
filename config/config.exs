@@ -168,6 +168,14 @@ config :surface, :components, [
 config :oli, :privacy_policies,
   url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
 
+# Configure footer text and links
+config :oli, :footer,
+  text: System.get_env("FOOTER_TEXT", "By accessing this site, you agree to the "),
+  link_1_location: System.get_env("FOOTER_LINK_1_LOCATION", "https://www.argos.education/terms"),
+  link_1_text: System.get_env("FOOTER_LINK_1_TEXT", "terms of use. "),
+  link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", "https://support.argos.education"),
+  link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "Support")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
