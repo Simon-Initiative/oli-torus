@@ -1,5 +1,4 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { readGlobalUserState } from 'data/persistence/extrinsic';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
 import {
@@ -54,21 +53,6 @@ export const loadInitialPageState = createAsyncThunk(
 
       // Sets up Current Active Everapp to None
       sessionState['app.active'] = 'none';
-
-      // read all user state for the assigned everapps into the session state
-      /* console.log('INIT PAGE', params); */
-      if (params.content.custom?.everApps) {
-        const everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
-        const userState = await readGlobalUserState(everAppIds, params.previewMode);
-        const everAppState = Object.keys(userState).reduce((acc: any, key) => {
-          Object.keys(userState[key]).forEach((subKey) => {
-            acc[`app.${key}.${subKey}`] = userState[key][subKey];
-          });
-          return acc;
-        }, {});
-        /* console.log('EVER APP STATE', { userState, everAppIds, everAppState }); */
-        Object.assign(sessionState, everAppState);
-      }
 
       if (params.resourceAttemptState) {
         Object.assign(sessionState, params.resourceAttemptState);
