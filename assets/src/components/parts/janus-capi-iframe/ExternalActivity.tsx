@@ -531,6 +531,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const formatted: Record<string, unknown> = {};
         const simVariable = filterVars[variable];
         const typeOfValue = typeof simVariable.value;
+        //Now we know that configData variable can contain a expression in value field so we need to parse that before sending it to SIM
         if (typeOfValue === 'string' && simVariable.value.indexOf('{') !== -1) {
           const gotid = templatizeText(simVariable.value, simLife.snapshot);
           simVariable.value = gotid;
