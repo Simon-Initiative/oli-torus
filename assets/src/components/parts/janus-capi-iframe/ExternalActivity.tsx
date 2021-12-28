@@ -143,20 +143,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
-  // Now we know that it is possible that the Init State variables can have an expression so we need to process them before we send them to SIM
-  const processInitStateVariablesExpression = (variables: any, state: Record<string, any>) => {
-    const result = Object.keys(variables).reduce((acc: Record<string, unknown>, key: any) => {
-      let updatedValue = variables[key];
-      const typeOfValue = typeof updatedValue;
-      if (typeOfValue === 'string') {
-        updatedValue = templatizeText(updatedValue, state);
-      }
-      acc[key] = updatedValue;
-      return acc;
-    }, {});
-    setInitState(result);
-  };
-
   const processInitStateVariable = (currentStateSnapshot: any, domain = 'stage') => {
     const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
@@ -216,8 +202,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       },
       {},
     );
+    setInitState(interestedSnapshot);
     simLife.snapshot = currentStateSnapshot;
-    processInitStateVariablesExpression(interestedSnapshot, currentStateSnapshot);
     setInitStateReceived(true);
   };
   useEffect(() => {
