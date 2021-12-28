@@ -143,16 +143,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
-  // Now we know that it is possible that the configData variables can have an expression so we need to process them before we send them to SIM
-  const processConfigDataExpression = (variables: any, state: Record<string, any>) => {
-    variables.forEach((variable: any) => {
-      const simVariable = variable;
-      const typeOfValue = typeof simVariable.value;
-      if (typeOfValue === 'string') {
-        simVariable.value = templatizeText(simVariable.value, state);
-      }
-    });
-  };
   // Now we know that it is possible that the Init State variables can have an expression so we need to process them before we send them to SIM
   const processInitStateVariablesExpression = (variables: any, state: Record<string, any>) => {
     const result = Object.keys(variables).reduce((acc: Record<string, unknown>, key: any) => {
@@ -226,11 +216,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       },
       {},
     );
-    processConfigDataExpression(simLife.currentState, currentStateSnapshot);
+    simLife.snapshot = currentStateSnapshot;
     processInitStateVariablesExpression(interestedSnapshot, currentStateSnapshot);
     setInitStateReceived(true);
   };
-
   useEffect(() => {
     let pModel;
     let pState;
@@ -328,6 +317,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     ready: false,
     currentState: [],
     ownerActivityId: 0,
+    snapshot: {},
   });
   const [simLife, setSimLife] = useState(getCleanSimLife());
   const [internalState, setInternalState] = useState(state || []);
@@ -436,6 +426,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife,
                 payload,
               });
+              simLife.snapshot = payload.snapshot;
               if (payload.domain) {
                 simLife.domain = payload.domain;
               }
@@ -552,7 +543,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       });
       Object.keys(filterVars).forEach((variable: any) => {
         const formatted: Record<string, unknown> = {};
-        formatted[variable] = filterVars[variable];
+        const simVariable = filterVars[variable];
+        const typeOfValue = typeof simVariable.value;
+        if (typeOfValue === 'string' && simVariable.value.indexOf('{') !== -1) {
+          const gotid = templatizeText(simVariable.value, simLife.snapshot);
+          simVariable.value = gotid;
+        }
+
+        formatted[variable] = simVariable;
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
     }
