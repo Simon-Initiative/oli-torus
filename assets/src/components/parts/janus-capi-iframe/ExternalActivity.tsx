@@ -1,3 +1,4 @@
+import { templatizeText } from 'apps/delivery/components/TextParser';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -142,6 +143,30 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
+  // Now we know that it is possible that the configData variables can have an expression so we need to process them before we send them to SIM
+  const processConfigDataExpression = (variables: any, state: Record<string, any>) => {
+    variables.forEach((variable: any) => {
+      const simVariable = variable;
+      const typeOfValue = typeof simVariable.value;
+      if (typeOfValue === 'string') {
+        simVariable.value = templatizeText(simVariable.value, state);
+      }
+    });
+  };
+  // Now we know that it is possible that the Init State variables can have an expression so we need to process them before we send them to SIM
+  const processInitStateVariablesExpression = (variables: any, state: Record<string, any>) => {
+    const result = Object.keys(variables).reduce((acc: Record<string, unknown>, key: any) => {
+      let updatedValue = variables[key];
+      const typeOfValue = typeof updatedValue;
+      if (typeOfValue === 'string') {
+        updatedValue = templatizeText(updatedValue, state);
+      }
+      acc[key] = updatedValue;
+      return acc;
+    }, {});
+    setInitState(result);
+  };
+
   const processInitStateVariable = (currentStateSnapshot: any, domain = 'stage') => {
     const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
@@ -201,7 +226,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       },
       {},
     );
-    setInitState(interestedSnapshot);
+    processConfigDataExpression(simLife.currentState, currentStateSnapshot);
+    processInitStateVariablesExpression(interestedSnapshot, currentStateSnapshot);
     setInitStateReceived(true);
   };
 
@@ -520,7 +546,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
       handleIFrameSpecificProperties(simLife.currentState, simLife.domain);
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
+      writeCapiLog('SENDING SIM CONFIG DATA !!!!', 3, {
+        simLife,
+        configData: filterVars,
+      });
+      Object.keys(filterVars).forEach((variable: any) => {
+        const formatted: Record<string, unknown> = {};
+        formatted[variable] = filterVars[variable];
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+      });
     }
     //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
     if (!initState && !Object.keys(initState)?.length) {
