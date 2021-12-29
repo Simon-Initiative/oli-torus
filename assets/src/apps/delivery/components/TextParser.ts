@@ -1,4 +1,9 @@
-import { evalScript, extractAllExpressionsFromText, getAssignScript } from 'adaptivity/scripting';
+import {
+  defaultGlobalEnv,
+  evalScript,
+  extractAllExpressionsFromText,
+  getAssignScript,
+} from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 // function to select the content between only the outermost {}
 
@@ -8,7 +13,7 @@ export const templatizeText = (
   env?: Environment,
   isFromTrapStates = false,
 ): string => {
-  let innerEnv = env;
+  let innerEnv = env || defaultGlobalEnv;
   const vars = extractAllExpressionsFromText(text);
   /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
