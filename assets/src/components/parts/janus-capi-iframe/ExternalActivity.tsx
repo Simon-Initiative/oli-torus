@@ -12,6 +12,7 @@ import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
+import { Environment } from 'janus-script';
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
 const getExternalActivityMap = () => {
@@ -33,6 +34,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
+  const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -138,6 +140,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
     if (initResult.context.mode) {
       context = initResult.context.mode;
+    }
+    if (initResult.env) {
+      const Env = new Environment(initResult.env);
+      setScriptEnv(Env);
     }
     simLife.domain = initResult.context.domain || 'stage';
     processInitStateVariable(currentStateSnapshot, simLife.domain);
@@ -533,7 +539,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const typeOfValue = typeof simVariable.value;
         //Now we know that configData variable can contain a expression in value field so we need to parse that before sending it to SIM
         if (typeOfValue === 'string' && simVariable.value.indexOf('{') !== -1) {
-          const gotid = templatizeText(simVariable.value, simLife.snapshot);
+          const gotid = templatizeText(simVariable.value, simLife.snapshot, scriptEnv);
           simVariable.value = gotid;
         }
 
