@@ -13,7 +13,7 @@ export const templatizeText = (
   env?: Environment,
   isFromTrapStates = false,
 ): string => {
-  let innerEnv = env || defaultGlobalEnv;
+  let innerEnv = env;
   const vars = extractAllExpressionsFromText(text);
   /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
