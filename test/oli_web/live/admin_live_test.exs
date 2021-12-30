@@ -7,7 +7,7 @@ defmodule OliWeb.AdminLiveTest do
   import OliWeb.Common.Properties.Utils
 
   alias Oli.Accounts
-  alias Oli.Accounts.User
+  alias Oli.Accounts.{Author, User}
 
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
@@ -17,10 +17,20 @@ defmodule OliWeb.AdminLiveTest do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user_id)
   end
 
+  defp live_view_author_detail_route(author_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsDetailView, author_id)
+  end
+
   defp create_user(_conn) do
     user = insert(:user)
 
     [user: user]
+  end
+
+  defp create_author(_conn) do
+    author = insert(:author)
+
+    [author: author]
   end
 
   describe "user cannot access when is not logged in" do
@@ -46,6 +56,15 @@ defmodule OliWeb.AdminLiveTest do
     test "redirects to new session when accessing the admin authors view", %{conn: conn} do
       {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fauthors"}}} =
         live(conn, @live_view_authors_route)
+    end
+
+    test "redirects to new session when accessing the author detail view", %{conn: conn} do
+      author_id = insert(:author).id
+
+      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fauthors%2F#{author_id}"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_author_detail_route(author_id))
     end
   end
 
@@ -554,6 +573,159 @@ defmodule OliWeb.AdminLiveTest do
       refute view
              |> render() =~
                first_author.given_name
+    end
+  end
+
+  describe "author detail" do
+    setup [:admin_conn, :create_author]
+
+    test "loads correctly with author data", %{conn: conn, author: author} do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(author.id))
+
+      assert has_element?(view, "input[value=\"#{author.name}\"]")
+      assert has_element?(view, "input[value=\"#{author.given_name}\"]")
+      assert has_element?(view, "input[value=\"#{author.family_name}\"]")
+      assert has_element?(view, "input[value=\"#{author.email}\"]")
+      assert has_element?(view, "input[value=\"Author\"]")
+    end
+
+    test "redirects to index view and displays error message when author does not exist", %{
+      conn: conn
+    } do
+      assert {:error, {:redirect, %{to: "/not_found"}}} =
+               live(conn, live_view_author_detail_route(1000))
+    end
+
+    test "displays a confirm modal before deleting a author", %{
+      conn: conn,
+      author: %Author{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> render_click()
+
+      assert view
+             |> element("h5.modal-title")
+             |> render() =~
+               "Delete Account"
+    end
+
+    test "deletes the author and redirects to the index page", %{
+      conn: conn,
+      author: %Author{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"delete_account\"]")
+      |> render_click()
+
+      flash = assert_redirected(view, @live_view_authors_route)
+      assert flash["info"] == "Author successfully deleted."
+
+      assert_raise Ecto.NoResultsError,
+                   ~r/^expected at least one result but got none in query/,
+                   fn -> Accounts.get_author!(id) end
+    end
+
+    test "locks the author", %{
+      conn: conn,
+      author: %Author{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_lock_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"lock_account\"]")
+      |> render_click()
+
+      %Author{locked_at: date} = Accounts.get_author!(id)
+      assert not is_nil(date)
+    end
+
+    test "unlocks the author", %{
+      conn: conn
+    } do
+      {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
+      %Author{id: id} = insert(:author, %{locked_at: date})
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_unlock_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"unlock_account\"]")
+      |> render_click()
+
+      assert %Author{locked_at: nil} = Accounts.get_author!(id)
+    end
+
+    test "confirms author email", %{
+      conn: conn
+    } do
+      %Author{id: id} = insert(:author, %{email_confirmed_at: nil})
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_confirm_email_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"confirm_email\"]")
+      |> render_click()
+
+      %Author{email_confirmed_at: date} = Accounts.get_author!(id)
+      assert not is_nil(date)
+    end
+
+    test "grant admin to author", %{
+      conn: conn,
+      author: %Author{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_grant_admin_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"grant_admin\"]")
+      |> render_click()
+
+      admin_role = Oli.Accounts.SystemRole.role_id().admin
+      assert %Author{system_role_id: ^admin_role} = Accounts.get_author!(id)
+    end
+
+    test "revoke admin to author", %{
+      conn: conn
+    } do
+      %Author{id: id} =
+        insert(:author, %{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_revoke_admin_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"revoke_admin\"]")
+      |> render_click()
+
+      author_role = Oli.Accounts.SystemRole.role_id().author
+      assert %Author{system_role_id: ^author_role} = Accounts.get_author!(id)
     end
   end
 end
