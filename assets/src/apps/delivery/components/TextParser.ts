@@ -1,9 +1,4 @@
-import {
-  defaultGlobalEnv,
-  evalScript,
-  extractAllExpressionsFromText,
-  getAssignScript,
-} from 'adaptivity/scripting';
+import { evalScript, extractAllExpressionsFromText, getAssignScript } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 // function to select the content between only the outermost {}
 
