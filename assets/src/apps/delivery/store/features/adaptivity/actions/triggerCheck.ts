@@ -10,6 +10,7 @@ import {
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
   getValue,
+  looksLikeJson,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectExtrinsicState, updateExtrinsicState } from '../../attempt/slice';
@@ -59,10 +60,12 @@ const handleParentChildActivityVariableSync = (
     const finalCurrentActivityVariables: ApplyStateOperation[] = Object.keys(
       updatedCurrentActivityVariables,
     ).map((yup) => {
+      const val = updatedCurrentActivityVariables[yup];
+      const looksLikeJSON = typeof val === 'string' ? looksLikeJson(val) : false;
       const globalOp: ApplyStateOperation = {
         target: yup,
         operator: '=',
-        value: updatedCurrentActivityVariables[yup],
+        value: looksLikeJSON ? JSON.stringify(val) : updatedCurrentActivityVariables[yup],
       };
       return globalOp;
     });
