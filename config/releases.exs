@@ -180,11 +180,11 @@ config :oli, :privacy_policies,
 
 # Configure footer text and links
 config :oli, :footer,
-  text: System.get_env("FOOTER_TEXT", "By accessing this site, you agree to the "),
-  link_1_location: System.get_env("FOOTER_LINK_1_LOCATION", "https://www.argos.education/terms"),
-  link_1_text: System.get_env("FOOTER_LINK_1_TEXT", "terms of use. "),
-  link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", "https://support.argos.education"),
-  link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "Support")
+  text: System.get_env("FOOTER_TEXT", ""),
+  link_1_location: System.get_env("FOOTER_LINK_1_LOCATION", ""),
+  link_1_text: System.get_env("FOOTER_LINK_1_TEXT", ""),
+  link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
+  link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
 
 # ## Using releases (Elixir v1.9+)
 #
