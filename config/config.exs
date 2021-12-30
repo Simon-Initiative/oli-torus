@@ -164,6 +164,10 @@ config :surface, :components, [
   }
 ]
 
+# Configure Privacy Policies link
+config :oli, :privacy_policies,
+  url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

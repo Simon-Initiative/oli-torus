@@ -174,6 +174,10 @@ truncate =
 
 config :logger, truncate: truncate
 
+# Configure Privacy Policies link
+config :oli, :privacy_policies,
+  url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

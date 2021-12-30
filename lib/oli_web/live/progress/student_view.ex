@@ -18,6 +18,7 @@ defmodule OliWeb.Progress.StudentView do
   data table_model, :struct
   data resource_accesses, :map
   data page_nodes, :list
+  data local_tz, :any
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -72,6 +73,7 @@ defmodule OliWeb.Progress.StudentView do
 
             {:ok,
              assign(socket,
+               local_tz: local_tz,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,
