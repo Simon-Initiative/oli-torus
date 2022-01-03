@@ -449,7 +449,19 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def send_one_grade(section, user, resource_access) do
-    Oli.Grading.send_score_to_lms(section, user, resource_access, access_token_provider(section))
+    case Oli.Grading.send_score_to_lms(
+           section,
+           user,
+           resource_access,
+           access_token_provider(section)
+         ) do
+      {:error, e} ->
+        Oli.Utils.Appsignal.capture_error(e)
+        {:error, e}
+
+      success ->
+        success
+    end
   end
 
   def finalize_attempt(conn, %{
