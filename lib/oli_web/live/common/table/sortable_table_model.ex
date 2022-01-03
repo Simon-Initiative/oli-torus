@@ -221,6 +221,13 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> sort
   end
 
+  def determine_total(entities) do
+    case entities do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
+  end
+
   def render_inserted_at_column(_, %{inserted_at: inserted_at}, _) do
     Timex.format!(inserted_at, "{relative}", :relative)
   end

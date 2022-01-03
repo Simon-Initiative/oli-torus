@@ -22,10 +22,14 @@ defmodule Oli.Factory do
     %User{
       email: "#{sequence("user")}@example.edu",
       name: sequence("User name"),
-      given_name: "User given name",
+      given_name: sequence("User given name"),
       family_name: "User family name",
       sub: "#{sequence("usersub")}",
-      author: insert(:author)
+      author: insert(:author),
+      guest: false,
+      independent_learner: true,
+      can_create_sections: true,
+      locked_at: nil
     }
   end
 
