@@ -62,15 +62,32 @@ defmodule OliWeb.Users.UsersTableModel do
     """
   end
 
-  def render_learner_column(assigns, %{independent_learner: independent_learner}, _) do
-    if independent_learner do
-      ~F"""
-        <span class="badge badge-primary">Independent Learner</span>
-      """
-    else
-      ~F"""
-        <span class="badge badge-dark">LTI</span>
-      """
-    end
+  def render_learner_column(
+        assigns,
+        %{independent_learner: independent_learner, can_create_sections: can_create_sections},
+        _
+      ) do
+    primary_badge =
+      if independent_learner do
+        ~F"""
+          <span class="badge badge-primary">Independent Learner</span>
+        """
+      else
+        ~F"""
+          <span class="badge badge-dark">LTI</span>
+        """
+      end
+
+    secondary_badge =
+      if can_create_sections do
+        ~F"""
+          <span class="badge badge-light">Can Create Sections</span>
+        """
+      else
+        ~F"""
+        """
+      end
+
+      ~F({primary_badge} {secondary_badge})
   end
 end

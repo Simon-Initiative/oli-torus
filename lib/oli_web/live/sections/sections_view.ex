@@ -1,9 +1,9 @@
 defmodule OliWeb.Sections.SectionsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Oli.Repo
+
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
-  alias Oli.Accounts.Author
+  alias Oli.Accounts
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -48,8 +48,8 @@ defmodule OliWeb.Sections.SectionsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
+    author = Accounts.get_author!(author_id)
 
     sections =
       Browse.browse_sections(
@@ -60,7 +60,7 @@ defmodule OliWeb.Sections.SectionsView do
 
     total_count = determine_total(sections)
 
-    {:ok, table_model} = SectionsTableModel.new(sections)
+    {:ok, table_model} = SectionsTableModel.new(sections, Map.get(session, "local_tz"))
 
     {:ok,
      assign(socket,
@@ -90,7 +90,7 @@ defmodule OliWeb.Sections.SectionsView do
     offset = get_int_param(params, "offset", 0)
 
     options = %BrowseOptions{
-      text_search: get_str_param(params, "text_search", ""),
+      text_search: get_param(params, "text_search", ""),
       show_deleted: get_boolean_param(params, "show_deleted", false),
       active_only: get_boolean_param(params, "active_only", false),
       # This view is currently for all institutions and all root products

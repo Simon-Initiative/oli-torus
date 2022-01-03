@@ -73,6 +73,9 @@ const Markup: React.FC<any> = ({
     // add a non breaking space instead of nothing
 
     processedText = processedText.length < 2 && !processedText.trim() ? '\u00a0' : processedText;
+    if (tag === 'span') {
+      renderStyles.visibility = 'hidden';
+    }
   }
   if (processedText.length !== processedText.trimLeft().length) {
     const noOfleadingSpaces = processedText.length - processedText.trimLeft().length;
@@ -255,6 +258,9 @@ const Markup: React.FC<any> = ({
         </sup>
       );
     case 'small':
+      if (!renderStyles.display) {
+        renderStyles.display = 'inline';
+      }
       return (
         <small ref={el} key={key} className={customCssClass} style={renderStyles}>
           {processedText}
@@ -297,7 +303,22 @@ const Markup: React.FC<any> = ({
       );
     case 'li':
       // eslint-disable-next-line
+      let spanChildren: any[] = [];
+      children.forEach((child: any) => {
+        if (child.props.tag === 'p') {
+          child.props.children.forEach((child: any) => {
+            if (child.props.tag === 'span') {
+              spanChildren.push(child);
+            }
+          });
+        } else if (child.props.tag === 'span') {
+          spanChildren.push(child);
+        }
+      });
       const listStyle = { ...renderStyles, display: 'list-item' };
+      if (spanChildren.length === 1 && spanChildren[0].props.style.color && !listStyle.color) {
+        listStyle.color = spanChildren[0].props.style.color;
+      }
       return (
         <li ref={el} key={key} className={customCssClass} style={listStyle}>
           {processedText}

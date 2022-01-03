@@ -1,35 +1,7 @@
-import { defaultGlobalEnv, evalScript, getAssignScript, getValue } from 'adaptivity/scripting';
+import { evalScript, extractAllExpressionsFromText, getAssignScript } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 // function to select the content between only the outermost {}
-const getExpression = (text: string) => {
-  const firstCurly = text.indexOf('{');
-  let lastCurly = -1;
-  let counter = 1;
-  let opens = 1;
-  while (counter < text.length && lastCurly === -1) {
-    if (text[firstCurly + counter] === '{') {
-      opens++;
-    } else if (text[firstCurly + counter] === '}') {
-      opens--;
-      if (opens === 0) {
-        lastCurly = firstCurly + counter;
-      }
-    }
-    counter++;
-  }
-  return text.substring(firstCurly + 1, lastCurly);
-};
-// extract all expressions from a string
-const extractExpressions = (text: string): string[] => {
-  const expressions = [];
-  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
-    const expr = getExpression(text);
-    const rest = text.substring(text.indexOf(expr) + expr.length + 1);
-    expressions.push(expr);
-    expressions.push(...extractExpressions(rest));
-  }
-  return expressions;
-};
+
 export const templatizeText = (
   text: string,
   state: any,
@@ -37,7 +9,7 @@ export const templatizeText = (
   isFromTrapStates = false,
 ): string => {
   let innerEnv = env;
-  const vars = extractExpressions(text);
+  const vars = extractAllExpressionsFromText(text);
   /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
     return text;
@@ -86,7 +58,7 @@ export const templatizeText = (
         console.log('error evaluating text', { v, e });
       }
     }
-    if (!stateValue) {
+    if (stateValue === undefined) {
       if (isFromTrapStates) {
         return text;
       } else {
@@ -101,7 +73,7 @@ export const templatizeText = (
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
     } else if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toFixed(4));
+      strValue = parseFloat(parseFloat(strValue).toString());
     }
     return strValue;
   });

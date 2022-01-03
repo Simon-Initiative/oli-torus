@@ -25,7 +25,10 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   The `id_field` is the field name from the row items that uniquely identifies a row item.  This will be used
   when emitting events related to a particular row item.
   """
+  use Surface.LiveComponent
+
   alias OliWeb.Common.Table.ColumnSpec
+  alias Surface.Components.Link
 
   # the items to display
   defstruct rows: [],
@@ -40,17 +43,41 @@ defmodule OliWeb.Common.Table.SortableTableModel do
             event_suffix: "",
             # the field used to identify uniquely a row item
             id_field: nil,
-            # extra data a view can push down to custom sorts or renderers
+
+            # optional extra data a view can push down to custom sorts or renderers that will be merged with
+            # table assigns
             data: %{}
 
-  def new(rows: rows, column_specs: column_specs, event_suffix: event_suffix, id_field: id_field) do
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field
+      ),
+      do:
+        new(
+          rows: rows,
+          column_specs: column_specs,
+          event_suffix: event_suffix,
+          id_field: id_field,
+          data: %{}
+        )
+
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        data: data
+      ) do
     model =
       %__MODULE__{
         rows: rows,
         column_specs: column_specs,
         event_suffix: event_suffix,
         id_field: id_field,
-        sort_by_spec: hd(column_specs)
+        sort_by_spec: hd(column_specs),
+        data: data
       }
       |> sort
 
@@ -64,6 +91,26 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         id_field: id_field,
         sort_by_spec: sort_by_spec,
         sort_order: sort_order
+      ),
+      do:
+        new(
+          rows: rows,
+          column_specs: column_specs,
+          event_suffix: event_suffix,
+          id_field: id_field,
+          sort_by_spec: sort_by_spec,
+          sort_order: sort_order,
+          data: %{}
+        )
+
+  def new(
+        rows: rows,
+        column_specs: column_specs,
+        event_suffix: event_suffix,
+        id_field: id_field,
+        sort_by_spec: sort_by_spec,
+        sort_order: sort_order,
+        data: data
       ) do
     model =
       %__MODULE__{
@@ -72,7 +119,8 @@ defmodule OliWeb.Common.Table.SortableTableModel do
         event_suffix: event_suffix,
         id_field: id_field,
         sort_by_spec: sort_by_spec,
-        sort_order: sort_order
+        sort_order: sort_order,
+        data: data
       }
       |> sort
 
@@ -171,5 +219,30 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> Map.put(:sort_order, sort_order)
     |> update_selection(selected)
     |> sort
+  end
+
+  def render_inserted_at_column(_, %{inserted_at: inserted_at}, _) do
+    Timex.format!(inserted_at, "{relative}", :relative)
+  end
+
+  def render_link_column(assigns, label, route_path, class \\ "") do
+    ~F"""
+      <Link
+        label={label}
+        to={route_path}
+        class={class}/>
+    """
+  end
+
+  def render_span_column(assigns, text, class \\ "") do
+    ~F"""
+      <span class={class}>{text}</span>
+    """
+  end
+
+  def render(assigns) do
+    ~F"""
+      <div>nothing</div>
+    """
   end
 end

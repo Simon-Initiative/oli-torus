@@ -1,11 +1,11 @@
 defmodule OliWeb.Delivery.SelectSource do
   use Surface.LiveView
 
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Products.Filter
-  alias OliWeb.Products.Listing
-  alias OliWeb.Common.Breadcrumb
+  alias Oli.Accounts
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Publishing
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
+  alias OliWeb.Router.Helpers, as: Routes
 
   data breadcrumbs, :any,
     default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
@@ -18,24 +18,33 @@ defmodule OliWeb.Delivery.SelectSource do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
-  data filter, :string, default: ""
-  data applied_filter, :string, default: ""
+  data query, :string, default: ""
+  data applied_query, :string, default: ""
 
-  @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/2
+  @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/3
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
+
+  # Breadcrumbs are an authoring-only requirement.
+  # SelectSource is used in delivery section creation (for LMS-lite functionality),
+  # so no breadcrumbs are needed in that context.
+  def breadcrumbs(:admin) do
+    OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb()
+  end
+
+  def breadcrumbs(_), do: []
 
   def breadcrumb(previous) do
     previous ++
       [
         Breadcrumb.new(%{
           full_title: "Select Source",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+          link: Routes.select_source_path(OliWeb.Endpoint, :admin)
         })
       ]
   end
 
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
+  def filter_rows(socket, query, _filter) do
+    case String.downcase(query) do
       "" ->
         socket.assigns.sources
 
@@ -54,27 +63,16 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   def live_path(socket, params) do
-    Routes.live_path(socket, OliWeb.Delivery.SelectSource, params)
+    Routes.select_source_path(socket, socket.assigns.live_action, params)
   end
 
-  defp retrieve_all_sources() do
-    products = Blueprint.list()
+  def mount(_params, session, socket) do
+    # SelectSource used in two routes.
+    # live_action is :independent_learner or :admin
+    route = socket.assigns.live_action
 
-    free_project_publications =
-      Oli.Publishing.all_available_publications()
-      |> then(fn publications ->
-        Blueprint.filter_for_free_projects(
-          products,
-          publications
-        )
-      end)
-
-    free_project_publications ++ products
-  end
-
-  def mount(_, _, socket) do
     sources =
-      retrieve_all_sources()
+      retrieve_all_sources(route, session)
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
     total_count = length(sources)
@@ -83,7 +81,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
     {:ok,
      assign(socket,
-       breadcrumbs: OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(),
+       breadcrumbs: breadcrumbs(route),
        total_count: total_count,
        table_model: table_model,
        sources: sources
@@ -94,12 +92,12 @@ defmodule OliWeb.Delivery.SelectSource do
     ~F"""
     <div>
 
-      <Filter apply={"apply_filter"} change={"change_filter"} reset="reset_filter"/>
+      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@applied_filter}
+        filter={@applied_query}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
@@ -114,11 +112,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   def handle_event("selected", %{"id" => source}, socket) do
     path =
-      Routes.open_and_free_path(
-        OliWeb.Endpoint,
-        :new,
-        %{"source_id" => source}
-      )
+      OliWeb.OpenAndFreeView.get_path([socket.assigns.live_action, :new, %{"source_id" => source}])
 
     {:noreply,
      redirect(socket,
@@ -127,4 +121,27 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   use OliWeb.Common.SortableTable.TableHandlers
+
+  defp retrieve_all_sources(:admin, _session) do
+    products = Blueprint.list()
+
+    free_project_publications =
+      Oli.Publishing.all_available_publications()
+      |> then(fn publications ->
+        Blueprint.filter_for_free_projects(
+          products,
+          publications
+        )
+      end)
+
+    free_project_publications ++ products
+  end
+
+  defp retrieve_all_sources(:independent_learner, session) do
+    Publishing.retrieve_visible_sources(
+      session["current_user_id"]
+      |> Accounts.get_user!(preload: [:author]),
+      nil
+    )
+  end
 end

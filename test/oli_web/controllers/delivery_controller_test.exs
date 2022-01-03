@@ -228,10 +228,10 @@ defmodule OliWeb.DeliveryControllerTest do
 
     tool_jwk = jwk_fixture()
 
-    registration =
-      registration_fixture(%{institution_id: institution.id, tool_jwk_id: tool_jwk.id})
+    registration = registration_fixture(%{tool_jwk_id: tool_jwk.id})
 
-    deployment = deployment_fixture(%{registration_id: registration.id})
+    deployment =
+      deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
     section =
       section_fixture(%{

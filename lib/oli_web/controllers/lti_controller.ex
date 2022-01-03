@@ -26,8 +26,15 @@ defmodule OliWeb.LtiController do
         |> put_session("state", state)
         |> redirect(external: redirect_url)
 
-      {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
-        handle_invalid_registration(conn, issuer, client_id)
+      {:error,
+       %{
+         reason: :invalid_registration,
+         msg: _msg,
+         issuer: issuer,
+         client_id: client_id,
+         lti_deployment_id: lti_deployment_id
+       }} ->
+        handle_invalid_registration(conn, issuer, client_id, lti_deployment_id)
 
       {:error, reason} ->
         render(conn, "lti_error.html", reason: reason)
@@ -130,7 +137,7 @@ defmodule OliWeb.LtiController do
       |> Keyword.get(:host)
 
     developer_key_config = %{
-      "title" => "OLI Torus",
+      "title" => Oli.VendorProperties.product_short_name(),
       "scopes" => [
         "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem",
         "https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly",
@@ -147,7 +154,7 @@ defmodule OliWeb.LtiController do
               %{
                 "placement" => "link_selection",
                 "message_type" => "LtiResourceLinkRequest",
-                "icon_url" => "https://#{host}/images/oli-icon.png"
+                "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
               },
               %{
                 "placement" => "course_navigation",
@@ -181,8 +188,7 @@ defmodule OliWeb.LtiController do
         "kty" => "RSA",
         "use" => "sig"
       },
-      "description" =>
-        "Create, deliver and iteratively improve course content through the Open Learning Initiative",
+      "description" => "Create, deliver and iteratively improve course content",
       "custom_fields" => %{},
       "public_jwk_url" => "https://#{host}/.well-known/jwks.json",
       "target_link_uri" => "https://#{host}/lti/launch",
@@ -282,13 +288,24 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: pending_registration_attrs["issuer"],
-          client_id: pending_registration_attrs["client_id"]
+          client_id: pending_registration_attrs["client_id"],
+          deployment_id: pending_registration_attrs["deployment_id"]
         )
     end
   end
 
-  defp handle_invalid_registration(conn, issuer, client_id) do
-    case Oli.Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
+  defp handle_invalid_registration(conn, issuer, client_id, deployment_id \\ nil) do
+    show_registration_page(conn, issuer, client_id, deployment_id)
+  end
+
+  defp handle_invalid_deployment(conn, _params, registration_id, deployment_id) do
+    registration = Institutions.get_registration!(registration_id)
+
+    show_registration_page(conn, registration.issuer, registration.client_id, deployment_id)
+  end
+
+  defp show_registration_page(conn, issuer, client_id, deployment_id) do
+    case Oli.Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
         conn
         |> render("register.html",
@@ -300,26 +317,13 @@ defmodule OliWeb.LtiController do
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,
-          client_id: client_id
+          client_id: client_id,
+          deployment_id: deployment_id
         )
 
       pending_registration ->
         conn
         |> render("registration_pending.html", pending_registration: pending_registration)
-    end
-  end
-
-  defp handle_invalid_deployment(conn, params, registration_id, deployment_id) do
-    case Institutions.create_deployment(%{
-           deployment_id: deployment_id,
-           registration_id: registration_id
-         }) do
-      {:ok, _deployment} ->
-        # try the LTI launch again now that deployment is created
-        launch(conn, params)
-
-      _ ->
-        render(conn, "lti_error.html", reason: "Failed to create deployment")
     end
   end
 
@@ -346,7 +350,7 @@ defmodule OliWeb.LtiController do
                picture: lti_params["picture"],
                website: lti_params["website"],
                email: lti_params["email"],
-               email_verified: lti_params["email_verified"],
+               email_verified: true,
                gender: lti_params["gender"],
                birthdate: lti_params["birthdate"],
                zoneinfo: lti_params["zoneinfo"],

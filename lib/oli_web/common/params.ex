@@ -12,7 +12,7 @@ defmodule OliWeb.Common.Params do
     end
   end
 
-  def get_str_param(params, name, default_value) do
+  def get_param(params, name, default_value) do
     case params[name] do
       nil ->
         default_value
@@ -49,5 +49,11 @@ defmodule OliWeb.Common.Params do
           _ -> default_value
         end
     end
+  end
+
+  def trim(params) do
+    Enum.reduce(params, %{}, fn {field, value}, acc ->
+      Map.put(acc, field, String.trim(value))
+    end)
   end
 end

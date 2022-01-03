@@ -34,8 +34,8 @@ defmodule OliWeb.RegistrationControllerTest do
   describe "new registration" do
     setup [:create_fixtures]
 
-    test "renders form", %{conn: conn, institution: institution} do
-      conn = get(conn, Routes.institution_registration_path(conn, :new, institution.id))
+    test "renders form", %{conn: conn} do
+      conn = get(conn, Routes.registration_path(conn, :new))
       assert html_response(conn, 200) =~ "Create Registration"
     end
   end
@@ -44,30 +44,18 @@ defmodule OliWeb.RegistrationControllerTest do
     setup [:create_fixtures]
 
     test "redirects to show when data is valid", %{
-      conn: conn,
-      institution: institution,
-      admin: admin
+      conn: conn
     } do
       conn =
-        post(conn, Routes.institution_registration_path(conn, :create, institution.id),
+        post(conn, Routes.registration_path(conn, :create),
           registration: Map.put(@create_attrs, :issuer, "some other issuer")
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
-
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-
-      conn = get(conn, Routes.institution_path(conn, :show, institution.id))
-      assert html_response(conn, 200) =~ "some issuer - some client_id"
+      assert redirected_to(conn) =~ "/admin/registrations/"
     end
 
-    test "renders errors when data is invalid", %{conn: conn, institution: institution} do
-      conn =
-        post(conn, Routes.institution_registration_path(conn, :create, institution.id),
-          registration: @invalid_attrs
-        )
+    test "renders errors when data is invalid", %{conn: conn} do
+      conn = post(conn, Routes.registration_path(conn, :create), registration: @invalid_attrs)
 
       assert html_response(conn, 200) =~ "Create Registration"
     end
@@ -78,11 +66,9 @@ defmodule OliWeb.RegistrationControllerTest do
 
     test "renders form for editing chosen registration", %{
       conn: conn,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
-      conn =
-        get(conn, Routes.institution_registration_path(conn, :edit, institution.id, registration))
+      conn = get(conn, Routes.registration_path(conn, :edit, registration))
 
       assert html_response(conn, 200) =~ "Edit Registration"
     end
@@ -94,35 +80,33 @@ defmodule OliWeb.RegistrationControllerTest do
     test "redirects when data is valid", %{
       conn: conn,
       registration: registration,
-      institution: institution,
       admin: admin
     } do
       conn =
         put(
           conn,
-          Routes.institution_registration_path(conn, :update, institution.id, registration),
+          Routes.registration_path(conn, :update, registration),
           registration: @update_attrs
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+      assert redirected_to(conn) =~ "/admin/registrations/"
 
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
-      conn = get(conn, Routes.institution_path(conn, :show, institution.id))
+      conn = get(conn, Routes.registration_path(conn, :show, registration.id))
       assert html_response(conn, 200) =~ "some updated auth_login_url"
     end
 
     test "renders errors when data is invalid", %{
       conn: conn,
-      registration: registration,
-      institution: institution
+      registration: registration
     } do
       conn =
         put(
           conn,
-          Routes.institution_registration_path(conn, :update, institution.id, registration),
+          Routes.registration_path(conn, :update, registration),
           registration: @invalid_attrs
         )
 
@@ -136,16 +120,16 @@ defmodule OliWeb.RegistrationControllerTest do
     test "deletes chosen registration", %{
       conn: conn,
       registration: registration,
-      institution: institution,
       admin: admin
     } do
       conn =
         delete(
           conn,
-          Routes.institution_registration_path(conn, :delete, institution.id, registration)
+          Routes.registration_path(conn, :delete, registration)
         )
 
-      assert redirected_to(conn) == Routes.institution_path(conn, :show, institution.id)
+      assert redirected_to(conn) ==
+               Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)
 
       assert_raise Ecto.NoResultsError, fn ->
         recycle(conn)

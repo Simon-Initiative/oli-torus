@@ -24,7 +24,7 @@ defmodule OliWeb.PageDeliveryController do
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author
-    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+    is_admin? = Oli.Accounts.is_admin?(current_author)
 
     # We only allow access to preview mode if the user is logged in as an author admin, or
     # is an instructor enrolled in the course section.  If the user is enrolled as a student,
@@ -103,7 +103,7 @@ defmodule OliWeb.PageDeliveryController do
       }) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author
-    is_admin? = !is_nil(current_author) and Oli.Accounts.is_admin?(current_author)
+    is_admin? = Oli.Accounts.is_admin?(current_author)
 
     # We only allow access to preview mode if the user is logged in as an author admin, or
     # is an instructor enrolled in the course section.  If the user is enrolled as a student,
@@ -449,7 +449,19 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def send_one_grade(section, user, resource_access) do
-    Oli.Grading.send_score_to_lms(section, user, resource_access, access_token_provider(section))
+    case Oli.Grading.send_score_to_lms(
+           section,
+           user,
+           resource_access,
+           access_token_provider(section)
+         ) do
+      {:error, e} ->
+        Oli.Utils.Appsignal.capture_error(e)
+        {:error, e}
+
+      success ->
+        success
+    end
   end
 
   def finalize_attempt(conn, %{

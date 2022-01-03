@@ -22,7 +22,6 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
   const [sliderValue, setSliderValue] = useState(0);
   const [isSliderEnabled, setIsSliderEnabled] = useState(true);
   const [cssClass, setCssClass] = useState('');
-
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : isSliderEnabled;
@@ -198,6 +197,17 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
     invertScale,
   } = model;
 
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
   const styles: CSSProperties = {
     width: '100%',
     flexDirection: model.showLabel ? 'column' : 'row',

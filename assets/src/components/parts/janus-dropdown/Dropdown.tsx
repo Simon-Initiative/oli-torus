@@ -17,7 +17,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const id: string = props.id;
 
   const [enabled, setEnabled] = useState(true);
-  const [selection, setSelection] = useState<number>(-1);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [selectedItem, setSelectedItem] = useState<string>('');
   const [cssClass, setCssClass] = useState('');
 
@@ -45,14 +45,14 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
         {
           id: `selectedIndex`,
           key: 'selectedIndex',
-          type: CapiVariableTypes.STRING,
-          value: -1,
+          type: CapiVariableTypes.NUMBER,
+          value: selectedIndex,
         },
         {
           id: `selectedItem`,
           key: 'selectedItem',
           type: CapiVariableTypes.STRING,
-          value: '',
+          value: selectedItem,
         },
         {
           id: `value`,
@@ -79,19 +79,37 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     // TODO: value ??
 
     const sSelectedIndex = currentStateSnapshot[`stage.${id}.selectedIndex`];
-    if (sSelectedIndex !== undefined) {
+    if (sSelectedIndex !== undefined && Number(sSelectedIndex) !== -1) {
       const stateSelection = Number(sSelectedIndex);
-      setSelection(stateSelection);
-      if (optionLabels) setSelectedItem(optionLabels[stateSelection - 1]);
+      setSelectedIndex(stateSelection);
+      if (pModel.optionLabels) {
+        setSelectedItem(pModel.optionLabels[stateSelection - 1]);
+        setTimeout(() => {
+          saveState({
+            selectedIndex: stateSelection,
+            selectedItem: pModel.optionLabels[stateSelection - 1],
+            value: pModel.optionLabels[stateSelection - 1],
+            enabled,
+          });
+        });
+      }
     }
 
     const sSelectedItem = currentStateSnapshot[`stage.${id}.selectedItem`];
-    if (sSelectedItem !== undefined) {
-      const selectionIndex: number = optionLabels?.findIndex((str: string) =>
+    if (sSelectedItem !== undefined && sSelectedItem !== '') {
+      const selectionIndex: number = pModel.optionLabels?.findIndex((str: string) =>
         sSelectedItem.includes(str),
       );
       setSelectedItem(sSelectedItem);
-      setSelection(selectionIndex + 1);
+      setSelectedIndex(selectionIndex + 1);
+      setTimeout(() => {
+        saveState({
+          selectedIndex: selectionIndex + 1,
+          selectedItem: sSelectedItem,
+          value: sSelectedItem,
+          enabled,
+        });
+      });
     }
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
@@ -145,6 +163,18 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
     optionLabels,
     palette,
   } = model;
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
   const dropdownContainerStyles: CSSProperties = {
     width,
@@ -209,7 +239,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   const handleChange = (event: any) => {
     const val = Number(event.target.value);
     // Update/set the value
-    setSelection(val);
+    setSelectedIndex(val);
     saveState({
       selectedIndex: val,
       selectedItem: event.target.options[event.target.selectedIndex].text,
@@ -242,23 +272,22 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           case NotificationType.STATE_CHANGED:
             {
               const { mutateChanges: changes } = payload;
+
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);
-                if (selection !== stateSelection) {
-                  setSelection(stateSelection);
+                if (selectedIndex !== stateSelection) {
+                  setSelectedIndex(stateSelection);
                   setSelectedItem(optionLabels[stateSelection - 1]);
+                  setTimeout(() => {
+                    saveState({
+                      selectedIndex: stateSelection,
+                      selectedItem: optionLabels[stateSelection - 1],
+                      value: optionLabels[stateSelection - 1],
+                      enabled,
+                    });
+                  });
                 }
-                props.onSave({
-                  id: `${id}`,
-                  responses: [
-                    {
-                      key: 'selectedIndex',
-                      type: CapiVariableTypes.NUMBER,
-                      value: sSelectedIndex,
-                    },
-                  ],
-                });
               }
 
               const sSelectedItem = changes[`stage.${id}.selectedItem`];
@@ -268,7 +297,15 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
                     sSelectedItem.includes(str),
                   );
                   setSelectedItem(sSelectedItem);
-                  setSelection(selectionIndex + 1);
+                  setSelectedIndex(selectionIndex + 1);
+                  setTimeout(() => {
+                    saveState({
+                      selectedIndex: selectionIndex + 1,
+                      selectedItem: sSelectedItem,
+                      value: sSelectedItem,
+                      enabled,
+                    });
+                  });
                 }
               }
 
@@ -281,23 +318,22 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: changes } = payload;
+
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);
-                if (selection !== stateSelection) {
-                  setSelection(stateSelection);
+                if (selectedIndex !== stateSelection) {
+                  setSelectedIndex(stateSelection);
                   setSelectedItem(optionLabels[stateSelection - 1]);
+                  setTimeout(() => {
+                    saveState({
+                      selectedIndex: stateSelection,
+                      selectedItem: optionLabels[stateSelection - 1],
+                      value: optionLabels[stateSelection - 1],
+                      enabled,
+                    });
+                  });
                 }
-                props.onSave({
-                  id: `${id}`,
-                  responses: [
-                    {
-                      key: 'selectedIndex',
-                      type: CapiVariableTypes.NUMBER,
-                      value: sSelectedIndex,
-                    },
-                  ],
-                });
               }
 
               const sSelectedItem = changes[`stage.${id}.selectedItem`];
@@ -307,7 +343,15 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
                     sSelectedItem.includes(str),
                   );
                   setSelectedItem(sSelectedItem);
-                  setSelection(selectionIndex + 1);
+                  setSelectedIndex(selectionIndex + 1);
+                  setTimeout(() => {
+                    saveState({
+                      selectedIndex: selectionIndex + 1,
+                      selectedItem: sSelectedItem,
+                      value: sSelectedItem,
+                      enabled,
+                    });
+                  });
                 }
               }
 
@@ -341,7 +385,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           {prompt}
         </option>,
       );
-    } else if (!selection || selection === -1) {
+    } else if (!selectedIndex || selectedIndex === -1) {
       // If a prompt is blank and the selectedIndex is not set or is set to -1, set empty first option
       options.push(
         <option key="-1" value="-1" selected={true} style={{ display: 'none' }}></option>,
@@ -351,7 +395,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       for (let i = 0; i < optionLabels.length; i++) {
         // Set selected if selectedIndex equals current index
         options.push(
-          <option key={i + 1} value={i + 1} selected={i + 1 === selection}>
+          <option key={i + 1} value={i + 1} selected={i + 1 === selectedIndex}>
             {optionLabels[i]}
           </option>,
         );
@@ -366,7 +410,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
       <select
         style={dropDownStyle}
         id={`${id}-select`}
-        value={selection}
+        value={selectedIndex}
         className={'dropdown '}
         onChange={handleChange}
         disabled={!enabled}

@@ -76,7 +76,6 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     if (sEnableReplay !== undefined) {
       setAudioEnableReplay(sEnableReplay);
     }
-
     setReady(true);
   }, []);
 
@@ -150,7 +149,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
                   id,
                   responses: [
                     {
-                      key: 'hasCompleted',
+                      key: 'hasStarted',
                       type: CapiVariableTypes.NUMBER,
                       value: parseBool(sHasStarted),
                     },
@@ -171,6 +170,25 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
                     },
                   ],
                 });
+              }
+
+              const sCurrentTime = changes[`stage.${id}.currentTime`];
+              if (sCurrentTime !== undefined) {
+                setAudioCurrentTime(sCurrentTime);
+                props.onSave({
+                  id,
+                  responses: [
+                    {
+                      key: 'currentTime',
+                      type: CapiVariableTypes.NUMBER,
+                      value: sCurrentTime,
+                    },
+                  ],
+                });
+                const audio: any = document.getElementById(`audioTag-${id}`);
+                if (audio) {
+                  audio.currentTime = sCurrentTime;
+                }
               }
             }
             break;
@@ -198,7 +216,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
                   id,
                   responses: [
                     {
-                      key: 'hasCompleted',
+                      key: 'hasStarted',
                       type: CapiVariableTypes.NUMBER,
                       value: parseBool(sHasStarted),
                     },
@@ -261,6 +279,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [audioIsCompleted, setAudioIsCompleted] = useState(false);
   const [audioAutoPlay, setAudioAutoPlay] = useState(autoPlay || false);
   const [audioEnableReplay, setAudioEnableReplay] = useState(enableReplay || true);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const audioStyles: CSSProperties = {
     /* position: 'absolute',
     top: y,
@@ -272,6 +291,18 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     outline: 'none',
     filter: 'sepia(20%) saturate(70%) grayscale(1) contrast(99%) invert(12%)',
   };
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
   let finalSrc = src;
   if (startTime && startTime >= 0) {
@@ -295,7 +326,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   }) => {
     const currentVideoTime = parseFloat(currentTime || 0);
     const audioDuration = parseFloat(duration || 0);
-    const exposureInPercentage = (currentVideoTime / audioDuration) * 100;
+    const exposurePercentage = (currentVideoTime / audioDuration) * 100;
     props.onSave({
       id: `${props.id}`,
       responses: [
@@ -330,9 +361,9 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
           value: currentTime,
         },
         {
-          key: 'exposureInPercentage',
+          key: 'exposurePercentage',
           type: CapiVariableTypes.NUMBER,
-          value: isNaN(exposureInPercentage) ? 0 : parseInt(exposureInPercentage.toString()),
+          value: isNaN(exposurePercentage) ? 0 : parseInt(exposurePercentage.toString()),
         },
         {
           key: 'hasCompleted',
@@ -363,34 +394,43 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
     });
   };
 
-  let isAudioStarted = false;
-  // handle the Audio player start
-  const handleAudioEnd = () => {
-    if (!enableReplay) {
-      setShowControls(false);
-    }
-  };
   const handleAudioPlay = (data: any) => {
-    if (isAudioStarted) return;
-    //Need this otherwise, save state will called on every second
-    isAudioStarted = true;
+    setAudioIsPlayerStarted(true);
     saveState({
       isAudioPlayerStarted: true,
       currentTime: data.target.currentTime,
       duration: data.target.duration,
-      isAudioCompleted: false,
+      isAudioCompleted: audioIsCompleted,
       audioState: 'playing',
     });
   };
 
   const handleAudioPause = (data: any) => {
+    setAudioCurrentTime(data.target.currentTime);
     saveState({
-      isAudioPlayerStarted: true,
+      isAudioPlayerStarted: audioIsPlayerStarted,
       currentTime: data.target.currentTime,
       duration: data.target.duration,
-      isAudioCompleted: false,
+      isAudioCompleted: audioIsCompleted,
       audioState: 'paused',
     });
+  };
+
+  const handleAudioEnd = (data: any) => {
+    setAudioIsCompleted(true);
+    saveState({
+      isAudioPlayerStarted: audioIsPlayerStarted,
+      currentTime: data.target.currentTime,
+      duration: data.target.duration,
+      isAudioCompleted: true,
+      audioState: 'done',
+    });
+    if (!enableReplay) {
+      setShowControls(false);
+    }
+    if (triggerCheck) {
+      props.onSubmit({ id: `${id}`, responses: [] });
+    }
   };
 
   useEffect(() => {
@@ -400,15 +440,15 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
 
   return ready ? (
     <audio
+      id={`audioTag-${id}`}
       data-janus-type={tagName}
       style={audioStyles}
       autoPlay={audioAutoPlay}
-      loop={audioEnableReplay}
       controls={showControls}
       controlsList="nodownload"
-      onEnded={handleAudioEnd}
       onPlay={handleAudioPlay}
       onPause={handleAudioPause}
+      onEnded={handleAudioEnd}
     >
       <source src={finalSrc} />
 

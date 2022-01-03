@@ -2,14 +2,19 @@
 import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
-import { selectPreviewMode } from '../../store/features/page/slice';
+import {
+  selectIsGraded,
+  selectPreviewMode,
+  selectResourceAttemptGuid,
+} from '../../store/features/page/slice';
 
 interface RestartLessonDialogProps {
   onRestart: () => void;
 }
 const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) => {
   const [isOpen, setIsOpen] = useState(true);
-
+  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
+  const graded = useSelector(selectIsGraded);
   const handleCloseModalClick = () => {
     setIsOpen(false);
     dispatch(setRestartLesson({ restartLesson: false }));
@@ -25,7 +30,11 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
       if (currentUrl.indexOf('/attempt') > 0) {
         window.location.reload();
       }
-      window.location.href = `${currentUrl}/attempt`;
+      if (graded) {
+        window.location.href = `${currentUrl}/attempt/${resourceAttemptGuid}`;
+      } else {
+        window.location.href = `${currentUrl}/attempt`;
+      }
     }
   };
 
@@ -59,7 +68,11 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
         <div className="modal-body">
           <div className="type"></div>
           <div className="message">
-            <p>Are you sure you want to restart and begin from the first screen?</p>
+            <p>
+              {graded
+                ? 'Are you sure you want to restart? This will end your current attempt and allow you to begin the lesson from the first screen.'
+                : 'Are you sure you want to restart and begin from the first screen?'}
+            </p>
           </div>
         </div>
         <div className="modal-footer">

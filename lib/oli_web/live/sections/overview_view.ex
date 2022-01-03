@@ -75,6 +75,7 @@ defmodule OliWeb.Sections.OverviewView do
     ~F"""
     <Groups>
       <Group label="Overview" description="Overview of this course section">
+        <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
       </Group>
@@ -86,6 +87,7 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)}>Preview Course Content</a></li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}>Enter Course as a Student</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
+        <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>
             <a disabled={@updates_count == 0} href={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug)}>
               Manage Updates
@@ -98,7 +100,10 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Manage" description="Manage all aspects of course delivery">
         <ul class="link-list">
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>View Enrolled Students</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EnrollmentsView, @section.slug)}>Manage Enrolled Students</a></li>
+          {#if @section.open_and_free}
+            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}>Invite Students</a></li>
+          {/if}
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}>Edit Section Details</a></li>
         </ul>
       </Group>

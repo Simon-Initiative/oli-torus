@@ -100,6 +100,53 @@ defmodule Oli.SectionsTest do
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
       assert ContextRoles.has_role?(user1, section.slug, ContextRoles.get_role(:context_learner))
     end
+
+    test "unenroll/3 removes context roles", %{section: section, user1: user1} do
+      Sections.enroll(user1.id, section.id, [
+        ContextRoles.get_role(:context_instructor),
+        ContextRoles.get_role(:context_learner)
+      ])
+
+      Sections.unenroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      refute ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_instructor)
+             )
+
+      assert ContextRoles.has_role?(
+               user1,
+               section.slug,
+               ContextRoles.get_role(:context_learner)
+             )
+
+      # unenroll does not remove the enrollment if there are remaining
+      # context roles
+      assert length(Sections.list_enrollments(section.slug)) > 0
+    end
+
+    test "unenroll/3 deletes an enrollment if all context roles are removed", %{
+      section: section,
+      user1: user1
+    } do
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      Sections.unenroll(user1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      assert Sections.list_enrollments(section.slug) == []
+    end
+
+    test "unenroll_learner/2 deletes an enrollment if the user is only a student", %{
+      section: section,
+      user1: user1
+    } do
+      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Sections.unenroll_learner(user1.id, section.id)
+
+      assert Sections.list_enrollments(section.slug) == []
+    end
   end
 
   describe "sections" do
@@ -187,8 +234,11 @@ defmodule Oli.SectionsTest do
       institution: institution
     } do
       jwk = jwk_fixture()
-      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      deployment = deployment_fixture(%{registration_id: registration.id})
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
+
       {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
 
       lti_params =

@@ -45,6 +45,17 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [frameCssClass, setFrameCssClass] = useState('');
   // these rely on being set every render and the "model" useState value being set
   const { src, title, allowScrolling, configData } = model;
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (frameWidth !== undefined) {
+      styleChanges.width = { value: frameWidth as number };
+    }
+    if (frameHeight != undefined) {
+      styleChanges.height = { value: frameHeight as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [frameWidth, frameHeight]);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults
@@ -301,7 +312,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -505,10 +516,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (simLife.ready) {
       return;
     }
-    simLife.ready = true;
-    const updateSimLife = { ...simLife };
-    updateSimLife.ready = true;
-    setSimLife(updateSimLife);
     // should / will sim send onReady more than once??
     const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
@@ -520,6 +527,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       simLife.init = true;
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
     }
+    simLife.ready = true;
+    const updateSimLife = { ...simLife };
+    updateSimLife.ready = true;
+    setSimLife(updateSimLife);
     return;
   };
 
@@ -641,46 +652,64 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }, 150);
   };
 
-  const handleResizeParentContainer = (data: any) => {
-    const iFrameResponse: { key: string; type: number; value: string }[] = [];
-    const modifiedData = data;
-    if (frameWidth && data?.width) {
-      const newW = parseFloat(data.width.value);
-      modifiedData.width.value = newW;
-    }
-    if (frameHeight && data?.height) {
-      const newH = parseFloat(data.height.value);
-      modifiedData.height.value = newH;
-    }
-    if (modifiedData?.height?.value) {
-      iFrameResponse.push({
-        key: `IFRAME_frameHeight`,
-        type: CapiVariableTypes.NUMBER,
-        value: modifiedData?.height?.value || frameHeight,
+  const handleResizeParentContainer = useCallback(
+    (data: any) => {
+      const iFrameResponse: { key: string; type: number; value: string }[] = [];
+      const modifiedData = data;
+      if (data?.width) {
+        setFrameWidth((previousWidth) => {
+          const newW = parseFloat(data.width.value);
+          if (data.width.type === 'relative') {
+            modifiedData.width.value = previousWidth + newW;
+          } else {
+            modifiedData.width.value = newW;
+          }
+          return modifiedData.width.value;
+        });
+      }
+      if (data?.height) {
+        setFrameHeight((previousHeight) => {
+          const newW = parseFloat(data.height.value);
+          if (data.height.type === 'relative') {
+            modifiedData.height.value = previousHeight + newW;
+          } else {
+            modifiedData.height.value = newW;
+          }
+          return modifiedData.height.value;
+        });
+      }
+
+      if (modifiedData?.height?.value) {
+        iFrameResponse.push({
+          key: `IFRAME_frameHeight`,
+          type: CapiVariableTypes.NUMBER,
+          value: modifiedData?.height?.value || frameHeight,
+        });
+      }
+      if (modifiedData?.width?.value) {
+        iFrameResponse.push({
+          key: `IFRAME_frameWidth`,
+          type: CapiVariableTypes.NUMBER,
+          value: modifiedData?.width?.value || frameWidth,
+        });
+      }
+      props.onSave({
+        id,
+        responses: iFrameResponse,
       });
-    }
-    if (modifiedData?.width?.value) {
-      iFrameResponse.push({
-        key: `IFRAME_frameWidth`,
-        type: CapiVariableTypes.NUMBER,
-        value: modifiedData?.width?.value || frameWidth,
-      });
-    }
-    props.onSave({
-      id,
-      responses: iFrameResponse,
-    });
-    props.onResize({ id: `${id}`, settings: modifiedData });
-    sendFormedResponse(
-      simLife.handshake,
-      {},
-      JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_RESPONSE,
-      {
-        messageId: data.messageId,
-        responseType: 'success',
-      },
-    );
-  };
+      props.onResize({ id: `${id}`, settings: modifiedData });
+      sendFormedResponse(
+        simLife.handshake,
+        {},
+        JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_RESPONSE,
+        {
+          messageId: data.messageId,
+          responseType: 'success',
+        },
+      );
+    },
+    [frameWidth, frameHeight],
+  );
 
   //#endregion
 
@@ -822,27 +851,42 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     writeCapiLog('INIT STATE APPLIED', 3, { initState });
-    Object.keys(initState)
-      .reverse()
-      .forEach((key: any) => {
-        const formatted: Record<string, unknown> = {};
-        const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
-        const value = initState[key];
-        const cVar = new CapiVariable({
-          key: baseKey,
-          value,
-        });
-        formatted[baseKey] = cVar;
-        //hack for Small world type SIMs
-        if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
-          const mFormatted: Record<string, unknown> = {};
-          const updatedVar = { ...cVar };
-          updatedVar.value = !parseBool(cVar.value);
-          mFormatted[baseKey] = updatedVar;
-          sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
-        }
-        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    const arrInitStateVars = Object.keys(initState);
+    //hack for KIP SIMs. 'CurrentEclipse' variables needs to be sent at last so moving it to last position in array.
+    if (arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse') !== -1) {
+      arrInitStateVars.push(
+        arrInitStateVars.splice(
+          arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse'),
+          1,
+        )[0],
+      );
+    }
+    arrInitStateVars.forEach((key: any) => {
+      const formatted: Record<string, unknown> = {};
+      const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
+      const value = initState[key];
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
       });
+      const typeOfValue = typeof value;
+      if (cVar.type === CapiVariableTypes.ARRAY) {
+        const isMultidimensional = cVar.value.filter(Array.isArray).length;
+        if (isMultidimensional && typeOfValue === 'string') {
+          cVar.value = JSON.stringify(cVar.value);
+        }
+      }
+      formatted[baseKey] = cVar;
+      //hack for Small world type SIMs
+      if (baseKey.indexOf('System.AllowNextOnCacheCase') !== -1) {
+        const mFormatted: Record<string, unknown> = {};
+        const updatedVar = { ...cVar };
+        updatedVar.value = !parseBool(cVar.value);
+        mFormatted[baseKey] = updatedVar;
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
+      }
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    });
     if (!simLife.init) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       simLife.init = true;

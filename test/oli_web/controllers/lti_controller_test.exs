@@ -4,6 +4,7 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.PlatformInstance
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
+  alias Oli.Institutions
 
   import Mox
 
@@ -77,6 +78,41 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :login, body))
 
+      assert html_response(conn, 200) =~ "Welcome to"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # validate still works when a user is already logged in
+      user = user_fixture()
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
+      assert html_response(conn, 200) =~ "Welcome to"
+      assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # form contains a required text input for deployment id
+      assert html_response(conn, 200) =~
+               "<input class=\"deployment_id form-control \" id=\"pending_registration_deployment_id\" name=\"pending_registration[deployment_id]\" placeholder=\"Deployment ID\" type=\"text\" required>"
+    end
+
+    test "registration form prepopulates deployment_id if it was included in oidc params", %{
+      conn: conn,
+      registration: registration
+    } do
+      body = %{
+        "client_id" => registration.client_id,
+        "iss" => "http://invalid.edu",
+        "login_hint" => "some-login_hint",
+        "lti_message_hint" => "some-lti_message_hint",
+        "target_link_uri" => "https://some-target_link_uri/lti/launch",
+        "lti_deployment_id" => "prepopulated_deployment_id"
+      }
+
+      conn = post(conn, Routes.lti_path(conn, :login, body))
+
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
 
@@ -91,12 +127,18 @@ defmodule OliWeb.LtiControllerTest do
 
       assert html_response(conn, 200) =~ "Welcome to Torus!"
       assert html_response(conn, 200) =~ "Register Your Institution"
+
+      # form contains a hidden input with value "prepopulated_deployment_id"
+      assert html_response(conn, 200) =~ "value=\"prepopulated_deployment_id\""
     end
 
-    test "launch successful for valid params and creates deployment on the fly", %{
+    test "show registration page when deployment doesnt exist", %{
       conn: conn,
-      registration: registration
+      registration: registration,
+      deployment: deployment
     } do
+      {:ok, _} = Institutions.delete_deployment(deployment)
+
       platform_jwk = jwk_fixture()
 
       Oli.Test.MockHTTP
@@ -120,7 +162,6 @@ defmodule OliWeb.LtiControllerTest do
       {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
 
       deployment_id = claims["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-      registration_id = registration.id
 
       assert nil ==
                Lti_1p3.Tool.get_registration_deployment(
@@ -131,18 +172,11 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Register Your Institution"
 
-      assert {%Lti_1p3.Tool.Registration{},
-              %Lti_1p3.Tool.Deployment{
-                deployment_id: ^deployment_id,
-                registration_id: ^registration_id
-              }} =
-               Lti_1p3.Tool.get_registration_deployment(
-                 registration.issuer,
-                 registration.client_id,
-                 deployment_id
-               )
+      # known deployment id is pre-populated and embedded in the form
+      assert html_response(conn, 200) =~ "value=\"#{deployment.deployment_id}\""
     end
 
     test "launch successful for valid params with no email", %{
@@ -221,7 +255,7 @@ defmodule OliWeb.LtiControllerTest do
 
       conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
 
-      assert html_response(conn, 200) =~ "Welcome to Torus!"
+      assert html_response(conn, 200) =~ "Welcome to"
       assert html_response(conn, 200) =~ "Register Your Institution"
     end
 
@@ -332,7 +366,7 @@ defmodule OliWeb.LtiControllerTest do
       assert json_response(conn, 200) |> Map.get("title") =~ "OLI Torus"
 
       assert json_response(conn, 200) |> Map.get("description") =~
-               "Create, deliver and iteratively improve course content through the Open Learning Initiative"
+               "Create, deliver and iteratively improve course content"
 
       assert json_response(conn, 200) |> Map.get("oidc_initiation_url") =~
                "https://localhost/lti/login"
@@ -361,8 +395,10 @@ defmodule OliWeb.LtiControllerTest do
   defp create_fixtures(%{conn: conn}) do
     jwk = jwk_fixture()
     institution = institution_fixture()
-    registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-    deployment = deployment_fixture(%{registration_id: registration.id})
+    registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+    deployment =
+      deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
     %{
       conn: conn,

@@ -18,6 +18,7 @@ defmodule OliWeb.Progress.StudentView do
   data table_model, :struct
   data resource_accesses, :map
   data page_nodes, :list
+  data local_tz, :any
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -65,11 +66,14 @@ defmodule OliWeb.Progress.StudentView do
                   Oli.Resources.ResourceType.get_id_by_type("page")
               end)
 
+            local_tz = Map.get(session, :local_tz)
+
             {:ok, table_model} =
-              StudentTabelModel.new(page_nodes, resource_accesses, section, user)
+              StudentTabelModel.new(page_nodes, resource_accesses, section, user, local_tz)
 
             {:ok,
              assign(socket,
+               local_tz: local_tz,
                text_search: "",
                table_model: table_model,
                page_nodes: page_nodes,
@@ -83,7 +87,7 @@ defmodule OliWeb.Progress.StudentView do
   end
 
   def handle_params(params, _, socket) do
-    text_search = get_str_param(params, "text_search", "")
+    text_search = get_param(params, "text_search", "")
 
     filtered_page_nodes =
       Enum.filter(socket.assigns.page_nodes, fn node ->
@@ -99,7 +103,8 @@ defmodule OliWeb.Progress.StudentView do
         filtered_page_nodes,
         socket.assigns.resource_accesses,
         socket.assigns.section,
-        socket.assigns.user
+        socket.assigns.user,
+        socket.assigns.local_tz
       )
 
     # Updating from params is what will apply the sort

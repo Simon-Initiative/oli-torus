@@ -1,11 +1,5 @@
 <div class="container">
-  <span>
-    <%= link to: Routes.open_and_free_path(@conn, :index) do %>
-      <i class="las la-arrow-left"></i> Back
-    <% end %>
-  </span>
-
-  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: "Edit Open and Free Section", bs_col_class: "col-sm-12 col-md-8 col-lg-6 mx-auto"}) do %>
-    <%= live_render @conn, OliWeb.OpenAndFree.SectionForm, session: %{"changeset" => @changeset, "action" => Routes.open_and_free_path(@conn, :update, @section), "submit_text" => "Save", "cancel" => Routes.open_and_free_path(@conn, :index)} %>
+  <%= render OliWeb.SharedView, "_box_form_container.html", Map.merge(assigns, %{title: "Edit Section", bs_col_class: "col-sm-12 col-md-8 col-lg-6 mx-auto"}) do %>
+    <%= render "form.html", Map.merge(assigns, %{action: get_path([@route, :update, @section]), submit_text: "Save", cancel: index_path(@route)}) %>
   <% end %>
 </div>

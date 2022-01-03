@@ -24,6 +24,8 @@ export const EditLink = (props: ExistingLinkEditorProps) => {
     const value = e.target.value;
     if (value === 'url') {
       setHref('');
+    } else if (pages.pages.length > 1) {
+      setHref(toInternalLink(pages.pages[0]));
     }
     setSource(value === 'page' ? 'page' : 'url');
   };

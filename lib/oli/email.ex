@@ -2,15 +2,6 @@ defmodule Oli.Email do
   import Bamboo.Email
   use Bamboo.Phoenix, view: OliWeb.EmailView
 
-  @spec welcome_author_email(String.t()) :: Bamboo.Email.t()
-  def welcome_author_email(recipient_email) do
-    base_email()
-    |> to(recipient_email)
-    |> subject("Welcome to Torus!")
-    |> render("welcome.html")
-    |> html_text_body()
-  end
-
   @spec invitation_email(String.t(), atom(), map()) :: Bamboo.Email.t()
   def invitation_email(recipient_email, view, assigns) do
     base_email()
@@ -24,7 +15,7 @@ defmodule Oli.Email do
           Bamboo.Email.t()
   def help_desk_email(name, from_email, help_desk_email, subject, view, assigns) do
     base_email()
-    |> from(name <> "<" <> from_email <> ">")
+    |> from(from_email)
     |> put_header("Reply-To", name <> " <" <> from_email <> ">")
     |> put_layout({OliWeb.LayoutView, :help_email})
     |> to(help_desk_email)

@@ -35,8 +35,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
   describe "index" do
     test "lists all open_and_free", %{conn: conn} do
-      conn = get(conn, Routes.open_and_free_path(conn, :index))
-      assert html_response(conn, 200) =~ "Open and Free"
+      conn = get(conn, Routes.admin_open_and_free_path(conn, :index))
+      assert html_response(conn, 200) =~ "Section"
     end
   end
 
@@ -51,17 +51,17 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       revision1: revision1
     } do
       conn =
-        post(conn, Routes.open_and_free_path(conn, :create),
+        post(conn, Routes.admin_open_and_free_path(conn, :create),
           section: Enum.into(@create_attrs, %{project_slug: project.slug})
         )
 
       assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.open_and_free_path(conn, :show, id)
+      assert redirected_to(conn) == Routes.admin_open_and_free_path(conn, :show, id)
 
       conn = recycle_author_session(conn, admin)
 
-      conn = get(conn, Routes.open_and_free_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Open and free"
+      conn = get(conn, Routes.admin_open_and_free_path(conn, :show, id))
+      assert html_response(conn, 200) =~ "Section"
 
       # can access open and free index and pages
       section = Sections.get_section!(id)
@@ -88,8 +88,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     setup [:create_fixtures]
 
     test "renders form for editing chosen open_and_free", %{conn: conn, section: section} do
-      conn = get(conn, Routes.open_and_free_path(conn, :edit, section))
-      assert html_response(conn, 200) =~ "Edit Open and Free Section"
+      conn = get(conn, Routes.admin_open_and_free_path(conn, :edit, section))
+      assert html_response(conn, 200) =~ "Edit Section"
     end
   end
 
@@ -97,18 +97,22 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     setup [:create_fixtures]
 
     test "redirects when data is valid", %{conn: conn, admin: admin, section: section} do
-      conn = put(conn, Routes.open_and_free_path(conn, :update, section), section: @update_attrs)
-      assert redirected_to(conn) == Routes.open_and_free_path(conn, :show, section)
+      conn =
+        put(conn, Routes.admin_open_and_free_path(conn, :update, section), section: @update_attrs)
+
+      assert redirected_to(conn) == Routes.admin_open_and_free_path(conn, :show, section)
 
       conn = recycle_author_session(conn, admin)
 
-      conn = get(conn, Routes.open_and_free_path(conn, :show, section))
+      conn = get(conn, Routes.admin_open_and_free_path(conn, :show, section))
       assert html_response(conn, 200)
     end
 
     test "renders errors when data is invalid", %{conn: conn, section: section} do
-      conn = put(conn, Routes.open_and_free_path(conn, :update, section), section: @invalid_attrs)
-      assert html_response(conn, 200) =~ "Edit Open and Free Section"
+      conn =
+        put(conn, Routes.admin_open_and_free_path(conn, :update, section), section: @invalid_attrs)
+
+      assert html_response(conn, 200) =~ "Edit Section"
     end
   end
 

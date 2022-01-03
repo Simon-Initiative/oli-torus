@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Gating.GatingCondition do
   schema "gating_conditions" do
     field :type, Ecto.Enum,
       values: [
-        :schedule,
+        :schedule
       ]
 
     # data used by the condition evaluator, e.g. start or end datetime, a list of
@@ -21,6 +21,9 @@ defmodule Oli.Delivery.Gating.GatingCondition do
 
     # optionally, this condition can be associated with a specific user
     belongs_to :user, Oli.Accounts.User
+
+    field :total_count, :integer, virtual: true
+    field :revision, :any, virtual: true
 
     timestamps(type: :utc_datetime)
   end

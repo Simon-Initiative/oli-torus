@@ -30,7 +30,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
 
   // initialize the swiper
   SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
-
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
@@ -75,7 +74,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     if (sCurrentImage !== undefined) {
       setCurrentSlide(sCurrentImage);
     }
-
     setReady(true);
   }, []);
 
@@ -177,6 +175,18 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
       );
     }
   }, [images]);
+
+  useEffect(() => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
+    }
+
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
   const saveState = ({ carouselZoom }: { carouselZoom: boolean }) => {
     const vars: any = [];

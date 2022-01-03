@@ -32,7 +32,16 @@
       required: true, autofocus: focusHelper(f, :timezone) %>
   <%= error_tag f, :timezone %>
 </div>
+
+<div class="text-secondary my-2">Default Brand</div>
+<div class="form-label-group">
+  <%= select f, :default_brand_id, @available_brands, prompt: "Select Brand", class: "form-control " <> error_class(f, :default_brand_id, "is-invalid"),
+    autofocus: focusHelper(f, :default_brand_id) %>
+  <%= error_tag f, :default_brand_id %>
+</div>
+
 <div>
   <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+  <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.institution_path(@conn, :index)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
 </div>
 <% end %>

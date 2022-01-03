@@ -16,8 +16,8 @@ defmodule Oli.Delivery.Sections.Enrollment do
   end
 
   @doc false
-  def changeset(section, attrs) do
-    section
+  def changeset(enrollment, attrs) do
+    enrollment
     |> cast(attrs, [:user_id, :section_id, :state])
     |> validate_required([:user_id, :section_id])
   end

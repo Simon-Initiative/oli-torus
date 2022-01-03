@@ -19,11 +19,11 @@
     </h5>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= local_datetime(@conn, resource_attempt.inserted_at) |> format_datetime() %></div>
+      <div><%= dt(resource_attempt.inserted_at, conn: @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= local_datetime(@conn, resource_attempt.date_evaluated) |> format_datetime() %></div>
+      <div><%= dt(resource_attempt.date_evaluated, conn: @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>

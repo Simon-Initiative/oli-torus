@@ -1,13 +1,15 @@
 defmodule Oli.Delivery.Sections.Blueprint do
-  alias Oli.Repo
+  import Ecto.Query, warn: false
+
   alias Oli.Accounts.Author
-  alias Oli.Institutions.Institution
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectVisibility
   alias Oli.Publishing.Publication
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections
-  import Ecto.Query, warn: false
+  alias Oli.Groups.CommunityVisibility
+  alias Oli.Institutions.Institution
+  alias Oli.Repo
 
   @doc """
   From a slug, retrieve a valid section blueprint.  A section is a
@@ -84,6 +86,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
     Repo.all(query)
   end
 
+  def available_products(nil, _institution), do: available_products()
+
   def available_products() do
     query =
       from section in Section,
@@ -144,6 +148,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "requires_payment" => false,
             "registration_open" => false,
             "timezone" => "America/New_York",
+            "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00")
           }
 
@@ -330,5 +335,31 @@ defmodule Oli.Delivery.Sections.Blueprint do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Get all the products that are not associated within a community.
+
+  ## Examples
+
+      iex> list_products_not_in_community(1)
+      {:ok, [%Section{}, ,...]}
+
+      iex> list_products_not_in_community(123)
+      {:ok, []}
+  """
+  def list_products_not_in_community(community_id) do
+    from(
+      section in Section,
+      left_join: community_visibility in CommunityVisibility,
+      on:
+        section.id ==
+          community_visibility.section_id and community_visibility.community_id == ^community_id,
+      where:
+        is_nil(community_visibility.id) and section.type == :blueprint and
+          section.status == :active,
+      select: section
+    )
+    |> Repo.all()
   end
 end

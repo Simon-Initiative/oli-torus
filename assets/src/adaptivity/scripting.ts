@@ -57,30 +57,25 @@ export const getExpressionStringForValue = (
 
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
-    try {
-      const testEnv = new Environment(env);
-      const evalResult = evalScript(`let foo = ${val};`, testEnv);
-      // when evalScript is executed successfully, evalResult.result is null.
-      // evalScript does not trigger catch block even though there is error and add the error in stack property.
-      if (evalResult?.result !== null) {
-        try {
-          //trying to check if it is a CSS string.This might not handle any advance CSS string.
-          const matchingCssElements = val.match(
-            /^(([a-z0-9\\[\]=:]+\s?)|((div|span|body.*|.box-sizing:*|.columns-container.*|background-color.*)?(#|\.){1}[a-z0-9\-_\s?:]+\s?)+)(\{[\s\S][^}]*})$/im,
-          );
-          //matchingCssElements !== null then it means it's a CSS string so set actuallyAString=true so that it can be wrapped in ""
-          if (matchingCssElements) {
-            actuallyAString = true;
-          }
-        } catch (e) {
-          actuallyAString = true;
-        }
-      }
-    } catch (e) {
-      // if we have parsing error then we're guessing it's CSS
+    const expressions = extractAllExpressionsFromText(val);
+    // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS.
+    const isCSSString = expressions.filter((e) => e.includes(';'));
+    if (isCSSString?.length) {
       actuallyAString = true;
     }
-
+    if (!actuallyAString) {
+      try {
+        const testEnv = new Environment(env);
+        const testResult = evalScript(`let foo = ${val};`, testEnv);
+        if (testResult?.result !== null) {
+          //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+          actuallyAString = expressions?.length ? false : true;
+        }
+      } catch (e) {
+        // if we have parsing error then we're guessing it's CSS
+        actuallyAString = true;
+      }
+    }
     if (!actuallyAString) {
       return `${val}`;
     }
@@ -305,7 +300,9 @@ export const applyState = (
   } else {
     result = evalScript(script, env);
   }
-  /* console.log('APPLY STATE RESULTS: ', { script, result }); */
+  if (result.result) {
+    console.log('APPLY STATE RESULTS: ', { script, result });
+  }
   return result;
 };
 
@@ -329,7 +326,7 @@ export const getLocalizedStateSnapshot = (
   const finalState: any = { ...snapshot };
   activityIds.forEach((activityId: string) => {
     const activityState = Object.keys(snapshot)
-      .filter((key) => key.indexOf(`${activityId}|`) === 0)
+      .filter((key) => key.indexOf(`${activityId}|stage.`) === 0)
       .reduce((collect: any, key) => {
         const localizedKey = key.replace(`${activityId}|`, '');
         collect[localizedKey] = snapshot[key];
@@ -338,6 +335,38 @@ export const getLocalizedStateSnapshot = (
     Object.assign(finalState, activityState);
   });
   return finalState;
+};
+
+// function to select the content between only the outermost {}
+export const extractExpressionFromText = (text: string) => {
+  const firstCurly = text.indexOf('{');
+  let lastCurly = -1;
+  let counter = 1;
+  let opens = 1;
+  while (counter < text.length && lastCurly === -1) {
+    if (text[firstCurly + counter] === '{') {
+      opens++;
+    } else if (text[firstCurly + counter] === '}') {
+      opens--;
+      if (opens === 0) {
+        lastCurly = firstCurly + counter;
+      }
+    }
+    counter++;
+  }
+  return text.substring(firstCurly + 1, lastCurly);
+};
+
+// extract all expressions from a string
+export const extractAllExpressionsFromText = (text: string): string[] => {
+  const expressions = [];
+  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+    const expr = extractExpressionFromText(text);
+    const rest = text.substring(text.indexOf(expr) + expr.length + 1);
+    expressions.push(expr);
+    expressions.push(...extractAllExpressionsFromText(rest));
+  }
+  return expressions;
 };
 
 // for use by client side scripting evalution

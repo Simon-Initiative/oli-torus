@@ -5,6 +5,9 @@ defmodule Oli.Grading do
   """
   require Logger
 
+  import Ecto.Query, warn: false
+  import Oli.Utils, only: [log_error: 2]
+
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -12,12 +15,12 @@ defmodule Oli.Grading do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Grading.GradebookRow
   alias Oli.Grading.GradebookScore
+  alias Oli.Activities.Realizer.Selection
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Lti.LTI_AGS
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
-  import Ecto.Query, warn: false
   alias Oli.Repo
   alias Oli.Delivery.Sections.SectionsProjectsPublications
 
@@ -53,14 +56,16 @@ defmodule Oli.Grading do
   end
 
   defp send_score(section, user, %ResourceAccess{} = resource_access, token) do
-    label = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id).title
+    revision = DeliveryResolver.from_resource_id(section.slug, resource_access.resource_id)
+
+    out_of_provider = fn -> determine_page_out_of(section.slug, revision) end
 
     # Next, fetch (and possibly create) the line item associated with this resource
     case LTI_AGS.fetch_or_create_line_item(
            section.line_items_service_url,
            resource_access.resource_id,
-           1,
-           label,
+           out_of_provider,
+           revision.title,
            token
          ) do
       # Finally, post the score for this line item
@@ -72,7 +77,9 @@ defmodule Oli.Grading do
         end
 
       {:error, e} ->
-        Logger.error(e)
+        {_id, msg} = log_error("Failed to fetch or create LMS line item", e)
+
+        {:error, msg}
     end
   end
 
@@ -202,6 +209,63 @@ defmodule Oli.Grading do
 
     {gradebook, column_labels}
   end
+
+  @doc """
+  Determines the maximum point value that can be obtained for a page.
+
+  Two implementations exist, one for adaptive pages and one for regular pages. The
+  adaptive implementation reads the "totalScore" key that should be present under the
+  "custom" key.
+
+  The basic implementation counts the activities present (including those from
+  activity bank selections).
+  """
+  def determine_page_out_of(_section_slug, %Revision{
+        content: %{"advancedDelivery" => true} = content
+      }) do
+    read_total_score(content)
+    |> ensure_valid_number()
+    |> max(1.0)
+  end
+
+  def determine_page_out_of(_section_slug, %Revision{content: %{"model" => model}}) do
+    Enum.reduce(model, 0, fn e, count ->
+      case e["type"] do
+        "activity-reference" ->
+          count + 1
+
+        "selection" ->
+          case Selection.parse(e) do
+            {:ok, %Selection{count: selection_count}} -> selection_count + count
+            _ -> count
+          end
+
+        _ ->
+          count
+      end
+    end)
+    |> max(1.0)
+  end
+
+  # reads the "custom / totalScore" nested key in a robust manner, with a default
+  # value of 1.0.
+  defp read_total_score(content) do
+    Map.get(content, "custom", %{"totalScore" => 1.0})
+    |> Map.get("totalScore", 1.0)
+  end
+
+  # ensure the read total score is a number, converting from a string and
+  # ignoring other constructs (imagine a JSON object here instead)
+  defp ensure_valid_number(value) when is_binary(value) do
+    case Float.parse(value) do
+      {f, _} -> f
+      _ -> 1.0
+    end
+  end
+
+  defp ensure_valid_number(value) when is_integer(value), do: value
+  defp ensure_valid_number(value) when is_float(value), do: value
+  defp ensure_valid_number(_), do: 1.0
 
   def fetch_students(section_slug) do
     Sections.list_enrollments(section_slug)

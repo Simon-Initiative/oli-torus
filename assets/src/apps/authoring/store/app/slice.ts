@@ -44,12 +44,13 @@ export interface AppState {
   bottomPanel: boolean;
   visible: boolean; // temp full screen rocket
   hasEditingLock: boolean;
-  showEditingLockErrMsg: boolean;
   rightPanelActiveTab: RightPanelTabs;
   currentRule: any;
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
   copiedPart: any | null;
+  readonly: boolean;
+  showDiagnosticsWindow: boolean;
 }
 
 const initialState: AppState = {
@@ -63,12 +64,13 @@ const initialState: AppState = {
   bottomPanel: true,
   visible: false,
   hasEditingLock: false,
-  showEditingLockErrMsg: false,
   rightPanelActiveTab: RightPanelTabs.LESSON,
   currentRule: undefined,
   partComponentTypes: [],
   activityTypes: [],
   copiedPart: null,
+  readonly: true,
+  showDiagnosticsWindow: false,
 };
 
 export interface AppConfig {
@@ -82,7 +84,7 @@ export interface AppConfig {
 }
 
 const slice: Slice<AppState> = createSlice({
-  name: 'app',
+  name: 'mainApp',
   initialState,
   reducers: {
     setInitialConfig(state, action: PayloadAction<AppConfig>) {
@@ -118,9 +120,6 @@ const slice: Slice<AppState> = createSlice({
     setHasEditingLock(state, action: PayloadAction<{ hasEditingLock: boolean }>) {
       state.hasEditingLock = action.payload.hasEditingLock;
     },
-    setShowEditingLockErrMsg(state, action: PayloadAction<{ showEditingLockErrMsg: boolean }>) {
-      state.showEditingLockErrMsg = action.payload.showEditingLockErrMsg;
-    },
     setRightPanelActiveTab(state, action: PayloadAction<{ rightPanelActiveTab: RightPanelTabs }>) {
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
@@ -129,6 +128,12 @@ const slice: Slice<AppState> = createSlice({
     },
     setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
+    },
+    setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
+      state.readonly = action.payload.readonly;
+    },
+    setShowDiagnosticsWindow(state, action: PayloadAction<{ show: boolean }>) {
+      state.showDiagnosticsWindow = action.payload.show;
     },
   },
   extraReducers: (builder) => {
@@ -139,19 +144,15 @@ const slice: Slice<AppState> = createSlice({
       state.hasEditingLock = false;
     });
     builder.addCase(savePage.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(saveActivity.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(savePartState.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
     builder.addCase(savePartStateToTree.rejected, (state) => {
-      state.showEditingLockErrMsg = true;
       state.hasEditingLock = false;
     });
   },
@@ -168,6 +169,8 @@ export const {
   setRightPanelActiveTab,
   setCurrentRule,
   setCopiedPart,
+  setReadonly,
+  setShowDiagnosticsWindow,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -203,10 +206,7 @@ export const selectHasEditingLock = createSelector(
   selectState,
   (state: AppState) => state.hasEditingLock,
 );
-export const selectshowEditingLockErrMsg = createSelector(
-  selectState,
-  (state: AppState) => state.showEditingLockErrMsg,
-);
+
 export const selectPartComponentTypes = createSelector(
   selectState,
   (state: AppState) => state.partComponentTypes,
@@ -215,6 +215,13 @@ export const selectPartComponentTypes = createSelector(
 export const selectActivityTypes = createSelector(
   selectState,
   (state: AppState) => state.activityTypes,
+);
+
+export const selectReadOnly = createSelector(selectState, (state: AppState) => state.readonly);
+
+export const selectShowDiagnosticsWindow = createSelector(
+  selectState,
+  (state: AppState) => state.showDiagnosticsWindow,
 );
 
 export default slice.reducer;

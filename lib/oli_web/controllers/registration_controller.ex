@@ -1,113 +1,104 @@
 defmodule OliWeb.RegistrationController do
   use OliWeb, :controller
 
+  alias Oli.Repo
   alias Oli.Institutions
   alias Oli.Lti_1p3.Tool.Registration
-  alias Oli.Branding
   alias OliWeb.Common.{Breadcrumb}
 
-  def root_breadcrumbs(institution_id, action, name) do
-    OliWeb.InstitutionController.root_breadcrumbs() ++
+  def root_breadcrumbs() do
+    OliWeb.Admin.AdminView.breadcrumb() ++
       [
         Breadcrumb.new(%{
-          full_title: "Registrations",
-          link: Routes.institution_registration_path(OliWeb.Endpoint, action, institution_id)
-        }),
-        Breadcrumb.new(%{
-          full_title: name
+          full_title: "LTI 1.3 Registrations",
+          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)
         })
       ]
   end
 
-  def edit_breadcrumbs(institution_id, id) do
-    OliWeb.InstitutionController.root_breadcrumbs() ++
+  def breadcrumbs(action, name) do
+    root_breadcrumbs() ++
       [
         Breadcrumb.new(%{
-          full_title: "Registrations",
-          link: Routes.institution_registration_path(OliWeb.Endpoint, :edit, institution_id, id)
-        }),
-        Breadcrumb.new(%{
-          full_title: "Edit"
+          full_title: name,
+          link: Routes.registration_path(OliWeb.Endpoint, action)
         })
       ]
   end
 
-  def available_brands(institution_id) do
-    institution = Institutions.get_institution!(institution_id)
-    available_brands = Branding.list_available_brands(institution_id)
+  def breadcrumbs(action, id, name) do
+    root_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: name,
+          link: Routes.registration_path(OliWeb.Endpoint, action, id)
+        })
+      ]
+  end
 
-    institution_brands =
-      available_brands
-      |> Enum.filter(fn b -> b.institution_id != nil end)
-      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+  def index(conn, _params) do
+    registrations = Institutions.list_registrations(preload: [:deployments])
 
-    other_brands =
-      available_brands
-      |> Enum.filter(fn b -> b.institution_id == nil end)
-      |> Enum.map(fn brand -> {brand.name, brand.id} end)
-
-    []
-    |> Enum.concat(
-      if Enum.count(institution_brands) > 0,
-        do: ["#{institution.name} Brands": institution_brands],
-        else: []
+    render(conn, "index.html",
+      breadcrumbs: root_breadcrumbs(),
+      registrations: registrations
     )
-    |> Enum.concat(if Enum.count(other_brands) > 0, do: ["Other Brands": other_brands], else: [])
   end
 
-  def new(conn, %{"institution_id" => institution_id}) do
-    changeset = Institutions.change_registration(%Registration{institution_id: institution_id})
+  def new(conn, _params) do
+    changeset = Institutions.change_registration(%Registration{})
 
     render(conn, "new.html",
       changeset: changeset,
-      breadcrumbs: root_breadcrumbs(institution_id, :create, "New"),
-      institution_id: institution_id,
-      available_brands: available_brands(institution_id),
+      breadcrumbs: breadcrumbs(:create, "New"),
       title: "Create Registration"
     )
   end
 
-  def create(conn, %{"institution_id" => institution_id, "registration" => registration_params}) do
+  def create(conn, %{"registration" => registration_params}) do
     {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
     registration_params =
       registration_params
-      |> Map.put("institution_id", institution_id)
       |> Map.put("tool_jwk_id", active_jwk.id)
 
     case Institutions.create_registration(registration_params) do
-      {:ok, _registration} ->
+      {:ok, registration} ->
         conn
         |> put_flash(:info, "Registration created successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+        |> redirect(to: Routes.registration_path(conn, :show, registration.id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html",
           changeset: changeset,
-          breadcrumbs: root_breadcrumbs(institution_id, :create, "New"),
-          institution_id: institution_id,
-          available_brands: available_brands(institution_id),
+          breadcrumbs: breadcrumbs(:create, "New"),
           title: "Create Registration"
         )
     end
   end
 
-  def edit(conn, %{"institution_id" => institution_id, "id" => id}) do
+  def show(conn, %{"id" => id}) do
+    registration = Institutions.get_registration!(id) |> Repo.preload([:deployments])
+
+    render(conn, "show.html",
+      registration: registration,
+      breadcrumbs: breadcrumbs(:show, id, "Show")
+    )
+  end
+
+  def edit(conn, %{"id" => id}) do
     registration = Institutions.get_registration_preloaded!(id)
     changeset = Institutions.change_registration(registration)
 
     render(conn, "edit.html",
       registration: registration,
-      breadcrumbs: edit_breadcrumbs(institution_id, id),
+      breadcrumbs: breadcrumbs(:edit, id, "Edit"),
       changeset: changeset,
-      institution_id: institution_id,
-      available_brands: available_brands(institution_id),
       title: "Edit Registration"
     )
   end
 
   def update(conn, %{
-        "institution_id" => institution_id,
         "id" => id,
         "registration" => registration_params
       }) do
@@ -117,26 +108,24 @@ defmodule OliWeb.RegistrationController do
       {:ok, _registration} ->
         conn
         |> put_flash(:info, "Registration updated successfully.")
-        |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+        |> redirect(to: Routes.registration_path(conn, :show, id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
-          breadcrumbs: edit_breadcrumbs(institution_id, id),
+          breadcrumbs: breadcrumbs(:edit, id, "Edit"),
           registration: registration,
           changeset: changeset,
-          institution_id: institution_id,
-          available_brands: available_brands(institution_id),
           title: "Edit Registration"
         )
     end
   end
 
-  def delete(conn, %{"institution_id" => institution_id, "id" => id}) do
+  def delete(conn, %{"id" => id}) do
     registration = Institutions.get_registration!(id)
     {:ok, _registration} = Institutions.delete_registration(registration)
 
     conn
     |> put_flash(:info, "Registration deleted successfully.")
-    |> redirect(to: Routes.institution_path(conn, :show, institution_id))
+    |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView))
   end
 end

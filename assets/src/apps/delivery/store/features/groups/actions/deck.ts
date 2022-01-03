@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { CapiVariableTypes } from 'adaptivity/capi';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
@@ -77,16 +78,16 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 1;
+    const currentAttemptNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const targettedAttemptNumberOp: ApplyStateOperation = {
       target: `${currentSequenceId}|session.attemptNumber`,
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const tutorialScoreOp: ApplyStateOperation = {
       target: 'session.tutorialScore',
@@ -130,9 +131,9 @@ export const initializeActivity = createAsyncThunk(
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
-    const arrInitFacts: string[] = [];
+    const arrInitFacts: Record<string, string> = {};
     const globalizedInitState = initState.map((s: any) => {
-      arrInitFacts.push(`${s.target}`);
+      arrInitFacts[s.target] = s.type;
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
       }
@@ -140,6 +141,9 @@ export const initializeActivity = createAsyncThunk(
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
+      if (s.type === CapiVariableTypes.MATH_EXPR) {
+        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+      }
       const modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
@@ -147,6 +151,7 @@ export const initializeActivity = createAsyncThunk(
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
+    console.log({ initState, globalizedInitState });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);

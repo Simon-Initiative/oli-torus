@@ -28,7 +28,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
-      {:ok, %Model{rules: rules, delivery: delivery}} ->
+      {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
         custom = Map.get(delivery, "custom", %{})
 
         scoringContext = %{
@@ -39,6 +39,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           currentAttemptNumber: attempt_number
         }
 
+        activitiesRequiredForEvaluation =
+          Map.get(authoring, "activitiesRequiredForEvaluation", [])
+
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
@@ -46,7 +49,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           activity_attempt_guid,
           part_inputs,
           scoringContext,
-          rules
+          rules,
+          activitiesRequiredForEvaluation
         )
 
       e ->
@@ -60,9 +64,11 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activity_attempt_guid,
         part_inputs,
         scoringContext,
-        rules
+        rules,
+        activitiesRequiredForEvaluation
       ) do
-    state = assemble_full_adaptive_state(resource_attempt, part_inputs)
+    state =
+      assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
 
     encodeResults = true
 
@@ -77,15 +83,23 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         score = decodedResults["score"]
         out_of = decodedResults["out_of"]
+        Logger.debug("Score: #{score}")
+        Logger.debug("Out of: #{out_of}")
         client_evaluations = to_client_results(score, out_of, part_inputs)
         Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
-        case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+        case apply_client_evaluation(
+               section_slug,
+               activity_attempt_guid,
+               client_evaluations,
+               :do_not_normalize
+             ) do
           {:ok, _} ->
             {:ok, decodedResults}
 
           {:error, err} ->
             Logger.debug("Error in apply client results! #{err}")
+
             {:error, err}
         end
 
@@ -108,40 +122,56 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end)
   end
 
-  defp assemble_full_adaptive_state(resource_attempt, part_inputs) do
+  defp assemble_full_adaptive_state(
+         resource_attempt,
+         activities_required_for_evaluation,
+         part_inputs
+       ) do
     extrinsic_state = resource_attempt.state
 
-    # need to get *all* of the activity attempts state (part responses saved thus far)
-    attempt_hierarchy =
-      Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(resource_attempt.id)
-
+    # if activitiesRequiredForEvaluation is empty, we don't need to get any extra state
     response_state =
-      Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts}, m ->
-        part_responses =
-          Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
-            case pa.response do
-              "" ->
-                acc
+      case activities_required_for_evaluation do
+        [] ->
+          %{}
 
-              nil ->
-                acc
+        _ ->
+          # need to get *all* of the activity attempts state (part responses saved thus far)
 
-              _ ->
-                part_values =
-                  Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
-                    case pv do
-                      nil -> acc1
-                      "" -> acc1
-                      _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
-                    end
-                  end)
+          attempt_hierarchy =
+            Oli.Delivery.Attempts.PageLifecycle.Hierarchy.get_latest_attempts(
+              resource_attempt.id,
+              activities_required_for_evaluation
+            )
 
-                Map.merge(acc, part_values)
-            end
+          Enum.reduce(Map.values(attempt_hierarchy), %{}, fn {_activity_attempt, part_attempts},
+                                                             m ->
+            part_responses =
+              Enum.reduce(Map.values(part_attempts), %{}, fn pa, acc ->
+                case pa.response do
+                  "" ->
+                    acc
+
+                  nil ->
+                    acc
+
+                  _ ->
+                    part_values =
+                      Enum.reduce(Map.values(pa.response), %{}, fn pv, acc1 ->
+                        case pv do
+                          nil -> acc1
+                          "" -> acc1
+                          _ -> Map.put(acc1, Map.get(pv, "path"), Map.get(pv, "value"))
+                        end
+                      end)
+
+                    Map.merge(acc, part_values)
+                end
+              end)
+
+            Map.merge(m, part_responses)
           end)
-
-        Map.merge(m, part_responses)
-      end)
+      end
 
     # need to combine with part_inputs as latest
     input_state =
@@ -219,7 +249,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
       roll_up = fn result ->
-        rollup_part_attempt_evaluations(activity_attempt_guid)
+        rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
         result
       end
 
@@ -291,7 +321,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     roll_up_fn = fn result ->
-      rollup_part_attempt_evaluations(activity_attempt_guid)
+      rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
       result
     end
 
@@ -324,6 +354,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   the results of the part evalutions (including ones already having been evaluated)
   will be rolled up to the activity attempt record.
 
+  The optional "normalize_mode" takes values of :normalize or :do_not_normalize.  The default
+  :normalize mode will normalize the part based score and out_of to a range of 0 to 1.
+  This ensures for all basic page based assessments that every activity has equal weight.
+
   On success returns an `{:ok, results}` tuple where results in an array of maps. Each
   map instance contains the result of one of the evaluations in the form:
 
@@ -333,7 +367,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   """
   @spec apply_client_evaluation(String.t(), String.t(), [map()]) ::
           {:ok, [map()]} | {:error, any}
-  def apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+  def apply_client_evaluation(
+        section_slug,
+        activity_attempt_guid,
+        client_evaluations,
+        normalize_mode \\ :normalize
+      ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
@@ -352,7 +391,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
           roll_up = fn result ->
-            rollup_part_attempt_evaluations(activity_attempt_guid)
+            rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)
             result
           end
 
@@ -384,9 +423,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                end)
                |> (fn evaluations -> {:ok, evaluations} end).()
                |> persist_evaluations(part_inputs, roll_up_fn) do
-            {:ok, results} -> results
-            {:error, error} -> Repo.rollback(error)
-            _ -> Repo.rollback("unknown error")
+            {:ok, results} ->
+              results
+
+            {:error, error} ->
+              Logger.debug("error inside apply_client_evaluation: #{error}")
+              Repo.rollback(error)
+
+            _ ->
+              Repo.rollback("unknown error")
           end
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
@@ -396,7 +441,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  def rollup_part_attempt_evaluations(activity_attempt_guid) do
+  def rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode) do
     # find the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -406,11 +451,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
 
+    {score, out_of} =
+      case normalize_mode do
+        :do_not_normalize -> {score, out_of}
+        _ -> {normalize_to_one(score, out_of), 1.0}
+      end
+
     update_activity_attempt(activity_attempt, %{
       score: score,
       out_of: out_of,
       date_evaluated: DateTime.utc_now()
     })
+  end
+
+  defp normalize_to_one(score, out_of) do
+    case out_of do
+      0 -> 0
+      _ -> score / out_of
+    end
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records

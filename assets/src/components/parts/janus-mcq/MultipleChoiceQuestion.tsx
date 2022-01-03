@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import { usePrevious } from 'components/hooks/usePrevious';
 import { shuffle } from 'lodash';
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
@@ -8,11 +7,11 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBoolean } from '../../../utils/common';
+import { parseArray, parseBoolean } from '../../../utils/common';
 import { renderFlow } from '../janus-text-flow/TextFlow';
 import { PartComponentProps } from '../types/parts';
 import { JanusMultipleChoiceQuestionProperties } from './MultipleChoiceQuestionType';
-import { McqModel } from './schema';
+import { McqItem, McqModel } from './schema';
 
 // SS assumes the unstyled "text" of the label is the text value
 // there should only be one node in a label text, but we'll concat them jic
@@ -67,6 +66,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   onConfigOptionClick,
   index,
   configureMode,
+  verticalGap = 0,
 }) => {
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -84,6 +84,9 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   }
   if (layoutType === 'verticalLayout' && overrideHeight) {
     mcqItemStyles.height = `calc(${100 / totalItems}%)`;
+  }
+  if (layoutType === 'verticalLayout' && verticalGap && index > 0) {
+    mcqItemStyles.marginTop = `${verticalGap}px`;
   }
 
   const textValue = getNodeText(nodes);
@@ -182,6 +185,59 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   );
 };
 
+interface McqOptionModel extends McqItem {
+  index: number;
+  value: number;
+}
+
+const getOptionTextFromNode = (children: any): any => {
+  let optionText = '';
+  if (children.tag === 'text') {
+    optionText = children.text;
+  } else if (children?.children?.length) {
+    optionText = getOptionTextFromNode(children.children[0]);
+  }
+  return optionText;
+};
+
+const getOptionTextById = (options: McqOptionModel[], optionId: number): string => {
+  const text = options
+    .map((option: any) => {
+      if (option.value === optionId) {
+        if (option.nodes[0].tag === 'text') {
+          return option.nodes[0].text;
+        } else {
+          return getOptionTextFromNode(option.nodes[0]);
+        }
+      }
+    })
+    .filter((option: any) => option !== undefined);
+  return text?.length ? text[0] : '';
+};
+
+const getOptionNumberFromText = (
+  options: McqOptionModel[],
+  optionText: string,
+): number | undefined => {
+  const values = options
+    .map((option) => {
+      const text = getOptionTextFromNode(option.nodes[0]);
+      if (text === optionText) {
+        return option.value;
+      }
+    })
+    .filter((option) => option !== undefined);
+
+  // even if there are multiple choices with the same text (why??) pick the first one
+  return values[0];
+};
+
+interface ItemSelectionInput {
+  value: number;
+  textValue: string;
+  checked: boolean;
+}
+
 const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -190,15 +246,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   const [enabled, setEnabled] = useState(true);
   const [randomized, setRandomized] = useState(false);
-  const [options, setOptions] = useState<any[]>([]);
+  const [options, setOptions] = useState<McqOptionModel[]>([]);
   const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
   // note in SS selection is 1 based
   const [selectedChoice, setSelectedChoice] = useState<number>(0);
   const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
   const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
   const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
-  const prevSelectedChoice = usePrevious<number>(selectedChoice);
-  const prevSelectedChoices = usePrevious<any[]>(selectedChoices);
 
   const initialize = useCallback(async (pModel) => {
     // set defaults from model
@@ -208,17 +262,18 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
 
-    // BS: not sure I grok this one
-    const dMcqItems = pModel.mcqItems || [];
-    setSelectedChoicesText(
-      dMcqItems.map((item: { nodes: any }, index: number) => {
-        return {
-          value: index + 1,
-          textValue: getNodeText(item.nodes),
-          checked: false,
-        };
-      }),
-    );
+    // we need to set up a new list so that we can shuffle while maintaining correct index/values
+    let mcqList: McqOptionModel[] = pModel.mcqItems?.map((item: any, index: number) => ({
+      ...item,
+      index: index,
+      value: index + 1,
+    }));
+
+    if (dRandomized) {
+      mcqList = shuffle(mcqList);
+    }
+
+    setOptions(mcqList);
 
     // now we need to save the defaults used in adaptivity (not necessarily the same)
     const initResult = await props.onInit({
@@ -265,35 +320,81 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;
     setState(currentStateSnapshot);
-    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
 
+    const sEnabled = currentStateSnapshot[`stage.${id}.enabled`];
     if (sEnabled !== undefined) {
       setEnabled(sEnabled);
     }
+
     const sRandomize = currentStateSnapshot[`stage.${id}.randomize`];
     if (sRandomize !== undefined) {
       setRandomized(sRandomize);
     }
+
+    // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
+    let hasDoneMultiple = false;
+    let hasDoneSelectedChoice = false;
+
+    // this is for setting *multiple* choices being selected by the number value
     const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
     if (sSelectedChoices !== undefined) {
-      setSelectedChoices(sSelectedChoices);
+      hasDoneMultiple = true;
+      hasDoneSelectedChoice = true;
+      const selectedArray = parseArray(sSelectedChoices);
+      if (Array.isArray(selectedArray)) {
+        const newSelectionArray = selectedArray.map((choice) => ({
+          value: choice,
+          textValue: getOptionTextById(options, choice),
+          checked: true,
+        }));
+        handleMultipleItemSelection(newSelectionArray, true);
+      }
     }
+
+    // this is for setting *multiple* choices being selected by the text value
     const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
-    if (sSelectedChoices !== undefined) {
-      setSelectedChoicesText(sSelectedChoicesText);
+    if (sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
+      hasDoneMultiple = true;
+      const selectedArray = parseArray(sSelectedChoicesText);
+      if (Array.isArray(selectedArray)) {
+        const newSelectionArray = selectedArray
+          .map((choiceText) => ({
+            value: getOptionNumberFromText(options, choiceText),
+            textValue: choiceText,
+            checked: true,
+          }))
+          .filter((choice) => choice.value !== undefined);
+        handleMultipleItemSelection(newSelectionArray as ItemSelectionInput[], true);
+      }
     }
-    const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
-    if (sSelectedChoiceText !== undefined) {
-      setSelectedChoiceText(sSelectedChoiceText);
+
+    if (!hasDoneMultiple) {
+      // this is for setting a *single* seletion by the number
+      const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
+      if (sSelectedChoice !== undefined) {
+        hasDoneSelectedChoice = true;
+        const choice = parseInt(String(sSelectedChoice), 10);
+        const checked = choice > 0;
+        const textValue = checked ? getOptionTextById(options, choice) : '';
+        handleItemSelection(
+          { value: choice, textValue, checked },
+          true, // need to save pretty much every time because of related properties like count
+        );
+      }
+
+      // this is for a *single* choice being selected by the text value
+      const sSelectedChoiceText = currentStateSnapshot[`stage.${id}.selectedChoiceText`];
+      if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
+        const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
+        if (choiceNumber !== undefined) {
+          handleItemSelection(
+            { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+            true, // need to save pretty much every time because of related properties like count
+          );
+        }
+      }
     }
-    const sSelectedChoice = currentStateSnapshot[`stage.${id}.selectedChoice`];
-    if (sSelectedChoice !== undefined) {
-      setSelectedChoice(sSelectedChoice);
-    }
-    const sNumberOfSelectedChoices = currentStateSnapshot[`stage.${id}.numberOfSelectedChoices`];
-    if (sNumberOfSelectedChoices !== undefined) {
-      setNumberOfSelectedChoices(sNumberOfSelectedChoices);
-    }
+
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
@@ -303,11 +404,11 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const {
     width,
     multipleSelection,
-    mcqItems,
     customCssClass,
     layoutType,
     height,
     overrideHeight = false,
+    verticalGap,
   } = model;
 
   useEffect(() => {
@@ -342,42 +443,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     props.onReady({ id, responses: [] });
   }, [ready]);
 
-  const getOptionTextFromNode = (children: any): any => {
-    let optionText = '';
-    if (children.tag === 'text') {
-      optionText = children.text;
-    } else if (children?.children?.length) {
-      optionText = getOptionTextFromNode(children.children[0]);
-    }
-    return optionText;
-  };
-
-  const getOptionTextById = (options: any[], optionId: number): string => {
-    const text = options
-      .map((option: any) => {
-        if (option.value === optionId) {
-          if (option.nodes[0].tag === 'text') {
-            return option.nodes[0].text;
-          } else {
-            return getOptionTextFromNode(option.nodes[0]);
-          }
-        }
-      })
-      .filter((option: any) => option !== undefined);
-    return text?.length ? text[0] : '';
-  };
-
-  const getOptionTextByText = (options: any, optionText: any): any => {
-    const text = options.map((option: any) => {
-      const text = getOptionTextFromNode(option.nodes[0]);
-      if (text === optionText) {
-        return option.value;
-      }
-    });
-
-    return text.filter((option: any) => option !== undefined);
-  };
-
   useEffect(() => {
     if (!props.notify) {
       return;
@@ -409,46 +474,71 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sRandomized !== undefined) {
                 setRandomized(parseBoolean(sRandomized));
               }
-              const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
-              if (sSelectedChoice !== undefined) {
-                const choice = parseInt(String(sSelectedChoice), 10);
-                if (selectedChoice !== choice) {
-                  setSelectedChoice(choice);
-                }
-              }
-              const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
-              if (sSelectedChoiceText !== undefined) {
-                const updatedSelectedOptions = getOptionTextByText(options, sSelectedChoiceText);
-                setSelectedChoice(updatedSelectedOptions);
-              }
+
+              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
+              let hasDoneMultiple = false;
+              let hasDoneSelectedChoice = false;
+
+              // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
-                const updatedValues = sSelectedChoices.map((item) =>
-                  !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
-                );
-                props.onSave({
-                  id: `${id}`,
-                  responses: [
-                    {
-                      key: 'numberOfSelectedChoices',
-                      type: CapiVariableTypes.NUMBER,
-                      value: updatedValues?.length,
-                    },
-                  ],
-                });
-                setSelectedChoices(updatedValues);
-              }
-              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
-              if (sSelectedChoicesText !== undefined) {
-                if (Array.isArray(sSelectedChoicesText)) {
-                  const updatedSelectedOptions = sSelectedChoicesText
-                    .map((item) => getOptionTextByText(options, item))
-                    .map((option) => {
-                      return option[0];
-                    });
-                  setSelectedChoices(updatedSelectedOptions);
+              if (sSelectedChoices !== undefined) {
+                hasDoneMultiple = true;
+                hasDoneSelectedChoice = true;
+                const selectedArray = parseArray(sSelectedChoices);
+                if (Array.isArray(selectedArray)) {
+                  const newSelectionArray = selectedArray.map((choice) => ({
+                    value: choice,
+                    textValue: getOptionTextById(options, choice),
+                    checked: true,
+                  }));
+                  handleMultipleItemSelection(newSelectionArray, true);
                 }
               }
+
+              // this is for setting *multiple* choices being selected by the text value
+              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
+              if (sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
+                hasDoneMultiple = true;
+                const selectedArray = parseArray(sSelectedChoicesText);
+                if (Array.isArray(selectedArray)) {
+                  const newSelectionArray = selectedArray
+                    .map((choiceText) => ({
+                      value: getOptionNumberFromText(options, choiceText),
+                      textValue: choiceText,
+                      checked: true,
+                    }))
+                    .filter((choice) => choice.value !== undefined);
+                  handleMultipleItemSelection(newSelectionArray as ItemSelectionInput[], true);
+                }
+              }
+
+              if (!hasDoneMultiple) {
+                // this is for setting a *single* seletion by the number
+                const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
+                if (sSelectedChoice !== undefined) {
+                  hasDoneSelectedChoice = true;
+                  const choice = parseInt(String(sSelectedChoice), 10);
+                  const checked = choice > 0;
+                  const textValue = checked ? getOptionTextById(options, choice) : '';
+                  handleItemSelection(
+                    { value: choice, textValue, checked },
+                    true, // need to save pretty much every time because of related properties like count
+                  );
+                }
+
+                // this is for a *single* choice being selected by the text value
+                const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
+                if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
+                  const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
+                  if (choiceNumber !== undefined) {
+                    handleItemSelection(
+                      { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+                      true, // need to save pretty much every time because of related properties like count
+                    );
+                  }
+                }
+              }
+
               // NOTE: it doesn't make sense (SS doesn't let you) to allow the things like
               // numberOfSelectedChoices to be set via mutate state
             }
@@ -464,19 +554,72 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sRandomized !== undefined) {
                 setRandomized(parseBoolean(sRandomized));
               }
-              const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
-              if (sSelectedChoice !== undefined) {
-                const choice = parseInt(String(sSelectedChoice), 10);
-                if (selectedChoice !== choice) {
-                  setSelectedChoice(choice);
+              // it doesn't make sense to apply *all* of these if they came at the same time (they shouldn't)
+              let hasDoneMultiple = false;
+              let hasDoneSelectedChoice = false;
+
+              // this is for setting *multiple* choices being selected by the number value
+              const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
+              if (sSelectedChoices !== undefined && sSelectedChoices.length) {
+                hasDoneMultiple = true;
+                hasDoneSelectedChoice = true;
+                const selectedArray = parseArray(sSelectedChoices);
+                if (Array.isArray(selectedArray)) {
+                  const newSelectionArray = selectedArray.map((choice) => ({
+                    value: choice,
+                    textValue: getOptionTextById(options, choice),
+                    checked: true,
+                  }));
+                  handleMultipleItemSelection(newSelectionArray, true);
                 }
               }
-              const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (sSelectedChoices !== undefined && Array.isArray(sSelectedChoices)) {
-                const updatedValues = sSelectedChoices.map((item) =>
-                  !Number.isNaN(parseFloat(item)) ? parseFloat(item) : item,
-                );
-                setSelectedChoices(updatedValues);
+
+              // this is for setting *multiple* choices being selected by the text value
+              const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
+              if (
+                sSelectedChoicesText !== undefined &&
+                sSelectedChoicesText.length &&
+                !hasDoneSelectedChoice
+              ) {
+                hasDoneMultiple = true;
+                const selectedArray = parseArray(sSelectedChoicesText);
+                if (Array.isArray(selectedArray)) {
+                  const newSelectionArray = selectedArray
+                    .map((choiceText) => ({
+                      value: getOptionNumberFromText(options, choiceText),
+                      textValue: choiceText,
+                      checked: true,
+                    }))
+                    .filter((choice) => choice.value !== undefined);
+                  handleMultipleItemSelection(newSelectionArray as ItemSelectionInput[], true);
+                }
+              }
+
+              if (!hasDoneMultiple) {
+                // this is for setting a *single* seletion by the number
+                const sSelectedChoice = changes[`stage.${id}.selectedChoice`];
+                if (sSelectedChoice !== undefined) {
+                  hasDoneSelectedChoice = true;
+                  const choice = parseInt(String(sSelectedChoice), 10);
+                  const checked = choice > 0;
+                  const textValue = checked ? getOptionTextById(options, choice) : '';
+                  handleItemSelection(
+                    { value: choice, textValue, checked },
+                    true, // need to save pretty much every time because of related properties like count
+                  );
+                }
+
+                // this is for a *single* choice being selected by the text value
+                const sSelectedChoiceText = changes[`stage.${id}.selectedChoiceText`];
+                if (sSelectedChoiceText !== undefined && !hasDoneSelectedChoice) {
+                  const choiceNumber = getOptionNumberFromText(options, sSelectedChoiceText);
+                  if (choiceNumber !== undefined) {
+                    handleItemSelection(
+                      { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+                      true, // need to save pretty much every time because of related properties like count
+                    );
+                  }
+                }
               }
             }
             break;
@@ -507,130 +650,121 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   }
 
   useEffect(() => {
-    // we need to set up a new list so that we can shuffle while maintaining correct index/values
-    let mcqList: any[] = mcqItems?.map((item: any, index: number) => ({
-      ...item,
-      index: index,
-      value: index + 1,
-    }));
-
-    if (randomized) {
-      mcqList = shuffle(mcqList);
-    }
-
-    setOptions(mcqList);
-  }, [mcqItems]);
+    setOptions((currentOptions) => {
+      if (randomized) {
+        return shuffle(currentOptions);
+      }
+      // TODO: return original model order??
+      return currentOptions;
+    });
+  }, [randomized]);
 
   useEffect(() => {
-    // watch for a new choice then
-    // trigger item selection handler
-    if (selectedChoice !== 0 && selectedChoice !== -1) {
-      let shouldSave = false;
-      let optionText = selectedChoiceText;
-      const currentSelectedText = getOptionTextById(options, selectedChoice);
-      if (!optionText?.length) {
-        // if selectedChoiceText blank then it means selectedChoice is being set from either init or mutate state and
-        //hence need to save the props as well.
-        shouldSave = true;
-        optionText = getOptionTextById(options, selectedChoice);
-      } else if (optionText !== currentSelectedText) {
-        optionText = currentSelectedText;
-        shouldSave = true;
-      }
-      /* console.log('handling MCQ single select'); */
-      handleItemSelection(
-        {
-          value: selectedChoice,
-          textValue: optionText,
-          checked: true,
-        },
-        shouldSave,
-      );
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
     }
-  }, [selectedChoice]);
-
-  useEffect(() => {
-    // watch for new choices that may be set programmatically
-    // trigger item selection handler for each
-    if (
-      prevSelectedChoices &&
-      // if previous selected is less than 1 and selected are greater than 1
-      ((prevSelectedChoices.length < 1 && selectedChoices.length > 0) ||
-        // if previous selected contains values and the values don't match currently selected values
-        (prevSelectedChoices.length > 0 &&
-          !prevSelectedChoices.every((fact) => selectedChoices.includes(fact))))
-    ) {
-      // if we reach here, it means selectedChoices is being set from either init or mutate state and
-      //hence need to save the variables.
-
-      if (!selectedChoicesText?.length) {
-        //update SelectedChoicesText with the latest selection
-        const choicesText = selectedChoices.map((choice) => getOptionTextById(options, choice));
-        setSelectedChoicesText(choicesText);
-      }
-      /* console.log('handling MCQ multi select'); */
-      selectedChoices.forEach((selectedChoice) => {
-        handleItemSelection(
-          {
-            value: selectedChoice,
-            textValue: getOptionTextById(options, selectedChoice),
-            checked: true,
-          },
-          true,
-        );
-      });
+    if (height != undefined) {
+      styleChanges.height = { value: height as number };
     }
-  }, [selectedChoices, selectedChoicesText, options]);
 
-  const handleItemSelection = (
-    {
-      value,
-      textValue,
-      checked,
-    }: {
-      value: number;
-      textValue: string;
-      checked: boolean;
-    },
-    shouldSave = true,
-  ) => {
-    /*  console.log('mcq handle select'); */
-    // TODO: non-number values?? - pb: I suspect not, since there's no SS ability to specify a value for an item
-    const newChoice = parseInt(value.toString(), 10);
-    let newCount = 1;
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  }, [width, height]);
 
-    let newSelectedChoices = [newChoice];
-    let updatedChoicesText = [textValue];
-
-    if (!multipleSelection) {
-      // sets data for radios, which can only have single values
-      setNumberOfSelectedChoices(newCount);
-      setSelectedChoice(checked ? newChoice : 0);
-      setSelectedChoiceText(checked ? textValue : '');
-      setSelectedChoices([newChoice]);
-      setSelectedChoicesText([textValue]);
-    } else {
-      // sets data for checkboxes, which can have multiple values
-      newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
-        (c) => checked || (!checked && newChoice !== c),
-      );
-
-      updatedChoicesText = newSelectedChoices.map((choice) => getOptionTextById(options, choice));
-
-      newCount = newSelectedChoices.length;
-      setNumberOfSelectedChoices(newCount);
-      setSelectedChoices(newSelectedChoices);
-      setSelectedChoicesText(updatedChoicesText);
+  // will always *replace* the selected choices (used by init & mutate)
+  const handleMultipleItemSelection = (selections: ItemSelectionInput[], shouldSave = true) => {
+    let modifiedSelections = selections;
+    const newCount = selections.length;
+    const blankValueExit =
+      (selections.length === 1 && selections.filter((item) => item.value <= 0)) || [];
+    if (blankValueExit.length) {
+      modifiedSelections = [];
     }
+    const newSelectedChoices = modifiedSelections
+      .sort((a, b) => a.value - b.value)
+      .map((item) => item.value);
+
+    const newSelectedChoice = newSelectedChoices[0];
+
+    const newSelectedChoicesText = modifiedSelections
+      .sort((a, b) => a.value - b.value)
+      .map((item) => item.textValue);
+
+    const newSelectedChoiceText = newSelectedChoicesText[0];
+
+    setNumberOfSelectedChoices(newCount);
+    setSelectedChoice(newSelectedChoice);
+    setSelectedChoices(newSelectedChoices);
+    setSelectedChoiceText(newSelectedChoiceText);
+    setSelectedChoicesText(newSelectedChoicesText);
+
     if (shouldSave) {
       saveState({
         numberOfSelectedChoices: newCount,
-        selectedChoice: newSelectedChoices.length ? newSelectedChoices.sort()[0] : 0,
-        selectedChoiceText: newSelectedChoices.length ? updatedChoicesText.sort()[0] : '',
+        selectedChoice: newSelectedChoice,
+        selectedChoiceText: newSelectedChoiceText,
         selectedChoices: newSelectedChoices,
+        selectedChoicesText: newSelectedChoicesText,
+      });
+    }
+  };
+
+  const handleItemSelection = (
+    { value, textValue, checked }: ItemSelectionInput,
+    shouldSave = true,
+  ) => {
+    const originalValue = parseInt(value.toString(), 10);
+    let newChoice = checked ? originalValue : 0;
+    let newCount = 1;
+    let newSelectedChoices = [newChoice];
+    let updatedChoicesText = [checked ? textValue : ''];
+    let updatedChoiceText = updatedChoicesText[0];
+
+    if (multipleSelection) {
+      // sets data for checkboxes, which can have multiple values
+      newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
+        (c) => checked || (!checked && originalValue !== c && c > 0),
+      );
+
+      newChoice = newSelectedChoices.sort()[0] || 0;
+
+      updatedChoicesText = newSelectedChoices
+        .sort()
+        .map((choice) => getOptionTextById(options, choice));
+      updatedChoiceText = updatedChoicesText[0] || '';
+
+      newCount = newSelectedChoices.length;
+    }
+    let modifiedNewSelectedChoices = newSelectedChoices;
+    const blankValueExit =
+      (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
+    if (blankValueExit.length) {
+      modifiedNewSelectedChoices = [];
+      updatedChoicesText = [];
+    }
+    setNumberOfSelectedChoices(newCount);
+    setSelectedChoice(newChoice);
+    setSelectedChoices(modifiedNewSelectedChoices);
+    setSelectedChoiceText(updatedChoiceText);
+    setSelectedChoicesText(updatedChoicesText);
+
+    if (shouldSave) {
+      saveState({
+        numberOfSelectedChoices: newCount,
+        selectedChoice: newChoice,
+        selectedChoiceText: updatedChoiceText,
+        selectedChoices: modifiedNewSelectedChoices,
         selectedChoicesText: updatedChoicesText,
       });
     }
+    console.log('MCQ HANDLE SELECT', {
+      shouldSave,
+      newCount,
+      newChoice,
+      newSelectedChoices,
+      updatedChoiceText,
+      updatedChoicesText,
+    });
   };
 
   const saveState = ({
@@ -699,12 +833,14 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   if (customCssClass === 'four-columns') {
     columns = 4;
   }
+
   return ready ? (
     <div data-janus-type={tagName} style={styles} className={`mcq-input`}>
       {options?.map((item, index) => (
         <MCQItem
           idx={index}
           key={`${id}-item-${index}`}
+          title={item.title}
           totalItems={options.length}
           layoutType={layoutType}
           itemId={`${id}-item-${index}`}
@@ -720,6 +856,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           disabled={!enabled}
           multipleSelection={multipleSelection}
           columns={columns}
+          verticalGap={verticalGap}
         />
       ))}
     </div>

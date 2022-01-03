@@ -338,7 +338,24 @@ defmodule Oli.Delivery.PaywallTest do
           base_project_id: map.project.id
         })
 
-      %{institution: map.institution, free: free, paid: paid}
+      {:ok, section} =
+        Sections.create_section(%{
+          type: :enrollable,
+          requires_payment: true,
+          amount: Money.new(:USD, 100),
+          grace_period_days: 1,
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          start_date: DateTime.add(DateTime.utc_now(), -5),
+          end_date: DateTime.add(DateTime.utc_now(), 5),
+          institution_id: map.institution.id,
+          base_project_id: map.project.id,
+          blueprint_id: nil
+        })
+
+      %{institution: map.institution, free: free, paid: paid, section: section}
     end
 
     test "calculate_product_cost/2 correctly works when no discounts present", %{
@@ -410,6 +427,12 @@ defmodule Oli.Delivery.PaywallTest do
     } do
       assert {:ok, Money.new(:USD, 0)} == Paywall.calculate_product_cost(free, nil)
       assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(paid, nil)
+    end
+
+    test "calculate_product_cost/2 correctly works when given an enrollable section", %{
+      section: section
+    } do
+      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(section, nil)
     end
   end
 end

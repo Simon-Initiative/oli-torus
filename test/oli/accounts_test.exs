@@ -1,6 +1,8 @@
 defmodule Oli.AccountsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
   alias Oli.Accounts.Author
 
@@ -17,6 +19,7 @@ defmodule Oli.AccountsTest do
         |> Repo.insert()
 
       assert author.system_role_id == Accounts.SystemRole.role_id().author
+      assert Accounts.is_admin?(author) == false
     end
 
     test "changeset accepts system role change", %{} do
@@ -30,6 +33,8 @@ defmodule Oli.AccountsTest do
         })
         |> Repo.insert()
 
+      assert Accounts.is_admin?(author) == false
+
       {:ok, author} =
         Accounts.insert_or_update_author(%{
           email: author.email,
@@ -37,6 +42,17 @@ defmodule Oli.AccountsTest do
         })
 
       assert author.system_role_id == Accounts.SystemRole.role_id().admin
+      assert Accounts.is_admin?(author) == true
+    end
+
+    test "search_authors_matching/1 returns authors matching the input exactly" do
+      author = insert(:author)
+      assert [author] == Accounts.search_authors_matching(author.email)
+    end
+
+    test "search_authors_matching/1 returns nothing when only matching a prefix" do
+      author = insert(:author)
+      assert [] == Accounts.search_authors_matching(String.slice(author.email, 0..3))
     end
   end
 
@@ -121,6 +137,37 @@ defmodule Oli.AccountsTest do
                ],
                :all
              )
+    end
+
+    test "get_author_with_community_admin_count/1 returns the author with the community_admin_count as zero" do
+      author = insert(:author)
+
+      assert %Author{community_admin_count: 0} =
+               Accounts.get_author_with_community_admin_count(author.id)
+    end
+
+    test "get_author_with_community_admin_count/1 returns the author with the community_admin_count field populated" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{author: community_account.author})
+      insert(:community_account, %{author: community_account.author, is_admin: false})
+
+      assert %Author{community_admin_count: 2} =
+               Accounts.get_author_with_community_admin_count(community_account.author_id)
+    end
+  end
+
+  describe "communities accounts" do
+    alias Oli.Groups.Community
+
+    test "list_admin_communities/1 returns the communities for which the author is an admin" do
+      community_account = insert(:community_account)
+      insert(:community_account, %{author: community_account.author})
+      insert(:community_account, %{author: community_account.author, is_admin: false})
+
+      communties = Accounts.list_admin_communities(community_account.author_id)
+
+      assert [%Community{} | _tail] = communties
+      assert 2 = length(communties)
     end
   end
 end

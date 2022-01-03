@@ -8,6 +8,8 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Predefined
   alias Oli.Slack
   alias OliWeb.Common.{Breadcrumb}
+  alias Oli.Branding
+
   require Logger
 
   def root_breadcrumbs() do
@@ -27,6 +29,31 @@ defmodule OliWeb.InstitutionController do
           full_title: name
         })
       ]
+  end
+
+  defp available_brands(institution_id) do
+    institution = Institutions.get_institution!(institution_id)
+
+    institution_brands =
+      Branding.list_available_brands(institution_id)
+      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
+    other_brands =
+      Branding.list_available_brands()
+      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
+    []
+    |> Enum.concat(
+      if Enum.count(institution_brands) > 0,
+        do: ["#{institution.name} Brands": institution_brands],
+        else: []
+    )
+    |> Enum.concat(if Enum.count(other_brands) > 0, do: ["Other Brands": other_brands], else: [])
+  end
+
+  defp available_brands() do
+    Branding.list_available_brands()
+    |> Enum.map(fn brand -> {brand.name, brand.id} end)
   end
 
   def index(conn, _params) do
@@ -51,7 +78,8 @@ defmodule OliWeb.InstitutionController do
       changeset: changeset,
       country_codes: Predefined.country_codes(),
       timezones: Predefined.timezones(),
-      breadcrumbs: root_breadcrumbs() |> named("New")
+      breadcrumbs: root_breadcrumbs() |> named("New"),
+      available_brands: available_brands()
     )
   end
 
@@ -73,7 +101,8 @@ defmodule OliWeb.InstitutionController do
           changeset: changeset,
           country_codes: Predefined.country_codes(),
           breadcrumbs: root_breadcrumbs() |> named("New"),
-          timezones: Predefined.timezones()
+          timezones: Predefined.timezones(),
+          available_brands: available_brands()
         )
     end
   end
@@ -96,7 +125,8 @@ defmodule OliWeb.InstitutionController do
       institution: institution,
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones()
+      timezones: Predefined.timezones(),
+      available_brands: available_brands(id)
     )
   end
 
@@ -115,7 +145,8 @@ defmodule OliWeb.InstitutionController do
           institution: institution,
           changeset: changeset,
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones()
+          timezones: Predefined.timezones(),
+          available_brands: available_brands(id)
         )
     end
   end
@@ -136,15 +167,19 @@ defmodule OliWeb.InstitutionController do
     issuer = pending_registration_attrs["issuer"]
     client_id = pending_registration_attrs["client_id"]
 
-    # no need to persist the pending registration changes since we would just turn around
-    # and delete it, but we do want to validate the changes using ecto apply_action
-    # case Ecto.Changeset.apply_action(PendingRegistration.changeset(%PendingRegistration{}, pending_registration_attrs), :update) do
-    case Institutions.get_pending_registration_by_issuer_client_id(issuer, client_id) do
+    # handle the case where deployment_id is nil in the html form, causing this attr
+    # to be and empty string
+    deployment_id = case pending_registration_attrs["deployment_id"] do
+      "" -> nil
+      deployment_id -> deployment_id
+    end
+
+    case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
         conn
         |> put_flash(
           :error,
-          "Pending registration with issuer '#{issuer}' and client_id '#{client_id}' does not exist"
+          "Pending registration with issuer '#{issuer}', client_id '#{client_id}' and deployment_id '#{deployment_id}' does not exist"
         )
         |> redirect(to: Routes.institution_path(conn, :index))
 
@@ -154,7 +189,7 @@ defmodule OliWeb.InstitutionController do
                  pending_registration,
                  pending_registration_attrs
                ),
-             {:ok, {institution, registration}} <-
+             {:ok, {institution, registration, _deployment}} <-
                Institutions.approve_pending_registration(pending_registration) do
           registration_approved_email =
             Oli.Email.create_email(

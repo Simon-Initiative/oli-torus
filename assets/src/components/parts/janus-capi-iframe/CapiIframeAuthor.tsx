@@ -21,7 +21,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   const [configClicked, setconfigClicked] = useState(false);
   const [ready, setReady] = useState<boolean>(false);
   const [internalState, setInternalState] = useState<any>([]);
-  const [isCAPI, setIsCAPI] = useState<boolean>(false);
 
   const styles: CSSProperties = {
     width,
@@ -105,10 +104,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   }, []);
 
   useEffect(() => {
-    setIsCAPI(false);
-  }, [props.model.src]);
-
-  useEffect(() => {
     // all activities *must* emit onReady
     props.onReady({ id: `${props.id}` });
   }, [ready]);
@@ -135,7 +130,6 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
   };
 
   const handleHandshakeRequest = (msgData: CapiMessage) => {
-    setIsCAPI(true);
     const {
       handshake: { requestToken: msgRequestToken },
     } = msgData;
@@ -406,20 +400,22 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
                 <label style={lableStyles}>{props.id}</label>
                 {src && !configClicked && (
                   <div style={configDivStyles} className="form-group">
-                    {isCAPI && (
+                    {
                       <a
                         href="#!"
-                        onClick={() => setconfigClicked(true)}
+                        onClick={() => {
+                          setconfigClicked(true);
+                          setInConfigureMode(true);
+                        }}
                         style={configAnchorStyles}
                       >
                         configure
                       </a>
-                    )}
+                    }
                     <iframe
                       ref={frameRef}
                       style={{ display: 'none', height: '100%', width: '100%' }}
                       data-janus-type={tagName}
-                      src={props.model.src}
                       scrolling={props.type?.toLowerCase() === 'janus-capi-iframe' ? 'no' : ''}
                     />
                   </div>

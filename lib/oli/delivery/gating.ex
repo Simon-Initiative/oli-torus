@@ -4,17 +4,69 @@ defmodule Oli.Delivery.Gating do
   """
 
   import Ecto.Query, warn: false
-  alias Oli.Repo
 
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
+  alias Oli.Accounts.User
+  alias Oli.Delivery.Gating.ConditionTypes
 
-  @strategies [
-    Oli.Delivery.Gating.Strategies.Schedule
-  ]
+  def browse_gating_conditions(
+        %Section{id: section_id, slug: section_slug},
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        text_search \\ nil
+      ) do
+    filter_by_text =
+      if text_search == "" or is_nil(text_search) do
+        true
+      else
+        dynamic(
+          [_gc, u, rev],
+          ilike(rev.title, ^"%#{text_search}%") or
+            ilike(u.name, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%") or
+            ilike(u.given_name, ^"%#{text_search}%") or
+            ilike(u.family_name, ^"%#{text_search}%")
+        )
+      end
+
+    query =
+      GatingCondition
+      |> join(:left, [gc], u in User, on: u.id == gc.user_id)
+      |> join(
+        :inner,
+        [gc, _],
+        rev in subquery(
+          from([pr: pr, rev: rev] in DeliveryResolver.section_resource_revisions(section_slug),
+            select: rev
+          )
+        ),
+        on: rev.resource_id == gc.resource_id
+      )
+      |> where(^filter_by_text)
+      |> where([gc, _], gc.section_id == ^section_id)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([gc, _, rev], %{
+        total_count: fragment("count(*) OVER()"),
+        revision: rev
+      })
+
+    query =
+      case field do
+        :title -> order_by(query, [_gc, _u, rev], {^direction, rev.title})
+        :user -> order_by(query, [gc_, u, _rev], {^direction, u.name})
+        :details -> query
+        _ -> order_by(query, [gc, _u, _rev], {^direction, field(gc, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @doc """
   Returns the list of gating_conditions for a section
@@ -161,44 +213,44 @@ defmodule Oli.Delivery.Gating do
   @doc """
   Returns true if all gating conditions pass for a resource and it's ancestors
   """
-  def check_resource(
+  def resource_open(
         section,
         resource_id
       )
       when is_integer(resource_id),
-      do: check_resource(section, Integer.to_string(resource_id))
+      do: resource_open(section, Integer.to_string(resource_id))
 
-  def check_resource(
+  def resource_open(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id
       ) do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
-      |> Enum.all?(&check_condition/1)
+      |> Enum.all?(&condition_open/1)
     else
       true
     end
   end
 
   # Returns true if the gating condition passes
-  defp check_condition(%GatingCondition{type: type} = gating_condition) do
-    @strategies
-    |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy -> strategy.check(gating_condition) end)
+  defp condition_open(%GatingCondition{type: type} = gating_condition) do
+    ConditionTypes.types()
+    |> Enum.find(fn {_name, ct} -> ct.type() == type end)
+    |> then(fn {_name, ct} -> ct.open?(gating_condition) end)
   end
 
   @doc """
   Returns a list of reasons why one or more gating conditions blocked access
   """
-  def reasons(
+  def details(
         section,
         resource_id,
         format_datetime: format_datetime
       )
       when is_integer(resource_id),
-      do: reasons(section, Integer.to_string(resource_id), format_datetime: format_datetime)
+      do: details(section, Integer.to_string(resource_id), format_datetime: format_datetime)
 
-  def reasons(
+  def details(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
         resource_id,
         format_datetime: format_datetime
@@ -207,17 +259,20 @@ defmodule Oli.Delivery.Gating do
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
       |> Enum.reduce([], fn gc, acc ->
-        [reason(gc, format_datetime: format_datetime) | acc]
+        [details(gc, format_datetime: format_datetime) | acc]
       end)
+      |> Enum.filter(fn reason -> reason != nil end)
     else
       []
     end
   end
 
   # Returns true if the gating conditions passes
-  defp reason(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
-    @strategies
-    |> Enum.find(fn s -> s.type() == type end)
-    |> then(fn strategy -> strategy.reason(gating_condition, format_datetime: format_datetime) end)
+  defp details(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
+    ConditionTypes.types()
+    |> Enum.find(fn {_name, ct} -> ct.type() == type end)
+    |> then(fn {_name, ct} ->
+      ct.details(gating_condition, format_datetime: format_datetime)
+    end)
   end
 end

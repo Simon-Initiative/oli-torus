@@ -1,3 +1,5 @@
+import { findReferencedActivitiesInConditions } from 'adaptivity/rules-engine';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -8,7 +10,11 @@ import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
 import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
-import { getIsBank, getIsLayer } from '../../../delivery/store/features/groups/actions/sequence';
+import {
+  findInSequence,
+  getIsBank,
+  getIsLayer,
+} from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
@@ -25,6 +31,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const dispatch = useDispatch();
   const currentRule = useSelector(selectCurrentRule);
   const currentActivity = useSelector(selectCurrentActivity);
+  const sequence = useSelector(selectSequence);
   const isLayer = getIsLayer();
   const isBank = getIsBank();
   let sequenceTypeLabel = '';
@@ -99,6 +106,38 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       const rulesClone = [...currentActivity?.authoring.rules];
       rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
       activityClone.authoring.rules = rulesClone;
+      // due to the way this works technically if we are *deleting" a condition with an external reference
+      // then it will *not* be removed here, but it will be removed the next time the lesson is opened in the editor
+      const conditionRefs = findReferencedActivitiesInConditions(
+        rule.conditions.any || rule.conditions.all,
+      );
+      if (conditionRefs.length > 0) {
+        if (!activityClone.authoring.activitiesRequiredForEvaluation) {
+          activityClone.authoring.activitiesRequiredForEvaluation = [];
+        }
+        // need to find the resourceId based on the sequenceId that is referenced
+        const resourceIds = conditionRefs
+          .map((conditionRef: any) => {
+            const sequenceItem = findInSequence(sequence, conditionRef);
+            if (sequenceItem) {
+              return sequenceItem.resourceId;
+            } else {
+              console.warn(
+                `[handleRuleChange] could not find referenced activity ${conditionRef} in sequence`,
+                sequence,
+              );
+            }
+          })
+          .filter((id) => id) as number[];
+        const current = activityClone.authoring.activitiesRequiredForEvaluation;
+        activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
+          new Set([...current, ...resourceIds]),
+        );
+        /* console.log('[handleRuleChange] adding activities to required for evaluation', {
+          activityClone,
+          rule,
+        }); */
+      }
       dispatch(saveActivity({ activity: activityClone }));
     }
   };

@@ -1,9 +1,9 @@
 defmodule OliWeb.Products.PaymentsView do
   use Surface.LiveView
 
-  alias(OliWeb.Products.Filter)
+  alias(OliWeb.Common.Filter)
 
-  alias OliWeb.Products.Listing
+  alias OliWeb.Common.Listing
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Common.Table.SortableTableModel
@@ -18,14 +18,14 @@ defmodule OliWeb.Products.PaymentsView do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
-  data filter, :string, default: ""
-  data applied_filter, :string, default: ""
+  data query, :string, default: ""
+  data applied_query, :string, default: ""
 
-  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/2
+  @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
 
-  def filter_rows(socket, filter) do
-    case String.downcase(filter) do
+  def filter_rows(socket, query, _filter) do
+    case String.downcase(query) do
       "" ->
         socket.assigns.payments
 
@@ -47,7 +47,7 @@ defmodule OliWeb.Products.PaymentsView do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
   end
 
-  def mount(%{"product_id" => product_slug}, _, socket) do
+  def mount(%{"product_id" => product_slug}, session, socket) do
     payments =
       Oli.Delivery.Paywall.list_payments(product_slug)
       |> Enum.map(fn element ->
@@ -65,7 +65,9 @@ defmodule OliWeb.Products.PaymentsView do
 
     total_count = length(payments)
 
-    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments)
+    local_tz = Map.get(session, :local_tz)
+
+    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, local_tz)
 
     {:ok,
      assign(socket,
@@ -85,12 +87,12 @@ defmodule OliWeb.Products.PaymentsView do
 
       <hr class="mt-5 mb-5"/>
 
-      <Filter apply={"apply_filter"} change={"change_filter"} reset="reset_filter"/>
+      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
       <div class="mb-3"/>
 
       <Listing
-        filter={@applied_filter}
+        filter={@applied_query}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}

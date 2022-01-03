@@ -1,10 +1,34 @@
 defmodule Oli.InstitutionsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti_1p3.Tool.Registration
+
+  describe "institutions" do
+    test "get_institution_by!/1 with existing data returns an institution" do
+      %Institution{name: name} = insert(:institution)
+
+      institution = Institutions.get_institution_by!(%{name: name})
+
+      assert institution.name == name
+    end
+
+    test "get_institution_by!/1 with invalid data returns nil" do
+      refute Institutions.get_institution_by!(%{name: "invalid_name"})
+    end
+
+    test "get_institution_by!/1 with multiple results raises an error" do
+      insert_pair(:institution)
+
+      assert_raise Ecto.MultipleResultsError, fn ->
+        Institutions.get_institution_by!(%{country_code: "US"})
+      end
+    end
+  end
 
   describe "registrations" do
     setup do
@@ -114,13 +138,15 @@ defmodule Oli.InstitutionsTest do
   end
 
   describe "deployments" do
-    alias Lti_1p3.DataProviders.EctoProvider.Deployment
+    alias Oli.Lti_1p3.Tool.Deployment
 
     setup do
       institution = institution_fixture()
       jwk = jwk_fixture()
-      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      deployment = deployment_fixture(%{registration_id: registration.id})
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
 
       registration = registration |> Repo.preload([:deployments])
 
@@ -139,11 +165,14 @@ defmodule Oli.InstitutionsTest do
       assert Institutions.get_deployment!(deployment.id) == deployment
     end
 
-    test "create_deployment/1 with valid data creates a deployment", %{registration: registration} do
+    test "create_deployment/1 with valid data creates a deployment", %{
+      institution: institution,
+      registration: registration
+    } do
       assert {:ok, %Deployment{} = deployment} =
                Institutions.create_deployment(
                  @valid_attrs
-                 |> Enum.into(%{registration_id: registration.id})
+                 |> Enum.into(%{institution_id: institution.id, registration_id: registration.id})
                )
 
       assert deployment.deployment_id == "some deployment_id"
@@ -185,8 +214,11 @@ defmodule Oli.InstitutionsTest do
     setup do
       institution = institution_fixture()
       jwk = jwk_fixture()
-      registration = registration_fixture(%{institution_id: institution.id, tool_jwk_id: jwk.id})
-      deployment = deployment_fixture(%{registration_id: registration.id})
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
+
       pending_registration = pending_registration_fixture()
 
       registration = registration |> Repo.preload([:deployments])
@@ -377,7 +409,7 @@ defmodule Oli.InstitutionsTest do
           auth_server: "new auth_server"
         })
 
-      {:ok, {%Institution{}, %Registration{}}} =
+      {:ok, {%Institution{}, %Registration{}, _deployment}} =
         Institutions.approve_pending_registration(pending_registration)
 
       assert Institutions.list_institutions()
@@ -386,9 +418,10 @@ defmodule Oli.InstitutionsTest do
       assert Institutions.list_registrations() |> Enum.find(fn r -> r.issuer == "new issuer" end) !=
                nil
 
-      assert Institutions.get_pending_registration_by_issuer_client_id(
+      assert Institutions.get_pending_registration(
                "some issuer",
-               "some client_id"
+               "some client_id",
+               "some deployment_id"
              ) == nil
     end
 
@@ -408,7 +441,7 @@ defmodule Oli.InstitutionsTest do
           auth_server: "new auth_server"
         })
 
-      {:ok, {%Institution{}, %Registration{}}} =
+      {:ok, {%Institution{}, %Registration{}, _deployment}} =
         Institutions.approve_pending_registration(pending_registration)
 
       assert Institutions.list_institutions() |> Enum.count() == 1
@@ -416,9 +449,10 @@ defmodule Oli.InstitutionsTest do
       assert Institutions.list_registrations() |> Enum.find(fn r -> r.issuer == "new issuer" end) !=
                nil
 
-      assert Institutions.get_pending_registration_by_issuer_client_id(
+      assert Institutions.get_pending_registration(
                "some issuer",
-               "some client_id"
+               "some client_id",
+               "some deployment_id"
              ) == nil
     end
   end

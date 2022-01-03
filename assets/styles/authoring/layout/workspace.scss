@@ -1,3 +1,4 @@
+// Adaptive page authoring UI depends on these measurements.
 $workspace-header-height: 65px;
 $workspace-sidebar-width: 65px;
 
@@ -37,7 +38,7 @@ $workspace-sidebar-width: 65px;
         display: block;
         position: absolute;
         bottom: -4px;
-        content: "";
+        content: '';
         width: 0;
         height: 0;
         border-style: solid;

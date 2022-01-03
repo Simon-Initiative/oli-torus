@@ -1,5 +1,7 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
+  import OliWeb.ViewHelpers
+
   require Logger
 
   alias Oli.Help.HelpContent
@@ -70,9 +72,6 @@ defmodule OliWeb.HelpController do
       given_name = if current_user.given_name == nil, do: " ", else: " "
       family_name = if current_user.family_name == nil, do: " ", else: " "
 
-      account_created_date =
-        DateTime.to_string(OliWeb.ViewHelpers.local_datetime(conn, current_user.inserted_at))
-
       {
         :ok,
         Map.merge(
@@ -80,7 +79,7 @@ defmodule OliWeb.HelpController do
           %{
             "account_email" => email,
             "account_name" => given_name <> " " <> family_name,
-            "account_created" => account_created_date
+            "account_created" => dt(current_user.inserted_at, conn: conn)
           }
         )
       }

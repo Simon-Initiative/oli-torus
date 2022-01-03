@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   alias OliWeb.Router.Helpers, as: Routes
   use Surface.LiveComponent
 
-  def new(sections) do
+  def new(sections, local_tz) do
     SortableTableModel.new(
       rows: sections,
       column_specs: [
@@ -31,13 +31,13 @@ defmodule OliWeb.Sections.SectionsTableModel do
         %ColumnSpec{
           name: :start_date,
           label: "Start",
-          render_fn: &__MODULE__.custom_render/3,
+          render_fn: &OliWeb.Common.Table.Common.render_date/3,
           sort_fn: &OliWeb.Common.Table.Common.sort_date/2
         },
         %ColumnSpec{
           name: :end_date,
           label: "End",
-          render_fn: &__MODULE__.custom_render/3,
+          render_fn: &OliWeb.Common.Table.Common.render_date/3,
           sort_fn: &OliWeb.Common.Table.Common.sort_date/2
         },
         %ColumnSpec{
@@ -48,7 +48,10 @@ defmodule OliWeb.Sections.SectionsTableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        local_tz: local_tz
+      }
     )
   end
 

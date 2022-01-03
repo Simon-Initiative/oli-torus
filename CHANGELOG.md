@@ -2,9 +2,77 @@
 
 ## Unreleased
 
+## 0.18.3 (2021-12-27)
+
 ### Bug Fixes
 
+- Fix bug preventing rendering of student progress view
+
+## 0.18.2 (2021-12-17)
+
+### Bug Fixes
+
+- Improved robustness of grade passback implementation
+- Fix bug related to missing title assign in preview mode
+
 ### Enhancements
+
+## 0.18.1 (2021-12-17)
+
+### Bug Fixes
+
+- Fix a bug where open and free sections could not be created from products
+- Fix a bug where payment codes were not displayed
+
+### Enhancements
+
+## 0.18.0 (2021-12-16)
+
+### Bug Fixes
+
+- Fix a bug that prevented editing internal links when only one other page exists
+- Fix a bug that prevented content from being added during remix
+- Fix a bug that prevented payment processing for product-less paid sections
+- Fix a bug that allowed paid status of a section to be toggled off
+- Fix a bug that resulted in products being able to be created with invalid grace period days
+- Fix Open and Free section creation when done through the admin panel
+- Fix an issue where LTI 1.3 deployments should represent individual institutions
+- Move LTI 1.3 registrations listing to live view table with search, sorting and paging
+- Fix LMS course section creation to properly set the blueprint reference
+- Fix a bug where null deployment id results in empty string in pending registration form
+- Fix a bug where immediately removing a new activity leaves it visible to the system
+- Fix an issue where selecting the actual checkbox in select source list doesn't work
+- Updates the labelling of options in the project visibility view
+
+### Enhancements
+
+- Send total points available during LMS line item creation
+- LMS Lite functionality. Admins can allow delivery users to create sections through OLI by toggling their ability to "create sections" and adding the "independent learner" role in the admin interface. These "independent instructors" can then create sections with a start/end date that are private and require an invitation to join. Instructors can invite students by creating an invite link from the section management portal -- any student with this link can enroll automatically.
+- Add support for configurable vendor properties
+- Allow default brand to be changed via release env var
+- Display course section and course project slug identifiers
+- Allow sections created from free products to have their payment settings edited
+
+## 0.17.0 (2021-11-30)
+
+### Bug Fixes
+
+- Add student input parsing to show student responses in datashop export
+- Change datashop session id to not reflect the user
+
+### Enhancements
+
+- Gating and Scheduling
+
+## 0.16.0 (2021-11-19)
+
+### Bug Fixes
+
+- Fix issue with bulk line item grade sync
+
+### Enhancements
+
+- Allow instructors to manually send one student grade to LMS
 
 ## 0.15.0 (2021-11-18)
 

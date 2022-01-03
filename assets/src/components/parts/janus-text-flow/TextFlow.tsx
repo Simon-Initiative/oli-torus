@@ -101,6 +101,16 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [scriptEnv, setScriptEnv] = useState<any>();
   const id: string = props.id;
 
+  const handleStylingChanges = () => {
+    const styleChanges: any = {};
+    if (width !== undefined) {
+      styleChanges.width = { value: width as number };
+    }
+    if (height != undefined && props.model.overrideHeight) {
+      styleChanges.height = { value: height as number };
+    }
+    props.onResize({ id: `${id}`, settings: styleChanges });
+  };
   const initialize = useCallback(async (pModel) => {
     // set defaults
 
@@ -118,7 +128,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
       const flowEnv = new Environment(initResult.env);
       setScriptEnv(flowEnv);
     }
-
+    handleStylingChanges();
     setReady(true);
   }, []);
 
