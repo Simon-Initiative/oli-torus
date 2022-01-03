@@ -1,4 +1,5 @@
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
+import { CookiePreferencesProps } from 'components/cookies/CookiePreferences';
 
 export type CookieDetails = {
   name: string;
@@ -57,7 +58,7 @@ const getCookie = (cname: string) => {
   return '';
 };
 
-const processConsent = () => {
+const processConsent = (cookiePreferences: CookiePreferencesProps) => {
   let optInCookie = getCookie('_cky_opt_in');
   const dismissOptIn = getCookie('_cky_opt_in_dismiss');
   if (optInCookie === '') {
@@ -69,7 +70,7 @@ const processConsent = () => {
   if (optInCookie === 'false' && dismissOptIn === '') {
     const minutes = 60 * 60 * 1000;
     setCookies([{ name: '_cky_opt_in_dismiss', value: 'true', duration: minutes }]);
-    selectCookieConsent();
+    selectCookieConsent(cookiePreferences);
   }
 };
 
@@ -91,7 +92,7 @@ const persistCookie = (cookies: CookieDetails[]) => {
     });
 };
 
-export const retrieveCookies = (url: string) => {
+export const retrieveCookies = (url: string, cookiePreferences: CookiePreferencesProps) => {
   const optInCookie = getCookie('_cky_opt_in');
   if (optInCookie === '') {
     fetch(url, {
@@ -115,7 +116,7 @@ export const retrieveCookies = (url: string) => {
             }
           });
         }
-        processConsent();
+        processConsent(cookiePreferences);
         return json;
       })
       .catch((error) => {
