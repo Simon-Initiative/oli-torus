@@ -11,7 +11,10 @@
         <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
       </div>
       <div class="col-sm-auto text-center">
-        <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a><a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
+        <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a>
+      </div>
+      <div class="col-sm-auto text-center">
+        <a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
       </div>
       <div class="col-sm text-right">
         Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
