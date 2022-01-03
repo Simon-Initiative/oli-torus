@@ -146,6 +146,8 @@ defmodule Oli.Accounts do
 
   def get_user!(id, preload: preloads), do: Repo.get!(User, id) |> Repo.preload(preloads)
 
+  def get_user(id, preload: preloads), do: Repo.get(User, id) |> Repo.preload(preloads)
+
   @doc """
   Gets a single user by query parameter
   ## Examples

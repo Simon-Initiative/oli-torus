@@ -6,8 +6,21 @@ defmodule OliWeb.AdminLiveTest do
   import Oli.Factory
   import OliWeb.Common.Properties.Utils
 
+  alias Oli.Accounts
+  alias Oli.Accounts.User
+
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
+
+  defp live_view_user_detail_route(user_id) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user_id)
+  end
+
+  defp create_user(_conn) do
+    user = insert(:user)
+
+    [user: user]
+  end
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin index view", %{conn: conn} do
@@ -18,6 +31,15 @@ defmodule OliWeb.AdminLiveTest do
     test "redirects to new session when accessing the admin users view", %{conn: conn} do
       {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fusers"}}} =
         live(conn, @live_view_users_route)
+    end
+
+    test "redirects to new session when accessing the user detail view", %{conn: conn} do
+      user_id = insert(:user).id
+
+      redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fusers%2F#{user_id}"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_user_detail_route(user_id))
     end
   end
 
@@ -277,6 +299,163 @@ defmodule OliWeb.AdminLiveTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~
                last_user.given_name
+    end
+  end
+
+  describe "user detail" do
+    setup [:admin_conn, :create_user]
+
+    test "loads correctly with user data", %{conn: conn, user: user} do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(user.id))
+
+      assert has_element?(view, "input[value=\"#{user.sub}\"]")
+      assert has_element?(view, "input[value=\"#{user.name}\"]")
+      assert has_element?(view, "input[value=\"#{user.given_name}\"]")
+      assert has_element?(view, "input[value=\"#{user.family_name}\"]")
+      assert has_element?(view, "input[value=\"#{user.email}\"]")
+      assert has_element?(view, "input[value=\"#{user.guest}\"]")
+      assert has_element?(view, "#user_independent_learner")
+      assert has_element?(view, "#user_can_create_sections")
+      assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
+      assert has_element?(view, "input[value=\"#{user.email_confirmed_at}\"]")
+      assert has_element?(view, "input[value=\"#{date(user.inserted_at)}\"]")
+      assert has_element?(view, "input[value=\"#{date(user.updated_at)}\"]")
+    end
+
+    test "displays error message when submit fails", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{user: %{email: ""}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "User couldn&#39;t be updated."
+
+      refute Accounts.get_user!(id).name == ""
+    end
+
+    test "updates a user correctly when data is valid", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      new_attributes = params_for(:user)
+
+      view
+      |> element("form[phx-submit=\"submit\"")
+      |> render_submit(%{user: new_attributes})
+
+      %User{name: new_name} = Accounts.get_user!(id)
+
+      assert new_attributes.name == new_name
+    end
+
+    test "redirects to index view and displays error message when user does not exist", %{
+      conn: conn
+    } do
+      assert {:error, {:redirect, %{to: "/not_found"}}} =
+               live(conn, live_view_user_detail_route(1000))
+    end
+
+    test "displays a confirm modal before deleting a user", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> render_click()
+
+      assert view
+             |> element("h5.modal-title")
+             |> render() =~
+               "Delete Account"
+    end
+
+    test "deletes the user and redirects to the index page", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_delete_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"delete_account\"]")
+      |> render_click()
+
+      flash = assert_redirected(view, @live_view_users_route)
+      assert flash["info"] == "User successfully deleted."
+
+      assert_raise Ecto.NoResultsError,
+                   ~r/^expected at least one result but got none in query/,
+                   fn -> Accounts.get_user!(id) end
+    end
+
+    test "locks the user", %{
+      conn: conn,
+      user: %User{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_lock_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"lock_account\"]")
+      |> render_click()
+
+      %User{locked_at: date} = Accounts.get_user!(id)
+      assert not is_nil(date)
+    end
+
+    test "unlocks the user", %{
+      conn: conn
+    } do
+      {:ok, date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
+      %User{id: id} = insert(:user, %{locked_at: date})
+
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_unlock_account_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"unlock_account\"]")
+      |> render_click()
+
+      assert %User{locked_at: nil} = Accounts.get_user!(id)
+    end
+
+    test "confirms user email", %{
+      conn: conn
+    } do
+      %User{id: id} = insert(:user, %{email_confirmed_at: nil})
+
+      {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
+
+      view
+      |> element("button[phx-click=\"show_confirm_email_modal\"]")
+      |> render_click()
+
+      view
+      |> element("button[phx-click=\"confirm_email\"]")
+      |> render_click()
+
+      %User{email_confirmed_at: date} = Accounts.get_user!(id)
+      assert not is_nil(date)
     end
   end
 end
