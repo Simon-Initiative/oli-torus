@@ -47,7 +47,7 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
       type,
       item,
       owner: problemSequence || item.owner,
-      suggestedFix: generateSuggestion(item.id, blackList),
+      suggestedFix: item.suggestedFix || generateSuggestion(item.id, blackList),
     };
   });
 
@@ -68,15 +68,16 @@ export const validators = [
   },
   {
     type: DiagnosticTypes.BROKEN,
-    validate: (activity: any, hierarchy: any, sequence: any[]) =>
-      activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'navigation') {
             if (action?.params?.target && action.params.target !== 'next') {
               if (!findInHierarchy(hierarchy, action.params.target)) {
                 return {
                   ...rule,
-                  owner: sequence.find((s) => s.resourceId === activity.id),
+                  owner,
                   suggestedFix: `Screen does not exist, fix navigate to.`,
                 };
               }
@@ -85,7 +86,100 @@ export const validators = [
           return null;
         });
         return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
-      }, []),
+      }, []);
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_TARGET_MUTATE,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
+        const brokenActions = rule.event.params.actions.map((action: any) => {
+          if (action.type === 'mutateState') {
+            const { target } = action.params;
+            if (!target.match(/session\./)) {
+              const targetId = target.split('.')[1] as string;
+              const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
+              if (!validTarget) {
+                return {
+                  ...rule,
+                  owner,
+                  suggestedFix: `Screen does not exist, fix target.`,
+                };
+              }
+            }
+          }
+          return null;
+        });
+        return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
+      }, []);
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_TARGET_INIT,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.content.custom.facts.reduce((broken: any[], fact: any) => {
+        const { target } = fact;
+        const targetId = target.split('.')[1] as string;
+        const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
+        if (!validTarget) {
+          broken = [
+            ...broken,
+            {
+              ...fact,
+              owner,
+              suggestedFix: `Screen does not exist, fix target.`,
+            },
+          ];
+        }
+        return broken;
+      }, []);
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_TARGET_COND,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        console.log(rule);
+        const brokenConditionsAll = rule.conditions.all.map((condition: any) => {
+          const target = condition.fact;
+          if (target && !target.match(/session\./)) {
+            const targetId = target.split('.')[1] as string;
+            const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
+            if (!validTarget) {
+              return {
+                ...rule,
+                owner,
+                suggestedFix: `Screen does not exist, fix target.`,
+              };
+            }
+          }
+          return null;
+        });
+        const brokenConditionsAny = rule.conditions.any.map((condition: any) => {
+          const target = condition.fact;
+          if (target && !target.match(/session\./)) {
+            const targetId = target.split('.')[1] as string;
+            const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
+            if (!validTarget) {
+              return {
+                ...rule,
+                owner,
+                suggestedFix: `Screen does not exist, fix target.`,
+              };
+            }
+          }
+          return null;
+        });
+        return [
+          ...broken,
+          ...brokenConditionsAll.filter((e: any) => !!e),
+          ...brokenConditionsAny.filter((e: any) => !!e),
+        ];
+      }, []);
+    },
   },
   /*{
     type: DiagnosticTypes.INVALID_VALUE,

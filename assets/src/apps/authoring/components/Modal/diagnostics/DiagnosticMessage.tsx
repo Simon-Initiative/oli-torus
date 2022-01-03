@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export interface Message {
@@ -27,17 +27,26 @@ export const BrokenMessage: React.FC<Message> = ({ problem }: Message) => (
   </span>
 );
 
-export const Messages: { [type: string]: React.FC<Message> } = {
-  [DiagnosticTypes.PATTERN]: PatternMessage,
-  [DiagnosticTypes.DUPLICATE]: DupeMessage,
-  [DiagnosticTypes.BROKEN]: BrokenMessage,
-};
-
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
-  const Message = Messages[problem.type];
+  const { type = DiagnosticTypes.DEFAULT } = problem;
 
-  return <Message {...props} />;
+  let action;
+  switch (type) {
+    case DiagnosticTypes.DUPLICATE:
+      action = <DupeMessage {...props} />;
+      break;
+    case DiagnosticTypes.PATTERN:
+      action = <PatternMessage {...props} />;
+      break;
+    case DiagnosticTypes.BROKEN:
+      action = <BrokenMessage {...props} />;
+      break;
+    default:
+      action = <Fragment>No fix defined.</Fragment>;
+      break;
+  }
+  return <Fragment>{action}</Fragment>;
 };
 
 export default DiagnosticMessage;

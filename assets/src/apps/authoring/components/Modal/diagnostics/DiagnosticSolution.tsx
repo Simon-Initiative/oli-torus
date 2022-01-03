@@ -20,7 +20,7 @@ export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps
       action = <FixBrokenPathButton {...props} />;
       break;
     default:
-      action = <Fragment />;
+      action = <Fragment>No fix defined.</Fragment>;
       break;
   }
   return <Fragment>{action}</Fragment>;

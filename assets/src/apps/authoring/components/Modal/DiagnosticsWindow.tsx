@@ -9,7 +9,7 @@ import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { createUpdater } from './diagnostics/actions';
-import DiagnosticSolution from './diagnostics/DiagnosticSolution';
+import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
