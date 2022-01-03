@@ -5,7 +5,11 @@ import ReactDOM from 'react-dom';
 
 const userOptions = consentOptions();
 
-export const CookiePreferences = () => {
+export interface CookiePreferencesProps {
+  privacyPoliciesUrl: string;
+}
+
+export const CookiePreferences = (props: CookiePreferencesProps) => {
   const [functionalActive, setFunctionalActive] = useState(true);
   const [analyticsActive, setAnalyticActive] = useState(true);
   const [targetingActive, setTargetingActive] = useState(false);
@@ -51,7 +55,7 @@ export const CookiePreferences = () => {
           purpose for which it has been collected.
         </p>
         <p>
-          <a href="https://www.cmu.edu/legal/privacy-notice.html">Privacy Notice</a>
+          <a href={props.privacyPoliciesUrl}>Privacy Notice</a>
         </p>
       </div>
       <div className="accordion" id="preferenceAccordion">
@@ -384,7 +388,7 @@ const savePreferences = () => {
   ]);
 };
 
-export function selectCookiePreferences(): void {
+export function selectCookiePreferences(props: CookiePreferencesProps): void {
   const cookiePreference = (
     <ModalSelection
       title="Cookie Preferences"
@@ -398,7 +402,7 @@ export function selectCookiePreferences(): void {
       okLabel="Save my preferences"
       cancelLabel="Cancel"
     >
-      <CookiePreferences />
+      <CookiePreferences privacyPoliciesUrl={props.privacyPoliciesUrl} />
     </ModalSelection>
   );
 

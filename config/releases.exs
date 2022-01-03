@@ -174,6 +174,18 @@ truncate =
 
 config :logger, truncate: truncate
 
+# Configure Privacy Policies link
+config :oli, :privacy_policies,
+  url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
+
+# Configure footer text and links
+config :oli, :footer,
+  text: System.get_env("FOOTER_TEXT", ""),
+  link_1_location: System.get_env("FOOTER_LINK_1_LOCATION", ""),
+  link_1_text: System.get_env("FOOTER_LINK_1_TEXT", ""),
+  link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
+  link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix
