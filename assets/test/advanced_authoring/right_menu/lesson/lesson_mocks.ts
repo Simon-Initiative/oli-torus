@@ -3,8 +3,6 @@ export const transformedSchema = {
   custom: {
     defaultScreenWidth: 1000,
     defaultScreenHeight: 500,
-    enableLessonMax: true,
-    lessonMax: 0,
     enableHistory: true,
     variables: [],
     logoutMessage: '',
@@ -54,7 +52,6 @@ export const lesson = {
     defaultTextStyle: 0,
     enableHistory: true,
     enableLessonMax: true,
-    lessonMax: 0,
     globalActivities: [],
     globalNumberFormat: '',
     headingStyleType: '',
