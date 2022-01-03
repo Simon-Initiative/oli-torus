@@ -115,7 +115,14 @@ config :oli, :recaptcha,
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
 # Configure help
-config :oli, :help, dispatcher: Oli.Help.Providers.EmailHelp
+# HELP_PROVIDER env var must be a string representing an existing provider module, such as "EmailHelp"
+help_provider =
+  case System.get_env("HELP_PROVIDER") do
+    nil -> Oli.Help.Providers.EmailHelp
+    provider -> Module.concat([Oli, Help, Providers, provider])
+  end
+
+config :oli, :help, dispatcher: help_provider
 
 config :lti_1p3,
   provider: Lti_1p3.DataProviders.EctoProvider,
@@ -124,7 +131,7 @@ config :lti_1p3,
     schemas: [
       user: Oli.Accounts.User,
       registration: Oli.Lti_1p3.Tool.Registration,
-      deployment: Oli.Lti_1p3.Tool.Deployment,
+      deployment: Oli.Lti_1p3.Tool.Deployment
     ]
   ]
 
@@ -156,6 +163,18 @@ config :surface, :components, [
     default_class: "help-block", default_translator: {OliWeb.ErrorHelpers, :translate_error}
   }
 ]
+
+# Configure Privacy Policies link
+config :oli, :privacy_policies,
+  url: System.get_env("PRIVACY_POLICIES_URL", "https://www.cmu.edu/legal/privacy-notice.html")
+
+# Configure footer text and links
+config :oli, :footer,
+  text: System.get_env("FOOTER_TEXT", ""),
+  link_1_location: System.get_env("FOOTER_LINK_1_LOCATION", ""),
+  link_1_text: System.get_env("FOOTER_LINK_1_TEXT", ""),
+  link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
+  link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

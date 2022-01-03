@@ -405,6 +405,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       acc[key] = snapshot[target];
       return acc;
     }, {});
+    console.log('The Init State data is ready to be sent to SIM-', { finalInitSnapshot, snapshot });
+
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
