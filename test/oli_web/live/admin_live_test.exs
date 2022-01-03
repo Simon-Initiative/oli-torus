@@ -11,6 +11,7 @@ defmodule OliWeb.AdminLiveTest do
 
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
+  @live_view_authors_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView)
 
   defp live_view_user_detail_route(user_id) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, user_id)
@@ -41,6 +42,11 @@ defmodule OliWeb.AdminLiveTest do
       {:error, {:redirect, %{to: ^redirect_path}}} =
         live(conn, live_view_user_detail_route(user_id))
     end
+
+    test "redirects to new session when accessing the admin authors view", %{conn: conn} do
+      {:error, {:redirect, %{to: "/authoring/session/new?request_path=%2Fadmin%2Fauthors"}}} =
+        live(conn, @live_view_authors_route)
+    end
   end
 
   describe "user cannot access when is logged in as an author but is not a system admin" do
@@ -54,6 +60,12 @@ defmodule OliWeb.AdminLiveTest do
 
     test "returns forbidden when accessing the admin users view", %{conn: conn} do
       conn = get(conn, @live_view_users_route)
+
+      assert response(conn, 403)
+    end
+
+    test "returns forbidden when accessing the admin authors view", %{conn: conn} do
+      conn = get(conn, @live_view_authors_route)
 
       assert response(conn, 403)
     end
@@ -456,6 +468,92 @@ defmodule OliWeb.AdminLiveTest do
 
       %User{email_confirmed_at: date} = Accounts.get_user!(id)
       assert not is_nil(date)
+    end
+  end
+
+  describe "authors index" do
+    setup [:admin_conn]
+
+    # At least the system admin from the seeds and the admin created by
+    # admin_conn for being able to access the view will be listed
+
+    test "lists authors", %{conn: conn, admin: admin} do
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               "#{admin.family_name}, #{admin.given_name}"
+    end
+
+    test "applies searching", %{conn: conn} do
+      author_1 = insert(:author, %{given_name: "Testing"})
+      author_2 = insert(:author)
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      view
+      |> render_hook("text_search_change", %{value: "testing"})
+
+      assert view
+             |> render() =~
+               author_1.given_name
+
+      refute view
+             |> render() =~
+               author_2.given_name
+
+      view
+      |> render_hook("text_search_change", %{value: ""})
+
+      assert view
+             |> render() =~
+               author_1.given_name
+
+      assert view
+             |> render() =~
+               author_2.given_name
+    end
+
+    test "applies sorting", %{conn: conn} do
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Administrator"
+
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> render_click(%{sort_by: "name"})
+
+      refute view
+             |> element("tr:first-child > td:first-child")
+             |> render() =~
+               "Administrator"
+
+      assert view
+             |> element("tr:last-child > td:first-child")
+             |> render() =~
+               "Administrator"
+    end
+
+    test "applies paging", %{conn: conn} do
+      [first_author | _tail] = insert_list(24, :author) |> Enum.sort_by(& &1.given_name)
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> render() =~
+               first_author.given_name
+
+      view
+      |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
+      |> render_click()
+
+      refute view
+             |> render() =~
+               first_author.given_name
     end
   end
 end

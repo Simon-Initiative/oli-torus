@@ -12,7 +12,7 @@ defmodule Oli.Factory do
     %Author{
       email: "#{sequence("author")}@example.edu",
       name: "Author name",
-      given_name: "Author given name",
+      given_name: sequence("Author given name"),
       family_name: "Author family name",
       system_role_id: Oli.Accounts.SystemRole.role_id().author
     }
