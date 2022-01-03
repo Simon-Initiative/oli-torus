@@ -1,4 +1,3 @@
-
 export const transformedSchema = {
   custom: {
     defaultScreenWidth: 1000,
