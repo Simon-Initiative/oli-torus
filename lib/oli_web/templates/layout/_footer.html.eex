@@ -1,13 +1,17 @@
 <%= render OliWeb.SharedView, "_help.html", conn: @conn %>
-<% privacy_policies_url = Application.fetch_env!(:oli, :privacy_policies)[:url]  %>
+<%
+  privacy_policies_url = Application.fetch_env!(:oli, :privacy_policies)[:url]
+  footer =  Application.fetch_env!(:oli, :footer)
+%>
 
 <footer>
   <div class="container">
     <div class="row">
-      <div class="col-sm text-left">
+      <div class="col-sm-auto text-left">
         <a href='javascript:;' onclick="OLI.selectCookiePreferences({privacyPoliciesUrl: '<%= privacy_policies_url %>'})">Cookie Preferences</a>
       </div>
-      <div class="col-sm text-center">
+      <div class="col-sm-auto text-center">
+        <%= footer[:text] %><a href="<%= footer[:link_1_location] %>" target="_blank"><%= footer[:link_1_text] %></a><a href="<%= footer[:link_2_location] %>" target="_blank"> <%= footer[:link_2_text] %></a>
       </div>
       <div class="col-sm text-right">
         Version <%= Application.fetch_env!(:oli, :build).version %> (<%= Application.fetch_env!(:oli, :build).sha |> String.upcase %>) <%= Timex.format!(Application.fetch_env!(:oli, :build).date, "%m/%d/%Y", :strftime) %>
