@@ -321,7 +321,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const allExpressions = expressions.map((expression) => {
       return processPartVariablesExpressions(expression, sequence, defaultGlobalEnv);
     });
-    return allExpressions;
+    return { expressions: allExpressions };
   };
 
   const handleActivitySavePart = async (

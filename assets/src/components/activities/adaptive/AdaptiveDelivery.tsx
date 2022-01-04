@@ -201,12 +201,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     if (payload.responses.length) {
       const saveResults = await handlePartSave(payload);
     }
-    let expressionResult: any = [];
+    let evaludatedExpressions: any = [];
     if (payload.expressions && payload.expressions.length && props.onInitPart) {
       const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
       // part attempt guid should be located in currentAttemptState.parts matched to id
       const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
-      expressionResult = await props.onInitPart(
+      evaludatedExpressions = await props.onInitPart(
         currentAttemptState.attemptGuid,
         partAttempt?.attemptGuid,
         payload.expressions,
@@ -214,7 +214,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     }
     const { snapshot, context, env } = await initPart(payload.id.toString());
     // TODO: something with save result? check for errors?
-    return { snapshot, context, env, expressionResult };
+    return { snapshot, context, env, expressionResult: evaludatedExpressions.expressions };
   };
 
   const handlePartReady = async (payload: { id: string | number }) => {
