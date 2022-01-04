@@ -21,22 +21,28 @@ defmodule OliWeb.Common.FormatDateTime do
   page is loaded.
 
   ## Examples
+      # date can be given a %Plug.Conn{}, %SessionContext{} or local_tz string to localize the datetime
       iex> date(datetime, conn)
+      "December 31, 2021 at 11:59:59 PM"
+
+      iex> date(datetime, context)
       "December 31, 2021 at 11:59:59 PM"
 
       iex> date(datetime, "America/New_York")
       "December 31, 2021 at 11:59:59 PM"
 
+      # if any of these are nil or omitted, the timezone will be displayed in UTC
       iex> date(datetime, nil)
       "January 1, 2022 at 4:59:59 AM UTC"
 
       iex> date(datetime)
       "January 1, 2022 at 4:59:59 AM UTC"
 
-      iex> date(datetime, conn, precision: :date)
+      # additionally, conn or context can be provided as opts along with any other format_datetime opts
+      iex> date(datetime, conn: conn, precision: :date)
       "January 1, 2022"
 
-      iex> date(datetime, conn, precision: :relative)
+      iex> date(datetime, context: context, precision: :relative)
       "8 minutes ago"
   """
   def date(datetime, opts \\ [])
@@ -55,21 +61,30 @@ defmodule OliWeb.Common.FormatDateTime do
 
   def date(nil, _opts), do: ""
 
-  def date(datetime, opts) do
-    maybe_context_or_local_tz = Keyword.get(opts, :context, Keyword.get(opts, :local_tz))
+  def date(datetime, opts) when is_list(opts) do
+    maybe_context_conn_or_local_tz =
+      Keyword.get(opts, :context)
+      |> value_or(Keyword.get(opts, :conn))
+      |> value_or(Keyword.get(opts, :local_tz))
 
-    opts =
-      case maybe_context_or_local_tz do
-        %SessionContext{author: author} ->
-          Keyword.put_new(opts, :author, author)
+    case maybe_context_conn_or_local_tz do
+      %Plug.Conn{} = conn ->
+        date(datetime, Keyword.merge(opts, context: SessionContext.init(conn)))
 
-        _ ->
-          opts
-      end
+      _ ->
+        opts =
+          case maybe_context_conn_or_local_tz do
+            %SessionContext{author: author} ->
+              Keyword.put_new(opts, :author, author)
 
-    datetime
-    |> maybe_localized_datetime(maybe_context_or_local_tz)
-    |> format_datetime(opts)
+            _ ->
+              opts
+          end
+
+        datetime
+        |> maybe_localized_datetime(maybe_context_conn_or_local_tz)
+        |> format_datetime(opts)
+    end
   end
 
   @doc """

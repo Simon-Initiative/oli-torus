@@ -57,7 +57,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
 
   defp format_datetime_fn(conn) do
     fn datetime ->
-      date(datetime, conn)
+      date(datetime, conn: conn, precision: :minutes)
     end
   end
 end
