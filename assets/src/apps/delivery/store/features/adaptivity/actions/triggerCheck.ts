@@ -10,6 +10,7 @@ import {
   defaultGlobalEnv,
   getLocalizedStateSnapshot,
   getValue,
+  looksLikeJson,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectExtrinsicState, updateExtrinsicState } from '../../attempt/slice';
