@@ -272,7 +272,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     resizePart: onResize,
     getUserData: readUserData,
     setUserData: saveUserData,
-    partInit: onInitPart,
+    initPart: onInitPart,
   };
 
   const [isReady, setIsReady] = useState(false);

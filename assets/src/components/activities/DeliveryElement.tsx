@@ -161,7 +161,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     this.onReady = (attemptGuid: string) => this.dispatch('activityReady', attemptGuid, undefined);
     this.onResize = (attemptGuid: string) => this.dispatch('resizePart', attemptGuid, undefined);
     this.onInitPart = (attemptGuid: string, partAttemptGuid: string, expression: string[]) =>
-      this.dispatch('partInit', attemptGuid, partAttemptGuid, expression);
+      this.dispatch('initPart', attemptGuid, partAttemptGuid, expression);
   }
 
   static get observedAttributes() {
