@@ -29,7 +29,7 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
       if (graded) {
         window.location.href = `${currentUrl}/attempt/${resourceAttemptGuid}`;
       } else {
-        const overviewURL = currentUrl.split('/page')[0];
+        const overviewURL = currentUrl.split('/page')[0] + '/overview';
         window.location.href = overviewURL;
       }
     }

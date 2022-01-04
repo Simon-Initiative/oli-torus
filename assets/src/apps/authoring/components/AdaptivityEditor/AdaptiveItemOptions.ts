@@ -185,6 +185,26 @@ export const sessionVariables: Record<string, unknown> = {
   visits: [],
 };
 
+export const inferTypeFromComponentType = async (
+  componentType: string,
+  parameterKey: string,
+  partModel?: any,
+): Promise<CapiVariableTypes> => {
+  const ComponentClass = customElements.get(componentType);
+  if (!ComponentClass) {
+    return CapiVariableTypes.UNKNOWN;
+  }
+  const instance: any = new ComponentClass();
+  if (instance.getAdaptivitySchema) {
+    const schema = await instance.getAdaptivitySchema({ currentModel: partModel });
+    if (schema[parameterKey]) {
+      return schema[parameterKey];
+    }
+  }
+
+  return CapiVariableTypes.UNKNOWN;
+};
+
 export const inferTypeFromOperatorAndValue = (operator: string, value: any): CapiVariableTypes => {
   const typeCombos = conditionTypeOperatorCombos.filter((combo) =>
     combo.operators.includes(operator),

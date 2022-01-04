@@ -18,16 +18,29 @@ defmodule Oli.Help.HelpContent do
   ]
 
   @subjects %{
-    help_credit: "How can I get credit for an OLI course?",
-    help_course_key: "Where do I find my course key?",
-    help_charge:
-      "My credit card was charged (multiple times, possibly) and I still cannot access my course",
-    help_lbd: "The Learn By Doing or Did I Get This? Exercises don't work properly",
-    help_server: "The server timed out or I received an unknown error",
-    help_tech: "Technical support",
-    help_course_content: "Course content",
-    help_course_feedback: "Feedback about a course or OLI",
-    help_other: "Other questions or comments"
+    "help_access_code" => "Access Code",
+    "help_account_info" => "Account Information",
+    "help_add_course" => "Adding / Linking a Course",
+    "help_assignments" => "Assignments",
+    "help_browser" => "Browser Issue",
+    "help_content_question_or_error" => "Content Question or Error",
+    "help_content_remix" => "Content Remix",
+    "help_section_management_scheduling" => "Course Section Management - Scheduling",
+    "help_section_management_setup" => "Course Section Management - SetUp",
+    "help_section_management_grades" => "Course Section Management - Grades",
+    "help_section_management_other" => "Course Section Management - Other",
+    "help_course_setup" => "Course Setup",
+    "help_course_enrollments" => "Course Enrollments",
+    "help_login" => "Login",
+    "help_lms_integration" => "LMS Integration",
+    "help_page_loading" => "Page Loading Issue",
+    "help_password" => "Password",
+    "help_payment" => "Payment or Purchase",
+    "help_request_content" => "Request - Content",
+    "help_request_feature" => "Request - Feature",
+    "help_request_product_demo" => "Request - Product Demo",
+    "help_request_other" => "Request - Other",
+    "help_ui_ux" => "UI/UX"
   }
 
   def parse(%{
@@ -71,6 +84,8 @@ defmodule Oli.Help.HelpContent do
   end
 
   def get_subject(key) do
-    Map.get(@subjects, String.to_existing_atom(key))
+    Map.get(@subjects, key)
   end
+
+  def list_subjects, do: @subjects
 end

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.18.3 (2021-12-27)
+
+### Bug Fixes
+
+- Fix bug preventing rendering of student progress view
+
+## 0.18.2 (2021-12-17)
+
+### Bug Fixes
+
+- Improved robustness of grade passback implementation
+- Fix bug related to missing title assign in preview mode
+
+### Enhancements
+
 ## 0.18.1 (2021-12-17)
 
 ### Bug Fixes

@@ -1,3 +1,4 @@
+import { templatizeText } from 'apps/delivery/components/TextParser';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -11,6 +12,7 @@ import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
+import { Environment } from 'janus-script';
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
 const getExternalActivityMap = () => {
@@ -32,6 +34,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
+  const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -138,6 +141,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     if (initResult.context.mode) {
       context = initResult.context.mode;
     }
+    if (initResult.env) {
+      const env = new Environment(initResult.env);
+      setScriptEnv(env);
+    }
     simLife.domain = initResult.context.domain || 'stage';
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
@@ -202,9 +209,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       {},
     );
     setInitState(interestedSnapshot);
+    simLife.snapshot = currentStateSnapshot;
     setInitStateReceived(true);
   };
-
   useEffect(() => {
     let pModel;
     let pState;
@@ -302,6 +309,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     ready: false,
     currentState: [],
     ownerActivityId: 0,
+    snapshot: {},
   });
   const [simLife, setSimLife] = useState(getCleanSimLife());
   const [internalState, setInternalState] = useState(state || []);
@@ -312,7 +320,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -410,6 +418,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 simLife,
                 payload,
               });
+              simLife.snapshot = payload.snapshot;
               if (payload.domain) {
                 simLife.domain = payload.domain;
               }
@@ -520,7 +529,22 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
       handleIFrameSpecificProperties(simLife.currentState, simLife.domain);
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
+      writeCapiLog('SENDING SIM CONFIG DATA !!!!', 3, {
+        simLife,
+        configData: filterVars,
+      });
+      Object.keys(filterVars).forEach((variable: any) => {
+        const formatted: Record<string, any> = {};
+        formatted[variable] = filterVars[variable];
+        if (typeof formatted[variable].value === 'string') {
+          formatted[variable].value = templatizeText(
+            formatted[variable].value,
+            simLife.snapshot,
+            scriptEnv,
+          );
+        }
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+      });
     }
     //if there are no more facts/init state data then send INITIAL_SETUP_COMPLETE response to SIM
     if (!initState && !Object.keys(initState)?.length) {
