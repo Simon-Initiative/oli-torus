@@ -95,7 +95,7 @@ defmodule OliWeb.Common.FormatDateTime do
   Formats a datetime by converting it to a string. If the timezone attached is UTC, then
   it is assumed this datetime has not been localized and the timezone is included.
 
-  Precision of the datetime can be set to :date, :minutes, or :minutes (default)
+  Precision of the datetime can be set to :date, :minutes (default) or :relative
 
   ## Examples
       iex> dt(datetime)
