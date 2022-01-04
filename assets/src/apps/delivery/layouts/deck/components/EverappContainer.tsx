@@ -18,7 +18,7 @@ const EverappContainer: React.FC<EverappContainerProps> = ({ apps }) => {
 
   return (
     <div className={`beagleContainer ${secondaryClass}`}>
-      <style>{`oli-adaptive-delivery { width: 256px; height: 100%; display: block; }`}</style>
+      <style>{`oli-adaptive-delivery { height: 100%; display: block; }`}</style>
       {apps.map((app: any, idx: number) => (
         <EverappRenderer key={app.id} app={app} index={idx} open={app.id === activeAppId} />
       ))}
