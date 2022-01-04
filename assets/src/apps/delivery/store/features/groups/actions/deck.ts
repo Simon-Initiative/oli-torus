@@ -29,7 +29,6 @@ import { setInitStateFacts, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
-  selectEnableHistory,
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -46,7 +45,6 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
-    const enableHistory = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -57,6 +55,38 @@ export const initializeActivity = createAsyncThunk(
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
+
+    /* console.log('CAT', { currentActivityTree, currentActivity }); */
+    // bind all parent parts to current activity
+    if (currentActivityTree && currentActivityTree?.length > 1) {
+      const syncOps: ApplyStateOperation[] = [];
+      for (let i = 0; i < currentActivityTree.length - 1; i++) {
+        const ancestor = currentActivityTree[i];
+        for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
+          const part = ancestor.content.partsLayout[p];
+          // get the adaptivity variables for the part
+          const Klass = customElements.get(part.type);
+          if (Klass) {
+            const instance = new Klass() as any;
+            if (instance.getAdaptivitySchema) {
+              const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
+              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              for (const key in variables) {
+                const target = `${currentSequenceId}|stage.${part.id}.${key}`;
+                const operator = 'bind to';
+                const value = `${ancestor.id}|stage.${part.id}.${key}`;
+                const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
+                syncOps.push(op);
+              }
+            }
+          }
+        }
+      }
+      /* console.log('SYNC OPS', syncOps); */
+      if (syncOps.length > 0) {
+        await bulkApplyState(syncOps);
+      }
+    }
 
     const resumeTarget: ApplyStateOperation = {
       target: `session.resume`,
@@ -151,6 +181,7 @@ export const initializeActivity = createAsyncThunk(
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
+    console.log({ initState, globalizedInitState });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);

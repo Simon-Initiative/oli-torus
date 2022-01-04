@@ -6,6 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import FillBlanks from './FillBlanks';
+import { adaptivitySchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -13,4 +14,7 @@ const customEvents: any = { ...apiCustomEvents };
 register(FillBlanks, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: true,
+  customApi: {
+    getAdaptivitySchema: adaptivitySchema,
+  },
 });

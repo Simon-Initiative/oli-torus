@@ -15,7 +15,6 @@ defmodule Oli.Email do
           Bamboo.Email.t()
   def help_desk_email(name, from_email, help_desk_email, subject, view, assigns) do
     base_email()
-    |> from(name <> "<" <> from_email <> ">")
     |> put_header("Reply-To", name <> " <" <> from_email <> ">")
     |> put_layout({OliWeb.LayoutView, :help_email})
     |> to(help_desk_email)

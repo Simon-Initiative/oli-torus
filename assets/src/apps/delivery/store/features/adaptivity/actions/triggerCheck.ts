@@ -20,58 +20,6 @@ import {
 import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
 
-const handleParentChildActivityVariableSync = (
-  treeActivityIds: string[],
-  currentActivityId: string,
-  localizedSnapshot: Record<string, any>,
-) => {
-  // handle parent/child variable sync  - Block Start
-  const filteredTreeActivityIds: string[] = treeActivityIds.filter(
-    (activity) => activity !== currentActivityId,
-  );
-  const parentVariables = filteredTreeActivityIds.map((item: string) => {
-    //need to filter all the variable that belong to parents of the current activity
-    const filteredParentScreenIdVariables = Object.keys(localizedSnapshot).filter((gotid) => {
-      if (
-        gotid.indexOf(item) !== -1 &&
-        gotid.startsWith(item) &&
-        !gotid.startsWith(currentActivityId)
-      ) {
-        const variables = gotid.split('|');
-        const v = gotid.replace(`${variables[0]}|stage`, `${currentActivityId}|stage`);
-        //need to make sure that the variabled doesn't exist for the current activity as we don't want to update the values of current activity
-        return Object.keys(localizedSnapshot).indexOf(v) === -1;
-      }
-    });
-    return [...filteredParentScreenIdVariables];
-  });
-  const updatedCurrentActivityVariables: Record<string, any> = {};
-  //now we are replacing the parent activity id with current activity Id
-  parentVariables.forEach((key) => {
-    key.forEach((item) => {
-      const variables = item.split('|');
-      const v = item.replace(`${variables[0]}|stage`, `${currentActivityId}|stage`);
-      updatedCurrentActivityVariables[v] = localizedSnapshot[item];
-    });
-  });
-  if (Object.keys(updatedCurrentActivityVariables).length) {
-    //formatting the variables for sending it to scripting
-    const finalCurrentActivityVariables: ApplyStateOperation[] = Object.keys(
-      updatedCurrentActivityVariables,
-    ).map((yup) => {
-      const globalOp: ApplyStateOperation = {
-        target: yup,
-        operator: '=',
-        value: updatedCurrentActivityVariables[yup],
-      };
-      return globalOp;
-    });
-
-    bulkApplyState(finalCurrentActivityVariables, defaultGlobalEnv);
-  }
-  // handle parent/child variable sync  - Block End
-};
-
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
   async (options: { activityId: string; customRules?: any[] }, { dispatch, getState }) => {
@@ -121,7 +69,6 @@ export const triggerCheck = createAsyncThunk(
 
     const treeActivityIds = currentActivityTree.map((a) => a.id);
     const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
-    handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
     const extrinsicSnapshot = Object.keys(localizedSnapshot).reduce(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');
