@@ -53,14 +53,8 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
   def create_intent(%Money{} = amount, %User{} = user, %Section{} = section, %Section{} = product) do
     {stripe_value, stripe_currency} = convert_amount(amount)
 
-    # if the user has a verified email address, we include it to send
-    # a receipt
-    with_verified_email =
-      if user.email_confirmed_at do
-        %{receipt_email: user.email}
-      else
-        %{}
-      end
+    # if the user has an email address, we include it so Stipe will send receipt
+    receipt_email = if user.email, do: %{receipt_email: user.email}, else: %{}
 
     body =
       Map.merge(
@@ -69,7 +63,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
           currency: stripe_currency,
           "payment_method_types[]": "card"
         },
-        with_verified_email
+        receipt_email
       )
       |> URI.encode_query()
 
