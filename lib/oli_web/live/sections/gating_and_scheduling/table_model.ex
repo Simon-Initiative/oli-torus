@@ -6,6 +6,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
+  alias OliWeb.Common.SessionContext
 
   def render(assigns) do
     ~F"""
@@ -13,44 +14,43 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     """
   end
 
-  def new(gating_condition_rows, section) do
-    column_specs = [
-      %ColumnSpec{
-        name: :title,
-        label: "Resource",
-        render_fn: &__MODULE__.render_resource_column/3
-      },
-      %ColumnSpec{
-        name: :type,
-        label: "Type",
-        render_fn: &__MODULE__.render_type_column/3
-      },
-      %ColumnSpec{
-        name: :details,
-        label: "Details",
-        render_fn: &__MODULE__.render_details_column/3
-      },
-      %ColumnSpec{
-        name: :user,
-        label: "User",
-        render_fn: &__MODULE__.render_user_column/3
-      },
-      %ColumnSpec{
-        name: :actions,
-        label: "Actions",
-        render_fn: &__MODULE__.render_actions_column/3
+  def new(%SessionContext{} = context, gating_condition_rows, section) do
+    SortableTableModel.new(
+      rows: gating_condition_rows,
+      column_specs: [
+        %ColumnSpec{
+          name: :title,
+          label: "Resource",
+          render_fn: &__MODULE__.render_resource_column/3
+        },
+        %ColumnSpec{
+          name: :type,
+          label: "Type",
+          render_fn: &__MODULE__.render_type_column/3
+        },
+        %ColumnSpec{
+          name: :details,
+          label: "Details",
+          render_fn: &__MODULE__.render_details_column/3
+        },
+        # %ColumnSpec{
+        #   name: :user,
+        #   label: "User",
+        #   render_fn: &__MODULE__.render_user_column/3
+        # },
+        %ColumnSpec{
+          name: :actions,
+          label: "Actions",
+          render_fn: &__MODULE__.render_actions_column/3
+        }
+      ],
+      event_suffix: "",
+      id_field: [:id],
+      data: %{
+        section_slug: section.slug,
+        context: context
       }
-    ]
-
-    {:ok, model} =
-      SortableTableModel.new(
-        rows: gating_condition_rows,
-        column_specs: column_specs,
-        event_suffix: "",
-        id_field: [:id]
-      )
-
-    {:ok, Map.put(model, :data, %{section_slug: section.slug})}
+    )
   end
 
   def render_resource_column(
@@ -90,28 +90,28 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       ) do
     ~F"""
       <div :if={start_datetime}>
-        Start: {date(start_datetime, context)}
+        <b>Start:</b> {date(start_datetime, context: context, precision: :minutes)}
       </div>
       <div :if={end_datetime}>
-        End: {date(end_datetime, context)}
+        <b>End:</b> {date(end_datetime, context: context, precision: :minutes)}
       </div>
     """
   end
 
-  def render_user_column(
-        assigns,
-        %GatingCondition{
-          user_id: user_id,
-          user: user
-        },
-        _
-      ) do
-    ~F"""
-      <div :if={user_id}>
-        {user.name}
-      </div>
-    """
-  end
+  # def render_user_column(
+  #       assigns,
+  #       %GatingCondition{
+  #         user_id: user_id,
+  #         user: user
+  #       },
+  #       _
+  #     ) do
+  #   ~F"""
+  #     <div :if={user_id}>
+  #       {user.name}
+  #     </div>
+  #   """
+  # end
 
   def render_actions_column(
         %{section_slug: section_slug} = assigns,
