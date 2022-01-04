@@ -1,3 +1,5 @@
+import { getValue } from '../adaptivity/scripting';
+
 /**
  * Returns the given value if it is not null or undefined. Otherwise, it returns
  * the default value. The return value will always be a defined value of the type given
@@ -156,3 +158,33 @@ export const parseNumString = (item: string): string | number => {
 // Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]
 export const zip = <T, U>(xs1: T[], xs2: U[]): [T, U][] =>
   xs1.reduce((acc, x, i) => (i > xs2.length - 1 ? acc : acc.concat([[x, xs2[i]]])), [] as [T, U][]);
+
+const getActualOwnerIdentifier = (expression: string, sequence: any, env: any) => {
+  if (expression.indexOf('|') === -1) {
+    return expression;
+  }
+  const [activityId, part] = expression.split('|');
+  const activitySequence = sequence.find((entry: any) => entry?.custom?.sequenceId === activityId);
+  const activityLayerId = activitySequence?.custom?.layerRef;
+  let expressionValue = getValue(expression, env);
+  let updatedExpression = expression;
+  if (expressionValue === undefined) {
+    const parentIdentifier = `${activityLayerId}|${part}`;
+    expressionValue = getValue(parentIdentifier, env);
+    if (expressionValue !== undefined) {
+      updatedExpression = parentIdentifier;
+    } else if (activityLayerId) {
+      updatedExpression = parentIdentifier;
+      updatedExpression = getActualOwnerIdentifier(updatedExpression, sequence, env);
+    }
+  }
+  return updatedExpression;
+};
+
+export const processPartVariablesExpressions = (expression: string, sequence: any, env: any) => {
+  if (expression.indexOf('|stage.') === -1) {
+    return { expression, expressioinWithActualOwnerId: expression };
+  }
+  const updatedExpression = getActualOwnerIdentifier(expression, sequence, env);
+  return { expression, expressioinWithActualOwnerId: updatedExpression };
+};

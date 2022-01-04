@@ -69,14 +69,14 @@ const Markup: React.FC<any> = ({
     let updatedState = { ...state };
     if (expressions) {
       //expressions is an array object that contains the original expression used in the text i.e. exp.expression
-      //and exp.newExpression which is the expression with actual ownerId of the part component that is used in the variable.
+      //and exp.expressioinWithActualOwnerId which is the expression with actual ownerId of the part component that is used in the variable.
       //we are trying to replace the expression with the actual ownerId (i.e. the question Id) of the part component that is used in the variable.
       expressions.forEach((exp: Record<string, string>) => {
-        updatedText = text.replaceAll(exp.expression, exp.newExpression);
+        updatedText = text.replaceAll(exp.expression, exp.expressioinWithActualOwnerId);
       });
 
       updatedState = expressions.reduce((acc: any, exp: any) => {
-        acc[exp.newExpression] = state[exp.newExpression];
+        acc[exp.expressioinWithActualOwnerId] = state[exp.expressioinWithActualOwnerId];
         return acc;
       }, {});
     }

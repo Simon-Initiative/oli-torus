@@ -32,7 +32,7 @@ import { selectEnableHistory, selectUserName, setScore } from '../../store/featu
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { parseArray, parseNumString } from 'utils/common';
+import { parseArray, parseNumString, processPartVariablesExpressions } from 'utils/common';
 import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
@@ -41,32 +41,6 @@ const InjectedStyles: React.FC<{ css?: string }> = (props) => {
   const defaultCss = '';
   const injected = props.css || defaultCss;
   return injected ? <style>{injected}</style> : null;
-};
-
-const getActualOwnerDetails = (expression: string, sequence: any) => {
-  const [activityId, part] = expression.split('|');
-  const activitySequence = sequence.find((entry: any) => entry?.custom?.sequenceId === activityId);
-  const activityLayerId = activitySequence?.custom?.layerRef;
-  let expressionValue = getValue(expression, defaultGlobalEnv);
-  let updatedExpression = expression;
-  if (expressionValue == undefined) {
-    expressionValue = getValue(activityLayerId + '|' + part, defaultGlobalEnv);
-    if (expressionValue !== undefined) {
-      updatedExpression = activityLayerId + '|' + part;
-    } else if (activityLayerId) {
-      updatedExpression = activityLayerId + '|' + part;
-      updatedExpression = getActualOwnerDetails(updatedExpression, sequence);
-    }
-  }
-  return updatedExpression;
-};
-
-export const getPartOwnerVariableId = (expression: string, sequence: any) => {
-  if (expression.indexOf('stage.') === -1) {
-    return { expression, newExpression: expression };
-  }
-  const updatedExpression = getActualOwnerDetails(expression, sequence);
-  return { expression, newExpression: updatedExpression };
 };
 
 const sharedActivityInit = new Map();
@@ -345,7 +319,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     expressions: string[],
   ) => {
     const allExpressions = expressions.map((expression) => {
-      return getPartOwnerVariableId(expression, sequence);
+      return processPartVariablesExpressions(expression, sequence, defaultGlobalEnv);
     });
     return allExpressions;
   };

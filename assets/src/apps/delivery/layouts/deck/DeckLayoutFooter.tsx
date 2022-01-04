@@ -2,6 +2,7 @@
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { processPartVariablesExpressions } from 'utils/common';
 import {
   ApplyStateOperation,
   bulkApplyState,
@@ -50,8 +51,6 @@ import {
 import EverappContainer from './components/EverappContainer';
 import FeedbackContainer from './components/FeedbackContainer';
 import HistoryNavigation from './components/HistoryNavigation';
-import { getPartOwnerVariableId } from './DeckLayoutView';
-
 export const handleValueExpression = (
   currentActivityTree: any[] | null,
   operationValue: string,
@@ -283,8 +282,8 @@ const DeckLayoutFooter: React.FC = () => {
         if (updatedText.toString().indexOf('stage.') !== -1) {
           const expressions = extractAllExpressionsFromText(updatedText);
           expressions.forEach((exp: any) => {
-            const target = getPartOwnerVariableId(exp, sequence);
-            updatedText = updatedText.replaceAll(exp, target.newExpression);
+            const target = processPartVariablesExpressions(exp, sequence, defaultGlobalEnv);
+            updatedText = updatedText.replaceAll(exp, target.expressioinWithActualOwnerId);
           });
         }
         if (scopedTarget.indexOf('stage') === 0) {

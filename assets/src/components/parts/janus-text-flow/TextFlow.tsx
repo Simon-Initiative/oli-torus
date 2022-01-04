@@ -141,12 +141,12 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
       return getTextExpressions(subtree || []);
     });
 
-    const finalExppression = allExpression.filter((expression) => expression);
+    const finalExpression = allExpression.filter((expression) => expression);
 
     const initResult = await props.onInit({
       id,
       responses: [],
-      expressions: finalExppression,
+      expressions: finalExpression,
     });
     // result of init has a state snapshot with latest (init state applied)
     const currentStateSnapshot = initResult.snapshot;

@@ -2,7 +2,6 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
-import { getPartOwnerVariableId } from 'apps/delivery/layouts/deck/DeckLayoutView';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
 import {
@@ -11,6 +10,7 @@ import {
   writePageAttemptState,
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
+import { processPartVariablesExpressions } from 'utils/common';
 import guid from 'utils/guid';
 import {
   ApplyStateOperation,
@@ -140,8 +140,8 @@ export const initializeActivity = createAsyncThunk(
       if (updatedText.toString().indexOf('stage.') !== -1) {
         const expressions = extractAllExpressionsFromText(updatedText);
         expressions.forEach((exp: any) => {
-          const target = getPartOwnerVariableId(exp, sequence);
-          updatedText = updatedText.replaceAll(exp, target.newExpression);
+          const target = processPartVariablesExpressions(exp, sequence, defaultGlobalEnv);
+          updatedText = updatedText.replaceAll(exp, target.expressioinWithActualOwnerId);
         });
       }
       arrInitFacts[s.target] = s.type;
