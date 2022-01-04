@@ -113,7 +113,6 @@
                 successElement.innerHTML = json.info;
                 successElement.classList.remove('d-none');
                 successElement.classList.add('d-block');
-                helpForm.classList.add('d-none');
                 const errorElement = document.getElementById('help-error-message');
                 errorElement.classList.remove('d-block');
                 errorElement.classList.add('d-none');
