@@ -60,14 +60,20 @@ export const loadInitialPageState = createAsyncThunk(
       if (params.content.custom?.everApps) {
         const everAppIds = params.content.custom.everApps.map((everApp: any) => everApp.id);
         const userState = await readGlobalUserState(everAppIds, params.previewMode);
-        const everAppState = Object.keys(userState).reduce((acc: any, key) => {
-          Object.keys(userState[key]).forEach((subKey) => {
-            acc[`app.${key}.${subKey}`] = userState[key][subKey];
-          });
-          return acc;
-        }, {});
-        /* console.log('EVER APP STATE', { userState, everAppIds, everAppState }); */
-        Object.assign(sessionState, everAppState);
+        if (typeof userState === 'object') {
+          const everAppState = Object.keys(userState).reduce((acc: any, key) => {
+            const subState = userState[key];
+            if (typeof subState !== 'object') {
+              return acc;
+            }
+            Object.keys(userState[key]).forEach((subKey) => {
+              acc[`app.${key}.${subKey}`] = userState[key][subKey];
+            });
+            return acc;
+          }, {});
+          /* console.log('EVER APP STATE', { userState, everAppIds, everAppState }); */
+          Object.assign(sessionState, everAppState);
+        }
       }
 
       if (params.resourceAttemptState) {
