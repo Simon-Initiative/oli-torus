@@ -66,8 +66,8 @@ export const loadInitialPageState = createAsyncThunk(
             if (typeof subState !== 'object') {
               return acc;
             }
-            Object.keys(userState[key]).forEach((subKey) => {
-              acc[`app.${key}.${subKey}`] = userState[key][subKey];
+            Object.keys(subState).forEach((subKey) => {
+              acc[`app.${key}.${subKey}`] = subState[subKey];
             });
             return acc;
           }, {});
