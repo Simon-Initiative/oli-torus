@@ -7,12 +7,9 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
     field(:score, :float)
     field(:out_of, :float)
 
-    field(:last_sync_score, :float)
-    field(:last_sync_out_of, :float)
-    field(:last_sync_type, Ecto.Enum, values: [:inline, :manual, :manual_batch], default: :inline)
-    field(:last_sync_datetime, :utc_datetime)
-    field(:last_sync_result, Ecto.Enum, values: [:success, :failure, :not_run], default: :not_run)
-    field(:last_sync_details, :string)
+    # Completed LMS grade updates
+    field(:last_successful_grade_update_id, :integer)
+    field(:last_grade_update_id, :integer)
 
     belongs_to(:user, Oli.Accounts.User)
     belongs_to(:section, Oli.Delivery.Sections.Section)
@@ -31,12 +28,8 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
       :access_count,
       :score,
       :out_of,
-      :last_sync_score,
-      :last_sync_out_of,
-      :last_sync_type,
-      :last_sync_datetime,
-      :last_sync_result,
-      :last_sync_details,
+      :last_successful_grade_update_id,
+      :last_grade_update_id,
       :user_id,
       :section_id,
       :resource_id

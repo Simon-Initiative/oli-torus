@@ -62,15 +62,27 @@ defmodule OliWeb.Grades.GradebookTableModel do
         ""
 
       # We have a rolled-up grade from at least one attempt
-      %ResourceAccess{score: score, out_of: out_of} ->
-        show_score(assigns, row, resource_id, score, out_of)
+      %ResourceAccess{} = resource_access ->
+        show_score(assigns, row, resource_id, resource_access)
     end
   end
 
-  defp show_score(assigns, row, resource_id, score, out_of) do
+  defp show_score(assigns, row, resource_id, %ResourceAccess{
+         score: score,
+         out_of: out_of,
+         last_successful_grade_update_id: last_successful_grade_update_id,
+         last_grade_update_id: last_grade_update_id
+       }) do
+    link_type =
+      if !is_nil(last_grade_update_id) and last_grade_update_id != last_successful_grade_update_id do
+        "badge badge-danger"
+      else
+        "badge badge-light"
+      end
+
     if out_of == 0 or out_of == 0.0 do
       ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
         <span>{score}/{out_of} 0%</span>
       </a>
       """
@@ -101,7 +113,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         end
 
       ~F"""
-      <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
       {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
       </a>
       """

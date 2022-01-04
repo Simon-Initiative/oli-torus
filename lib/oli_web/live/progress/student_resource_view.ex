@@ -9,6 +9,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Progress.Passback
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
@@ -187,10 +188,15 @@ defmodule OliWeb.Progress.StudentResourceView do
     # instance of this window
     resource_access = get_resource_access(revision.resource_id, section.slug, user.id)
 
-    grade_sync_result = send_one_grade(section, user, resource_access)
+    {:ok, %Oban.Job{id: id}} =
+      Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(resource_access.id, :manual)
 
-    {:noreply,
-     assign(socket, grade_sync_result: grade_sync_result, resource_access: resource_access)}
+    Broadcaster.subscribe_to_lms_grade_update(
+      socket.assigns.resource_access.id,
+      id
+    )
+
+    {:noreply, assign(socket, grade_sync_result: "Pending...", resource_access: resource_access)}
   end
 
   def handle_event("save", %{"resource_access" => params}, socket) do
@@ -214,23 +220,35 @@ defmodule OliWeb.Progress.StudentResourceView do
     end
   end
 
-  defp host() do
-    Application.get_env(:oli, OliWeb.Endpoint)
-    |> Keyword.get(:url)
-    |> Keyword.get(:host)
-  end
+  def handle_info({:lms_grade_update_result, _, job_id, result}, socket) do
+    %{
+      resource_access: resource_access,
+      section: section,
+      user: user
+    } = socket.assigns
 
-  defp access_token_provider(section) do
-    fn ->
-      {_deployment, registration} =
-        Oli.Delivery.Sections.get_deployment_registration_from_section(section)
-
-      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
+    # Unsubscribe to this job when we reach a terminal state
+    if result in [:success, :failure, :not_synced] do
+      Broadcaster.unsubscribe_to_lms_grade_update(
+        resource_access.id,
+        job_id
+      )
     end
-  end
 
-  def send_one_grade(section, user, resource_access) do
-    Oli.Grading.send_score_to_lms(section, user, resource_access, access_token_provider(section))
+    resource_access = get_resource_access(resource_access.id, section.slug, user.id)
+
+    grade_sync_result =
+      case result do
+        :pending -> "LMS Update Pending..."
+        :success -> "LMS Update Succeeded"
+        :failure -> "LMS Update Failed"
+        :retrying -> "LMS Update Failed, Retrying"
+        :running -> "LMS Update Executing..."
+        :not_synced -> "Grade passback not enabled"
+      end
+
+    {:noreply,
+     assign(socket, resource_access: resource_access, grade_sync_result: grade_sync_result)}
   end
 
   defp ensure_no_nil(params, key) do

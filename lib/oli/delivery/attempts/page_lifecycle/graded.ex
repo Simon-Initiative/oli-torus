@@ -172,7 +172,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
           {score + p.score, out_of + p.out_of}
         end)
 
-      # Adaptive graded pages can specify a "totalScore" which overrides the calcualted
+      # Adaptive graded pages can specify a "totalScore" which overrides the calculated
       # out_of
       out_of = override_out_of(out_of, resource_attempt.revision.content)
 

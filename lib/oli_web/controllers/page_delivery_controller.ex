@@ -11,6 +11,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
@@ -435,47 +436,17 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp host() do
-    Application.get_env(:oli, OliWeb.Endpoint)
-    |> Keyword.get(:url)
-    |> Keyword.get(:host)
-  end
-
-  defp access_token_provider(section) do
-    fn ->
-      {_deployment, registration} = Sections.get_deployment_registration_from_section(section)
-      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
-    end
-  end
-
-  def send_one_grade(section, user, resource_access) do
-    case Oli.Grading.send_score_to_lms(
-           section,
-           user,
-           resource_access,
-           access_token_provider(section)
-         ) do
-      {:error, e} ->
-        Oli.Utils.Appsignal.capture_error(e)
-        {:error, e}
-
-      success ->
-        success
-    end
-  end
-
   def finalize_attempt(conn, %{
         "section_slug" => section_slug,
         "revision_slug" => revision_slug,
         "attempt_guid" => attempt_guid
       }) do
     user = conn.assigns.current_user
-    section = conn.assigns.section
 
     case PageLifecycle.finalize(section_slug, attempt_guid) do
-      {:ok, resource_access} ->
-        grade_sync_result = send_one_grade(section, user, resource_access)
-        after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result)
+      {:ok, %ResourceAccess{id: id}} ->
+        Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(id, :inline)
+        after_finalized(conn, section_slug, revision_slug, attempt_guid, user)
 
       {:error, {:already_submitted}} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
@@ -491,7 +462,7 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
+  def after_finalized(conn, section_slug, revision_slug, attempt_guid, user) do
     section = conn.assigns.section
     context = PageContext.create_for_visit(section_slug, revision_slug, user)
 
@@ -506,9 +477,8 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     grade_message =
-      case grade_sync_result do
-        {:ok, :synced} -> "Your grade has been updated in your LMS"
-        {:error, _} -> "There was a problem updating your grade in your LMS"
+      case section.grade_passback_enabled do
+        true -> "Your grade will be updated in your LMS shortly"
         _ -> ""
       end
 
