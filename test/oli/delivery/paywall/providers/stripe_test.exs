@@ -1,12 +1,11 @@
 defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Paywall.Providers.Stripe
-
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing
+  alias Oli.Delivery.{Sections, Paywall}
+  alias Oli.Delivery.Paywall.Providers.Stripe
+  alias Lti_1p3.Tool.ContextRoles
+
   import Ecto.Query, warn: false
 
   alias Oli.Test.MockHTTP
@@ -33,7 +32,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
           base_project_id: map.project.id
         })
 
-      user1 = user_fixture() |> Repo.preload(:platform_roles)
+      user1 = user_fixture(%{email_confirmed_at: Timex.now()}) |> Repo.preload(:platform_roles)
 
       {:ok, section} =
         Sections.create_section(%{
@@ -68,11 +67,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
                Stripe.finalize_payment(%{"id" => "a_made_up_intent_id"})
     end
 
-    test "finalization succeeds", %{
-      section: section,
-      product: product,
-      user1: user
-    } do
+    test "finalization succeeds", %{section: section, product: product, user1: user} do
       url = "https://api.stripe.com/v1/payment_intents"
 
       MockHTTP
@@ -87,8 +82,8 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
 
       pending_payment = Paywall.get_provider_payment(:stripe, "test_id")
-      refute is_nil(pending_payment)
-      assert is_nil(pending_payment.application_date)
+      assert pending_payment
+      refute pending_payment.application_date
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
       assert pending_payment.section_id == product.id
@@ -98,10 +93,10 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       assert {:ok, _} = Stripe.finalize_payment(intent)
 
       finalized = Paywall.get_provider_payment(:stripe, "test_id")
-      refute is_nil(finalized)
+      assert finalized
       assert finalized.id == pending_payment.id
 
-      refute is_nil(finalized.application_date)
+      assert finalized.application_date
       assert finalized.pending_section_id == section.id
       assert finalized.pending_user_id == user.id
       assert finalized.section_id == product.id
@@ -113,11 +108,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       assert e.section_id == section.id
     end
 
-    test "double finalization fails", %{
-      section: section,
-      product: product,
-      user1: user
-    } do
+    test "double finalization fails", %{section: section, product: product, user1: user} do
       url = "https://api.stripe.com/v1/payment_intents"
 
       MockHTTP
