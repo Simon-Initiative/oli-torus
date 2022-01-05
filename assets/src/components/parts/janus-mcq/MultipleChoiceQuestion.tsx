@@ -715,7 +715,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   ) => {
     const originalValue = parseInt(value.toString(), 10);
     let newChoice = checked ? originalValue : 0;
-    let newCount = 1;
+    let newCount = checked ? 1 : 0;
     let newSelectedChoices = [newChoice];
     let updatedChoicesText = [checked ? textValue : ''];
     let updatedChoiceText = updatedChoicesText[0];
