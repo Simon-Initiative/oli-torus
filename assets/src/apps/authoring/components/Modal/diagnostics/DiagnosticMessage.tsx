@@ -27,6 +27,36 @@ export const BrokenMessage: React.FC<Message> = ({ problem }: Message) => (
   </span>
 );
 
+export const ValueUndefined: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    A condition with the ID &quot;
+    <strong>{problem?.item?.condition?.id}</strong>&quot;, is missing a value.
+  </span>
+);
+
+export const InvalidMutateTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    A rule with the ID &quot;
+    <strong>{problem?.item?.id}</strong>&quot;, has an invalid component target (
+    <strong>{problem?.item?.action.params.target}</strong>).
+  </span>
+);
+
+export const InvalidCondTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    A rule with the ID &quot;
+    <strong>{problem?.item?.rule?.id}</strong>&quot;, has an invalid component target (
+    <strong>{problem?.item?.condition?.fact}</strong>).
+  </span>
+);
+
+export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    A rule in the initial state has an invalid component target (
+    <strong>{problem?.item?.fact?.target}</strong>).
+  </span>
+);
+
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
@@ -41,6 +71,18 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
       break;
     case DiagnosticTypes.BROKEN:
       action = <BrokenMessage {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_COND:
+      action = <InvalidCondTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_INIT:
+      action = <InvalidInitStateTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_MUTATE:
+      action = <InvalidMutateTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_VALUE:
+      action = <ValueUndefined {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

@@ -9,6 +9,8 @@ import {
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
+import { forEachCondition } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
+import has from 'lodash/has';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -47,9 +49,32 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
       type,
       item,
       owner: problemSequence || item.owner,
-      suggestedFix: item.suggestedFix || generateSuggestion(item.id, blackList),
+      suggestedFix:
+        typeof item.suggestedFix === 'string'
+          ? item.suggestedFix
+          : generateSuggestion(item.id, blackList),
     };
   });
+
+const validateTarget = (target: string, activity: any) => {
+  if (target && !target.match(/session\./)) {
+    const targetId = target.split('.')[1] as string;
+    const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
+    return validTarget;
+  }
+  return true;
+};
+
+const validateValue = (condition: any, rule: any, owner: any) => {
+  return has(condition, 'value') && !condition.value
+    ? {
+        condition,
+        rule,
+        owner,
+        suggestedFix: ``,
+      }
+    : null;
+};
 
 export const validators = [
   {
@@ -85,7 +110,7 @@ export const validators = [
           }
           return null;
         });
-        return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
+        return [...brokenColl, ...brokenActions];
       }, []);
     },
   },
@@ -96,22 +121,18 @@ export const validators = [
       return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'mutateState') {
-            const { target } = action.params;
-            if (!target.match(/session\./)) {
-              const targetId = target.split('.')[1] as string;
-              const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
-              if (!validTarget) {
-                return {
+            return validateTarget(action.params.target, activity)
+              ? null
+              : {
                   ...rule,
+                  action,
                   owner,
-                  suggestedFix: `Screen does not exist, fix target.`,
+                  suggestedFix: ``,
                 };
-              }
-            }
           }
           return null;
         });
-        return [...brokenColl, ...brokenActions.filter((e: any) => !!e)];
+        return [...brokenColl, ...brokenActions];
       }, []);
     },
   },
@@ -119,22 +140,19 @@ export const validators = [
     type: DiagnosticTypes.INVALID_TARGET_INIT,
     validate: (activity: any, hierarchy: any, sequence: any[]) => {
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return activity.content.custom.facts.reduce((broken: any[], fact: any) => {
-        const { target } = fact;
-        const targetId = target.split('.')[1] as string;
-        const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
-        if (!validTarget) {
-          broken = [
-            ...broken,
-            {
-              ...fact,
-              owner,
-              suggestedFix: `Screen does not exist, fix target.`,
-            },
-          ];
-        }
-        return broken;
-      }, []);
+      return activity.content.custom.facts.reduce(
+        (broken: any[], fact: any) => [
+          ...broken,
+          validateTarget(fact.target, activity)
+            ? null
+            : {
+                fact,
+                owner,
+                suggestedFix: ``,
+              },
+        ],
+        [],
+      );
     },
   },
   {
@@ -142,52 +160,40 @@ export const validators = [
     validate: (activity: any, hierarchy: any, sequence: any[]) => {
       const owner = sequence.find((s) => s.resourceId === activity.id);
       return activity.authoring.rules.reduce((broken: any[], rule: any) => {
-        console.log(rule);
-        const brokenConditionsAll = rule.conditions.all.map((condition: any) => {
-          const target = condition.fact;
-          if (target && !target.match(/session\./)) {
-            const targetId = target.split('.')[1] as string;
-            const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
-            if (!validTarget) {
-              return {
-                ...rule,
-                owner,
-                suggestedFix: `Screen does not exist, fix target.`,
-              };
-            }
+        const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
+
+        const brokenConditionValues: any[] = [];
+        forEachCondition(conditions, (condition: any) => {
+          if (!validateTarget(condition.fact, activity)) {
+            brokenConditionValues.push({
+              condition,
+              rule,
+              owner,
+              suggestedFix: ``,
+            });
           }
-          return null;
         });
-        const brokenConditionsAny = rule.conditions.any.map((condition: any) => {
-          const target = condition.fact;
-          if (target && !target.match(/session\./)) {
-            const targetId = target.split('.')[1] as string;
-            const validTarget = activity.content.partsLayout.some((p: any) => p.id === targetId);
-            if (!validTarget) {
-              return {
-                ...rule,
-                owner,
-                suggestedFix: `Screen does not exist, fix target.`,
-              };
-            }
-          }
-          return null;
-        });
-        return [
-          ...broken,
-          ...brokenConditionsAll.filter((e: any) => !!e),
-          ...brokenConditionsAny.filter((e: any) => !!e),
-        ];
+
+        return [...broken, ...brokenConditionValues];
       }, []);
     },
   },
-  /*{
+  {
     type: DiagnosticTypes.INVALID_VALUE,
-    validate: (activity: any, hierarchy: any, sequence: any[]) =>
-      activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
-        return brokenColl;
-      }, []),
-  },*/
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
+
+        const brokenConditionValues: any[] = [];
+        forEachCondition(conditions, (condition: any) => {
+          brokenConditionValues.push(validateValue(condition, rule, owner));
+        });
+
+        return [...broken, ...brokenConditionValues];
+      }, []);
+    },
+  },
 ];
 
 export const validatePartIds = createAsyncThunk<any, any, any>(
@@ -207,14 +213,12 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
       const foundProblems = validators.reduce(
         (probs: any, validator: any) => ({
           ...probs,
-          [validator.type]: validator.validate(activity, hierarchy, sequence),
+          [validator.type]: validator
+            .validate(activity, hierarchy, sequence)
+            .filter((e: any) => !!e),
         }),
         {},
       );
-
-      if (activity.activitySlug === 'welcome') {
-        console.log(activity);
-      }
 
       const countProblems = Object.keys(foundProblems).reduce(
         (c: number, current: any) => foundProblems[current].length + c,
