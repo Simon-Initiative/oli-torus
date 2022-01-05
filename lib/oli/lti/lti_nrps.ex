@@ -59,6 +59,12 @@ defmodule Oli.Lti.LTI_NRPS do
     end
   end
 
+  def required_scopes() do
+    [
+      @context_memberships_url_key
+    ]
+  end
+
   @doc """
   Returns the context memberships URL from LTI launch params. If not present returns nil.
   """

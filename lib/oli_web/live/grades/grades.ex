@@ -8,7 +8,6 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.AccessToken
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Repo
@@ -56,7 +55,9 @@ defmodule OliWeb.Grades.GradesLive do
        registration: registration,
        total_jobs: nil,
        failed_jobs: nil,
-       succeeded_jobs: nil
+       succeeded_jobs: nil,
+       test_output: nil,
+       test_in_progress?: false
      )}
   end
 
@@ -119,11 +120,13 @@ defmodule OliWeb.Grades.GradesLive do
     </p>
 
     <div class="card-group">
+      <%= live_component OliWeb.Grades.TestConnection, assigns %>
+      <%= live_component OliWeb.Grades.Export, assigns %>
+    </div>
 
+    <div class="card-group">
       <%= live_component OliWeb.Grades.LineItems, assigns %>
       <%= live_component OliWeb.Grades.GradeSync, assigns %>
-      <%= live_component OliWeb.Grades.Export, assigns %>
-
     </div>
 
     <div class="mt-4 <%= progress_visible %>">
@@ -212,6 +215,10 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
+  def emit_status(pid, status, decoration, is_done?) do
+    send(pid, {:test_status, status, decoration, is_done?})
+  end
+
   def handle_event("send_line_items", _, socket) do
     registration = socket.assigns.registration
 
@@ -244,6 +251,42 @@ defmodule OliWeb.Grades.GradesLive do
 
   def handle_event("select_page", %{"page" => resource_id}, socket) do
     {:noreply, assign(socket, selected_page: resource_id)}
+  end
+
+  def handle_event("test_connection", _, socket) do
+    registration = socket.assigns.registration
+    pid = self()
+
+    emit_status(pid, "Starting test", :normal, false)
+
+    Task.async(fn ->
+      emit_status(pid, "Requesting access token...", :normal, false)
+
+      try do
+        case access_token_provider(registration) do
+          {:ok, access_token} ->
+            emit_status(pid, "Received access token", :normal, false)
+            emit_status(pid, "Requesting line items...", :normal, false)
+
+            case LTI_AGS.fetch_line_items(socket.assigns.line_items_url, access_token) do
+              {:ok, _} ->
+                emit_status(pid, "Received line items", :normal, false)
+                emit_status(pid, "Success!", :success, true)
+
+              {:error, e} ->
+                emit_status(pid, e, :failure, true)
+            end
+
+          {:error, e} ->
+            emit_status(pid, e, :failure, true)
+        end
+      rescue
+        e in RuntimeError -> emit_status(pid, "Failed! " <> e.message, :failure, true)
+        _ -> emit_status(pid, "Failed! Unknown failure", :failure, true)
+      end
+    end)
+
+    {:noreply, assign(socket, test_in_progress?: true, test_output: [])}
   end
 
   def handle_event("send_grades", _, socket) do
@@ -306,6 +349,18 @@ defmodule OliWeb.Grades.GradesLive do
       _ ->
         {:error, dgettext("grades", "Error getting LMS access token")}
     end
+  end
+
+  def handle_info({:test_status, status, decoration, is_done?}, socket) do
+    test_output =
+      if is_nil(socket.assigns.test_output) do
+        []
+      else
+        socket.assigns.test_output
+      end ++
+        [{status, decoration}]
+
+    {:noreply, assign(socket, test_output: test_output, test_in_progress?: !is_done?)}
   end
 
   def handle_info({:lms_grade_update_result, resource_access_id, job_id, result}, socket) do
