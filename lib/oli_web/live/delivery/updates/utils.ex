@@ -1,6 +1,8 @@
 defmodule OliWeb.Delivery.Updates.Utils do
   use Phoenix.HTML
+
   import Phoenix.LiveView.Helpers
+  import OliWeb.Common.FormatDateTime
 
   alias Oli.Publishing.Publication
 
@@ -41,7 +43,7 @@ defmodule OliWeb.Delivery.Updates.Utils do
     ~L"""
     <div class="d-flex w-100 justify-content-between">
       <h5 class="mb-1"><%= project.title %> <small><%= "v#{edition}.#{major}.#{minor}" %></small></h5>
-      <small>Published <%= Timex.format!(published, "{relative}", :relative) %></small>
+      <small>Published <%= date(published, precision: :relative) %></small>
     </div>
     <p class="mb-1"><%= description %></p>
     """

@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.OpenFreeSettings do
-  use Surface.Component
+  use OliWeb, :surface_component
 
   alias Surface.Components.{Field, Select}
   alias Surface.Components.Form.{Field, Label, DateTimeLocalInput, Select, Checkbox, ErrorTag}
@@ -14,9 +14,10 @@ defmodule OliWeb.Sections.OpenFreeSettings do
   def timezone_localized_datetime(nil, _timezone), do: nil
 
   def timezone_localized_datetime(%DateTime{} = datetime, timezone) do
-    case OliWeb.ViewHelpers.maybe_localized_datetime(datetime, timezone) do
+    case maybe_localized_datetime(datetime, timezone) do
       {:localized, datetime} ->
         datetime
+
       datetime ->
         datetime
     end

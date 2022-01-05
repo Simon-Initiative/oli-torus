@@ -1,5 +1,5 @@
 defmodule OliWeb.Users.Common do
-  use Surface.LiveComponent
+  use OliWeb, :surface_component
 
   def render(assigns) do
     ~F"""
@@ -26,7 +26,7 @@ defmodule OliWeb.Users.Common do
             """
           else
             ~F"""
-            <span data-toggle="tooltip" data-html="true" title={"<b>Email Confirmed</b> on #{Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}")}"}>
+            <span data-toggle="tooltip" data-html="true" title={"<b>Email Confirmed</b> on #{date(email_confirmed_at)}"}>
               <i class="las la-check text-success"></i>
             </span>
             """

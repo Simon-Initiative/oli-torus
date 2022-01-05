@@ -8,6 +8,7 @@ defmodule OliWeb.Products.PaymentsView do
   alias OliWeb.Products.Payments.CreateCodes
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.SessionContext
 
   data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Payments"})]
   data title, :string, default: "Payments"
@@ -48,6 +49,8 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   def mount(%{"product_id" => product_slug}, session, socket) do
+    context = SessionContext.init(session)
+
     payments =
       Oli.Delivery.Paywall.list_payments(product_slug)
       |> Enum.map(fn element ->
@@ -65,12 +68,11 @@ defmodule OliWeb.Products.PaymentsView do
 
     total_count = length(payments)
 
-    local_tz = Map.get(session, :local_tz)
-
-    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, local_tz)
+    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, context)
 
     {:ok,
      assign(socket,
+       context: context,
        product: Oli.Delivery.Sections.get_section_by(slug: product_slug),
        product_slug: product_slug,
        payments: payments,

@@ -1,6 +1,5 @@
 defmodule OliWeb.Insights do
-  use Phoenix.LiveView
-  import OliWeb.ViewHelpers
+  use OliWeb, :live_view
 
   alias OliWeb.Insights.{TableHeader, TableRow}
   alias Oli.Authoring.Course
@@ -208,7 +207,7 @@ defmodule OliWeb.Insights do
               |> List.replace_at(16, Jason.encode_to_iodata!(Enum.at(&1, 16)))
               |> List.replace_at(17, Jason.encode_to_iodata!(Enum.at(&1, 17)))
               # JSON format date
-              |> List.replace_at(20, format_datetime(Enum.at(&1, 20))))
+              |> List.replace_at(20, date(Enum.at(&1, 20))))
           )
       ]
     ]
