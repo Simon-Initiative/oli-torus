@@ -6,6 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import NavigationButton from './NavigationButton';
+import { adaptivitySchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -13,4 +14,7 @@ const customEvents: any = { ...apiCustomEvents };
 register(NavigationButton, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: false,
+  customApi: {
+    getAdaptivitySchema: async () => adaptivitySchema,
+  },
 });

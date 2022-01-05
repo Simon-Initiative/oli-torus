@@ -133,6 +133,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a user is a platform (institution) instructor.
+  """
+  def is_institution_instructor?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:institution_instructor)
+      ],
+      :any
+    )
+  end
+
+  @doc """
   Can a user create independent, enrollable sections through OLI's LMS?
   """
   def is_independent_instructor?(%User{} = user) do
@@ -1354,8 +1367,8 @@ defmodule Oli.Delivery.Sections do
   Converts a section's start_date and end_date to the gievn timezone's local datetimes
   """
   def localize_section_start_end_datetimes(
-         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
-       ) do
+        %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+      ) do
     timezone = Timex.Timezone.get(timezone, Timex.now())
 
     start_date =
@@ -1374,5 +1387,4 @@ defmodule Oli.Delivery.Sections do
     |> Map.put(:start_date, start_date)
     |> Map.put(:end_date, end_date)
   end
-
 end

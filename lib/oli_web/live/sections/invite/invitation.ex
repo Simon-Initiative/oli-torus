@@ -1,5 +1,5 @@
 defmodule OliWeb.Sections.Invites.Invitation do
-  use Surface.Component
+  use OliWeb, :surface_component
   alias OliWeb.Router.Helpers, as: Routes
 
   prop invitation, :struct, required: true
@@ -27,22 +27,12 @@ defmodule OliWeb.Sections.Invites.Invitation do
         </div>
       </div>
       {#if active}
-        <p class="mb-1">Expires: {with_time(@invitation.date_expires)}</p>
+        <p class="mb-1">Expires: {date(@invitation.date_expires)}</p>
         <small class="text-muted">Time remaining: {duration(@invitation.date_expires, DateTime.utc_now())}.</small>
       {#else}
-        <p class="mb-1">Expired: {with_time(@invitation.date_expires)}</p>
+        <p class="mb-1">Expired: {date(@invitation.date_expires)}</p>
       {/if}
     </li>
     """
-  end
-
-  defp with_time(d) do
-    Timex.format!(d, "%Y-%m-%d %H:%M:%S", :strftime)
-  end
-
-  defp duration(from, to) do
-    Timex.diff(from, to, :milliseconds)
-    |> Timex.Duration.from_milliseconds()
-    |> Timex.format_duration(:humanized)
   end
 end

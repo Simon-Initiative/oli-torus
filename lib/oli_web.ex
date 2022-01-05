@@ -62,6 +62,23 @@ defmodule OliWeb do
     end
   end
 
+  def surface_view do
+    quote do
+      use Surface.LiveView,
+        layout: {OliWeb.LayoutView, "live.html"}
+
+      unquote(view_helpers())
+    end
+  end
+
+  def surface_component do
+    quote do
+      use Surface.LiveComponent
+
+      unquote(view_helpers())
+    end
+  end
+
   def mailer_view do
     quote do
       use Phoenix.View,
@@ -102,8 +119,9 @@ defmodule OliWeb do
 
       import OliWeb.ErrorHelpers
       import OliWeb.Gettext
-      alias OliWeb.Router.Helpers, as: Routes
+
       import OliWeb.ViewHelpers
+      import OliWeb.Common.FormatDateTime
 
       import Oli.Accounts,
         only: [
@@ -115,6 +133,8 @@ defmodule OliWeb do
 
       import Oli.Utils
       import Oli.Branding
+
+      alias OliWeb.Router.Helpers, as: Routes
     end
   end
 
