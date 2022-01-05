@@ -40,7 +40,7 @@ defmodule OliWeb.Admin.AdminView do
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)}>Browse all Projects</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView)}>Browse all Products</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)}>Browse all Course Sections</a></li>
-          <li><a href={Routes.open_and_free_path(OliWeb.Endpoint, :index)}>Manage Open and Free Sections</a></li>
+          <li><a href={Routes.admin_open_and_free_path(OliWeb.Endpoint, :index)}>Manage Open and Free Sections</a></li>
           <li><a href={Routes.ingest_path(OliWeb.Endpoint, :index)}>Ingest New Project</a></li>
           <li><a href={Routes.brand_path(OliWeb.Endpoint, :index)}>Manage Branding</a></li>
         </ul>
@@ -48,6 +48,7 @@ defmodule OliWeb.Admin.AdminView do
       <Group label="System Management" description="Manage and support system level functionality">
         <ul class="link-list">
           <li><a href={Routes.activity_manage_path(OliWeb.Endpoint, :index)}>Manage Activities</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)}>Manage LTI 1.3 Registrations</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Features.FeaturesLive)}>Enable and Disable Feature Flags</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ApiKeys.ApiKeysLive)}>Manage Third-Party API Keys</a></li>
           <li>

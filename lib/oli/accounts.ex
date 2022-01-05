@@ -2,9 +2,6 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [value_or: 2]
 
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-
   alias Oli.Accounts.{
     User,
     Author,
@@ -15,6 +12,8 @@ defmodule Oli.Accounts do
   }
 
   alias Oli.Groups.CommunityAccount
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -313,6 +312,8 @@ defmodule Oli.Accounts do
   @doc """
   Returns true if an author is an administrator.
   """
+  def is_admin?(nil), do: false
+
   def is_admin?(%Author{system_role_id: system_role_id}) do
     SystemRole.role_id().admin == system_role_id
   end
@@ -417,15 +418,12 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Searches for a list of authors with an email matching a wildcard pattern
+  Searches for a list of authors with an email matching the exact string
   """
   def search_authors_matching(query) do
-    q = query
-    q = "%" <> q <> "%"
-
     Repo.all(
       from(author in Author,
-        where: ilike(author.email, ^q)
+        where: ilike(author.email, ^query)
       )
     )
   end

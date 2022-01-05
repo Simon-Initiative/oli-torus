@@ -14,7 +14,15 @@
 
   <%= hidden_input f, :registration_id, value: @registration_id %>
 
+  <div class="text-secondary my-2">Institution</div>
+  <div class="form-label-group">
+    <%= select f, :institution_id, @available_institutions, prompt: "Select Institution", class: "form-control " <> error_class(f, :institution_id, "is-invalid"),
+      autofocus: focusHelper(f, :institution_id) %>
+    <%= error_tag f, :institution_id %>
+  </div>
+
   <div>
     <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
+  <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.registration_path(@conn, :show, @registration_id)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>
   </div>
 <% end %>

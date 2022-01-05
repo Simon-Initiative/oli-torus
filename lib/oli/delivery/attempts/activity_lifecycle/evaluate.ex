@@ -88,13 +88,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         client_evaluations = to_client_results(score, out_of, part_inputs)
         Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
-        case apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+        case apply_client_evaluation(
+               section_slug,
+               activity_attempt_guid,
+               client_evaluations,
+               :do_not_normalize
+             ) do
           {:ok, _} ->
             {:ok, decodedResults}
 
           {:error, err} ->
             Logger.debug("Error in apply client results! #{err}")
-            IO.inspect(err)
+
             {:error, err}
         end
 
@@ -244,7 +249,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
       roll_up = fn result ->
-        rollup_part_attempt_evaluations(activity_attempt_guid)
+        rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
         result
       end
 
@@ -316,7 +321,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     roll_up_fn = fn result ->
-      rollup_part_attempt_evaluations(activity_attempt_guid)
+      rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
       result
     end
 
@@ -349,6 +354,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   the results of the part evaluations (including ones already having been evaluated)
   will be rolled up to the activity attempt record.
 
+  The optional "normalize_mode" takes values of :normalize or :do_not_normalize.  The default
+  :normalize mode will normalize the part based score and out_of to a range of 0 to 1.
+  This ensures for all basic page based assessments that every activity has equal weight.
+
   On success returns an `{:ok, results}` tuple where results in an array of maps. Each
   map instance contains the result of one of the evaluations in the form:
 
@@ -358,7 +367,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   """
   @spec apply_client_evaluation(String.t(), String.t(), [map()]) ::
           {:ok, [map()]} | {:error, any}
-  def apply_client_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+  def apply_client_evaluation(
+        section_slug,
+        activity_attempt_guid,
+        client_evaluations,
+        normalize_mode \\ :normalize
+      ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
@@ -377,7 +391,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
           roll_up = fn result ->
-            rollup_part_attempt_evaluations(activity_attempt_guid)
+            rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)
             result
           end
 
@@ -471,7 +485,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  def rollup_part_attempt_evaluations(activity_attempt_guid) do
+  def rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode) do
     # find the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
@@ -481,11 +495,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
 
+    {score, out_of} =
+      case normalize_mode do
+        :do_not_normalize -> {score, out_of}
+        _ -> {normalize_to_one(score, out_of), 1.0}
+      end
+
     update_activity_attempt(activity_attempt, %{
       score: score,
       out_of: out_of,
       date_evaluated: DateTime.utc_now()
     })
+  end
+
+  defp normalize_to_one(score, out_of) do
+    case out_of do
+      0 -> 0
+      _ -> score / out_of
+    end
   end
 
   # Evaluate a list of part_input submissions for a matching list of part_attempt records

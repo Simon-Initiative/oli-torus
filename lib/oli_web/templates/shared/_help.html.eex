@@ -41,22 +41,7 @@
                 <div class="form-group mb-3">
                   <%= label f, :subject, "Subject:", class: "control-label" %>
                   <%= select f, :subject,
-                      ["- - - - - - - - -": [
-                      [value: "help_credit", key: "How can I get credit for an OLI course?"],
-                      [value: "help_course_key", key: "Where do I find my course key?"],
-                      [value: "help_charge", key: "My credit card was charged (multiple times, possibly) and I still cannot access my course"],
-                      [value: "help_lbd", key: "The Learn By Doing or Did I Get This? Exercises don't work properly"],
-                      [value: "help_server", key: "The server timed out or I received an unknown error"]
-                      ],
-                      "- - - - - - - - -": [
-                      [value: "help_tech", key: "Technical support"],
-                      [value: "help_course_content", key: "Course content"],
-                      [value: "help_course_feedback", key: "Feedback about a course or OLI"]
-                      ],
-                      "- - - - - - - - -": [
-                      [value: "help_other", key: "Other questions or comments"]
-                      ]
-                      ],
+                      Enum.map(Oli.Help.HelpContent.list_subjects(), fn {key, desc} -> [value: key, key: desc] end),
                       prompt: "Select from the list of topics provided.",
                       class: "form-control" <> error_class(f, :message, "is-invalid"),
                       required: true %>
@@ -128,7 +113,6 @@
                 successElement.innerHTML = json.info;
                 successElement.classList.remove('d-none');
                 successElement.classList.add('d-block');
-                helpForm.classList.add('d-none');
                 const errorElement = document.getElementById('help-error-message');
                 errorElement.classList.remove('d-block');
                 errorElement.classList.add('d-none');

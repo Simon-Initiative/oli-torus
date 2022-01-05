@@ -84,7 +84,7 @@ defmodule OliWeb.Delivery.RemixSection do
       |> Repo.preload(:institution)
 
     available_publications =
-      Publishing.available_publications(current_user.author, section.institution)
+      Publishing.retrieve_visible_publications(current_user, section.institution)
 
     # only permit instructor or admin level access
 
@@ -122,7 +122,7 @@ defmodule OliWeb.Delivery.RemixSection do
         section,
         _session
       ) do
-    redirect_after_save = Routes.open_and_free_path(OliWeb.Endpoint, :show, section)
+    redirect_after_save = OliWeb.OpenAndFreeView.get_path([:admin, :show, section])
 
     # only permit authoring admin level access
 
@@ -488,17 +488,31 @@ defmodule OliWeb.Delivery.RemixSection do
 
   def handle_event(
         "HierarchyPicker.select",
-        %{"publication_id" => publication_id, "resource_id" => resource_id},
+        %{"uuid" => uuid},
         socket
       ) do
-    %{modal: %{assigns: %{selection: selection}} = modal} = socket.assigns
+    %{
+      modal:
+        %{
+          assigns: %{
+            selection: selection,
+            hierarchy: hierarchy,
+            selected_publication: publication
+          }
+        } = modal
+    } = socket.assigns
+
+    item = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
     modal = %{
       modal
       | assigns: %{
           modal.assigns
           | selection:
-              xor(selection, {String.to_integer(publication_id), String.to_integer(resource_id)})
+              xor(
+                selection,
+                {publication.id, item.revision.resource_id}
+              )
         }
     }
 

@@ -10,7 +10,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Lti_1p3.DataProviders.EctoProvider.Deployment
+  alias Oli.Lti_1p3.Tool.Deployment
   alias Oli.Lti_1p3.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
@@ -133,6 +133,13 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Can a user create independent, enrollable sections through OLI's LMS?
+  """
+  def is_independent_instructor?(%User{} = user) do
+    user.can_create_sections
+  end
+
+  @doc """
   Determines if a user is an administrator in a given section.
   """
   def is_admin?(nil, _) do
@@ -179,6 +186,47 @@ defmodule Oli.Delivery.Sections do
     |> Enrollment.changeset(%{section_id: section_id})
     |> Ecto.Changeset.put_assoc(:context_roles, context_roles)
     |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Unenrolls a user from a section by removing the provided context roles. If no context roles are provided, no change is made. If all context roles are removed from the user, the enrollment is deleted.
+
+  To unenroll a student, use unenrolle_learner/2
+  """
+  def unenroll(user_id, section_id, context_roles) do
+    context_roles = EctoProvider.Marshaler.to(context_roles)
+
+    case Repo.one(
+           from(e in Enrollment,
+             preload: [:context_roles],
+             where: e.user_id == ^user_id and e.section_id == ^section_id,
+             select: e
+           )
+         ) do
+      nil ->
+        # Enrollment not found
+        {:error, nil}
+
+      enrollment ->
+        other_context_roles =
+          Enum.filter(enrollment.context_roles, &(!Enum.member?(context_roles, &1)))
+
+        if Enum.count(other_context_roles) == 0 do
+          Repo.delete(enrollment)
+        else
+          enrollment
+          |> Enrollment.changeset(%{section_id: section_id})
+          |> Ecto.Changeset.put_assoc(:context_roles, other_context_roles)
+          |> Repo.update()
+        end
+    end
+  end
+
+  @doc """
+  Unenrolls a student from a section by removing the :context_learner role. If this is their only context_role, the enrollment is deleted.
+  """
+  def unenroll_learner(user_id, section_id) do
+    unenroll(user_id, section_id, [ContextRoles.get_role(:context_learner)])
   end
 
   @doc """
@@ -358,11 +406,12 @@ defmodule Oli.Delivery.Sections do
       left_join: b in assoc(s, :brand),
       left_join: d in assoc(s, :lti_1p3_deployment),
       left_join: r in assoc(d, :registration),
-      left_join: rb in assoc(r, :brand),
+      left_join: i in assoc(d, :institution),
+      left_join: default_brand in assoc(i, :default_brand),
       where: s.slug == ^slug,
       preload: [
         brand: b,
-        lti_1p3_deployment: {d, registration: {r, brand: rb}}
+        lti_1p3_deployment: {d, institution: {i, default_brand: default_brand}}
       ]
     )
     |> Repo.one()
@@ -386,7 +435,7 @@ defmodule Oli.Delivery.Sections do
     client_id = lti_params["aud"]
 
     Repo.all(
-      from s in Section,
+      from(s in Section,
         join: d in Deployment,
         on: s.lti_1p3_deployment_id == d.id,
         join: r in Registration,
@@ -397,6 +446,7 @@ defmodule Oli.Delivery.Sections do
         order_by: [asc: :id],
         limit: 1,
         select: s
+      )
     )
     |> one_or_warn(context_id)
   end
@@ -429,11 +479,12 @@ defmodule Oli.Delivery.Sections do
         lti_1p3_deployment_id: lti_1p3_deployment_id
       }) do
     Repo.one(
-      from d in Deployment,
+      from(d in Deployment,
         join: r in Registration,
         on: d.registration_id == r.id,
         where: ^lti_1p3_deployment_id == d.id,
         select: {d, r}
+      )
     )
   end
 
@@ -561,6 +612,14 @@ defmodule Oli.Delivery.Sections do
   """
   def change_section(%Section{} = section, attrs \\ %{}) do
     Section.changeset(section, attrs)
+  end
+
+  def change_independent_learner_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true, requires_enrollment: true}), attrs)
+  end
+
+  def change_open_and_free_section(%Section{} = section, attrs \\ %{}) do
+    change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
   @doc """
@@ -707,40 +766,6 @@ defmodule Oli.Delivery.Sections do
     |> Repo.delete_all()
 
     create_section_resources(section, publication)
-  end
-
-  def retrieve_visible_sources(user, institution) do
-    all =
-      case user.author do
-        nil ->
-          {Oli.Delivery.Sections.Blueprint.available_products(),
-           Publishing.available_publications()}
-
-        author ->
-          {Oli.Delivery.Sections.Blueprint.available_products(author, institution),
-           Publishing.available_publications(author, institution)}
-      end
-      |> then(fn {products, publications} ->
-        filtered =
-          Enum.filter(publications, fn p -> p.published end)
-          |> then(fn publications ->
-            Oli.Delivery.Sections.Blueprint.filter_for_free_projects(
-              products,
-              publications
-            )
-          end)
-
-        filtered ++ products
-      end)
-
-    Enum.sort_by(all, fn a -> get_title(a) end, :asc)
-  end
-
-  defp get_title(pub_or_prod) do
-    case Map.get(pub_or_prod, :title) do
-      nil -> pub_or_prod.project.title
-      title -> title
-    end
   end
 
   @doc """
@@ -1299,4 +1324,66 @@ defmodule Oli.Delivery.Sections do
 
     resource_type_id == container or resource_type_id == page
   end
+
+  @doc """
+  Parses a ISO 8601 formatted local timestamps to DateTimes if they are not empty or nil.
+
+  Returns a tuple containing the start and end datetimes in UTC: {utc_start_date, utc_end_date}
+  """
+  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
+    section_timezone = Timex.Timezone.get(from_timezone)
+    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
+
+    utc_start_date =
+      case start_date do
+        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
+          start_date
+
+        start_date ->
+          start_date
+          |> Timex.parse!("{ISO:Extended}")
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    utc_end_date =
+      case end_date do
+        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
+          end_date
+
+        end_date ->
+          end_date
+          |> Timex.parse!("{ISO:Extended}")
+          |> Timex.to_datetime(section_timezone)
+          |> Timex.Timezone.convert(utc_timezone)
+      end
+
+    {utc_start_date, utc_end_date}
+  end
+
+  @doc """
+  Converts a section's start_date and end_date to the gievn timezone's local datetimes
+  """
+  def localize_section_start_end_datetimes(
+         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+       ) do
+    timezone = Timex.Timezone.get(timezone, Timex.now())
+
+    start_date =
+      case start_date do
+        start_date when start_date == nil or start_date == "" -> start_date
+        start_date -> Timex.Timezone.convert(start_date, timezone)
+      end
+
+    end_date =
+      case end_date do
+        end_date when end_date == nil or end_date == "" -> end_date
+        end_date -> Timex.Timezone.convert(end_date, timezone)
+      end
+
+    section
+    |> Map.put(:start_date, start_date)
+    |> Map.put(:end_date, end_date)
+  end
+
 end

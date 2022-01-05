@@ -5,15 +5,16 @@ defmodule OliWeb.CommunityLive.ShowView do
   alias Oli.Accounts
   alias Oli.Accounts.{AuthorBrowseOptions, UserBrowseOptions}
   alias Oli.Groups
+  alias Oli.Institutions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, DeleteModal}
+  alias OliWeb.Common.{Breadcrumb, DeleteModal, Params}
   alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
   alias Surface.Components.Link
 
   alias OliWeb.CommunityLive.{
     Form,
     IndexView,
-    AccountInvitation,
+    Invitation,
     ShowSection,
     MembersIndexView
   }
@@ -28,7 +29,8 @@ defmodule OliWeb.CommunityLive.ShowView do
   data modal, :any, default: nil
   data community_admins, :list
   data community_members, :list
-  data matches, :map, default: %{"admin" => [], "member" => []}
+  data community_institutions, :list
+  data matches, :map, default: %{"admin" => [], "member" => [], "institution" => []}
 
   @delete_modal_description """
     This action will not affect existing course sections that are using this community.
@@ -46,7 +48,7 @@ defmodule OliWeb.CommunityLive.ShowView do
       ]
   end
 
-  def mount(%{"community_id" => community_id}, _session, socket) do
+  def mount(%{"community_id" => community_id}, %{"is_system_admin" => is_system_admin}, socket) do
     socket =
       case Groups.get_community(community_id) do
         nil ->
@@ -58,6 +60,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           changeset = Groups.change_community(community)
           community_admins = Groups.list_community_admins(community_id)
           community_members = Groups.list_community_members(community_id, 3)
+          community_institutions = Groups.list_community_institutions(community_id)
 
           assign(socket,
             community: community,
@@ -65,7 +68,9 @@ defmodule OliWeb.CommunityLive.ShowView do
             breadcrumbs: breadcrumb(community_id),
             community_admins: community_admins,
             community_id: community_id,
-            community_members: community_members
+            community_members: community_members,
+            community_institutions: community_institutions,
+            is_system_admin: is_system_admin
           )
       end
 
@@ -87,7 +92,7 @@ defmodule OliWeb.CommunityLive.ShowView do
           section_title="Community Admins"
           section_description="Add other authors by email to administrate the community."
         >
-          <AccountInvitation
+          <Invitation
             list_id="admin_matches"
             invite="add_admin"
             remove="remove_admin"
@@ -95,14 +100,15 @@ defmodule OliWeb.CommunityLive.ShowView do
             matches={@matches["admin"]}
             placeholder="admin@example.edu"
             button_text="Add"
-            collaborators={@community_admins}/>
+            collaborators={@community_admins}
+            allow_removal={@is_system_admin}/>
         </ShowSection>
 
         <ShowSection
           section_title="Community Members"
           section_description="Add users by email as members of the community. Only showing the last 3 additions here."
         >
-          <AccountInvitation
+          <Invitation
             list_id="member_matches"
             invite="add_member"
             remove="remove_member"
@@ -126,6 +132,24 @@ defmodule OliWeb.CommunityLive.ShowView do
           </Link>
         </ShowSection>
 
+        <ShowSection
+        section_title="Institutions"
+        section_description="Add institutions to be part of the community."
+        >
+          <Invitation
+            list_id="institution_matches"
+            to_invite={:institution}
+            search_field={:name}
+            invite="add_institution"
+            remove="remove_institution"
+            suggest="suggest_institution"
+            matches={@matches["institution"]}
+            main_fields={[primary: :name, secondary: :institution_email]}
+            placeholder="Institution name"
+            button_text="Add"
+            collaborators={@community_institutions}/>
+        </ShowSection>
+
         <ShowSection section_title="Actions">
           <div class="d-flex align-items-center">
             <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
@@ -137,7 +161,9 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def handle_event("save", %{"community" => params}, socket) do
-    case Groups.update_community(socket.assigns.community, params) do
+    socket = clear_flash(socket)
+
+    case Groups.update_community(socket.assigns.community, Params.trim(params)) do
       {:ok, community} ->
         socket = put_flash(socket, :info, "Community successfully updated.")
 
@@ -157,6 +183,8 @@ defmodule OliWeb.CommunityLive.ShowView do
   end
 
   def handle_event("delete", _params, socket) do
+    socket = clear_flash(socket)
+
     socket =
       case Groups.delete_community(socket.assigns.community) do
         {:ok, _community} ->
@@ -215,27 +243,73 @@ defmodule OliWeb.CommunityLive.ShowView do
       is_admin: user_type == "admin"
     }
 
-    case Groups.create_community_account_from_email(user_type, email, attrs) do
-      {:ok, _community_account} ->
-        socket = put_flash(socket, :info, "Community #{user_type} successfully added.")
-        updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
+    emails =
+      email
+      |> String.split(",")
+      |> Enum.map(&String.trim(&1))
 
-        {:noreply, assign(socket, updated_assigns)}
+    socket =
+      case Groups.create_community_accounts_from_emails(user_type, emails, attrs) do
+        {:ok, _community_accounts} ->
+          put_flash(socket, :info, "Community #{user_type}(s) successfully added.")
 
-      {:error, error} ->
-        message =
-          case error do
-            :author_not_found ->
-              "Community admin couldn't be added. Author does not exist."
+        {:error, _error} ->
+          message =
+            "Some of the community #{user_type}s couldn't be added because the users don't exist in the system or are already associated."
 
-            :user_not_found ->
-              "Community member couldn't be added. User does not exist."
+          put_flash(socket, :error, message)
+      end
 
-            %Ecto.Changeset{} ->
-              "Community user couldn't be added. It is already associated to the community or an unexpected error occurred."
-          end
+    updated_assigns = community_accounts_assigns(user_type, attrs.community_id)
 
-        {:noreply, put_flash(socket, :error, message)}
+    {:noreply, assign(socket, updated_assigns)}
+  end
+
+  def handle_event("add_institution", %{"institution" => %{"name" => name}}, socket) do
+    socket = clear_flash(socket)
+    community_id = socket.assigns.community.id
+
+    names =
+      name
+      |> String.split(",")
+      |> Enum.map(&String.trim(&1))
+
+    socket =
+      case Groups.create_community_institutions_from_names(names, %{
+             community_id: community_id
+           }) do
+        {:ok, _community_institutions} ->
+          put_flash(socket, :info, "Community institution(s) successfully added.")
+
+        {:error, _error} ->
+          message =
+            "Some of the community institutions couldn't be added because the institutions don't exist in the system or are already associated."
+
+          put_flash(socket, :error, message)
+      end
+
+    {:noreply,
+     assign(socket, community_institutions: Groups.list_community_institutions(community_id))}
+  end
+
+  def handle_event("remove_institution", %{"collaborator-id" => institution_id}, socket) do
+    socket = clear_flash(socket)
+    community_id = socket.assigns.community.id
+
+    attrs = %{
+      community_id: community_id,
+      institution_id: institution_id
+    }
+
+    case Groups.delete_community_institution(attrs) do
+      {:ok, _community_institution} ->
+        socket = put_flash(socket, :info, "Community institution successfully removed.")
+
+        {:noreply,
+         assign(socket, community_institutions: Groups.list_community_institutions(community_id))}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Community institution couldn't be removed.")}
     end
   end
 
@@ -267,6 +341,17 @@ defmodule OliWeb.CommunityLive.ShowView do
 
   def handle_event("suggest_" <> user_type, %{"collaborator" => %{"email" => query}}, socket) do
     matches = Map.put(socket.assigns.matches, user_type, browse_accounts(user_type, query))
+    {:noreply, assign(socket, matches: matches)}
+  end
+
+  def handle_event("suggest_institution", %{"institution" => %{"name" => query}}, socket) do
+    matches =
+      Map.put(
+        socket.assigns.matches,
+        "institution",
+        Institutions.search_institutions_matching(query)
+      )
+
     {:noreply, assign(socket, matches: matches)}
   end
 

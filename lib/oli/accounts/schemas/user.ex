@@ -39,6 +39,7 @@ defmodule Oli.Accounts.User do
     field :research_opt_out, :boolean
     field :state, :map, default: %{}
     field :locked_at, :utc_datetime
+    field :can_create_sections, :boolean, default: false
 
     has_many :user_identities,
              Oli.UserIdentities.UserIdentity,
@@ -104,7 +105,8 @@ defmodule Oli.Accounts.User do
       :research_opt_out,
       :state,
       :locked_at,
-      :email_confirmed_at
+      :email_confirmed_at,
+      :can_create_sections
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
@@ -146,7 +148,8 @@ defmodule Oli.Accounts.User do
       :state,
       :locked_at,
       :email_confirmed_at,
-      :email_confirmation_token
+      :email_confirmation_token,
+      :can_create_sections
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()

@@ -8,6 +8,7 @@ import { InitStateEditor } from './components/AdaptivityEditor/InitStateEditor';
 import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
+import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
@@ -22,6 +23,7 @@ import {
   selectReadOnly,
   selectRevisionSlug,
   selectRightPanel,
+  selectShowDiagnosticsWindow,
   selectTopPanel,
   setInitialConfig,
   setPanelState,
@@ -66,6 +68,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     isAppVisible,
     hasEditingLock,
   }); */
+
+  const showDiagnosticsWindow = useSelector(selectShowDiagnosticsWindow);
 
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
@@ -115,22 +119,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   };
 
   useEffect(() => {
-    const appConfig = {
-      paths: props.paths,
-      isAdmin: props.isAdmin,
-      projectSlug: props.projectSlug,
-      revisionSlug: props.revisionSlug,
-      partComponentTypes: props.partComponentTypes,
-      activityTypes: props.activityTypes,
-    };
-    dispatch(setInitialConfig(appConfig));
-
-    if (props.content) {
-      dispatch(initializeFromContext({ context: props.content, config: appConfig }));
-    }
-  }, [props]);
-
-  useEffect(() => {
     if (isAppVisible) {
       // forced light mode to save on initial dev time
       const darkModeCss: any = document.getElementById('authoring-theme-dark');
@@ -157,6 +145,18 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }, [isAppVisible]);
 
   useEffect(() => {
+    const appConfig = {
+      paths: props.paths,
+      isAdmin: props.isAdmin,
+      projectSlug: props.projectSlug,
+      revisionSlug: props.revisionSlug,
+      partComponentTypes: props.partComponentTypes,
+      activityTypes: props.activityTypes,
+    };
+    dispatch(setInitialConfig(appConfig));
+  }, [props]);
+
+  useEffect(() => {
     window.addEventListener('beforeunload', async () =>
       isFirefox
         ? setTimeout(async () => {
@@ -165,19 +165,37 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
         : await dispatch(releaseEditingLock()),
     );
 
-    setTimeout(() => {
-      if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
+    let initTimeout: any = null;
+    if (hasEditingLock || (isReadOnly && isReadOnlyWarningDismissed)) {
+      initTimeout = setTimeout(() => {
+        if (props.content) {
+          const appConfig = {
+            paths: props.paths,
+            isAdmin: props.isAdmin,
+            projectSlug: props.projectSlug,
+            revisionSlug: props.revisionSlug,
+            partComponentTypes: props.partComponentTypes,
+            activityTypes: props.activityTypes,
+          };
+          dispatch(initializeFromContext({ context: props.content, config: appConfig }));
+        }
         setIsAppVisible(true);
-      }
-    }, 500);
-    setTimeout(() => {
+      }, 500);
+    }
+    const loadingTimeout = setTimeout(() => {
       setIsLoading(false);
     }, 2000);
 
     return () => {
       window.removeEventListener('beforeunload', async () => await dispatch(releaseEditingLock()));
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
     };
-  }, [hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
+  }, [props, hasEditingLock, isReadOnly, isReadOnlyWarningDismissed]);
 
   return (
     <>
@@ -263,6 +281,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
           </div>
         </Alert>
       )}
+
+      {showDiagnosticsWindow && <DiagnosticsWindow />}
     </>
   );
 };

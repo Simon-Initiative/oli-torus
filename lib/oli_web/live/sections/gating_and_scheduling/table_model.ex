@@ -94,10 +94,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
 
     ~F"""
       <div :if={start_datetime}>
-        Start: {dt(start_datetime, local_tz)}
+        Start: {dt(start_datetime, local_tz: local_tz)}
       </div>
       <div :if={end_datetime}>
-        End: {dt(end_datetime, local_tz)}
+        End: {dt(end_datetime, local_tz: local_tz)}
       </div>
     """
   end

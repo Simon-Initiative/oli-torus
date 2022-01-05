@@ -1,70 +1,54 @@
 <div class="container">
-
-  <span>
-    <%= link to: Routes.open_and_free_path(@conn, :index) do %>
-      <i class="las la-arrow-left"></i> Back
-    <% end %>
-  </span>
-
   <h3 class="my-3">
     <%= @section.title %>
-    <%= link "Edit Details", to: Routes.open_and_free_path(@conn, :edit, @section), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
+    <%= link "Edit Details", to: get_path([@route, :edit, @section]), class: "btn btn-sm btn-outline-primary ml-2 float-right" %>
   </h3>
-
   <table class="table">
     <tbody>
       <tr>
         <td><strong>Brand:</strong></td>
         <td>
-          <%= case  @section.brand do %>
+          <%= case @section.brand do %>
             <% nil -> %>
-              <span class="text-secondary font-italic">None</span>
-
+            <span class="text-secondary font-italic">None</span>
             <% brand -> %>
-              <%= brand_logo_html(brand, class: "my-1 d-block") %>
-              <a href="<%= Routes.brand_path(@conn, :show, brand) %>" class="logo-container">
-                <%= brand.name %>
-              </a>
+            <%= brand_logo_html(brand, class: "my-1 d-block") %>
+            <a href="<%= Routes.brand_path(@conn, :show, brand) %>" class="logo-container">
+              <%= brand.name %>
+            </a>
           <% end %>
         </td>
       </tr>
-
       <tr>
         <td><strong>URL:</strong></td>
         <td><%= external_link Routes.page_delivery_url(@conn, :index, @section.slug), to: Routes.page_delivery_url(@conn, :index, @section.slug) %></td>
       </tr>
-
       <tr>
         <td><strong>Start Date:</strong></td>
         <td>
-          <%= case  @section.start_date do %>
+          <%= case @section.start_date do %>
             <% nil -> %>
               <span class="text-secondary font-italic">None</span>
-
             <% start_date -> %>
-              <%= start_date %>
+              <%= dt(start_date, show_timezone: true) %>
           <% end %>
         </td>
       </tr>
-
       <tr>
         <td><strong>End Date:</strong></td>
         <td>
-          <%= case  @section.end_date do %>
+          <%= case @section.end_date do %>
             <% nil -> %>
               <span class="text-secondary font-italic">None</span>
-
             <% end_date -> %>
-              <%= end_date %>
+              <%= dt(end_date, show_timezone: true) %>
           <% end %>
         </td>
       </tr>
-
       <tr>
         <td><strong>Timezone:</strong></td>
         <td><%= @section.timezone %></td>
       </tr>
-
       <tr>
         <td><strong>Registration:</strong></td>
         <td>
@@ -77,17 +61,15 @@
       </tr>
     </tbody>
   </table>
-
   <p class="mb-2">
     <h5>Remix</h5>
     <%= link "Curriculum Remix", to: Routes.open_and_free_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug), class: "btn btn-sm btn-primary" %>
   </p>
-
   <p>
     <h5>Updates</h5>
     <%= live_render(@conn, OliWeb.Delivery.ManageUpdates, session: %{
       "section" => @section,
       "current_author" => @current_author
       }) %>
-    </p>
+  </p>
 </div>

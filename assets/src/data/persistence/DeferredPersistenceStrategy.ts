@@ -124,14 +124,14 @@ export class DeferredPersistenceStrategy extends AbstractPersistenceStrategy {
     return false;
   }
 
-  flushPendingChanges(): boolean {
+  flushPendingChanges(releaseLock = true): boolean {
     if (this.timer !== null) {
       clearTimeout(this.timer);
     }
 
     // Handle the case where we have a pending change
     if (this.pending !== null) {
-      this.pending(true);
+      this.pending(releaseLock);
       return true;
     }
     return false;

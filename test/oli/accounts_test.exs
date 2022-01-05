@@ -19,6 +19,7 @@ defmodule Oli.AccountsTest do
         |> Repo.insert()
 
       assert author.system_role_id == Accounts.SystemRole.role_id().author
+      assert Accounts.is_admin?(author) == false
     end
 
     test "changeset accepts system role change", %{} do
@@ -32,6 +33,8 @@ defmodule Oli.AccountsTest do
         })
         |> Repo.insert()
 
+      assert Accounts.is_admin?(author) == false
+
       {:ok, author} =
         Accounts.insert_or_update_author(%{
           email: author.email,
@@ -39,6 +42,17 @@ defmodule Oli.AccountsTest do
         })
 
       assert author.system_role_id == Accounts.SystemRole.role_id().admin
+      assert Accounts.is_admin?(author) == true
+    end
+
+    test "search_authors_matching/1 returns authors matching the input exactly" do
+      author = insert(:author)
+      assert [author] == Accounts.search_authors_matching(author.email)
+    end
+
+    test "search_authors_matching/1 returns nothing when only matching a prefix" do
+      author = insert(:author)
+      assert [] == Accounts.search_authors_matching(String.slice(author.email, 0..3))
     end
   end
 

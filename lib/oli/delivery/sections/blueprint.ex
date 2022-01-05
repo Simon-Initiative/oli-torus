@@ -86,6 +86,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
     Repo.all(query)
   end
 
+  def available_products(nil, _institution), do: available_products()
+
   def available_products() do
     query =
       from section in Section,
@@ -146,6 +148,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "requires_payment" => false,
             "registration_open" => false,
             "timezone" => "America/New_York",
+            "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00")
           }
 
@@ -352,7 +355,9 @@ defmodule Oli.Delivery.Sections.Blueprint do
       on:
         section.id ==
           community_visibility.section_id and community_visibility.community_id == ^community_id,
-      where: is_nil(community_visibility.id),
+      where:
+        is_nil(community_visibility.id) and section.type == :blueprint and
+          section.status == :active,
       select: section
     )
     |> Repo.all()

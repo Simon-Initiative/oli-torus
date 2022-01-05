@@ -39,6 +39,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
     width,
     multipleSelection,
     mcqItems,
+    verticalGap,
     customCssClass,
     layoutType,
     overrideHeight = false,
@@ -268,7 +269,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
           <style>
             {`
           .mcq-input>div {
-            margin: 1px 6px 10px 0 !important;
+            margin: 1px 6px 10px 0;
             display: block;
             position: static !important;
             min-height: 20px;
@@ -295,6 +296,7 @@ const McqAuthor: React.FC<AuthorPartComponentProps<McqModel>> = (props) => {
               {...item}
               x={0}
               y={0}
+              verticalGap={verticalGap}
               overrideHeight={overrideHeight}
               disabled={false}
               multipleSelection={multipleSelection}

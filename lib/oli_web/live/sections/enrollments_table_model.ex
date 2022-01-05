@@ -10,7 +10,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     """
   end
 
-  def new(users, section) do
+  def new(users, section, local_tz) do
     base_columns = [
       %ColumnSpec{name: :name, label: "Name", render_fn: &__MODULE__.render_name_column/3},
       %ColumnSpec{
@@ -21,7 +21,12 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
       %ColumnSpec{
         name: :enrollment_date,
         label: "Enrolled On",
-        render_fn: &OliWeb.Common.Table.Common.render_short_date/3
+        render_fn: &OliWeb.Common.Table.Common.render_date/3
+      },
+      %ColumnSpec{
+        name: :unenroll,
+        label: "Unenroll",
+        render_fn: &__MODULE__.render_unenroll_column/3
       }
     ]
 
@@ -32,7 +37,7 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
             %ColumnSpec{
               name: :payment_date,
               label: "Paid On",
-              render_fn: &OliWeb.Common.Table.Common.render_short_date/3
+              render_fn: &OliWeb.Common.Table.Common.render_date/3
             }
           ]
       else
@@ -44,7 +49,10 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
         rows: users,
         column_specs: column_specs,
         event_suffix: "",
-        id_field: [:id]
+        id_field: [:id],
+        data: %{
+          local_tz: local_tz
+        }
       )
 
     {:ok, Map.put(model, :data, %{section_slug: section.slug})}
@@ -64,6 +72,14 @@ defmodule OliWeb.Delivery.Sections.EnrollmentsTableModel do
     <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, assigns.section_slug, id)}>
       {name(name, given_name, family_name)}
     </a>
+    """
+  end
+
+  def render_unenroll_column(assigns, user, _) do
+    ~F"""
+    <button class="btn btn-outline-danger" phx-click="unenroll" phx-value-id={user.id}>
+      Unenroll
+    </button>
     """
   end
 end

@@ -6,6 +6,7 @@ import {
   setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
+import { addPart } from 'apps/authoring/store/parts/actions/addPart';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
@@ -36,22 +37,10 @@ const AddComponentToolbar: React.FC = () => {
   const addPartToCurrentScreen = (newPartData: any) => {
     if (currentActivityTree) {
       const [currentActivity] = currentActivityTree.slice(-1);
-      const clonedActivity = clone(currentActivity);
-      const sequenceEntry = findInSequenceByResourceId(currentSequence, currentActivity.resourceId);
-      const partIdentifier = {
-        id: newPartData.id,
-        type: newPartData.type,
-        owner: sequenceEntry?.custom?.sequenceId || '',
-        inherited: false,
-        // objectives: [],
-      };
-      clonedActivity.authoring.parts.push(partIdentifier);
-      clonedActivity.content.partsLayout.push(newPartData);
-
-      /* console.log('adding new part', { newPartData, clonedActivity, currentSequence }); */
-      dispatch(saveActivity({ activity: clonedActivity }));
+      dispatch(addPart({ activityId: currentActivity.id, newPartData }));
     }
   };
+
   const handleAddComponent = useCallback(
     (partComponentType: string) => {
       setShowPartsMenu(false);

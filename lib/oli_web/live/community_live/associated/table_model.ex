@@ -37,7 +37,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_date_column/3
+          render_fn: &SortableTableModel.render_inserted_at_column/3
         },
         %ColumnSpec{
           name: :action,

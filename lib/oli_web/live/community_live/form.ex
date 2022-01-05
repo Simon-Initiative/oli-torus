@@ -15,7 +15,7 @@ defmodule OliWeb.CommunityLive.Form do
         {#if @display_labels}
           <Label class="control-label">Community Name</Label>
         {/if}
-        <TextInput class="form-control" opts={placeholder: "Name"}/>
+        <TextInput class="form-control" opts={placeholder: "Name", maxlength: "255"}/>
         <ErrorTag/>
       </Field>
 
@@ -30,7 +30,8 @@ defmodule OliWeb.CommunityLive.Form do
         {#if @display_labels}
           <Label class="control-label">Community Contact</Label>
         {/if}
-        <TextInput class="form-control" opts={placeholder: "Key Contact"}/>
+        <TextInput class="form-control" opts={placeholder: "Key Contact", maxlength: "255"}/>
+        <ErrorTag/>
       </Field>
 
       <Field name={:global_access} class="form-check">

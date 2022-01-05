@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { CapiVariableTypes } from 'adaptivity/capi';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
@@ -28,7 +29,6 @@ import { setInitStateFacts, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
-  selectEnableHistory,
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -45,7 +45,6 @@ export const initializeActivity = createAsyncThunk(
   async (activityId: ResourceId, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
-    const enableHistory = selectEnableHistory(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
@@ -56,6 +55,38 @@ export const initializeActivity = createAsyncThunk(
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
+
+    /* console.log('CAT', { currentActivityTree, currentActivity }); */
+    // bind all parent parts to current activity
+    if (currentActivityTree && currentActivityTree?.length > 1) {
+      const syncOps: ApplyStateOperation[] = [];
+      for (let i = 0; i < currentActivityTree.length - 1; i++) {
+        const ancestor = currentActivityTree[i];
+        for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
+          const part = ancestor.content.partsLayout[p];
+          // get the adaptivity variables for the part
+          const Klass = customElements.get(part.type);
+          if (Klass) {
+            const instance = new Klass() as any;
+            if (instance.getAdaptivitySchema) {
+              const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
+              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              for (const key in variables) {
+                const target = `${currentSequenceId}|stage.${part.id}.${key}`;
+                const operator = 'bind to';
+                const value = `${ancestor.id}|stage.${part.id}.${key}`;
+                const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
+                syncOps.push(op);
+              }
+            }
+          }
+        }
+      }
+      /* console.log('SYNC OPS', syncOps); */
+      if (syncOps.length > 0) {
+        await bulkApplyState(syncOps);
+      }
+    }
 
     const resumeTarget: ApplyStateOperation = {
       target: `session.resume`,
@@ -77,16 +108,16 @@ export const initializeActivity = createAsyncThunk(
       operator: '=',
       value: false,
     };
-    const currentAttempNumber = 1;
+    const currentAttemptNumber = 1;
     const attemptNumberOp: ApplyStateOperation = {
       target: 'session.attemptNumber',
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const targettedAttemptNumberOp: ApplyStateOperation = {
       target: `${currentSequenceId}|session.attemptNumber`,
       operator: '=',
-      value: currentAttempNumber,
+      value: currentAttemptNumber,
     };
     const tutorialScoreOp: ApplyStateOperation = {
       target: 'session.tutorialScore',
@@ -130,9 +161,9 @@ export const initializeActivity = createAsyncThunk(
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
-    const arrInitFacts: string[] = [];
+    const arrInitFacts: Record<string, string> = {};
     const globalizedInitState = initState.map((s: any) => {
-      arrInitFacts.push(`${s.target}`);
+      arrInitFacts[s.target] = s.type;
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
       }
@@ -140,6 +171,9 @@ export const initializeActivity = createAsyncThunk(
       const ownerActivity = currentActivityTree?.find(
         (activity) => !!activity.content.partsLayout.find((p: any) => p.id === targetPart),
       );
+      if (s.type === CapiVariableTypes.MATH_EXPR) {
+        return { ...s, target: `${ownerActivity.id}|${s.target}` };
+      }
       const modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
@@ -147,6 +181,7 @@ export const initializeActivity = createAsyncThunk(
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
+    console.log({ initState, globalizedInitState });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);

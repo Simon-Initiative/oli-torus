@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.17.0",
+      version: "0.18.3",
       elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -93,8 +93,8 @@ defmodule Oli.MixProject do
       {:jason, "~> 1.0"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.3.2"},
-      {:lti_1p3_ecto_provider, "~> 0.2.2"},
+      {:lti_1p3, "~> 0.3.3"},
+      {:lti_1p3_ecto_provider, "~> 0.2.3"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: :test},

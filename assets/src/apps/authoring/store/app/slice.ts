@@ -50,6 +50,7 @@ export interface AppState {
   activityTypes: ActivityRegistration[];
   copiedPart: any | null;
   readonly: boolean;
+  showDiagnosticsWindow: boolean;
 }
 
 const initialState: AppState = {
@@ -69,6 +70,7 @@ const initialState: AppState = {
   activityTypes: [],
   copiedPart: null,
   readonly: true,
+  showDiagnosticsWindow: false,
 };
 
 export interface AppConfig {
@@ -130,6 +132,9 @@ const slice: Slice<AppState> = createSlice({
     setReadonly(state, action: PayloadAction<{ readonly: boolean }>) {
       state.readonly = action.payload.readonly;
     },
+    setShowDiagnosticsWindow(state, action: PayloadAction<{ show: boolean }>) {
+      state.showDiagnosticsWindow = action.payload.show;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
@@ -165,6 +170,7 @@ export const {
   setCurrentRule,
   setCopiedPart,
   setReadonly,
+  setShowDiagnosticsWindow,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -212,5 +218,10 @@ export const selectActivityTypes = createSelector(
 );
 
 export const selectReadOnly = createSelector(selectState, (state: AppState) => state.readonly);
+
+export const selectShowDiagnosticsWindow = createSelector(
+  selectState,
+  (state: AppState) => state.showDiagnosticsWindow,
+);
 
 export default slice.reducer;

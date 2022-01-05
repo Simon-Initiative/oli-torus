@@ -11,10 +11,12 @@
                     <tr>
                         <td style="padding: 20px; text-align: left; font-family: sans-serif; font-size: 12px; line-height: 20px; color: #2d3436;">
                             <p style="margin: 0;">
-                            The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
-                            As a leader in higher education's innovation of online learning, we're a growing research and production project exploring effective approaches since the early 2000s.
+                            <%= Oli.VendorProperties.product_description() %>
                             <br><br>
-                            To learn more about our platform and learning engineering, visit <a href="https://oli.cmu.edu" style="color: #2c66c4">oli.cmu.edu</a>
+                            To learn more about our platform visit
+                            <a href="<%= Oli.VendorProperties.product_learn_more_link() %>" style="color: #2c66c4">
+                              <%= Oli.VendorProperties.product_learn_more_link() %>
+                            </a>
                             </p>
                         </td>
                     </tr>

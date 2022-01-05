@@ -18,6 +18,7 @@ defmodule OliWeb.LayoutView do
   alias Oli.Accounts
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+  alias Oli.Delivery.Sections
 
   def container_slug(assigns) do
     if assigns[:container] do

@@ -3,17 +3,19 @@ defmodule Oli.Lti_1p3.Tool.Registration do
   import Ecto.Changeset
 
   schema "lti_1p3_registrations" do
-    field :issuer, :string
-    field :client_id, :string
-    field :key_set_url, :string
-    field :auth_token_url, :string
-    field :auth_login_url, :string
-    field :auth_server, :string
+    field(:issuer, :string)
+    field(:client_id, :string)
+    field(:key_set_url, :string)
+    field(:auth_token_url, :string)
+    field(:auth_login_url, :string)
+    field(:auth_server, :string)
 
-    has_many :deployments, Lti_1p3.DataProviders.EctoProvider.Deployment
-    belongs_to :tool_jwk, Lti_1p3.DataProviders.EctoProvider.Jwk, foreign_key: :tool_jwk_id
-    belongs_to :institution, Oli.Institutions.Institution
-    belongs_to :brand, Oli.Branding.Brand
+    belongs_to(:tool_jwk, Lti_1p3.DataProviders.EctoProvider.Jwk, foreign_key: :tool_jwk_id)
+
+    has_many(:deployments, Oli.Lti_1p3.Tool.Deployment)
+
+    field :deployments_count, :integer, virtual: true
+    field :total_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end
@@ -28,9 +30,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
       :auth_token_url,
       :auth_login_url,
       :auth_server,
-      :tool_jwk_id,
-      :institution_id,
-      :brand_id
+      :tool_jwk_id
     ])
     |> validate_required([
       :issuer,
@@ -39,8 +39,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
       :auth_token_url,
       :auth_login_url,
       :auth_server,
-      :tool_jwk_id,
-      :institution_id
+      :tool_jwk_id
     ])
   end
 end

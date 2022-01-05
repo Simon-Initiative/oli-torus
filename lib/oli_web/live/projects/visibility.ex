@@ -43,21 +43,21 @@ defmodule OliWeb.Projects.VisibilityLive do
                   <p>Project authors</p>
                   <span class="ml-2 badge badge-pill badge-light">default</span>
                 </div>
-                <small>Only instructors who are collaborators and have linked their accounts</small>
+                <small>Only instructors with linked authoring accounts that are project collaborators</small>
               <% end %>
             </div>
             <div class="form-group">
               <%= label class: "form-check-label" do %>
                 <%= radio_button :visibility, :option, "global", class: "form-check-input", checked: @project.visibility == :global %>
                 <p>Open</p>
-                <small>Any instructor who has linked their account</small>
+                <small>Any instructor</small>
               <% end %>
             </div>
             <div class="form-group">
               <%= label class: "form-check-label" do %>
                 <%= radio_button :visibility, :option, "selected", class: "form-check-input", checked:  @project.visibility == :selected %>
                 <p>Restricted</p>
-                <small>Only these instructors or institutions...</small>
+                <small>Only instructors with these linked authoring accounts or from these institutions...</small>
               <% end %>
             </div>
           </div>
@@ -68,7 +68,7 @@ defmodule OliWeb.Projects.VisibilityLive do
               <ul class="nav nav-tabs">
                 <li class="nav-item">
                   <a phx-click="users_tab" class="nav-link <%= if  @tab == :users, do: "active" %>"
-                                        data-toggle="tab" href="#users">Users</a>
+                                        data-toggle="tab" href="#users">Authors</a>
                 </li>
                 <li class="nav-item">
                   <a phx-click="institutions_tab" class="nav-link <%= if  @tab == :institutions, do: "active" %>"
@@ -80,9 +80,9 @@ defmodule OliWeb.Projects.VisibilityLive do
                 <div id="users" class="container tab-pane pl-0 <%= if  @tab == :users, do: "active", else: "fade" %>">
                   <div>
                     <form phx-change="search" class="form-inline form-grow">
-                      <%= text_input :search_field, :query, placeholder: "Search for users by email here",
+                      <%= text_input :search_field, :query, placeholder: "Enter an author email here",
                                     class: "form-control form-control-sm mb-2 mb-sm-0 title container-fluid flex-fill",
-                                    autofocus: true, "phx-debounce": "300" %>
+                                    autofocus: true, "phx-debounce": "300", autocomplete: "off" %>
                       <%= hidden_input :search_field, :entity, value: "instructors" %>
                     </form>
                   </div>

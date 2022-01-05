@@ -47,7 +47,7 @@ defmodule OliWeb.Products.PaymentsView do
     Routes.live_path(socket, OliWeb.Products.PaymentsView, socket.assigns.product_slug, params)
   end
 
-  def mount(%{"product_id" => product_slug}, _, socket) do
+  def mount(%{"product_id" => product_slug}, session, socket) do
     payments =
       Oli.Delivery.Paywall.list_payments(product_slug)
       |> Enum.map(fn element ->
@@ -65,7 +65,9 @@ defmodule OliWeb.Products.PaymentsView do
 
     total_count = length(payments)
 
-    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments)
+    local_tz = Map.get(session, :local_tz)
+
+    {:ok, table_model} = OliWeb.Products.Payments.TableModel.new(payments, local_tz)
 
     {:ok,
      assign(socket,

@@ -11,6 +11,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
+  use OliWeb.Common.Modal
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -50,17 +51,10 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        enrollments =
-          Sections.browse_enrollments(
-            section,
-            %Paging{offset: 0, limit: @limit},
-            %Sorting{direction: :asc, field: :name},
-            @default_options
-          )
+        local_tz = Map.get(session, :local_tz)
 
-        total_count = determine_total(enrollments)
-
-        {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section)
+        %{total_count: total_count, table_model: table_model} =
+          enrollment_assigns(section, local_tz)
 
         {:ok,
          assign(socket,
@@ -69,7 +63,9 @@ defmodule OliWeb.Sections.EnrollmentsView do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           options: @default_options
+           options: @default_options,
+           modal: nil,
+           local_tz: local_tz
          )}
     end
   end
@@ -119,6 +115,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   def render(assigns) do
     ~F"""
     <div>
+
       <TextSearch id="text-search"/>
 
       <div class="mb-3"/>
@@ -155,11 +152,41 @@ defmodule OliWeb.Sections.EnrollmentsView do
      )}
   end
 
+  def handle_event("unenroll", %{"id" => user_id}, socket) do
+    %{section: section, local_tz: local_tz} = socket.assigns
+
+    case Sections.unenroll_learner(user_id, section.id) do
+      {:ok, _} ->
+        %{total_count: total_count, table_model: table_model} =
+          enrollment_assigns(section, local_tz)
+
+        {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
+
+      _ ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  def enrollment_assigns(section, local_tz) do
+    enrollments =
+      Sections.browse_enrollments(
+        section,
+        %Paging{offset: 0, limit: @limit},
+        %Sorting{direction: :asc, field: :name},
+        @default_options
+      )
+
+    total_count = determine_total(enrollments)
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, local_tz)
+
+    %{total_count: total_count, table_model: table_model}
   end
 end

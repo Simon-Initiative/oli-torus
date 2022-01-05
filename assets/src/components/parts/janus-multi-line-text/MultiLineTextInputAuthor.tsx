@@ -17,6 +17,7 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
     prompt,
     showLabel,
     initValue,
+    fontSize,
     showCharacterCount,
   } = model;
   const wrapperStyles: CSSProperties = {
@@ -26,6 +27,7 @@ const MultiLineTextInputAuthor: React.FC<AuthorPartComponentProps<MultiLineTextM
     width,
     height,
     resize: 'none',
+    fontSize,
   };
 
   useEffect(() => {
