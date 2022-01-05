@@ -67,14 +67,17 @@ defmodule OliWeb.Grades.GradebookTableModel do
     end
   end
 
-  defp show_score(assigns, row, resource_id, %ResourceAccess{
-         score: score,
-         out_of: out_of,
-         last_successful_grade_update_id: last_successful_grade_update_id,
-         last_grade_update_id: last_grade_update_id
-       }) do
+  defp show_score(
+         assigns,
+         row,
+         resource_id,
+         %ResourceAccess{
+           score: score,
+           out_of: out_of
+         } = resource_access
+       ) do
     link_type =
-      if !is_nil(last_grade_update_id) and last_grade_update_id != last_successful_grade_update_id do
+      if ResourceAccess.last_grade_update_failed?(resource_access) do
         "badge badge-danger"
       else
         "badge badge-light"

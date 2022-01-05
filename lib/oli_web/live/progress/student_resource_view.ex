@@ -16,6 +16,8 @@ defmodule OliWeb.Progress.StudentResourceView do
   data section, :any, default: nil
   data changeset, :any
   data resource_access, :any
+  data last_failed, :any
+
   data revision, :any
   data user, :any
   data is_editing, :boolean, default: false
@@ -65,9 +67,21 @@ defmodule OliWeb.Progress.StudentResourceView do
                section: section,
                resource_access: resource_access,
                revision: revision,
+               last_failed: fetch_last_failed(resource_access),
                user: user
              )}
         end
+    end
+  end
+
+  defp fetch_last_failed(resource_access) do
+    if ResourceAccess.last_grade_update_failed?(resource_access) do
+      Oli.Repo.get(
+        Oli.Delivery.Attempts.Core.LMSGradeUpdate,
+        resource_access.last_grade_update_id
+      )
+    else
+      nil
     end
   end
 
@@ -77,8 +91,11 @@ defmodule OliWeb.Progress.StudentResourceView do
            section_slug,
            user_id
          ) do
-      nil -> nil
-      ra -> Oli.Repo.preload(ra, :resource_attempts)
+      nil ->
+        nil
+
+      ra ->
+        Oli.Repo.preload(ra, :resource_attempts)
     end
   end
 
@@ -132,7 +149,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
           {#if !@section.open_and_free}
             <div class="mb-3"/>
-            <Passback click="passback" grade_sync_result={@grade_sync_result}/>
+            <Passback click="passback" last_failed={@last_failed} resource_access={@resource_access} grade_sync_result={@grade_sync_result}/>
           {/if}
 
       </Group>
@@ -248,7 +265,11 @@ defmodule OliWeb.Progress.StudentResourceView do
       end
 
     {:noreply,
-     assign(socket, resource_access: resource_access, grade_sync_result: grade_sync_result)}
+     assign(socket,
+       resource_access: resource_access,
+       last_failed: fetch_last_failed(resource_access),
+       grade_sync_result: grade_sync_result
+     )}
   end
 
   defp ensure_no_nil(params, key) do

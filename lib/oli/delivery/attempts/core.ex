@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -18,8 +19,59 @@ defmodule Oli.Delivery.Attempts.Core do
     ResourceAccess,
     ResourceAttempt,
     ActivityAttempt,
-    LMSGradeUpdate
+    LMSGradeUpdate,
+    GradeUpdateBrowseOptions
   }
+
+  def browse_lms_grade_updates(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %GradeUpdateBrowseOptions{section_id: section_id} = options
+      ) do
+    by_section = dynamic([_, ra, _], ra.section_id == ^section_id)
+
+    filter_by_user =
+      if is_nil(options.user_id) do
+        true
+      else
+        dynamic([s, _], s.guest == false)
+      end
+
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        text_search = String.trim(options.text_search)
+
+        dynamic(
+          [g, _, u],
+          ilike(g.details, ^"%#{text_search}%") or
+            ilike(g.result, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%")
+        )
+      end
+
+    query =
+      User
+      |> join(:left, [g], ra in ResourceAccess, on: g.resource_access_id == ra.id)
+      |> join(:left, [_, ra], u in Oli.Accounts.User, on: ra.user_id == u.id)
+      |> where(^by_section)
+      |> where(^filter_by_text)
+      |> where(^filter_by_user)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([_, _, u], %{
+        user_email: u.email
+      })
+
+    query =
+      case field do
+        :user_email -> order_by(query, [_, _, u], {^direction, u.email})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @moduledoc """
   Core attempt related functions.

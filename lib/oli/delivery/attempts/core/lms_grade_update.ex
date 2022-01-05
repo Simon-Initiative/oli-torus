@@ -11,6 +11,8 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
 
+    field :user_email, :string, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
