@@ -6,8 +6,13 @@ defmodule OliWeb.LegacyLogsController do
   def process(conn, _params) do
 
     doc = Map.get(conn.assigns, :raw_body)
-    result = doc |> xpath(~x"//*/@external_object_id")
-    IO.inspect result
+    activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
+    action = to_string(xpath(doc, ~x"//*/@action_id"))
+#    IO.inspect activity_attempt_guid
+#    IO.inspect action
+
+    Oli.Delivery.CustomActivityLogs.queue_or_create_activity_log(activity_attempt_guid, action, to_string(doc))
+#    Oli.Delivery.CustomLogs.Worker.perform_now(activity_attempt_guid, action, to_string(doc))
 
     conn
     |> put_resp_content_type("text/xml")

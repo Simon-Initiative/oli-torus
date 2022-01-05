@@ -52,8 +52,8 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   // @ts-ignore
   window.adjustIframeHeight = (i,f) => {
     const iframe = document.querySelector(f);
-    iframe.style.height = (parseInt(i) + 10) + "px";
-    iframe.contentWindow.document.querySelector("html").style.height = (parseInt(i) + 10) + "px";
+    iframe.style.height = (parseInt(i) + 50) + "px";
+    iframe.contentWindow.document.querySelector("html").style.height = (parseInt(i) + 50) + "px";
   }
 
   return (
