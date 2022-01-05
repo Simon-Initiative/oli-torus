@@ -149,7 +149,8 @@ defmodule Oli.Factory do
       institution: insert(:institution),
       base_project: insert(:project),
       slug: sequence("examplesection"),
-      type: :blueprint
+      type: :blueprint,
+      open_and_free: false
     }
   end
 
