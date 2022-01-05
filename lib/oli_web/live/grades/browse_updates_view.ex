@@ -1,26 +1,22 @@
-defmodule OliWeb.Grades.GradebookView do
+defmodule OliWeb.Grades.BrowseUpdatesView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
+  alias Oli.Delivery.Attempts.Core.GradeUpdateBrowseOptions
+  alias Oli.Delivery.Attempts.Core
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Sections
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
-  alias OliWeb.Grades.GradebookTableModel
+  alias OliWeb.Grades.UpdatesTableModel
+  alias OliWeb.Common.SessionContext
 
   @limit 25
-  @default_options %EnrollmentBrowseOptions{
-    is_student: true,
-    is_instructor: false,
-    text_search: nil
-  }
 
   data breadcrumbs, :any
-  data title, :string, default: "Gradebook"
+  data title, :string, default: "LMS Grade Updates"
   data section, :any, default: nil
   data tabel_model, :struct
   data total_count, :integer, default: 0
@@ -37,10 +33,18 @@ defmodule OliWeb.Grades.GradebookView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Gradebook",
+          full_title: "LMS Grade Updates",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
+  end
+
+  defp default_options(section) do
+    %GradeUpdateBrowseOptions{
+      user_id: nil,
+      section_id: section.id,
+      text_search: nil
+    }
   end
 
   def mount(%{"section_slug" => section_slug}, session, socket) do
@@ -49,37 +53,29 @@ defmodule OliWeb.Grades.GradebookView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        enrollments =
-          Sections.browse_enrollments(
-            section,
+        context = SessionContext.init(session)
+
+        options = default_options(section)
+
+        updates =
+          Core.browse_lms_grade_updates(
             %Paging{offset: 0, limit: @limit},
             %Sorting{direction: :asc, field: :name},
-            @default_options
+            options
           )
 
-        total_count = determine_total(enrollments)
+        total_count = determine_total(updates)
 
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-        graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
-
-        resource_accesses = fetch_resource_accesses(enrollments, section)
-
-        {:ok, table_model} =
-          GradebookTableModel.new(enrollments, graded_pages, resource_accesses, section.slug)
+        {:ok, table_model} = UpdatesTableModel.new(updates, context)
 
         {:ok,
          assign(socket,
+           context: context,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,
            table_model: table_model,
-           graded_pages: graded_pages,
-           options: @default_options
+           options: options
          )}
     end
   end
@@ -91,16 +87,6 @@ defmodule OliWeb.Grades.GradebookView do
     end
   end
 
-  defp fetch_resource_accesses(enrollments, section) do
-    # retrieve all graded resource accesses, but only for this slice of students
-    student_ids = Enum.map(enrollments, fn user -> user.id end)
-
-    Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
-      section.slug,
-      student_ids
-    )
-  end
-
   def handle_params(params, _, socket) do
     table_model =
       SortableTableModel.update_from_params(
@@ -110,33 +96,18 @@ defmodule OliWeb.Grades.GradebookView do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %EnrollmentBrowseOptions{
-      text_search: get_param(params, "text_search", ""),
-      is_student: true,
-      is_instructor: false
-    }
+    options = %{socket.assigns.options | text_search: get_param(params, "text_search", "")}
 
-    enrollments =
-      Sections.browse_enrollments(
-        socket.assigns.section,
+    updates =
+      Core.browse_lms_grade_updates(
         %Paging{offset: offset, limit: @limit},
-        # We cannot support sorting by columns other than the user name, so ignore any
-        # attempt to do that
         %Sorting{direction: table_model.sort_order, field: :name},
         options
       )
 
-    resource_accesses = fetch_resource_accesses(enrollments, socket.assigns.section)
+    {:ok, table_model} = UpdatesTableModel.new(updates, socket.assigns.context)
 
-    {:ok, table_model} =
-      GradebookTableModel.new(
-        enrollments,
-        socket.assigns.graded_pages,
-        resource_accesses,
-        socket.assigns.section.slug
-      )
-
-    total_count = determine_total(enrollments)
+    total_count = determine_total(updates)
 
     {:noreply,
      assign(
