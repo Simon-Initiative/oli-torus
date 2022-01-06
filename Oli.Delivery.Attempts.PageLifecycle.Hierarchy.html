@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.18.3">
+    <meta name="project" content="OLI Torus v0.18.4">
 
-    <title>Oli.Delivery.Attempts.PageLifecycle.Hierarchy — OLI Torus v0.18.3</title>
+    <title>Oli.Delivery.Attempts.PageLifecycle.Hierarchy — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-4081b5c960.js"></script>
+    <script src="dist/sidebar_items-2e7071bb70.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.18.3
+        v0.18.4
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Attempts.PageLifecycle.Hierarchy <small class="app-vsn">(OLI Torus v0.18.3)</small>
+Oli.Delivery.Attempts.PageLifecycle.Hierarchy <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -116,7 +116,8 @@ Oli.Delivery.Attempts.PageLifecycle.Hierarchy <small class="app-vsn">(OLI Torus 
 
   </div>
 
-    <div class="summary-synopsis"><p>Creates an attempt hierarchy for a given resource visit context.</p></div>
+    <div class="summary-synopsis"><p>Creates an attempt hierarchy for a given resource visit context, optimized to
+use a constant number of queries relative to the number of activities and parts.</p></div>
 
 </div>
 <div class="summary-row">
@@ -162,7 +163,7 @@ Functions
     </a>
     <h1 class="signature">create(context)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L27" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -172,7 +173,8 @@ Functions
 
   <section class="docstring">
 
-<p>Creates an attempt hierarchy for a given resource visit context.</p><p>Returns {:ok, %AttemptState{}}</p>
+<p>Creates an attempt hierarchy for a given resource visit context, optimized to
+use a constant number of queries relative to the number of activities and parts.</p><p>Returns {:ok, %AttemptState{}}</p>
   </section>
 </section>
 <section class="detail" id="get_latest_attempts/1">
@@ -184,7 +186,7 @@ Functions
     </a>
     <h1 class="signature">get_latest_attempts(resource_attempt_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L146" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L178" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -211,7 +213,7 @@ to their part attempts. As an example:</p><p>%{
     </a>
     <h1 class="signature">get_latest_attempts(resource_attempt_id, activity_ids)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L182" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L214" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

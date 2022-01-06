@@ -5,12 +5,12 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="ExDoc v0.25.2">
-    <meta name="project" content="OLI Torus v0.18.3">
+    <meta name="project" content="OLI Torus v0.18.4">
 
-    <title>Oli.Delivery.Attempts.PageLifecycle.AttemptState — OLI Torus v0.18.3</title>
+    <title>Oli.Delivery.Attempts.PageLifecycle.AttemptState — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-4081b5c960.js"></script>
+    <script src="dist/sidebar_items-2e7071bb70.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -58,7 +58,7 @@
 OLI Torus
       </a>
       <strong class="sidebar-projectVersion">
-        v0.18.3
+        v0.18.4
       </strong>
     </div>
 
@@ -86,7 +86,7 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Delivery.Attempts.PageLifecycle.AttemptState <small class="app-vsn">(OLI Torus v0.18.3)</small>
+Oli.Delivery.Attempts.PageLifecycle.AttemptState <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
           <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/attempt_state.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
@@ -100,10 +100,10 @@ Oli.Delivery.Attempts.PageLifecycle.AttemptState <small class="app-vsn">(OLI Tor
 <p>The complete state of a page attempt</p><p>resource_attempt - The resource attempt record itself</p><p>attempt_hierarchy - The activity attempt and part attempt hierarchy in the form of
 a map of activity resource id to tuples {%ActivityAttempt, part_attempt_map}, where part attempt
 map is a map of part ids to part attempt records.</p><p>A full example of the attempt_hierarchy for two activities each with two parts would
-look like:</p><pre><code class="makeup elixir"><span class="p" data-group-id="8319738645-1">%{</span><span class="w">
-  </span><span class="mi">45</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8319738645-2">{</span><span class="p" data-group-id="8319738645-3">%</span><span class="nc" data-group-id="8319738645-3">ActivityAttempt</span><span class="p" data-group-id="8319738645-3">{</span><span class="p" data-group-id="8319738645-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8319738645-4">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8319738645-5">%</span><span class="nc" data-group-id="8319738645-5">PartAttempt</span><span class="p" data-group-id="8319738645-5">{</span><span class="p" data-group-id="8319738645-5">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="8319738645-6">{</span><span class="p" data-group-id="8319738645-6">}</span><span class="p" data-group-id="8319738645-4">}</span><span class="p" data-group-id="8319738645-2">}</span><span class="p">,</span><span class="w">
-  </span><span class="mi">67</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8319738645-7">{</span><span class="p" data-group-id="8319738645-8">%</span><span class="nc" data-group-id="8319738645-8">ActivityAttempt</span><span class="p" data-group-id="8319738645-8">{</span><span class="p" data-group-id="8319738645-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8319738645-9">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8319738645-10">%</span><span class="nc" data-group-id="8319738645-10">PartAttempt</span><span class="p" data-group-id="8319738645-10">{</span><span class="p" data-group-id="8319738645-10">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="8319738645-11">{</span><span class="p" data-group-id="8319738645-11">}</span><span class="p" data-group-id="8319738645-9">}</span><span class="p" data-group-id="8319738645-7">}</span><span class="w">
-</span><span class="p" data-group-id="8319738645-1">}</span></code></pre>
+look like:</p><pre><code class="makeup elixir"><span class="p" data-group-id="2389126606-1">%{</span><span class="w">
+  </span><span class="mi">45</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2389126606-2">{</span><span class="p" data-group-id="2389126606-3">%</span><span class="nc" data-group-id="2389126606-3">ActivityAttempt</span><span class="p" data-group-id="2389126606-3">{</span><span class="p" data-group-id="2389126606-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2389126606-4">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2389126606-5">%</span><span class="nc" data-group-id="2389126606-5">PartAttempt</span><span class="p" data-group-id="2389126606-5">{</span><span class="p" data-group-id="2389126606-5">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="2389126606-6">{</span><span class="p" data-group-id="2389126606-6">}</span><span class="p" data-group-id="2389126606-4">}</span><span class="p" data-group-id="2389126606-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="mi">67</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2389126606-7">{</span><span class="p" data-group-id="2389126606-8">%</span><span class="nc" data-group-id="2389126606-8">ActivityAttempt</span><span class="p" data-group-id="2389126606-8">{</span><span class="p" data-group-id="2389126606-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2389126606-9">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2389126606-10">%</span><span class="nc" data-group-id="2389126606-10">PartAttempt</span><span class="p" data-group-id="2389126606-10">{</span><span class="p" data-group-id="2389126606-10">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="2389126606-11">{</span><span class="p" data-group-id="2389126606-11">}</span><span class="p" data-group-id="2389126606-9">}</span><span class="p" data-group-id="2389126606-7">}</span><span class="w">
+</span><span class="p" data-group-id="2389126606-1">}</span></code></pre>
         </section>
 
 
