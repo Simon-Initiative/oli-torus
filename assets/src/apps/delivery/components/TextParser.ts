@@ -31,7 +31,7 @@ export const templatizeText = (
     let stateValue = state[v];
     if (!stateValue || typeof stateValue === 'object') {
       try {
-        if (v.indexOf(':') !== -1) {
+        if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
           // if the expression is just a variable, then if it has a colon
           // it is most likely targetting another screen, and needs to be wrapped
           // for evaluation; same with if it has a space in it TODO: detect that;
@@ -47,7 +47,7 @@ export const templatizeText = (
         }
       } catch (e) {
         // ignore?
-        console.log('error evaluating text', { v, e });
+        console.warn('error evaluating text', { v, e });
       }
     }
     if (stateValue === undefined) {
