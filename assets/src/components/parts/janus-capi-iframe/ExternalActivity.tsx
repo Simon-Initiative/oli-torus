@@ -529,7 +529,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     const filterVars = createCapiObjectFromStateVars(simLife.currentState, simLife.domain);
     if (filterVars && Object.keys(filterVars)?.length !== 0) {
       handleIFrameSpecificProperties(simLife.currentState, simLife.domain);
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, filterVars);
       writeCapiLog('SENDING SIM CONFIG DATA !!!!', 3, {
         simLife,
         configData: filterVars,
