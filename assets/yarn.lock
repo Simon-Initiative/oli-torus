@@ -4751,10 +4751,10 @@ istanbul-reports@^3.0.2:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
 
-janus-script@^1.6.3:
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/janus-script/-/janus-script-1.6.3.tgz#fb03dc72ef61c49d309dcf7dfffa349c13f50205"
-  integrity sha512-MrKsVmnVY823DT9+JcfMXjeTQQKW4i20oTdS+Cw44Bfw+kyjNBcU4vAxNnChxcpx2XsDUtuCl1d8Xyd35QjUSw==
+janus-script@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/janus-script/-/janus-script-1.8.0.tgz#c9b15a09edceadbef24bcfcb4897491043473e4c"
+  integrity sha512-MXeT/iHqC8NUbpTTHXOO2bMaxGUjApE75dlfRKFwYeUsz4pS3vKjsh6ONmzz7mYKsg6bMiXFT4I1JxAwt2klCg==
   dependencies:
     eventemitter3 "^4.0.7"
     mathjs "^9.3.2"
