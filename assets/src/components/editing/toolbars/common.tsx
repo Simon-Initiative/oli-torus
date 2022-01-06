@@ -30,6 +30,7 @@ interface ToolbarButtonProps {
   position?: 'left' | 'right' | 'top' | 'bottom';
   setParentPopoverOpen?: (b: boolean) => void;
   parentElement?: string;
+  setContent?: React.Dispatch<React.SetStateAction<JSX.Element>>;
 }
 
 export const ToolbarButton = ({
@@ -55,7 +56,7 @@ export const ToolbarButton = ({
       title={tooltip}
       className={`btn btn-sm btn-light ${style || ''} ${(active && 'active') || ''}`}
       onClick={(_e) => {
-        setParentPopoverOpen && setParentPopoverOpen(false);
+        setParentPopoverOpen?.(false);
         command.execute(context, editor);
       }}
     >
@@ -64,51 +65,48 @@ export const ToolbarButton = ({
   );
 };
 
-export const DropdownToolbarButton = ({
-  icon,
-  command,
-  style,
-  context,
-  active,
-  description,
-  setParentPopoverOpen,
-  tooltip,
-  parentElement,
-}: ToolbarButtonProps) => {
+export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
   const editor = useSlate();
-  const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
+  // const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
   const onDone = (params: any) => {
-    setParentPopoverOpen && setParentPopoverOpen(false);
-    setIsPopoverOpen(false);
-    command.execute(context, editor, params);
+    props.setParentPopoverOpen?.(false);
+    // setIsPopoverOpen(false);
+    props.command.execute(props.context, editor, params);
   };
   const onCancel = () => {
-    setParentPopoverOpen && setParentPopoverOpen(false);
-    setIsPopoverOpen(false);
+    props.setParentPopoverOpen?.(false);
+    // setIsPopoverOpen(false);
   };
 
   return (
-    <Popover.Popover
-      onClickOutside={(_e) => setIsPopoverOpen(false)}
-      isOpen={isPopoverOpen}
-      padding={5}
-      positions={['right']}
-      reposition={false}
-      content={() => <div>{command.obtainParameters?.(context, editor, onDone, onCancel)}</div>}
+    // <Popover.Popover
+    //   onClickOutside={(_e) => setIsPopoverOpen(false)}
+    //   isOpen={isPopoverOpen}
+    //   padding={5}
+    //   positions={['right']}
+    //   reposition={false}
+    //   content={() => <div>{}</div>}
+    // >
+    <button
+      data-container={props.parentElement && `#${props.parentElement}`}
+      data-toggle="tooltip"
+      ref={(r) => ($(r as any) as any).tooltip()}
+      data-placement="top"
+      title={props.tooltip}
+      className={`btn btn-sm btn-light ${props.style || ''} ${(props.active && 'active') || ''}`}
+      onClick={(_e) => {
+        _e.stopPropagation();
+        props.setContent?.(
+          props.command.obtainParameters?.(props.context, editor, onDone, onCancel) || (
+            <span></span>
+          ),
+        );
+      }}
     >
-      <button
-        data-container={parentElement || false}
-        data-toggle="tooltip"
-        data-placement="top"
-        title={tooltip}
-        className={`btn btn-sm btn-light ${style || ''} ${(active && 'active') || ''}`}
-        onClick={() => setIsPopoverOpen(!isPopoverOpen)}
-        type="button"
-      >
-        {buttonContent(icon, description)}
-      </button>
-    </Popover.Popover>
+      {buttonContent(props.icon, props.description)}
+    </button>
+    // </Popover.Popover>
   );
 };
 

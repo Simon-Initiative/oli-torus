@@ -1,9 +1,16 @@
-import React from 'react';
-import { ArrowContainer, ContentLocationGetter, Popover } from 'react-tiny-popover';
-import { ReactEditor, useSlate } from 'slate-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ArrowContainer,
+  ContentLocation,
+  ContentLocationGetter,
+  Popover,
+  PopoverState,
+} from 'react-tiny-popover';
+import { Editor } from 'slate';
+import { useSlate } from 'slate-react';
 
 type HoveringToolbarProps = {
-  isOpen: (editor: ReactEditor) => boolean;
+  isOpen: (editor: Editor) => boolean;
   showArrow?: boolean;
   children: JSX.Element;
   onClickOutside?: (e: MouseEvent) => void;
@@ -12,27 +19,68 @@ type HoveringToolbarProps = {
   parentRef?: React.RefObject<HTMLElement>;
 };
 export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
-  const editor = useSlate();
-
   const arrowSize = 8;
 
-  const content = (
-    <div className="hovering-toolbar" onMouseDown={(e) => e.preventDefault()}>
-      <div className="btn-group btn-group-sm" role="group">
-        {props.children}
-      </div>
-    </div>
+  const editor = useSlate();
+
+  const [mousedown, setMousedown] = useState(false);
+  useEffect(() => {
+    const upListener = (_e: MouseEvent) => setMousedown(false);
+    const downListener = (_e: MouseEvent) => setMousedown(true);
+    document.addEventListener('mouseup', upListener);
+    document.addEventListener('mousedown', downListener);
+
+    return () => {
+      document.removeEventListener('mouseup', upListener);
+      document.removeEventListener('mousedown', downListener);
+    };
+  }, []);
+
+  const preventMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => e.preventDefault(),
+    [],
   );
 
-  const target = props.target || <span style={{ userSelect: 'none', display: 'none' }}></span>;
+  const content = useMemo(
+    () => (
+      <div className="hovering-toolbar" onMouseDown={preventMouseDown}>
+        <div className="btn-group btn-group-sm" role="group">
+          {props.children}
+        </div>
+      </div>
+    ),
+    [props.children],
+  );
 
-  if (!props.isOpen(editor)) {
-    return target;
-  }
+  const target = useMemo(
+    () => props.target || <span style={{ userSelect: 'none', display: 'none' }}></span>,
+    [props.target],
+  );
+
+  const isOpen = useMemo(() => props.isOpen(editor) && !mousedown, [editor, mousedown]);
+
+  const centerPopover = useCallback(
+    ({ popoverRect, parentRect }: PopoverState): ContentLocation => {
+      // Position the popover above the center of the selection
+      const native = window.getSelection();
+      if (!native || mousedown) return parentRect;
+
+      const selectionRect = native.getRangeAt(0).getBoundingClientRect();
+
+      return {
+        top: selectionRect.top + window.pageYOffset - 56,
+        left:
+          selectionRect.left + window.pageXOffset + selectionRect.width / 2 - popoverRect.width / 2,
+      };
+    },
+    [mousedown],
+  );
+
+  if (!isOpen) return target;
 
   return (
     <Popover
-      isOpen={props.isOpen(editor)}
+      isOpen={isOpen}
       align={'center'}
       padding={5}
       parentElement={props.parentRef?.current || undefined}
@@ -54,26 +102,7 @@ export const HoveringToolbar = React.memo((props: HoveringToolbarProps) => {
         }
         return content;
       }}
-      contentLocation={
-        props.contentLocation
-          ? props.contentLocation
-          : ({ popoverRect }) => {
-              // Position the popover above the center of the selection
-              const native = window.getSelection();
-              if (!native) return { top: 0, left: 0 };
-              const range = native.getRangeAt(0);
-              const selectionRect = range.getBoundingClientRect();
-
-              return {
-                top: selectionRect.top + window.pageYOffset - 56,
-                left:
-                  selectionRect.left +
-                  window.pageXOffset +
-                  selectionRect.width / 2 -
-                  popoverRect.width / 2,
-              };
-            }
-      }
+      contentLocation={props.contentLocation || centerPopover}
     >
       {target}
     </Popover>

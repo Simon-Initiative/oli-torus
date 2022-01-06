@@ -11,4 +11,6 @@ export enum Marks {
   'sup',
 }
 
-export type FormattedText = Record<'text', string> & Partial<Record<Mark, true>>;
+type Decoration = 'youtubeInput';
+
+export type FormattedText = Record<'text', string> & Partial<Record<Mark | Decoration, true>>;

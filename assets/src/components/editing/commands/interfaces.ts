@@ -29,7 +29,7 @@ export type Command = {
   precondition: (editor: Editor) => boolean;
   // execute: run when the command is called (usually to create an element and insert it)
   // eslint-disable-next-line
-  execute: (context: CommandContext, editor: Editor, params?: Object) => void;
+  execute: (context: CommandContext, editor: Editor, params?: Object) => any;
   // obtainParameters: allow the command to gather additional info before running the command
   // (for example, show a size picker for table insertion)
   // Returns a JSX element that will be inserted in a popover

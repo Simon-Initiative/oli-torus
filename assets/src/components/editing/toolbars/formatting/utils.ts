@@ -1,7 +1,7 @@
 import { ReactEditor } from 'slate-react';
-import { Range } from 'slate';
+import { Editor, Range } from 'slate';
 
-export function shouldShowFormattingToolbar(editor: ReactEditor) {
+export function shouldShowFormattingToolbar(editor: Editor): boolean {
   const { selection } = editor;
 
   return !!selection && ReactEditor.isFocused(editor) && !Range.isCollapsed(selection);

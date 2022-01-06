@@ -7,12 +7,14 @@ import {
   isTopLevel,
 } from 'components/editing/utils';
 
-export function shouldShowInsertionToolbar(editor: Editor) {
+export function inEmptyLine(editor: Editor) {
   const { selection } = editor;
   if (!selection) return false;
-  const isSelectionCollapsed = ReactEditor.isFocused(editor) && Range.isCollapsed(selection);
+  const selectionCollapsed = ReactEditor.isFocused(editor) && Range.isCollapsed(selection);
 
-  const isInParagraph =
+  console.log('focused', ReactEditor.isFocused(editor), 'collapsed', Range.isCollapsed(selection));
+
+  const inParagraph =
     [
       ...Editor.nodes(editor, {
         match: (n) => {
@@ -22,16 +24,16 @@ export function shouldShowInsertionToolbar(editor: Editor) {
       }),
     ].length > 0;
 
-  const isTopLevelOrInTable =
+  const inTopLevelOrTable =
     isTopLevel(editor) ||
     getHighestTopLevel(editor).caseOf({
       just: (n) => Element.isElement(n) && n.type === 'table',
       nothing: () => false,
     });
 
-  const isInValidParents = isInParagraph && isTopLevelOrInTable;
+  const parentIsValid = inParagraph && inTopLevelOrTable;
 
-  return isSelectionCollapsed && isInValidParents;
+  return selectionCollapsed && parentIsValid;
 }
 
 export function positionInsertion(el: HTMLElement, editor: Editor) {

@@ -1,12 +1,13 @@
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowContainer, Popover } from 'react-tiny-popover';
-import { useFocused, useSlate } from 'slate-react';
+import { Popover } from 'react-tiny-popover';
+import { Range } from 'slate';
+import { ReactEditor, useFocused, useSlate, useSlateStatic } from 'slate-react';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 import { CommandContext, ToolbarItem } from '../../commands/interfaces';
 import { DropdownToolbarButton, hideToolbar, showToolbar, Spacer, ToolbarButton } from '../common';
-import { positionInsertion, shouldShowInsertionToolbar } from './utils';
+import { positionInsertion, inEmptyLine } from './utils';
 
 type InsertionToolbarProps = {
   isPerformingAsyncAction: boolean;
@@ -24,9 +25,17 @@ function insertionAreEqual(prevProps: InsertionToolbarProps, nextProps: Insertio
 export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((props) => {
   const { toolbarItems } = props;
   const ref = useRef<HTMLDivElement>(null);
-  const editor = useSlate();
+  const editor = useSlateStatic();
   const focused = useFocused();
   const id = guid();
+
+  console.log(
+    'in editor',
+    'focused?',
+    ReactEditor.isFocused(editor),
+    'selected?',
+    editor.selection && Range.isCollapsed(editor.selection),
+  );
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -39,7 +48,7 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
       hideToolbar(el);
     }
 
-    if (isPopoverOpen || (focused && shouldShowInsertionToolbar(editor))) {
+    if (isPopoverOpen || (focused && inEmptyLine(editor))) {
       reposition();
       showToolbar(el);
     } else {
@@ -53,7 +62,46 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
     };
   });
 
-  if (!isPopoverOpen && !shouldShowInsertionToolbar(editor)) {
+  const [content, setContent] = useState(<span></span>);
+
+  const buttons = (
+    <>
+      {[
+        ...toolbarItems.map((t, i) => {
+          if (t.type !== 'CommandDesc') {
+            return <Spacer key={'spacer-' + i} />;
+          }
+          if (!t.command.precondition(editor)) {
+            return null;
+          }
+
+          const shared = {
+            style: 'btn',
+            key: t.description(editor),
+            icon: t.icon(editor),
+            tooltip: t.description(editor),
+            command: t.command,
+            context: props.commandContext,
+            parentElement: id,
+            setParentPopoverOpen: setIsPopoverOpen,
+          };
+
+          if (t.command.obtainParameters === undefined) {
+            return <ToolbarButton {...shared} />;
+          }
+          // eslint-disable-next-line
+          return <DropdownToolbarButton {...shared} setContent={setContent} />;
+        }),
+      ].filter((x) => x)}
+    </>
+  );
+
+  useEffect(() => {
+    setContent(buttons);
+  }, []);
+
+  console.log('popover open', isPopoverOpen);
+  if (!isPopoverOpen && !inEmptyLine(editor)) {
     return null;
   }
 
@@ -67,59 +115,33 @@ export const InsertionToolbar: React.FC<InsertionToolbarProps> = React.memo((pro
       <div className="insert-button-container">
         <Popover
           containerClassName="add-resource-popover"
-          onClickOutside={(_e) => setIsPopoverOpen(false)}
+          onClickOutside={(_e) => {
+            console.log('clicked outside');
+            setIsPopoverOpen(false);
+            setContent(buttons);
+          }}
           isOpen={isPopoverOpen}
           align="center"
           padding={5}
           reposition={false}
-          positions={['top']}
+          positions={['right']}
           boundaryElement={document.body}
           parentElement={ref.current || undefined}
-          content={({ position, childRect, popoverRect }) => (
-            <ArrowContainer
-              position={position}
-              childRect={childRect}
-              popoverRect={popoverRect}
-              arrowSize={8}
-              arrowColor="rgb(38,38,37)"
-              // Position the arrow in the middle of the popover
-              arrowStyle={{ left: popoverRect.width / 2 - 8 }}
-            >
-              <div className="hovering-toolbar">
-                <div className="btn-group btn-group-vertical btn-group-sm" role="group">
-                  {[
-                    ...toolbarItems.map((t, i) => {
-                      if (t.type !== 'CommandDesc') {
-                        return <Spacer key={'spacer-' + i} />;
-                      }
-                      if (!t.command.precondition(editor)) {
-                        return null;
-                      }
-
-                      const shared = {
-                        style: 'btn-dark',
-                        key: t.description(editor),
-                        icon: t.icon(editor),
-                        tooltip: t.description(editor),
-                        command: t.command,
-                        context: props.commandContext,
-                        parentElement: id,
-                        setParentPopoverOpen: setIsPopoverOpen,
-                      };
-
-                      if (t.command.obtainParameters === undefined) {
-                        return <ToolbarButton {...shared} />;
-                      }
-                      // eslint-disable-next-line
-                      return <DropdownToolbarButton {...shared} />;
-                    }),
-                  ].filter((x) => x)}
-                </div>
+          content={
+            <div className="insertion-toolbar">
+              <div className="btn-group btn-group-sm" role="group">
+                {content}
               </div>
-            </ArrowContainer>
-          )}
+            </div>
+          }
         >
-          <div className="insert-button" onClick={() => setIsPopoverOpen(!isPopoverOpen)}>
+          <div
+            className="insert-button"
+            onClick={() => {
+              setContent(buttons);
+              setIsPopoverOpen(!isPopoverOpen);
+            }}
+          >
             {props.isPerformingAsyncAction ? (
               <LoadingSpinner size={LoadingSpinnerSize.Normal} />
             ) : (

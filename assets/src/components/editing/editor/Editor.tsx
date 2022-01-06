@@ -1,7 +1,16 @@
+import { withHtml } from 'components/editing/editor/overrides/html';
 import { ModelElement } from 'data/content/model/elements/types';
-import { Mark } from 'data/content/model/text';
+import { Mark, Marks } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slate';
+import {
+  BaseRange,
+  createEditor,
+  Descendant,
+  Editor as SlateEditor,
+  Node,
+  NodeEntry,
+  Operation,
+} from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import guid from 'utils/guid';
@@ -65,7 +74,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
   const editor = useMemo(
     () =>
       withMarkdown(commandContext)(
-        withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
+        withHtml(withReact(withHistory(withTables(withInlines(withVoids(createEditor())))))),
       ),
     [],
   );
@@ -95,12 +104,23 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     hotkeyHandler(editor, e.nativeEvent, commandContext);
   }, []);
 
+  // const decorate: (entry: NodeEntry<Node>) => BaseRange[] = useCallback(([node, path]) => {
+  //   const ranges: BaseRange[] = []
+
+  //   return ranges
+  // }, [])
+
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(
-      (m, k) => (k !== 'text' ? markFor(k as Mark, m) : m),
+      (m, k) => (k in Marks ? markFor(k as Mark, m) : m),
       children,
     );
-    return <span {...attributes}>{markup}</span>;
+    return (
+      <span {...attributes}>
+        {markup}
+        {leaf.youtubeInput && <span>Enter something</span>}
+      </span>
+    );
   }, []);
 
   const onChange = (value: Descendant[]) => {
