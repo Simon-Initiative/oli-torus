@@ -1,4 +1,5 @@
 import React, { Fragment } from 'react';
+
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export interface Message {
@@ -29,23 +30,23 @@ export const BrokenMessage: React.FC<Message> = ({ problem }: Message) => (
 
 export const ValueUndefined: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    A condition with the ID &quot;
-    <strong>{problem?.item?.condition?.id}</strong>&quot;, is missing a value.
+    The &quot;
+    <strong>{problem?.item?.rule?.name}</strong>&quot; rule is missing a condition value.
   </span>
 );
 
 export const InvalidMutateTarget: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    A rule with the ID &quot;
-    <strong>{problem?.item?.id}</strong>&quot;, has an invalid component target (
+    The &quot;
+    <strong>{problem?.item?.name}</strong>&quot; rule, has an invalid action target (
     <strong>{problem?.item?.action.params.target}</strong>).
   </span>
 );
 
 export const InvalidCondTarget: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    A rule with the ID &quot;
-    <strong>{problem?.item?.rule?.id}</strong>&quot;, has an invalid component target (
+    The &quot;
+    <strong>{problem?.item?.rule?.name}</strong>&quot; rule has an invalid condition target (
     <strong>{problem?.item?.condition?.fact}</strong>).
   </span>
 );

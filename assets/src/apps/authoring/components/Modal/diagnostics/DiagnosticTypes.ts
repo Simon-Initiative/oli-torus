@@ -9,3 +9,10 @@ export enum DiagnosticTypes {
   INVALID_TARGET_COND = 'invalid_target_cond',
   DEFAULT = '',
 }
+
+export const DiagnosticRuleTypes = [
+  DiagnosticTypes.INVALID_TARGET_COND,
+  DiagnosticTypes.INVALID_TARGET_INIT,
+  DiagnosticTypes.INVALID_TARGET_MUTATE,
+  DiagnosticTypes.INVALID_VALUE,
+];
