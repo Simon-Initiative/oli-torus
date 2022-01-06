@@ -6,6 +6,7 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import Carousel from './Carousel';
+import { adaptivitySchema } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes];
 const customEvents: any = { ...apiCustomEvents };
@@ -17,5 +18,8 @@ register(Carousel, manifest.delivery.element, observedAttributes, {
     model: {
       json: true,
     },
+  },
+  customApi: {
+    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });
