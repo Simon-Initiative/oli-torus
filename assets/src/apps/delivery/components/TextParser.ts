@@ -11,7 +11,7 @@ export const templatizeText = (
   let innerEnv = env;
   let vars = extractAllExpressionsFromText(text);
   // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
-  vars = vars.filter((e) => !e.includes(';'));
+  vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
   /* console.log('templatizeText call: ', { text, vars, state, env }); */
   if (!vars) {
     return text;
