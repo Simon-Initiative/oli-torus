@@ -319,6 +319,7 @@ defmodule OliWeb.Grades.GradesLive do
                  ) do
               {:ok, job} ->
                 Broadcaster.subscribe_to_lms_grade_update(
+                  socket.assigns.section.id,
                   ra.id,
                   job.id
                 )
@@ -367,6 +368,7 @@ defmodule OliWeb.Grades.GradesLive do
     # Unsubscribe to this job when we reach a terminal state
     if result in [:success, :failure, :not_synced] do
       Broadcaster.unsubscribe_to_lms_grade_update(
+        socket.assigns.section.id,
         resource_access_id,
         job_id
       )

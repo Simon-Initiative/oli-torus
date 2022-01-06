@@ -206,9 +206,14 @@ defmodule OliWeb.Progress.StudentResourceView do
     resource_access = get_resource_access(revision.resource_id, section.slug, user.id)
 
     {:ok, %Oban.Job{id: id}} =
-      Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(resource_access.id, :manual)
+      Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+        section.id,
+        resource_access.id,
+        :manual
+      )
 
     Broadcaster.subscribe_to_lms_grade_update(
+      socket.assigns.section.id,
       socket.assigns.resource_access.id,
       id
     )
@@ -247,6 +252,7 @@ defmodule OliWeb.Progress.StudentResourceView do
     # Unsubscribe to this job when we reach a terminal state
     if result in [:success, :failure, :not_synced] do
       Broadcaster.unsubscribe_to_lms_grade_update(
+        socket.assigns.section.id,
         resource_access.id,
         job_id
       )

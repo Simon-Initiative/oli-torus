@@ -9,6 +9,7 @@ defmodule Oli.Repo.Migrations.GradeUpdate do
       add :type, :string, null: false, default: "inline"
       add :result, :string, null: false, default: "success"
       add :details, :string
+      add :attempt_number, :integer, null: false
 
       add :resource_access_id, references(:resource_accesses)
 

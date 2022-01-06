@@ -62,13 +62,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
   - `:retrying`: The grade update request failed, but is queued for a retry
 
   """
-  def create(resource_access_id, update_type) do
+  def create(section_id, resource_access_id, update_type) do
     case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.new(
-           %{resource_access_id: resource_access_id, type: update_type},
+           %{resource_access_id: resource_access_id, type: update_type, section_id: section_id},
            replace: [:args]
          ) do
       {:ok, job} ->
         Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
+          section_id,
           resource_access_id,
           job.id,
           :queued
@@ -84,7 +85,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
   @impl Oban.Worker
   def perform(
         %Oban.Job{
-          args: %{"resource_access_id" => resource_access_id_str, "type" => type}
+          args: %{
+            "resource_access_id" => resource_access_id_str,
+            "type" => type,
+            "section_id" => section_id
+          }
         } = job
       ) do
     # All Oban keys end up being strings due to JSONB serialization, so convert the id
@@ -92,6 +97,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     {resource_access_id, _} = Integer.parse(resource_access_id_str)
 
     Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
+      section_id,
       resource_access_id,
       job.id,
       :running
@@ -140,7 +146,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
           resource_access.score,
           resource_access.out_of,
           type,
-          job
+          job,
+          section
         )
 
         {:error, e}
@@ -151,7 +158,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
           resource_access.score,
           resource_access.out_of,
           type,
-          job
+          job,
+          section
         )
 
       {:ok, :not_synced} ->
@@ -160,7 +168,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
           resource_access.score,
           resource_access.out_of,
           type,
-          job
+          job,
+          section
         )
 
       # To be as robust as possible, catch a wildcard and treat that as simply an unknown error
@@ -173,14 +182,25 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
           resource_access.score,
           resource_access.out_of,
           type,
-          job
+          job,
+          section
         )
 
         {:error, "Unknown error"}
     end
   end
 
-  defp track(access_updater, result, details, resource_access_id, score, out_of, type, job) do
+  defp track(
+         access_updater,
+         result,
+         details,
+         resource_access_id,
+         score,
+         out_of,
+         type,
+         job,
+         section
+       ) do
     result =
       case Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id) do
         nil ->
@@ -194,6 +214,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
                    type: type,
                    result: result,
                    details: details,
+                   attempt_number: String.to_integer(job["attempt"]),
                    resource_access_id: resource_access_id
                  }) do
               {:ok, %LMSGradeUpdate{id: id}} ->
@@ -215,6 +236,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     # the above transaction to guarantee that client code that might perform a read in response to this
     # sees the database in a consistent state.
     Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
+      section.id,
       resource_access_id,
       job.id,
 
@@ -232,31 +254,31 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     result
   end
 
-  def track_failure(details, resource_access_id, score, out_of, type, job) do
+  def track_failure(details, resource_access_id, score, out_of, type, job, section) do
     fn id ->
       %{
         last_grade_update_id: id
       }
     end
-    |> track(:failure, details, resource_access_id, score, out_of, type, job)
+    |> track(:failure, details, resource_access_id, score, out_of, type, job, section)
   end
 
-  def track_success(resource_access_id, score, out_of, type, job) do
+  def track_success(resource_access_id, score, out_of, type, job, section) do
     fn id ->
       %{
         last_grade_update_id: id,
         last_successful_grade_update_id: id
       }
     end
-    |> track(:success, nil, resource_access_id, score, out_of, type, job)
+    |> track(:success, nil, resource_access_id, score, out_of, type, job, section)
   end
 
-  def track_not_synced(resource_access_id, score, out_of, type, job) do
+  def track_not_synced(resource_access_id, score, out_of, type, job, section) do
     fn id ->
       %{
         last_grade_update_id: id
       }
     end
-    |> track(:not_synced, nil, resource_access_id, score, out_of, type, job)
+    |> track(:not_synced, nil, resource_access_id, score, out_of, type, job, section)
   end
 end
