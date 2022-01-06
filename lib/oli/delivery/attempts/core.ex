@@ -50,6 +50,19 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  For a given resource attempt id, this returns a list of the id and resource_id
+  for all activity attempt records that pertain to this resource attempt id.
+  """
+  def get_attempt_resource_id_pair(resource_attempt_id) do
+    Repo.all(
+      from(r in ActivityAttempt,
+        where: r.resource_attempt_id == ^resource_attempt_id,
+        select: map(r, [:id, :resource_id])
+      )
+    )
+  end
+
+  @doc """
   Retrieves all graded resource access for a given context
 
   `[%ResourceAccess{}, ...]`
