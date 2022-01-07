@@ -19,7 +19,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext, AttemptState}
 
   @doc """
-  Creates an attempt hierarchy for a given resource visit context.
+  Creates an attempt hierarchy for a given resource visit context, optimized to
+  use a constant number of queries relative to the number of activities and parts.
 
   Returns {:ok, %AttemptState{}}
   """
@@ -62,25 +63,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        attempt_hierarchy =
-          Enum.reduce(activity_revisions, %{}, fn revision, m ->
-            case create_full_activity_attempt(
-                   resource_attempt,
-                   revision,
-                   !MapSet.member?(unscored, revision.resource_id)
-                 ) do
-              {:ok, {activity_attempt, part_attempts}} ->
-                Map.put(m, revision.resource_id, {activity_attempt, part_attempts})
+        activity_ids = Enum.map(activity_revisions, fn r -> r.resource_id end)
 
-              e ->
-                Map.put(m, revision.resource_id, e)
-            end
-          end)
+        # This requires exactly three queries
+        bulk_create_attempts(resource_attempt, activity_revisions, unscored)
+
+        # One more to fetch and assemble the full atempt hierarchy
+        hierarchy = get_latest_attempts(resource_attempt.id, activity_ids)
 
         {:ok,
          %AttemptState{
            resource_attempt: resource_attempt,
-           attempt_hierarchy: attempt_hierarchy
+           attempt_hierarchy: hierarchy
          }}
 
       error ->
@@ -88,46 +82,84 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     end
   end
 
-  defp create_full_activity_attempt(
-         resource_attempt,
-         %Revision{resource_id: resource_id, id: id, content: model} = revision,
-         scoreable
-       ) do
-    with {:ok, parsed_model} <- Model.parse(model),
-         {:ok, transformed_model} <- Transformers.apply_transforms(model),
-         {:ok, activity_attempt} <-
-           create_activity_attempt(%{
-             resource_attempt_id: resource_attempt.id,
-             attempt_guid: UUID.uuid4(),
-             attempt_number: 1,
-             revision_id: id,
-             resource_id: resource_id,
-             transformed_model: transformed_model,
-             scoreable: scoreable
-           }),
-         {:ok, part_attempts} <- create_part_attempts(parsed_model, activity_attempt) do
-      # We simulate the effect of preloading the revision by setting it
-      # after we create the record. This is needed so that this function matches
-      # the contract of get_latest_attempt - namely that the revision association
-      # on activity attempt records is preloaded.
+  # Instead of one insertion query for every part attempt and one insertion query for
+  # every activity attempt, this implementation does the same with exactly three queries:
+  #
+  # 1. Bulk activity attempt creation (regardless of the number of attempts)
+  # 2. A query
+  #
+  defp bulk_create_attempts(resource_attempt, activity_revisions, unscored) do
+    # Use a common timestamp for all insertions
+    right_now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
 
-      {:ok, {Map.put(activity_attempt, :revision, revision), part_attempts}}
-    else
-      e -> Logger.error("failed to create full activity attempt: #{inspect(e)}")
-    end
+    # Create the activity attempts, in bulk
+    Enum.map(activity_revisions, fn r ->
+      scoreable = !MapSet.member?(unscored, r.resource_id)
+      create_raw_activity_attempt(resource_attempt, r, scoreable, right_now)
+    end)
+    |> bulk_create_activity_attempts()
+
+    # Create the resource ID to attempt database ID mapping
+    id_mapping = create_resource_id_mapping(resource_attempt.id)
+
+    # Create the part attempts, in bulk
+    Enum.map(activity_revisions, fn r ->
+      {:ok, parsed_model} = Model.parse(r.content)
+      create_raw_part_attempts(parsed_model, Map.get(id_mapping, r.resource_id), right_now)
+    end)
+    |> List.flatten()
+    |> bulk_create_part_attempts()
   end
 
-  defp create_part_attempts(parsed_model, activity_attempt) do
-    Enum.reduce_while(parsed_model.parts, {:ok, %{}}, fn p, {:ok, m} ->
-      case create_part_attempt(%{
-             attempt_guid: UUID.uuid4(),
-             activity_attempt_id: activity_attempt.id,
-             attempt_number: 1,
-             part_id: p.id
-           }) do
-        {:ok, part_attempt} -> {:cont, {:ok, Map.put(m, p.id, part_attempt)}}
-        e -> {:halt, e}
-      end
+  defp create_resource_id_mapping(resource_attempt_id) do
+    get_attempt_resource_id_pair(resource_attempt_id)
+    |> Enum.reduce(%{}, fn %{id: id, resource_id: resource_id}, m ->
+      Map.put(m, resource_id, id)
+    end)
+  end
+
+  defp bulk_create_activity_attempts(raw_attempts) do
+    Repo.insert_all(ActivityAttempt, raw_attempts)
+  end
+
+  defp bulk_create_part_attempts(raw_attempts) do
+    Repo.insert_all(PartAttempt, raw_attempts)
+  end
+
+  defp create_raw_activity_attempt(
+         resource_attempt,
+         %Revision{resource_id: resource_id, id: id, content: model},
+         scoreable,
+         now
+       ) do
+    {:ok, transformed_model} = Transformers.apply_transforms(model)
+
+    %{
+      resource_attempt_id: resource_attempt.id,
+      attempt_guid: UUID.uuid4(),
+      attempt_number: 1,
+      revision_id: id,
+      resource_id: resource_id,
+      transformed_model: transformed_model,
+      scoreable: scoreable,
+      inserted_at: now,
+      updated_at: now
+    }
+  end
+
+  defp create_raw_part_attempts(parsed_model, activity_attempt_id, now) do
+    Enum.map(parsed_model.parts, fn p ->
+      %{
+        hints: [],
+        attempt_guid: UUID.uuid4(),
+        activity_attempt_id: activity_attempt_id,
+        attempt_number: 1,
+        part_id: p.id,
+        inserted_at: now,
+        updated_at: now
+      }
     end)
   end
 

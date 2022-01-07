@@ -15,12 +15,17 @@ export const FixIdButton: React.FC<SolutionProps> = ({
   };
 
   return (
-    <>
-      <input ref={txtRef} type="text" defaultValue={suggestion} />
-      <button className="btn btn-sm btn-primary" onClick={handleClick}>
+    <div className="aa-action aa-mutate d-flex mb-2 form-inline align-items-center flex-nowrap">
+      <input
+        ref={txtRef}
+        type="text"
+        defaultValue={suggestion}
+        className="form-control form-control-sm"
+      />
+      <button className="btn btn-sm btn-primary ml-2" onClick={handleClick}>
         Apply
       </button>
-    </>
+    </div>
   );
 };
 

@@ -137,7 +137,7 @@ export const evalScript = (
   const program = parser.parseProgram();
   if (parser.errors.length) {
     /* console.error(`ERROR SCRIPT: ${script}`, { e: parser.errors }); */
-    throw new Error(`Error in script: ${script}\n${parser.errors.join('\n')}`);
+    throw new Error(`Parse Error in script: ${script}\n${parser.errors.join('\n')}`);
   }
   const result = evaluator.eval(program, globalEnv);
   let jsResult = result.toJS();
@@ -147,6 +147,7 @@ export const evalScript = (
   //if a variable has bindTo operator applied on this then we get a error that we can ignore
   // sometimes jsResult?.message?.indexOf('is a bound reference, cannot assign') is undefined so jsResult?.message?.indexOf('is a bound reference, cannot assign') !== -1 return true which we want to avoid hence checking > 0
   if (jsResult?.message?.indexOf('is a bound reference, cannot assign') > 0) {
+    console.warn(`Error in script: ${script}\n${jsResult.message}`);
     return { env: globalEnv, result: null };
   }
   return { env: globalEnv, result: jsResult };
@@ -264,8 +265,6 @@ export const applyState = (
       )};`;
       break;
     case 'bind to':
-      // NOTE: once a value is bound, you can *never* set it other than through binding????
-      // at least right now otherwise it will just overwrite the binding
       // binding is a special case, it MUST be a string because it's binding to a variable
       // it should not be wrapped in curlies already
       if (typeof operation.value !== 'string') {
@@ -276,6 +275,19 @@ export const applyState = (
         script += `= ${operation.value};`;
       } else {
         script += `&= {${operation.value}};`;
+      }
+      break;
+    case 'anchor to':
+      // anchoring is a special case, it MUST be a string because it's anchoring to a variable
+      // it should not be wrapped in curlies already
+      if (typeof operation.value !== 'string') {
+        errorMsg = `anchor to value must be a string, got ${typeof operation.value}`;
+        break;
+      }
+      if (operation.value[0] === '{' && operation.value.slice(-1) === '}') {
+        script += `= ${operation.value};`;
+      } else {
+        script += `#= {${operation.value}};`;
       }
       break;
     case 'setting to':
