@@ -99,8 +99,7 @@ defmodule Oli.Delivery.Page.PageContext do
         {:ok,
          {state,
           %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-          {state, [resource_attempt], latest_attempts,
-           ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+          assemble_final_context(state, resource_attempt, latest_attempts, page_revision)
 
         {:error, _} ->
           {:error, [], %{}}
@@ -125,6 +124,17 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts
     }
+  end
+
+  defp assemble_final_context(state, resource_attempt, latest_attempts, %{
+         content: %{"advancedDelivery" => true}
+       }) do
+    {state, [resource_attempt], latest_attempts, latest_attempts}
+  end
+
+  defp assemble_final_context(state, resource_attempt, latest_attempts, page_revision) do
+    {state, [resource_attempt], latest_attempts,
+     ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)

@@ -19,6 +19,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.AttemptState do
   ```
   """
 
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
+  alias Oli.Resources.Revision
+  alias Oli.Delivery.Attempts.PageLifecycle.Hierarchy
+
   @enforce_keys [
     :resource_attempt,
     :attempt_hierarchy
@@ -33,4 +37,22 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.AttemptState do
           resource_attempt: any(),
           attempt_hierarchy: any()
         }
+
+  def fetch_attempt_state(%ResourceAttempt{} = resource_attempt, %Revision{
+        content: %{"advancedDelivery" => true}
+      }) do
+    {:ok,
+     %__MODULE__{
+       resource_attempt: resource_attempt,
+       attempt_hierarchy: Hierarchy.thin_hierarchy(resource_attempt)
+     }}
+  end
+
+  def fetch_attempt_state(%ResourceAttempt{} = resource_attempt, _) do
+    {:ok,
+     %__MODULE__{
+       resource_attempt: resource_attempt,
+       attempt_hierarchy: Hierarchy.full_hierarchy(resource_attempt)
+     }}
+  end
 end

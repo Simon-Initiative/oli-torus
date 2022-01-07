@@ -16,13 +16,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.Result
-  alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext, AttemptState}
+  alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
 
   @doc """
   Creates an attempt hierarchy for a given resource visit context, optimized to
   use a constant number of queries relative to the number of activities and parts.
 
-  Returns {:ok, %AttemptState{}}
+  Returns {:ok, %ResourceAttempt{}}
   """
   def create(%VisitContext{} = context) do
     {resource_access_id, next_attempt_number} =
@@ -63,19 +63,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        activity_ids = Enum.map(activity_revisions, fn r -> r.resource_id end)
-
-        # This requires exactly three queries
         bulk_create_attempts(resource_attempt, activity_revisions, unscored)
-
-        # One more to fetch and assemble the full atempt hierarchy
-        hierarchy = get_latest_attempts(resource_attempt.id, activity_ids)
-
-        {:ok,
-         %AttemptState{
-           resource_attempt: resource_attempt,
-           attempt_hierarchy: hierarchy
-         }}
+        {:ok, resource_attempt}
 
       error ->
         error
@@ -86,7 +75,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   # every activity attempt, this implementation does the same with exactly three queries:
   #
   # 1. Bulk activity attempt creation (regardless of the number of attempts)
-  # 2. A query
+  # 2. A query to fetch the newly created IDs and their corresponding resource_ids
+  # 3. A final bulk insert query to create the part attempts
   #
   defp bulk_create_attempts(resource_attempt, activity_revisions, unscored) do
     # Use a common timestamp for all insertions
@@ -198,6 +188,28 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> results_to_activity_map
   end
 
+  def full_hierarchy(resource_attempt) do
+    get_latest_attempts(resource_attempt.id)
+    |> results_to_activity_map()
+  end
+
+  def thin_hierarchy(resource_attempt) do
+    map =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    get_thin_activity_context(resource_attempt.id)
+    |> Enum.map(fn {id, guid, type_id} ->
+      {id,
+       %{
+         id: id,
+         attemptGuid: guid,
+         deliveryElement: Map.get(map, type_id).delivery_element
+       }}
+    end)
+    |> Map.new()
+  end
+
   @doc """
   Retrieves the state of the latest attempts for a given resource attempt id and
   a given list of activity ids.
@@ -211,7 +223,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
   }
   """
-  def get_latest_attempts(resource_attempt_id, activity_ids) do
+  def get_latest_attempts(resource_attempt_id) do
     Repo.all(
       from(aa1 in ActivityAttempt,
         join: r in assoc(aa1, :revision),
@@ -226,8 +238,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and
             pa1.activity_attempt_id == pa2.activity_attempt_id,
         where:
-          aa1.resource_id in ^activity_ids and
-            aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and
+          aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and
             is_nil(pa2.id),
         preload: [revision: r],
         select: {pa1, aa1}
