@@ -101,33 +101,24 @@ defmodule OliWeb.CommunityLiveTest do
       assert has_element?(view, "a[href=\"#{@live_view_new_route}\"]")
     end
 
-    test "lists only active communities", %{conn: conn} do
+    test "applies filtering", %{conn: conn} do
       c1 = insert(:community)
       c2 = insert(:community, status: :deleted)
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "#communities-table")
       assert has_element?(view, "##{c1.id}")
       refute has_element?(view, "##{c2.id}")
-    end
-
-    test "lists all communities when filter is applied", %{conn: conn} do
-      c1 = insert(:community)
-      c2 = insert(:community, status: :deleted)
-
-      {:ok, view, _html} = live(conn, @live_view_index_route)
 
       view
       |> element("#community-filters form")
       |> render_change(%{"filter" => %{"status" => "active,deleted"}})
 
-      assert has_element?(view, "#communities-table")
       assert has_element?(view, "##{c1.id}")
       assert has_element?(view, "##{c2.id}")
     end
 
-    test "applies filtering", %{conn: conn} do
+    test "applies searching", %{conn: conn} do
       c1 = insert(:community, %{name: "Testing"})
       c2 = insert(:community)
 

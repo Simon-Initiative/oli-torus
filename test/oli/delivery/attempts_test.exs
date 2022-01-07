@@ -78,8 +78,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      # verify that creating the attempt tree returns both activity attempts
-      {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
+      {:ok, resource_attempt} =
         Hierarchy.create(%VisitContext{
           latest_resource_attempt: nil,
           page_revision: p1.revision,
@@ -89,6 +88,10 @@ defmodule Oli.Delivery.AttemptsTest do
           blacklisted_activity_ids: [],
           publication_id: pub.id
         })
+
+      # verify that creating the attempt tree returns both activity attempts
+      {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
+        AttemptState.fetch_attempt_state(resource_attempt, p1.revision)
 
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)

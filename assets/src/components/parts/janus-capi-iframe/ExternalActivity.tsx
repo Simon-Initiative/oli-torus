@@ -1,4 +1,5 @@
 import { templatizeText } from 'apps/delivery/components/TextParser';
+import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -7,12 +8,11 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
+import { clone, parseBool, parseBoolean } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
-import { Environment } from 'janus-script';
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
 const getExternalActivityMap = () => {
@@ -679,7 +679,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const handleResizeParentContainer = useCallback(
     (data: any) => {
       const iFrameResponse: { key: string; type: number; value: string }[] = [];
-      const modifiedData = data;
+      const modifiedData = clone(data);
       if (data?.width) {
         setFrameWidth((previousWidth) => {
           const newW = parseFloat(data.width.value);

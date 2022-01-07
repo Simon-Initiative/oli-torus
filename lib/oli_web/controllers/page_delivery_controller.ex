@@ -301,7 +301,7 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
 
     {:ok, activity_guid_mapping} =
-      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
+      context.activities
       |> Jason.encode()
 
     {:ok, {previous, next}} =

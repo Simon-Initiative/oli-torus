@@ -171,6 +171,12 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
            total_count: length(filtered)
          )}
       end
+
+      def withelist_filter(filter, filter_name, allowed_values) do
+        Map.get(filter, filter_name)
+        |> String.split(",")
+        |> Enum.filter(&(&1 in allowed_values))
+      end
     end
   end
 end
