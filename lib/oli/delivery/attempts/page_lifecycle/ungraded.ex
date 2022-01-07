@@ -11,7 +11,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
   }
 
   alias Oli.Delivery.Attempts.PageLifecycle.Common
-  alias Oli.Resources.Revision
 
   @moduledoc """
   Implementation of a page Lifecycle behaviour for ungraded pages.
