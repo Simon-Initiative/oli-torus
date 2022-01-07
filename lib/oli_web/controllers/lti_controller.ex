@@ -119,7 +119,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  def developer_key_json(conn, _params) do
+  def developer_key_json(conn, params) do
     {:ok, active_jwk} = Lti_1p3.get_active_jwk()
 
     public_jwk =
@@ -156,10 +156,20 @@ defmodule OliWeb.LtiController do
                 "message_type" => "LtiResourceLinkRequest",
                 "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
               },
-              %{
-                "placement" => "course_navigation",
-                "message_type" => "LtiResourceLinkRequest"
-              }
+              case Map.get(params, "course_navigation_default") do
+                "disabled" ->
+                  %{
+                    "default" => "disabled",
+                    "placement" => "course_navigation",
+                    "message_type" => "LtiResourceLinkRequest"
+                  }
+
+                _ ->
+                  %{
+                    "placement" => "course_navigation",
+                    "message_type" => "LtiResourceLinkRequest"
+                  }
+              end
               ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
               # %{
               #   "placement" => "assignment_selection",
