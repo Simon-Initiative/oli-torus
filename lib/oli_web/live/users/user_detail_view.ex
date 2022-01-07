@@ -1,8 +1,5 @@
 defmodule OliWeb.Users.UsersDetailView do
   use OliWeb, :surface_view
-
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils
