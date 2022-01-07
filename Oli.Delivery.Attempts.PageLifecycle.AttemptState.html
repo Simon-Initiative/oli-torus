@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.PageLifecycle.AttemptState — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-815f975462.js"></script>
+    <script src="dist/sidebar_items-5719fed63a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -97,13 +97,7 @@ Oli.Delivery.Attempts.PageLifecycle.AttemptState <small class="app-vsn">(OLI Tor
 
 
         <section id="moduledoc">
-<p>The complete state of a page attempt</p><p>resource_attempt - The resource attempt record itself</p><p>attempt_hierarchy - The activity attempt and part attempt hierarchy in the form of
-a map of activity resource id to tuples {%ActivityAttempt, part_attempt_map}, where part attempt
-map is a map of part ids to part attempt records.</p><p>A full example of the attempt_hierarchy for two activities each with two parts would
-look like:</p><pre><code class="makeup elixir"><span class="p" data-group-id="8104134883-1">%{</span><span class="w">
-  </span><span class="mi">45</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8104134883-2">{</span><span class="p" data-group-id="8104134883-3">%</span><span class="nc" data-group-id="8104134883-3">ActivityAttempt</span><span class="p" data-group-id="8104134883-3">{</span><span class="p" data-group-id="8104134883-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8104134883-4">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8104134883-5">%</span><span class="nc" data-group-id="8104134883-5">PartAttempt</span><span class="p" data-group-id="8104134883-5">{</span><span class="p" data-group-id="8104134883-5">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="8104134883-6">{</span><span class="p" data-group-id="8104134883-6">}</span><span class="p" data-group-id="8104134883-4">}</span><span class="p" data-group-id="8104134883-2">}</span><span class="p">,</span><span class="w">
-  </span><span class="mi">67</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8104134883-7">{</span><span class="p" data-group-id="8104134883-8">%</span><span class="nc" data-group-id="8104134883-8">ActivityAttempt</span><span class="p" data-group-id="8104134883-8">{</span><span class="p" data-group-id="8104134883-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8104134883-9">%{</span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8104134883-10">%</span><span class="nc" data-group-id="8104134883-10">PartAttempt</span><span class="p" data-group-id="8104134883-10">{</span><span class="p" data-group-id="8104134883-10">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="nc">PartAttempt</span><span class="p" data-group-id="8104134883-11">{</span><span class="p" data-group-id="8104134883-11">}</span><span class="p" data-group-id="8104134883-9">}</span><span class="p" data-group-id="8104134883-7">}</span><span class="w">
-</span><span class="p" data-group-id="8104134883-1">}</span></code></pre>
+<p>The complete state of a page attempt</p><p>resource_attempt - The resource attempt record itself</p><p>attempt_hierarchy - The state of the activity attempts required for rendering</p>
         </section>
 
 
@@ -130,6 +124,25 @@ look like:</p><pre><code class="makeup elixir"><span class="p" data-group-id="81
 
   </div>
 
+  <div class="summary-functions summary">
+    <h2>
+      <a href="#functions">Functions</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#fetch_attempt_state/2">fetch_attempt_state(resource_attempt, arg2)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The required attempt state for page rendering differs between basic and adaptive pages.
+A basic page needs the &quot;full attempt hierarchy&quot;, that is, the resource attempt, and then a
+map of activity ids on that page to tuples of activity attempt and a part attempt mapping. For
+example</p></div>
+
+</div>
+
+  </div>
+
         </section>
 
 
@@ -151,7 +164,7 @@ Types
     </a>
     <h1 class="signature">t()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/attempt_state.ex#L32" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/attempt_state.ex#L25" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -172,6 +185,61 @@ Types
       </div>
 
 
+  </section>
+</section>
+
+          </div>
+        </section>
+
+        <section id="functions" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#functions">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Functions
+          </h1>
+          <div class="functions-list">
+<section class="detail" id="fetch_attempt_state/2">
+
+  <div class="detail-header">
+    <a href="#fetch_attempt_state/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">fetch_attempt_state(resource_attempt, arg2)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/attempt_state.ex#L63" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>The required attempt state for page rendering differs between basic and adaptive pages.
+A basic page needs the &quot;full attempt hierarchy&quot;, that is, the resource attempt, and then a
+map of activity ids on that page to tuples of activity attempt and a part attempt mapping. For
+example:</p><pre><code class="makeup elixir"><span class="p" data-group-id="4432949253-1">%{</span><span class="w">
+  </span><span class="mi">232</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-2">{</span><span class="p" data-group-id="4432949253-3">%</span><span class="nc" data-group-id="4432949253-3">ActivityAttempt</span><span class="p" data-group-id="4432949253-3">{</span><span class="p" data-group-id="4432949253-3">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4432949253-4">%{</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-5">%</span><span class="nc" data-group-id="4432949253-5">PartAttempt</span><span class="p" data-group-id="4432949253-5">{</span><span class="p" data-group-id="4432949253-5">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-6">%</span><span class="nc" data-group-id="4432949253-6">PartAttempt</span><span class="p" data-group-id="4432949253-6">{</span><span class="p" data-group-id="4432949253-6">}</span><span class="p" data-group-id="4432949253-4">}</span><span class="p" data-group-id="4432949253-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="mi">233</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-7">{</span><span class="p" data-group-id="4432949253-8">%</span><span class="nc" data-group-id="4432949253-8">ActivityAttempt</span><span class="p" data-group-id="4432949253-8">{</span><span class="p" data-group-id="4432949253-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4432949253-9">%{</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-10">%</span><span class="nc" data-group-id="4432949253-10">PartAttempt</span><span class="p" data-group-id="4432949253-10">{</span><span class="p" data-group-id="4432949253-10">}</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="4432949253-11">%</span><span class="nc" data-group-id="4432949253-11">PartAttempt</span><span class="p" data-group-id="4432949253-11">{</span><span class="p" data-group-id="4432949253-11">}</span><span class="p" data-group-id="4432949253-9">}</span><span class="p" data-group-id="4432949253-7">}</span><span class="w">
+</span><span class="p" data-group-id="4432949253-1">}</span></code></pre><p>The adaptive page requires less information, which is also arranged in a different format. It
+uses simply a mapping of activity resource ids to a small set of data including the
+attempt guid and the name of the delivery element to use rendering. That looks like:any()</p><pre><code class="makeup elixir"><span class="p" data-group-id="8912120822-1">%{</span><span class="w">
+  </span><span class="mi">232</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8912120822-2">%{</span><span class="w">
+    </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="mi">232</span><span class="p">,</span><span class="w">
+    </span><span class="ss">attemptGuid</span><span class="p">:</span><span class="w"> </span><span class="mi">2398298233</span><span class="p">,</span><span class="w">
+    </span><span class="ss">deliveryElement</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;oli-adaptive-delivery&quot;</span><span class="w">
+
+  </span><span class="p" data-group-id="8912120822-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="mi">233</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8912120822-3">%{</span><span class="w">
+    </span><span class="ss">id</span><span class="p">:</span><span class="w"> </span><span class="mi">233</span><span class="p">,</span><span class="w">
+    </span><span class="ss">attemptGuid</span><span class="p">:</span><span class="w"> </span><span class="mi">223923892389</span><span class="p">,</span><span class="w">
+    </span><span class="ss">deliveryElement</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;oli-adaptive-delivery&quot;</span><span class="w">
+  </span><span class="p" data-group-id="8912120822-3">}</span><span class="w">
+</span><span class="p" data-group-id="8912120822-1">}</span></code></pre>
   </section>
 </section>
 
