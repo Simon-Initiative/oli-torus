@@ -245,6 +245,9 @@ defmodule OliWeb.Router do
 
     # update session timezone information
     post("/timezone", StaticPageController, :timezone)
+    
+    # general health check for application & db
+    get "/healthz", HealthController, :index
   end
 
   scope "/.well-known", OliWeb do
