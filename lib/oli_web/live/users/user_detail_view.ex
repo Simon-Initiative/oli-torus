@@ -1,20 +1,12 @@
 defmodule OliWeb.Users.UsersDetailView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils
   import OliWeb.Common.Utils
 
-  alias Oli.Repo
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User}
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Pow.UserContext
-  alias OliWeb.Users.Actions
+  alias Oli.Accounts.User
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -23,7 +15,14 @@ defmodule OliWeb.Users.UsersDetailView do
     ConfirmEmailModal
   }
 
-  prop author, :any
+  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Pow.UserContext
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Users.Actions
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
+
   data breadcrumbs, :any
   data title, :string, default: "User Details"
   data user, :struct, default: nil
@@ -37,26 +36,31 @@ defmodule OliWeb.Users.UsersDetailView do
     |> breadcrumb(user)
   end
 
+  def breadcrumb(previous, %User{id: id} = user) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: name(user.name, user.given_name, user.family_name),
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
+        })
+      ]
+  end
+
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token, "current_author_id" => author_id},
+        %{"csrf_token" => csrf_token},
         socket
       ) do
-    user =
-      Accounts.get_user_by(id: user_id)
-      |> Repo.preload(:platform_roles)
+    user = user_with_platform_roles(user_id)
 
     case user do
       nil ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
       user ->
-        author = Repo.get(Author, author_id)
-
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(user),
-           author: author,
            user: user,
            csrf_token: csrf_token,
            changeset: user_changeset(user)
@@ -83,7 +87,6 @@ defmodule OliWeb.Users.UsersDetailView do
                 <Label class="form-check-label mr-2">Independent Learner</Label>
               </Field>
             </div>
-
             <section class="mb-2">
               <heading>
                 <p>Enable Independent Section Creation</p>
@@ -96,7 +99,6 @@ defmodule OliWeb.Users.UsersDetailView do
                 </Field>
               </div>
             </section>
-
             <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
             <ReadOnly label="Email Confirmed" value={date(@user.email_confirmed_at)}/>
             <ReadOnly label="Created" value={date(@user.inserted_at)}/>
@@ -135,15 +137,16 @@ defmodule OliWeb.Users.UsersDetailView do
       ) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    user =
-      socket.assigns.user
-      |> Oli.Accounts.User.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
-      |> Repo.update!()
+    case Accounts.update_user(socket.assigns.user, %{email_confirmed_at: email_confirmed_at}) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> assign(user: user)
+         |> hide_modal()}
 
-    {:noreply,
-     socket
-     |> assign(user: user)
-     |> hide_modal()}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Error confirming user's email")}
+    end
   end
 
   def handle_event("show_lock_account_modal", _, socket) do
@@ -198,14 +201,12 @@ defmodule OliWeb.Users.UsersDetailView do
      |> hide_modal()}
   end
 
-  def handle_event("show_delete_account_modal", %{"id" => id}, socket) do
-    user = user_with_platform_roles(id)
-
+  def handle_event("show_delete_account_modal", _, socket) do
     modal = %{
       component: DeleteAccountModal,
       assigns: %{
         id: "delete_account",
-        user: user
+        user: socket.assigns.user
       }
     }
 
@@ -222,10 +223,12 @@ defmodule OliWeb.Users.UsersDetailView do
     case Accounts.delete_user(user) do
       {:ok, _} ->
         {:noreply,
-         redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
+         socket
+         |> put_flash(:info, "User successfully deleted.")
+         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView))}
 
-      {:error, e} ->
-        {:noreply, put_flash(socket, :error, e)}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "User couldn't be deleted.")}
     end
   end
 
@@ -233,30 +236,24 @@ defmodule OliWeb.Users.UsersDetailView do
     {:noreply, assign(socket, changeset: user_changeset(socket.assigns.user, params))}
   end
 
-  def handle_event("submit", _params, socket) do
-    Repo.update!(socket.assigns.changeset)
+  def handle_event("submit", %{"user" => params}, socket) do
+    case Accounts.update_user(socket.assigns.user, params) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> assign(user: user, changeset: user_changeset(user, params))}
 
-    {:noreply,
-     socket
-     |> assign(user: user_with_platform_roles(socket.assigns.user.id))}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "User couldn't be updated.")}
+    end
   end
 
-  def user_with_platform_roles(id) do
-    Accounts.get_user!(id, preload: [:platform_roles])
+  defp user_with_platform_roles(id) do
+    Accounts.get_user(id, preload: [:platform_roles])
   end
 
-  def user_changeset(user, attrs \\ %{}) do
+  defp user_changeset(user, attrs \\ %{}) do
     User.noauth_changeset(user, attrs)
     |> Map.put(:action, :update)
-  end
-
-  def breadcrumb(previous, %User{id: id} = user) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: name(user.name, user.given_name, user.family_name),
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, id)
-        })
-      ]
   end
 end
