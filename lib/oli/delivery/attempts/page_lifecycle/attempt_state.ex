@@ -4,19 +4,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.AttemptState do
 
   resource_attempt - The resource attempt record itself
 
-  attempt_hierarchy - The activity attempt and part attempt hierarchy in the form of
-  a map of activity resource id to tuples {%ActivityAttempt, part_attempt_map}, where part attempt
-  map is a map of part ids to part attempt records.
+  attempt_hierarchy - The state of the activity attempts required for rendering
 
-  A full example of the attempt_hierarchy for two activities each with two parts would
-  look like:
-
-  ```
-  %{
-    45 => {%ActivityAttempt{}, %{"1" => %PartAttempt{}, "2" => PartAttempt{}}},
-    67 => {%ActivityAttempt{}, %{"1" => %PartAttempt{}, "2" => PartAttempt{}}}
-  }
-  ```
   """
 
   alias Oli.Delivery.Attempts.Core.ResourceAttempt
@@ -38,6 +27,39 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.AttemptState do
           attempt_hierarchy: any()
         }
 
+  @doc """
+  The required attempt state for page rendering differs between basic and adaptive pages.
+  A basic page needs the "full attempt hierarchy", that is, the resource attempt, and then a
+  map of activity ids on that page to tuples of activity attempt and a part attempt mapping. For
+  example:
+
+  ```
+  %{
+    232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}},
+    233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
+  }
+  ```
+
+  The adaptive page requires less information, which is also arranged in a different format. It
+  uses simply a mapping of activity resource ids to a small set of data including the
+  attempt guid and the name of the delivery element to use rendering. That looks like:any()
+
+  ```
+  %{
+    232 => %{
+      id: 232,
+      attemptGuid: 2398298233,
+      deliveryElement: "oli-adaptive-delivery"
+
+    },
+    233 => %{
+      id: 233,
+      attemptGuid: 223923892389,
+      deliveryElement: "oli-adaptive-delivery"
+    }
+  }
+  ```
+  """
   def fetch_attempt_state(%ResourceAttempt{} = resource_attempt, %Revision{
         content: %{"advancedDelivery" => true}
       }) do
