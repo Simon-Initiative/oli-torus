@@ -140,7 +140,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
             {
               const { mutateChanges: changes } = payload;
               const isOpen: boolean | undefined = changes[`stage.${id}.isOpen`];
-              if (isOpen !== undefined) {
+              if (isOpen !== undefined && showPopup !== isOpen) {
                 setShowPopup(isOpen);
                 props.onSave({
                   id,

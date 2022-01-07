@@ -221,9 +221,15 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     |> sort
   end
 
-  def render_inserted_at_column(assigns, %{inserted_at: inserted_at}, _) do
-    date(inserted_at, Map.get(assigns, :context))
+  def determine_total(entities) do
+    case entities do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
+
+  def render_inserted_at_column(assigns, %{inserted_at: inserted_at}, _),
+    do: date(inserted_at, Map.get(assigns, :context))
 
   def render_link_column(assigns, label, route_path, class \\ "") do
     ~F"""

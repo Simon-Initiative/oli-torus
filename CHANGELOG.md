@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.18.4 (2022-01-06)
+
+### Bug Fixes
+
+- Improve performance of initial page visits by introducing bulk insertions of attempts
+
 ## 0.18.3 (2021-12-27)
 
 ### Bug Fixes
