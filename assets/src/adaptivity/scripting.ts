@@ -63,7 +63,6 @@ export const getExpressionStringForValue = (
     if (isCSSString?.length) {
       actuallyAString = true;
     }
-
     if (!actuallyAString) {
       try {
         const testEnv = new Environment(env);
