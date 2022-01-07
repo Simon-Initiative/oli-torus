@@ -45,21 +45,24 @@ defmodule Oli.Accounts do
     query =
       User
       |> join(:left, [u], e in "enrollments", on: u.id == e.user_id)
+      |> join(:left, [u, _e], a in "authors", on: u.author_id == a.id)
       |> where(^filter_by_text)
       |> where(^filter_by_guest)
       |> limit(^limit)
       |> offset(^offset)
       |> preload(:author)
-      |> group_by([u, _], u.id)
-      |> select_merge([u, e], %{
+      |> group_by([u, _, _], u.id)
+      |> group_by([_, _, a], a.email)
+      |> select_merge([u, e, _], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()")
       })
 
     query =
       case field do
-        :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
-        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+        :enrollments_count -> order_by(query, [_, e, _], {^direction, count(e.id)})
+        :author -> order_by(query, [_, _, a], {^direction, a.email})
+        _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
       end
 
     Repo.all(query)
