@@ -72,7 +72,7 @@ defmodule Oli.Delivery.Attempts.Core do
       from(a in ActivityAttempt,
         join: r in Revision,
         on: a.revision_id == r.id,
-        where: r.resource_attempt_id == ^resource_attempt_id,
+        where: a.resource_attempt_id == ^resource_attempt_id,
         select: {a.resource_id, a.attempt_guid, r.activity_type_id}
       )
     )
