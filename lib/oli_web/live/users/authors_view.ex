@@ -1,16 +1,16 @@
 defmodule OliWeb.Users.AuthorsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+
+  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
   alias Oli.Accounts
-  alias Oli.Accounts.{AuthorBrowseOptions, Author}
+  alias Oli.Accounts.AuthorBrowseOptions
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.AuthorsTableModel
-
-  import OliWeb.DelegatedEvents
-  import OliWeb.Common.Params
 
   @limit 25
   @default_options %AuthorBrowseOptions{
@@ -20,9 +20,7 @@ defmodule OliWeb.Users.AuthorsView do
   prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "All Authors"
-
   data authors, :list, default: []
-
   data tabel_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
@@ -45,7 +43,7 @@ defmodule OliWeb.Users.AuthorsView do
   end
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+    author = Accounts.get_author(author_id)
 
     authors =
       Accounts.browse_authors(
@@ -54,8 +52,7 @@ defmodule OliWeb.Users.AuthorsView do
         @default_options
       )
 
-    total_count = determine_total(authors)
-
+    total_count = SortableTableModel.determine_total(authors)
     {:ok, table_model} = AuthorsTableModel.new(authors)
 
     {:ok,
@@ -67,13 +64,6 @@ defmodule OliWeb.Users.AuthorsView do
        table_model: table_model,
        options: @default_options
      )}
-  end
-
-  defp determine_total(projects) do
-    case(projects) do
-      [] -> 0
-      [hd | _] -> hd.total_count
-    end
   end
 
   def handle_params(params, _, socket) do
@@ -97,7 +87,7 @@ defmodule OliWeb.Users.AuthorsView do
       )
 
     table_model = Map.put(table_model, :rows, authors)
-    total_count = determine_total(authors)
+    total_count = SortableTableModel.determine_total(authors)
 
     {:noreply,
      assign(socket,

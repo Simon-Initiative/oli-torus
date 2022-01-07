@@ -149,6 +149,8 @@ defmodule Oli.Accounts do
 
   def get_user!(id, preload: preloads), do: Repo.get!(User, id) |> Repo.preload(preloads)
 
+  def get_user(id, preload: preloads), do: Repo.get(User, id) |> Repo.preload(preloads)
+
   @doc """
   Gets a single user by query parameter
   ## Examples
@@ -374,6 +376,18 @@ defmodule Oli.Accounts do
 
   """
   def get_author!(id), do: Repo.get!(Author, id)
+
+  @doc """
+    Gets a single author.
+    Returns nil if the Author does not exist.
+    ## Examples
+      iex> get_author(123)
+      %Author{}
+      iex> get_author(456)
+      nil
+
+  """
+  def get_author(id), do: Repo.get(Author, id)
 
   @doc """
   Gets a single author with the count of communities for which the author is an admin.
