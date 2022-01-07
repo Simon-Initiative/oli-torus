@@ -242,7 +242,12 @@ defmodule OliWeb.Progress.StudentResourceView do
     end
   end
 
-  def handle_info({:lms_grade_update_result, _, job_id, result}, socket) do
+  def handle_info({:lms_grade_update_result, payload}, socket) do
+    %{
+      job: %{id: job_id},
+      status: result
+    } = payload
+
     %{
       resource_access: resource_access,
       section: section,

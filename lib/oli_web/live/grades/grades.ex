@@ -364,7 +364,13 @@ defmodule OliWeb.Grades.GradesLive do
     {:noreply, assign(socket, test_output: test_output, test_in_progress?: !is_done?)}
   end
 
-  def handle_info({:lms_grade_update_result, resource_access_id, job_id, result}, socket) do
+  def handle_info({:lms_grade_update_result, payload}, socket) do
+    %{
+      resource_access_id: resource_access_id,
+      job: %{id: job_id},
+      status: result
+    } = payload
+
     # Unsubscribe to this job when we reach a terminal state
     if result in [:success, :failure, :not_synced] do
       Broadcaster.unsubscribe_to_lms_grade_update(

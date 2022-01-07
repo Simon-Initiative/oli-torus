@@ -71,8 +71,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
         Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
           section_id,
           resource_access_id,
-          job.id,
-          :queued
+          job,
+          :queued,
+          nil
         )
 
         {:ok, job}
@@ -99,8 +100,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
       section_id,
       resource_access_id,
-      job.id,
-      :running
+      job,
+      :running,
+      nil
     )
 
     case Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id) do
@@ -201,7 +203,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
          job,
          section
        ) do
-    result =
+    persistence_result =
       case Oli.Delivery.Attempts.Core.get_resource_access(resource_access_id) do
         nil ->
           {:error, "Unknown resource access"}
@@ -238,7 +240,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     Oli.Delivery.Attempts.PageLifecycle.Broadcaster.broadcast_lms_grade_update(
       section.id,
       resource_access_id,
-      job.id,
+      job,
 
       # Report the status as either [:success, :failure, :retrying, :not_synced]
       case {result, job} do
@@ -248,10 +250,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
 
         {other, _} ->
           other
-      end
+      end,
+      details
     )
 
-    result
+    persistence_result
   end
 
   def track_failure(details, resource_access_id, score, out_of, type, job, section) do
