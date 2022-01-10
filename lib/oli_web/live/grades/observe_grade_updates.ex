@@ -8,7 +8,7 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
   alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
   alias OliWeb.Grades.ObserveTableModel
 
-  @retain_count 25
+  @retain_count 15
 
   data breadcrumbs, :any
   data title, :string, default: "Observe Grade Updates"
@@ -16,6 +16,7 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
   data table_model, :any, default: []
   data total_count, :integer, default: 0
 
+  @spec set_breadcrumbs(:admin | :user, atom | %{:slug => any, optional(any) => any}) :: [...]
   def set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
     |> breadcrumb(section)
@@ -62,7 +63,7 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
   end
 
   def handle_info({:lms_grade_update_result, payload}, socket) do
-    %{
+    %Oli.Delivery.Attempts.PageLifecycle.GradeUpdatePayload{
       resource_access_id: resource_access_id,
       job: %{attempt: attempt},
       status: status,

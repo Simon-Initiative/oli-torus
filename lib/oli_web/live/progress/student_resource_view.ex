@@ -243,7 +243,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   end
 
   def handle_info({:lms_grade_update_result, payload}, socket) do
-    %{
+    %Oli.Delivery.Attempts.PageLifecycle.GradeUpdatePayload{
       job: %{id: job_id},
       status: result
     } = payload
