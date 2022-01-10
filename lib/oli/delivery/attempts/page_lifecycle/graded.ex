@@ -54,20 +54,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
       # where the resource revision has changed.  Instead we return back the existing attempt tree and force
       # the page renderer to resolve this discrepancy by indicating the "revised" state.
+
+      {:ok, attempt_state} =
+        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+
       if page_revision.id !== latest_resource_attempt.revision_id do
-        {:ok,
-         {:revised,
-          %AttemptState{
-            resource_attempt: latest_resource_attempt,
-            attempt_hierarchy: Hierarchy.get_latest_attempts(latest_resource_attempt.id)
-          }}}
+        {:ok, {:revised, attempt_state}}
       else
-        {:ok,
-         {:in_progress,
-          %AttemptState{
-            resource_attempt: latest_resource_attempt,
-            attempt_hierarchy: Hierarchy.get_latest_attempts(latest_resource_attempt.id)
-          }}}
+        {:ok, {:in_progress, attempt_state}}
       end
     end
   end
@@ -92,7 +86,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case {page_revision.max_attempts > length(resource_attempts) or
             page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
       {true, false} ->
-        Hierarchy.create(context)
+        {:ok, resource_attempt} = Hierarchy.create(context)
+        AttemptState.fetch_attempt_state(resource_attempt, page_revision)
 
       {true, true} ->
         {:error, {:active_attempt_present}}

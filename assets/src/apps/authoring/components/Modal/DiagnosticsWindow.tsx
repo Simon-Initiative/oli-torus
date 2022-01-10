@@ -2,15 +2,16 @@ import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/a
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import DiagnosticMessage from './diagnostics/DiagnosticMessage';
-import { DiagnosticTypes } from './diagnostics/DiagnosticTypes';
+import { DiagnosticTypes, DiagnosticRuleTypes } from './diagnostics/DiagnosticTypes';
 
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
 import React, { Fragment, useState } from 'react';
 import { ListGroup, Modal } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { createUpdater } from './diagnostics/actions';
-import DiagnosticSolution from './diagnostics/DiagnosticSolution';
+import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
+import { setCurrentRule } from '../../store/app/slice';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -58,6 +59,24 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
     onApplyFix();
   };
 
+  const handleProblemClick = async (problem: any) => {
+    await dispatch(setCurrentActivityFromSequence(error.activity.custom.sequenceId));
+    switch (problem.type) {
+      case DiagnosticTypes.INVALID_TARGET_INIT:
+        dispatch(setCurrentRule({ currentRule: 'initState' }));
+        break;
+      case DiagnosticTypes.INVALID_TARGET_COND:
+      case DiagnosticTypes.INVALID_VALUE:
+        dispatch(setCurrentRule({ currentRule: problem.item.rule }));
+        break;
+      case DiagnosticTypes.INVALID_TARGET_MUTATE:
+        dispatch(setCurrentRule({ currentRule: problem.item }));
+        break;
+    }
+  };
+
+  const isRuleItem = (type: DiagnosticTypes) => DiagnosticRuleTypes.indexOf(type) > -1;
+
   return (
     <ListGroup>
       <ListGroup.Item>
@@ -74,7 +93,11 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
       {error.problems.map((problem: any) => (
         <ListGroup.Item key={problem.owner.resourceId}>
           <ListGroup horizontal>
-            <ListGroup.Item className="flex-grow-1">
+            <ListGroup.Item
+              action={isRuleItem(problem.type)}
+              className="flex-grow-1"
+              onClick={() => handleProblemClick(problem)}
+            >
               <DiagnosticMessage problem={problem} />
             </ListGroup.Item>
             {problem.type === DiagnosticTypes.DUPLICATE && (

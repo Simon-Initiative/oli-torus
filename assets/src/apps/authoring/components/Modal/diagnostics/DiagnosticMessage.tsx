@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Fragment } from 'react';
+
 import { DiagnosticTypes } from './DiagnosticTypes';
 
 export interface Message {
@@ -27,17 +28,68 @@ export const BrokenMessage: React.FC<Message> = ({ problem }: Message) => (
   </span>
 );
 
-export const Messages: { [type: string]: React.FC<Message> } = {
-  [DiagnosticTypes.PATTERN]: PatternMessage,
-  [DiagnosticTypes.DUPLICATE]: DupeMessage,
-  [DiagnosticTypes.BROKEN]: BrokenMessage,
-};
+export const ValueUndefined: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    The &quot;
+    <strong>{problem?.item?.rule?.name}</strong>&quot; rule is missing a condition value.
+  </span>
+);
+
+export const InvalidMutateTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    The &quot;
+    <strong>{problem?.item?.name}</strong>&quot; rule, has an invalid action target (
+    <strong>{problem?.item?.action.params.target}</strong>).
+  </span>
+);
+
+export const InvalidCondTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    The &quot;
+    <strong>{problem?.item?.rule?.name}</strong>&quot; rule has an invalid condition target (
+    <strong>{problem?.item?.condition?.fact}</strong>).
+  </span>
+);
+
+export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    A rule in the initial state has an invalid component target (
+    <strong>{problem?.item?.fact?.target}</strong>).
+  </span>
+);
 
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
-  const Message = Messages[problem.type];
+  const { type = DiagnosticTypes.DEFAULT } = problem;
 
-  return <Message {...props} />;
+  let action;
+  switch (type) {
+    case DiagnosticTypes.DUPLICATE:
+      action = <DupeMessage {...props} />;
+      break;
+    case DiagnosticTypes.PATTERN:
+      action = <PatternMessage {...props} />;
+      break;
+    case DiagnosticTypes.BROKEN:
+      action = <BrokenMessage {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_COND:
+      action = <InvalidCondTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_INIT:
+      action = <InvalidInitStateTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_TARGET_MUTATE:
+      action = <InvalidMutateTarget {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_VALUE:
+      action = <ValueUndefined {...props} />;
+      break;
+    default:
+      action = <Fragment>No fix defined.</Fragment>;
+      break;
+  }
+  return <Fragment>{action}</Fragment>;
 };
 
 export default DiagnosticMessage;
