@@ -154,7 +154,9 @@ if Mix.env() == :dev do
 end
 
 # Configure Mnesia directory (used by pow persistent sessions)
-config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
+config :mnesia,
+  dir: to_charlist(System.get_env("MNESIA_DIR", ".mnesia")),
+  dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 
