@@ -311,9 +311,10 @@ defmodule OliWeb.Grades.GradesLive do
         total_jobs =
           Attempts.get_resource_access_for_page(section.slug, page.resource_id)
           |> Enum.filter(fn ra -> MapSet.member?(user_ids, ra.user_id) end)
-          |> Enum.filter(fn ra -> !is_nil(ra.date_evaluated) end)
+          |> Enum.filter(fn ra -> !is_nil(ra.score) end)
           |> Enum.filter(fn ra ->
             case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+                   section.id,
                    ra.id,
                    :manual_batch
                  ) do
@@ -352,7 +353,7 @@ defmodule OliWeb.Grades.GradesLive do
     end
   end
 
-  def handle_info({:test_status, status, decoration, is_done?}, socket) do
+  def handle_info({:test_status, status, decoration, is_done}, socket) do
     test_output =
       if is_nil(socket.assigns.test_output) do
         []
@@ -361,7 +362,7 @@ defmodule OliWeb.Grades.GradesLive do
       end ++
         [{status, decoration}]
 
-    {:noreply, assign(socket, test_output: test_output, test_in_progress?: !is_done?)}
+    {:noreply, assign(socket, test_output: test_output, test_in_progress?: !is_done)}
   end
 
   def handle_info({:lms_grade_update_result, payload}, socket) do
@@ -426,5 +427,10 @@ defmodule OliWeb.Grades.GradesLive do
            progress_current: socket.assigns.progress_current + 1
          )}
     end
+  end
+
+  def handle_info(_, socket) do
+    # needed to ignore results of Task invocation
+    {:noreply, socket}
   end
 end

@@ -60,7 +60,7 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
         updates =
           Core.browse_lms_grade_updates(
             %Paging{offset: 0, limit: @limit},
-            %Sorting{direction: :asc, field: :name},
+            %Sorting{direction: :asc, field: :inserted_at},
             options
           )
 
@@ -101,12 +101,11 @@ defmodule OliWeb.Grades.BrowseUpdatesView do
     updates =
       Core.browse_lms_grade_updates(
         %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: :name},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
 
-    {:ok, table_model} = UpdatesTableModel.new(updates, socket.assigns.context)
-
+    table_model = Map.put(table_model, :rows, updates)
     total_count = determine_total(updates)
 
     {:noreply,

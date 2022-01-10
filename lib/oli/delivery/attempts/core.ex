@@ -34,7 +34,7 @@ defmodule Oli.Delivery.Attempts.Core do
       if is_nil(options.user_id) do
         true
       else
-        dynamic([s, _], s.guest == false)
+        dynamic([_, _, u], u.id == ^options.user_id)
       end
 
     filter_by_text =
@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Attempts.Core do
       end
 
     query =
-      User
+      LMSGradeUpdate
       |> join(:left, [g], ra in ResourceAccess, on: g.resource_access_id == ra.id)
       |> join(:left, [_, ra], u in Oli.Accounts.User, on: ra.user_id == u.id)
       |> where(^by_section)
@@ -61,7 +61,8 @@ defmodule Oli.Delivery.Attempts.Core do
       |> limit(^limit)
       |> offset(^offset)
       |> select_merge([_, _, u], %{
-        user_email: u.email
+        user_email: u.email,
+        total_count: fragment("count(*) OVER()")
       })
 
     query =
@@ -174,8 +175,9 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.revision_id == r.id,
         where:
           s.slug == ^section_slug and s.status != :deleted and r.graded == true and
-            r.resource_id == ^resource_id,
-        select: a
+            a.resource_id == ^resource_id,
+        select: a,
+        distinct: a
       )
     )
   end

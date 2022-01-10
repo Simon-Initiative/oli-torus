@@ -20,7 +20,7 @@ defmodule OliWeb.Grades.UpdatesTableModel do
         },
         %ColumnSpec{
           name: :attempt_number,
-          label: "Attempt"
+          label: "Update Attempt #"
         },
         %ColumnSpec{
           name: :score,

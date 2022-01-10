@@ -447,6 +447,7 @@ defmodule OliWeb.PageDeliveryController do
     case PageLifecycle.finalize(section_slug, attempt_guid) do
       {:ok, %ResourceAccess{id: id}} ->
         Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
+
         after_finalized(conn, section_slug, revision_slug, attempt_guid, user)
 
       {:error, {:already_submitted}} ->

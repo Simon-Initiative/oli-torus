@@ -5,7 +5,6 @@ defmodule Oli.Repo.Migrations.GradeUpdate do
     create table(:lms_grade_updates) do
       add :score, :float, null: false
       add :out_of, :float, null: false
-      add :attempt, :integer, null: false
       add :type, :string, null: false, default: "inline"
       add :result, :string, null: false, default: "success"
       add :details, :string

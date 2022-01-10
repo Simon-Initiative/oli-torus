@@ -51,8 +51,7 @@ defmodule OliWeb.Grades.TestConnection do
 
       <div class="card-footer">
 
-        <button class="btn btn-primary" phx-click="test_connection"
-          disabled="<%= !assigns.section.grade_passback_enabled or assigns.test_in_progress? %>">
+        <button class="btn btn-primary" phx-click="test_connection">
           Test Connection
         </button>
 

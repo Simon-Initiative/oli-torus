@@ -7,12 +7,13 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
     field(:out_of, :float)
     field(:type, Ecto.Enum, values: [:inline, :manual, :manual_batch], default: :inline)
     field(:result, Ecto.Enum, values: [:success, :failure, :not_synced], default: :success)
-    field(:details, :string)
+    field(:details, :string, default: nil)
     field(:attempt_number, :integer)
 
     belongs_to(:resource_access, Oli.Delivery.Attempts.Core.ResourceAccess)
 
     field :user_email, :string, virtual: true
+    field :total_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)
   end
@@ -29,6 +30,13 @@ defmodule Oli.Delivery.Attempts.Core.LMSGradeUpdate do
       :attempt_number,
       :resource_access_id
     ])
-    |> validate_required([:score, :out_of, :type, :result, :attempt_number, :resource_access_id])
+    |> validate_required([
+      :score,
+      :out_of,
+      :type,
+      :result,
+      :attempt_number,
+      :resource_access_id
+    ])
   end
 end

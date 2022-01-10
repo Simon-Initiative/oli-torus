@@ -37,27 +37,10 @@ defmodule OliWeb.Progress.Passback do
       nil ->
         ""
 
-      {:ok, :synced} ->
-        ~F"""
-        <div class="alert alert-success" role="alert">
-          Grade successfully sent to the LMS.
-        </div>
-        """
-
-      {:ok, :not_synced} ->
+      result ->
         ~F"""
         <div class="alert alert-info" role="alert">
-          Grade passback is not enabled.
-        </div>
-        """
-
-      {:error, e} ->
-        ~F"""
-        <div class="alert alert-danger" role="alert">
-          <p>The following error was encountered:</p>
-
-          <hr>
-          <p class="mb-0">{e}</p>
+          {result}
         </div>
         """
     end

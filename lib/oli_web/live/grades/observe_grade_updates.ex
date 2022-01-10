@@ -10,10 +10,12 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
 
   @retain_count 15
 
+  data retain_count, :integer, default: @retain_count
   data breadcrumbs, :any
   data title, :string, default: "Observe Grade Updates"
   data section, :any, default: nil
   data table_model, :any, default: []
+  data updates, :list, default: []
   data total_count, :integer, default: 0
 
   @spec set_breadcrumbs(:admin | :user, atom | %{:slug => any, optional(any) => any}) :: [...]
@@ -43,7 +45,8 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
-           table_mode: ObserveTableModel.new([]),
+           table_model: ObserveTableModel.new([]),
+           updates: [],
            section: section
          )}
     end
@@ -91,9 +94,11 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
       ]
       |> List.pop_at(@retain_count)
 
+    {:ok, table_model} = ObserveTableModel.new(updates)
+
     {:noreply,
      assign(socket,
-       table_model: ObserveTableModel.new(updates),
+       table_model: table_model,
        total_count: Enum.count(updates)
      )}
   end

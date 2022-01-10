@@ -263,7 +263,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       )
     end
 
-    resource_access = get_resource_access(resource_access.id, section.slug, user.id)
+    resource_access = get_resource_access(resource_access.resource_id, section.slug, user.id)
 
     grade_sync_result =
       case result do
