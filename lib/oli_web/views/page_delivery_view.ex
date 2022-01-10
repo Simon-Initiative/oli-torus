@@ -100,31 +100,46 @@ defmodule OliWeb.PageDeliveryView do
   def encode_activity_attempts(registered_activity_slug_map, latest_attempts) do
     Map.keys(latest_attempts)
     |> Enum.map(fn activity_id ->
-      {activity_attempt, part_attempts_map} = Map.get(latest_attempts, activity_id)
-      {:ok, model} = Oli.Activities.Model.parse(activity_attempt.transformed_model)
-
-      state =
-        Oli.Activities.State.ActivityState.from_attempt(
-          activity_attempt,
-          Map.values(part_attempts_map),
-          model
-        )
-
-      activity_type_slug =
-        Map.get(registered_activity_slug_map, activity_attempt.revision.activity_type_id)
-
-      state
-      |> Map.from_struct()
-      |> Map.put(
-        :answers,
-        Oli.Utils.LoadTesting.provide_answers(
-          activity_type_slug,
-          activity_attempt.transformed_model
-        )
-      )
+      encode_attempt(registered_activity_slug_map, Map.get(latest_attempts, activity_id))
     end)
+    |> Enum.filter(fn data -> !is_nil(data) end)
     |> Jason.encode!()
     |> Base.encode64()
+  end
+
+  # We only encode activity attempts for basic pages, when a full attempt hiearchy is present here as
+  # the second argument. These entries will be in the shape
+  # of two element tuples.
+  defp encode_attempt(registered_activity_slug_map, {activity_attempt, part_attempts_map}) do
+    {:ok, model} = Oli.Activities.Model.parse(activity_attempt.transformed_model)
+
+    state =
+      Oli.Activities.State.ActivityState.from_attempt(
+        activity_attempt,
+        Map.values(part_attempts_map),
+        model
+      )
+
+    activity_type_slug =
+      Map.get(registered_activity_slug_map, activity_attempt.revision.activity_type_id)
+
+    state
+    |> Map.from_struct()
+    |> Map.put(
+      :answers,
+      Oli.Utils.LoadTesting.provide_answers(
+        activity_type_slug,
+        activity_attempt.transformed_model
+      )
+    )
+  end
+
+  # The thin attempt hierarchy will be present when the rendered page is an adaptive page. This is simply a map
+  # (and doesn't match the shape above). We do not support exercising of adaptive pages from the load
+  # testing framework.  Therefore, we return nil, which will be filtered out and ultimately the
+  # __ACTIVITY_ATTEMPT__ load testing page variable will be an empty list.
+  defp encode_attempt(_, _) do
+    nil
   end
 
   def calculate_score_percentage(resource_access) do
