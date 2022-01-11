@@ -477,7 +477,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/payments", OliWeb do
-    pipe_through([:api, :delivery_protected])
+    pipe_through([:api, :delivery_protected, :with_current_user])
 
     # String payment intent creation
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
