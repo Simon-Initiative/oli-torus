@@ -124,7 +124,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          scoreable,
          now
        ) do
-    {:ok, transformed_model} = Transformers.apply_transforms(model)
+    transformed_model =
+      case Transformers.apply_transforms(model) do
+        {:ok, transformed_model} -> transformed_model
+        _ -> nil
+      end
 
     %{
       resource_attempt_id: resource_attempt.id,

@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
+  require Logger
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -19,6 +20,58 @@ defmodule Oli.Delivery.Attempts.Core do
     ResourceAttempt,
     ActivityAttempt
   }
+
+  def select_model(%ActivityAttempt{transformed_model: nil, revision_id: revision_id}, nil) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: nil}, %Oli.Resources.Revision{
+        content: content
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: transformed_model}, _) do
+    transformed_model
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: nil,
+        revision_id: revision_id
+      }) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: %Oli.Resources.Revision{
+          content: content
+        }
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: transformed_model
+      }) do
+    transformed_model
+  end
+
+  defp perform_inline_fetch(revision_id) do
+    Logger.warning(
+      "Inline fetch of revision for model selection. This can lead to performance problems if done as part of an iteration of a collection."
+    )
+
+    case Oli.Repo.get(Oli.Resources.Revision, revision_id) do
+      nil ->
+        Logger.error("Inline fetch could not locate revision")
+        nil
+
+      %Oli.Resources.Revision{content: content} ->
+        content
+    end
+  end
 
   @moduledoc """
   Core attempt related functions.

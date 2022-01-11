@@ -324,7 +324,7 @@ defmodule OliWeb.Api.AttemptController do
       score: attempt.score,
       outOf: attempt.out_of,
       dateEvaluated: attempt.date_evaluated,
-      model: Oli.Delivery.Page.ModelPruner.prune(attempt.transformed_model),
+      model: Attempts.select_model(attempt, revision) |> Oli.Delivery.Page.ModelPruner.prune(),
       partAttempts:
         Map.values(latest_part_attempt_by_part)
         |> Enum.map(fn pa ->

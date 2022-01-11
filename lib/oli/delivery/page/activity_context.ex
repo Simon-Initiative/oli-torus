@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
   alias Oli.Delivery.Page.ModelPruner
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Activities.State
   alias Oli.Activities.State.ActivityState
   alias Oli.Activities
@@ -25,8 +26,9 @@ defmodule Oli.Delivery.Page.ActivityContext do
     activity_states = State.from_attempts(latest_attempts)
 
     Enum.map(latest_attempts, fn {id,
-                                  {%ActivityAttempt{transformed_model: model, revision: revision},
-                                   _}} ->
+                                  {%ActivityAttempt{revision: revision} = activity_attempt, _}} ->
+      model = Core.select_model(activity_attempt)
+
       # the activity type this revision pertains to
       type = Map.get(reg_map, revision.activity_type_id)
       state = Map.get(activity_states, id)

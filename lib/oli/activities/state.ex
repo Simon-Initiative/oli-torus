@@ -9,7 +9,7 @@ defmodule Oli.Activities.State do
   """
   def from_attempts(latest_attempts) do
     Enum.map(latest_attempts, fn {id, {activity_attempt, part_attempts}} ->
-      {:ok, model} = Map.get(activity_attempt, :transformed_model) |> Model.parse()
+      {:ok, model} = Oli.Delivery.Attempts.Core.select_model(activity_attempt) |> Model.parse()
 
       {id, ActivityState.from_attempt(activity_attempt, Map.values(part_attempts), model)}
     end)
