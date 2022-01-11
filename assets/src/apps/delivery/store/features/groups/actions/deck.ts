@@ -163,7 +163,7 @@ export const initializeActivity = createAsyncThunk(
     const initState = currentActivity?.content?.custom?.facts || [];
     const arrInitFacts: Record<string, string> = {};
     const globalizedInitState = initState.map((s: any) => {
-      arrInitFacts[s.target] = s.type;
+      arrInitFacts[s.target] = s.operator;
       if (s.target.indexOf('stage.') !== 0) {
         return { ...s };
       }

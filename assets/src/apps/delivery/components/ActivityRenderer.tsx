@@ -389,10 +389,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
-
+    const initStateBindToFacts: string[] = [];
     updateGlobalState(snapshot, initStateFacts);
     const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
       let target = key;
+      const operator = initStateFacts[key];
+      if (operator === 'bind to') {
+        initStateBindToFacts.push(key);
+      }
       if (target.indexOf('stage') === 0) {
         const lstVar = target.split('.');
         if (lstVar?.length > 1) {
@@ -413,6 +417,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
       initStateFacts: finalInitSnapshot,
       domain: adaptivityDomain,
+      initStateBindToFacts: initStateBindToFacts,
     });
   };
 
