@@ -301,7 +301,7 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
 
     {:ok, activity_guid_mapping} =
-      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
+      context.activities
       |> Jason.encode()
 
     {:ok, {previous, next}} =
@@ -312,6 +312,8 @@ defmodule OliWeb.PageDeliveryController do
       graded: context.page.graded,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
+      latest_attempts: %{},
+      activity_type_slug_mapping: %{},
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),

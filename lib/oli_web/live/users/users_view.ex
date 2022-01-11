@@ -1,16 +1,16 @@
 defmodule OliWeb.Users.UsersView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
+
+  import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
   alias Oli.Accounts
-  alias Oli.Accounts.{UserBrowseOptions, Author}
+  alias Oli.Accounts.UserBrowseOptions
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UsersTableModel
-
-  import OliWeb.DelegatedEvents
-  import OliWeb.Common.Params
 
   @limit 25
   @default_options %UserBrowseOptions{
@@ -18,12 +18,8 @@ defmodule OliWeb.Users.UsersView do
     text_search: ""
   }
 
-  prop author, :any
-
   data breadcrumbs, :any
-
   data users, :list, default: []
-
   data tabel_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
@@ -35,9 +31,17 @@ defmodule OliWeb.Users.UsersView do
     |> breadcrumb()
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
+  def breadcrumb(previous) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "All Users",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
+        })
+      ]
+  end
 
+  def mount(_, _, socket) do
     users =
       Accounts.browse_users(
         %Paging{offset: 0, limit: @limit},
@@ -45,27 +49,18 @@ defmodule OliWeb.Users.UsersView do
         @default_options
       )
 
-    total_count = determine_total(users)
-
+    total_count = SortableTableModel.determine_total(users)
     {:ok, table_model} = UsersTableModel.new(users)
 
     {:ok,
      assign(socket,
        title: "All Users",
        breadcrumbs: set_breadcrumbs(),
-       author: author,
        users: users,
        total_count: total_count,
        table_model: table_model,
        options: @default_options
      )}
-  end
-
-  defp determine_total(projects) do
-    case(projects) do
-      [] -> 0
-      [hd | _] -> hd.total_count
-    end
   end
 
   def handle_params(params, _, socket) do
@@ -90,7 +85,7 @@ defmodule OliWeb.Users.UsersView do
       )
 
     table_model = Map.put(table_model, :rows, users)
-    total_count = determine_total(users)
+    total_count = SortableTableModel.determine_total(users)
 
     {:noreply,
      assign(socket,
@@ -157,15 +152,5 @@ defmodule OliWeb.Users.UsersView do
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
-  end
-
-  def breadcrumb(previous) do
-    previous ++
-      [
-        Breadcrumb.new(%{
-          full_title: "All Users",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
-        })
-      ]
   end
 end

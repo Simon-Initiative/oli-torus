@@ -40,12 +40,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
           error
       end
     else
-      {:ok,
-       {:in_progress,
-        %AttemptState{
-          resource_attempt: latest_resource_attempt,
-          attempt_hierarchy: Hierarchy.get_latest_attempts(latest_resource_attempt.id)
-        }}}
+      {:ok, attempt_state} =
+        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+
+      {:ok, {:in_progress, attempt_state}}
     end
   end
 
@@ -65,6 +63,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Ungraded do
 
   @impl Lifecycle
   def start(%VisitContext{} = context) do
-    Hierarchy.create(context)
+    {:ok, resource_attempt} = Hierarchy.create(context)
+    AttemptState.fetch_attempt_state(resource_attempt, context.page_revision)
   end
 end

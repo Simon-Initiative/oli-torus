@@ -36,8 +36,8 @@ const ActionNavigationEditor: React.FC<ActionNavigationEditorProps> = (props) =>
 
   const onChangeHandler = (sequenceId: string) => {
     // console.log('onChange picker', sequenceId);
-    onChange({ target: sequenceId || 'next' });
-    setTarget(sequenceId || 'next');
+    onChange({ target: sequenceId || 'invalid' });
+    setTarget(sequenceId || 'invalid');
   };
 
   return (
