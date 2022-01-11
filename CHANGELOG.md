@@ -2,11 +2,12 @@
 
 ## Unreleased
 
-## 0.18.4 (2022-01-06)
+## 0.18.4 (2022-01-11)
 
 ### Bug Fixes
 
 - Improve performance of initial page visits by introducing bulk insertions of attempts
+- FIx enrollments view rendering problem in sections that require payment
 
 ## 0.18.3 (2021-12-27)
 
