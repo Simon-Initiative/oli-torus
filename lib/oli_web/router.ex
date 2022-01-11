@@ -65,6 +65,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetDefaultPow, :user)
   end
 
+  pipeline :with_current_user do
+    plug(Oli.Plugs.SetCurrentUser)
+  end
+
   # set the layout to be workspace
   pipeline :workspace do
     plug(:put_root_layout, {OliWeb.LayoutView, "workspace.html"})
@@ -245,7 +249,7 @@ defmodule OliWeb.Router do
 
     # update session timezone information
     post("/timezone", StaticPageController, :timezone)
-    
+
     # general health check for application & db
     get "/healthz", HealthController, :index
   end
@@ -468,8 +472,12 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api])
-
+    # This endpoint is secured via an API token
     post("/", Api.PaymentController, :new)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:api, :delivery_protected])
 
     # String payment intent creation
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
