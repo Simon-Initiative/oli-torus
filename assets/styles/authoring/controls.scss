@@ -101,3 +101,9 @@
   left: 0px;
   top: -3px;
 }
+
+.btn.move-btn {
+  &[disabled] {
+    opacity: 0.25;
+  }
+}

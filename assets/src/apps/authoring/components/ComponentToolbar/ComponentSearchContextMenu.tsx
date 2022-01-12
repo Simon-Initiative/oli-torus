@@ -1,3 +1,4 @@
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
   selectPartComponentTypes,
   selectPaths,
@@ -10,6 +11,7 @@ import { useCallback } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
+import cloneDeep from 'lodash/cloneDeep';
 
 const ComponentSearchContextMenu: React.FC = () => {
   const [show, setShow] = useState(false);
@@ -54,14 +56,28 @@ const ComponentSearchContextMenu: React.FC = () => {
     return `${paths?.images}/icons/${part.icon}`;
   };
 
+  const updateActivityTreeParts = (list: any) => {
+    const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
+    activity.content.partsLayout = list;
+    dispatch(saveActivity({ activity }));
+  };
+
   const moveComponentUp = (event: any, part: any, index: number) => {
     event.preventDefault();
     event.stopPropagation();
+    const list = allParts.filter((p: any) => p.id !== part.id);
+    list.splice(index - 1, 0, part);
+
+    updateActivityTreeParts(list);
   };
 
   const moveComponentDown = (event: any, part: any, index: number) => {
     event.preventDefault();
     event.stopPropagation();
+    const list = allParts.filter((p: any) => p.id !== part.id);
+    list.splice(index + 1, 0, part);
+
+    updateActivityTreeParts(list);
   };
 
   // console.log('ALL PARTS', { allParts, currentActivityTree });
@@ -114,16 +130,20 @@ const ComponentSearchContextMenu: React.FC = () => {
                     </div>
                     <div className="text-center mr-1 d-flex" style={{ minWidth: '36px' }}>
                       <button
-                        className="btn btn-xs"
+                        className="btn btn-xs move-btn"
                         onClick={(ev) => moveComponentUp(ev, part, index)}
+                        disabled={index === 0}
                       >
                         <span className="icon-chevron-up" />
+                        <span className="sr-only">Move Up</span>
                       </button>
                       <button
-                        className="btn btn-xs"
+                        className="btn btn-xs move-btn"
                         onClick={(ev) => moveComponentDown(ev, part, index)}
+                        disabled={index === allParts.length - 1}
                       >
                         <span className="icon-chevron-down" />
+                        <span className="sr-only">Move Down</span>
                       </button>
                     </div>
                   </ListGroup.Item>
