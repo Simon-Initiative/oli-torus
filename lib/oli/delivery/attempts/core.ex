@@ -4,7 +4,6 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
   require Logger
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
