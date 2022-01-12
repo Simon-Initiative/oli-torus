@@ -320,7 +320,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -897,7 +897,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       if (cVar.type === CapiVariableTypes.ARRAY) {
         const isMultidimensional = cVar.value.filter(Array.isArray).length;
         if (isMultidimensional && typeOfValue === 'string') {
-          cVar.value = JSON.stringify(cVar.value);
+          const val: any[] = [];
+          //it's stage what we are doing here but CAPI expect a Multidimensional array [[0.5,1],[0.521]] as ['[0.5','1]','[0.5,'1]'], so we need to convert it to this format.
+          cVar.value.forEach((v: any) => {
+            val.push(...JSON.stringify(v).split(','));
+          });
+          cVar.value = val;
         }
       }
       formatted[baseKey] = cVar;

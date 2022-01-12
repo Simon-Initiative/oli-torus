@@ -8,7 +8,7 @@ defmodule OliWeb.Api.OpenAndFreeController do
   def index(conn, _params) do
     sections =
       Sections.list_open_and_free_sections()
-      |> Enum.filter(fn s -> s.registration_open end)
+      |> Enum.filter(fn s -> s.registration_open and !s.requires_enrollment end)
       |> Enum.map(fn section ->
         %{
           slug: section.slug,
