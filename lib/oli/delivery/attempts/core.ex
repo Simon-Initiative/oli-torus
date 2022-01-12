@@ -435,7 +435,7 @@ defmodule Oli.Delivery.Attempts.Core do
       Repo.all(
         from(activity_attempt in ActivityAttempt,
           where: activity_attempt.attempt_guid in ^activity_attempt_guids,
-          preload: [:part_attempts]
+          preload: [:part_attempts, :revision]
         )
       )
 
