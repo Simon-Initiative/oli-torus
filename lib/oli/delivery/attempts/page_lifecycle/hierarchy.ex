@@ -87,9 +87,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # Create the activity attempts, in bulk
     Enum.map(activity_revisions, fn r ->
       scoreable = !MapSet.member?(unscored, r.resource_id)
-      create_raw_activity_attempt(resource_attempt, r, scoreable, right_now)
+      create_raw_activity_attempt(r, scoreable)
     end)
-    |> bulk_create_activity_attempts()
+    |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
     # Create the resource ID to attempt database ID mapping
     id_mapping = create_resource_id_mapping(resource_attempt.id)
@@ -97,10 +97,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # Create the part attempts, in bulk
     Enum.map(activity_revisions, fn r ->
       {:ok, parsed_model} = Model.parse(r.content)
-      create_raw_part_attempts(parsed_model, Map.get(id_mapping, r.resource_id), right_now)
+      create_raw_part_attempts(parsed_model, Map.get(id_mapping, r.resource_id))
     end)
     |> List.flatten()
-    |> bulk_create_part_attempts()
+    |> bulk_create_part_attempts(right_now)
   end
 
   defp create_resource_id_mapping(resource_attempt_id) do
@@ -110,49 +110,59 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     end)
   end
 
-  defp bulk_create_activity_attempts(raw_attempts) do
-    Repo.insert_all(ActivityAttempt, raw_attempts)
+  defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
+    placeholders = %{
+      now: now,
+      attempt_number: 1,
+      resource_attempt_id: resource_attempt_id
+    }
+
+    Repo.insert_all(ActivityAttempt, raw_attempts, placeholders: placeholders)
   end
 
-  defp bulk_create_part_attempts(raw_attempts) do
-    Repo.insert_all(PartAttempt, raw_attempts)
+  defp bulk_create_part_attempts(raw_attempts, now) do
+    placeholders = %{
+      now: now,
+      attempt_number: 1,
+      hints: []
+    }
+
+    Repo.insert_all(PartAttempt, raw_attempts, placeholders: placeholders)
   end
 
   defp create_raw_activity_attempt(
-         resource_attempt,
          %Revision{resource_id: resource_id, id: id, content: model},
-         scoreable,
-         now
+         scoreable
        ) do
     transformed_model =
       case Transformers.apply_transforms(model) do
-        {:ok, transformed_model} -> transformed_model
+        {:ok, t} -> t
         _ -> nil
       end
 
     %{
-      resource_attempt_id: resource_attempt.id,
+      resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
-      attempt_number: 1,
+      attempt_number: {:placeholder, :attempt_number},
       revision_id: id,
       resource_id: resource_id,
       transformed_model: transformed_model,
       scoreable: scoreable,
-      inserted_at: now,
-      updated_at: now
+      inserted_at: {:placeholder, :now},
+      updated_at: {:placeholder, :now}
     }
   end
 
-  defp create_raw_part_attempts(parsed_model, activity_attempt_id, now) do
+  defp create_raw_part_attempts(parsed_model, activity_attempt_id) do
     Enum.map(parsed_model.parts, fn p ->
       %{
-        hints: [],
+        hints: {:placeholder, :hints},
         attempt_guid: UUID.uuid4(),
         activity_attempt_id: activity_attempt_id,
-        attempt_number: 1,
+        attempt_number: {:placeholder, :attempt_number},
         part_id: p.id,
-        inserted_at: now,
-        updated_at: now
+        inserted_at: {:placeholder, :now},
+        updated_at: {:placeholder, :now}
       }
     end)
   end
