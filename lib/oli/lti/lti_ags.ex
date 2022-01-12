@@ -239,4 +239,11 @@ defmodule Oli.Lti.LTI_AGS do
       {"Authorization", "Bearer #{access_token.access_token}"}
     ]
   end
+
+  def required_scopes() do
+    [
+      @lineitem_scope_url,
+      @scores_scope_url
+    ]
+  end
 end
