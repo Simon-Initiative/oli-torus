@@ -18,7 +18,7 @@ defmodule Oli.Activities.Transformers do
       {:ok, parsed_model} ->
         case Enum.count(parsed_model.transformations) do
           0 ->
-            {:no_effect, parsed_model}
+            {:no_effect, model}
 
           _ ->
             Enum.reduce_while(parsed_model.transformations, {:ok, model}, fn t, {:ok, model} ->
