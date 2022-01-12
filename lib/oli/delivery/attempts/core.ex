@@ -4,7 +4,6 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
   require Logger
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
@@ -96,23 +95,21 @@ defmodule Oli.Delivery.Attempts.Core do
   """
 
   @doc """
-  Creates or updates an access record for a given resource, section context id and user. When
+  Creates or updates an access record for a given resource, section id and user. When
   created the access count is set to 1, otherwise on updates the
   access count is incremented.
   ## Examples
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:ok, %ResourceAccess{}}
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:error, %Ecto.Changeset{}}
   """
-  def track_access(resource_id, section_slug, user_id) do
-    section = Sections.get_section_by(slug: section_slug)
-
+  def track_access(resource_id, section_id, user_id) do
     Oli.Repo.insert!(
       %ResourceAccess{
         access_count: 1,
         user_id: user_id,
-        section_id: section.id,
+        section_id: section_id,
         resource_id: resource_id
       },
       on_conflict: [inc: [access_count: 1]],
@@ -351,23 +348,23 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def get_latest_resource_attempt(resource_id, section_slug, user_id) do
     Repo.one(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: ra1 in ResourceAttempt,
-        on: a.id == ra1.resource_access_id,
-        left_join: ra2 in ResourceAttempt,
+      ResourceAttempt
+      |> join(:left, [ra1], a in ResourceAccess, on: a.id == ra1.resource_access_id)
+      |> join(:left, [_, a], s in Section, on: a.section_id == s.id)
+      |> join(:left, [ra1, a, _], ra2 in ResourceAttempt,
         on:
           a.id == ra2.resource_access_id and ra1.id < ra2.id and
-            ra1.resource_access_id == ra2.resource_access_id,
-        where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
-            a.resource_id == ^resource_id and
-            is_nil(ra2),
-        select: ra1
+            ra1.resource_access_id == ra2.resource_access_id
       )
+      |> join(:left, [ra1, _, _, _], r in Revision, on: ra1.revision_id == r.id)
+      |> where(
+        [ra1, a, s, ra2, _],
+        a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+          a.resource_id == ^resource_id and
+          is_nil(ra2)
+      )
+      |> preload(:revision)
     )
-    |> Repo.preload([:revision])
   end
 
   @doc """

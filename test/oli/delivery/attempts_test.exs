@@ -74,7 +74,7 @@ defmodule Oli.Delivery.AttemptsTest do
       a2: a2,
       publication: pub
     } do
-      Attempts.track_access(p1.resource.id, section.slug, user.id)
+      Attempts.track_access(p1.resource.id, section.id, user.id)
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
@@ -109,14 +109,14 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       p1: %{resource: resource}
     } do
-      Attempts.track_access(resource.id, section.slug, user1.id)
-      Attempts.track_access(resource.id, section.slug, user1.id)
+      Attempts.track_access(resource.id, section.id, user1.id)
+      Attempts.track_access(resource.id, section.id, user1.id)
 
       entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 1
       assert hd(entries).access_count == 2
 
-      Attempts.track_access(resource.id, section.slug, user2.id)
+      Attempts.track_access(resource.id, section.id, user2.id)
       entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 2
 
@@ -140,7 +140,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       # Page 1
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
@@ -175,8 +175,8 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
-      PageContext.create_for_visit(section.slug, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user2)
 
       # User1 - same as above
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
@@ -340,7 +340,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -367,7 +367,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -377,7 +377,7 @@ defmodule Oli.Delivery.AttemptsTest do
           activity_provider
         )
 
-      PageContext.create_for_visit(section.slug, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user2)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -456,7 +456,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
