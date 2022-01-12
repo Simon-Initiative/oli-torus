@@ -1,6 +1,8 @@
 defmodule OliWeb.Users.Common do
   use Surface.LiveComponent
 
+  alias Oli.Accounts
+
   def render(assigns) do
     ~F"""
     <div>nothing</div>
@@ -9,7 +11,12 @@ defmodule OliWeb.Users.Common do
 
   def render_email_column(
         assigns,
-        %{email: email, email_confirmed_at: email_confirmed_at, locked_at: locked_at} = row,
+        %{
+          email: email,
+          email_confirmed_at: email_confirmed_at,
+          invitation_accepted_at: invitation_accepted_at,
+          locked_at: locked_at
+        } = row,
         _
       ) do
     checkmark =
@@ -18,18 +25,34 @@ defmodule OliWeb.Users.Common do
           nil
 
         _ ->
-          if email_confirmed_at == nil do
-            ~F"""
-            <span data-toggle="tooltip" data-html="true" title={"<b>Confirmation Pending</b> sent to #{email}"}>
-              <i class="las la-paper-plane text-secondary"></i>
-            </span>
-            """
-          else
-            ~F"""
-            <span data-toggle="tooltip" data-html="true" title={"<b>Email Confirmed</b> on #{Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}")}"}>
-              <i class="las la-check text-success"></i>
-            </span>
-            """
+          cond do
+            Accounts.user_confirmation_pending?(row) ->
+              ~F"""
+              <span data-toggle="tooltip" data-html="true" title={"<b>Confirmation Pending</b> sent to #{email}"}>
+                <i class="las la-paper-plane text-secondary"></i>
+              </span>
+              """
+
+            not is_nil(email_confirmed_at) ->
+              ~F"""
+              <span data-toggle="tooltip" data-html="true" title={"<b>Email Confirmed</b> on #{Timex.format!(email_confirmed_at, "{YYYY}-{M}-{D}")}"}>
+                <i class="las la-check text-success"></i>
+              </span>
+              """
+
+            not is_nil(invitation_accepted_at) ->
+              ~F"""
+              <span data-toggle="tooltip" data-html="true" title={"<b>Invitation Accepted</b> on #{Timex.format!(invitation_accepted_at, "{YYYY}-{M}-{D}")}"}>
+                <i class="las la-check text-success"></i>
+              </span>
+              """
+
+            true ->
+              ~F"""
+              <span data-toggle="tooltip" data-html="true" title={"<b>Invitation Pending</b> sent to #{email}"}>
+                <i class="las la-paper-plane text-secondary"></i>
+              </span>
+              """
           end
       end
 
