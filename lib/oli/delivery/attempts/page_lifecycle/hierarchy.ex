@@ -89,6 +89,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       scoreable = !MapSet.member?(unscored, r.resource_id)
       create_raw_activity_attempt(r, scoreable)
     end)
+    |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
     # Create the resource ID to attempt database ID mapping
@@ -128,6 +129,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     }
 
     Repo.insert_all(PartAttempt, raw_attempts, placeholders: placeholders)
+  end
+
+  # If all of the transformed_model attrs are nil, we do not need to include them in
+  # the query, as they will be set to nil by default
+  defp optimize_transformed_model(raw_attempts) do
+    case Enum.all?(raw_attempts, fn a -> is_nil(a.transformed_model) end) do
+      true -> Enum.map(raw_attempts, fn a -> Map.delete(a, :transformed_model) end)
+      _ -> raw_attempts
+    end
   end
 
   defp create_raw_activity_attempt(
