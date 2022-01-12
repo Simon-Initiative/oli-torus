@@ -849,12 +849,11 @@ defmodule OliWeb.Router do
   # routes only accessible when load testing mode is enabled. These routes exist solely
   # to allow the load testing framework to do things like query for the available open and free
   # sections, to query for all of the pages in an individual section, etc.
-  if Oli.Utils.LoadTesting.enabled?() do
-    scope "/api/v1/testing", OliWeb do
-      pipe_through([:api])
 
-      get("/openfree", Api.OpenAndFreeController, :index)
-    end
+  scope "/api/v1/testing", OliWeb do
+    pipe_through([:api])
+
+    get("/openfree", Api.OpenAndFreeController, :index)
   end
 
   # routes only accessible to developers
