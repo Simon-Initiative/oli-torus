@@ -150,7 +150,7 @@ defmodule Oli.Analytics.Datashop do
   end
 
   defp get_part_from_attempt(part_attempt) do
-    part_attempt.activity_attempt.transformed_model["authoring"]["parts"]
+    Attempts.select_model(part_attempt.activity_attempt)["authoring"]["parts"]
     |> Enum.find(%{}, &(&1["id"] == part_attempt.part_id))
   end
 end

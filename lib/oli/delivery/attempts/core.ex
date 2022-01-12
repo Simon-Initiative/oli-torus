@@ -2,6 +2,7 @@ defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
   alias Oli.Repo
+  require Logger
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -19,6 +20,76 @@ defmodule Oli.Delivery.Attempts.Core do
     ResourceAttempt,
     ActivityAttempt
   }
+
+  @doc """
+  Select the model to use to power all aspects of an activity.  If an activity utilizes
+  transformations, the transformed model will be stored on the activity attempt in the
+  `transformed_model` attribute.  Otherwise, that field will be `nil` indicating that the
+  original model from the revision of the activity should be used.  Allowing the
+  `transformed_model` to be nil is a significant storage and performance optimization,
+  particularly when the size and number of activities within a page becomes large.
+
+  This variant of this function allows the activity attempt and the revision to be passed
+  as separate arguments to support workflows where the revision is not expected to be
+  preloaded in the activity attempt. In situations where that revision is expected to be
+  preloaded, `select_model/1` can be used instead.
+
+  In both variants, a robustness feature exists that will inline retrieve the revision,
+  if needed and not specified.  This is clearly to prevent functional problems, but it can
+  lead to performance issues if done across a collection.  A warning is logged in this
+  case.
+  """
+  def select_model(%ActivityAttempt{transformed_model: nil, revision_id: revision_id}, nil) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: nil}, %Oli.Resources.Revision{
+        content: content
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: transformed_model}, _) do
+    transformed_model
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: nil,
+        revision_id: revision_id
+      }) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: %Oli.Resources.Revision{
+          content: content
+        }
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: transformed_model
+      }) do
+    transformed_model
+  end
+
+  defp perform_inline_fetch(revision_id) do
+    Logger.warning(
+      "Inline fetch of revision for model selection. This can lead to performance problems if done as part of an iteration of a collection."
+    )
+
+    case Oli.Repo.get(Oli.Resources.Revision, revision_id) do
+      nil ->
+        Logger.error("Inline fetch could not locate revision")
+        nil
+
+      %Oli.Resources.Revision{content: content} ->
+        content
+    end
+  end
 
   @moduledoc """
   Core attempt related functions.
@@ -364,7 +435,7 @@ defmodule Oli.Delivery.Attempts.Core do
       Repo.all(
         from(activity_attempt in ActivityAttempt,
           where: activity_attempt.attempt_guid in ^activity_attempt_guids,
-          preload: [:part_attempts]
+          preload: [:part_attempts, :revision]
         )
       )
 

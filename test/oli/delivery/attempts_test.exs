@@ -9,7 +9,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput}
+  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
 
   describe "creating the attempt tree records" do
     setup do
@@ -242,7 +242,7 @@ defmodule Oli.Delivery.AttemptsTest do
         :attempt1
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: %{some: :thing}},
         :activity_a,
         :attempt1,
         :activity_attempt1
@@ -261,7 +261,7 @@ defmodule Oli.Delivery.AttemptsTest do
         :attempt2
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: nil},
         :activity_a,
         :attempt2,
         :activity_attempt2
@@ -302,6 +302,35 @@ defmodule Oli.Delivery.AttemptsTest do
         :activity_attempt2,
         :part3_attempt2
       )
+    end
+
+    test "model selection", %{
+      activity_a: activity,
+      activity_attempt1: activity_attempt1,
+      activity_attempt2: activity_attempt2
+    } do
+      revision = activity.revision
+
+      # Directly loading attempts will not preload the revision, which makes it suitable
+      # to feed into select_model/2
+
+      assert %{"some" => "thing"} ==
+               Oli.Repo.get(ActivityAttempt, activity_attempt1.id)
+               |> Attempts.select_model(revision)
+
+      assert revision.content ==
+               Oli.Repo.get(ActivityAttempt, activity_attempt2.id)
+               |> Attempts.select_model(revision)
+
+      # Using get_activity_attempt_by does preload, therefore we can use select_model/1
+
+      assert %{"some" => "thing"} ==
+               Attempts.get_activity_attempt_by(attempt_guid: activity_attempt1.attempt_guid)
+               |> Attempts.select_model()
+
+      assert revision.content ==
+               Attempts.get_activity_attempt_by(attempt_guid: activity_attempt2.attempt_guid)
+               |> Attempts.select_model()
     end
 
     test "get graded resource access", %{
@@ -490,7 +519,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt1,
           :activity_attempt1
@@ -509,7 +538,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt2
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt2,
           :activity_attempt2
@@ -595,7 +624,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt1,
           :activity_attempt1
@@ -614,7 +643,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt2
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt2,
           :activity_attempt2
