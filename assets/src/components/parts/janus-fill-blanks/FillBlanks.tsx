@@ -1,5 +1,6 @@
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
+import { getFormattedVariables } from '../../../utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -291,7 +292,8 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: changes } = payload;
+              const { initStateFacts: initStateFacts } = payload;
+              const changes = getFormattedVariables(initStateFacts);
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled) {
                 setEnabled(parseBool(sEnabled));

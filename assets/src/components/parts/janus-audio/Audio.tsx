@@ -1,5 +1,5 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from 'utils/common';
+import { getFormattedVariables, parseBool } from '../../../utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -194,7 +194,8 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: changes } = payload;
+              const { initStateFacts: initStateFacts } = payload;
+              const changes = getFormattedVariables(initStateFacts);
               const sCustomCssClass = changes[`stage.${id}.customCssClass`];
               if (sCustomCssClass !== undefined) {
                 setClasses(String(sCustomCssClass));

@@ -34,7 +34,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
-  const [scriptEnv, setScriptEnv] = useState<any>();
+  const [scriptEnv, setScriptEnv] = useState<Environment>();
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -426,9 +426,22 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 context: payload.mode,
                 questionId: payload.currentActivityId,
               };
+              const initStateFacts = payload.initStateFacts;
+              let processedInitStateFacts = {};
+              if (scriptEnv) {
+                processedInitStateFacts = Object.keys(initStateFacts).reduce(
+                  (acc: any, key: string) => {
+                    const target = key.split('|')[1];
+                    acc[target] = scriptEnv.Get(key).toJS();
+                    return acc;
+                  },
+                  {},
+                );
+              }
+
               notifyConfigChange();
               // we only send the Init state variables.
-              const currentStateSnapshot = payload.initStateFacts;
+              const currentStateSnapshot = processedInitStateFacts;
 
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
@@ -445,7 +458,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         unsub();
       });
     };
-  }, [props.notify, simLife]);
+  }, [props.notify, simLife, scriptEnv]);
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
