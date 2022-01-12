@@ -265,22 +265,22 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
   <a href="#dt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="0791995838-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="2372610608-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="0791995838-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="2372610608-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="0791995838-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="2372610608-3">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-4">(</span><span class="n">datetime</span><span class="p" data-group-id="0791995838-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-4">(</span><span class="n">datetime</span><span class="p" data-group-id="2372610608-4">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-5">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="0791995838-5">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-5">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="2372610608-5">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="0791995838-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="0791995838-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="2372610608-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="2372610608-6">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
   </section>
 </section>
@@ -356,26 +356,26 @@ it is assumed this datetime has not been localized and the timezone is included.
   <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-1">(</span><span class="n">datetime</span><span class="p" data-group-id="5846503478-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-1">(</span><span class="n">datetime</span><span class="p" data-group-id="8235115313-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-2">(</span><span class="p" data-group-id="5846503478-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="5846503478-3">}</span><span class="p" data-group-id="5846503478-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-2">(</span><span class="p" data-group-id="8235115313-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="8235115313-3">}</span><span class="p" data-group-id="8235115313-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-4">(</span><span class="p" data-group-id="5846503478-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="5846503478-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="5846503478-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-4">(</span><span class="p" data-group-id="8235115313-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="8235115313-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="8235115313-4">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-6">(</span><span class="p" data-group-id="5846503478-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="5846503478-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="5846503478-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-6">(</span><span class="p" data-group-id="8235115313-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="8235115313-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="8235115313-6">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-8">(</span><span class="p" data-group-id="5846503478-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="5846503478-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="5846503478-8">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-8">(</span><span class="p" data-group-id="8235115313-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="8235115313-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="8235115313-8">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="5846503478-10">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="8235115313-10">)</span><span class="w">
 </span><span class="s">&quot;5 hours ago&quot;</span><span class="w">
 
 </span><span class="c1"># author has preference show_relative_dates set to true</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="5846503478-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="5846503478-11">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="8235115313-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="8235115313-11">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
   </section>
 </section>
