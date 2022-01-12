@@ -21,6 +21,24 @@ defmodule Oli.Delivery.Attempts.Core do
     ActivityAttempt
   }
 
+  @doc """
+  Select the model to use to power all aspects of an activity.  If an activity utilizes
+  transformations, the transformed model will be stored on the activity attempt in the
+  `transformed_model` attribute.  Otherwise, that field will be `nil` indicating that the
+  original model from the revision of the activity should be used.  Allowing the
+  `transformed_model` to be nil is a significant storage and performance optimization,
+  particularly when the size and number of activities within a page becomes large.
+
+  This variant of this function allows the activity attempt and the revision to be passed
+  as separate arguments to support workflows where the revision is not expected to be
+  preloaded in the activity attempt. In situations where that revision is expected to be
+  preloaded, `select_model/1` can be used instead.
+
+  In both variants, a robustness feature exists that will inline retrieve the revision,
+  if needed and not specified.  This is clearly to prevent functional problems, but it can
+  lead to performance issues if done across a collection.  A warning is logged in this
+  case.
+  """
   def select_model(%ActivityAttempt{transformed_model: nil, revision_id: revision_id}, nil) do
     perform_inline_fetch(revision_id)
   end

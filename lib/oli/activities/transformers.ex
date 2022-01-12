@@ -6,10 +6,12 @@ defmodule Oli.Activities.Transformers do
   @doc """
   Transforms an unparsed activity model.
 
-  When no transformations exist, or the resulting transformations had no effect, returns {:no_effect, original_model_parsed}
+  When no transformations exist, or the resulting transformations had no effect this
+  returns {:no_effect, original_model} where `original_model` is the original unparsed model
+  of the activity.
 
   Otherwise, this applies all transformations and returns {:ok, transformed_model} where
-  `transformed_model` is the parsed model after mutation from transformations.
+  `transformed_model` is the raw model after mutation from transformations.
 
   If errors occur during parsing or transformation, returns {:error, e}
   """
