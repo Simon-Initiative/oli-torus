@@ -1,5 +1,7 @@
 defmodule OliWeb.Users.Actions do
   use Surface.Component
+
+  alias Oli.Accounts
   alias Oli.Accounts.SystemRole
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -28,7 +30,7 @@ defmodule OliWeb.Users.Actions do
           <input type="hidden" name="id" value={@user.id} />
         </form>
 
-        {#if is_nil(@user.email_confirmed_at)}
+        {#if Accounts.user_confirmation_pending?(@user)}
           <button type="submit" class="btn btn-primary" form={"resend-confirmation-#{@user.id}"}>Resend confirmation link</button>
           <button class="btn btn-primary" phx-click="show_confirm_email_modal" phx-value-id={@user.id}>Confirm email</button>
 
