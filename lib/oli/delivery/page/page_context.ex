@@ -29,6 +29,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Delivery.Sections.Section
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -77,13 +78,13 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_visit(String.t(), String.t(), Oli.Accounts.User) ::
+  @spec create_for_visit(Section, String.t(), Oli.Accounts.User) ::
           %PageContext{}
-  def create_for_visit(section_slug, page_slug, user) do
+  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
-    Attempts.track_access(page_revision.resource_id, section_slug, user.id)
+    Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 

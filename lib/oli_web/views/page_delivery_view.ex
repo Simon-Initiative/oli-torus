@@ -5,6 +5,7 @@ defmodule OliWeb.PageDeliveryView do
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Delivery.Attempts.Core
 
   def show_score(score, out_of) do
     cond do
@@ -111,7 +112,7 @@ defmodule OliWeb.PageDeliveryView do
   # the second argument. These entries will be in the shape
   # of two element tuples.
   defp encode_attempt(registered_activity_slug_map, {activity_attempt, part_attempts_map}) do
-    {:ok, model} = Oli.Activities.Model.parse(activity_attempt.transformed_model)
+    {:ok, model} = Core.select_model(activity_attempt) |> Oli.Activities.Model.parse()
 
     state =
       Oli.Activities.State.ActivityState.from_attempt(
@@ -129,7 +130,7 @@ defmodule OliWeb.PageDeliveryView do
       :answers,
       Oli.Utils.LoadTesting.provide_answers(
         activity_type_slug,
-        activity_attempt.transformed_model
+        Core.select_model(activity_attempt)
       )
     )
   end

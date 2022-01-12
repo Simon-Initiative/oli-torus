@@ -1,10 +1,11 @@
 defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
+  require Logger
+
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
-  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
@@ -74,28 +75,96 @@ defmodule Oli.Delivery.Attempts.Core do
     Repo.all(query)
   end
 
+  @doc """
+  Select the model to use to power all aspects of an activity.  If an activity utilizes
+  transformations, the transformed model will be stored on the activity attempt in the
+  `transformed_model` attribute.  Otherwise, that field will be `nil` indicating that the
+  original model from the revision of the activity should be used.  Allowing the
+  `transformed_model` to be nil is a significant storage and performance optimization,
+  particularly when the size and number of activities within a page becomes large.
+
+  This variant of this function allows the activity attempt and the revision to be passed
+  as separate arguments to support workflows where the revision is not expected to be
+  preloaded in the activity attempt. In situations where that revision is expected to be
+  preloaded, `select_model/1` can be used instead.
+
+  In both variants, a robustness feature exists that will inline retrieve the revision,
+  if needed and not specified.  This is clearly to prevent functional problems, but it can
+  lead to performance issues if done across a collection.  A warning is logged in this
+  case.
+  """
+  def select_model(%ActivityAttempt{transformed_model: nil, revision_id: revision_id}, nil) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: nil}, %Oli.Resources.Revision{
+        content: content
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: transformed_model}, _) do
+    transformed_model
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: nil,
+        revision_id: revision_id
+      }) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: %Oli.Resources.Revision{
+          content: content
+        }
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: transformed_model
+      }) do
+    transformed_model
+  end
+
+  defp perform_inline_fetch(revision_id) do
+    Logger.warning(
+      "Inline fetch of revision for model selection. This can lead to performance problems if done as part of an iteration of a collection."
+    )
+
+    case Oli.Repo.get(Oli.Resources.Revision, revision_id) do
+      nil ->
+        Logger.error("Inline fetch could not locate revision")
+        nil
+
+      %Oli.Resources.Revision{content: content} ->
+        content
+    end
+  end
+
   @moduledoc """
   Core attempt related functions.
   """
 
   @doc """
-  Creates or updates an access record for a given resource, section context id and user. When
+  Creates or updates an access record for a given resource, section id and user. When
   created the access count is set to 1, otherwise on updates the
   access count is incremented.
   ## Examples
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:ok, %ResourceAccess{}}
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:error, %Ecto.Changeset{}}
   """
-  def track_access(resource_id, section_slug, user_id) do
-    section = Sections.get_section_by(slug: section_slug)
-
+  def track_access(resource_id, section_id, user_id) do
     Oli.Repo.insert!(
       %ResourceAccess{
         access_count: 1,
         user_id: user_id,
-        section_id: section.id,
+        section_id: section_id,
         resource_id: resource_id
       },
       on_conflict: [inc: [access_count: 1]],
@@ -348,23 +417,23 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def get_latest_resource_attempt(resource_id, section_slug, user_id) do
     Repo.one(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: ra1 in ResourceAttempt,
-        on: a.id == ra1.resource_access_id,
-        left_join: ra2 in ResourceAttempt,
+      ResourceAttempt
+      |> join(:left, [ra1], a in ResourceAccess, on: a.id == ra1.resource_access_id)
+      |> join(:left, [_, a], s in Section, on: a.section_id == s.id)
+      |> join(:left, [ra1, a, _], ra2 in ResourceAttempt,
         on:
           a.id == ra2.resource_access_id and ra1.id < ra2.id and
-            ra1.resource_access_id == ra2.resource_access_id,
-        where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
-            a.resource_id == ^resource_id and
-            is_nil(ra2),
-        select: ra1
+            ra1.resource_access_id == ra2.resource_access_id
       )
+      |> join(:left, [ra1, _, _, _], r in Revision, on: ra1.revision_id == r.id)
+      |> where(
+        [ra1, a, s, ra2, _],
+        a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+          a.resource_id == ^resource_id and
+          is_nil(ra2)
+      )
+      |> preload(:revision)
     )
-    |> Repo.preload([:revision])
   end
 
   @doc """
@@ -432,7 +501,7 @@ defmodule Oli.Delivery.Attempts.Core do
       Repo.all(
         from(activity_attempt in ActivityAttempt,
           where: activity_attempt.attempt_guid in ^activity_attempt_guids,
-          preload: [:part_attempts]
+          preload: [:part_attempts, :revision]
         )
       )
 
