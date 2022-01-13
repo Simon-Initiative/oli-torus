@@ -7,15 +7,15 @@ defmodule OliWeb.LtiController do
   alias Oli.Delivery.Sections
   alias Oli.Institutions
   alias Oli.Institutions.PendingRegistration
-  alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.PlatformRoles
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
   alias OliWeb.Common.LtiSession
-  alias Oli.Lti.LTI_AGS
-  alias Oli.Lti.LTI_NRPS
   alias Oli.Lti.LtiParams
+  alias Lti_1p3.Tool.ContextRoles
+  alias Lti_1p3.Tool.PlatformRoles
+  alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.NRPS
 
   require Logger
 
@@ -451,10 +451,10 @@ defmodule OliWeb.LtiController do
   defp update_section_details(context_title, section, lti_params) do
     Sections.update_section(section, %{
       title: context_title,
-      grade_passback_enabled: LTI_AGS.grade_passback_enabled?(lti_params),
-      line_items_service_url: LTI_AGS.get_line_items_url(lti_params),
-      nrps_enabled: LTI_NRPS.nrps_enabled?(lti_params),
-      nrps_context_memberships_url: LTI_NRPS.get_context_memberships_url(lti_params)
+      grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+      line_items_service_url: AGS.get_line_items_url(lti_params),
+      nrps_enabled: NRPS.nrps_enabled?(lti_params),
+      nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
     })
   end
 

@@ -2,10 +2,10 @@ defmodule OliWeb.Grades.GradesLive do
   use OliWeb, :live_view
 
   alias Oli.Grading
-  alias Oli.Lti.LTI_AGS
-  alias Oli.Lti.LineItem
-  alias Oli.Lti.LTI_NRPS
-  alias Lti_1p3.Tool.AccessToken
+  alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.AGS.LineItem
+  alias Lti_1p3.Tool.Services.NRPS
+  alias Lti_1p3.Tool.Services.AccessToken
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Attempts.Core.ResourceAccess
@@ -144,7 +144,7 @@ defmodule OliWeb.Grades.GradesLive do
         fn assigns ->
           out_of = Oli.Grading.determine_page_out_of(section.slug, p)
 
-          LTI_AGS.create_line_item(
+          AGS.create_line_item(
             assigns.line_items_url,
             p.resource_id,
             out_of,
@@ -163,7 +163,7 @@ defmodule OliWeb.Grades.GradesLive do
       |> Enum.map(fn p ->
         fn assigns ->
           line_item = Map.get(line_item_map, LineItem.to_resource_id(p.resource_id))
-          LTI_AGS.update_line_item(line_item, %{label: p.title}, assigns.access_token)
+          AGS.update_line_item(line_item, %{label: p.title}, assigns.access_token)
         end
       end)
 
@@ -190,7 +190,7 @@ defmodule OliWeb.Grades.GradesLive do
           [
             fn assigns ->
               Grading.to_score(sub, resource_access)
-              |> LTI_AGS.post_score(line_item, assigns.access_token)
+              |> AGS.post_score(line_item, assigns.access_token)
             end
             | tasks
           ]
@@ -232,7 +232,7 @@ defmodule OliWeb.Grades.GradesLive do
     # Those requests would simply fail, but this extra step eliminates making
     # those requests altogether.
     if section.nrps_enabled do
-      case LTI_NRPS.fetch_memberships(section.nrps_context_memberships_url, access_token) do
+      case NRPS.fetch_memberships(section.nrps_context_memberships_url, access_token) do
         {:ok, memberships} ->
           # get a set of the subs corresponding to Active students
           subs =
@@ -297,7 +297,7 @@ defmodule OliWeb.Grades.GradesLive do
 
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case LTI_AGS.fetch_or_create_line_item(
+        case AGS.fetch_or_create_line_item(
                section.line_items_service_url,
                page.resource_id,
                out_of,
@@ -320,7 +320,7 @@ defmodule OliWeb.Grades.GradesLive do
   defp fetch_line_items(registration, line_items_url) do
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case LTI_AGS.fetch_line_items(line_items_url, access_token) do
+        case AGS.fetch_line_items(line_items_url, access_token) do
           {:ok, line_items} -> {:ok, line_items, access_token}
           _ -> {:error, dgettext("grades", "Error accessing LMS line items")}
         end

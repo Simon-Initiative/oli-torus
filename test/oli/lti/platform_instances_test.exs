@@ -1,4 +1,4 @@
-defmodule Lti_1p3.Platform.PlatformInstancesTest do
+defmodule Oli.Lti.PlatformInstancesTest do
   use Oli.DataCase
 
   alias Oli.Lti.PlatformInstances

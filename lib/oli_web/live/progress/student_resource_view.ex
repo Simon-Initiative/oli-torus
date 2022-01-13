@@ -9,6 +9,7 @@ defmodule OliWeb.Progress.StudentResourceView do
   alias OliWeb.Sections.Mount
   alias Oli.Delivery.Attempts.Core
   alias OliWeb.Progress.Passback
+  alias Lti_1p3.Tool.Services.AccessToken
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
@@ -225,7 +226,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       {_deployment, registration} =
         Oli.Delivery.Sections.get_deployment_registration_from_section(section)
 
-      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
+      AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
     end
   end
 
