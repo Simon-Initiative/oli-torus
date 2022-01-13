@@ -171,6 +171,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # out_of
       out_of = override_out_of(out_of, resource_attempt.revision.content)
 
+      # cap the score to not exceed the out of
+      score = min(score, out_of)
+
       update_resource_attempt(resource_attempt, %{
         score: score,
         out_of: out_of,
@@ -211,6 +214,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       DeliveryResolver.from_resource_id(section_slug, access.resource_id)
 
     %Result{score: score, out_of: out_of} = Scoring.calculate_score(strategy_id, graded_attempts)
+
+    # Again, cap the score to never exceed the out_of.
+    score = min(score, out_of)
 
     update_resource_access(access, %{
       score: score,
