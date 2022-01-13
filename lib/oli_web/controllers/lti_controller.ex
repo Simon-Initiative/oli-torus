@@ -15,6 +15,7 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.LtiSession
   alias Oli.Lti.LTI_AGS
   alias Oli.Lti.LTI_NRPS
+  alias Oli.Lti_1p3.LtiParams
 
   require Logger
 
@@ -45,8 +46,21 @@ defmodule OliWeb.LtiController do
     session_state = Plug.Conn.get_session(conn, "state")
 
     case Lti_1p3.Tool.LaunchValidation.validate(params, session_state) do
-      {:ok, lti_params, lti_params_key} ->
-        handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key)
+      {:ok, lti_params} ->
+        # cache user lti params and store the id in the current session
+        case LtiParams.create_or_update_lti_params(lti_params) do
+          {:ok, %{id: lti_params_id}} ->
+            LtiSession.put_session_lti_params(conn, lti_params_id)
+
+            # handle the valid lti launch
+            handle_valid_lti_1p3_launch(conn, lti_params)
+
+          _ ->
+            {_error_id, error_msg} =
+              log_error("An error occurred while creating/updating LTI params")
+
+            throw(error_msg)
+        end
 
       {:error, %{reason: :invalid_registration, msg: _msg, issuer: issuer, client_id: client_id}} ->
         handle_invalid_registration(conn, issuer, client_id)
@@ -337,7 +351,7 @@ defmodule OliWeb.LtiController do
     end
   end
 
-  defp handle_valid_lti_1p3_launch(conn, lti_params, lti_params_key) do
+  defp handle_valid_lti_1p3_launch(conn, lti_params) do
     issuer = lti_params["iss"]
     client_id = lti_params["aud"]
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
@@ -371,18 +385,22 @@ defmodule OliWeb.LtiController do
                institution_id: institution.id
              }) do
           {:ok, user} ->
+            # update lti params and session to be associated with the current lms user
+            {:ok, %{id: lti_params_id}} =
+              LtiParams.create_or_update_lti_params(lti_params, user.id)
+
+            LtiSession.put_session_lti_params(conn, lti_params_id)
+
             # update user platform roles
             Accounts.update_user_platform_roles(user, PlatformRoles.get_roles_by_uris(lti_roles))
-
-            # keep track of the latest user lti params for later requests which
-            # are not in the context of a section
-            conn = LtiSession.put_user_params(conn, lti_params_key)
 
             # context claim is considered optional according to IMS http://www.imsglobal.org/spec/lti/v1p3/#context-claim
             # safeguard against the case that context is missing
             case lti_params["https://purl.imsglobal.org/spec/lti/claim/context"] do
               nil ->
-                throw("Error getting context information from launch params")
+                {_error_id, error_msg} = log_error("context claim is missing from lti params")
+
+                throw(error_msg)
 
               context ->
                 # update section specifics - if one exists. Enroll the user and also update the section details
