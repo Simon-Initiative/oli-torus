@@ -17,6 +17,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   alias Oli.Analytics.Datashop.Utils
   alias Oli.Rendering.Utils, as: RenderUtils
   alias Oli.Delivery.Attempts.Core.PartAttempt
+  alias Oli.Delivery.Attempts.Core
 
   def setup(type, %{problem_name: problem_name, part_attempt: part_attempt}) do
     element(:event_descriptor, [
@@ -147,8 +148,8 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     |> RenderUtils.parse_html_content()
   end
 
-  defp all_choices(part_attempt), do: part_attempt.activity_attempt.transformed_model["choices"]
-  defp all_inputs(part_attempt), do: part_attempt.activity_attempt.transformed_model["inputs"]
+  defp all_choices(part_attempt), do: Core.select_model(part_attempt.activity_attempt)["choices"]
+  defp all_inputs(part_attempt), do: Core.select_model(part_attempt.activity_attempt)["inputs"]
 
   defp selected_choice_ids(input), do: String.split(input, " ")
 

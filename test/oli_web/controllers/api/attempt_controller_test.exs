@@ -62,7 +62,7 @@ defmodule OliWeb.AttemptControllerTest do
         :attempt1
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: nil},
         :activity_a,
         :attempt1,
         :activity_attempt1
@@ -81,7 +81,7 @@ defmodule OliWeb.AttemptControllerTest do
         :attempt2
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: nil},
         :activity_a,
         :attempt2,
         :activity_attempt2

@@ -552,7 +552,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, %Activity{}}` when the creation processes succeeds
+  .`{:ok, {%Activity{}, transformed_content}}` when the creation processes succeeds
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
@@ -598,6 +598,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              }) do
         case Transformers.apply_transforms(content) do
           {:ok, transformed} -> {activity, transformed}
+          {:no_effect, original} -> {activity, original}
           _ -> {activity, nil}
         end
       else

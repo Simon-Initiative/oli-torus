@@ -287,6 +287,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          transformed =
            case Transformers.apply_transforms(content) do
              {:ok, t} -> t
+             {:no_effect, t} -> t
              _ -> nil
            end
 
