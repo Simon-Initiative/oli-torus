@@ -126,7 +126,7 @@ defmodule OliWeb.AttemptControllerTest do
     user = map.user1
 
     lti_params_id =
-      Oli.Lti_1p3.TestHelpers.all_default_claims()
+      Oli.Lti.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], map.section.slug)
       |> cache_lti_params(user.id)
 

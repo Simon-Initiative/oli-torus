@@ -105,7 +105,7 @@ defmodule OliWeb.ResourceAttemptStateControllerTest do
       })
 
     lti_params_id =
-      Oli.Lti_1p3.TestHelpers.all_default_claims()
+      Oli.Lti.TestHelpers.all_default_claims()
       |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.slug)
       |> cache_lti_params(user.id)
 

@@ -15,7 +15,7 @@ defmodule OliWeb.LtiController do
   alias OliWeb.Common.LtiSession
   alias Oli.Lti.LTI_AGS
   alias Oli.Lti.LTI_NRPS
-  alias Oli.Lti_1p3.LtiParams
+  alias Oli.Lti.LtiParams
 
   require Logger
 

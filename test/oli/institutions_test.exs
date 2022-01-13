@@ -6,7 +6,7 @@ defmodule Oli.InstitutionsTest do
   alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Institutions.PendingRegistration
-  alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Lti.Tool.Registration
 
   describe "institutions" do
     test "get_institution_by!/1 with existing data returns an institution" do
@@ -138,7 +138,7 @@ defmodule Oli.InstitutionsTest do
   end
 
   describe "deployments" do
-    alias Oli.Lti_1p3.Tool.Deployment
+    alias Oli.Lti.Tool.Deployment
 
     setup do
       institution = institution_fixture()

@@ -53,9 +53,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:resource_gating_index, :map, default: %{}, null: false)
     field(:previous_next_index, :map, default: nil, null: true)
 
-    belongs_to(:lti_1p3_deployment, Oli.Lti_1p3.Tool.Deployment,
-      foreign_key: :lti_1p3_deployment_id
-    )
+    belongs_to(:lti_1p3_deployment, Oli.Lti.Tool.Deployment, foreign_key: :lti_1p3_deployment_id)
 
     belongs_to(:institution, Institution)
     belongs_to(:brand, Brand)

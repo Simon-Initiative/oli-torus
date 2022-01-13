@@ -7,8 +7,8 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Institutions
-  alias Oli.Lti_1p3.Tool.Registration
-  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Lti.Tool.Registration
+  alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.PendingRegistration
 
   @create_attrs %{

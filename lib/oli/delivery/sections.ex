@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Oli.Lti_1p3.Tool.Deployment
-  alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Lti.Tool.Deployment
+  alias Oli.Lti.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
@@ -1354,8 +1354,8 @@ defmodule Oli.Delivery.Sections do
   Converts a section's start_date and end_date to the gievn timezone's local datetimes
   """
   def localize_section_start_end_datetimes(
-         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
-       ) do
+        %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+      ) do
     timezone = Timex.Timezone.get(timezone, Timex.now())
 
     start_date =
@@ -1374,5 +1374,4 @@ defmodule Oli.Delivery.Sections do
     |> Map.put(:start_date, start_date)
     |> Map.put(:end_date, end_date)
   end
-
 end

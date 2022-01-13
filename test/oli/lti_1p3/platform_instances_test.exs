@@ -1,7 +1,7 @@
 defmodule Lti_1p3.Platform.PlatformInstancesTest do
   use Oli.DataCase
 
-  alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti.PlatformInstances
 
   describe "lti_1p3_platform_instances" do
     alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance

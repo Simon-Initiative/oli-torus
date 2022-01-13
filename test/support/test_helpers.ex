@@ -185,8 +185,7 @@ defmodule Oli.TestHelpers do
   end
 
   def cache_lti_params(lti_params, user_id) do
-    {:ok, %{id: id}} =
-      Oli.Lti_1p3.LtiParams.create_or_update_lti_params(lti_params, user_id)
+    {:ok, %{id: id}} = Oli.Lti.LtiParams.create_or_update_lti_params(lti_params, user_id)
 
     id
   end

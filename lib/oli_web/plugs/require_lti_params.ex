@@ -3,7 +3,7 @@ defmodule Oli.Plugs.RequireLtiParams do
   import Phoenix.Controller
 
   alias OliWeb.Common.LtiSession
-  alias Oli.Lti_1p3.LtiParams
+  alias Oli.Lti.LtiParams
 
   def init(opts), do: opts
 

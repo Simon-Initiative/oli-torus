@@ -1,9 +1,9 @@
-defmodule Oli.Lti_1p3.LtiParams do
+defmodule Oli.Lti.LtiParams do
   use Ecto.Schema
   import Ecto.Changeset
 
   alias Oli.Repo
-  alias Oli.Lti_1p3.LtiParams
+  alias Oli.Lti.LtiParams
 
   schema "lti_1p3_params" do
     field :issuer, :string
@@ -14,7 +14,7 @@ defmodule Oli.Lti_1p3.LtiParams do
     field :params, :map
     field :exp, :utc_datetime
 
-    belongs_to :user, Oli.Lti_1p3.Tool.Registration
+    belongs_to :user, Oli.Lti.Tool.Registration
 
     timestamps(type: :utc_datetime)
   end

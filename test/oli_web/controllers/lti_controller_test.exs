@@ -5,7 +5,7 @@ defmodule OliWeb.LtiControllerTest do
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints
   alias Oli.Institutions
-  alias Oli.Lti_1p3.LtiParams
+  alias Oli.Lti.LtiParams
 
   import Mox
 
@@ -152,7 +152,7 @@ defmodule OliWeb.LtiControllerTest do
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
 
       claims =
-        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        Oli.Lti.TestHelpers.all_default_claims()
         |> Map.delete("iss")
         |> Map.delete("aud")
 
@@ -196,7 +196,7 @@ defmodule OliWeb.LtiControllerTest do
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
 
       claims =
-        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        Oli.Lti.TestHelpers.all_default_claims()
         |> Map.delete("iss")
         |> Map.delete("aud")
 
@@ -231,7 +231,7 @@ defmodule OliWeb.LtiControllerTest do
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
 
       claims =
-        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        Oli.Lti.TestHelpers.all_default_claims()
         |> Map.delete("iss")
         |> Map.delete("aud")
         |> Map.delete("email")
@@ -283,7 +283,7 @@ defmodule OliWeb.LtiControllerTest do
       signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
 
       claims =
-        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        Oli.Lti.TestHelpers.all_default_claims()
         |> Map.delete("iss")
         |> Map.delete("aud")
 
