@@ -50,7 +50,7 @@ defmodule OliWeb.LtiController do
         # cache user lti params and store the id in the current session
         case LtiParams.create_or_update_lti_params(lti_params) do
           {:ok, %{id: lti_params_id}} ->
-            LtiSession.put_session_lti_params(conn, lti_params_id)
+            conn = LtiSession.put_session_lti_params(conn, lti_params_id)
 
             # handle the valid lti launch
             handle_valid_lti_1p3_launch(conn, lti_params)
