@@ -5,8 +5,6 @@ defmodule OliWeb.Users.UsersDetailViewTest do
   import Phoenix.LiveViewTest
 
   alias Oli.Seeder
-  alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Delivery.Sections
   alias Oli.Accounts
 
   describe "user details live test" do
@@ -28,7 +26,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id)
         )
 
-      {:ok, view, html} = live(conn)
+      {:ok, _view, html} = live(conn)
 
       assert html =~ "User details"
       assert html =~ lms_student.name
@@ -39,7 +37,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
         )
 
-      {:ok, view, html} = live(conn)
+      {:ok, _view, html} = live(conn)
 
       assert html =~ "User details"
       assert html =~ independent_student.name
@@ -60,7 +58,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, lms_student.id)
         )
 
-      {:ok, view, html} = live(conn)
+      {:ok, _view, html} = live(conn)
 
       [lti_params] = Oli.Lti.LtiParams.all_user_lti_params(lms_student.id)
 
