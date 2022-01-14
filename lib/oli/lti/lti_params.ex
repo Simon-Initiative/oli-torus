@@ -1,20 +1,21 @@
 defmodule Oli.Lti.LtiParams do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, warn: false
 
   alias Oli.Repo
   alias Oli.Lti.LtiParams
 
   schema "lti_1p3_params" do
-    field :issuer, :string
-    field :client_id, :string
-    field :deployment_id, :string
-    field :context_id, :string
-    field :sub, :string
-    field :params, :map
-    field :exp, :utc_datetime
+    field(:issuer, :string)
+    field(:client_id, :string)
+    field(:deployment_id, :string)
+    field(:context_id, :string)
+    field(:sub, :string)
+    field(:params, :map)
+    field(:exp, :utc_datetime)
 
-    belongs_to :user, Oli.Lti.Tool.Registration
+    belongs_to(:user, Oli.Lti.Tool.Registration)
 
     timestamps(type: :utc_datetime)
   end
@@ -106,5 +107,15 @@ defmodule Oli.Lti.LtiParams do
   """
   def get_lti_params(id) do
     Repo.get(LtiParams, id)
+  end
+
+  @doc """
+  Returns all lti param records for the given user id
+  """
+  def all_user_lti_params(user_id) do
+    from(p in LtiParams,
+      where: p.user_id == ^user_id
+    )
+    |> Repo.all()
   end
 end
