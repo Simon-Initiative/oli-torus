@@ -10,6 +10,7 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Branding
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Confirm
+  alias OliWeb.Sections.Mount
   alias OliWeb.Products.Details.{Actions, Edit, Content}
 
   data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Product"})]
@@ -18,24 +19,33 @@ defmodule OliWeb.Products.DetailsView do
   prop author, :any
   prop is_admin, :boolean
 
-  def mount(%{"product_id" => product_slug}, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
-    product = Blueprint.get_blueprint(product_slug)
+  def mount(
+        %{"product_id" => product_slug},
+        %{"current_author_id" => author_id} = session,
+        socket
+      ) do
+    case Mount.for(product_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    available_brands =
-      Branding.list_brands()
-      |> Enum.map(fn brand -> {brand.name, brand.id} end)
+      {_, _, product} ->
+        author = Repo.get(Author, author_id)
 
-    {:ok,
-     assign(socket,
-       available_brands: available_brands,
-       updates: Sections.check_for_available_publication_updates(product),
-       author: author,
-       product: product,
-       is_admin: Oli.Accounts.is_admin?(author),
-       changeset: Section.changeset(product, %{}),
-       title: "Edit Product"
-     )}
+        available_brands =
+          Branding.list_brands()
+          |> Enum.map(fn brand -> {brand.name, brand.id} end)
+
+        {:ok,
+         assign(socket,
+           available_brands: available_brands,
+           updates: Sections.check_for_available_publication_updates(product),
+           author: author,
+           product: product,
+           is_admin: Oli.Accounts.is_admin?(author),
+           changeset: Section.changeset(product, %{}),
+           title: "Edit Product"
+         )}
+    end
   end
 
   def render(assigns) do

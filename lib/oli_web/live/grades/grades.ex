@@ -8,10 +8,10 @@ defmodule OliWeb.Grades.GradesLive do
   alias Lti_1p3.Tool.Services.AccessToken
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Attempts.Core, as: Attempts
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Sections
   alias Oli.Accounts
   alias Oli.Repo
+  alias Oli.Delivery.Attempts.PageLifecycle.Broadcaster
 
   def mount(
         _params,
@@ -52,7 +52,12 @@ defmodule OliWeb.Grades.GradesLive do
        progress_max: 0,
        section_slug: section.slug,
        section: section,
-       registration: registration
+       registration: registration,
+       total_jobs: nil,
+       failed_jobs: nil,
+       succeeded_jobs: nil,
+       test_output: nil,
+       test_in_progress?: false
      )}
   end
 
@@ -115,11 +120,13 @@ defmodule OliWeb.Grades.GradesLive do
     </p>
 
     <div class="card-group">
+      <%= live_component OliWeb.Grades.TestConnection, assigns %>
+      <%= live_component OliWeb.Grades.Export, assigns %>
+    </div>
 
+    <div class="card-group">
       <%= live_component OliWeb.Grades.LineItems, assigns %>
       <%= live_component OliWeb.Grades.GradeSync, assigns %>
-      <%= live_component OliWeb.Grades.Export, assigns %>
-
     </div>
 
     <div class="mt-4 <%= progress_visible %>">
@@ -170,34 +177,6 @@ defmodule OliWeb.Grades.GradesLive do
     creation_tasks ++ update_tasks
   end
 
-  defp determine_grade_sync_tasks(section, graded_page, line_item, students) do
-    # create a map of all resource accesses, keyed off of the student id
-    resource_accesses =
-      Attempts.get_resource_access_for_page(section.slug, graded_page.resource_id)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.user_id, r) end)
-
-    # For each student, see if they have a finalized score in an access record
-    # If so, create add a task function that when invoked will post the score
-    Enum.reduce(students, [], fn %{id: user_id, sub: sub}, tasks ->
-      case Map.get(resource_accesses, user_id) do
-        nil ->
-          tasks
-
-        %ResourceAccess{score: nil} ->
-          tasks
-
-        %ResourceAccess{} = resource_access ->
-          [
-            fn assigns ->
-              Grading.to_score(sub, resource_access)
-              |> AGS.post_score(line_item, assigns.access_token)
-            end
-            | tasks
-          ]
-      end
-    end)
-  end
-
   defp host() do
     Application.get_env(:oli, OliWeb.Endpoint)
     |> Keyword.get(:url)
@@ -206,20 +185,6 @@ defmodule OliWeb.Grades.GradesLive do
 
   defp access_token_provider(registration) do
     AccessToken.fetch_access_token(registration, Grading.ags_scopes(), host())
-  end
-
-  defp send_grades(students, access_token, section, page, line_item, socket) do
-    task_queue = determine_grade_sync_tasks(section, page, line_item, students)
-
-    send(self(), :pop_task_queue)
-
-    {:noreply,
-     assign(socket,
-       access_token: access_token,
-       task_queue: task_queue,
-       progress_max: length(task_queue),
-       progress_current: 0
-     )}
   end
 
   defp fetch_students(access_token, section) do
@@ -248,6 +213,10 @@ defmodule OliWeb.Grades.GradesLive do
     else
       students
     end
+  end
+
+  def emit_status(pid, status, decoration, is_done?) do
+    send(pid, {:test_status, status, decoration, is_done?})
   end
 
   def handle_event("send_line_items", _, socket) do
@@ -284,6 +253,42 @@ defmodule OliWeb.Grades.GradesLive do
     {:noreply, assign(socket, selected_page: resource_id)}
   end
 
+  def handle_event("test_connection", _, socket) do
+    registration = socket.assigns.registration
+    pid = self()
+
+    emit_status(pid, "Starting test", :normal, false)
+
+    Task.async(fn ->
+      emit_status(pid, "Requesting access token...", :normal, false)
+
+      try do
+        case access_token_provider(registration) do
+          {:ok, access_token} ->
+            emit_status(pid, "Received access token", :normal, false)
+            emit_status(pid, "Requesting line items...", :normal, false)
+
+            case LTI_AGS.fetch_line_items(socket.assigns.line_items_url, access_token) do
+              {:ok, _} ->
+                emit_status(pid, "Received line items", :normal, false)
+                emit_status(pid, "Success!", :success, true)
+
+              {:error, e} ->
+                emit_status(pid, e, :failure, true)
+            end
+
+          {:error, e} ->
+            emit_status(pid, e, :failure, true)
+        end
+      rescue
+        e in RuntimeError -> emit_status(pid, "Failed! " <> e.message, :failure, true)
+        _ -> emit_status(pid, "Failed! Unknown failure", :failure, true)
+      end
+    end)
+
+    {:noreply, assign(socket, test_in_progress?: true, test_output: [])}
+  end
+
   def handle_event("send_grades", _, socket) do
     section = socket.assigns.section
     registration = socket.assigns.registration
@@ -293,24 +298,42 @@ defmodule OliWeb.Grades.GradesLive do
         p.resource_id == socket.assigns.selected_page
       end)
 
-    out_of = Oli.Grading.determine_page_out_of(section.slug, page)
-
     case access_token_provider(registration) do
       {:ok, access_token} ->
-        case AGS.fetch_or_create_line_item(
-               section.line_items_service_url,
-               page.resource_id,
-               out_of,
-               page.title,
-               access_token
-             ) do
-          {:ok, line_item} ->
-            fetch_students(access_token, section)
-            |> send_grades(access_token, section, page, line_item, socket)
+        # Obtain a MapSet of enrolled student ids in this course section
+        user_ids =
+          fetch_students(access_token, section)
+          |> Enum.map(fn u -> u.id end)
+          |> MapSet.new()
 
-          {:error, e} ->
-            {:noreply, put_flash(socket, :error, e)}
-        end
+        # Spawn grade update workers for every student that has a finalized
+        # resource access in this section
+        total_jobs =
+          Attempts.get_resource_access_for_page(section.slug, page.resource_id)
+          |> Enum.filter(fn ra -> MapSet.member?(user_ids, ra.user_id) end)
+          |> Enum.filter(fn ra -> !is_nil(ra.score) end)
+          |> Enum.filter(fn ra ->
+            case Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(
+                   section.id,
+                   ra.id,
+                   :manual_batch
+                 ) do
+              {:ok, job} ->
+                Broadcaster.subscribe_to_lms_grade_update(
+                  socket.assigns.section.id,
+                  ra.id,
+                  job.id
+                )
+
+                true
+
+              _ ->
+                false
+            end
+          end)
+          |> Enum.count()
+
+        {:noreply, assign(socket, total_jobs: total_jobs, failed_jobs: 0, succeeded_jobs: 0)}
 
       {:error, e} ->
         {:noreply, put_flash(socket, :error, e)}
@@ -328,6 +351,55 @@ defmodule OliWeb.Grades.GradesLive do
       _ ->
         {:error, dgettext("grades", "Error getting LMS access token")}
     end
+  end
+
+  def handle_info({:test_status, status, decoration, is_done}, socket) do
+    test_output =
+      if is_nil(socket.assigns.test_output) do
+        []
+      else
+        socket.assigns.test_output
+      end ++
+        [{status, decoration}]
+
+    {:noreply, assign(socket, test_output: test_output, test_in_progress?: !is_done)}
+  end
+
+  def handle_info({:lms_grade_update_result, payload}, socket) do
+    %Oli.Delivery.Attempts.PageLifecycle.GradeUpdatePayload{
+      resource_access_id: resource_access_id,
+      job: %{id: job_id},
+      status: result
+    } = payload
+
+    # Unsubscribe to this job when we reach a terminal state
+    if result in [:success, :failure, :not_synced] do
+      Broadcaster.unsubscribe_to_lms_grade_update(
+        socket.assigns.section.id,
+        resource_access_id,
+        job_id
+      )
+    end
+
+    failed_jobs =
+      if result == :failure do
+        socket.assigns.failed_jobs + 1
+      else
+        socket.assigns.failed_jobs
+      end
+
+    succeeded_jobs =
+      if result == :success or result == :not_synced do
+        socket.assigns.succeeded_jobs + 1
+      else
+        socket.assigns.succeeded_jobs
+      end
+
+    {:noreply,
+     assign(socket,
+       failed_jobs: failed_jobs,
+       succeeded_jobs: succeeded_jobs
+     )}
   end
 
   def handle_info(:pop_task_queue, socket) do
@@ -355,5 +427,10 @@ defmodule OliWeb.Grades.GradesLive do
            progress_current: socket.assigns.progress_current + 1
          )}
     end
+  end
+
+  def handle_info(_, socket) do
+    # needed to ignore results of Task invocation
+    {:noreply, socket}
   end
 end

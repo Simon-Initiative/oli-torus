@@ -1,5 +1,6 @@
 defmodule OliWeb.Sections.EnrollmentsView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :surface_view
+  use OliWeb.Common.Modal
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
@@ -11,7 +12,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
-  use OliWeb.Common.Modal
+  alias OliWeb.Common.SessionContext
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -51,21 +52,21 @@ defmodule OliWeb.Sections.EnrollmentsView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        local_tz = Map.get(session, :local_tz)
+        context = SessionContext.init(session)
 
         %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, local_tz)
+          enrollment_assigns(section, context)
 
         {:ok,
          assign(socket,
+           context: context,
            changeset: Sections.change_section(section),
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,
            table_model: table_model,
            options: @default_options,
-           modal: nil,
-           local_tz: local_tz
+           modal: nil
          )}
     end
   end
@@ -153,12 +154,12 @@ defmodule OliWeb.Sections.EnrollmentsView do
   end
 
   def handle_event("unenroll", %{"id" => user_id}, socket) do
-    %{section: section, local_tz: local_tz} = socket.assigns
+    %{section: section, context: context} = socket.assigns
 
     case Sections.unenroll_learner(user_id, section.id) do
       {:ok, _} ->
         %{total_count: total_count, table_model: table_model} =
-          enrollment_assigns(section, local_tz)
+          enrollment_assigns(section, context)
 
         {:noreply, assign(socket, total_count: total_count, table_model: table_model)}
 
@@ -175,7 +176,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
     ])
   end
 
-  def enrollment_assigns(section, local_tz) do
+  def enrollment_assigns(section, context) do
     enrollments =
       Sections.browse_enrollments(
         section,
@@ -185,7 +186,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
       )
 
     total_count = determine_total(enrollments)
-    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, local_tz)
+    {:ok, table_model} = EnrollmentsTableModel.new(enrollments, section, context)
 
     %{total_count: total_count, table_model: table_model}
   end

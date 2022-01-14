@@ -1,5 +1,6 @@
 defmodule OliWeb.Users.UsersDetailView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb, :surface_view
+
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils

@@ -65,6 +65,7 @@
 
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
   </head>
   <body>
 
@@ -88,19 +89,6 @@
     <script>
       window.$ = $;
       $('.dropdown-toggle').dropdown();
-
-      // update session timezone
-      const local_tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-      fetch('/timezone', {
-        method: 'post',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({local_tz})
-      })
-      .then(_res => console.log("local timezone information updated", local_tz))
-      .catch(_res => console.error("failed to update local timezone information", local_tz));
     </script>
 
     <script>hljs.highlightAll();</script>

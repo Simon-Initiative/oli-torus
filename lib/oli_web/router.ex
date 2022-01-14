@@ -675,6 +675,8 @@ defmodule OliWeb.Router do
     live("/:section_slug", Sections.OverviewView)
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
+    live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
+    live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
     live("/:section_slug/grades/gradebook", Grades.GradebookView)
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)

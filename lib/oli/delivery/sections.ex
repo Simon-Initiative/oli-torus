@@ -133,6 +133,19 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
+  Determines if a user is a platform (institution) instructor.
+  """
+  def is_institution_instructor?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:institution_instructor)
+      ],
+      :any
+    )
+  end
+
+  @doc """
   Can a user create independent, enrollable sections through OLI's LMS?
   """
   def is_independent_instructor?(%User{} = user) do

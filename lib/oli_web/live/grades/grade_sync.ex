@@ -33,6 +33,14 @@ defmodule OliWeb.Grades.GradeSync do
           <% end %>
         </select>
 
+        <%= if !is_nil(assigns.total_jobs) do %>
+
+          <p>Pending grade updates: <%= (assigns.total_jobs - (assigns.failed_jobs + assigns.succeeded_jobs)) %></p>
+          <p>Succeeded: <%= assigns.succeeded_jobs %></p>
+          <p>Failed: <%= assigns.failed_jobs %></p>
+
+        <% end %>
+
       </div>
 
       <div class="card-footer">

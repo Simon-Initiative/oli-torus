@@ -1,5 +1,5 @@
 defmodule OliWeb.Progress.PageAttemptSummary do
-  use Surface.Component
+  use OliWeb, :surface_component
 
   prop attempt, :struct, required: true
 
@@ -24,7 +24,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
         <span>Not Submitted Yet</span>
       </div>
-      <p class="mb-1">Started: {with_time(@attempt.inserted_at)}</p>
+      <p class="mb-1">Started: {date(@attempt.inserted_at)}</p>
       <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.</small>
     </li>
     """
@@ -37,23 +37,9 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
         <span>{@attempt.score} / {@attempt.out_of}</span>
       </div>
-      <p class="mb-1 text-muted">Submitted: {with_time(@attempt.date_evaluated)} ({relative(@attempt.date_evaluated)})</p>
+      <p class="mb-1 text-muted">Submitted: {date(@attempt.date_evaluated)} ({date(@attempt.date_evaluated, precision: :relative)})</p>
       <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, @attempt.date_evaluated)}.</small>
     </li>
     """
-  end
-
-  defp relative(d) do
-    Timex.format!(d, "{relative}", :relative)
-  end
-
-  defp with_time(d) do
-    Timex.format!(d, "%Y-%m-%d %H:%M:%S", :strftime)
-  end
-
-  defp duration(from, to) do
-    Timex.diff(from, to, :milliseconds)
-    |> Timex.Duration.from_milliseconds()
-    |> Timex.format_duration(:humanized)
   end
 end

@@ -63,6 +63,13 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
     map = Seeder.base_project_with_resource4()
     admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
 
+    Seeder.create_schedule_gating_condition(
+      DateTime.add(yesterday(), -(60 * 60 * 24), :second),
+      yesterday(),
+      map.page1.id,
+      map.section_1.id
+    )
+
     conn =
       Plug.Test.init_test_session(conn, [])
       |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
@@ -75,6 +82,13 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
     instructor = user_fixture()
     Sections.enroll(instructor.id, map.section_1.id, [ContextRoles.get_role(:context_instructor)])
+
+    Seeder.create_schedule_gating_condition(
+      DateTime.add(yesterday(), -(60 * 60 * 24), :second),
+      yesterday(),
+      map.page1.id,
+      map.section_1.id
+    )
 
     conn =
       Plug.Test.init_test_session(conn, [])

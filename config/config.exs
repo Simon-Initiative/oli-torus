@@ -96,7 +96,7 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oban,
   repo: Oli.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, snapshots: 20, selections: 2, updates: 10]
+  queues: [default: 10, snapshots: 20, selections: 2, updates: 10, grades: 30]
 
 config :ex_money,
   auto_start_exchange_rate_service: false,
@@ -155,7 +155,9 @@ if Mix.env() == :dev do
 end
 
 # Configure Mnesia directory (used by pow persistent sessions)
-config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
+config :mnesia,
+  dir: to_charlist(System.get_env("MNESIA_DIR", ".mnesia")),
+  dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 

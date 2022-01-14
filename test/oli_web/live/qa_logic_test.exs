@@ -1,11 +1,13 @@
 defmodule OliWeb.Qa.StateLogicTest do
   use Oli.DataCase
+
   alias Oli.Qa.Reviewers.Pedagogy
   alias Oli.Qa.Reviewers.Content
   alias Oli.Publishing
 
   alias OliWeb.Qa.State
   alias OliWeb.Qa.QaLive
+  alias OliWeb.Common.SessionContext
 
   def merge_changes(changes, state) do
     Map.merge(state, Enum.reduce(changes, %{}, fn {k, v}, m -> Map.put(m, k, v) end))
@@ -91,8 +93,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       # test filtering out of pedagogy, and ensure that a selected pedagogy item gets converted to the content warning
       first_pedagogy_warning =
@@ -153,8 +156,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       # if we have the first one selected, it selects the second
       pedagogy_warnings = Enum.filter(state.warnings, fn w -> w.review.type == "pedagogy" end)
@@ -177,8 +181,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       # if we have the last one selected, it selects the next to last
       pedagogy_warnings = Enum.filter(state.warnings, fn w -> w.review.type == "pedagogy" end)
@@ -201,8 +206,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       # if we have the second one selected, it selects the next (third)
       pedagogy_warnings = Enum.filter(state.warnings, fn w -> w.review.type == "pedagogy" end)
@@ -225,8 +231,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       # if we have the second one selected, it selects the next (third)
       pedagogy_warnings = Enum.filter(state.warnings, fn w -> w.review.type == "pedagogy" end)
@@ -250,8 +257,9 @@ defmodule OliWeb.Qa.StateLogicTest do
       Content.broken_uris(content, project.slug)
 
       current_review = QaLive.read_current_review(project)
+      context = SessionContext.init() |> Map.put(:author, author)
 
-      state = State.initialize_state(author, project, current_review)
+      state = State.initialize_state(context, project, current_review)
 
       state =
         State.set_filters(state, State.toggle_filter(state, "pedagogy")) |> merge_changes(state)

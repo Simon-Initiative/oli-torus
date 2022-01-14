@@ -18,7 +18,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
   Takes a list of %HierarchyNode{}, a map of resource_ids to %ResourceAccess{} structs, and the
   section and user to construct the table model.
   """
-  def new(page_nodes, resource_accesses, section, user, local_tz) do
+  def new(page_nodes, resource_accesses, section, user, context) do
     rows =
       Enum.with_index(page_nodes, fn node, index ->
         ra = Map.get(resource_accesses, node.revision.resource_id)
@@ -109,20 +109,20 @@ defmodule OliWeb.Progress.StudentTabelModel do
           %ColumnSpec{
             name: :updated_at,
             label: "First Visited",
-            render_fn: &__MODULE__.custom_render/3,
-            sort_fn: &OliWeb.Common.Table.Common.render_date/3
+            render_fn: &OliWeb.Common.Table.Common.render_date/3,
+            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
           },
           %ColumnSpec{
             name: :updated_at,
             label: "Last Visited",
-            render_fn: &__MODULE__.custom_render/3,
-            sort_fn: &OliWeb.Common.Table.Common.render_date/3
+            render_fn: &OliWeb.Common.Table.Common.render_date/3,
+            sort_fn: &OliWeb.Common.Table.Common.sort_date/2
           }
         ],
         event_suffix: "",
         id_field: [:index],
         data: %{
-          local_tz: local_tz
+          context: context
         }
       )
 
@@ -142,41 +142,35 @@ defmodule OliWeb.Progress.StudentTabelModel do
      end, direction}
   end
 
-  def custom_render(assigns, row, %ColumnSpec{name: name}) do
-    case name do
-      :title ->
-        ~F"""
-        <ResourceTitle
-          node={row.node}
-          url={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.user_id, row.resource_id)}/>
-        """
+  def custom_render(assigns, row, %ColumnSpec{name: :title}) do
+    ~F"""
+    <ResourceTitle
+      node={row.node}
+      url={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, assigns.section_slug, assigns.user_id, row.resource_id)}/>
+    """
+  end
 
-      :score ->
-        if row.type == "Graded" and !is_nil(row.score) do
-          "#{row.score} / #{row.out_of}"
-        else
-          ""
-        end
+  def custom_render(_assigns, row, %ColumnSpec{name: :score}) do
+    if row.type == "Graded" and !is_nil(row.score) do
+      "#{row.score} / #{row.out_of}"
+    else
+      ""
+    end
+  end
 
-      :number_accesses ->
-        if row.number_accesses == 0 do
-          ""
-        else
-          row.number_accesses
-        end
+  def custom_render(_assigns, row, %ColumnSpec{name: :number_accesses}) do
+    if row.number_accesses == 0 do
+      ""
+    else
+      row.number_accesses
+    end
+  end
 
-      :number_attempts ->
-        if row.number_attempts == 0 do
-          ""
-        else
-          row.number_attempts
-        end
-
-      _ ->
-        case Map.get(row, name) do
-          nil -> ""
-          d -> Timex.format!(d, "%Y-%m-%d", :strftime)
-        end
+  def custom_render(_assigns, row, %ColumnSpec{name: :number_attempts}) do
+    if row.number_attempts == 0 do
+      ""
+    else
+      row.number_attempts
     end
   end
 
