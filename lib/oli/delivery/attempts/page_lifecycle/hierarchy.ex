@@ -109,10 +109,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp query_driven_part_attempt_creation(resource_attempt_id) do
     query = """
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
-      SELECT trim('"' FROM p::text), a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
+      SELECT trim('"' FROM (jsonb_path_query(r.content, '$.authoring.parts[*].id'))::text), a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
       FROM activity_attempts as a
       LEFT JOIN revisions as r on a.revision_id = r.id
-      LEFT JOIN LATERAL jsonb_path_query(r.content, '$.authoring.parts[*].id') as p ON TRUE
       WHERE a.resource_attempt_id = $1;
     """
 
