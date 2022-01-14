@@ -125,7 +125,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
       {_deployment, registration} =
         Oli.Delivery.Sections.get_deployment_registration_from_section(section)
 
-      Lti_1p3.Tool.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
+      Lti_1p3.Tool.Services.AccessToken.fetch_access_token(registration, Oli.Grading.ags_scopes(), host())
     end
   end
 

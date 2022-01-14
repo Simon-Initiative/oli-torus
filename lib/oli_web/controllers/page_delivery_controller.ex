@@ -21,7 +21,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
   alias Lti_1p3.Tool.ContextRoles
-  alias Lti_1p3.Tool.Services.AccessToken
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user

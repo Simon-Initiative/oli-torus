@@ -268,7 +268,7 @@ defmodule OliWeb.Grades.GradesLive do
             emit_status(pid, "Received access token", :normal, false)
             emit_status(pid, "Requesting line items...", :normal, false)
 
-            case LTI_AGS.fetch_line_items(socket.assigns.line_items_url, access_token) do
+            case AGS.fetch_line_items(socket.assigns.line_items_url, access_token) do
               {:ok, _} ->
                 emit_status(pid, "Received line items", :normal, false)
                 emit_status(pid, "Success!", :success, true)
