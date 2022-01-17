@@ -525,8 +525,6 @@ const DeckLayoutFooter: React.FC = () => {
   const containerWidth =
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
 
-  const containerClasses = ['checkContainer', 'rowRestriction', 'columnRestriction'];
-
   // effects
   useEffect(() => {
     // legacy usage expects the feedback header to be handled
@@ -559,7 +557,10 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
+      <div
+        className={`checkContainer rowRestriction columnRestriction`}
+        style={{ width: containerWidth }}
+      >
         <NextButton
           isLoading={isLoading || !initPhaseComplete}
           text={nextButtonText}
@@ -570,18 +571,16 @@ const DeckLayoutFooter: React.FC = () => {
           showCheckBtn={currentActivity?.custom?.showCheckBtn}
         />
         {!isLegacyTheme && (
-          <>
-            <FeedbackContainer
-              minimized={!displayFeedback}
-              showIcon={displayFeedbackIcon}
-              showHeader={displayFeedbackHeader}
-              onMinimize={() => setDisplayFeedback(false)}
-              onMaximize={() => setDisplayFeedback(true)}
-              feedbacks={currentFeedbacks}
-            />
-            <HistoryNavigation />
-          </>
+          <FeedbackContainer
+            minimized={!displayFeedback}
+            showIcon={displayFeedbackIcon}
+            showHeader={displayFeedbackHeader}
+            onMinimize={() => setDisplayFeedback(false)}
+            onMaximize={() => setDisplayFeedback(true)}
+            feedbacks={currentFeedbacks}
+          />
         )}
+        <HistoryNavigation />
       </div>
       {isLegacyTheme && (
         <>
@@ -593,7 +592,6 @@ const DeckLayoutFooter: React.FC = () => {
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}
           />
-          <HistoryNavigation />
         </>
       )}
       <EverappContainer apps={currentPage?.custom?.everApps || []} />
