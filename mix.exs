@@ -160,6 +160,7 @@ defmodule Oli.MixProject do
       {:jose, "~> 1.10"},
       {:lti_1p3, "~> 0.4.2"},
       {:lti_1p3_ecto_provider, "~> 0.3.1"},
+      {:libcluster, "~> 3.3"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:mox, "~> 0.5", only: [:test, :hound]},

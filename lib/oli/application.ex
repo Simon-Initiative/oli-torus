@@ -6,9 +6,19 @@ defmodule Oli.Application do
   use Application
 
   def start(_type, _args) do
+    topologies = [
+      oli: [
+        strategy: Cluster.Strategy.Gossip
+      ]
+    ]
+
     # List all child processes to be supervised
     children =
       [
+        # libcluster config
+        {Cluster.Supervisor, [topologies, [name: Oli.ClusterSupervisor]]},
+
+        # Start Phoenix PubSub
         {Phoenix.PubSub, name: Oli.PubSub},
 
         # Start the Ecto repository
