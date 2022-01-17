@@ -571,19 +571,16 @@ const DeckLayoutFooter: React.FC = () => {
           showCheckBtn={currentActivity?.custom?.showCheckBtn}
         />
         {!isLegacyTheme && (
-          <>
-            <FeedbackContainer
-              minimized={!displayFeedback}
-              showIcon={displayFeedbackIcon}
-              showHeader={displayFeedbackHeader}
-              onMinimize={() => setDisplayFeedback(false)}
-              onMaximize={() => setDisplayFeedback(true)}
-              feedbacks={currentFeedbacks}
-            />
-            <HistoryNavigation />
-          </>
+          <FeedbackContainer
+            minimized={!displayFeedback}
+            showIcon={displayFeedbackIcon}
+            showHeader={displayFeedbackHeader}
+            onMinimize={() => setDisplayFeedback(false)}
+            onMaximize={() => setDisplayFeedback(true)}
+            feedbacks={currentFeedbacks}
+          />
         )}
-        {isLegacyTheme && <HistoryNavigation />}
+        <HistoryNavigation />
       </div>
       {isLegacyTheme && (
         <>
