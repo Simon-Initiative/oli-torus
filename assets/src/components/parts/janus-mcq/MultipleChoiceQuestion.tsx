@@ -378,6 +378,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         const textValue = checked ? getOptionTextById(options, choice) : '';
         handleItemSelection(
           { value: choice, textValue, checked },
+          null,
           true, // need to save pretty much every time because of related properties like count
         );
       }
@@ -389,6 +390,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         if (choiceNumber !== undefined) {
           handleItemSelection(
             { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+            null,
             true, // need to save pretty much every time because of related properties like count
           );
         }
@@ -465,7 +467,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
             break;
           case NotificationType.STATE_CHANGED:
             {
-              const { mutateChanges: changes } = payload;
+              const { mutateChanges: changes, snapshot } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
@@ -522,6 +524,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                   const textValue = checked ? getOptionTextById(options, choice) : '';
                   handleItemSelection(
                     { value: choice, textValue, checked },
+                    snapshot,
                     true, // need to save pretty much every time because of related properties like count
                   );
                 }
@@ -533,6 +536,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                   if (choiceNumber !== undefined) {
                     handleItemSelection(
                       { value: choiceNumber, textValue: sSelectedChoiceText, checked: true },
+                      snapshot,
                       true, // need to save pretty much every time because of related properties like count
                     );
                   }
@@ -711,6 +715,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   const handleItemSelection = (
     { value, textValue, checked }: ItemSelectionInput,
+    snapshot: any,
     shouldSave = true,
   ) => {
     const originalValue = parseInt(value.toString(), 10);
@@ -721,8 +726,12 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     let updatedChoiceText = updatedChoicesText[0];
 
     if (multipleSelection) {
+      let selectedChoicesSet = [...new Set([...selectedChoices, newChoice])];
+      if (selectedChoices.length === 0 && snapshot) {
+        selectedChoicesSet = [...new Set([...snapshot[`stage.${id}.selectedChoices`], newChoice])];
+      }
       // sets data for checkboxes, which can have multiple values
-      newSelectedChoices = [...new Set([...selectedChoices, newChoice])].filter(
+      newSelectedChoices = selectedChoicesSet.filter(
         (c) => checked || (!checked && originalValue !== c && c > 0),
       );
 

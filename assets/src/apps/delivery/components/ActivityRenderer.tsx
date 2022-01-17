@@ -427,8 +427,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const mutateChanges = useSelector(selectLastMutateChanges);
 
   const notifyStateMutation = async () => {
+    const { snapshot } = await onRequestLatestState();
     ref.current.notify(NotificationType.STATE_CHANGED, {
       mutateChanges,
+      snapshot,
     });
   };
   useEffect(() => {
