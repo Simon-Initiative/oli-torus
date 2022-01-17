@@ -106,7 +106,7 @@ export interface NextButton {
 const initialNextButtonClassName = 'checkBtn';
 const wrongFeedbackNextButtonClassName = 'closeFeedbackBtn wrongFeedback';
 const correctFeedbackNextButtonClassName = 'closeFeedbackBtn correctFeedback';
-/* const componentEventService = ComponentEventService.getInstance(); */
+
 const NextButton: React.FC<NextButton> = ({
   text,
   handler,
@@ -421,6 +421,14 @@ const DeckLayoutFooter: React.FC = () => {
 
   const checkHandler = () => {
     setIsLoading(true);
+    /* console.log('CHECK BUTTON CLICKED', {
+      isGoodFeedback,
+      displayFeedback,
+      nextActivityId,
+      isLegacyTheme,
+      currentActivity,
+      displayFeedbackIcon,
+    }); */
     if (displayFeedback) setDisplayFeedback(false);
 
     // if (isGoodFeedback && canProceed) {
@@ -442,7 +450,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !enableHistory) {
+      if (!enableHistory) {
         dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else if (
         !isGoodFeedback &&
