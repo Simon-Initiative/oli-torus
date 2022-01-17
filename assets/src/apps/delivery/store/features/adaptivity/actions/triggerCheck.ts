@@ -8,6 +8,7 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../../../adaptivity/scripting';
@@ -73,9 +74,8 @@ export const triggerCheck = createAsyncThunk(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');
         const isVarVariable = key.startsWith('variables.');
-        //Once Beagle App functionality is integrated, this can be removed
-        const isBeagleVariable = key.startsWith('app.');
-        if (isSessionVariable || isVarVariable || isBeagleVariable) {
+        const isEverAppVariable = key.startsWith('app.');
+        if (isSessionVariable || isVarVariable || isEverAppVariable) {
           acc[key] = localizedSnapshot[key];
         }
         return acc;
@@ -243,14 +243,42 @@ export const triggerCheck = createAsyncThunk(
       // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
 
-    // TODO: get score back from check result
-    bulkApplyState(
-      [
-        { target: 'session.currentQuestionScore', operator: '=', value: score },
-        { target: `session.visits.${currentActivity.id}`, operator: '=', value: 1 },
-      ],
-      defaultGlobalEnv,
-    );
+    const updateScoreAndVisit: ApplyStateOperation[] = [
+      { target: 'session.currentQuestionScore', operator: '=', value: score },
+    ];
+    if (attempt.attemptNumber === 1) {
+      updateScoreAndVisit.push({
+        target: `session.visits.${currentActivity.id}`,
+        operator: '+',
+        value: 1,
+      });
+    }
+    bulkApplyState(updateScoreAndVisit, defaultGlobalEnv);
+
+    // after these final extrinsic state updates, we need to write it again
+    // update redux first because we need to get the latest full extrnisic state to write to the server
+    const latestSnapshot = getEnvState(defaultGlobalEnv);
+    const latestExtrinsic = Object.keys(latestSnapshot).reduce((acc: Record<string, any>, key) => {
+      const isSessionVariable = key.startsWith('session.');
+      const isVarVariable = key.startsWith('variables.');
+      const isEverAppVariable = key.startsWith('app.');
+      if (isSessionVariable || isVarVariable || isEverAppVariable) {
+        acc[key] = latestSnapshot[key];
+      }
+      return acc;
+    }, {});
+    await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
+
+    if (!isPreviewMode) {
+      // update the server with the latest changes
+      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      /* console.log('trigger check last min extrinsic state', {
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      }); */
+      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
+    }
 
     await dispatch(
       setLastCheckResults({
