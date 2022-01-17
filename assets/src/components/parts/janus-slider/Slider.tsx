@@ -1,6 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { getFormattedVariables } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

@@ -6,7 +6,8 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { getFormattedVariables, parseBoolean } from '../../../utils/common';
+import { parseBoolean } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 

@@ -1,7 +1,7 @@
 import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
 import SwiperCore, { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { getFormattedVariables } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

@@ -1,3 +1,4 @@
+import { getValue } from 'adaptivity/scripting';
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
@@ -432,7 +433,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 processedInitStateFacts = Object.keys(initStateFacts).reduce(
                   (acc: any, key: string) => {
                     const target = key.split('|')[1];
-                    acc[target] = scriptEnv.Get(key).toJS();
+                    acc[target] = getValue(key, scriptEnv);
                     return acc;
                   },
                   {},

@@ -1,6 +1,6 @@
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import Select2 from 'react-select2-wrapper';
-import { getFormattedVariables } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

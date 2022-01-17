@@ -6,7 +6,8 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { getFormattedVariables, parseBool } from '../../../utils/common';
+import { parseBool } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { PartComponentProps } from '../types/parts';
 import { DropdownModel } from './schema';
 

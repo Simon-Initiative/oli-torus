@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import YouTube, { Options } from 'react-youtube';
-import { getFormattedVariables } from '../../../utils/common';
+import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
