@@ -75,8 +75,8 @@ defmodule OliWeb.PaymentProviders.StripeController do
           reason: reason
         })
 
-      e ->
-        Logger.error("StripeController could not finalize payment", e)
+      _ ->
+        Logger.error("StripeController could not finalize payment")
 
         json(conn, %{
           result: "failure",
