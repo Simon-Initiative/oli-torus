@@ -67,7 +67,6 @@ const updateConditions = async (conditions: any, deck: any, rootState: any) => {
   await Promise.all(
     conditions.map(async (condition: any) => {
       if (condition.fact.indexOf('stage.') !== 0 && condition.fact.indexOf('session.') !== 0) {
-        console.log(condition.fact);
         const parts = condition.fact.split('|');
         if (parts.length > 1) {
           const sequenceId = parts[0];
