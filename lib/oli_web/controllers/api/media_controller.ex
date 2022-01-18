@@ -205,11 +205,15 @@ defmodule OliWeb.Api.MediaController do
     case Base.decode64(file) do
       {:ok, contents} ->
         case MediaLibrary.add(project_slug, name, contents) do
-          {:ok, %MediaItem{} = item} -> json(conn, %{type: "success", url: item.url})
-          {:error, error} -> error(conn, 400, error)
+          {:ok, %MediaItem{} = item} ->
+            json(conn, %{type: "success", url: item.url})
+
+          {:error, error} ->
+            {_id, err_msg} = Oli.Utils.log_error("failed to add media", error)
+            error(conn, 400, err_msg)
         end
 
-      :error ->
+      _ ->
         error(conn, 400, "invalid encoded file")
     end
   end
