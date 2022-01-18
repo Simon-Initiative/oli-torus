@@ -7,7 +7,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBoolean } from '../../../utils/common';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { PartComponentProps } from '../types/parts';
 import { NavButtonModel } from './schema';
 
@@ -291,8 +290,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initFacts } = payload;
-              const changes = getFormattedVariables(initFacts);
+              const { initStateFacts: changes } = payload;
               const sTitle = changes[`stage.${id}.title`];
               if (sTitle !== undefined) {
                 setButtonTitle(sTitle);

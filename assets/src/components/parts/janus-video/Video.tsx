@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
 import YouTube, { Options } from 'react-youtube';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -210,8 +209,7 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initFacts } = payload;
-              const changes = getFormattedVariables(initFacts);
+              const { initStateFacts: changes } = payload;
               const sAutoPlay = changes[`stage.${id}.autoPlay`];
               if (sAutoPlay !== undefined) {
                 setVideoAutoPlay(sAutoPlay);

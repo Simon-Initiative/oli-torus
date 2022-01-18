@@ -7,7 +7,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { PartComponentProps } from '../types/parts';
 import { InputTextModel } from './schema';
 
@@ -133,8 +132,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: changes } = payload;
-              const initStateFacts = getFormattedVariables(changes);
+              const { initStateFacts: initStateFacts } = payload;
               const sEnabled = initStateFacts[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(parseBool(sEnabled));

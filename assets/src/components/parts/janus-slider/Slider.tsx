@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import React, { ChangeEvent, CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -153,8 +152,7 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initFacts } = payload;
-              const changes = getFormattedVariables(initFacts);
+              const { initStateFacts: changes } = payload;
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setIsSliderEnabled(sEnabled);

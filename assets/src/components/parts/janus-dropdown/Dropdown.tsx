@@ -7,7 +7,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { PartComponentProps } from '../types/parts';
 import { DropdownModel } from './schema';
 
@@ -318,9 +317,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initStateFacts } = payload;
-              const changes = getFormattedVariables(initStateFacts);
-
+              const { initStateFacts: changes } = payload;
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);

@@ -7,7 +7,6 @@ import {
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
 import { AudioModel } from './schema';
-import { getFormattedVariables } from '../../../adaptivity/common';
 
 const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -195,8 +194,7 @@ const Audio: React.FC<PartComponentProps<AudioModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initStateFacts } = payload;
-              const changes = getFormattedVariables(initStateFacts);
+              const { initStateFacts: changes } = payload;
               const sCustomCssClass = changes[`stage.${id}.customCssClass`];
               if (sCustomCssClass !== undefined) {
                 setClasses(String(sCustomCssClass));

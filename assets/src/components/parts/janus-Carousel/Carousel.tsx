@@ -1,7 +1,6 @@
 import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
 import SwiperCore, { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { getFormattedVariables } from '../../../adaptivity/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -116,9 +115,7 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initStateFacts } = payload;
-              const changes = getFormattedVariables(initStateFacts);
-
+              const { initStateFacts: changes } = payload;
               const sZoom = changes[`stage.${id}.zoom`];
               if (sZoom !== undefined) {
                 setCarouselZoom(sZoom);
