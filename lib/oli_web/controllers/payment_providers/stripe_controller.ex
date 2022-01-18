@@ -128,9 +128,13 @@ defmodule OliWeb.PaymentProviders.StripeController do
 
             json(conn, %{clientSecret: client_secret})
 
-          {:error, reason} ->
-            Logger.error("StripeController:init_intent failed", reason)
+          {:error, reason} when is_binary(reason) ->
+            Logger.error("StripeController:init_intent failed. #{reason}")
             error(conn, 500, reason)
+
+          _ ->
+            Logger.error("StripeController:init_intent failed.")
+            error(conn, 500, "Intent creation failed")
         end
       else
         e ->
