@@ -38,10 +38,14 @@ defmodule Oli.Delivery.Paywall do
       from(
         p in Payment,
         where: p.enrollment_id == ^id,
+        limit: 1,
         select: p
       )
 
-    !is_nil(Repo.one(query))
+    case Repo.all(query) do
+      [] -> false
+      _ -> true
+    end
   end
 
   defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
