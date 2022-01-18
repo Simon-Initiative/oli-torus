@@ -52,13 +52,15 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
           blueprint_id: product.id
         })
 
-      Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
+      {:ok, enrollment} =
+        Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       %{
         product: product,
         section: section,
         map: map,
-        user1: user1
+        user1: user1,
+        enrollment: enrollment
       }
     end
 
@@ -67,7 +69,12 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
                Stripe.finalize_payment(%{"id" => "a_made_up_intent_id"})
     end
 
-    test "finalization succeeds", %{section: section, product: product, user1: user} do
+    test "finalization succeeds", %{
+      section: section,
+      product: product,
+      user1: user,
+      enrollment: enrollment
+    } do
       url = "https://api.stripe.com/v1/payment_intents"
 
       MockHTTP
@@ -84,6 +91,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       pending_payment = Paywall.get_provider_payment(:stripe, "test_id")
       assert pending_payment
       refute pending_payment.application_date
+      assert is_nil(pending_payment.enrollment_id)
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
       assert pending_payment.section_id == product.id
@@ -95,7 +103,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       finalized = Paywall.get_provider_payment(:stripe, "test_id")
       assert finalized
       assert finalized.id == pending_payment.id
-
+      assert finalized.enrollment_id == enrollment.id
       assert finalized.application_date
       assert finalized.pending_section_id == section.id
       assert finalized.pending_user_id == user.id
