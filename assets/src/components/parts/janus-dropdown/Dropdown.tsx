@@ -318,6 +318,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: changes } = payload;
+
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);

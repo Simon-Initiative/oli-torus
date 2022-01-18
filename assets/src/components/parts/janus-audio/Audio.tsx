@@ -1,5 +1,5 @@
 import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
-import { parseBool } from '../../../utils/common';
+import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,

@@ -112,6 +112,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
           case NotificationType.CONTEXT_CHANGED:
             {
               const { initStateFacts: initStateFacts } = payload;
+
               const sEnabled = initStateFacts[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(parseBool(sEnabled));

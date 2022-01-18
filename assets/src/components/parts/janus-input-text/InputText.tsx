@@ -132,7 +132,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
-              const { initStateFacts: initStateFacts } = payload;
+              const { initStateFacts } = payload;
               const sEnabled = initStateFacts[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(parseBool(sEnabled));
