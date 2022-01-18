@@ -67,12 +67,20 @@ defmodule OliWeb.PaymentProviders.StripeController do
           url: Routes.page_delivery_path(conn, :index, slug)
         })
 
-      {:error, reason} ->
-        Logger.error("StripeController could not finalize payment", reason)
+      {:error, reason} when is_binary(reason) ->
+        Logger.error("StripeController could not finalize payment: #{reason}")
 
         json(conn, %{
           result: "failure",
           reason: reason
+        })
+
+      e ->
+        Logger.error("StripeController could not finalize payment", e)
+
+        json(conn, %{
+          result: "failure",
+          reason: "Could not finalize payment"
         })
     end
   end
