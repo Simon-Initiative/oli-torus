@@ -5,6 +5,9 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
   alias Oli.Delivery.{Sections, Paywall}
   alias Oli.Delivery.Paywall.Providers.Stripe
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
 
   import Ecto.Query, warn: false
 
@@ -168,6 +171,21 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       e = Oli.Repo.get!(Oli.Delivery.Sections.Enrollment, finalized.enrollment_id)
       assert e.user_id == user.id
       assert e.section_id == section.id
+
+      results =
+        Sections.browse_enrollments(
+          section,
+          %Paging{offset: 0, limit: 3},
+          %Sorting{field: :email, direction: :asc},
+          %EnrollmentBrowseOptions{
+            is_student: false,
+            is_instructor: false,
+            text_search: nil
+          }
+        )
+
+      assert Enum.count(results) == 1
+      refute is_nil(hd(results).payment_date)
     end
 
     test "double finalization fails", %{section: section, product: product, user1: user} do
