@@ -428,21 +428,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 questionId: payload.currentActivityId,
               };
               const initStateFacts = payload.initStateFacts;
-              let processedInitStateFacts = {};
-              if (scriptEnv) {
-                processedInitStateFacts = Object.keys(initStateFacts).reduce(
-                  (acc: any, key: string) => {
-                    const target = key.split('|')[1];
-                    acc[target] = getValue(key, scriptEnv);
-                    return acc;
-                  },
-                  {},
-                );
-              }
-
               notifyConfigChange();
               // we only send the Init state variables.
-              const currentStateSnapshot = processedInitStateFacts;
+              const currentStateSnapshot = initStateFacts;
 
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
