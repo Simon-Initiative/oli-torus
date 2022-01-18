@@ -67,12 +67,20 @@ defmodule OliWeb.PaymentProviders.StripeController do
           url: Routes.page_delivery_path(conn, :index, slug)
         })
 
-      {:error, reason} ->
-        Logger.error("StripeController could not finalize payment", reason)
+      {:error, reason} when is_binary(reason) ->
+        Logger.error("StripeController could not finalize payment: #{reason}")
 
         json(conn, %{
           result: "failure",
           reason: reason
+        })
+
+      _ ->
+        Logger.error("StripeController could not finalize payment")
+
+        json(conn, %{
+          result: "failure",
+          reason: "Could not finalize payment"
         })
     end
   end
@@ -120,9 +128,13 @@ defmodule OliWeb.PaymentProviders.StripeController do
 
             json(conn, %{clientSecret: client_secret})
 
-          {:error, reason} ->
-            Logger.error("StripeController:init_intent failed", reason)
+          {:error, reason} when is_binary(reason) ->
+            Logger.error("StripeController:init_intent failed. #{reason}")
             error(conn, 500, reason)
+
+          _ ->
+            Logger.error("StripeController:init_intent failed.")
+            error(conn, 500, "Intent creation failed")
         end
       else
         e ->
