@@ -41,7 +41,11 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
               else
                 institution.id
               end,
-            base_project_id: project.id
+            base_project_id: project.id,
+            requires_payment: true,
+            amount: "$100.00",
+            grace_period_days: 5,
+            has_grace_period: true
           },
           attrs
         )
@@ -83,7 +87,28 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
         _ -> true
       end
 
-      Sections.enroll(user.id, section.id, roles)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, roles)
+
+      # Have the first enrolled student also have made a payment for this section
+      case index do
+        2 ->
+          Oli.Delivery.Paywall.create_payment(%{
+            type: :direct,
+            generation_date: DateTime.utc_now(),
+            application_date: DateTime.utc_now(),
+            amount: "$100.00",
+            provider_type: :stripe,
+            provider_id: "1",
+            provider_payload: %{},
+            pending_user_id: user.id,
+            pending_section_id: section.id,
+            enrollment_id: enrollment.id,
+            section_id: section.id
+          })
+
+        _ ->
+          true
+      end
     end)
   end
 
@@ -125,6 +150,18 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 11
       assert hd(results).name == "1"
+
+      # Verify that sorting by payment_date works, in both directions
+      results = browse(section1, 0, :payment_date, :asc, nil, false, false)
+      assert length(results) == 3
+      assert hd(results).total_count == 11
+      assert hd(results).name == "3"
+      refute is_nil(hd(results).payment_date)
+
+      results = browse(section1, 10, :payment_date, :desc, nil, false, false)
+      assert length(results) == 1
+      assert hd(results).total_count == 11
+      assert hd(results).name == "3"
 
       # Verify offset and reverse sort for enrollment_date
       results = browse(section1, 10, :enrollment_date, :desc, nil, false, false)
