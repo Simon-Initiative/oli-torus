@@ -63,7 +63,32 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
     }),
   );
 };
-
+const updateConditions = async (conditions: any, deck: any, rootState: any) => {
+  await Promise.all(
+    conditions.map(async (condition: any) => {
+      if (condition.fact.indexOf('stage.') !== 0 && condition.fact.indexOf('session.') !== 0) {
+        console.log(condition.fact);
+        const parts = condition.fact.split('|');
+        if (parts.length > 1) {
+          const sequenceId = parts[0];
+          const activityLineage = getSequenceLineage(deck.children, sequenceId);
+          const activityTree: IActivity[] = activityLineage
+            .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
+            .filter((activity) => !!activity) as IActivity[];
+          const [, partId] = condition.fact.split('.');
+          activityTree?.map((activity) => {
+            activity.authoring?.parts.map((p: any) => {
+              if (p.id === partId) {
+                condition.fact = condition.fact.replace(sequenceId, p.owner);
+                return;
+              }
+            });
+          });
+        }
+      }
+    }),
+  );
+};
 export const updateActivityRules = createAsyncThunk(
   `${GroupsSlice}/updateActivityRules`,
   async (deck: any, { dispatch, getState }) => {
@@ -104,6 +129,7 @@ export const updateActivityRules = createAsyncThunk(
               .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
+            await updateConditions(conditionsToUpdate, deck, rootState);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
