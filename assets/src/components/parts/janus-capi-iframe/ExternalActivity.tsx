@@ -1,4 +1,3 @@
-import { getValue } from 'adaptivity/scripting';
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
@@ -35,7 +34,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [initStateReceived, setInitStateReceived] = useState(false);
   const id: string = props.id;
 
-  const [scriptEnv, setScriptEnv] = useState<Environment>();
+  const [scriptEnv, setScriptEnv] = useState<any>();
   // model items, note that we use default values now because
   // the delay from parsing the json means we can't set them from the model immediately
   const [frameX, setFrameX] = useState<number>(0);
@@ -427,10 +426,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 context: payload.mode,
                 questionId: payload.currentActivityId,
               };
-              const initStateFacts = payload.initStateFacts;
               notifyConfigChange();
               // we only send the Init state variables.
-              const currentStateSnapshot = initStateFacts;
+              const currentStateSnapshot = payload.initStateFacts;
 
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
@@ -447,7 +445,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         unsub();
       });
     };
-  }, [props.notify, simLife, scriptEnv]);
+  }, [props.notify, simLife]);
 
   //#region Capi Handlers
   const updateInternalState = (vars: any[]) => {
