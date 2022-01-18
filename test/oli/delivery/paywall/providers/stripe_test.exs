@@ -188,6 +188,36 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       refute is_nil(hd(results).payment_date)
     end
 
+    test "multiple intent creation fails when first is finalized",
+         %{section: section, product: product, user1: user} do
+      url = "https://api.stripe.com/v1/payment_intents"
+
+      MockHTTP
+      |> expect(:post, fn ^url, _body, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: "{ \"client_secret\": \"secret\", \"id\": \"test_id\" }"
+         }}
+      end)
+
+      {:ok, intent1} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+
+      assert {:ok, _} = Stripe.finalize_payment(intent1)
+
+      MockHTTP
+      |> expect(:post, fn ^url, _body, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: "{ \"client_secret\": \"secret\", \"id\": \"second_id\" }"
+         }}
+      end)
+
+      assert {:error, {:payment_already_exists}} =
+               Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+    end
+
     test "double finalization fails", %{section: section, product: product, user1: user} do
       url = "https://api.stripe.com/v1/payment_intents"
 
