@@ -108,6 +108,60 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       assert e.section_id == section.id
     end
 
+    test "multiple intent creation succeeds when first is not finalized",
+         %{section: section, product: product, user1: user} do
+      url = "https://api.stripe.com/v1/payment_intents"
+
+      MockHTTP
+      |> expect(:post, fn ^url, _body, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: "{ \"client_secret\": \"secret\", \"id\": \"test_id\" }"
+         }}
+      end)
+
+      {:ok, _intent1} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+
+      MockHTTP
+      |> expect(:post, fn ^url, _body, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           status_code: 200,
+           body: "{ \"client_secret\": \"secret\", \"id\": \"second_id\" }"
+         }}
+      end)
+
+      {:ok, intent2} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+
+      assert is_nil(Paywall.get_provider_payment(:stripe, "test_id"))
+      pending_payment = Paywall.get_provider_payment(:stripe, "second_id")
+      assert pending_payment
+      refute pending_payment.application_date
+      assert pending_payment.pending_section_id == section.id
+      assert pending_payment.pending_user_id == user.id
+      assert pending_payment.section_id == product.id
+      assert pending_payment.provider_type == :stripe
+      assert pending_payment.provider_id == "second_id"
+
+      assert {:ok, _} = Stripe.finalize_payment(intent2)
+
+      finalized = Paywall.get_provider_payment(:stripe, "second_id")
+      assert finalized
+      assert finalized.id == pending_payment.id
+
+      assert finalized.application_date
+      assert finalized.pending_section_id == section.id
+      assert finalized.pending_user_id == user.id
+      assert finalized.section_id == product.id
+      assert finalized.provider_type == :stripe
+      assert finalized.provider_id == "second_id"
+
+      e = Oli.Repo.get!(Oli.Delivery.Sections.Enrollment, finalized.enrollment_id)
+      assert e.user_id == user.id
+      assert e.section_id == section.id
+    end
+
     test "double finalization fails", %{section: section, product: product, user1: user} do
       url = "https://api.stripe.com/v1/payment_intents"
 
