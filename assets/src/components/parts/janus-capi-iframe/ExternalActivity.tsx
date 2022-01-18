@@ -13,19 +13,7 @@ import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
-const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
-const getExternalActivityMap = () => {
-  const result: any = {};
-
-  externalActivityMap.forEach((value, key) => {
-    // TODO: cut out functions?
-    result[key] = value;
-  });
-
-  return result;
-};
-
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
   const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
@@ -402,16 +390,24 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 payload,
               });
               const currentMutateStateSnapshot = payload.mutateChanges;
-              //udpate the local key-value pair when variables changed by mutation i.e. from outside
-              Object.keys(currentMutateStateSnapshot).forEach((key) => {
-                externalActivityMap.set(
-                  `${simLife.ownerActivityId}|${key}`,
-                  currentMutateStateSnapshot[key],
-                );
-              });
-              setScreenContext(NotificationType.STATE_CHANGED);
-              processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
-              setSimIsInitStatePassedOnce(false);
+              const changedVariables = Object.keys(currentMutateStateSnapshot).reduce(
+                (acc: any, key: any) => {
+                  if (key.indexOf('stage.') === 0) {
+                    const value = currentMutateStateSnapshot[key];
+                    const initValue = initState[key];
+                    if (value !== initValue) {
+                      acc[key] = currentMutateStateSnapshot[key];
+                    }
+                  }
+                  return acc;
+                },
+                {},
+              );
+              if (Object.keys(changedVariables).length > 0) {
+                setScreenContext(NotificationType.STATE_CHANGED);
+                processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
+                setSimIsInitStatePassedOnce(false);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -471,11 +467,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       });
       if (hasDiff) {
         setInternalState(mutableState);
-        mutableState.forEach((element) => {
-          if (element.id.indexOf(`stage.${id}.`) === 0) {
-            externalActivityMap.set(`${simLife.ownerActivityId}|${element.id}`, element);
-          }
-        });
       }
     }
     return mutableState;
