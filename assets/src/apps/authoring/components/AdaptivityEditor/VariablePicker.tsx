@@ -37,6 +37,11 @@ interface VariablePickerProps {
   context: 'init' | 'mutate' | 'condition';
 }
 
+export interface LessonVariable {
+  name: string;
+  expression: string;
+}
+
 export const VariablePicker: React.FC<VariablePickerProps> = ({
   placement = OverlayPlacements.TOP,
   targetRef,
@@ -330,28 +335,27 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   );
 
   const VariableTemplate: React.FC = () =>
-    currentLesson.custom.variables.map((variable: any, index: number) => {
-      return Object.keys(variable).map((varKey) => {
-        const limitedType = getLimitedTypeCheck(variable[varKey]);
-        return (
-          <div key={index} className="part-type">
-            <button
-              type="button"
-              className="text-btn font-italic"
-              onClick={() => {
-                setTargetRef(`variables.${varKey}`);
-                setTypeRef(`${limitedType}`);
-              }}
-              title={`${
-                CapiVariableTypes[limitedType][0] +
-                CapiVariableTypes[limitedType].slice(1).toLowerCase()
-              }`}
-            >
-              {varKey}
-            </button>
-          </div>
-        );
-      });
+    currentLesson?.custom?.variables?.map((variable: LessonVariable, index: number) => {
+      const { expression, name } = variable;
+      const limitedType = getLimitedTypeCheck(expression);
+      return (
+        <div key={index} className="part-type">
+          <button
+            type="button"
+            className="text-btn font-italic"
+            onClick={() => {
+              setTargetRef(`variables.${name}`);
+              setTypeRef(`${limitedType}`);
+            }}
+            title={`${
+              CapiVariableTypes[limitedType][0] +
+              CapiVariableTypes[limitedType].slice(1).toLowerCase()
+            }`}
+          >
+            {name}
+          </button>
+        </div>
+      );
     });
 
   useEffect(() => {

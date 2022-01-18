@@ -52,7 +52,7 @@ jobs:
         with:
           command: |
             cd /torus
-            sh deploy.sh ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
+            sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
           host: ${{ steps.info.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}

@@ -191,6 +191,9 @@ export const initializeActivity = createAsyncThunk(
     }
     // now that the scripting env should be up to date, need to update attempt state in redux and server
     const currentState = getEnvState(defaultGlobalEnv);
+    console.log('DECK.TS - currentState received from getEnvState(defaultGlobalEnv)', {
+      currentState,
+    });
 
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
       if (key.indexOf('session.') === 0) {

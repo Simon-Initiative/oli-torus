@@ -1,3 +1,4 @@
+import { saveActivity } from 'apps/authoring/store/activities/actions/saveActivity';
 import {
   selectPartComponentTypes,
   selectPaths,
@@ -10,6 +11,7 @@ import { useCallback } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
+import cloneDeep from 'lodash/cloneDeep';
 
 const ComponentSearchContextMenu: React.FC = () => {
   const [show, setShow] = useState(false);
@@ -54,6 +56,30 @@ const ComponentSearchContextMenu: React.FC = () => {
     return `${paths?.images}/icons/${part.icon}`;
   };
 
+  const updateActivityTreeParts = (list: any) => {
+    const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
+    activity.content.partsLayout = list;
+    dispatch(saveActivity({ activity }));
+  };
+
+  const moveComponentUp = (event: any, part: any, index: number) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const list = allParts.filter((p: any) => p.id !== part.id);
+    list.splice(index - 1, 0, part);
+
+    updateActivityTreeParts(list);
+  };
+
+  const moveComponentDown = (event: any, part: any, index: number) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const list = allParts.filter((p: any) => p.id !== part.id);
+    list.splice(index + 1, 0, part);
+
+    updateActivityTreeParts(list);
+  };
+
   // console.log('ALL PARTS', { allParts, currentActivityTree });
 
   return (
@@ -88,18 +114,38 @@ const ComponentSearchContextMenu: React.FC = () => {
             <Popover.Title as="h3">{allParts.length} Parts On Screen</Popover.Title>
             <Popover.Content>
               <ListGroup className="aa-parts-list">
-                {allParts.map((part: any) => (
+                {allParts.map((part: any, index: number) => (
                   <ListGroup.Item
                     active={part.id === currentPartSelection}
                     action
                     onClick={() => handlePartClick(part)}
                     key={part.id}
-                    className="d-flex align-items-center"
+                    className="d-flex align-items-center justify-content-between"
                   >
-                    <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
-                      <img title={part.type} src={getPartIcon(part.type)} />
+                    <div>
+                      <div className="text-center mr-1 d-inline-block" style={{ minWidth: '36px' }}>
+                        <img title={part.type} src={getPartIcon(part.type)} />
+                      </div>
+                      <span className="mr-2">{part.id}</span>
                     </div>
-                    <span className="mr-2">{part.id}</span>
+                    <div className="text-center mr-1 d-flex" style={{ minWidth: '36px' }}>
+                      <button
+                        className="btn btn-xs move-btn"
+                        onClick={(ev) => moveComponentUp(ev, part, index)}
+                        disabled={index === 0}
+                      >
+                        <span className="icon-chevron-up" />
+                        <span className="sr-only">Move Up</span>
+                      </button>
+                      <button
+                        className="btn btn-xs move-btn"
+                        onClick={(ev) => moveComponentDown(ev, part, index)}
+                        disabled={index === allParts.length - 1}
+                      >
+                        <span className="icon-chevron-down" />
+                        <span className="sr-only">Move Down</span>
+                      </button>
+                    </div>
                   </ListGroup.Item>
                 ))}
               </ListGroup>

@@ -1,5 +1,6 @@
 import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
+import { selectIsLegacyTheme } from 'apps/delivery/store/features/page/slice';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import FeedbackRenderer from './FeedbackRenderer';
@@ -24,6 +25,8 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityIds = (currentActivityTree || []).map((activity) => activity.id);
 
+  const isLegacyTheme = useSelector(selectIsLegacyTheme);
+
   const handleToggleFeedback = () => {
     if (minimized) {
       onMaximize();
@@ -37,7 +40,10 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   };
 
   return (
-    <div className="feedbackContainer rowRestriction" style={{ top: 525 }}>
+    <div
+      className={`feedbackContainer rowRestriction ${isLegacyTheme ? 'columnRestriction' : ''}`}
+      style={{ top: '525px' }}
+    >
       <div className={`bottomContainer fixed ${minimized ? 'minimized' : ''}`}>
         <button
           onClick={handleToggleFeedback}

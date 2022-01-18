@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:scoreable, :boolean, default: true)
     field(:score, :float)
     field(:out_of, :float)
-    field(:transformed_model, :map)
+    field(:transformed_model, :map, default: nil)
 
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)
@@ -37,7 +37,6 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     |> validate_required([
       :attempt_guid,
       :attempt_number,
-      :transformed_model,
       :resource_attempt_id,
       :resource_id,
       :revision_id
