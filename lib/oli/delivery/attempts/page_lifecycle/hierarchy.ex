@@ -13,7 +13,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   import Oli.Delivery.Attempts.Core
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Resources.Revision
-  alias Oli.Activities.Model
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.Result
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
@@ -92,23 +91,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
-    # Create the resource ID to attempt database ID mapping
-    id_mapping = create_resource_id_mapping(resource_attempt.id)
-
-    # Create the part attempts, in bulk
-    Enum.map(activity_revisions, fn r ->
-      {:ok, parsed_model} = Model.parse(r.content)
-      create_raw_part_attempts(parsed_model, Map.get(id_mapping, r.resource_id))
-    end)
-    |> List.flatten()
-    |> bulk_create_part_attempts(right_now)
-  end
-
-  defp create_resource_id_mapping(resource_attempt_id) do
-    get_attempt_resource_id_pair(resource_attempt_id)
-    |> Enum.reduce(%{}, fn %{id: id, resource_id: resource_id}, m ->
-      Map.put(m, resource_id, id)
-    end)
+    query_driven_part_attempt_creation(resource_attempt.id)
   end
 
   defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
@@ -121,14 +104,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     Repo.insert_all(ActivityAttempt, raw_attempts, placeholders: placeholders)
   end
 
-  defp bulk_create_part_attempts(raw_attempts, now) do
-    placeholders = %{
-      now: now,
-      attempt_number: 1,
-      hints: []
-    }
+  # This is the optimal way to bulk create part attempts: passing a query driven 'insert'
+  # to the database, instead of passing the raw payload of each record to create.
+  defp query_driven_part_attempt_creation(resource_attempt_id) do
+    query = """
+      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
+      SELECT trim('"' FROM (jsonb_path_query(r.content, '$.authoring.parts[*].id'))::text), a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
+      FROM activity_attempts as a
+      LEFT JOIN revisions as r on a.revision_id = r.id
+      WHERE a.resource_attempt_id = $1;
+    """
 
-    Repo.insert_all(PartAttempt, raw_attempts, placeholders: placeholders)
+    Repo.query!(query, [resource_attempt_id])
   end
 
   # If all of the transformed_model attrs are nil, we do not need to include them in
@@ -161,20 +148,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }
-  end
-
-  defp create_raw_part_attempts(parsed_model, activity_attempt_id) do
-    Enum.map(parsed_model.parts, fn p ->
-      %{
-        hints: {:placeholder, :hints},
-        attempt_guid: UUID.uuid4(),
-        activity_attempt_id: activity_attempt_id,
-        attempt_number: {:placeholder, :attempt_number},
-        part_id: p.id,
-        inserted_at: {:placeholder, :now},
-        updated_at: {:placeholder, :now}
-      }
-    end)
   end
 
   @doc """

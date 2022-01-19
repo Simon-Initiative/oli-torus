@@ -84,17 +84,17 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
 
         %{"id" => id} = intent
 
-        case Oli.Delivery.Paywall.create_payment(%{
-               type: :direct,
-               generation_date: DateTime.utc_now(),
-               amount: amount,
-               pending_user_id: user.id,
-               pending_section_id: section.id,
-               provider_payload: intent,
-               provider_id: id,
-               provider_type: :stripe,
-               section_id: product.id
-             }) do
+        attrs = %{
+          type: :direct,
+          generation_date: DateTime.utc_now(),
+          amount: amount,
+          provider_payload: intent,
+          provider_id: id,
+          provider_type: :stripe,
+          section_id: product.id
+        }
+
+        case Oli.Delivery.Paywall.create_pending_payment(user, section, attrs) do
           {:ok, _} -> {:ok, intent}
           e -> e
         end
@@ -118,15 +118,20 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
 
       %{application_date: nil} = payment ->
         section = Oli.Delivery.Sections.get_section!(payment.pending_section_id)
-        enrollment = Oli.Delivery.Sections.get_enrollment(section.slug, payment.pending_user_id)
 
-        case Oli.Delivery.Paywall.update_payment(payment, %{
-               enrollment_id: enrollment.id,
-               application_date: DateTime.utc_now(),
-               provider_payload: intent
-             }) do
-          {:ok, _} -> {:ok, section}
-          _ -> {:error, "Could not finalize payment"}
+        case Oli.Delivery.Sections.get_enrollment(section.slug, payment.pending_user_id) do
+          nil ->
+            {:error, "Count not find enrollment to finalize payment"}
+
+          enrollment ->
+            case Oli.Delivery.Paywall.update_payment(payment, %{
+                   enrollment_id: enrollment.id,
+                   application_date: DateTime.utc_now(),
+                   provider_payload: intent
+                 }) do
+              {:ok, _} -> {:ok, section}
+              _ -> {:error, "Could not finalize payment"}
+            end
         end
 
       _ ->
