@@ -389,14 +389,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
-    const initStateBindToFacts: string[] = [];
+    const initStateBindToFacts: any = {};
     updateGlobalState(snapshot, initStateFacts);
     const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
       let target = key;
       const operator = initStateFacts[key];
-      if (operator === 'bind to') {
-        initStateBindToFacts.push(key);
-      }
       if (target.indexOf('stage') === 0) {
         const lstVar = target.split('.');
         if (lstVar?.length > 1) {
@@ -406,10 +403,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-      acc[key] = snapshot[target];
+
+      if (operator === 'bind to') {
+        initStateBindToFacts[key] = snapshot[target];
+      } else {
+        acc[key] = snapshot[target];
+      }
       return acc;
     }, {});
-    console.log('The Init State data is ready to be sent to SIM-', { finalInitSnapshot, snapshot });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,

@@ -310,7 +310,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -388,14 +388,19 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               writeCapiLog('MUTATE STATE!!!!', 3, {
                 simLife,
                 payload,
+                initStateBindToFacts,
               });
               const currentMutateStateSnapshot = payload.mutateChanges;
               const changedVariables = Object.keys(currentMutateStateSnapshot).reduce(
                 (acc: any, key: any) => {
                   if (key.indexOf('stage.') === 0) {
                     const value = currentMutateStateSnapshot[key];
-                    const initValue = initState[key];
-                    if (value !== initValue) {
+                    let initValue = initStateBindToFacts[key];
+                    const typeOfInitValue = typeof initValue;
+                    if (typeOfInitValue === 'object') {
+                      initValue = JSON.stringify(initValue);
+                    }
+                    if (value.toString() !== initValue?.toString()) {
                       acc[key] = currentMutateStateSnapshot[key];
                     }
                   }
@@ -884,8 +889,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       return;
     }
 
-    writeCapiLog('INIT STATE APPLIED', 3, { initState, screenContext, initStateBindToFacts });
-    let arrInitStateVars = Object.keys(initState);
+    writeCapiLog('INIT STATE APPLIED', 3, { initState });
+    const arrInitStateVars = Object.keys(initState);
     //hack for KIP SIMs. 'CurrentEclipse' variables needs to be sent at last so moving it to last position in array.
     if (arrInitStateVars.indexOf('stage.orrery.Eclipses.Settings.CurrentEclipse') !== -1) {
       arrInitStateVars.push(
@@ -895,10 +900,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         )[0],
       );
     }
-    if (initStateBindToFacts?.length && screenContext === NotificationType.CONTEXT_CHANGED) {
-      arrInitStateVars = arrInitStateVars.filter((v) => !initStateBindToFacts.includes(v));
-    }
-
     arrInitStateVars.forEach((key: any) => {
       const formatted: Record<string, unknown> = {};
       const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
@@ -919,10 +920,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       simLife.init = true;
       if (screenContext === NotificationType.CONTEXT_CHANGED) {
-        initStateBindToFacts.forEach((key: any) => {
+        Object.keys(initStateBindToFacts).forEach((key: any) => {
           const formatted: Record<string, unknown> = {};
           const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
-          const value = initState[key];
+          const value = initStateBindToFacts[key];
           const cVar = processCapiFormattedResponse(baseKey, value);
           formatted[baseKey] = cVar;
           sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
