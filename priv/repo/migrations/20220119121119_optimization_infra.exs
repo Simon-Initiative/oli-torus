@@ -7,9 +7,11 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
     drop_trigger()
     drop_materialized_view()
 
-    create_materialized_view()
-    create_trigger()
-    create_stored_procedure()
+    user = get_current_db_user()
+
+    create_materialized_view(user)
+    create_trigger(user)
+    create_stored_procedure(user)
 
     refresh_materialized_view()
   end
@@ -18,6 +20,29 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
     drop_stored_procedure()
     drop_trigger()
     drop_materialized_view()
+  end
+
+  def get_current_db_user() do
+    case System.get_env("DATABASE_URL", nil) do
+      nil -> "postgres"
+      url -> parse_user_from_db_url(url, "postgres")
+    end
+  end
+
+  def parse_user_from_db_url(url, default) do
+    case url do
+      "ecto://" <> rest ->
+        split = String.split(rest, ":")
+
+        case Enum.count(split) do
+          0 -> default
+          1 -> default
+          _ -> Enum.at(split, 0)
+        end
+
+      _ ->
+        default
+    end
   end
 
   def drop_materialized_view() do
@@ -40,7 +65,7 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
     """
   end
 
-  def create_materialized_view() do
+  def create_materialized_view(user) do
     execute """
     CREATE MATERIALIZED VIEW IF NOT EXISTS public.part_mapping
     TABLESPACE pg_default
@@ -57,7 +82,7 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
 
     execute """
     ALTER TABLE IF EXISTS public.part_mapping
-    OWNER TO postgres;
+    OWNER TO #{user};
     """
 
     execute """
@@ -75,7 +100,7 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
     """
   end
 
-  def create_trigger() do
+  def create_trigger(user) do
     execute """
     CREATE OR REPLACE FUNCTION public.refresh_part_mapping()
         RETURNS trigger
@@ -92,7 +117,7 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
 
     execute """
     ALTER FUNCTION public.refresh_part_mapping()
-    OWNER TO postgres;
+    OWNER TO #{user};
     """
 
     execute """
@@ -104,7 +129,7 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
     """
   end
 
-  def create_stored_procedure() do
+  def create_stored_procedure(user) do
     execute """
     CREATE OR REPLACE PROCEDURE public.create_attempt_hierarchy(
       resource_attempt_id integer,
@@ -142,11 +167,11 @@ defmodule Oli.Repo.Migrations.OptimizationInfra do
 
     execute """
     ALTER PROCEDURE public.create_attempt_hierarchy(integer, character varying)
-        OWNER TO postgres;
+        OWNER TO #{user};
     """
 
     execute """
-    GRANT EXECUTE ON PROCEDURE public.create_attempt_hierarchy(integer, character varying) TO postgres;
+    GRANT EXECUTE ON PROCEDURE public.create_attempt_hierarchy(integer, character varying) TO #{user};
     """
 
     execute """
