@@ -146,7 +146,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
       SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
       FROM activity_attempts as a
-      LEFT JOIN part_mapping as pm on a.revision_id = pm.id
+      LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
       WHERE a.resource_attempt_id = $1;
     """
 
