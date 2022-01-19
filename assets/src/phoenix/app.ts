@@ -106,5 +106,5 @@ $(() => {
     }
   });
 
-  (window as any).hljs.initHighlightingOnLoad();
+  (window as any).hljs.highlightAll();
 });

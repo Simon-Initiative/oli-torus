@@ -20,7 +20,7 @@ defmodule OliWeb.Grades.TestConnection do
             </p>
 
             <ul>
-              <%= for scope <- Oli.Lti.LTI_AGS.required_scopes() do %>
+              <%= for scope <- Lti_1p3.Tool.Services.AGS.required_scopes() do %>
                 <li><code><%= scope %></code></li>
               <% end %>
             </ul>
@@ -39,7 +39,7 @@ defmodule OliWeb.Grades.TestConnection do
             <p>To enable this service, ensure that all of the following scopes are present in your LMS configuration:</p>
 
             <ul>
-              <%= for scope <- Oli.Lti.LTI_NRPS.required_scopes() do %>
+              <%= for scope <- Lti_1p3.Tool.Services.NRPS.required_scopes() do %>
                 <li><code><%= scope %></code></li>
               <% end %>
             </ul>

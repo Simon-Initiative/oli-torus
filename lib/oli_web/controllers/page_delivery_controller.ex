@@ -16,11 +16,11 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
+  alias Lti_1p3.Tool.ContextRoles
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user

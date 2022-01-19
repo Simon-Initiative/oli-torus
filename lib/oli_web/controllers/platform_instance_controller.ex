@@ -1,7 +1,7 @@
 defmodule OliWeb.PlatformInstanceController do
   use OliWeb, :controller
 
-  alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti.PlatformInstances
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
   alias Lti_1p3.Platform.LoginHint
   alias Lti_1p3.Platform.LoginHints

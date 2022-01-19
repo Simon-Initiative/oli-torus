@@ -1,4 +1,4 @@
-defmodule Oli.Lti_1p3.Tool.Registration do
+defmodule Oli.Lti.Tool.Registration do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,7 +12,7 @@ defmodule Oli.Lti_1p3.Tool.Registration do
 
     belongs_to(:tool_jwk, Lti_1p3.DataProviders.EctoProvider.Jwk, foreign_key: :tool_jwk_id)
 
-    has_many(:deployments, Oli.Lti_1p3.Tool.Deployment)
+    has_many(:deployments, Oli.Lti.Tool.Deployment)
 
     field :deployments_count, :integer, virtual: true
     field :total_count, :integer, virtual: true

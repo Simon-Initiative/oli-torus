@@ -10,7 +10,7 @@ defmodule Oli.Branding do
 
   alias Oli.Branding.Brand
   alias Oli.Delivery.Sections.Section
-  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.Institution
 
   @doc """

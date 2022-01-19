@@ -1,5 +1,6 @@
 defmodule OliWeb.Users.UsersDetailView do
   use OliWeb, :surface_view
+
   use OliWeb.Common.Modal
 
   import OliWeb.Common.Properties.Utils
@@ -22,6 +23,7 @@ defmodule OliWeb.Users.UsersDetailView do
   alias OliWeb.Users.Actions
   alias Surface.Components.Form
   alias Surface.Components.Form.{Checkbox, Label, Field, Submit}
+  alias Oli.Lti.LtiParams
 
   data breadcrumbs, :any
   data title, :string, default: "User Details"
@@ -63,7 +65,8 @@ defmodule OliWeb.Users.UsersDetailView do
            breadcrumbs: set_breadcrumbs(user),
            user: user,
            csrf_token: csrf_token,
-           changeset: user_changeset(user)
+           changeset: user_changeset(user),
+           user_lti_params: LtiParams.all_user_lti_params(user.id)
          )}
     end
   end
@@ -106,11 +109,31 @@ defmodule OliWeb.Users.UsersDetailView do
             <Submit class="float-right btn btn-md btn-primary mt-2">Save</Submit>
           </Form>
         </Group>
+        {#if !Enum.empty?(@user_lti_params)}
+          <Group label="LTI Details" description="LTI 1.3 details provided by an LMS">
+            <ul class="list-group">
+              {#for lti_params <- @user_lti_params}
+                <li class="list-group-item">
+                  <div class="d-flex pb-2 mb-2 border-bottom">
+                    <div class="flex-grow-1">{lti_params.issuer}</div>
+                    <div>Last Updated: {date(lti_params.updated_at)}</div>
+                  </div>
+                  <div style="max-height: 400px; overflow: scroll;">
+                    <pre> <code
+                      id="lit_params_#{lti_params.id}" class="lti-params language-json" phx-update="ignore">{Jason.encode!(lti_params.params) |> Jason.Formatter.pretty_print()}</code>
+                    </pre>
+                  </div>
+                </li>
+              {/for}
+            </ul>
+          </Group>
+        {/if}
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.independent_learner}
             <Actions user={@user} csrf_token={@csrf_token}/>
           {#else}
-            <div></div>
+            <div>No actions available</div>
+            <div class="text-secondary">LTI users are managed by their LMS</div>
           {/if}
         </Group>
       </Groups>

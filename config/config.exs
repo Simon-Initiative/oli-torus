@@ -130,10 +130,11 @@ config :lti_1p3,
     repo: Oli.Repo,
     schemas: [
       user: Oli.Accounts.User,
-      registration: Oli.Lti_1p3.Tool.Registration,
-      deployment: Oli.Lti_1p3.Tool.Deployment
+      registration: Oli.Lti.Tool.Registration,
+      deployment: Oli.Lti.Tool.Deployment
     ]
-  ]
+  ],
+  ags_line_item_prefix: "oli-torus-"
 
 config :ex_aws,
   access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
