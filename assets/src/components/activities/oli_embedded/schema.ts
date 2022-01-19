@@ -13,4 +13,3 @@ export interface OliEmbeddedModelSchema extends ActivityModelSchema {
     previewText: string;
   };
 }
-
