@@ -26,13 +26,15 @@ defmodule OliWeb.LegacySuperactivityController do
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
     user = conn.assigns.current_user
 
-    activity_attempt = Attempts.get_latest_activity_attempt(
-                         Attempts.get_activity_attempt_by(attempt_guid: attempt_guid).resource_attempt_id)
-                       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
+    activity_attempt =
+      Attempts.get_latest_activity_attempt(
+        Attempts.get_activity_attempt_by(attempt_guid: attempt_guid).resource_attempt_id
+      )
+      |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
     part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
 
-    %{"base" => base, "src" => src} = activity_attempt.transformed_model
+    %{"base" => base, "src" => src} = activity_attempt.revision.content
 
     context = %{
       attempt_guid: activity_attempt.attempt_guid,
@@ -81,7 +83,7 @@ defmodule OliWeb.LegacySuperactivityController do
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
-    %{"base" => base, "src" => src} = activity_attempt.transformed_model
+    %{"base" => base, "src" => src} = activity_attempt.revision.content
 
     resource_attempt = Attempts.get_resource_attempt_by(id: activity_attempt.resource_attempt_id)
 
@@ -128,7 +130,7 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  defp process_command("loadClientConfig", context, _params)  do
+  defp process_command("loadClientConfig", context, _params) do
     xml =
       SuperActivityClient.setup(%{
         context: context
@@ -151,7 +153,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "loadContentFile" do
-    %{"modelXml" => modelXml} = context.activity_attempt.transformed_model
+    %{"modelXml" => modelXml} = context.activity_attempt.revision.content
     {:ok, modelXml}
   end
 
@@ -159,6 +161,7 @@ defmodule OliWeb.LegacySuperactivityController do
     case context.activity_attempt.date_evaluated do
       nil ->
         attempt_history(context)
+
       _ ->
         seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
 
@@ -168,7 +171,6 @@ defmodule OliWeb.LegacySuperactivityController do
                seed_state_from_previous
              ) do
           {:ok, {attempt_state, _model}} ->
-
             attempt_history(fetch_context(context.host, context.user, attempt_state.attemptGuid))
 
           {:error, _} ->
@@ -220,7 +222,8 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, _context, _params) when command_name === "loadUserSyllabus" do
+  defp process_command(command_name, _context, _params)
+       when command_name === "loadUserSyllabus" do
     {:error, "command not supported", 400}
   end
 
@@ -361,12 +364,16 @@ defmodule OliWeb.LegacySuperactivityController do
             )
           end
 
-          ActivityEvaluation.rollup_part_attempt_evaluations(
-            context.activity_attempt.attempt_guid, :normalize
+          rest = ActivityEvaluation.rollup_part_attempt_evaluations(
+            context.activity_attempt.attempt_guid,
+            :normalize
           )
+          
+          rest
         end)
 
-      _ -> {:ok, "activity already finalized"}
+      _ ->
+        {:ok, "activity already finalized"}
     end
   end
 

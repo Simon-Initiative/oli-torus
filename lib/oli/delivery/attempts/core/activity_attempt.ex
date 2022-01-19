@@ -39,7 +39,6 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     |> validate_required([
       :attempt_guid,
       :attempt_number,
-      :transformed_model,
       :resource_attempt_id,
       :resource_id,
       :revision_id
