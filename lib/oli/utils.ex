@@ -1,6 +1,8 @@
 defmodule Oli.Utils do
   require Logger
 
+  import Ecto.Changeset
+
   @doc """
   Generates a random hex string of the given length
   """
@@ -144,6 +146,17 @@ defmodule Oli.Utils do
     else
       changeset
     end
+  end
+
+  def validate_dates_consistency(changeset, start_date_field, end_date_field) do
+    validate_change(changeset, start_date_field, fn _, field ->
+      # check if the start date is after the end date
+      if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
+        [{start_date_field, "must be before the end date"}]
+      else
+        []
+      end
+    end)
   end
 
   def read_json_file(filename) do

@@ -4,7 +4,9 @@ defmodule Oli.Delivery.Gating.GatingConditionData do
   used by a particular strategy
   """
   use Ecto.Schema
+
   import Ecto.Changeset
+  import Oli.Utils
 
   @primary_key false
   embedded_schema do
@@ -20,5 +22,6 @@ defmodule Oli.Delivery.Gating.GatingConditionData do
       :start_datetime,
       :end_datetime
     ])
+    |> validate_dates_consistency(:start_datetime, :end_datetime)
   end
 end

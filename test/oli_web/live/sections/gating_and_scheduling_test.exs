@@ -1,13 +1,12 @@
 defmodule OliWeb.Sections.GatingAndSchedulingTest do
   use OliWeb.ConnCase
 
-  import Phoenix.ConnTest
-  import Phoenix.LiveViewTest
   import Oli.Factory
+  import Phoenix.{ConnTest, LiveViewTest}
 
-  alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.{Gating, Sections}
+  alias Oli.Seeder
 
   @endpoint OliWeb.Endpoint
 
@@ -18,6 +17,14 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         OliWeb.Sections.GatingAndScheduling.Edit,
         section_slug,
         gating_condition_id
+      )
+
+  defp gating_condition_new_route(section_slug),
+    do:
+      Routes.live_path(
+        @endpoint,
+        OliWeb.Sections.GatingAndScheduling.New,
+        section_slug
       )
 
   describe "gating and scheduling live test admin" do
@@ -148,6 +155,176 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert_raise Ecto.NoResultsError,
                    ~r/^expected at least one result but got none in query/,
                    fn -> Gating.get_gating_condition!(gating_condition.id) end
+    end
+
+    test "displays error message when dates are not consistent", %{
+      conn: conn,
+      section_1: section,
+      gating_condition: gating_condition
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_edit_route(section.slug, gating_condition.id)
+        )
+
+      view
+      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+
+      view
+      |> render_hook("schedule_end_date_changed", %{value: "2022-01-10T13:48"})
+
+      view
+      |> element("button[phx-click=\"update_gate\"]")
+      |> render_click()
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Gating condition couldn&#39;t be updated."
+    end
+
+    test "updates the gating condition when dates are consistent", %{
+      conn: conn,
+      section_1: section,
+      gating_condition: gating_condition
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_edit_route(section.slug, gating_condition.id)
+        )
+
+      view
+      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+
+      view
+      |> render_hook("schedule_end_date_changed", %{value: "2022-01-13T13:48"})
+
+      view
+      |> element("button[phx-click=\"update_gate\"]")
+      |> render_click()
+
+      flash =
+        assert_redirected(
+          view,
+          Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+        )
+
+      assert flash["info"] == "Gating condition successfully updated."
+    end
+  end
+
+  describe "gating and scheduling new live test" do
+    setup [:setup_admin_session]
+
+    test "displays error message when dates are not consistent", %{
+      conn: conn,
+      section_1: section
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_new_route(section.slug)
+        )
+
+      view
+      |> element("button[phx-click=\"show-resource-picker\"]")
+      |> render_click()
+
+      # Since Oli.Publishing.DeliveryResolver.find_in_hierarchy generates dynamic uuids every
+      # time is called, and that is what is used to select one resource, is necessary to parse the
+      # HTML element to get the actual uuid :(
+
+      element_splitted =
+        view
+        |> element("div[phx-click=\"HierarchyPicker.select\"]", "Page one")
+        |> render()
+        |> String.split("\"")
+
+      prev_uuid_index =
+        Enum.with_index(element_splitted)
+        |> Enum.find(fn elem -> elem(elem, 0) == " phx-value-uuid=" end)
+        |> elem(1)
+
+      uuid = Enum.at(element_splitted, prev_uuid_index + 1)
+
+      view
+      |> render_hook("select_resource", %{selection: "#{uuid}"})
+
+      view
+      |> render_hook("select-condition", %{value: "schedule"})
+
+      view
+      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+
+      view
+      |> render_hook("schedule_end_date_changed", %{value: "2022-01-10T13:48"})
+
+      view
+      |> element("button[phx-click=\"create_gate\"]")
+      |> render_click()
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Gating condition couldn&#39;t be created."
+    end
+
+    test "creates the gating condition when dates are consistent", %{
+      conn: conn,
+      section_1: section
+    } do
+      {:ok, view, _html} =
+        live(
+          conn,
+          gating_condition_new_route(section.slug)
+        )
+
+      view
+      |> element("button[phx-click=\"show-resource-picker\"]")
+      |> render_click()
+
+      # Since Oli.Publishing.DeliveryResolver.find_in_hierarchy generates dynamic uuids every
+      # time is called, and that is what is used to select one resource, is necessary to parse the
+      # HTML element to get the actual uuid :(
+
+      element_splitted =
+        view
+        |> element("div[phx-click=\"HierarchyPicker.select\"]", "Page one")
+        |> render()
+        |> String.split("\"")
+
+      prev_uuid_index =
+        Enum.with_index(element_splitted)
+        |> Enum.find(fn elem -> elem(elem, 0) == " phx-value-uuid=" end)
+        |> elem(1)
+
+      uuid = Enum.at(element_splitted, prev_uuid_index + 1)
+
+      view
+      |> render_hook("select_resource", %{selection: "#{uuid}"})
+
+      view
+      |> render_hook("select-condition", %{value: "schedule"})
+
+      view
+      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+
+      view
+      |> render_hook("schedule_end_date_changed", %{value: "2022-01-13T13:48"})
+
+      view
+      |> element("button[phx-click=\"create_gate\"]")
+      |> render_click()
+
+      flash =
+        assert_redirected(
+          view,
+          Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
+        )
+
+      assert flash["info"] == "Gating condition successfully created."
     end
   end
 
