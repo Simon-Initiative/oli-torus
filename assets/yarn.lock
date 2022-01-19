@@ -4780,10 +4780,10 @@ istanbul-reports@^3.0.2:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
 
-janus-script@^1.6.1:
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/janus-script/-/janus-script-1.6.1.tgz#e3334c23497cef88b00aded55e21635d7d1ab083"
-  integrity sha512-eQi6aXCdAa9Ly/DB9+awu2GPvuJ/YHakd2aTLFSmQ06aVQLExw9x++21p59x+zhY8qH2bbZWdfjSCm8We7mULg==
+janus-script@^1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/janus-script/-/janus-script-1.9.0.tgz#454b4cbb4a8d37435297529d8d455d271e568045"
+  integrity sha512-ifvq+7kx6ho9ZSTsGkOgwlrCWyx6MPL1V/rQMf8SirT7/xpf1HBDyUyEKc/nR/XkClt9PNWvcplcZfBy2oVY4Q==
   dependencies:
     eventemitter3 "^4.0.7"
     mathjs "^9.3.2"

@@ -1,8 +1,9 @@
 import React, { Fragment } from 'react';
 
 import { DiagnosticTypes } from './DiagnosticTypes';
-import FixIdButton from './FixIdButton';
+import { FixIdButton } from './FixIdButton';
 import { FixBrokenPathButton } from './FixBrokenPathButton';
+import { FixTargetButton } from './FixTargetButton';
 import { SolutionProps } from './SolutionProps';
 
 export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps): JSX.Element => {
@@ -19,8 +20,16 @@ export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps
     case DiagnosticTypes.BROKEN:
       action = <FixBrokenPathButton {...props} />;
       break;
+    case DiagnosticTypes.INVALID_TARGET_COND:
+    case DiagnosticTypes.INVALID_TARGET_INIT:
+    case DiagnosticTypes.INVALID_TARGET_MUTATE:
+      action = <FixTargetButton {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_VALUE:
+      action = <FixIdButton {...props} />;
+      break;
     default:
-      action = <Fragment />;
+      action = <Fragment>No fix defined.</Fragment>;
       break;
   }
   return <Fragment>{action}</Fragment>;

@@ -73,7 +73,6 @@ defmodule Oli.LocksTest do
         Locks.acquire(project.slug, publication.id, resource.id, author2.id)
 
       assert date1 == nil
-      :timer.sleep(2000)
 
       assert Locks.update(project.slug, publication.id, resource.id, author.id) == {:acquired}
 
@@ -82,7 +81,6 @@ defmodule Oli.LocksTest do
 
       assert date1 != date2
 
-      :timer.sleep(2000)
       assert Locks.update(project.slug, publication.id, resource.id, author.id) == {:updated}
     end
 

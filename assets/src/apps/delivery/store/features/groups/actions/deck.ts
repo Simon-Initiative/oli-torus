@@ -73,7 +73,7 @@ export const initializeActivity = createAsyncThunk(
               // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
               for (const key in variables) {
                 const target = `${currentSequenceId}|stage.${part.id}.${key}`;
-                const operator = 'bind to';
+                const operator = 'anchor to';
                 const value = `${ancestor.id}|stage.${part.id}.${key}`;
                 const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
                 syncOps.push(op);
@@ -181,7 +181,6 @@ export const initializeActivity = createAsyncThunk(
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
-    console.log({ initState, globalizedInitState });
 
     thunkApi.dispatch(setInitStateFacts({ facts: arrInitFacts }));
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);

@@ -10,6 +10,25 @@
 
 </script>
 
+
+<script>
+$(function() {
+  const canvas_developer_key_url = "<%= @canvas_developer_key_url %>";
+
+  const course_navigation_default_checkbox = document.querySelector('input#course_navigation_default');
+  const canvas_developer_key_url_input = document.querySelector('input#canvas_developer_key_url');
+
+  course_navigation_default_checkbox.addEventListener('change', function() {
+    if (course_navigation_default_checkbox.checked) {
+      canvas_developer_key_url_input.value = canvas_developer_key_url + '?course_navigation_default=disabled';
+    } else {
+      canvas_developer_key_url_input.value = canvas_developer_key_url;
+    }
+  });
+
+})
+</script>
+
 <div class="row justify-content-md-center mt-5">
   <div class="col-8">
     <div class="card">
@@ -62,6 +81,10 @@
                       <i class="lar la-clipboard"></i> Copy
                     </button>
                   </div>
+                </div>
+                <div class="mt-1"><b>Options</b></div>
+                <div>
+                  <input id="course_navigation_default" type="checkbox"> <label for="course_navigation_default">Disable course navigation placement by default</label>
                 </div>
               </p>
             </div>

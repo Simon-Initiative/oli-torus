@@ -94,6 +94,8 @@ defmodule OliWeb.ViewHelpers do
   """
   def dt(datetime, opts \\ [])
 
+  def dt(nil, _), do: ""
+
   def dt(datetime, %Plug.Conn{assigns: assigns} = conn) do
     case Map.get(assigns, :current_author) do
       %Author{} = author ->

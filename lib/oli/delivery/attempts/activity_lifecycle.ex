@@ -42,7 +42,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
            {:ok, part_attempt} <-
              get_part_attempt_by(attempt_guid: part_attempt_guid)
              |> Oli.Utils.trap_nil(:not_found),
-           {:ok, model} <- Model.parse(activity_attempt.transformed_model),
+           {:ok, model} <- select_model(activity_attempt) |> Model.parse(),
            {:ok, part} <-
              Enum.find(model.parts, fn p -> p.id == part_attempt.part_id end)
              |> Oli.Utils.trap_nil(:not_found) do
@@ -116,14 +116,20 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           # Resolve the revision to pick up the latest
           revision = DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
 
+          {model_to_store, working_model} =
+            case Transformers.apply_transforms(revision.content) do
+              {:ok, transformed_model} -> {transformed_model, transformed_model}
+              {:no_effect, original} -> {nil, original}
+              _ -> {nil, nil}
+            end
+
           # parse and transform
           with {:ok, model} <- Model.parse(revision.content),
-               {:ok, transformed_model} <- Transformers.apply_transforms(revision.content),
                {:ok, new_activity_attempt} <-
                  create_activity_attempt(%{
                    attempt_guid: UUID.uuid4(),
                    attempt_number: attempt_count + 1,
-                   transformed_model: transformed_model,
+                   transformed_model: model_to_store,
                    resource_id: activity_attempt.resource_id,
                    revision_id: revision.id,
                    resource_attempt_id: activity_attempt.resource_attempt_id
@@ -156,7 +162,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
               end
 
             {ActivityState.from_attempt(new_activity_attempt, new_part_attempts, model),
-             ModelPruner.prune(transformed_model)}
+             ModelPruner.prune(working_model)}
           else
             {:error, error} -> Repo.rollback(error)
           end

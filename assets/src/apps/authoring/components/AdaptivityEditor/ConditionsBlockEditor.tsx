@@ -362,7 +362,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                 type="radio"
                 name={`anyAllToggle-${id}`}
                 id={`anyCondition-${id}`}
-                defaultChecked={blockType === 'any'}
+                checked={blockType === 'any'}
                 onChange={() => handleBlockTypeChange()}
               />
               <label className="form-check-label" htmlFor="anyCondition-root">
@@ -375,7 +375,7 @@ const ConditionsBlockEditor: React.FC<CondtionsBlockEditorProps> = (props) => {
                 type="radio"
                 name={`anyAllToggle-${id}`}
                 id={`allCondition-${id}`}
-                defaultChecked={blockType === 'all'}
+                checked={blockType === 'all'}
                 onChange={() => handleBlockTypeChange()}
               />
               <label className="form-check-label" htmlFor="allCondition-root">

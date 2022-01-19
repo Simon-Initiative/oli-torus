@@ -16,15 +16,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   require Logger
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
-    %ActivityAttempt{
-      transformed_model: transformed_model,
-      resource_attempt: resource_attempt,
-      attempt_number: attempt_number
-    } =
+    activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
 
-    case Model.parse(transformed_model) do
+    %ActivityAttempt{
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number
+    } = activity_attempt
+
+    activity_model = select_model(activity_attempt)
+
+    case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
@@ -519,15 +522,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
 
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
-    %ActivityAttempt{
-      transformed_model: transformed_model,
-      attempt_number: attempt_number,
-      resource_attempt: resource_attempt
-    } =
+    activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
 
-    {:ok, %Model{parts: parts}} = Model.parse(transformed_model)
+    %ActivityAttempt{
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number
+    } = activity_attempt
+
+    activity_model = select_model(activity_attempt)
+
+    {:ok, %Model{parts: parts}} = Model.parse(activity_model)
 
     # We need to tie the attempt_guid from the part_inputs to the attempt_guid
     # from the %PartAttempt, and then the part id from the %PartAttempt to the

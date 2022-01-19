@@ -135,10 +135,6 @@ config :lti_1p3,
     ]
   ]
 
-config :ex_aws,
-  access_key_id: [{:system, "AWS_ACCESS_KEY_ID"}, :instance_role],
-  secret_access_key: [{:system, "AWS_SECRET_ACCESS_KEY"}, :instance_role]
-
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -153,7 +149,9 @@ if Mix.env() == :dev do
 end
 
 # Configure Mnesia directory (used by pow persistent sessions)
-config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
+config :mnesia,
+  dir: to_charlist(System.get_env("MNESIA_DIR", ".mnesia")),
+  dump_log_write_threshold: 10000
 
 config :appsignal, :config, revision: System.get_env("SHA", default_sha)
 

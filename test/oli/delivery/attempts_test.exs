@@ -9,7 +9,7 @@ defmodule Oli.Delivery.AttemptsTest do
 
   alias Oli.Activities.Model.{Part, Feedback}
   alias Oli.Delivery.Page.PageContext
-  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput}
+  alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
 
   describe "creating the attempt tree records" do
     setup do
@@ -74,12 +74,11 @@ defmodule Oli.Delivery.AttemptsTest do
       a2: a2,
       publication: pub
     } do
-      Attempts.track_access(p1.resource.id, section.slug, user.id)
+      Attempts.track_access(p1.resource.id, section.id, user.id)
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      # verify that creating the attempt tree returns both activity attempts
-      {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
+      {:ok, resource_attempt} =
         Hierarchy.create(%VisitContext{
           latest_resource_attempt: nil,
           page_revision: p1.revision,
@@ -89,6 +88,10 @@ defmodule Oli.Delivery.AttemptsTest do
           blacklisted_activity_ids: [],
           publication_id: pub.id
         })
+
+      # verify that creating the attempt tree returns both activity attempts
+      {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
+        AttemptState.fetch_attempt_state(resource_attempt, p1.revision)
 
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
@@ -106,14 +109,14 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       p1: %{resource: resource}
     } do
-      Attempts.track_access(resource.id, section.slug, user1.id)
-      Attempts.track_access(resource.id, section.slug, user1.id)
+      Attempts.track_access(resource.id, section.id, user1.id)
+      Attempts.track_access(resource.id, section.id, user1.id)
 
       entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 1
       assert hd(entries).access_count == 2
 
-      Attempts.track_access(resource.id, section.slug, user2.id)
+      Attempts.track_access(resource.id, section.id, user2.id)
       entries = Oli.Repo.all(Oli.Delivery.Attempts.Core.ResourceAccess)
       assert length(entries) == 2
 
@@ -137,7 +140,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       # Page 1
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
@@ -172,8 +175,8 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
-      PageContext.create_for_visit(section.slug, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user2)
 
       # User1 - same as above
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
@@ -239,7 +242,7 @@ defmodule Oli.Delivery.AttemptsTest do
         :attempt1
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: %{some: :thing}},
         :activity_a,
         :attempt1,
         :activity_attempt1
@@ -258,7 +261,7 @@ defmodule Oli.Delivery.AttemptsTest do
         :attempt2
       )
       |> Seeder.create_activity_attempt(
-        %{attempt_number: 1, transformed_model: %{}},
+        %{attempt_number: 1, transformed_model: nil},
         :activity_a,
         :attempt2,
         :activity_attempt2
@@ -301,6 +304,35 @@ defmodule Oli.Delivery.AttemptsTest do
       )
     end
 
+    test "model selection", %{
+      activity_a: activity,
+      activity_attempt1: activity_attempt1,
+      activity_attempt2: activity_attempt2
+    } do
+      revision = activity.revision
+
+      # Directly loading attempts will not preload the revision, which makes it suitable
+      # to feed into select_model/2
+
+      assert %{"some" => "thing"} ==
+               Oli.Repo.get(ActivityAttempt, activity_attempt1.id)
+               |> Attempts.select_model(revision)
+
+      assert revision.content ==
+               Oli.Repo.get(ActivityAttempt, activity_attempt2.id)
+               |> Attempts.select_model(revision)
+
+      # Using get_activity_attempt_by does preload, therefore we can use select_model/1
+
+      assert %{"some" => "thing"} ==
+               Attempts.get_activity_attempt_by(attempt_guid: activity_attempt1.attempt_guid)
+               |> Attempts.select_model()
+
+      assert revision.content ==
+               Attempts.get_activity_attempt_by(attempt_guid: activity_attempt2.attempt_guid)
+               |> Attempts.select_model()
+    end
+
     test "get graded resource access", %{
       section: section,
       graded_page: %{revision: revision},
@@ -308,7 +340,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -335,7 +367,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -345,7 +377,7 @@ defmodule Oli.Delivery.AttemptsTest do
           activity_provider
         )
 
-      PageContext.create_for_visit(section.slug, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user2)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -424,7 +456,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
-      PageContext.create_for_visit(section.slug, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
@@ -487,7 +519,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt1,
           :activity_attempt1
@@ -506,7 +538,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt2
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt2,
           :activity_attempt2
@@ -592,7 +624,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt1,
           :activity_attempt1
@@ -611,7 +643,7 @@ defmodule Oli.Delivery.AttemptsTest do
           :attempt2
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: nil},
           :activity_a,
           :attempt2,
           :activity_attempt2

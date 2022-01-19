@@ -1,5 +1,6 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
+  require Logger
 
   import OliWeb.ViewHelpers,
     only: [
@@ -60,9 +61,10 @@ defmodule OliWeb.PageDeliveryController do
 
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
+    section = conn.assigns.section
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      case Sections.get_section_by(slug: section_slug)
+      case section
            |> Oli.Repo.preload([:base_project, :root_section_resource]) do
         nil ->
           render(conn, "error.html")
@@ -125,9 +127,10 @@ defmodule OliWeb.PageDeliveryController do
 
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
+    section = conn.assigns.section
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      PageContext.create_for_visit(section_slug, revision_slug, user)
+      PageContext.create_for_visit(section, revision_slug, user)
       |> render_page(conn, section_slug, user, false)
     else
       render(conn, "not_authorized.html")
@@ -140,9 +143,10 @@ defmodule OliWeb.PageDeliveryController do
          %{content: %{"advancedDelivery" => true}} = revision
        ) do
     user = conn.assigns.current_user
+    section = conn.assigns.section
 
     if Sections.is_instructor?(user, section_slug) do
-      PageContext.create_for_visit(section_slug, revision.slug, user)
+      PageContext.create_for_visit(section, revision.slug, user)
       |> render_page(conn, section_slug, user, true)
     else
       render(conn, "not_authorized.html")
@@ -301,7 +305,7 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
 
     {:ok, activity_guid_mapping} =
-      Oli.Delivery.Page.ActivityContext.to_thin_context_map(context.activities)
+      context.activities
       |> Jason.encode()
 
     {:ok, {previous, next}} =
@@ -312,6 +316,8 @@ defmodule OliWeb.PageDeliveryController do
       graded: context.page.graded,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
       resource_attempt_guid: resource_attempt.attempt_guid,
+      latest_attempts: %{},
+      activity_type_slug_mapping: %{},
       resource_attempt_state: resource_attempt_state,
       activity_guid_mapping: activity_guid_mapping,
       content: Jason.encode!(context.page.content),
@@ -486,14 +492,21 @@ defmodule OliWeb.PageDeliveryController do
       {:error, {:no_more_attempts}} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
 
-      _ ->
+      {:error, e} ->
+        Logger.error("Page finalization error encountered: #{e}")
+        Oli.Utils.Appsignal.capture_error(e)
+        render(conn, "error.html")
+
+      e ->
+        Logger.error("Page finalization error encountered: #{e}")
+        Oli.Utils.Appsignal.capture_error(e)
         render(conn, "error.html")
     end
   end
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user, grade_sync_result) do
     section = conn.assigns.section
-    context = PageContext.create_for_visit(section_slug, revision_slug, user)
+    context = PageContext.create_for_visit(section, revision_slug, user)
 
     message =
       if context.page.max_attempts == 0 do

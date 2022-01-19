@@ -104,6 +104,8 @@ defmodule Oli.Delivery.Sections do
     query =
       case field do
         :enrollment_date -> order_by(query, [e, _, _], {^direction, e.inserted_at})
+        :payment_date -> order_by(query, [_, _, p], {^direction, p.application_date})
+        :payment_id -> order_by(query, [_, _, p], {^direction, p.id})
         _ -> order_by(query, [_, u, _], {^direction, field(u, ^field)})
       end
 
@@ -1365,8 +1367,8 @@ defmodule Oli.Delivery.Sections do
   Converts a section's start_date and end_date to the gievn timezone's local datetimes
   """
   def localize_section_start_end_datetimes(
-         %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
-       ) do
+        %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+      ) do
     timezone = Timex.Timezone.get(timezone, Timex.now())
 
     start_date =
@@ -1385,5 +1387,4 @@ defmodule Oli.Delivery.Sections do
     |> Map.put(:start_date, start_date)
     |> Map.put(:end_date, end_date)
   end
-
 end

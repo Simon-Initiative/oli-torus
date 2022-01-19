@@ -3,6 +3,31 @@ defmodule Oli.Activities.TransformersTest do
 
   alias Oli.Activities.Transformers
 
+  test "no transformers results in no effect" do
+    model = %{
+      "stem" => "this is the stem",
+      "choices" => [
+        %{id: "1", content: []},
+        %{id: "2", content: []},
+        %{id: "3", content: []},
+        %{id: "4", content: []}
+      ],
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "responses" => [],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ],
+        "transformations" => []
+      }
+    }
+
+    assert {:no_effect, _} = Transformers.apply_transforms(model)
+  end
+
   test "applying shuffle" do
     model = %{
       "stem" => "this is the stem",

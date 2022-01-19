@@ -1,4 +1,5 @@
 import { templatizeText } from 'apps/delivery/components/TextParser';
+import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
@@ -7,12 +8,11 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { parseBool, parseBoolean } from '../../../utils/common';
+import { clone, parseBool, parseBoolean } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
 
-import { Environment } from 'janus-script';
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
 const getExternalActivityMap = () => {
@@ -320,7 +320,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -679,7 +679,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const handleResizeParentContainer = useCallback(
     (data: any) => {
       const iFrameResponse: { key: string; type: number; value: string }[] = [];
-      const modifiedData = data;
+      const modifiedData = clone(data);
       if (data?.width) {
         setFrameWidth((previousWidth) => {
           const newW = parseFloat(data.width.value);
@@ -897,7 +897,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       if (cVar.type === CapiVariableTypes.ARRAY) {
         const isMultidimensional = cVar.value.filter(Array.isArray).length;
         if (isMultidimensional && typeOfValue === 'string') {
-          cVar.value = JSON.stringify(cVar.value);
+          const val: any[] = [];
+          //it's stage what we are doing here but CAPI expect a Multidimensional array [[0.5,1],[0.521]] as ['[0.5','1]','[0.5,'1]'], so we need to convert it to this format.
+          cVar.value.forEach((v: any) => {
+            val.push(...JSON.stringify(v).split(','));
+          });
+          cVar.value = val;
         }
       }
       formatted[baseKey] = cVar;
