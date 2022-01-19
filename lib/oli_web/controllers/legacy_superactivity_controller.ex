@@ -195,7 +195,6 @@ defmodule OliWeb.LegacySuperactivityController do
 
     # oli legacy allows for custom activities to supply arbitrary score types.
     # Worse still; an activity can supply multiple score types as part of the grade. How to handle these on Torus?
-
     case purse_score(score_type, score_value) do
       {:non_numeric, score_value} ->
         custom_scores =
@@ -222,19 +221,6 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, _context, _params) when command_name === "loadUserSyllabus" do
-    #    summary = Summary.get_summary(context.section.slug, context.user)
-#    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
-
-    #    page_nodes =
-    #      hierarchy
-    #      |> Oli.Delivery.Hierarchy.flatten()
-
-    #      |> Enum.filter(fn node ->
-    #        node.revision.resource_type_id ==
-    #          Oli.Resources.ResourceType.get_id_by_type("page")
-    #      end)
-
-#    IO.inspect(hierarchy, limit: :infinity)
     {:error, "command not supported", 400}
   end
 
@@ -336,7 +322,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
-    # :TODO: no op?
+    # no op
     xml =
       FileDirectory.setup(%{
         context: context

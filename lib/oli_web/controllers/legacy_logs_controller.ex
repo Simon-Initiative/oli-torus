@@ -9,7 +9,8 @@ defmodule OliWeb.LegacyLogsController do
     activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
     action = to_string(xpath(doc, ~x"//*/@action_id"))
 
-#    Oli.Delivery.CustomActivityLogs.queue_or_create_activity_log(activity_attempt_guid, action, to_string(doc))
+    # Processing via oban task not neccessary here given that this http request
+    # is only involved with this one single task
     Oli.Delivery.CustomLogs.Worker.perform_now(activity_attempt_guid, action, to_string(doc))
 
     conn
