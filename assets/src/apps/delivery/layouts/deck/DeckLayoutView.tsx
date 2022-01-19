@@ -261,7 +261,6 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       return;
     }
     const resolve = await dispatch(initializeActivity(currentActivity.resourceId));
-    console.log({ resolve });
   }, [currentActivityTree]);
 
   const handleActivityReady = async (activityId: string | number, attemptGuid: string) => {

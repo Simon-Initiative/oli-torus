@@ -402,10 +402,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-      acc[key] = snapshot[target];
+      acc[target] = snapshot[target];
       return acc;
     }, {});
-    console.log('The Init State data is ready to be sent to SIM-', { finalInitSnapshot, snapshot });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,

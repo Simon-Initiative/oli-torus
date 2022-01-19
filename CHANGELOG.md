@@ -9,6 +9,7 @@
 - Improve performance of initial page visits by introducing bulk insertions of attempts
 - Fix enrollments view rendering problem in sections that require payment
 - Ensure score can never exceed out of for graded pages
+- Ensure multiple payment attempts is handled correctly
 
 ### Enhancements
 
