@@ -18,8 +18,7 @@ import { CloseButton } from 'components/misc/CloseButton';
 import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
 import { lastPart } from 'components/activities/oli_embedded/utils';
 import { ActivityXmlEditor } from 'components/common/ActivityXmlEditor';
-import ModalSelection from "components/modal/ModalSelection";
-import { CookieConsent } from 'components/cookies/CookieConsent';
+import ModalSelection from 'components/modal/ModalSelection';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
@@ -141,7 +140,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
       ReactDOM.unmountComponentAtNode(cookiePrefs);
     }
   };
-
 
   return (
     <>
