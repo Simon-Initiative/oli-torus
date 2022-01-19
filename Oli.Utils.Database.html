@@ -10,7 +10,7 @@
     <title>Oli.Utils.Database — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-13583cdaf6.js"></script>
+    <script src="dist/sidebar_items-16f74b919d.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -142,6 +142,20 @@ json, text, or yaml format.  Default is to log output as JSON.</p></div>
 table scan or if the query equals or exceeds a cost threshold.</p></div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_current_db_user/0">get_current_db_user()</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#parse_user_from_db_url/2">parse_user_from_db_url(url, default)</a>
+
+  </div>
+
+</div>
 
   </div>
 
@@ -180,7 +194,7 @@ Functions
 
 <p>Explains the query plan for a given Ecto based query.  Options to either inline log
 the result and return the query, or to just return to analyzed result.  Results can be in either
-json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this inline for development on a query by query basis like:</p><pre><code class="makeup elixir"><span class="n">from</span><span class="p" data-group-id="8163080786-1">(</span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Section</span><span class="p">,</span><span class="w">
+json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this inline for development on a query by query basis like:</p><pre><code class="makeup elixir"><span class="n">from</span><span class="p" data-group-id="8455418629-1">(</span><span class="n">s</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Section</span><span class="p">,</span><span class="w">
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">SectionsProjectsPublications</span><span class="p">,</span><span class="w">
       </span><span class="ss">on</span><span class="p">:</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">spp</span><span class="o">.</span><span class="n">section_id</span><span class="p">,</span><span class="w">
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">pr</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">PublishedResource</span><span class="p">,</span><span class="w">
@@ -188,12 +202,12 @@ json, text, or yaml format.  Default is to log output as JSON.</p><p>Use this in
       </span><span class="ss">join</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="nc">Revision</span><span class="p">,</span><span class="w">
       </span><span class="ss">on</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">pr</span><span class="o">.</span><span class="n">revision_id</span><span class="p">,</span><span class="w">
       </span><span class="ss">where</span><span class="p">:</span><span class="w">
-        </span><span class="p" data-group-id="8163080786-2">(</span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">page_id</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">container_id</span><span class="p" data-group-id="8163080786-2">)</span><span class="w"> </span><span class="ow">and</span><span class="w">
+        </span><span class="p" data-group-id="8455418629-2">(</span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">page_id</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">rev</span><span class="o">.</span><span class="n">resource_type_id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">container_id</span><span class="p" data-group-id="8455418629-2">)</span><span class="w"> </span><span class="ow">and</span><span class="w">
           </span><span class="n">s</span><span class="o">.</span><span class="n">slug</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="o">^</span><span class="n">section_slug</span><span class="p">,</span><span class="w">
       </span><span class="ss">select</span><span class="p">:</span><span class="w"> </span><span class="n">rev</span><span class="w">
-    </span><span class="p" data-group-id="8163080786-1">)</span><span class="w">
-    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Oli.Utils.Database</span><span class="o">.</span><span class="n">explain</span><span class="p" data-group-id="8163080786-3">(</span><span class="p" data-group-id="8163080786-3">)</span><span class="w">
-    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Repo</span><span class="o">.</span><span class="n">all</span><span class="p" data-group-id="8163080786-4">(</span><span class="p" data-group-id="8163080786-4">)</span></code></pre>
+    </span><span class="p" data-group-id="8455418629-1">)</span><span class="w">
+    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Oli.Utils.Database</span><span class="o">.</span><span class="n">explain</span><span class="p" data-group-id="8455418629-3">(</span><span class="p" data-group-id="8455418629-3">)</span><span class="w">
+    </span><span class="o">|&gt;</span><span class="w"> </span><span class="nc">Repo</span><span class="o">.</span><span class="n">all</span><span class="p" data-group-id="8455418629-4">(</span><span class="p" data-group-id="8455418629-4">)</span></code></pre>
   </section>
 </section>
 <section class="detail" id="explain_sql/3">
@@ -243,6 +257,50 @@ json, text, or yaml format.  Default is to log output as JSON.</p>
 
 <p>Logs as a warning the query and stacktrace of the caller if the query contains a sequential
 table scan or if the query equals or exceeds a cost threshold.</p>
+  </section>
+</section>
+<section class="detail" id="get_current_db_user/0">
+
+  <div class="detail-header">
+    <a href="#get_current_db_user/0" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_current_db_user()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/database.ex#L166" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="parse_user_from_db_url/2">
+
+  <div class="detail-header">
+    <a href="#parse_user_from_db_url/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">parse_user_from_db_url(url, default)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils/database.ex#L173" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 
