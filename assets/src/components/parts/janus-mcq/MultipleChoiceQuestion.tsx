@@ -713,68 +713,69 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     }
   };
 
-  const handleItemSelection = (
-    { value, textValue, checked }: ItemSelectionInput,
-    snapshot: any,
-    shouldSave = true,
-  ) => {
-    const originalValue = parseInt(value.toString(), 10);
-    let newChoice = checked ? originalValue : 0;
-    let newCount = checked ? 1 : 0;
-    let newSelectedChoices = [newChoice];
-    let updatedChoicesText = [checked ? textValue : ''];
-    let updatedChoiceText = updatedChoicesText[0];
+  const handleItemSelection = useCallback(
+    ({ value, textValue, checked }: ItemSelectionInput, snapshot: any, shouldSave = true) => {
+      const originalValue = parseInt(value.toString(), 10);
+      let newChoice = checked ? originalValue : 0;
+      let newCount = checked ? 1 : 0;
+      let newSelectedChoices = [newChoice];
+      let updatedChoicesText = [checked ? textValue : ''];
+      let updatedChoiceText = updatedChoicesText[0];
 
-    if (multipleSelection) {
-      let selectedChoicesSet = [...new Set([...selectedChoices, newChoice])];
-      if (selectedChoices.length === 0 && snapshot) {
-        selectedChoicesSet = [...new Set([...snapshot[`stage.${id}.selectedChoices`], newChoice])];
+      if (multipleSelection) {
+        let selectedChoicesSet = [...new Set([...selectedChoices, newChoice])];
+        if (selectedChoices.length === 0 && snapshot && snapshot[`stage.${id}.selectedChoices`]) {
+          selectedChoicesSet = [
+            ...new Set([...snapshot[`stage.${id}.selectedChoices`], newChoice]),
+          ];
+        }
+        // sets data for checkboxes, which can have multiple values
+        newSelectedChoices = selectedChoicesSet.filter(
+          (c) => checked || (!checked && originalValue !== c && c > 0),
+        );
+
+        newChoice = newSelectedChoices.sort()[0] || 0;
+
+        updatedChoicesText = newSelectedChoices
+          .sort()
+          .map((choice) => getOptionTextById(options, choice));
+        updatedChoiceText = updatedChoicesText[0] || '';
+
+        newCount = newSelectedChoices.length;
       }
-      // sets data for checkboxes, which can have multiple values
-      newSelectedChoices = selectedChoicesSet.filter(
-        (c) => checked || (!checked && originalValue !== c && c > 0),
-      );
+      let modifiedNewSelectedChoices = newSelectedChoices;
+      const blankValueExit =
+        (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
+      if (blankValueExit.length) {
+        modifiedNewSelectedChoices = [];
+        updatedChoicesText = [];
+      }
+      setNumberOfSelectedChoices(newCount);
+      setSelectedChoice(newChoice);
+      setSelectedChoices(modifiedNewSelectedChoices);
+      setSelectedChoiceText(updatedChoiceText);
+      setSelectedChoicesText(updatedChoicesText);
 
-      newChoice = newSelectedChoices.sort()[0] || 0;
-
-      updatedChoicesText = newSelectedChoices
-        .sort()
-        .map((choice) => getOptionTextById(options, choice));
-      updatedChoiceText = updatedChoicesText[0] || '';
-
-      newCount = newSelectedChoices.length;
-    }
-    let modifiedNewSelectedChoices = newSelectedChoices;
-    const blankValueExit =
-      (newSelectedChoices.length === 1 && newSelectedChoices.filter((value) => value <= 0)) || [];
-    if (blankValueExit.length) {
-      modifiedNewSelectedChoices = [];
-      updatedChoicesText = [];
-    }
-    setNumberOfSelectedChoices(newCount);
-    setSelectedChoice(newChoice);
-    setSelectedChoices(modifiedNewSelectedChoices);
-    setSelectedChoiceText(updatedChoiceText);
-    setSelectedChoicesText(updatedChoicesText);
-
-    if (shouldSave) {
-      saveState({
-        numberOfSelectedChoices: newCount,
-        selectedChoice: newChoice,
-        selectedChoiceText: updatedChoiceText,
-        selectedChoices: modifiedNewSelectedChoices,
-        selectedChoicesText: updatedChoicesText,
+      if (shouldSave) {
+        saveState({
+          numberOfSelectedChoices: newCount,
+          selectedChoice: newChoice,
+          selectedChoiceText: updatedChoiceText,
+          selectedChoices: modifiedNewSelectedChoices,
+          selectedChoicesText: updatedChoicesText,
+        });
+      }
+      console.log('MCQ HANDLE SELECT', {
+        shouldSave,
+        newCount,
+        newChoice,
+        newSelectedChoices,
+        updatedChoiceText,
+        updatedChoicesText,
       });
-    }
-    console.log('MCQ HANDLE SELECT', {
-      shouldSave,
-      newCount,
-      newChoice,
-      newSelectedChoices,
-      updatedChoiceText,
-      updatedChoicesText,
-    });
-  };
+    },
+    [selectedChoices, model],
+  );
 
   const saveState = ({
     numberOfSelectedChoices,
