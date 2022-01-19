@@ -403,7 +403,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-
       if (operator === 'bind to') {
         initStateBindToFacts[key] = snapshot[target];
       } else {

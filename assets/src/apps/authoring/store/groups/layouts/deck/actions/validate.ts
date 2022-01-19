@@ -60,7 +60,8 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
   });
 
 const validateTarget = (target: string, activity: any, parts: any[]) => {
-  const split = target.split('.');
+  const targetNameIdx = target.search(/app|variables|stage|session/);
+  const split = target.slice(targetNameIdx).split('.');
   const type = split[0] as string;
   const targetId = split[1] as string;
   if (!targetId) {
