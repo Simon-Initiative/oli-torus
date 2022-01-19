@@ -3,7 +3,6 @@ defmodule Oli.Delivery.CustomLogs.Worker do
 
   import Ecto.Query, warn: false
   alias Oli.Repo
-  alias Oli.Delivery.CustomLogs.CustomActivityLog
   alias Oli.Resources.Revision
 
   alias Oli.Delivery.Attempts.Core.{

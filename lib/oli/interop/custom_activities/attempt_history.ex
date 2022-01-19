@@ -1,7 +1,5 @@
 defmodule Oli.Interop.CustomActivities.AttemptHistory do
 
-  alias Lti_1p3.Tool.ContextRoles
-
   import XmlBuilder
   alias Oli.Interop.CustomActivities.{Problem, ActivityAttempt}
 

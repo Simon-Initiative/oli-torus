@@ -1,10 +1,10 @@
 import { Maybe } from 'tsmonad';
 import { Identifiable } from 'data/content/model';
-import {makeUndoable, PostUndoable, ScoringStrategy} from "components/activities/types";
-import {OliEmbeddedModelSchema} from "components/activities/oli_embedded/schema";
-import {Operations} from "utils/pathOperations";
-import {clone} from "utils/common";
-import guid from "utils/guid";
+import { makeUndoable, PostUndoable, ScoringStrategy } from 'components/activities/types';
+import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
+import { Operations } from 'utils/pathOperations';
+import { clone } from 'utils/common';
+import guid from 'utils/guid';
 
 export class OliEmbeddedActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -32,23 +32,22 @@ export class OliEmbeddedActions {
         scoringStrategy: ScoringStrategy.average,
         responses: [],
         hints: [],
-      })
+      });
     };
   }
 
   static removePart(partId: string) {
-    console.log("Remove part " + partId);
     return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
-      if(draftState.authoring.parts.length > 1){
-        draftState.authoring.parts = draftState.authoring.parts.filter(p => p.id !== partId);
+      if (draftState.authoring.parts.length > 1) {
+        draftState.authoring.parts = draftState.authoring.parts.filter((p) => p.id !== partId);
       }
     };
   }
 
   static updatePartScoringStrategy(partId: string, scoringStrategy: ScoringStrategy) {
     return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
-      const part = draftState.authoring.parts.find(p => p.id === partId);
-      if(part){
+      const part = draftState.authoring.parts.find((p) => p.id === partId);
+      if (part) {
         part.scoringStrategy = scoringStrategy;
       }
     };
@@ -65,5 +64,4 @@ export class OliEmbeddedActions {
       draftState.resourceURLs = draftState.resourceURLs.filter((url) => url !== value);
     };
   }
-
 }

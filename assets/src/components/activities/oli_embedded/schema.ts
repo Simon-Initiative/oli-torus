@@ -1,4 +1,4 @@
-import {ActivityModelSchema, Part, Stem} from '../types';
+import { ActivityModelSchema, Part, Stem } from '../types';
 
 export interface OliEmbeddedModelSchema extends ActivityModelSchema {
   base: string;

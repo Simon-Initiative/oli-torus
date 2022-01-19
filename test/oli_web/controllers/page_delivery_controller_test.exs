@@ -84,8 +84,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
           Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
         )
 
-#      IO.inspect conn
-
       # verify the redirection
       assert html_response(conn, 302) =~ "redirected"
       redir_path = redirected_to(conn, 302)
@@ -392,7 +390,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
         conn
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
-#      IO.inspect conn
       # redirected to enroll page
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :enroll, section.slug)
 

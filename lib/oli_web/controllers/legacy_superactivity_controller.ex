@@ -12,7 +12,6 @@ defmodule OliWeb.LegacySuperactivityController do
     FileDirectory
   }
 
-  #  alias Oli.Delivery.Student.Summary
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Grading
@@ -129,7 +128,7 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  defp process_command(command_name, context, _params) when command_name === "loadClientConfig" do
+  defp process_command("loadClientConfig", context, _params)  do
     xml =
       SuperActivityClient.setup(%{
         context: context
@@ -222,7 +221,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, context, _params) when command_name === "loadUserSyllabus" do
+  defp process_command(command_name, _context, _params) when command_name === "loadUserSyllabus" do
     #    summary = Summary.get_summary(context.section.slug, context.user)
 #    hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(context.section.slug)
 
@@ -377,11 +376,11 @@ defmodule OliWeb.LegacySuperactivityController do
           end
 
           ActivityEvaluation.rollup_part_attempt_evaluations(
-            context.activity_attempt.attempt_guid
+            context.activity_attempt.attempt_guid, :normalize
           )
         end)
 
-      _ -> {:ok, "activty already finalized"}
+      _ -> {:ok, "activity already finalized"}
     end
   end
 

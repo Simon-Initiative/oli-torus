@@ -3,7 +3,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
-  #  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess, ActivityAttempt}
+
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Activities
@@ -22,14 +22,13 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      instructor = user_fixture(
-        %{
+      instructor =
+        user_fixture(%{
           name: "Mr John Bay Doe",
           given_name: "John",
           family_name: "Doe",
-          middle_name: "Bay",
-        }
-      )
+          middle_name: "Bay"
+        })
 
       Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
@@ -43,97 +42,200 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = post(
-        conn,
-        Routes.legacy_superactivity_path(
-          conn,
-          :process,
-          %{
-            "commandName" => "loadClientConfig",
-            "activityContextGuid" => activity_attempt.attempt_guid
-          }
-        )
-      )
+      conn =
+        get(conn, Routes.legacy_superactivity_path(conn, :context, activity_attempt.attempt_guid))
 
-      IO.write conn.resp_body
+      assert conn.resp_body =~ ~s("mode":"delivery")
 
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = post(
-        conn,
-        Routes.legacy_superactivity_path(
+      conn =
+        post(
           conn,
-          :process,
-          %{
-            "commandName" => "beginSession",
-            "activityContextGuid" => activity_attempt.attempt_guid,
-            "others" => "others"
-          }
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadClientConfig",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
         )
-      )
 
-      #      IO.write conn.resp_body
+      assert conn.resp_body =~ ~s(<super_activity_client server_time_zone="EST">)
 
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = post(
-        conn,
-        Routes.legacy_superactivity_path(
+      conn =
+        post(
           conn,
-          :process,
-          %{
-            "commandName" => "loadContentFile",
-            "activityContextGuid" => activity_attempt.attempt_guid,
-            "others" => "others"
-          }
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "beginSession",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
         )
-      )
 
-      #      IO.write conn.resp_body
+      assert conn.resp_body =~ ~s(<super_activity_session>)
 
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = post(
-        conn,
-        Routes.legacy_superactivity_path(
+      conn =
+        post(
           conn,
-          :process,
-          %{
-            "commandName" => "startAttempt",
-            "activityContextGuid" => activity_attempt.attempt_guid,
-            "others" => "others"
-          }
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadContentFile",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
         )
-      )
 
-      #      IO.write conn.resp_body
+      assert conn.resp_body =~ ~s(<embed_activity id="custom_side" width="670" height="300">)
 
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      conn = post(
-        conn,
-        Routes.legacy_superactivity_path(
+      conn =
+        post(
           conn,
-          :process,
-          %{
-            "commandName" => "none",
-            "activityContextGuid" => activity_attempt.attempt_guid,
-            "others" => "others"
-          }
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "startAttempt",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
         )
-      )
 
-      #      IO.write conn.resp_body
+      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "writeFileRecord",
+              "activityContextGuid" => activity_attempt.attempt_guid,
+              "byteEncoding" => "utf8",
+              "fileName" => "custom_file.xml",
+              "fileRecordData" => """
+                <launch_attributes>
+                <attribute attribute_id="height" value="300"/>
+                <attribute attribute_id="width" value="670"/>
+                </launch_attributes>
+              """,
+              "resourceTypeID" => "oli_embedded",
+              "mimeType" => "xml",
+              "userGuid" => user.id,
+              "attemptNumber" => 1
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<file_record date_created=")
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "loadFileRecord",
+              "activityContextGuid" => activity_attempt.attempt_guid,
+              "fileName" => "custom_file.xml",
+              "userGuid" => user.id,
+              "attemptNumber" => 1
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<launch_attributes>)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "scoreAttempt",
+              "activityContextGuid" => activity_attempt.attempt_guid,
+              "scoreValue" => "2",
+              "scoreId" => "percent"
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "endAttempt",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(<attempt_history activity_guid=)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        post(
+          conn,
+          Routes.legacy_superactivity_path(
+            conn,
+            :process,
+            %{
+              "commandName" => "none",
+              "activityContextGuid" => activity_attempt.attempt_guid
+            }
+          )
+        )
+
+      assert conn.resp_body =~ ~s(command not supported)
+      
     end
-
   end
 
   defp setup_session(%{conn: conn}) do
@@ -158,18 +260,18 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       },
       "title" => "Embedded activity",
       "modelXml" => ~s(<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">
-<embed_activity id="custom_side" width="670" height="300">
-	<title>Custom Activity</title>
-	<source>webcontent/custom_activity/customactivity.js</source>
-	<assets>
-		<asset name="layout">webcontent/custom_activity/layout.html</asset>
-		<asset name="controls">webcontent/custom_activity/controls.html</asset>
-		<asset name="styles">webcontent/custom_activity/styles.css</asset>
-		<asset name="questions">webcontent/custom_activity/questions.xml</asset>
-	</assets>
-</embed_activity>
-),
+      <!DOCTYPE embed_activity PUBLIC "-//Carnegie Mellon University//DTD Embed 1.1//EN" "http://oli.cmu.edu/dtd/oli-embed-activity_1.0.dtd">
+      <embed_activity id="custom_side" width="670" height="300">
+        <title>Custom Activity</title>
+        <source>webcontent/custom_activity/customactivity.js</source>
+        <assets>
+          <asset name="layout">webcontent/custom_activity/layout.html</asset>
+          <asset name="controls">webcontent/custom_activity/controls.html</asset>
+          <asset name="styles">webcontent/custom_activity/styles.css</asset>
+          <asset name="questions">webcontent/custom_activity/questions.xml</asset>
+        </assets>
+      </embed_activity>
+      ),
       "authoring" => %{
         "parts" => [
           %{
@@ -189,13 +291,13 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       Seeder.base_project_with_resource2()
       |> Seeder.add_objective("objective one", :o1)
       |> Seeder.add_activity(
-           %{title: "one", max_attempts: 2, content: content},
-           :publication,
-           :project,
-           :author,
-           :activity,
-           Activities.get_registration_by_slug("oli_embedded").id
-         )
+        %{title: "one", max_attempts: 2, content: content},
+        :publication,
+        :project,
+        :author,
+        :activity,
+        Activities.get_registration_by_slug("oli_embedded").id
+      )
 
     attrs = %{
       graded: false,
@@ -217,25 +319,10 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
 
     map = Seeder.add_page(map, attrs, :page)
 
-#    Seeder.attach_pages_to(
-#      [map.page1, map.page2, map.page.resource],
-#      map.container.resource,
-#      map.container.revision,
-#      map.publication
-#    )
-
     map =
       map
       |> Seeder.create_section()
       |> Seeder.create_section_resources()
-    #    section =
-    #      section_fixture(%{
-    #        context_id: "some-context-id",
-    #        project_id: map.project.id,
-    #        publication_id: map.publication.id,
-    #        institution_id: map.institution.id,
-    #        open_and_free: false
-    #      })
 
     lti_params =
       Oli.Lti_1p3.TestHelpers.all_default_claims()
@@ -263,5 +350,4 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
       activity_id: Map.get(map, :activity).resource.id
     }
   end
-
 end

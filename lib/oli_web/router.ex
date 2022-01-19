@@ -208,15 +208,15 @@ defmodule OliWeb.Router do
     pipe_through([:delivery, :skip_csrf_protection])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
     get("/jcourse/superactivity/context/:attempt_guid", OliWeb.LegacySuperactivityController, :context)
-#    post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
-    pow_assent_authorization_post_callback_routes()
-  end
-
-  scope "/" do
-    pipe_through([:delivery, :skip_csrf_protection])
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
     pow_assent_authorization_post_callback_routes()
   end
+
+  # scope "/" do
+  #   pipe_through([:delivery, :skip_csrf_protection])
+  #   post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
+  #   pow_assent_authorization_post_callback_routes()
+  # end
 
   scope "/authoring", as: :authoring do
     pipe_through([:browser, :authoring, :registration_captcha, :pow_email_layout])
