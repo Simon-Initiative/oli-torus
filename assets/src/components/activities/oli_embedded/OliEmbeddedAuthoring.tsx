@@ -244,7 +244,6 @@ export class OliEmbeddedAuthoring extends AuthoringElement<OliEmbeddedModelSchem
     );
   }
 }
-
 // eslint-disable-next-line
 const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.authoring.element, OliEmbeddedAuthoring);
