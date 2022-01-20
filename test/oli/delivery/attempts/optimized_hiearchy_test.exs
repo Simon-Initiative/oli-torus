@@ -89,12 +89,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.OptimizedHierarchyTest do
             %{
               "type" => "activity-reference",
               "activity_id" => Map.get(map, :a5).resource.id,
-              "custom" => %{"isGroup" => true},
+              "custom" => %{"isBank" => true},
               "children" => [
                 %{
                   "type" => "activity-reference",
                   "activity_id" => Map.get(map, :a6).resource.id,
-                  "custom" => %{"isGroup" => false}
+                  "custom" => %{"isBank" => false}
                 }
               ]
             }
