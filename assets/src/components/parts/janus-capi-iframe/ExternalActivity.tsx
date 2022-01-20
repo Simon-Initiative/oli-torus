@@ -717,10 +717,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           value: modifiedData?.width?.value || frameWidth,
         });
       }
-      props.onSave({
-        id,
-        responses: iFrameResponse,
-      });
       props.onResize({ id: `${id}`, settings: modifiedData });
       sendFormedResponse(
         simLife.handshake,
