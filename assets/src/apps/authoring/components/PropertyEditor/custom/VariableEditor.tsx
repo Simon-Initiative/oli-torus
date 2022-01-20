@@ -135,7 +135,7 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
       </ListGroup>
       <Modal show={show} onHide={handleClose} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Modal heading</Modal.Title>
+          <Modal.Title>Variable editor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {props.items.map((element: any) => VariableArrayItem(element))}
