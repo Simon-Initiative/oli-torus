@@ -162,4 +162,27 @@ defmodule Oli.Utils.Database do
 
   defp analyze_to_sql(true), do: "ANALYZE true"
   defp analyze_to_sql(false), do: "ANALYZE false"
+
+  def get_current_db_user() do
+    case System.get_env("DATABASE_URL", nil) do
+      nil -> "postgres"
+      url -> parse_user_from_db_url(url, "postgres")
+    end
+  end
+
+  def parse_user_from_db_url(url, default) do
+    case url do
+      "ecto://" <> rest ->
+        split = String.split(rest, ":")
+
+        case Enum.count(split) do
+          0 -> default
+          1 -> default
+          _ -> Enum.at(split, 0)
+        end
+
+      _ ->
+        default
+    end
+  end
 end

@@ -20,7 +20,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   @doc """
   Creates an attempt hierarchy for a given resource visit context, optimized to
   use a constant number of queries relative to the number of activities and parts.
-
   Returns {:ok, %ResourceAttempt{}}
   """
   def create(%VisitContext{} = context) do
@@ -109,9 +108,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp query_driven_part_attempt_creation(resource_attempt_id) do
     query = """
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
-      SELECT trim('"' FROM (jsonb_path_query(r.content, '$.authoring.parts[*].id'))::text), a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
+      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
       FROM activity_attempts as a
-      LEFT JOIN revisions as r on a.revision_id = r.id
+      LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
       WHERE a.resource_attempt_id = $1;
     """
 
@@ -152,11 +151,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   @doc """
   Retrieves the state of the latest attempts for a given resource attempt id.
-
   Return value is a map of activity ids to a two element tuple.  The first
   element is the latest activity attempt and the second is a map of part ids
   to their part attempts. As an example:
-
   %{
     232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
     233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}

@@ -8,15 +8,15 @@ defmodule Oli.BrandingTest do
     alias Oli.Branding.Brand
 
     @valid_attrs %{
-      favicons: "some favicons",
-      logo: "some logo",
-      logo_dark: "some logo_dark",
+      favicons: "/some_favicons",
+      logo: "/some_logo",
+      logo_dark: "/some_logo_dark",
       name: "some name"
     }
     @update_attrs %{
-      favicons: "some updated favicons",
-      logo: "some updated logo",
-      logo_dark: "some updated logo_dark",
+      favicons: "/some_updated_favicons",
+      logo: "/some_updated_logo",
+      logo_dark: "/some_updated_logo_dark",
       name: "some updated name"
     }
     @invalid_attrs %{favicons: nil, logo: nil, logo_dark: nil, name: nil}
@@ -42,9 +42,9 @@ defmodule Oli.BrandingTest do
 
     test "create_brand/1 with valid data creates a brand" do
       assert {:ok, %Brand{} = brand} = Branding.create_brand(@valid_attrs)
-      assert brand.favicons == "some favicons"
-      assert brand.logo == "some logo"
-      assert brand.logo_dark == "some logo_dark"
+      assert brand.favicons == "/some_favicons"
+      assert brand.logo == "/some_logo"
+      assert brand.logo_dark == "/some_logo_dark"
       assert brand.name == "some name"
     end
 
@@ -55,9 +55,9 @@ defmodule Oli.BrandingTest do
     test "update_brand/2 with valid data updates the brand" do
       brand = brand_fixture()
       assert {:ok, %Brand{} = brand} = Branding.update_brand(brand, @update_attrs)
-      assert brand.favicons == "some updated favicons"
-      assert brand.logo == "some updated logo"
-      assert brand.logo_dark == "some updated logo_dark"
+      assert brand.favicons == "/some_updated_favicons"
+      assert brand.logo == "/some_updated_logo"
+      assert brand.logo_dark == "/some_updated_logo_dark"
       assert brand.name == "some updated name"
     end
 
@@ -160,13 +160,33 @@ defmodule Oli.BrandingTest do
     end
 
     @tag capture_log: true
+    test "brand_logo_path returns brand logo path", %{section: section} do
+      section_brand = brand_fixture()
+
+      {:ok, section} =
+        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      assert Branding.brand_logo_path(section) == "/some_logo"
+    end
+
+    @tag capture_log: true
+    test "brand_logo_path_dark returns dark mode brand logo path", %{section: section} do
+      section_brand = brand_fixture()
+
+      {:ok, section} =
+        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      assert Branding.brand_logo_path_dark(section) == "/some_logo_dark"
+    end
+
+    @tag capture_log: true
     test "brand_logo_url returns brand logo url", %{section: section} do
       section_brand = brand_fixture()
 
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
-      assert Branding.brand_logo_url(section) == "some logo"
+      assert Branding.brand_logo_url(section) == "#{Oli.Utils.get_base_url()}/some_logo"
     end
 
     @tag capture_log: true
@@ -176,7 +196,7 @@ defmodule Oli.BrandingTest do
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
-      assert Branding.brand_logo_url_dark(section) == "some logo_dark"
+      assert Branding.brand_logo_url_dark(section) == "#{Oli.Utils.get_base_url()}/some_logo_dark"
     end
 
     @tag capture_log: true
@@ -186,7 +206,7 @@ defmodule Oli.BrandingTest do
       {:ok, section} =
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
-      assert Branding.favicons("icon.png", section) == "some favicons/icon.png"
+      assert Branding.favicons("icon.png", section) == "/some_favicons/icon.png"
     end
   end
 end

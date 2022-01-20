@@ -124,9 +124,28 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
-      const check_call_result = (await check(
+      let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
+      if (!requiredVariables) {
+        // assume they are all required since authoring hasn't specified
+        requiredVariables = Object.keys(localizedSnapshot);
+      }
+      const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
+        const isRequiredKey = requiredVariables.includes(key);
+        if (isRequiredKey) {
+          acc[key] = localizedSnapshot[key];
+        }
+        return acc;
+      }, {});
+
+      console.log('PRE CHECK RESULT', {
+        currentActivity,
+        currentRules,
         localizedSnapshot,
+        requiredVariables,
+        checkSnapshot,
+      });
+      const check_call_result = (await check(
+        checkSnapshot,
         rulesToCheck,
         scoringContext,
       )) as CheckResult;
@@ -140,6 +159,7 @@ export const triggerCheck = createAsyncThunk(
         currentRules,
         checkResult,
         localizedSnapshot,
+        checkSnapshot,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,

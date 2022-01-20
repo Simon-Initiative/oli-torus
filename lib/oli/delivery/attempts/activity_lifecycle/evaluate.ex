@@ -45,6 +45,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
+          variablesRequiredForEvaluation =
+            Map.get(authoring, "variablesRequiredForEvaluation", nil)
+
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
@@ -53,7 +56,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_inputs,
           scoringContext,
           rules,
-          activitiesRequiredForEvaluation
+          activitiesRequiredForEvaluation,
+          variablesRequiredForEvaluation
         )
 
       e ->
@@ -68,12 +72,19 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         part_inputs,
         scoringContext,
         rules,
-        activitiesRequiredForEvaluation
+        activitiesRequiredForEvaluation,
+        variablesRequiredForEvaluation
       ) do
-    state =
-      assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+    state = case variablesRequiredForEvaluation do
+      nil -> assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+      _ ->
+        assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+        |> Map.take(variablesRequiredForEvaluation)
+    end
 
     encodeResults = true
+
+    Logger.debug("Sending State to Node #{Jason.encode!(state)}")
 
     case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
       {:ok, check_results} ->
