@@ -20,7 +20,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   @doc """
   Creates an attempt hierarchy for a given resource visit context, optimized to
   use a constant number of queries relative to the number of activities and parts.
-
   Returns {:ok, %ResourceAttempt{}}
   """
   def create(%VisitContext{} = context) do
@@ -37,39 +36,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
-    case context.page_revision do
-      %{content: %{"advancedDelivery" => true}} ->
-        optimized_hierarchy_creation(
-          context,
-          resource_access_id,
-          next_attempt_number
-        )
-
-      _ ->
-        normal_hierarchy_creation(context, resource_access_id, next_attempt_number)
-    end
-  end
-
-  defp optimized_hierarchy_creation(context, resource_access_id, next_attempt_number) do
-    case create_resource_attempt(%{
-           content: context.page_revision.content,
-           errors: [],
-           attempt_guid: UUID.uuid4(),
-           resource_access_id: resource_access_id,
-           attempt_number: next_attempt_number,
-           revision_id: context.page_revision.id
-         }) do
-      {:ok, resource_attempt} ->
-        stored_procedure_driven_hierarchy_creation(resource_attempt.id, context.section_slug)
-
-        {:ok, resource_attempt}
-
-      error ->
-        error
-    end
-  end
-
-  defp normal_hierarchy_creation(context, resource_access_id, next_attempt_number) do
     %Result{
       errors: errors,
       revisions: activity_revisions,
@@ -95,9 +61,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        # bulk_create_attempts(resource_attempt, activity_revisions, unscored)
         bulk_create_attempts(resource_attempt, activity_revisions, unscored)
-
         {:ok, resource_attempt}
 
       error ->
@@ -153,14 +117,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     Repo.query!(query, [resource_attempt_id])
   end
 
-  defp stored_procedure_driven_hierarchy_creation(resource_attempt_id, section_slug) do
-    query = """
-     CALL create_attempt_hierarchy($1, $2);
-    """
-
-    Repo.query!(query, [resource_attempt_id, section_slug])
-  end
-
   # If all of the transformed_model attrs are nil, we do not need to include them in
   # the query, as they will be set to nil by default
   defp optimize_transformed_model(raw_attempts) do
@@ -195,11 +151,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   @doc """
   Retrieves the state of the latest attempts for a given resource attempt id.
-
   Return value is a map of activity ids to a two element tuple.  The first
   element is the latest activity attempt and the second is a map of part ids
   to their part attempts. As an example:
-
   %{
     232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
     233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
