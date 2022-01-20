@@ -74,12 +74,6 @@ export const ObjectFieldTemplate = ({
 };
 
 const VariableArrayItem: React.FC<any> = (props) => {
-  const btnStyle = {
-    flex: 1,
-    paddingLeft: 6,
-    paddingRight: 6,
-    fontWeight: 'bold',
-  };
   return (
     <div className={`mt-2 border-bottom`}>
       <div className="mb-2 d-flex flex-row align-items-start">
@@ -87,7 +81,6 @@ const VariableArrayItem: React.FC<any> = (props) => {
         <div className="align-self-end mb-3">
           <Button
             variant="danger"
-            style={btnStyle}
             disabled={props.disabled || props.readonly}
             onClick={props.onDropIndexClick(props.index)}
           >
@@ -127,9 +120,7 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
               </Tooltip>
             }
           >
-            <ListGroupItem key={index}>
-              Name: {element?.children?.props?.formData?.name}
-            </ListGroupItem>
+            <ListGroupItem key={index}>{element?.children?.props?.formData?.name}</ListGroupItem>
           </OverlayTrigger>
         ))}
       </ListGroup>
