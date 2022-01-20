@@ -117,7 +117,8 @@ Oli.Delivery.Attempts.PageLifecycle.Hierarchy <small class="app-vsn">(OLI Torus 
   </div>
 
     <div class="summary-synopsis"><p>Creates an attempt hierarchy for a given resource visit context, optimized to
-use a constant number of queries relative to the number of activities and parts.</p></div>
+use a constant number of queries relative to the number of activities and parts.
+Returns {:ok, %ResourceAttempt{}}</p></div>
 
 </div>
 <div class="summary-row">
@@ -133,7 +134,14 @@ use a constant number of queries relative to the number of activities and parts.
 
   </div>
 
-    <div class="summary-synopsis"><p>Retrieves the state of the latest attempts for a given resource attempt id.</p></div>
+    <div class="summary-synopsis"><p>Retrieves the state of the latest attempts for a given resource attempt id.
+Return value is a map of activity ids to a two element tuple.  The first
+element is the latest activity attempt and the second is a map of part ids
+to their part attempts. As an example:
+%{
+  232 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+  233 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
+}</p></div>
 
 </div>
 <div class="summary-row">
@@ -174,7 +182,7 @@ Functions
     </a>
     <h1 class="signature">create(context)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L26" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L25" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -185,7 +193,8 @@ Functions
   <section class="docstring">
 
 <p>Creates an attempt hierarchy for a given resource visit context, optimized to
-use a constant number of queries relative to the number of activities and parts.</p><p>Returns {:ok, %ResourceAttempt{}}</p>
+use a constant number of queries relative to the number of activities and parts.
+Returns {:ok, %ResourceAttempt{}}</p>
   </section>
 </section>
 <section class="detail" id="full_hierarchy/1">
@@ -197,7 +206,7 @@ use a constant number of queries relative to the number of activities and parts.
     </a>
     <h1 class="signature">full_hierarchy(resource_attempt)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L255" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L209" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -219,7 +228,7 @@ use a constant number of queries relative to the number of activities and parts.
     </a>
     <h1 class="signature">get_latest_attempts(resource_attempt_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L208" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L162" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -229,9 +238,11 @@ use a constant number of queries relative to the number of activities and parts.
 
   <section class="docstring">
 
-<p>Retrieves the state of the latest attempts for a given resource attempt id.</p><p>Return value is a map of activity ids to a two element tuple.  The first
+<p>Retrieves the state of the latest attempts for a given resource attempt id.
+Return value is a map of activity ids to a two element tuple.  The first
 element is the latest activity attempt and the second is a map of part ids
-to their part attempts. As an example:</p><p>%{
+to their part attempts. As an example:
+%{
   232 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
   233 =&gt; {%ActivityAttempt{}, %{ &quot;1&quot; =&gt; %PartAttempt{}, &quot;2&quot; =&gt; %PartAttempt{}}}
 }</p>
@@ -246,7 +257,7 @@ to their part attempts. As an example:</p><p>%{
     </a>
     <h1 class="signature">get_latest_attempts(resource_attempt_id, activity_ids)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L231" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L185" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -268,7 +279,7 @@ to their part attempts. As an example:</p><p>%{
     </a>
     <h1 class="signature">thin_hierarchy(resource_attempt)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L259" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/hierarchy.ex#L213" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
