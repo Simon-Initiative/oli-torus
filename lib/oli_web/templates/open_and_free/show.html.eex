@@ -12,7 +12,7 @@
             <% nil -> %>
             <span class="text-secondary font-italic">None</span>
             <% brand -> %>
-            <%= brand_logo_html(brand, class: "my-1 d-block") %>
+            <%= brand_logo(%{brand: brand, class: "my-1 d-block"}) %>
             <a href="<%= Routes.brand_path(@conn, :show, brand) %>" class="logo-container">
               <%= brand.name %>
             </a>

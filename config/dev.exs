@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 from_boolean_env = fn key, default ->
   System.get_env(key, default)

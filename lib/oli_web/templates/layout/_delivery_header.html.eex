@@ -7,7 +7,7 @@
       logo_link ->
         logo_link
       end %>">
-      <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
+      <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
     </a>
 
     <%= if not preview_mode(@conn) do %>
@@ -26,7 +26,7 @@
               Preview
             </span>
             <div class="user-icon">
-              <%= user_icon() %>
+              <%= user_icon(%{}) %>
             </div>
           </a>
         </div>
