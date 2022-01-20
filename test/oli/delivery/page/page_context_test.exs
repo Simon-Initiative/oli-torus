@@ -46,6 +46,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         objectives: %{"attached" => []}
       }
 
+      Seeder.ensure_published(map.publication.id)
+
       Seeder.add_page(map, attrs, :p1)
       |> Seeder.create_section_resources()
     end

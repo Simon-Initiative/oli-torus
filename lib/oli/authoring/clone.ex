@@ -2,12 +2,10 @@ defmodule Oli.Authoring.Clone do
   import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
   alias Oli.Publishing
-  alias Oli.Publishing.{AuthoringResolver, PublishedResource}
-  alias Oli.Authoring.{Collaborators, MediaLibrary, Locks}
+  alias Oli.Publishing.{AuthoringResolver}
+  alias Oli.Authoring.{Collaborators, Locks}
   alias Oli.Repo
   alias Oli.Authoring.Course
-  alias Oli.Authoring.Course.ProjectResource
-  alias Oli.Authoring.MediaLibrary.{MediaItem, ItemOptions}
 
   def clone_project(project_slug, author) do
     Repo.transaction(fn ->
@@ -36,7 +34,7 @@ defmodule Oli.Authoring.Clone do
            _ <- Locks.release_all(base_publication.id),
            _ <- clone_all_published_resources(base_publication.id, cloned_publication.id),
            _ <- clone_all_project_resources(base_project.id, cloned_project.id),
-           _ <- clone_all_media_items(base_project.slug, cloned_project.id) do
+           _ <- clone_all_media_items(base_project.id, cloned_project.id) do
         cloned_project
       else
         {:error, error} -> Repo.rollback(error)
@@ -45,46 +43,35 @@ defmodule Oli.Authoring.Clone do
   end
 
   def clone_all_project_resources(base_project_id, cloned_project_id) do
-    Course.list_project_resources(base_project_id)
-    |> Enum.map(
-      &Repo.insert!(
-        Course.change_project_resource(%ProjectResource{}, %{
-          resource_id: &1.resource_id,
-          project_id: cloned_project_id
-        })
-      )
-    )
+    query = """
+      INSERT INTO projects_resources(project_id, resource_id, inserted_at, updated_at)
+      SELECT $1, resource_id, now(), now()
+      FROM projects_resources as p
+      WHERE p.project_id = $2;
+    """
+
+    Repo.query!(query, [cloned_project_id, base_project_id])
   end
 
   def clone_all_published_resources(base_publication_id, cloned_publication_id) do
-    Publishing.get_published_resources_by_publication(base_publication_id)
-    |> Enum.map(
-      &Repo.insert!(
-        Publishing.change_published_resource(%PublishedResource{}, %{
-          publication_id: cloned_publication_id,
-          resource_id: &1.resource_id,
-          revision_id: &1.revision_id
-        })
-      )
-    )
+    query = """
+      INSERT INTO published_resources(publication_id, revision_id, resource_id, inserted_at, updated_at)
+      SELECT $1, revision_id, resource_id, now(), now()
+      FROM published_resources as p
+      WHERE p.publication_id = $2;
+    """
+
+    Repo.query!(query, [cloned_publication_id, base_publication_id])
   end
 
-  def clone_all_media_items(base_project_slug, cloned_project_id) do
-    {:ok, {media_items, _count}} = MediaLibrary.items(base_project_slug, %ItemOptions{})
+  def clone_all_media_items(base_project_id, cloned_project_id) do
+    query = """
+      INSERT INTO media_items(project_id, url, file_name, mime_type, file_size, md5_hash, deleted, inserted_at, updated_at)
+      SELECT $1, url, file_name, mime_type, file_size, md5_hash, deleted, now(), now()
+      FROM media_items as p
+      WHERE p.project_id = $2;
+    """
 
-    media_items
-    |> Enum.map(
-      &Repo.insert!(
-        MediaLibrary.change_media_item(%MediaItem{}, %{
-          url: &1.url,
-          file_name: &1.file_name,
-          mime_type: &1.mime_type,
-          file_size: &1.file_size,
-          md5_hash: &1.md5_hash,
-          deleted: &1.deleted,
-          project_id: cloned_project_id
-        })
-      )
-    )
+    Repo.query!(query, [cloned_project_id, base_project_id])
   end
 end

@@ -61,6 +61,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
         graded: true
       }
 
+      Seeder.ensure_published(map.publication.id)
+
       Seeder.add_page(map, attrs, :p1)
       |> Seeder.create_section_resources()
     end
@@ -98,6 +100,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       # verify that reading the latest attempts back from the db gives us
       # the same results
       attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
+
       assert Map.has_key?(attempts, a1.resource.id)
       assert Map.has_key?(attempts, a2.resource.id)
 

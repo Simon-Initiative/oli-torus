@@ -135,6 +135,9 @@ config :lti_1p3,
     ]
   ]
 
+config :ex_aws,
+  region: {:system, "AWS_REGION"}
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
