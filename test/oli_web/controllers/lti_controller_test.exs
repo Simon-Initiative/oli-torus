@@ -95,10 +95,10 @@ defmodule OliWeb.LtiControllerTest do
 
       # form contains a required text input for deployment id
       assert html_response(conn, 200) =~
-               "<input class=\"deployment_id form-control \" id=\"pending_registration_deployment_id\" name=\"pending_registration[deployment_id]\" placeholder=\"Deployment ID\" type=\"text\" required>"
+               "<input class=\"deployment_id form-control \" id=\"pending_registration_deployment_id\" name=\"pending_registration[deployment_id]\" placeholder=\"Deployment ID\" required type=\"text\">"
     end
 
-    test "registration form prepopulates deployment_id if it was included in oidc params", %{
+    test "registration form pre-populates deployment_id if it was included in oidc params", %{
       conn: conn,
       registration: registration
     } do
