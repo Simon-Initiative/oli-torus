@@ -35,7 +35,7 @@ export const updatePart = createAsyncThunk(
       const sequence = selectSequence(rootState);
       const sequenceEntry = findInSequenceByResourceId(sequence, activityClone.id);
       const activitySequenceId = sequenceEntry?.custom.sequenceId;
-      if (!authorPart) {
+      if (!authorPart && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
         // this shouldn't happen, but maybe it was missing?? add it
         activityClone.authoring.parts.push({
           id: payload.changes.id,
@@ -48,7 +48,7 @@ export const updatePart = createAsyncThunk(
       }
 
       // if this item has any children in the sequence, update them too
-      if (sequenceEntry) {
+      if (sequenceEntry && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
         const hierarchy = getHierarchy(sequence, activitySequenceId);
         const allInvolved = flattenHierarchy(hierarchy);
         const activitiesToUpdate: IActivity[] = [];

@@ -29,20 +29,24 @@ export const addPart = createAsyncThunk(
       inherited: false,
       // objectives: [],
     };
-    activityClone.authoring.parts.push(partIdentifier);
+    if (newPartData.type !== 'janus-text-flow' && newPartData.type !== 'janus-image') {
+      activityClone.authoring.parts.push(partIdentifier);
+    }
     activityClone.content.partsLayout.push(newPartData);
 
     // need to add partIdentifier any sequence children
     const childrenToUpdate: any[] = [];
-    const activityHierarchy = getHierarchy(sequence, sequenceEntry?.custom?.sequenceId);
-    if (activityHierarchy.length) {
-      const flattenedHierarchy = flattenHierarchy(activityHierarchy);
-      flattenedHierarchy.forEach((child) => {
-        const childActivity = selectActivityById(rootState, child.resourceId as number);
-        const childClone = clone(childActivity);
-        childClone.authoring.parts.push({ ...partIdentifier, inherited: true });
-        childrenToUpdate.push(childClone);
-      });
+    if (newPartData.type !== 'janus-text-flow' && newPartData.type !== 'janus-image') {
+      const activityHierarchy = getHierarchy(sequence, sequenceEntry?.custom?.sequenceId);
+      if (activityHierarchy.length) {
+        const flattenedHierarchy = flattenHierarchy(activityHierarchy);
+        flattenedHierarchy.forEach((child) => {
+          const childActivity = selectActivityById(rootState, child.resourceId as number);
+          const childClone = clone(childActivity);
+          childClone.authoring.parts.push({ ...partIdentifier, inherited: true });
+          childrenToUpdate.push(childClone);
+        });
+      }
     }
 
     const activitiesToUpdate = [activityClone, ...childrenToUpdate];

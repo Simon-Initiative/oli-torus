@@ -95,14 +95,15 @@ export const validators = [
   {
     type: DiagnosticTypes.DUPLICATE,
     validate: (activity: any) =>
-      activity.authoring.parts.filter(
-        (ref: any) => activity.authoring.parts.filter((ref2: any) => ref2.id === ref.id).length > 1,
+      activity.content.partsLayout.filter(
+        (ref: any) =>
+          activity.content.partsLayout.filter((ref2: any) => ref2.id === ref.id).length > 1,
       ),
   },
   {
     type: DiagnosticTypes.PATTERN,
     validate: (activity: any) =>
-      activity.authoring.parts.filter(
+      activity.content.partsLayout.filter(
         (ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id),
       ),
   },
@@ -226,7 +227,7 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
     const errors: DiagnosticError[] = [];
 
     const partsList = allActivities.reduce(
-      (list: any[], act: any) => list.concat(act.authoring.parts),
+      (list: any[], act: any) => list.concat(act.content.partsLayout),
       [],
     );
 
@@ -261,12 +262,12 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
         // id blacklist should include all parent ids, and all children ids
         const lineageBlacklist = getSequenceLineage(sequence, activitySequence.custom.sequenceId)
           .map((s) => allActivities.find((a) => a.id === s.resourceId))
-          .map((a) => a?.authoring.parts.map((ref: any) => ref.id))
+          .map((a) => (a?.content?.partsLayout || []).map((ref: any) => ref.id))
           .reduce((acc, cur) => acc.concat(cur), []);
         const hierarchyItem = findInHierarchy(hierarchy, activitySequence.custom.sequenceId);
         const childrenBlackList: string[] = flattenHierarchy(hierarchyItem?.children ?? [])
           .map((s) => allActivities.find((a) => a.id === s.resourceId))
-          .map((a) => a?.authoring.parts.map((ref: any) => ref.id))
+          .map((a) => (a?.content?.partsLayout || []).map((ref: any) => ref.id))
           .reduce((acc, cur) => acc.concat(cur), []);
         //console.log('blacklists: ', { lineageBlacklist, childrenBlackList });
         const testBlackList = Array.from(new Set([...lineageBlacklist, ...childrenBlackList]));
