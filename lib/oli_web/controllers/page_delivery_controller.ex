@@ -1,5 +1,6 @@
 defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
+  require Logger
 
   import OliWeb.ViewHelpers,
     only: [
@@ -464,7 +465,14 @@ defmodule OliWeb.PageDeliveryController do
       {:error, {:no_more_attempts}} ->
         redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
 
-      _ ->
+      {:error, e} ->
+        Logger.error("Page finalization error encountered: #{e}")
+        Oli.Utils.Appsignal.capture_error(e)
+        render(conn, "error.html")
+
+      e ->
+        Logger.error("Page finalization error encountered: #{e}")
+        Oli.Utils.Appsignal.capture_error(e)
         render(conn, "error.html")
     end
   end

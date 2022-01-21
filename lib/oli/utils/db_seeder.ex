@@ -616,6 +616,22 @@ defmodule Oli.Seeder do
     end
   end
 
+  def ensure_published(publication_id) do
+    case Repo.get(Publication, publication_id) do
+      nil ->
+        true
+
+      %Publication{published: nil} = p ->
+        Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+    end
+
+    query = """
+    REFRESH MATERIALIZED VIEW part_mapping;
+    """
+
+    Oli.Repo.query!(query, [])
+  end
+
   defp create_published_resource(publication, resource, revision) do
     Publishing.create_published_resource(%{
       publication_id: publication.id,

@@ -153,3 +153,7 @@ config :phoenix, :plug_init_mode, :runtime
 config :joken, default_signer: "secret"
 
 config :appsignal, :config, active: false
+
+# Configure AWS
+config :ex_aws,
+  region: System.get_env("AWS_REGION", "us-east-1")

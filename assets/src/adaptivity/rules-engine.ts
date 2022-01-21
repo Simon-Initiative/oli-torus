@@ -265,6 +265,36 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
   return Array.from(referencedActivities);
 };
 
+export const getReferencedKeysInConditions = (conditions: any) => {
+  const references: Set<string> = new Set();
+
+  conditions.forEach((condition: any) => {
+    // the fact *must* be a reference to a key we need
+    if (condition.fact) {
+      references.add(condition.fact);
+    }
+    // the value *might* contain a reference to a key we need
+    if (
+      typeof condition.value === 'string' &&
+      condition.value.search(/app\.|variables\.|stage\.|session\./) !== -1
+    ) {
+      // value could have more than one reference inside it
+      const exprs = extractAllExpressionsFromText(condition.value);
+      exprs.forEach((expr: string) => {
+        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+          references.add(expr);
+        }
+      });
+    }
+    if (condition.any || condition.all) {
+      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
+      childRefs.forEach((ref) => references.add(ref));
+    }
+  });
+
+  return Array.from(references);
+};
+
 export interface CheckResult {
   correct: boolean;
   results: Event[];

@@ -12,6 +12,7 @@ defmodule Oli.Branding do
   alias Oli.Delivery.Sections.Section
   alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.Institution
+  alias Oli.Utils
 
   @doc """
   Returns the list of brands.
@@ -156,11 +157,21 @@ defmodule Oli.Branding do
   end
 
   def brand_logo_url(section \\ nil) do
+    brand_logo_path(section)
+    |> Utils.ensure_absolute_url()
+  end
+
+  def brand_logo_url_dark(section \\ nil) do
+    brand_logo_path_dark(section)
+    |> Utils.ensure_absolute_url()
+  end
+
+  def brand_logo_path(section \\ nil) do
     brand_with_defaults(section)
     |> Map.get(:logo)
   end
 
-  def brand_logo_url_dark(section \\ nil) do
+  def brand_logo_path_dark(section \\ nil) do
     brand_with_defaults(section)
     |> Map.get(:logo_dark)
   end

@@ -45,6 +45,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
+        variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
+
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
@@ -53,7 +55,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_inputs,
           scoringContext,
           rules,
-          activitiesRequiredForEvaluation
+          activitiesRequiredForEvaluation,
+          variablesRequiredForEvaluation
         )
 
       e ->
@@ -68,12 +71,36 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         part_inputs,
         scoringContext,
         rules,
-        activitiesRequiredForEvaluation
+        activitiesRequiredForEvaluation,
+        variablesRequiredForEvaluation
       ) do
     state =
-      assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+      case variablesRequiredForEvaluation do
+        nil ->
+          assemble_full_adaptive_state(
+            resource_attempt,
+            activitiesRequiredForEvaluation,
+            part_inputs
+          )
+
+        _ ->
+          assemble_full_adaptive_state(
+            resource_attempt,
+            activitiesRequiredForEvaluation,
+            part_inputs
+          )
+          |> Map.take(variablesRequiredForEvaluation)
+      end
 
     encodeResults = true
+    Logger.debug("Sending State to Node #{Jason.encode!(state)}")
+
+    File.write("./#{activity_attempt_guid}-state.json", Poison.encode!(state), [:binary])
+    File.write("./#{activity_attempt_guid}-rules.json", Poison.encode!(rules), [:binary])
+
+    File.write("./#{activity_attempt_guid}-scoring.json", Poison.encode!(scoringContext), [
+      :binary
+    ])
 
     case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
       {:ok, check_results} ->

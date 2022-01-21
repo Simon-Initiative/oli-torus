@@ -7,7 +7,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, StudentInput}
+  alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt, PartAttempt, StudentInput}
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Student.Summary
@@ -55,6 +55,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_activity(%{title: "two", max_attempts: 5, content: content}, :activity2)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
+
+      Seeder.ensure_published(map.publication.id)
 
       Seeder.add_page(
         map,
@@ -232,6 +234,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
+
+      Seeder.ensure_published(map.publication.id)
 
       Seeder.add_page(
         map,
@@ -593,6 +597,43 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert snapshot.revision_id == activity_revision.id
     end
 
+    test "processing a submission where there are invalid scores", %{
+      graded_page_user1_attempt1: resource_attempt1,
+      user1_part1_attempt1: part_attempt,
+      section: section,
+      user1_activity_attempt1: activity_attempt
+    } do
+      part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      {:ok, _} =
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+
+      # verify the part attempt record was updated correctly
+      updated_attempt = Oli.Repo.get!(PartAttempt, part_attempt.id)
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
+      refute updated_attempt.date_evaluated == nil
+
+      # verify that the submission rolled up to the activity attempt
+      updated_attempt = Oli.Repo.get!(ActivityAttempt, activity_attempt.id)
+      assert updated_attempt.score == 1.0
+      assert updated_attempt.out_of == 1.0
+      refute updated_attempt.date_evaluated == nil
+
+      # Now simulate something having gone wrong, perhaps a rogue activity using
+      # client-side eval, or some other future bug in the system leading to an invalid
+      # score for the activity attempt
+
+      Attempts.update_activity_attempt(updated_attempt, %{score: 2.0, out_of: 1.0})
+
+      PageLifecycle.finalize(section.slug, resource_attempt1.attempt_guid)
+
+      # Verify a valid grade was recorded despite the invalid grade at the activity attempt
+      ra = Oli.Repo.get(ResourceAccess, resource_attempt1.resource_access_id)
+      assert ra.score == 1.0
+      assert ra.out_of == 1.0
+    end
+
     test "handling reset attempts that request preservation of last attempt state", %{
       ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
       section: section,
@@ -684,6 +725,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_objective("objective one", :o1)
         |> Seeder.add_activity(%{title: "one", content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
+
+      Seeder.ensure_published(map.publication.id)
 
       attrs = %{
         title: "page1",
@@ -851,6 +894,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           :activity
         )
         |> Seeder.add_user(%{}, :user1)
+
+      Seeder.ensure_published(map.publication.id)
 
       attrs = %{
         title: "page1",

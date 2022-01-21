@@ -1,4 +1,7 @@
-import { findReferencedActivitiesInConditions } from 'adaptivity/rules-engine';
+import {
+  findReferencedActivitiesInConditions,
+  getReferencedKeysInConditions,
+} from 'adaptivity/rules-engine';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import debounce from 'lodash/debounce';
 import isEqual from 'lodash/isEqual';
@@ -111,6 +114,17 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       const conditionRefs = findReferencedActivitiesInConditions(
         rule.conditions.any || rule.conditions.all,
       );
+      const variableRefs = getReferencedKeysInConditions(
+        rule.conditions.any || rule.conditions.all,
+      );
+      if (!activityClone.authoring.variablesRequiredForEvaluation) {
+        activityClone.authoring.variablesRequiredForEvaluation = [];
+      }
+      activityClone.authoring.variablesRequiredForEvaluation.push(...variableRefs);
+      // make unique
+      activityClone.authoring.variablesRequiredForEvaluation = [
+        ...new Set(activityClone.authoring.variablesRequiredForEvaluation),
+      ];
       if (conditionRefs.length > 0) {
         if (!activityClone.authoring.activitiesRequiredForEvaluation) {
           activityClone.authoring.activitiesRequiredForEvaluation = [];
@@ -133,10 +147,10 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
           new Set([...current, ...resourceIds]),
         );
-        /* console.log('[handleRuleChange] adding activities to required for evaluation', {
+        console.log('[handleRuleChange] adding activities to required for evaluation', {
           activityClone,
           rule,
-        }); */
+        });
       }
       dispatch(saveActivity({ activity: activityClone }));
     }
