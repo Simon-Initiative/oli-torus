@@ -175,6 +175,33 @@ defmodule Oli.Utils do
   end
 
   @doc """
+  Returns true if the given URL is absolute
+  """
+  def is_url_absolute(url) do
+    String.match?(url, ~r/^(?:[a-z]+:)?\/\//i)
+  end
+
+  @doc """
+  Returns the given url or path ensuring it is absolute. If a relative path is given, then
+  the configured base url will be prepended
+  """
+  def ensure_absolute_url(url) do
+    if is_url_absolute(url) do
+      url
+    else
+      get_base_url() <> ensure_prepended_slash(url)
+    end
+  end
+
+  defp ensure_prepended_slash(url) do
+    if String.starts_with?(url, "/") do
+      url
+    else
+      "/#{url}"
+    end
+  end
+
+  @doc """
   Generates a shortened v4 UUID encoded as base57
   """
   def uuid() do
