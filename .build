@@ -108,8 +108,11 @@ Oli.Consent.CookiesConsent.html
 Oli.Consent.html
 Oli.Delivery.ActivityProvider.Result.html
 Oli.Delivery.ActivityProvider.html
+Oli.Delivery.Attempts.ActivityLifecycle.AWSLambdaEvaluator.html
 Oli.Delivery.Attempts.ActivityLifecycle.Evaluate.html
+Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator.html
 Oli.Delivery.Attempts.ActivityLifecycle.Persistence.html
+Oli.Delivery.Attempts.ActivityLifecycle.RuleEvaluator.html
 Oli.Delivery.Attempts.ActivityLifecycle.html
 Oli.Delivery.Attempts.Core.ActivityAttempt.html
 Oli.Delivery.Attempts.Core.ClientEvaluation.html
@@ -633,8 +636,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-e48cf84233.js
-dist/sidebar_items-cc42afe846.js
+dist/search_items-7fd0fc188c.js
+dist/sidebar_items-7d776f5d33.js
 index.html
 license.html
 readme.html
