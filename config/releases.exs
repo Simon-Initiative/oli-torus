@@ -186,10 +186,6 @@ config :oli, :footer,
   link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
   link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
 
-# Configure AWS
-config :ex_aws,
-  region: System.get_env("AWS_REGION", "us-east-1")
-
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix

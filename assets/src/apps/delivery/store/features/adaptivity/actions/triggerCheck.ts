@@ -266,7 +266,10 @@ export const triggerCheck = createAsyncThunk(
     const updateScoreAndVisit: ApplyStateOperation[] = [
       { target: 'session.currentQuestionScore', operator: '=', value: score },
     ];
-    if (attempt.attemptNumber === 1) {
+    /* console.log('VISITS', { visit: attempt.attemptNumber <= 2 }); */
+    // because visit count doesn't increase until AFTER checking is done, it could be 1 or 2 depending
+    // on whether or not it was correct
+    if (attempt.attemptNumber <= 2) {
       updateScoreAndVisit.push({
         target: `session.visits.${currentActivity.id}`,
         operator: '+',
