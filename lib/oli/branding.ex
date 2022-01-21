@@ -157,11 +157,13 @@ defmodule Oli.Branding do
   end
 
   def brand_logo_url(section \\ nil) do
-    Utils.get_base_url() <> brand_logo_path(section)
+    brand_logo_path(section)
+    |> Utils.ensure_absolute_url()
   end
 
   def brand_logo_url_dark(section \\ nil) do
-    Utils.get_base_url() <> brand_logo_path_dark(section)
+    brand_logo_path_dark(section)
+    |> Utils.ensure_absolute_url()
   end
 
   def brand_logo_path(section \\ nil) do
