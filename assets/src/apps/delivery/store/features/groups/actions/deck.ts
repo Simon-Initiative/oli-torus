@@ -192,7 +192,7 @@ export const initializeActivity = createAsyncThunk(
     const currentState = getEnvState(defaultGlobalEnv);
 
     const sessionState = Object.keys(currentState).reduce((collect: any, key) => {
-      if (key.indexOf('session.') === 0) {
+      if (key.indexOf('session.') !== -1) {
         collect[key] = currentState[key];
       }
       return collect;
