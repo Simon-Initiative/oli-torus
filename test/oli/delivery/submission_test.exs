@@ -92,7 +92,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       {:ok, _summary} = Summary.get_summary(section.slug, user1)
 
       # Open the graded page as user 1 to get the prologue
-      user1_page_context = PageContext.create_for_visit(section.slug, revision.slug, user1)
+      user1_page_context = PageContext.create_for_visit(section, revision.slug, user1)
       assert user1_page_context.progress_state == :not_started
       assert Enum.empty?(user1_page_context.resource_attempts)
 
@@ -129,7 +129,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert user1_latest_resource_attempt.id == user1_resource_attempt.id
 
       # Make sure the progress state is correct for the latest resource attempt
-      assert PageContext.create_for_visit(section.slug, revision.slug, user1).progress_state ==
+      assert PageContext.create_for_visit(section, revision.slug, user1).progress_state ==
                :in_progress
 
       # Now we have an "in progress" resource attempt for student 1 with a saved student input,
@@ -141,7 +141,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Access the graded page with user2
       assert is_nil(Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id))
-      user2_page_context = PageContext.create_for_visit(section.slug, revision.slug, user2)
+      user2_page_context = PageContext.create_for_visit(section, revision.slug, user2)
       assert user2_page_context.progress_state == :not_started
       assert Enum.count(user2_page_context.resource_attempts) == 0
 

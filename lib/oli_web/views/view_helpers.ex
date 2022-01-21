@@ -63,5 +63,4 @@ defmodule OliWeb.ViewHelpers do
         ""
     end
   end
-
 end

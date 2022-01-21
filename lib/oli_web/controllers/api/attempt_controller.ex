@@ -313,18 +313,16 @@ defmodule OliWeb.Api.AttemptController do
         end
       end)
 
-    revision = Oli.Resources.get_revision!(attempt.revision_id)
-
     %{
       activityId: attempt.resource_id,
-      activityType: revision.activity_type_id,
+      activityType: attempt.revision.activity_type_id,
       revisionId: attempt.revision_id,
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
       score: attempt.score,
       outOf: attempt.out_of,
       dateEvaluated: attempt.date_evaluated,
-      model: Oli.Delivery.Page.ModelPruner.prune(attempt.transformed_model),
+      model: Attempts.select_model(attempt) |> Oli.Delivery.Page.ModelPruner.prune(),
       partAttempts:
         Map.values(latest_part_attempt_by_part)
         |> Enum.map(fn pa ->
