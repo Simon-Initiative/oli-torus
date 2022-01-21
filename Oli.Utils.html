@@ -10,7 +10,7 @@
     <title>Oli.Utils — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-16f74b919d.js"></script>
+    <script src="dist/sidebar_items-cc42afe846.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,16 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.18.4)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#ensure_absolute_url/1">ensure_absolute_url(url)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns the given url or path ensuring it is absolute. If a relative path is given, then
+the configured base url will be prepended</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_base_url/0">get_base_url()</a>
 
   </div>
@@ -124,6 +134,15 @@ Oli.Utils <small class="app-vsn">(OLI Torus v0.18.4)</small>
     <a href="#has_non_empty_value/1">has_non_empty_value(v)</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#is_url_absolute/1">is_url_absolute(url)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns true if the given URL is absolute</p></div>
 
 </div>
 <div class="summary-row">
@@ -263,6 +282,29 @@ the non-nil result as {:ok, result}</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="ensure_absolute_url/1">
+
+  <div class="detail-header">
+    <a href="#ensure_absolute_url/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">ensure_absolute_url(url)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L188" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns the given url or path ensuring it is absolute. If a relative path is given, then
+the configured base url will be prepended</p>
+  </section>
+</section>
 <section class="detail" id="get_base_url/0">
 
   <div class="detail-header">
@@ -305,6 +347,28 @@ Functions
   <section class="docstring">
 
 
+  </section>
+</section>
+<section class="detail" id="is_url_absolute/1">
+
+  <div class="detail-header">
+    <a href="#is_url_absolute/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">is_url_absolute(url)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L180" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns true if the given URL is absolute</p>
   </section>
 </section>
 <section class="detail" id="log_error/2">
@@ -432,7 +496,7 @@ Metadata is not exposed in the user facing error message.</p>
     </a>
     <h1 class="signature">pretty(map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L200" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L227" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -567,7 +631,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">uuid()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L180" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L207" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -633,7 +697,7 @@ the non-nil result as {:ok, result}</p>
     </a>
     <h1 class="signature">zip(filename_content_tuples, zip_filename)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L188" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/utils.ex#L215" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
