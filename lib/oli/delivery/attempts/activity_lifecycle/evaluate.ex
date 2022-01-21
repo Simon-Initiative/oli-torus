@@ -95,13 +95,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     encodeResults = true
     Logger.debug("Sending State to Node #{Jason.encode!(state)}")
 
-    File.write("./#{activity_attempt_guid}-state.json", Poison.encode!(state), [:binary])
-    File.write("./#{activity_attempt_guid}-rules.json", Poison.encode!(rules), [:binary])
-
-    File.write("./#{activity_attempt_guid}-scoring.json", Poison.encode!(scoringContext), [
-      :binary
-    ])
-
     case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
       {:ok, check_results} ->
         # Logger.debug("Check RESULTS: #{check_results}")
