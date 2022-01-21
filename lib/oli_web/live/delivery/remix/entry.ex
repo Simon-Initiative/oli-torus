@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
     <div
       tabindex="0"
       phx-keydown="keydown"
-      id={resource_id}
+      id={"entry-#{resource_id}"}
       draggable="true"
       phx-click="select"
       phx-value-uuid={uuid}

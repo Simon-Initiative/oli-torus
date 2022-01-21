@@ -3,7 +3,7 @@
 
     <div class="container">
         <a class="navbar-brand torus-logo mr-auto" href="<%= Routes.static_page_path(@conn, :index) %>">
-            <%= brand_logo_html(@conn, class: "d-inline-block align-top mr-2") %>
+            <%= brand_logo(Map.merge(assigns, %{class: "d-inline-block align-top mr-2"})) %>
         </a>
 
         <div class="nav-item my-2 my-lg-0 mr-2">
