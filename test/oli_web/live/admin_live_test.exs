@@ -4,7 +4,6 @@ defmodule OliWeb.AdminLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
-  import OliWeb.Common.Properties.Utils
   import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts

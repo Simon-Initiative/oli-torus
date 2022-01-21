@@ -81,7 +81,7 @@ defmodule OliWeb.Users.UsersDetailViewTest do
           Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersDetailView, independent_student.id)
         )
 
-      {:ok, view, html} = live(conn)
+      {:ok, _view, html} = live(conn)
 
       assert html =~ "LTI 1.3 details" == false
       assert html =~ "LTI users are managed by the LMS" == false
