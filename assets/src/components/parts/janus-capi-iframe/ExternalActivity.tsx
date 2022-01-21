@@ -542,6 +542,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             formatted[variable].value,
             simLife.snapshot,
             scriptEnv,
+            true,
           );
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
