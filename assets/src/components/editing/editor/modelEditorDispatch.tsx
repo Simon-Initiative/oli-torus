@@ -1,41 +1,38 @@
-import { InputRefEditor } from 'components/editing/models/inputref/Editor';
-import { LinkEditor } from 'components/editing/models/link/Editor';
-import { PopupEditor } from 'components/editing/models/popup/Editor';
-import { TableEditor } from 'components/editing/models/table/TableEditor';
-import { TdEditor } from 'components/editing/models/table/TdEditor';
-import { ThEditor } from 'components/editing/models/table/ThEditor';
-import { TrEditor } from 'components/editing/models/table/TrEditor';
+import { AudioEditor } from 'components/editing/elements/audio/Editor';
+import { CodeEditor } from 'components/editing/elements/blockcode/Editor';
+import { BlockQuoteEditor } from 'components/editing/elements/blockquote/Editor';
+import { InputRefEditor } from 'components/editing/elements/inputref/Editor';
+import { LinkEditor } from 'components/editing/elements/link/Editor';
+import { PopupEditor } from 'components/editing/elements/popup/Editor';
+import { TableEditor } from 'components/editing/elements/table/TableEditor';
+import { TdEditor } from 'components/editing/elements/table/TdEditor';
+import { ThEditor } from 'components/editing/elements/table/ThEditor';
+import { TrEditor } from 'components/editing/elements/table/TrEditor';
+import { WebpageEditor } from 'components/editing/elements/webpage/Editor';
+import { YouTubeEditor } from 'components/editing/elements/youtube/Editor';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import * as React from 'react';
-import { Editor } from 'slate';
-import { ReactEditor } from 'slate-react';
-import { CommandContext } from '../commands/interfaces';
-import { AudioEditor } from '../models/audio/Editor';
-import { CodeBlockLine, CodeEditor } from '../models/blockcode/Editor';
-import { BlockQuoteEditor } from '../models/blockquote/Editor';
-import { ImageEditor } from '../models/image/Editor';
-import { EditorProps } from '../models/interfaces';
-import { WebpageEditor } from '../models/webpage/Editor';
-import { YouTubeEditor } from '../models/youtube/Editor';
+import { RenderElementProps } from 'slate-react';
+import { CommandContext } from '../elements/commands/interfaces';
+import { ImageEditor } from '../elements/image/Editor';
+import { EditorProps } from '../elements/interfaces';
 
 export function editorFor(
-  element: ContentModel.ModelElement,
-  props: any,
-  editor: ReactEditor & Editor,
+  model: ContentModel.ModelElement,
+  props: RenderElementProps,
   commandContext: CommandContext,
 ): JSX.Element {
   const { attributes, children } = props;
 
   const editorProps = {
-    model: element,
-    editor,
+    model,
     attributes,
     children,
     commandContext,
   };
 
-  switch (element.type) {
+  switch (model.type) {
     case 'p':
       return <p {...attributes}>{children}</p>;
     case 'h1':
@@ -73,7 +70,7 @@ export function editorFor(
     case 'code':
       return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
     case 'code_line':
-      return <CodeBlockLine {...(editorProps as EditorProps<ContentModel.CodeLine>)} />;
+      return <span {...attributes}>{props.children}</span>;
     case 'table':
       return <TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
     case 'tr':
@@ -110,6 +107,10 @@ export function markFor(mark: Mark, children: any): JSX.Element {
       return <sub>{children}</sub>;
     case 'sup':
       return <sup>{children}</sup>;
+    case 'strikethrough':
+      return <span style={{ textDecoration: 'line-through' }}>{children}</span>;
+    case 'underline':
+      return <span style={{ textDecoration: 'underline' }}>{children}</span>;
     default:
       return <span>{children}</span>;
   }

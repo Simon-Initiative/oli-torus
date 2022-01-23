@@ -64,10 +64,32 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
   return <i>Empty</i>;
 }
 
-export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 56) => {
+export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 74) => {
   return {
     top: childRect.top + window.scrollY - yOffset,
-    left: childRect.left + window.window.scrollX + childRect.width / 2 - popoverRect.width / 2,
+    left: childRect.left + window.scrollX + childRect.width / 2 - popoverRect.width / 2,
+  };
+};
+
+export const alignedLeftAbove = ({ childRect }: PopoverState, yOffset = 74) => {
+  return {
+    top: childRect.top + window.scrollY - yOffset,
+    left: childRect.left + window.scrollX,
+  };
+};
+
+export const alignedLeftBelow = ({ childRect }: PopoverState, yOffset = 0) => {
+  return {
+    top: childRect.bottom + window.scrollY + yOffset,
+    left: childRect.left + window.scrollX,
+  };
+};
+
+export const belowParent = ({ parentRect, popoverRect }: PopoverState, yOffset = 0) => {
+  console.log(parentRect, popoverRect);
+  return {
+    top: parentRect.bottom + window.scrollY + yOffset - popoverRect.height,
+    left: parentRect.left + window.scrollX - popoverRect.width,
   };
 };
 

@@ -2,12 +2,12 @@ import { Range, Editor, Transforms } from 'slate';
 import {
   olCommandDesc as olCmd,
   ulCommandDesc as ulCmd,
-} from 'components/editing/commands/ListsCmd';
-import { commandDesc as codeCmd } from 'components/editing/commands/BlockcodeCmd';
-import { commandDesc as quoteCmd } from 'components/editing/commands/BlockquoteCmd';
+} from 'components/editing/elements/commands/ListsCmd';
+import { commandDesc as quoteCmd } from 'components/editing/elements/commands/BlockquoteCmd';
 import { ReactEditor } from 'slate-react';
 import { isTopLevel } from 'components/editing/utils';
-import { CommandContext } from 'components/editing/commands/interfaces';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { codeBlockInsertDesc } from 'components/editing/elements/commands/BlockcodeCmd';
 
 const SHORTCUTS = {
   '#': 'h1',
@@ -66,7 +66,7 @@ export const withMarkdown = (context: CommandContext) => (editor: Editor & React
           case 'blockquote':
             return quoteCmd.command.execute(context, editor);
           case 'code':
-            return codeCmd.command.execute(context, editor);
+            return codeBlockInsertDesc.command.execute(context, editor);
         }
       }
     }

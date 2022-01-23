@@ -14,6 +14,7 @@
     "sourceMap": true,
     "noEmitHelpers": false,
     "alwaysStrict": true,
+    "isolatedModules": true,
     "outDir": "./dev",
     "baseUrl": ".",
     "paths": {

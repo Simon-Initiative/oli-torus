@@ -57,6 +57,8 @@ export class HtmlParser implements WriterImpl {
       code: (e) => <code>{e}</code>,
       sub: (e) => <sub>{e}</sub>,
       sup: (e) => <sup>{e}</sup>,
+      underline: (e) => <span style={{ textDecoration: 'underline' }}>{e}</span>,
+      strikethrough: (e) => <span style={{ textDecoration: 'line-through' }}>{e}</span>,
     };
     return Object.keys(textEntity)
       .filter((attr: Mark | 'text') => textEntity[attr] === true)
@@ -103,6 +105,8 @@ export class HtmlParser implements WriterImpl {
     return <h6>{next()}</h6>;
   }
   img(context: WriterContext, next: Next, attrs: Image) {
+    if (attrs.src === undefined) return null;
+
     return this.figure(
       attrs,
       <img
@@ -115,12 +119,16 @@ export class HtmlParser implements WriterImpl {
     );
   }
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
+    if (attrs.src === undefined) return null;
+
     return this.iframe(context, next, {
       ...attrs,
       src: `https://www.youtube.com/embed/${this.escapeXml(attrs.src)}`,
     });
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
+    if (attrs.src === undefined) return null;
+
     return this.figure(
       attrs,
       <div className="embed-responsive embed-responsive-16by9">

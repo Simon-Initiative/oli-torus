@@ -1,4 +1,14 @@
-export type Mark = 'em' | 'strong' | 'mark' | 'del' | 'var' | 'code' | 'sub' | 'sup';
+export type Mark =
+  | 'em'
+  | 'strong'
+  | 'mark'
+  | 'del'
+  | 'var'
+  | 'code'
+  | 'sub'
+  | 'sup'
+  | 'underline'
+  | 'strikethrough';
 
 export enum Marks {
   'em',
@@ -9,6 +19,8 @@ export enum Marks {
   'code',
   'sub',
   'sup',
+  'underline',
+  'strikethrough',
 }
 
 type Decoration = 'youtubeInput';

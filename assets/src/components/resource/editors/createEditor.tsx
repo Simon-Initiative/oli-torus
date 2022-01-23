@@ -3,7 +3,6 @@ import { ActivityReference, ResourceContent, ResourceContext } from 'data/conten
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ContentBlock } from './ContentBlock';
 import { ActivityBlock } from './ActivityBlock';
-import { getToolbarForContentType } from '../../editing/toolbars/insertion/items';
 import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
 import { InlineActivityEditor, EditorUpdate } from 'components/activity/InlineActivityEditor';
@@ -13,6 +12,7 @@ import { ActivityBankSelection } from './ActivityBankSelection';
 import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
 import { defaultActivityState } from 'data/activities/utils';
+import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 
 // content or referenced activities
 export const createEditor = (

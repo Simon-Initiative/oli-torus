@@ -1,9 +1,9 @@
 import { normalize as tableNormalize } from 'components/editing/editor/normalizers/tables';
-import { p } from 'data/content/model/elements/factories';
-import { SchemaConfig, schema } from 'data/content/model/schema';
+import { li, p } from 'data/content/model/elements/factories';
+import { schema } from 'data/content/model/schema';
 import * as Immutable from 'immutable';
-import { Editor as SlateEditor, Element, Node, NodeEntry, Path, Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { Editor, Element, Node, NodeEntry, Path, Text, Transforms } from 'slate';
+import guid from 'utils/guid';
 
 export interface NormalizerContext {
   // Node types normally not allowed in an editor
@@ -22,18 +22,15 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'iframe',
 ]);
 
-export function installNormalizer(
-  editor: SlateEditor & ReactEditor,
-  context: NormalizerContext = {},
-) {
+export function installNormalizer(editor: Editor, context: NormalizerContext = {}) {
   const { normalizeNode } = editor;
 
   editor.normalizeNode = (entry: NodeEntry<Node>) => {
     try {
       const [node, path] = entry;
 
-      if (Element.isElement(node) && restrictedElements.has(node.type as string)) {
-        if (!context?.whitelist?.includes(node.type as string)) {
+      if (Element.isElement(node) && restrictedElements.has(node.type)) {
+        if (!context.whitelist?.includes(node.type)) {
           Transforms.removeNodes(editor, { at: path });
           return;
         }
@@ -42,21 +39,61 @@ export function installNormalizer(
       // Ensure that we always have a paragraph as the last node in
       // the document, otherwise it can be impossible for a user
       // to position their cursor after the last node
-      if (SlateEditor.isEditor(node)) {
+      if (Editor.isEditor(node)) {
         const last = node.children[node.children.length - 1];
 
         if (!Element.isElement(last) || last.type !== 'p') {
-          Transforms.insertNodes(editor, p(), { mode: 'highest', at: SlateEditor.end(editor, []) });
+          Transforms.insertNodes(editor, p(), { mode: 'highest', at: Editor.end(editor, []) });
         }
         return; // Return here is necessary to enable multi-pass normalization
       }
 
+      const [parent, parentPath] = Editor.parent(editor, path);
+
       // Check this node's parent constraints
-      if (SlateEditor.isBlock(editor, node)) {
-        const [parent, parentPath] = SlateEditor.parent(editor, path);
-        if (!SlateEditor.isEditor(parent)) {
-          const config: SchemaConfig = (schema as any)[parent.type as string];
-          if (Element.isElement(node) && !(config.validChildren as any)[node.type as string]) {
+      if (Editor.isEditor(parent)) {
+        // Handle text nodes at the top level - they should be paragraphs.
+        if (Text.isText(node)) {
+          Transforms.wrapNodes(editor, p(), { at: path });
+          return;
+        }
+      } else {
+        const config = schema[parent.type];
+
+        if (Element.isElement(parent)) {
+          // lists
+          if (['ol', 'ul'].includes(parent.type)) {
+            if (Text.isText(node)) {
+              console.log('is text, wrapping');
+              Transforms.wrapNodes(editor, li(), { at: path });
+              return;
+            }
+            if (Element.isElement(node) && !config.validChildren[node.type]) {
+              Transforms.setNodes(editor, { type: 'li' }, { at: path });
+              return;
+            }
+          }
+
+          // code
+          if (parent.type === 'code') {
+            if (Text.isText(node)) {
+              Transforms.wrapNodes(
+                editor,
+                { type: 'code_line', id: guid(), children: [] },
+                { at: path },
+              );
+              return;
+            }
+            if (Element.isElement(node) && !config.validChildren[node.type]) {
+              Transforms.setNodes(editor, { type: 'code_line' }, { at: path });
+              return;
+            }
+          }
+        }
+
+        // As a fallback, if we can't reconcile the content, just delete it.
+        if (Editor.isBlock(editor, node)) {
+          if (Element.isElement(node) && !config.validChildren[node.type]) {
             // Special case for code blocks -- they have two wrappers (code, code_line),
             // so deletion removes the inner block and causes validation errors
             if (node.type === 'p' && parent.type === 'code') {
@@ -71,9 +108,8 @@ export function installNormalizer(
       }
 
       // Check the top-level constraints
-      if (SlateEditor.isBlock(editor, node) && !(schema as any)[node.type as string].isTopLevel) {
-        const [parent] = SlateEditor.parent(editor, path);
-        if (SlateEditor.isEditor(parent)) {
+      if (Editor.isBlock(editor, node) && !schema[node.type].isTopLevel) {
+        if (Editor.isEditor(parent)) {
           Transforms.unwrapNodes(editor, { at: path });
           return; // Return here is necessary to enable multi-pass normalization
         }
@@ -82,12 +118,10 @@ export function installNormalizer(
       // Ensure that certain blocks types, when found next to each other,
       // get a paragraph inserted in between them
 
-      const [parent] = SlateEditor.parent(editor, path);
-
       // For every block that has a next sibling, look to see if this block and the sibling
       // are both block types that need to have whitespace between them.
       if (path[path.length - 1] + 1 < parent.children.length) {
-        const nextItem = SlateEditor.node(editor, Path.next(path));
+        const nextItem = Editor.node(editor, Path.next(path));
 
         if (nextItem !== undefined) {
           const [nextNode] = nextItem;

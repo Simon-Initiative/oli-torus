@@ -19,7 +19,7 @@ const isList = (n: Node): n is UnorderedList | OrderedList =>
   Element.isElement(n) && (n.type === 'ul' || n.type === 'ol');
 
 // Handles a 'tab' key down event that may indent a list item.
-function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
+export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     const [match] = SlateEditor.nodes(editor, {
       match: (n) => Element.isElement(n) && n.type === 'li',
@@ -45,7 +45,7 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
                 newList.children.pop();
 
                 Transforms.wrapNodes(editor, newList, { at: editor.selection });
-                e.preventDefault();
+                e?.preventDefault();
                 return;
               }
             }
@@ -56,7 +56,7 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
           newList.children.pop();
 
           Transforms.wrapNodes(editor, newList, { at: editor.selection });
-          e.preventDefault();
+          e?.preventDefault();
         }
       }
     }
@@ -64,7 +64,7 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
 }
 
 // Handles a shift+tab press to possibly outdent a list item
-function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
+export function handleOutdent(editor: SlateEditor, e?: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     const [match] = SlateEditor.nodes(editor, {
       match: (n) => Element.isElement(n) && n.type === 'li',
@@ -86,7 +86,7 @@ function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
           // Lift the current node up one level, effectively promoting
           // it up as a list item into the parent list
           Transforms.liftNodes(editor, { at: editor.selection });
-          e.preventDefault();
+          e?.preventDefault();
         }
       }
     }

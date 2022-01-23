@@ -1,13 +1,10 @@
 import { schema } from 'data/content/model/schema';
-import { Editor, Element } from 'slate';
+import { Editor } from 'slate';
 
 export const withInlines = (editor: Editor) => {
   editor.isInline = (element) => {
     try {
-      if (Element.isElement(element)) {
-        return !schema[element.type as string].isBlock;
-      }
-      return false;
+      return !schema[element.type].isBlock;
     } catch (e) {
       return false;
     }

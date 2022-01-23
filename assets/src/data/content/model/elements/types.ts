@@ -61,7 +61,7 @@ export interface UnorderedList extends SlateElement<ListChildren> {
 type MediaChildren = Text[];
 export interface Image extends SlateElement<MediaChildren> {
   type: 'img';
-  src: string;
+  src: string | undefined;
   height?: number;
   width?: number;
   alt?: string;
@@ -71,7 +71,7 @@ export interface Image extends SlateElement<MediaChildren> {
 
 export interface YouTube extends SlateElement<MediaChildren> {
   type: 'youtube';
-  src: string;
+  src: string | undefined;
   height?: number;
   width?: number;
   alt?: string;

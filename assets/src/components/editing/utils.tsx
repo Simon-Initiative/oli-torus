@@ -1,7 +1,7 @@
 import { RichText } from 'components/activities/types';
 import { ModelElement } from 'data/content/model/elements/types';
 import { schema } from 'data/content/model/schema';
-import { Mark, Marks } from 'data/content/model/text';
+import { Mark } from 'data/content/model/text';
 import {
   Descendant,
   Editor,
@@ -73,32 +73,8 @@ export function textNodesInSelection(editor: Editor) {
 }
 
 export function isMarkActive(editor: Editor, mark: Mark): boolean {
-  return marksInPartOfSelection(editor).includes(mark);
-}
-
-// Returns a Mark[] that apply to the entire current selection
-export function marksInEntireSelection(editor: Editor) {
-  const marks: any = {};
-  const textNodes = textNodesInSelection(editor);
-  textNodes.forEach((text) => {
-    Object.keys(text)
-      .filter((k) => k in Marks)
-      .forEach((mark) => (marks[mark] ? (marks[mark] += 1) : (marks[mark] = 1)));
-  });
-  return Object.entries(marks)
-    .filter(([, v]) => v === textNodes.length)
-    .map(([k]) => k as Mark);
-}
-
-// Returns a Mark[] of all marks that exist in any part of the current selection
-export function marksInPartOfSelection(editor: Editor) {
-  const marks: any = {};
-  textNodesInSelection(editor).forEach((text) => {
-    Object.keys(text)
-      .filter((k) => k in Marks)
-      .forEach((mark) => (marks[mark] = true));
-  });
-  return Object.keys(marks);
+  const marks = Editor.marks(editor);
+  return !!marks && !!marks[mark];
 }
 
 // Extracts the text from a hierarchy of nodes
@@ -121,8 +97,7 @@ export const isTopLevel = (editor: Editor) => {
   const [...nodes] = Editor.nodes(editor, {
     match: (n) => {
       if (!Element.isElement(n)) return false;
-      const attrs = schema[n.type];
-      return attrs && attrs.isTopLevel;
+      return schema[n.type].isTopLevel;
     },
   });
   return nodes.every((node) => node[1].length === 1);
@@ -169,6 +144,13 @@ export const isActive = (editor: Editor, type: string | string[]) => {
       (typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1),
   });
   return !!match;
+};
+
+export const nearestOfType = (editor: Editor, type: string) => {
+  const [match] = Editor.nodes(editor, {
+    match: (n) => Element.isElement(n) && n.type === type,
+  });
+  return match[0];
 };
 
 export const isActiveList = (editor: Editor) => {

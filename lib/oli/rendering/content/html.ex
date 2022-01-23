@@ -88,9 +88,7 @@ defmodule Oli.Rendering.Content.Html do
     ])
   end
 
-  def img(%Context{} = context, _, e) do
-    missing_media_src(context, e)
-  end
+  def img(%Context{} = _context, _, _e), do: ""
 
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
     iframe(
@@ -100,9 +98,7 @@ defmodule Oli.Rendering.Content.Html do
     )
   end
 
-  def youtube(%Context{} = context, _, e) do
-    missing_media_src(context, e)
-  end
+  def youtube(%Context{} = _context, _, _e), do: ""
 
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(attrs, [
@@ -342,7 +338,9 @@ defmodule Oli.Rendering.Content.Html do
       "var" => "var",
       "code" => "code",
       "sub" => "sub",
-      "sup" => "sup"
+      "sup" => "sup",
+      "underline" => "underline",
+      "strikethrough" => "strikethrough"
     }
 
     marks =
@@ -358,7 +356,11 @@ defmodule Oli.Rendering.Content.Html do
     |> Enum.reduce(
       text,
       fn mark, acc ->
-        "<#{mark}>#{acc}</#{mark}>"
+        case mark do
+          "underline" -> "<span style=\"text-decoration: underline;\"}></span>"
+          "strikethrough" -> "<span style=\"text-decoration: line-through;\"}></span>"
+          _ -> "<#{mark}>#{acc}</#{mark}>"
+        end
       end
     )
   end

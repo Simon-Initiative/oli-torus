@@ -3,8 +3,12 @@ import React from 'react';
 import { Text } from 'slate';
 import { WriterContext } from './context';
 
-export type Next = () => React.ReactElement;
-type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => React.ReactElement;
+export type Next = () => React.ReactElement | null;
+type ElementWriter = (
+  ctx: WriterContext,
+  next: Next,
+  text: ModelElement,
+) => React.ReactElement | null;
 
 export interface WriterImpl {
   text: (ctx: WriterContext, text: Text) => React.ReactElement;
@@ -50,12 +54,28 @@ export function isContentItem(value: any): value is ContentItem {
 export type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
 
 export class ContentWriter {
-  render(context: WriterContext, content: ContentItem[], impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ContentItem, impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ModelElement, impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ContentTypes, impl: WriterImpl): React.ReactElement {
+  render(
+    context: WriterContext,
+    content: ContentItem[],
+    impl: WriterImpl,
+  ): React.ReactElement | null;
+  render(context: WriterContext, content: ContentItem, impl: WriterImpl): React.ReactElement | null;
+  render(
+    context: WriterContext,
+    content: ModelElement[],
+    impl: WriterImpl,
+  ): React.ReactElement | null;
+  render(
+    context: WriterContext,
+    content: ModelElement,
+    impl: WriterImpl,
+  ): React.ReactElement | null;
+  render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement | null;
+  render(
+    context: WriterContext,
+    content: ContentTypes,
+    impl: WriterImpl,
+  ): React.ReactElement | null {
     if (Array.isArray(content)) {
       return (
         <>
