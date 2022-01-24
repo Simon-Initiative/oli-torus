@@ -7,49 +7,37 @@ defmodule Oli.Application do
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    children = [
-      {Phoenix.PubSub, name: Oli.PubSub},
+    children =
+      [
+        {Phoenix.PubSub, name: Oli.PubSub},
 
-      # Start the Ecto repository
-      Oli.Repo,
+        # Start the Ecto repository
+        Oli.Repo,
 
-      # Starts telemetry
-      OliWeb.Telemetry,
+        # Starts telemetry
+        OliWeb.Telemetry,
 
-      # Start the endpoint when the application starts
-      OliWeb.Endpoint,
+        # Start the endpoint when the application starts
+        OliWeb.Endpoint,
 
-      # Start the Oban background job processor
-      {Oban, oban_config()},
+        # Start the Oban background job processor
+        {Oban, oban_config()},
 
-      # Start the Pow MnesiaCache to persist session across server restarts
-      Pow.Store.Backend.MnesiaCache,
+        # Start the Pow MnesiaCache to persist session across server restarts
+        Pow.Store.Backend.MnesiaCache,
 
-      # Start the NodeJS bridge
-      %{
-        id: NodeJS,
-        start:
-          {NodeJS, :start_link,
-           [
-             [
-               path: "#{:code.priv_dir(:oli)}/node",
-               pool_size: Application.fetch_env!(:oli, :node_js_pool_size)
-             ]
-           ]}
-      },
-
-      # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
-      %{
-        id: "cleanup_nonce_store_daily",
-        start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
-      },
-      %{
-        id: "cleanup_login_hint_store_daily",
-        start:
-          {SchedEx, :run_every,
-           [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
-      }
-    ]
+        # Starts the nonce cleanup task, call Lti_1p3.Nonces.cleanup_nonce_store/0 at 1:01 UTC every day
+        %{
+          id: "cleanup_nonce_store_daily",
+          start: {SchedEx, :run_every, [Lti_1p3.Nonces, :cleanup_nonce_store, [], "1 1 * * *"]}
+        },
+        %{
+          id: "cleanup_login_hint_store_daily",
+          start:
+            {SchedEx, :run_every,
+             [Lti_1p3.Platform.LoginHints, :cleanup_login_hint_store, [], "1 1 * * *"]}
+        }
+      ] ++ maybe_node_js_config()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -66,5 +54,28 @@ defmodule Oli.Application do
 
   defp oban_config do
     Application.fetch_env!(:oli, Oban)
+  end
+
+  # Only add in the NodeJS config if that is indeed the selected rule engine evaluator
+  defp maybe_node_js_config do
+    case Application.fetch_env!(:oli, :rule_evaluator)[:dispatcher] do
+      Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator ->
+        [
+          %{
+            id: NodeJS,
+            start:
+              {NodeJS, :start_link,
+               [
+                 [
+                   path: "#{:code.priv_dir(:oli)}/node",
+                   pool_size: Application.fetch_env!(:oli, :rule_evaluator)[:node_js_pool_size]
+                 ]
+               ]}
+          }
+        ]
+
+      _ ->
+        []
+    end
   end
 end

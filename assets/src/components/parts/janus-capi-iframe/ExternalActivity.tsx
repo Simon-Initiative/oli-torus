@@ -435,6 +435,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
               setInitStateBindToFacts(payload.initStateBindToFacts);
+              console.log({ initFactsSnapshot_EA_CC: currentStateSnapshot });
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
               setSimIsInitStatePassedOnce(false);
@@ -541,6 +542,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             formatted[variable].value,
             simLife.snapshot,
             scriptEnv,
+            true,
           );
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
@@ -717,10 +719,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           value: modifiedData?.width?.value || frameWidth,
         });
       }
-      props.onSave({
-        id,
-        responses: iFrameResponse,
-      });
       props.onResize({ id: `${id}`, settings: modifiedData });
       sendFormedResponse(
         simLife.handshake,

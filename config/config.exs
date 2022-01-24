@@ -21,7 +21,6 @@ world_universities_and_domains_json =
 default_sha = if Mix.env() == :dev, do: "DEV BUILD", else: "UNKNOWN BUILD"
 
 config :oli,
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "10")),
   load_testing_mode: :disabled,
   problematic_query_detection: :disabled,
   problematic_query_cost_threshold: 150,
@@ -53,6 +52,18 @@ config :oli,
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+
+rule_evaluator_provider =
+  case System.get_env("RULE_EVALUATOR_PROVIDER") do
+    nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
+    provider -> Module.concat([Oli, Delivery, Attempts, ActivityLifecycle, provider])
+  end
+
+config :oli, :rule_evaluator,
+  dispatcher: rule_evaluator_provider,
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
+  aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -134,6 +145,9 @@ config :lti_1p3,
       deployment: Oli.Lti_1p3.Tool.Deployment
     ]
   ]
+
+config :ex_aws,
+  region: {:system, "AWS_REGION"}
 
 # Configures Elixir's Logger
 config :logger, :console,
