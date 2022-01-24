@@ -1,3 +1,4 @@
+import { looksLikeJson } from 'adaptivity/scripting';
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
@@ -537,13 +538,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       Object.keys(filterVars).forEach((variable: any) => {
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
-        if (typeof formatted[variable].value === 'string') {
-          formatted[variable].value = templatizeText(
-            formatted[variable].value,
-            simLife.snapshot,
-            scriptEnv,
-            true,
-          );
+        const value = formatted[variable].value;
+        if (typeof value === 'string') {
+          //we don't want to evaluate a JSON string
+          const looksLikeJSON = looksLikeJson(value);
+          formatted[variable].value = looksLikeJSON
+            ? value
+            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true);
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
