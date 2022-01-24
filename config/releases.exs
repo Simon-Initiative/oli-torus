@@ -125,6 +125,18 @@ config :oli, :recaptcha,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
 
+rule_evaluator_provider =
+  case System.get_env("RULE_EVALUATOR_PROVIDER") do
+    nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
+    provider -> Module.concat([Oli, Delivery, Attempts, ActivityLifecycle, provider])
+  end
+
+config :oli, :rule_evaluator,
+  dispatcher: rule_evaluator_provider,
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
+  aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
+
 # Configure help
 # HELP_PROVIDER env var must be a string representing an existing provider module, such as "FreshdeskHelp"
 help_provider =

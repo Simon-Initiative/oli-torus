@@ -320,7 +320,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -429,6 +429,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+              console.log({ initFactsSnapshot_EA_CC: currentStateSnapshot });
 
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
@@ -541,6 +542,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             formatted[variable].value,
             simLife.snapshot,
             scriptEnv,
+            true,
           );
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
@@ -717,10 +719,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           value: modifiedData?.width?.value || frameWidth,
         });
       }
-      props.onSave({
-        id,
-        responses: iFrameResponse,
-      });
       props.onResize({ id: `${id}`, settings: modifiedData });
       sendFormedResponse(
         simLife.handshake,
