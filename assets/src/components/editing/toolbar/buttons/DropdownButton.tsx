@@ -3,6 +3,7 @@ import { ButtonContent } from 'components/editing/toolbar/buttons/shared';
 import { useToolbar } from 'components/editing/toolbar/useToolbar';
 import React, { PropsWithChildren } from 'react';
 import { Popover } from 'react-tiny-popover';
+import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 export const DropdownButton = (props: PropsWithChildren<Props>) => {
   const thisDropdown = React.useRef<HTMLButtonElement | null>(null);
   const toolbar = useToolbar();
+  const editor = useSlate();
 
   const isOpen = React.useMemo(
     () => !!thisDropdown.current && toolbar.submenu?.current === thisDropdown.current,
@@ -42,7 +44,11 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       content={content}
     >
       <button
-        className={classNames(['editorToolbar__button', 'editorToolbar__button--dropdown'])}
+        className={classNames([
+          'editorToolbar__button',
+          'editorToolbar__button--dropdown',
+          props.description.active?.(editor) && 'active',
+        ])}
         onClick={onClick}
       >
         <ButtonContent {...props} />

@@ -1,28 +1,20 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commands';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import * as Persistence from 'data/persistence/resource';
-import React, { useEffect } from 'react';
-import {
-  isInternalLink,
-  LinkablePages,
-  toInternalLink,
-  translateDeliveryToAuthoring,
-} from './utils';
+import React from 'react';
+import { isInternalLink, LinkablePages, translateDeliveryToAuthoring } from './utils';
 
 type Props = {
   setEditLink: React.Dispatch<React.SetStateAction<boolean>>;
   href: string;
   pages: LinkablePages;
-  setPages: React.Dispatch<React.SetStateAction<LinkablePages>>;
   commandContext: CommandContext;
-
   selectedPage: Persistence.Page | null;
-  setSelectedPage: React.Dispatch<React.SetStateAction<Persistence.Page | null>>;
 };
 export const DisplayLink = (props: Props) => {
-  const { href, pages, setPages, selectedPage, setSelectedPage, setEditLink, commandContext } =
-    props;
+  const { href, pages, selectedPage, setEditLink, commandContext } = props;
 
   const onCopy = (href: string) => {
     navigator.clipboard.writeText(
@@ -43,77 +35,42 @@ export const DisplayLink = (props: Props) => {
     );
   };
 
-  const fetchPages = () => {
-    setPages({ type: 'Waiting' });
+  if (pages.type === 'success') {
+    return (
+      <>
+        <Toolbar.Group>
+          <CommandButton
+            description={createButtonCommandDesc({
+              icon: '',
+              description: isInternalLink(href)
+                ? selectedPage
+                  ? selectedPage.title
+                  : 'Link'
+                : href,
+              execute: () => onVisit(href),
+            })}
+          />
+        </Toolbar.Group>
 
-    // If our current href is a page link, parse out the slug
-    // so we can send that along as a query param to our request.
-    // The server will align this possibly out of date slug with the
-    // current ones for us.
-    const slug = href.startsWith('/authoring/project/')
-      ? href.substr(href.lastIndexOf('/') + 1)
-      : undefined;
-
-    Persistence.pages(commandContext.projectSlug, slug)
-      .then((result) => {
-        if (result.type === 'success') {
-          // See if our current href is an actual page link
-          const foundItem = result.pages.find((p) => toInternalLink(p) === href);
-
-          // If it is, init the state appropriately
-          if (foundItem !== undefined) {
-            setSelectedPage(foundItem as any);
-          } else {
-            setSelectedPage(result.pages[0] as any);
-          }
-
-          setPages(result);
-        }
-      })
-      .catch((e) => setPages({ type: 'Uninitialized' }));
-  };
-
-  const linkCommands = [
-    [
-      createButtonCommandDesc({
-        icon: '',
-        description: isInternalLink(href) ? (selectedPage ? selectedPage.title : 'Link') : href,
-        execute: () => onVisit(href),
-      }),
-    ],
-    [
-      createButtonCommandDesc({
-        icon: 'content_copy',
-        description: 'Copy link',
-        execute: () => onCopy(href),
-      }),
-      createButtonCommandDesc({
-        icon: 'edit',
-        description: 'Edit link',
-        execute: () => {
-          setEditLink(true);
-        },
-      }),
-    ],
-  ];
-
-  const loadingCommand = [
-    [createButtonCommandDesc({ icon: '', description: 'Loading...', execute: fetchPages })],
-  ];
-
-  useEffect(() => {
-    if (pages.type === 'Uninitialized') {
-      fetchPages();
-    }
-  });
-
-  return (
-    <div className="hovering-toolbar">
-      <div className="btn-group btn-group-sm" role="group">
-        <Toolbar context={commandContext}>
-          {/* {pages.type === 'success' ? linkCommands : loadingCommand} */}
-        </Toolbar>
-      </div>
-    </div>
-  );
+        <Toolbar.Group>
+          <CommandButton
+            description={createButtonCommandDesc({
+              icon: 'content_copy',
+              description: 'Copy link',
+              execute: () => onCopy(href),
+            })}
+          />
+          <CommandButton
+            description={createButtonCommandDesc({
+              icon: 'edit',
+              description: 'Edit link',
+              execute: () => {
+                setEditLink(true);
+              },
+            })}
+          />
+        </Toolbar.Group>
+      </>
+    );
+  }
 };

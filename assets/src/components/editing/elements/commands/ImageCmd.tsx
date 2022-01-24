@@ -8,8 +8,8 @@ import { Command, CommandDesc } from 'components/editing/elements/commands/inter
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { image } from 'data/content/model/elements/factories';
 
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+const dismiss = () => window.oliDispatch(modalActions.dismiss());
+const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function selectImage(
   projectSlug: string,

@@ -1,7 +1,7 @@
 import { BoundingRect, Point, Handle } from 'components/misc/resizable/types';
 import { MousePosition } from 'components/misc/resizable/useMousePosition';
 
-const HANDLE_CENTER_IN_PIXELS = 4;
+const HANDLE_CENTER_IN_PIXELS = 8;
 const offsetByHandleSize = (styles: Point) => ({
   ...styles,
   ...{
@@ -18,9 +18,9 @@ export const cursor = (position: 'border' | Handle): { [k: string]: string } => 
 };
 
 const positions = (rect: BoundingRect, position: 'border' | Handle): Point | BoundingRect => {
-  if (position === 'border') return rect;
-  if (position === 'e') return { left: rect.left + rect.width, top: rect.top + rect.height / 2 };
-  if (position === 's') return { left: rect.left + rect.width / 2, top: rect.top + rect.height };
+  if (position === 'border') return { top: 0, left: 0, width: rect.width, height: rect.height };
+  if (position === 'e') return { left: rect.width, top: rect.height / 2 };
+  if (position === 's') return { left: rect.width / 2, top: rect.height };
   throw new Error('Unexpected position in `positions`, ' + position);
 };
 
@@ -40,24 +40,24 @@ export const offset = (element: HTMLElement): BoundingRect => ({
   height: element.offsetHeight,
 });
 
-const proportionally = (initial: BoundingRect, width: number, height: number) => {
-  console.log('initial wh, wh', initial.width, initial.height, width, height);
+const proportionally = (initial: BoundingRect, targetWidth: number, targetHeight: number) => {
+  // aspectRatio
+  // === initial.width / initial.height
+  // === scaledWidth / scaledHeight
+  // Get both scaled values, and only use one.
+  const scaledHeight = initial.height / (initial.width / targetWidth || 1);
+  const scaledWidth = initial.width / (initial.height / targetHeight || 1);
 
-  // initial.width / initial.height == scaledWidth / scaledHeight
-  const scaledHeight = initial.height / (initial.width / width || 1);
-  const scaledWidth = initial.width / (initial.height / height || 1);
-
-  console.log('new width and height', scaledWidth, scaledHeight);
-
-  // Constrain resizing to the smaller value of boundary width and height
-  if (scaledHeight < height)
+  // If changing the height, use the scaledWidth to
+  // maintain aspect ratio. Otherwise, use scaledHeight.
+  if (targetHeight !== initial.height)
     return {
       width: scaledWidth,
-      height: height,
+      height: targetHeight,
     };
 
   return {
-    width,
+    width: targetWidth,
     height: scaledHeight,
   };
 };
@@ -66,12 +66,6 @@ const constrained = (resized: BoundingRect) => {
   const MIN_SIZE = 10;
   const atLeast = (a: number, min: number) => (a < min ? min : a);
 
-  console.log('constrained', {
-    ...resized,
-    width: atLeast(resized.width, MIN_SIZE),
-    height: atLeast(resized.height, MIN_SIZE),
-  });
-
   return {
     ...resized,
     width: atLeast(resized.width, MIN_SIZE),
@@ -79,45 +73,33 @@ const constrained = (resized: BoundingRect) => {
   };
 };
 
-const boundingRectHelper = (
+const _rectFromCursor = (
   initial: DOMRect,
-  mouse: MousePosition,
-  position: Handle,
+  cursor: MousePosition,
+  handle?: Handle,
 ): BoundingRect => {
-  const initialBottom = initial.bottom + window.scrollY;
-  const initialRight = initial.right + window.scrollX;
-  const dh = mouse.y - initialBottom; // > 0: larger, < 0: smaller
-  const dw = mouse.x - initialRight; // > 0: larger, < 0: smaller
+  const dh = cursor.y - initial.bottom; // > 0: larger, < 0: smaller
+  const dw = cursor.x - initial.right; // > 0: larger, < 0: smaller
 
-  if (position === 'e') {
-    const proportional = proportionally(initial, initial.width + dw, initial.height);
+  // East: only look at dw
+  // South: only look at dh
+  const proportional =
+    handle === 'e'
+      ? proportionally(initial, initial.width + dw, initial.height)
+      : handle === 's'
+      ? proportionally(initial, initial.width, initial.height + dh)
+      : initial;
 
-    console.log('proportional', proportional);
-
-    return {
-      left: initial.left + window.scrollX,
-      top: initial.top + window.scrollY,
-      width: proportional.width,
-      height: proportional.height,
-    };
-  }
-
-  if (position === 's') {
-    const proportional = proportionally(initial, initial.width, initial.height + dh);
-
-    return {
-      left: initial.left + window.scrollX,
-      top: initial.top + window.scrollY,
-      width: proportional.width,
-      height: proportional.height,
-    };
-  }
-
-  throw new Error('unhandled drag handle in Image Editor boundingRect: ' + position);
+  return {
+    left: initial.left,
+    top: initial.top,
+    width: proportional.width,
+    height: proportional.height,
+  };
 };
 
-export const boundingRect = (
+export const rectFromCursor = (
   initial: DOMRect,
-  mouse: MousePosition,
-  dragHandle: Handle,
-): BoundingRect => constrained(boundingRectHelper(initial, mouse, dragHandle));
+  cursor: MousePosition,
+  handle?: Handle,
+): BoundingRect => constrained(_rectFromCursor(initial, cursor, handle));

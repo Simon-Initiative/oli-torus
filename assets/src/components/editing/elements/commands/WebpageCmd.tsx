@@ -7,8 +7,8 @@ import { useState } from 'react';
 import { webpage } from 'data/content/model/elements/factories';
 import * as Settings from 'components/editing/elements/settings/Settings';
 
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+const dismiss = () => window.oliDispatch(modalActions.dismiss());
+const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export type WebpageCreationProps = {
   onChange: (src: string) => void;

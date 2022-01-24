@@ -1,4 +1,5 @@
 import * as ContentModel from 'data/content/model/elements/types';
+import React from 'react';
 import { ReactEditor } from 'slate-react';
 import { Editor, Transforms } from 'slate';
 
@@ -25,3 +26,12 @@ export function updateModel<T extends ContentModel.ModelElement>(
 export function getEditMode(editor: ReactEditor) {
   return !ReactEditor.isReadOnly(editor);
 }
+
+// Slate bug as of 0.72.0. Prevents selection at the edges
+// of an inline element.
+// https://bugs.chromium.org/p/chromium/issues/detail?id=1249405
+export const InlineChromiumBugfix = () => (
+  <span contentEditable={false} style={{ fontSize: 0 }}>
+    ${String.fromCodePoint(160) /* Non-breaking space */}
+  </span>
+);

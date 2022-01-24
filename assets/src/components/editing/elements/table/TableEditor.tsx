@@ -17,9 +17,7 @@ export const TableEditor = (props: Props) => {
       <table>
         <tbody>{props.children}</tbody>
       </table>
-      <div contentEditable={false}>
-        <CaptionEditor onEdit={(caption: string) => onEdit({ caption })} model={props.model} />
-      </div>
+      <CaptionEditor onEdit={(caption: string) => onEdit({ caption })} model={props.model} />
     </div>
   );
 };

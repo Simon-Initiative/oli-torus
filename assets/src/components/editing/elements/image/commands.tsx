@@ -80,8 +80,8 @@ export const initCommands = (
       description: () => 'Alt text',
       command: {
         execute: (_context, _editor, _params) => {
-          const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-          const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+          const dismiss = () => window.oliDispatch(modalActions.dismiss());
+          const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
           display(
             <ImageModal

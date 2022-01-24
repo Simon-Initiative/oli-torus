@@ -1,29 +1,24 @@
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { DisplayLink } from 'components/editing/elements/link/DisplayLink';
 import { EditLink } from 'components/editing/elements/link/EditLink';
+import { Initialization } from 'components/editing/elements/link/Initialization';
 import { LinkablePages } from 'components/editing/elements/link/utils';
-import { updateModel } from 'components/editing/elements/utils';
+import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import { nearestOfType } from 'components/editing/utils';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import * as ContentModel from 'data/content/model/elements/types';
-import { centeredAbove, alignedLeftBelow } from 'data/content/utils';
+import { alignedLeftBelow } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
-import { ContentLocation, PopoverState } from 'react-tiny-popover';
-import { Editor, Range } from 'slate';
-import { ReactEditor, useFocused, useSelected } from 'slate-react';
-
-const InlineChromiumBugfix = () => (
-  <span contentEditable={false} style={{ fontSize: 0 }}>
-    ${String.fromCodePoint(160) /* Non-breaking space */}
-  </span>
-);
+import { Range } from 'slate';
+import { useFocused, useSelected, useSlate } from 'slate-react';
 
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
-
 export const LinkEditor = (props: Props) => {
   const focused = useFocused();
   const selected = useSelected();
+  const editor = useSlate();
+  const ref = React.useRef<HTMLSpanElement | null>(null);
 
   const [editLink, setEditLink] = useState(false);
 
@@ -36,75 +31,72 @@ export const LinkEditor = (props: Props) => {
 
   const isEditButton = editLink && selectedPage && pages.type === 'success';
 
-  const { attributes, children, editor, model } = props;
-
   const onEdit = (href: string) => {
-    if (href !== '' && href !== model.href) {
-      updateModel<ContentModel.Hyperlink>(editor, model, { href });
-    }
+    if (href !== '' && href !== props.model.href)
+      updateModel<ContentModel.Hyperlink>(editor, props.model, { href });
     setEditLink(false);
   };
 
-  const toolbarYOffset = isEditButton ? 132 : 56;
   const isToolbarOpen =
     (focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)) || editLink;
 
-  const centerPopover = React.useCallback(
-    (_s: PopoverState): ContentLocation => {
-      if (!editor.selection) return { top: -5000, left: -5000 };
-      const node = nearestOfType(editor, 'a');
-      console.log(node);
-      const { top, left } = ReactEditor.toDOMNode(editor, node).getBoundingClientRect();
-      return {
-        top: top + window.scrollY - 74,
-        left: left + window.scrollX,
-      };
-    },
-    [editor],
-  );
-
   return (
-    <HoverContainer
-      isOpen={() => isToolbarOpen}
-      target={
-        <span {...attributes}>
+    <span ref={ref}>
+      <InlineChromiumBugfix />
+      <HoverContainer
+        isOpen={() => isToolbarOpen}
+        // parentNode={ref.current || undefined}
+        contentLocation={alignedLeftBelow}
+        target={
           <a
+            {...props.attributes}
             id={props.model.id}
             href="#"
             className="inline-link"
             onClick={() => setEditLink(false)}
           >
-            <InlineChromiumBugfix />
-            {children}
-            <InlineChromiumBugfix />
+            {props.children}
           </a>
-        </span>
-      }
-      contentLocation={alignedLeftBelow}
-    >
-      <>
-        {isEditButton && (
-          <EditLink
-            setEditLink={setEditLink}
-            href={model.href}
-            onEdit={onEdit}
-            pages={pages}
-            selectedPage={selectedPage}
-            setSelectedPage={setSelectedPage}
-          />
-        )}
-        {!isEditButton && (
-          <DisplayLink
-            setEditLink={setEditLink}
-            commandContext={props.commandContext}
-            href={model.href}
-            setPages={setPages}
-            pages={pages}
-            selectedPage={selectedPage}
-            setSelectedPage={setSelectedPage}
-          />
-        )}
-      </>
-    </HoverContainer>
+        }
+      >
+        <Toolbar context={props.commandContext}>
+          {/* {isEditButton ? ( */}
+          {pages.type === 'success' && selectedPage ? (
+            <EditLink
+              setEditLink={setEditLink}
+              href={props.model.href}
+              onEdit={onEdit}
+              pages={pages}
+              selectedPage={selectedPage}
+              setSelectedPage={setSelectedPage}
+              model={props.model}
+            />
+          ) : (
+            <Initialization
+              href={props.model.href}
+              pages={pages}
+              setSelectedPage={setSelectedPage}
+              setPages={setPages}
+              commandContext={props.commandContext}
+              setEditLink={setEditLink}
+            />
+          )}
+
+          {/* )
+          : (
+            <DisplayLink
+              commandContext={props.commandContext}
+              href={props.model.href}
+              setPages={setPages}
+              pages={pages}
+              selectedPage={selectedPage}
+              setSelectedPage={setSelectedPage}
+            />
+          )
+          } */}
+        </Toolbar>
+      </HoverContainer>
+      <InlineChromiumBugfix />
+    </span>
   );
 };

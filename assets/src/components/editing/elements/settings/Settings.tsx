@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Popover } from 'react-tiny-popover';
-import { ReactEditor } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { Transforms, Editor, Location } from 'slate';
 import { cursorAtEndOfInput, cursorAtBeginningOfInput } from 'components/editing/utils';
 import { ModelElement } from 'data/content/model/elements/types';
+import { getEditMode } from 'components/editing/elements/utils';
 
 // Reusable components for settings UIs
 
@@ -81,12 +82,12 @@ interface InputProps {
   value: string | undefined;
   onChange: (s: string) => void;
   placeholder: string;
-  editor: Editor;
   model: ModelElement;
-  editMode: boolean;
 }
 export const Input = (props: InputProps) => {
-  const { onChange, placeholder, editor, model, editMode } = props;
+  const { onChange, placeholder, model } = props;
+  const editor = useSlate();
+  const editMode = getEditMode(editor);
   const [value, setValue] = useState(props.value);
   const ref = useRef<HTMLInputElement | null>(null);
 
@@ -105,9 +106,8 @@ export const Input = (props: InputProps) => {
       onBlur={(_e) => ReactEditor.deselect(editor)}
       onKeyDown={(e) => {
         const input = ref.current;
-        if (!input) {
-          return;
-        }
+        if (!input) return;
+
         const changeSelection = (path: Location) => {
           ReactEditor.focus(editor);
           Transforms.select(editor, path);

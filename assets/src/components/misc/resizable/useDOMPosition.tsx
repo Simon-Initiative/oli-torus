@@ -7,20 +7,28 @@ export const useDOMPosition = (): [DOMRect | undefined, (elem: HTMLElement | nul
 
   const updateRect = () => setRect(elem?.getBoundingClientRect());
 
+  const resizeObserver = new ResizeObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.contentBoxSize) {
+        updateRect();
+      }
+    });
+  });
+
   const ref = React.useCallback((elem: HTMLElement | null) => {
-    console.log('elem changed', elem);
     if (!elem) return;
     setElem(elem);
   }, []);
 
   React.useEffect(() => {
-    console.log('updating rect with', elem?.getBoundingClientRect());
     updateRect();
 
+    elem && resizeObserver.observe(elem);
     window.addEventListener('resize', updateRect);
     window.addEventListener('scroll', updateRect);
 
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener('resize', updateRect);
       window.removeEventListener('scroll', updateRect);
     };

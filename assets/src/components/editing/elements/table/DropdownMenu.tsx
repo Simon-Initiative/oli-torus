@@ -16,7 +16,7 @@ export const DropdownMenu = (props: Props) => {
   // There has to be a better way to do this.
   useEffect(() => {
     if (ref !== null && ref.current !== null) {
-      ((window as any).$('.dropdown-toggle') as any).dropdown();
+      (window.$('.dropdown-toggle') as any).dropdown();
     }
   });
 

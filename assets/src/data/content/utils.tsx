@@ -71,25 +71,17 @@ export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset 
   };
 };
 
-export const alignedLeftAbove = ({ childRect }: PopoverState, yOffset = 74) => {
+export const alignedLeftAbove = ({ childRect }: PopoverState) => {
   return {
-    top: childRect.top + window.scrollY - yOffset,
-    left: childRect.left + window.scrollX,
+    top: window.scrollY - childRect.height - 10,
+    left: window.scrollX,
   };
 };
 
-export const alignedLeftBelow = ({ childRect }: PopoverState, yOffset = 0) => {
+export const alignedLeftBelow = ({ childRect }: PopoverState) => {
   return {
-    top: childRect.bottom + window.scrollY + yOffset,
-    left: childRect.left + window.scrollX,
-  };
-};
-
-export const belowParent = ({ parentRect, popoverRect }: PopoverState, yOffset = 0) => {
-  console.log(parentRect, popoverRect);
-  return {
-    top: parentRect.bottom + window.scrollY + yOffset - popoverRect.height,
-    left: parentRect.left + window.scrollX - popoverRect.width,
+    top: window.scrollY + childRect.height + 10,
+    left: window.scrollX,
   };
 };
 

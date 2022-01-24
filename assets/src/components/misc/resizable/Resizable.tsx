@@ -1,34 +1,28 @@
 import { BoundingRect, Handle } from 'components/misc/resizable/types';
 import { useDOMPosition } from 'components/misc/resizable/useDOMPosition';
 import { useMousePosition } from 'components/misc/resizable/useMousePosition';
-import { boundingRect, resizeHandleStyles } from 'components/misc/resizable/utils';
-import React, { PropsWithChildren, ReactElement, useEffect, useState } from 'react';
+import { rectFromCursor, resizeHandleStyles } from 'components/misc/resizable/utils';
+import React, { PropsWithChildren, useEffect, useState } from 'react';
 
 interface Props {
-  onResize: (boundingRect: BoundingRect) => void;
+  show: boolean;
+  onResize: (rect: BoundingRect) => void;
 }
 
-export const Resizable = (props: PropsWithChildren<Props>): ReactElement => {
+export const Resizable = (props: PropsWithChildren<Props>) => {
   const [handle, setHandle] = useState<Handle | undefined>(undefined);
-  const mousePosition = useMousePosition();
+  const cursor = useMousePosition();
   const [rect, ref] = useDOMPosition();
 
-  console.log('rect', rect);
+  useEffect(() => {
+    const onMouseUp = (_e: MouseEvent) => setHandle(undefined);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => window.removeEventListener('mouseup', onMouseUp);
+  }, []);
 
   useEffect(() => {
-    const onMouseUp = (e: MouseEvent) => {
-      if (rect && handle)
-        props.onResize(boundingRect(rect, { x: e.clientX, y: e.clientY }, handle));
-      // Reset the active handle to nothing
-      setHandle(undefined);
-    };
-
-    window.addEventListener('mouseup', onMouseUp);
-
-    return () => window.removeEventListener('mouseup', onMouseUp);
-  }, [handle, rect]);
-
-  // console.log('element', element, element.getBoundingClientRect());
+    if (rect && handle && cursor) props.onResize(rectFromCursor(rect, cursor, handle));
+  }, [rect, handle, cursor]);
 
   const onMouseDown = React.useCallback(
     (position: Handle) => (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -39,10 +33,10 @@ export const Resizable = (props: PropsWithChildren<Props>): ReactElement => {
   );
 
   const handleStyles = (thisHandle: Handle | 'border') => {
-    const currentlyResizing = handle && mousePosition;
+    const currentlyResizing = handle && cursor;
     if (!rect) return { top: -5000, left: -5000, width: 0, height: 0 };
-    if (!currentlyResizing) return resizeHandleStyles(rect, thisHandle);
-    return resizeHandleStyles(boundingRect(rect, mousePosition, handle), thisHandle);
+    if (!cursor) return resizeHandleStyles(rect, thisHandle);
+    return resizeHandleStyles(rectFromCursor(rect, cursor, handle), thisHandle);
   };
 
   const resizeHandle = (handle: Handle) => (
@@ -54,11 +48,15 @@ export const Resizable = (props: PropsWithChildren<Props>): ReactElement => {
   );
 
   return (
-    <>
-      <div ref={ref}>{props.children}</div>
-      <div className="resize-selection-box-border" style={handleStyles('border')}></div>
-      {resizeHandle('s')}
-      {resizeHandle('e')}
-    </>
+    <div ref={ref} style={{ position: 'relative', width: 'fit-content' }}>
+      {props.children}
+      {props.show && (
+        <>
+          <div className="resize-selection-box-border" style={handleStyles('border')} />
+          {resizeHandle('s')}
+          {resizeHandle('e')}
+        </>
+      )}
+    </div>
   );
 };

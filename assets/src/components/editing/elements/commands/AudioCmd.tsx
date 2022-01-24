@@ -9,8 +9,8 @@ import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { audio } from 'data/content/model/elements/factories';
 
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+const dismiss = () => window.oliDispatch(modalActions.dismiss());
+const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function selectAudio(
   projectSlug: string,

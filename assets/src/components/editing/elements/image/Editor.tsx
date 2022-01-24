@@ -35,14 +35,14 @@ export const ImageEditor = (props: Props) => {
         isOpen={isSelected}
         contentLocation={alignedLeftAbove}
         target={
-          <Resizable onResize={({ width, height }) => onEdit({ width, height })}>
-            <img
-              style={{ margin: '0 auto', display: 'block' }}
-              width={props.model.width}
-              height={props.model.height}
-              src={props.model.src}
-            />
-          </Resizable>
+          <div style={{ margin: '0 auto', width: 'fit-content' }}>
+            <Resizable
+              show={focused && selected}
+              onResize={({ width, height }) => onEdit({ width, height })}
+            >
+              <img width={props.model.width} height={props.model.height} src={props.model.src} />
+            </Resizable>
+          </div>
         }
       >
         <Toolbar context={props.commandContext}>

@@ -15,7 +15,7 @@ type Props = {
   children: JSX.Element;
   contentLocation?: ContentLocationGetter;
   target?: JSX.Element;
-  parentRef?: React.RefObject<HTMLElement>;
+  parentNode?: HTMLElement;
 };
 export const HoverContainer = (props: Props) => {
   const arrowSize = 8;
@@ -55,8 +55,9 @@ export const HoverContainer = (props: Props) => {
   const centerPopover = useCallback(
     (_s: PopoverState): ContentLocation => {
       if (!editor.selection || mousedown) return position;
-      const node = [...Editor.nodes(editor)][1][0];
-      const { top, left } = ReactEditor.toDOMNode(editor, node).getBoundingClientRect();
+      const parentNode =
+        props.parentNode || ReactEditor.toDOMNode(editor, [...Editor.nodes(editor)][1][0]);
+      const { top, left } = parentNode.getBoundingClientRect();
       const newPosition = {
         top: top + window.scrollY - 74,
         left: left + window.scrollX,
@@ -64,7 +65,7 @@ export const HoverContainer = (props: Props) => {
       setPosition(newPosition);
       return newPosition;
     },
-    [mousedown, position],
+    [mousedown, position, props.parentNode],
   );
 
   if (!props.isOpen(editor)) return target;
@@ -74,7 +75,7 @@ export const HoverContainer = (props: Props) => {
       isOpen={props.isOpen(editor)}
       align={'start'}
       padding={5}
-      parentElement={props.parentRef?.current || undefined}
+      parentElement={props.parentNode}
       content={({ childRect, popoverRect }) => {
         if (!props.showArrow) return content;
         return (

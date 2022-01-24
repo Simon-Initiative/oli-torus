@@ -4,15 +4,11 @@ import {
   createToggleFormatCommand as format,
   switchType,
 } from 'components/editing/elements/commands/commands';
-import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { commandDesc as linkCmd } from 'components/editing/elements/commands/LinkCmd';
 import { ulCommandDesc as ulCmd } from 'components/editing/elements/commands/ListsCmd';
-import { commandDesc as titleCmd } from 'components/editing/elements/commands/TitleCmd';
-import { isActive, isTopLevel } from 'components/editing/utils';
+import { isActive } from 'components/editing/utils';
 import { SlateEditor } from 'data/content/model/slate';
-import { type } from 'jquery';
-import React from 'react';
-import { Editor, Element, Transforms } from 'slate';
 import { audioCmdDescBuilder } from 'components/editing/elements/commands/AudioCmd';
 import { imgCmdDescBuilder } from 'components/editing/elements/commands/ImageCmd';
 import { tableCommandDesc } from 'components/editing/elements/commands/table/TableCmd';
@@ -57,13 +53,6 @@ const listDesc = createButtonCommandDesc({
   execute: (_ctx, editor) => switchType(editor, 'ul'),
 });
 
-const quoteDesc = createButtonCommandDesc({
-  icon: 'format_quote',
-  description: 'Quote',
-  active: (editor) => isActive(editor, 'blockquote'),
-  execute: (_ctx, editor) => switchType(editor, 'blockquote'),
-});
-
 const headingDesc = createButtonCommandDesc({
   icon: 'title',
   description: 'Heading',
@@ -75,28 +64,26 @@ const underLineDesc = format({
   icon: 'format_underlined',
   mark: 'underline',
   description: 'Underline',
-  precondition: (_e) => true,
 });
 
 const strikethroughDesc = format({
   icon: 'strikethrough_s',
   mark: 'strikethrough',
   description: 'Strikethrough',
-  precondition: (_e) => true,
 });
 
 const subscriptDesc = format({
   icon: 'subscript',
   mark: 'sub',
   description: 'Subscript',
-  precondition: (_e) => true,
+  precondition: (editor) => !isActive(editor, ['code']),
 });
 
 const superscriptDesc = format({
   icon: 'superscript',
   mark: 'sup',
   description: 'Superscript',
-  precondition: (_e) => true,
+  precondition: (editor) => !isActive(editor, ['code']),
 });
 
 const inlineCodeDesc = format({
@@ -130,10 +117,10 @@ export const formattingDropdownDesc: CommandDesc = {
   icon: () => 'expand_more',
   description: () => 'More',
   command: {
-    execute: (_context, editor, action) => {},
+    execute: (_context, _editor, _action) => {},
     precondition: (_editor) => true,
   },
-  active: (_e) => false,
+  active: (e) => additionalFormattingOptions.some((opt) => opt.active?.(e)),
 };
 
 export const activeBlockType = (editor: SlateEditor) =>
