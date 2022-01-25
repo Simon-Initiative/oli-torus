@@ -196,6 +196,15 @@ config :ex_json_schema,
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
 
+# Configure libcluster for horizontal scaling
+# Take into account that different strategies could use different config options
+config :libcluster,
+  topologies: [
+    oli: [
+      strategy: Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip")])
+    ]
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
