@@ -17,11 +17,11 @@ import {
   addDescs,
 } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { showTextEditorToolbar } from 'components/editing/toolbar/utils';
+import { getHighestTopLevel, safeToDOMNode } from 'components/editing/utils';
 import { CodeLanguages } from 'data/content/model/other';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
-import { useSlate } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 
 interface Props {
   context: CommandContext;
@@ -78,11 +78,12 @@ export const EditorToolbar = (props: Props) => {
                 icon: '',
                 description: language,
                 active: (editor) => {
-                  const [topLevel, at] = [...Editor.nodes(editor)][1];
-                  if (Element.isElement(topLevel) && topLevel.type === 'code') {
-                    return topLevel.language === language;
-                  }
-                  return false;
+                  const topLevel = getHighestTopLevel(editor).valueOr<any>(undefined);
+                  return (
+                    Element.isElement(topLevel) &&
+                    topLevel.type === 'code' &&
+                    topLevel.language === language
+                  );
                 },
                 execute: (_ctx, editor) => {
                   const [, at] = [...Editor.nodes(editor)][1];
@@ -132,13 +133,36 @@ export const EditorToolbar = (props: Props) => {
 
   /* {Filter for precondition} */
   return (
-    <HoverContainer isOpen={showTextEditorToolbar}>
-      <Toolbar context={props.context}>
-        {blockToggling}
-        {blockSettings?.()}
-        {formatting}
-        {insertMenu}
-      </Toolbar>
-    </HoverContainer>
+    <HoverContainer
+      isOpen={isOpen}
+      position="top"
+      align="start"
+      relativeTo={() =>
+        getHighestTopLevel(editor).caseOf({
+          just: (n) => safeToDOMNode(editor, n).valueOr(undefined as any),
+          nothing: () => undefined,
+        })
+      }
+      content={
+        <Toolbar context={props.context}>
+          {blockToggling}
+          {blockSettings?.()}
+          {formatting}
+          {insertMenu}
+        </Toolbar>
+      }
+    />
   );
 };
+
+function isOpen(editor: Editor): boolean {
+  const { selection } = editor;
+
+  return (
+    !!selection &&
+    ReactEditor.isFocused(editor) &&
+    [...Editor.nodes(editor)]
+      .map((entry) => entry[0])
+      .every((node) => !(Element.isElement(node) && editor.isVoid(node)))
+  );
+}

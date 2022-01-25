@@ -8,18 +8,6 @@ import {
 } from 'components/editing/utils';
 import { ToolbarItem } from 'components/editing/elements/commands/interfaces';
 
-export function showTextEditorToolbar(editor: Editor): boolean {
-  const { selection } = editor;
-
-  return (
-    !!selection &&
-    ReactEditor.isFocused(editor) &&
-    [...Editor.nodes(editor)]
-      .map((entry) => entry[0])
-      .every((node) => (Element.isElement(node) ? !editor.isVoid(node) : true))
-  );
-}
-
 export function inEmptyLine(editor: Editor) {
   const { selection } = editor;
   if (!selection) return false;

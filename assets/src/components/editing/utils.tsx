@@ -13,6 +13,7 @@ import {
   RemoveNodeOperation,
   Text,
 } from 'slate';
+import { ReactEditor } from 'slate-react';
 import { Maybe } from 'tsmonad';
 
 // Native input selection -- not slate
@@ -104,24 +105,21 @@ export const isTopLevel = (editor: Editor) => {
 };
 
 export const getHighestTopLevel = (editor: Editor): Maybe<Node> => {
-  if (!editor.selection) {
-    return Maybe.nothing();
-  }
-  let [node, path] = Editor.node(editor, editor.selection);
+  if (!editor.selection) return Maybe.nothing();
 
-  // eslint-disable-next-line
-  while (true) {
-    // TopLevel node is selected, only Editor node as parent
-    if (path.length === 1) {
-      return Maybe.maybe(node);
-    }
-    // Editor is selected
-    if (path.length === 0) {
-      return Maybe.nothing();
-    }
-    const [nextNode, nextPath] = Editor.parent(editor, path);
-    path = nextPath;
-    node = nextNode;
+  const selectedNodes = [...Editor.nodes(editor)];
+  if (selectedNodes.length < 2) return Maybe.nothing();
+  // selectedNodes[0] == Editor, selectedNodes[1] == highestTopLevel
+  return Maybe.just(selectedNodes[1][0]);
+};
+
+export const safeToDOMNode = (editor: Editor, node: Node): Maybe<HTMLElement> => {
+  try {
+    return Maybe.just(ReactEditor.toDOMNode(editor, node));
+  } catch (_) {
+    // This can fail if the editor hasn't been persisted with a newly added node yet,
+    // even if the element is "in" the DOM.
+    return Maybe.nothing();
   }
 };
 
@@ -131,9 +129,7 @@ export const getNearestBlock = (editor: Editor): Maybe<ModelElement> => {
   const block: NodeEntry<ModelElement> | undefined = Editor.above(editor, {
     match: (n) => Editor.isBlock(editor, n),
   });
-  if (block) {
-    return Maybe.just(block[0]);
-  }
+  if (block) return Maybe.just(block[0]);
   return Maybe.nothing();
 };
 

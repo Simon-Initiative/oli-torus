@@ -7,66 +7,39 @@ import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/u
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import * as ContentModel from 'data/content/model/elements/types';
-import { alignedLeftBelow } from 'data/content/utils';
+import { useCollapsedSelection } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
-import { Range } from 'slate';
-import { useFocused, useSelected, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {
-  const focused = useFocused();
-  const selected = useSelected();
   const editor = useSlate();
-  const ref = React.useRef<HTMLSpanElement | null>(null);
+  const collapsedSelection = useCollapsedSelection();
+  const isOpen = React.useCallback(() => collapsedSelection, [collapsedSelection]);
 
-  const [editLink, setEditLink] = useState(false);
+  const [linkablePages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
 
-  // All of the pages that we have available in the course
-  // for allowing links to
-  const [pages, setPages] = useState<LinkablePages>({ type: 'Uninitialized' });
-
-  // The selected page, when in link from page mode
   const [selectedPage, setSelectedPage] = useState<Persistence.Page | null>(null);
-
-  const isEditButton = editLink && selectedPage && pages.type === 'success';
 
   const onEdit = (href: string) => {
     if (href !== '' && href !== props.model.href)
       updateModel<ContentModel.Hyperlink>(editor, props.model, { href });
-    setEditLink(false);
   };
 
-  const isToolbarOpen =
-    (focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)) || editLink;
-
   return (
-    <span ref={ref}>
-      <InlineChromiumBugfix />
-      <HoverContainer
-        isOpen={() => isToolbarOpen}
-        // parentNode={ref.current || undefined}
-        contentLocation={alignedLeftBelow}
-        target={
-          <a
-            {...props.attributes}
-            id={props.model.id}
-            href="#"
-            className="inline-link"
-            onClick={() => setEditLink(false)}
-          >
-            {props.children}
-          </a>
-        }
-      >
+    <HoverContainer
+      isOpen={isOpen}
+      position="bottom"
+      align="start"
+      content={
         <Toolbar context={props.commandContext}>
-          {/* {isEditButton ? ( */}
-          {pages.type === 'success' && selectedPage ? (
+          {linkablePages.type === 'success' && selectedPage ? (
             <EditLink
-              setEditLink={setEditLink}
+              // setEditLink={setEditLink}
               href={props.model.href}
               onEdit={onEdit}
-              pages={pages}
+              pages={linkablePages}
               selectedPage={selectedPage}
               setSelectedPage={setSelectedPage}
               model={props.model}
@@ -74,29 +47,27 @@ export const LinkEditor = (props: Props) => {
           ) : (
             <Initialization
               href={props.model.href}
-              pages={pages}
+              pages={linkablePages}
               setSelectedPage={setSelectedPage}
               setPages={setPages}
               commandContext={props.commandContext}
-              setEditLink={setEditLink}
+              // setEditLink={setEditLink}
             />
           )}
-
-          {/* )
-          : (
-            <DisplayLink
-              commandContext={props.commandContext}
-              href={props.model.href}
-              setPages={setPages}
-              pages={pages}
-              selectedPage={selectedPage}
-              setSelectedPage={setSelectedPage}
-            />
-          )
-          } */}
         </Toolbar>
-      </HoverContainer>
-      <InlineChromiumBugfix />
-    </span>
+      }
+    >
+      <a
+        {...props.attributes}
+        id={props.model.id}
+        href="#"
+        className="inline-link"
+        // onClick={() => setEditLink(false)}
+      >
+        <InlineChromiumBugfix />
+        {props.children}
+        <InlineChromiumBugfix />
+      </a>
+    </HoverContainer>
   );
 };

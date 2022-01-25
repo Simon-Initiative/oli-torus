@@ -13,7 +13,7 @@ interface Props {
   pages: LinkablePages;
   setPages: React.Dispatch<React.SetStateAction<LinkablePages>>;
   setSelectedPage: React.Dispatch<React.SetStateAction<Persistence.Page | null>>;
-  setEditLink: React.Dispatch<React.SetStateAction<boolean>>;
+  // setEditLink: React.Dispatch<React.SetStateAction<boolean>>;
 }
 export const Initialization = (props: Props) => {
   const fetchPages = async () => {
@@ -36,7 +36,7 @@ export const Initialization = (props: Props) => {
     });
 
     props.setPages(result);
-    props.setEditLink(true);
+    // props.setEditLink(true);
   };
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
-import { ReactEditor } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { Editor, Transforms } from 'slate';
 
 /**
@@ -17,6 +17,12 @@ export function updateModel<T extends ContentModel.ModelElement>(
   const path = ReactEditor.findPath(editor, model);
   Transforms.setNodes(editor, changes, { at: path });
 }
+
+export const onEditModel = <T extends ContentModel.ModelElement>(model: T) => {
+  const editor = useSlate();
+
+  return React.useCallback((attrs: Partial<T>) => updateModel<T>(editor, model, attrs), [editor]);
+};
 
 /**
  * Determines the edit mode of a slate instance. Returns true if

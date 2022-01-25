@@ -1,11 +1,9 @@
 import React from 'react';
 import { ReactEditor, useSelected, useFocused, useSlate } from 'slate-react';
 import { Transforms } from 'slate';
-import { updateModel, getEditMode } from 'components/editing/elements/utils';
+import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
-import * as Settings from 'components/editing/elements/settings/Settings';
-import { displayModelToClassName } from 'data/content/utils';
 import { CaptionEditor } from 'components/editing/elements/settings/CaptionEditor';
 
 export interface Props extends EditorProps<ContentModel.Webpage> {}
@@ -14,8 +12,7 @@ export const WebpageEditor = (props: Props) => {
   const selected = useSelected();
   const editor = useSlate();
 
-  const onEdit = (updated: Partial<ContentModel.Webpage>) =>
-    updateModel<ContentModel.Webpage>(editor, props.model, updated);
+  const onEdit = onEditModel(props.model);
 
   const borderStyle =
     focused && selected

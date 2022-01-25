@@ -3,7 +3,6 @@ import { EditorProps } from 'components/editing/elements/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import * as ContentModel from 'data/content/model/elements/types';
-import { centeredAbove } from 'data/content/utils';
 import React from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
@@ -51,12 +50,7 @@ export const InputRefEditor = (props: InputRefProps) => {
       : {};
 
   const withToolbar = (target: React.ReactElement) => (
-    <HoverContainer
-      isOpen={() => focused && selected}
-      showArrow
-      target={target}
-      contentLocation={centeredAbove}
-    >
+    <HoverContainer isOpen={() => focused && selected} showArrow target={target}>
       <Toolbar context={props.commandContext}>{/* {commands} */}</Toolbar>
     </HoverContainer>
   );

@@ -15,13 +15,12 @@ export const Resizable = (props: PropsWithChildren<Props>) => {
   const [rect, ref] = useDOMPosition();
 
   useEffect(() => {
-    const onMouseUp = (_e: MouseEvent) => setHandle(undefined);
+    const onMouseUp = (_e: MouseEvent) => {
+      if (rect && handle && cursor) props.onResize(rectFromCursor(rect, cursor, handle));
+      setHandle(undefined);
+    };
     window.addEventListener('mouseup', onMouseUp);
     return () => window.removeEventListener('mouseup', onMouseUp);
-  }, []);
-
-  useEffect(() => {
-    if (rect && handle && cursor) props.onResize(rectFromCursor(rect, cursor, handle));
   }, [rect, handle, cursor]);
 
   const onMouseDown = React.useCallback(
@@ -33,7 +32,6 @@ export const Resizable = (props: PropsWithChildren<Props>) => {
   );
 
   const handleStyles = (thisHandle: Handle | 'border') => {
-    const currentlyResizing = handle && cursor;
     if (!rect) return { top: -5000, left: -5000, width: 0, height: 0 };
     if (!cursor) return resizeHandleStyles(rect, thisHandle);
     return resizeHandleStyles(rectFromCursor(rect, cursor, handle), thisHandle);

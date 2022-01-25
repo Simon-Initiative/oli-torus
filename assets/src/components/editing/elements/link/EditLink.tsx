@@ -1,19 +1,15 @@
 import { onEnterApply } from 'components/editing/elements/settings/Settings';
-import { CloseButton } from 'components/misc/CloseButton';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
 import { isInternalLink, normalizeHref, toInternalLink } from './utils';
 import * as Settings from 'components/editing/elements/settings/Settings';
 import { Hyperlink } from 'data/content/model/elements/types';
-import { type } from 'jquery';
 
 type ExistingLinkEditorProps = {
   href: string;
   onEdit: (href: string) => void;
   pages: Persistence.PagesReceived;
   model: Hyperlink;
-
-  setEditLink: React.Dispatch<React.SetStateAction<boolean>>;
   selectedPage: Persistence.Page;
   setSelectedPage: React.Dispatch<React.SetStateAction<Persistence.Page | null>>;
 };
@@ -88,8 +84,9 @@ export const EditLink = (props: ExistingLinkEditorProps) => {
 
   const hrefInput = (
     <input
+      onMouseDown={(e) => (e.currentTarget.focus(), console.log(e, 'mouse down'))}
       type="text"
-      value={href}
+      defaultValue={href}
       placeholder="www.google.com"
       onChange={(e) => setHref(e.target.value)}
       onKeyPress={(e) => onEnterApply(e, () => props.onEdit(normalizeHref(href)))}
@@ -122,12 +119,16 @@ export const EditLink = (props: ExistingLinkEditorProps) => {
   );
 
   return (
-    <div className="settings-editor-wrapper">
+    <div
+      className="settings-editor-wrapper"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      <input type="text" />
       <div className="settings-editor">
-        <div className="mb-2 d-flex justify-content-between">
-          {linkOptions}
-          <CloseButton editMode={true} onClick={() => props.setEditLink(false)} />
-        </div>
+        <div className="mb-2 d-flex justify-content-between">{linkOptions}</div>
         {changeHref}
       </div>
     </div>

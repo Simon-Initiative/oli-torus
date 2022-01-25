@@ -6,39 +6,31 @@ import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/u
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import * as ContentModel from 'data/content/model/elements/types';
-import { alignedLeftBelow } from 'data/content/utils';
 import React from 'react';
-import { Range } from 'slate';
-import { useFocused, useSelected, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 import './Editor.scss';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import { useCollapsedSelection } from 'data/content/utils';
 
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
-  const focused = useFocused();
-  const selected = useSelected();
+  const collapsedSelection = useCollapsedSelection();
+  const isOpen = React.useCallback(() => collapsedSelection, [collapsedSelection]);
+
   const editor = useSlate();
-  const ref = React.useRef<HTMLSpanElement | null>(null);
+  // const ref = React.useRef<HTMLSpanElement | null>(null);
 
   const onEdit = (changes: Partial<ContentModel.Popup>) =>
     updateModel<ContentModel.Popup>(editor, props.model, changes);
 
   return (
-    <span {...props.attributes} ref={ref}>
-      <HoverContainer
-        contentLocation={alignedLeftBelow}
-        parentNode={ref.current || undefined}
-        isOpen={() =>
-          focused && selected && !!editor.selection && Range.isCollapsed(editor.selection)
-        }
-        target={
-          <span className="popup__anchorText">
-            <InlineChromiumBugfix />
-            {props.children}
-            <InlineChromiumBugfix />
-          </span>
-        }
-      >
+    // <span ref={ref}>
+    <HoverContainer
+      position="bottom"
+      align="start"
+      // relativeTo={ref.current || undefined}
+      isOpen={isOpen}
+      content={
         <Toolbar context={props.commandContext}>
           <Toolbar.Group>
             <CommandButton
@@ -67,7 +59,14 @@ export const PopupEditor = (props: Props) => {
             />
           </Toolbar.Group>
         </Toolbar>
-      </HoverContainer>
-    </span>
+      }
+    >
+      <span {...props.attributes} className="popup__anchorText">
+        <InlineChromiumBugfix />
+        {props.children}
+        <InlineChromiumBugfix />
+      </span>
+    </HoverContainer>
+    // </span>
   );
 };

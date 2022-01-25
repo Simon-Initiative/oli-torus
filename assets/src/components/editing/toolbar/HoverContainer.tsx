@@ -1,101 +1,78 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ArrowContainer,
-  ContentLocation,
-  ContentLocationGetter,
-  Popover,
-  PopoverState,
-} from 'react-tiny-popover';
+import { useMousedown } from 'components/misc/resizable/useMousedown';
+import { positionRect } from 'data/content/utils';
+import React, { PropsWithChildren, useCallback, useEffect, useState } from 'react';
+import { Popover, PopoverAlign, PopoverPosition } from 'react-tiny-popover';
 import { Editor } from 'slate';
-import { ReactEditor, useSlate } from 'slate-react';
+import { useSlate } from 'slate-react';
 
-type Props = {
-  isOpen: (editor: Editor) => boolean;
-  showArrow?: boolean;
-  children: JSX.Element;
-  contentLocation?: ContentLocationGetter;
-  target?: JSX.Element;
-  parentNode?: HTMLElement;
-};
-export const HoverContainer = (props: Props) => {
-  const arrowSize = 8;
+const offscreenRect = { top: -5000, left: -5000 };
 
+interface Props {
+  isOpen: boolean | ((editor: Editor) => boolean);
+  content: JSX.Element;
+  position?: PopoverPosition;
+  align?: PopoverAlign;
+  relativeTo?: HTMLElement | (() => HTMLElement | undefined);
+  style?: React.CSSProperties;
+}
+export const HoverContainer = (props: PropsWithChildren<Props>) => {
   const editor = useSlate();
-  // Initialize with an off-screen position to prevent flickering on first render
-  const [position, setPosition] = useState({ top: -5000, left: -5000 });
-  const [mousedown, setMousedown] = useState(false);
+  const mousedown = useMousedown();
+  const [position, setPosition] = useState(offscreenRect);
+  const isOpen = typeof props.isOpen === 'function' ? props.isOpen(editor) : props.isOpen;
 
   useEffect(() => {
-    const upListener = (_e: MouseEvent) => setMousedown(false);
-    const downListener = (_e: MouseEvent) => setMousedown(true);
-    document.addEventListener('mouseup', upListener);
-    document.addEventListener('mousedown', downListener);
-
-    return () => {
-      document.removeEventListener('mouseup', upListener);
-      document.removeEventListener('mousedown', downListener);
-    };
-  }, []);
+    if (!isOpen) setPosition(offscreenRect);
+  }, [isOpen]);
 
   const preventMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => e.preventDefault(),
     [],
   );
 
-  const content = (
-    <div className="hovering-toolbar" onMouseDown={preventMouseDown}>
-      <div className="btn-group btn-group-sm" role="group">
-        {props.children}
-      </div>
-    </div>
-  );
+  const children = <div style={{ display: 'inline', ...props.style }}>{props.children}</div>;
 
-  const target = props.target ?? <span style={{ userSelect: 'none', display: 'none' }}></span>;
-
-  const centerPopover = useCallback(
-    (_s: PopoverState): ContentLocation => {
-      if (!editor.selection || mousedown) return position;
-      const parentNode =
-        props.parentNode || ReactEditor.toDOMNode(editor, [...Editor.nodes(editor)][1][0]);
-      const { top, left } = parentNode.getBoundingClientRect();
-      const newPosition = {
-        top: top + window.scrollY - 74,
-        left: left + window.scrollX,
-      };
-      setPosition(newPosition);
-      return newPosition;
-    },
-    [mousedown, position, props.parentNode],
-  );
-
-  if (!props.isOpen(editor)) return target;
+  if (!isOpen) return children;
 
   return (
     <Popover
-      isOpen={props.isOpen(editor)}
-      align={'start'}
+      isOpen
       padding={5}
-      parentElement={props.parentNode}
-      content={({ childRect, popoverRect }) => {
-        if (!props.showArrow) return content;
-        return (
-          <ArrowContainer
-            position={'top'}
-            childRect={childRect}
-            popoverRect={popoverRect}
-            arrowSize={arrowSize}
-            arrowColor="rgb(38,38,37)"
-            // Position the arrow in the middle of the popover
-            arrowStyle={{ left: popoverRect.width / 2 - arrowSize }}
-          >
-            {content}
-          </ArrowContainer>
-        );
+      reposition={false}
+      contentLocation={(state) => {
+        // Setting state in render is bad practice, but react-tiny-popover is
+        // bugged and nudges the popover position even if you don't want
+        // it to change.
+
+        const childRect =
+          (props.relativeTo
+            ? typeof props.relativeTo === 'function'
+              ? props.relativeTo()?.getBoundingClientRect()
+              : props.relativeTo.getBoundingClientRect()
+            : state.childRect) || state.childRect;
+
+        if (mousedown) return position;
+
+        const newPosition = positionRect({
+          ...state,
+          position: props.position || 'bottom',
+          align: props.align || 'start',
+          childRect,
+        });
+
+        if (newPosition !== position) setPosition(newPosition);
+        return newPosition;
       }}
-      contentLocation={props.contentLocation ?? centerPopover}
+      content={
+        <div className="hovering-toolbar" onMouseDown={preventMouseDown}>
+          <div className="btn-group btn-group-sm" role="group">
+            {props.content}
+          </div>
+        </div>
+      }
     >
-      {target}
+      {children}
     </Popover>
   );
 };
-HoverContainer.displayName = 'HoveringToolbar';
+HoverContainer.displayName = 'HoverContainer';

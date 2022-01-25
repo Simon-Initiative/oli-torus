@@ -1,17 +1,13 @@
 import React from 'react';
-import { updateModel } from 'components/editing/elements/utils';
+import { onEditModel, updateModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/settings/CaptionEditor';
 import { useSlate } from 'slate-react';
 
-export type CodeProps = EditorProps<ContentModel.Code>;
-
+type CodeProps = EditorProps<ContentModel.Code>;
 export const CodeEditor = (props: CodeProps) => {
-  const editor = useSlate();
-
-  const onEdit = (updated: Partial<ContentModel.Code>) =>
-    updateModel<ContentModel.Code>(editor, props.model, updated);
+  const onEdit = onEditModel(props.model);
 
   return (
     <div {...props.attributes} className="code-editor">
