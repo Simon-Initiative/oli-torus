@@ -90,33 +90,20 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentUserId = useSelector(selectUserId);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-    const objId = `${payload.key}`;
-    await debouncedSaveData({ isPreviewMode, payload, objId, value: payload.value });
+    const { simId, key, value } = payload;
+    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
-    // Read only the key from the simid
-    const objId = `${payload.key}`;
-    const data = await debouncedReadData({ isPreviewMode, payload, objId });
-    return data;
+    const { simId, key } = payload;
+    const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
+    if (data) {
+      const value = data[simId]?.[key];
+      /* console.log('GOT DATA', { simId, key, value, data }); */
+      return value;
+    }
+    return undefined;
   };
-
-  const debouncedReadData = debounce(
-    async ({ isPreviewMode, payload, objId }) => {
-      const retrievedData = await Extrinsic.readGlobalUserState([payload.simId], isPreviewMode);
-      return retrievedData?.[payload.simId]?.[objId];
-    },
-    500,
-    { maxWait: 10000, leading: true, trailing: false },
-  );
-
-  const debouncedSaveData = debounce(
-    async ({ isPreviewMode, payload, objId, value }) => {
-      await Extrinsic.updateGlobalUserState({ [payload.simId]: { [objId]: value } }, isPreviewMode);
-    },
-    200,
-    { maxWait: 10000, leading: true, trailing: false },
-  );
 
   const activityState: ActivityState = {
     attemptGuid: 'foo',
