@@ -407,7 +407,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (operator === 'bind to') {
         initStateBindToFacts[key] = snapshot[target];
       } else {
-        acc[key] = snapshot[target];
+        acc[target] = snapshot[target];
       }
       return acc;
     }, {});
