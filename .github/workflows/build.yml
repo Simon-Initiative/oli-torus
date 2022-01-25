@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - hotfix-*
-      - january-integration
 
 jobs:
   elixir-build-test:
