@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Oli.Lti_1p3.Tool.Deployment
-  alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Lti.Tool.Deployment
+  alias Oli.Lti.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
@@ -131,6 +131,19 @@ defmodule Oli.Delivery.Sections do
       user,
       section_slug,
       ContextRoles.get_role(:context_instructor)
+    )
+  end
+
+  @doc """
+  Determines if a user is a platform (institution) instructor.
+  """
+  def is_institution_instructor?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:institution_instructor)
+      ],
+      :any
     )
   end
 

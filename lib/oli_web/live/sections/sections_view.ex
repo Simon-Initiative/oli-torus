@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.SectionsView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
-  alias Oli.Accounts
+  alias OliWeb.Common.SessionContext
   alias Oli.Delivery.Sections.{Browse, BrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
@@ -48,8 +48,8 @@ defmodule OliWeb.Sections.SectionsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    author = Accounts.get_author!(author_id)
+  def mount(_, %{"current_author_id" => _} = session, socket) do
+    %SessionContext{author: author} = context = SessionContext.init(session)
 
     sections =
       Browse.browse_sections(
@@ -60,10 +60,11 @@ defmodule OliWeb.Sections.SectionsView do
 
     total_count = determine_total(sections)
 
-    {:ok, table_model} = SectionsTableModel.new(sections, Map.get(session, "local_tz"))
+    {:ok, table_model} = SectionsTableModel.new(context, sections)
 
     {:ok,
      assign(socket,
+       context: context,
        breadcrumbs: set_breadcrumbs(),
        author: author,
        sections: sections,

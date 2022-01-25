@@ -24,7 +24,7 @@
           <td><%= brand.name %></td>
 
           <td>
-            <%= brand_logo_html(brand) %>
+            <%= brand_logo(%{brand: brand}) %>
           </td>
 
           <td>

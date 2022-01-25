@@ -12,7 +12,7 @@
             <% nil -> %>
             <span class="text-secondary font-italic">None</span>
             <% brand -> %>
-            <%= brand_logo_html(brand, class: "my-1 d-block") %>
+            <%= brand_logo(%{brand: brand, class: "my-1 d-block"}) %>
             <a href="<%= Routes.brand_path(@conn, :show, brand) %>" class="logo-container">
               <%= brand.name %>
             </a>
@@ -30,7 +30,7 @@
             <% nil -> %>
               <span class="text-secondary font-italic">None</span>
             <% start_date -> %>
-              <%= dt(start_date, show_timezone: true) %>
+              <%= date(start_date, show_timezone: true) %>
           <% end %>
         </td>
       </tr>
@@ -41,7 +41,7 @@
             <% nil -> %>
               <span class="text-secondary font-italic">None</span>
             <% end_date -> %>
-              <%= dt(end_date, show_timezone: true) %>
+              <%= date(end_date, show_timezone: true) %>
           <% end %>
         </td>
       </tr>

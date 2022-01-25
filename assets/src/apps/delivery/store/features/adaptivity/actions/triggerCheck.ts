@@ -124,9 +124,28 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
-      const check_call_result = (await check(
+      let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
+      if (!requiredVariables) {
+        // assume they are all required since authoring hasn't specified
+        requiredVariables = Object.keys(localizedSnapshot);
+      }
+      const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
+        const isRequiredKey = requiredVariables.includes(key);
+        if (isRequiredKey) {
+          acc[key] = localizedSnapshot[key];
+        }
+        return acc;
+      }, {});
+
+      console.log('PRE CHECK RESULT', {
+        currentActivity,
+        currentRules,
         localizedSnapshot,
+        requiredVariables,
+        checkSnapshot,
+      });
+      const check_call_result = (await check(
+        checkSnapshot,
         rulesToCheck,
         scoringContext,
       )) as CheckResult;
@@ -140,6 +159,7 @@ export const triggerCheck = createAsyncThunk(
         currentRules,
         checkResult,
         localizedSnapshot,
+        checkSnapshot,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
@@ -246,7 +266,10 @@ export const triggerCheck = createAsyncThunk(
     const updateScoreAndVisit: ApplyStateOperation[] = [
       { target: 'session.currentQuestionScore', operator: '=', value: score },
     ];
-    if (attempt.attemptNumber === 1) {
+    /* console.log('VISITS', { visit: attempt.attemptNumber <= 2 }); */
+    // because visit count doesn't increase until AFTER checking is done, it could be 1 or 2 depending
+    // on whether or not it was correct
+    if (attempt.attemptNumber <= 2) {
       updateScoreAndVisit.push({
         target: `session.visits.${currentActivity.id}`,
         operator: '+',

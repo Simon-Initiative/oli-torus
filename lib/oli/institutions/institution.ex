@@ -19,7 +19,7 @@ defmodule Oli.Institutions.Institution do
     # can choose from when delivering thier section
     has_many :brands, Oli.Branding.Brand
 
-    has_many :deployments, Oli.Lti_1p3.Tool.Deployment
+    has_many :deployments, Oli.Lti.Tool.Deployment
 
     many_to_many :communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityInstitution
 

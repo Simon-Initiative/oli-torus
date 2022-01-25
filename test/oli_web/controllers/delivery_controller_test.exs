@@ -11,10 +11,10 @@ defmodule OliWeb.DeliveryControllerTest do
   describe "delivery_controller index" do
     setup [:setup_lti_session]
 
-    test "handles student with no section", %{conn: conn, cache_keys: cache_keys} do
+    test "handles student with no section", %{conn: conn, lti_param_ids: lti_param_ids} do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.student_no_section)
+        |> LtiSession.put_session_lti_params(lti_param_ids.student_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~
@@ -23,11 +23,11 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles user with student and instructor roles with no section", %{
       conn: conn,
-      cache_keys: cache_keys
+      lti_param_ids: lti_param_ids
     } do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.student_instructor_no_section)
+        |> LtiSession.put_session_lti_params(lti_param_ids.student_instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
@@ -36,10 +36,10 @@ defmodule OliWeb.DeliveryControllerTest do
                "Let's create a new section for your course. Please select one of the options below:"
     end
 
-    test "handles student with section", %{conn: conn, cache_keys: cache_keys} do
+    test "handles student with section", %{conn: conn, lti_param_ids: lti_param_ids} do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.student)
+        |> LtiSession.put_session_lti_params(lti_param_ids.student)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Online Consent Form"
@@ -47,12 +47,12 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles instructor with no section or linked account", %{
       conn: conn,
-      cache_keys: cache_keys,
+      lti_param_ids: lti_param_ids,
       user: _user
     } do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor_no_section)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
@@ -61,24 +61,24 @@ defmodule OliWeb.DeliveryControllerTest do
                "Let's create a new section for your course. Please select one of the options below:"
     end
 
-    test "handles instructor with no section", %{conn: conn, cache_keys: cache_keys, user: user} do
+    test "handles instructor with no section", %{conn: conn, lti_param_ids: lti_param_ids, user: user} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
 
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor_no_section)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~
                "Let's create a new section for your course. Please select one of the options below:"
     end
 
-    test "handles instructor with section", %{conn: conn, cache_keys: cache_keys, user: user} do
+    test "handles instructor with section", %{conn: conn, lti_param_ids: lti_param_ids, user: user} do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
 
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Online Consent Form"
@@ -86,7 +86,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "handles instructor create section", %{
       conn: conn,
-      cache_keys: cache_keys,
+      lti_param_ids: lti_param_ids,
       user: user,
       publication: publication
     } do
@@ -94,7 +94,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor_no_section)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
         |> post(
           Routes.delivery_path(conn, :create_section, %{
             source_id: "publication:#{publication.id}"
@@ -108,10 +108,10 @@ defmodule OliWeb.DeliveryControllerTest do
   describe "delivery_controller link_account" do
     setup [:setup_lti_session]
 
-    test "renders link account form", %{conn: conn, cache_keys: cache_keys} do
+    test "renders link account form", %{conn: conn, lti_param_ids: lti_param_ids} do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> get(Routes.delivery_path(conn, :link_account))
 
       assert html_response(conn, 200) =~ "Link Existing Account"
@@ -139,10 +139,10 @@ defmodule OliWeb.DeliveryControllerTest do
   describe "delivery_controller process_link_account_provider" do
     setup [:setup_lti_session]
 
-    test "processes link account for provider", %{conn: conn, cache_keys: cache_keys} do
+    test "processes link account for provider", %{conn: conn, lti_param_ids: lti_param_ids} do
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> get(Routes.authoring_delivery_path(conn, :process_link_account_provider, :google))
 
       assert html_response(conn, 302) =~ "redirect"
@@ -154,7 +154,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "processes link account for user email authentication failure", %{
       conn: conn,
-      cache_keys: cache_keys,
+      lti_param_ids: lti_param_ids,
       author: author
     } do
       author_params =
@@ -165,7 +165,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> post(Routes.delivery_path(conn, :process_link_account_user),
           user: author_params
         )
@@ -176,7 +176,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
     test "processes link account for user email", %{
       conn: conn,
-      cache_keys: cache_keys,
+      lti_param_ids: lti_param_ids,
       author: author
     } do
       author_params =
@@ -187,7 +187,7 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn =
         conn
-        |> LtiSession.put_user_params(cache_keys.instructor)
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
         |> post(Routes.delivery_path(conn, :process_link_account_user), user: author_params)
 
       assert html_response(conn, 302) =~ "redirect"
@@ -241,149 +241,106 @@ defmodule OliWeb.DeliveryControllerTest do
       })
 
     user = user_fixture()
+    student = user_fixture()
+    student_no_section = user_fixture()
+    instructor = user_fixture()
+    instructor_no_section = user_fixture()
+    student_instructor_no_section = user_fixture()
 
     %{project: project, publication: publication} = project_fixture(author)
 
     conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
-    cache_keys = %{
-      student: nil,
-      student_no_section: nil,
-      instructor: nil,
-      instructor_no_section: nil,
-      student_instructor_no_section: nil
+    lti_param_ids = %{
+      student:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => student.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => section.context_id,
+              "title" => section.title
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+          },
+          student.id
+        ),
+      student_no_section: cache_lti_params(
+        %{
+          "iss" => registration.issuer,
+          "aud" => registration.client_id,
+          "sub" => student_no_section.sub,
+          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+            "id" => "some-new-context-id",
+            "title" => "some new title"
+          },
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+          ],
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+        },
+        student_no_section.id
+      ),
+      instructor:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => instructor.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => section.context_id,
+              "title" => section.title
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+          },
+          instructor.id
+        ),
+      instructor_no_section: cache_lti_params(
+        %{
+          "iss" => registration.issuer,
+          "aud" => registration.client_id,
+          "sub" => instructor_no_section.sub,
+          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+            "id" => "some-new-context-id",
+            "title" => "some new title"
+          },
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+          ],
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+        },
+        instructor_no_section.id
+      ),
+      student_instructor_no_section: cache_lti_params(
+        %{
+          "iss" => registration.issuer,
+          "aud" => registration.client_id,
+          "sub" => student_instructor_no_section.sub,
+          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+            "id" => "some-new-context-id",
+            "title" => "some new title"
+          },
+          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+            "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+          ],
+          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+        },
+        student_instructor_no_section.id
+      ),
     }
-
-    cache_keys = %{
-      cache_keys
-      | student:
-          Lti_1p3.Tool.lti_params_key(
-            registration.issuer,
-            registration.client_id,
-            "student-sub",
-            section.context_id
-          )
-    }
-
-    cache_lti_params(cache_keys.student, %{
-      "iss" => registration.issuer,
-      "aud" => registration.client_id,
-      "sub" => "student-sub",
-      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-        "id" => section.context_id,
-        "title" => section.title
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
-      ],
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-    })
-
-    cache_keys = %{
-      cache_keys
-      | student_no_section:
-          Lti_1p3.Tool.lti_params_key(
-            registration.issuer,
-            registration.client_id,
-            "student-sub",
-            "some-new-context-id"
-          )
-    }
-
-    cache_lti_params(cache_keys.student_no_section, %{
-      "iss" => registration.issuer,
-      "aud" => registration.client_id,
-      "sub" => "student-sub",
-      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-        "id" => "some-new-context-id",
-        "title" => "some new title"
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
-      ],
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-    })
-
-    cache_keys = %{
-      cache_keys
-      | instructor:
-          Lti_1p3.Tool.lti_params_key(
-            registration.issuer,
-            registration.client_id,
-            "instructor-sub",
-            section.context_id
-          )
-    }
-
-    cache_lti_params(cache_keys.instructor, %{
-      "iss" => registration.issuer,
-      "aud" => registration.client_id,
-      "sub" => "instructor-sub",
-      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-        "id" => section.context_id,
-        "title" => section.title
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
-      ],
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-    })
-
-    cache_keys = %{
-      cache_keys
-      | instructor_no_section:
-          Lti_1p3.Tool.lti_params_key(
-            registration.issuer,
-            registration.client_id,
-            "instructor-create-sub",
-            "some-new-context-id"
-          )
-    }
-
-    cache_lti_params(cache_keys.instructor_no_section, %{
-      "iss" => registration.issuer,
-      "aud" => registration.client_id,
-      "sub" => "instructor-create-sub",
-      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-        "id" => "some-new-context-id",
-        "title" => "some new title"
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
-      ],
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-    })
-
-    cache_keys = %{
-      cache_keys
-      | student_instructor_no_section:
-          Lti_1p3.Tool.lti_params_key(
-            registration.issuer,
-            registration.client_id,
-            "student-instructor-sub",
-            "some-new-context-id"
-          )
-    }
-
-    cache_lti_params(cache_keys.student_instructor_no_section, %{
-      "iss" => registration.issuer,
-      "aud" => registration.client_id,
-      "sub" => "student-instructor-sub",
-      "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-      "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-        "id" => "some-new-context-id",
-        "title" => "some new title"
-      },
-      "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
-        "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
-      ],
-      "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-    })
 
     conn =
       conn
@@ -395,9 +352,14 @@ defmodule OliWeb.DeliveryControllerTest do
      author: author,
      institution: institution,
      user: user,
+     student: student,
+     student_no_section: student_no_section,
+     instructor: instructor,
+     instructor_no_section: instructor_no_section,
+     student_instructor_no_section: student_instructor_no_section,
      project: project,
      publication: publication,
-     cache_keys: cache_keys}
+     lti_param_ids: lti_param_ids}
   end
 
   defp setup_open_and_free_session(%{conn: conn}) do

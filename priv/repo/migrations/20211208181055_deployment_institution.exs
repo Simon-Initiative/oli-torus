@@ -64,8 +64,8 @@ defmodule Oli.Repo.Migrations.DeploymentInstitution do
   def down do
 
     alter table(:lti_1p3_registrations) do
+      add :brand_id, references(:brands)
       add :institution_id, references(:institutions)
-      add :brand_id, references(:institutions)
     end
 
     flush()

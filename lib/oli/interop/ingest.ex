@@ -29,23 +29,23 @@ defmodule Oli.Interop.Ingest do
   def ingest(file, as_author) do
     case :zip.unzip(to_charlist(file), [:memory]) do
       {:ok, entries} -> process(entries, as_author)
-      _ -> {:error, "error processing archive file"}
+      _ -> {:error, :invalid_archive}
     end
   end
 
   # verify that an in memory archive is valid by ensuring that it contains the three
   # required keys (files): the "_project", the "_hierarchy" and the "_media-manifest"
-  defp is_valid_archive?(map) do
+  defp is_valid_digest?(map) do
     Map.has_key?(map, @project_key) && Map.has_key?(map, @hierarchy_key) &&
       Map.has_key?(map, @media_key)
   end
-
+  
   # Process the unzipped entries of the archive
   def process(entries, as_author) do
-    resource_map = to_map(entries)
+    {resource_map, _error_map} = to_map(entries)
 
     # Proceed only if the archive is valid
-    if is_valid_archive?(resource_map) do
+    if is_valid_digest?(resource_map) do
       Repo.transaction(fn _ ->
         project_details = Map.get(resource_map, @project_key)
         media_details = Map.get(resource_map, @media_key)
@@ -79,11 +79,11 @@ defmodule Oli.Interop.Ingest do
              {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
           project
         else
-          error -> Repo.rollback(error)
+          {:error, error} -> Repo.rollback(error)
         end
       end)
     else
-      {:error, "invalid archive"}
+      {:error, :invalid_digest}
     end
   end
 
@@ -95,7 +95,8 @@ defmodule Oli.Interop.Ingest do
   # Process the _project file to create the project structure
   defp create_project(project_details, as_author) do
     case Map.get(project_details, "title") do
-      nil -> {:error, "no project title found"}
+      nil -> {:error, :missing_project_title}
+      "" -> {:error, :empty_project_title}
       title -> Oli.Authoring.Course.create_project(title, as_author)
     end
   end
@@ -396,27 +397,53 @@ defmodule Oli.Interop.Ingest do
   # where the keys are the ids (with the .json extension dropped)
   # and the values are the JSON content, parsed into maps
   defp to_map(entries) do
-    Enum.reduce(entries, %{}, fn {file, content}, map ->
-      id_from_file = fn ->
-        f = List.to_string(file)
-        String.slice(f, 0, String.length(f) - 5)
+    Enum.reduce(entries, {%{}, %{}}, fn {file, content}, {resource_map, error_map} ->
+      id_from_file = fn file ->
+        file
+        |> List.to_string()
+        |> :filename.basename()
+        |> String.replace_suffix(".json", "")
       end
 
-      decoded = Poison.decode!(content)
+      case Poison.decode(content) do
+        {:ok, decoded} ->
+          # Take the id from the attribute within the file content, unless
+          # that id is not present (nil) or empty string. In that case,
+          # use the file name to determine the id.  This allows us to avoid
+          # issues of ids that contain unicode characters not being parsed
+          # correctly from zip file entries.
+          id =
+            case Map.get(decoded, "id") do
+              nil -> id_from_file.(file)
+              "" -> id_from_file.(file)
+              id -> id
+            end
 
-      # Take the id from the attribute within the file content, unless
-      # that id is not present (nil) or empty string. In that case,
-      # use the file name to determine the id.  This allows us to avoid
-      # issues of ids that contain unicode characters not being parsed
-      # correctly from zip file entries.
-      id =
-        case Map.get(decoded, "id") do
-          nil -> id_from_file.()
-          "" -> id_from_file.()
-          id -> id
-        end
+          {Map.put(resource_map, id, decoded), error_map}
 
-      Map.put(map, id, decoded)
+        {:error, reason} ->
+          {resource_map, Map.put(error_map, id_from_file.(file), reason)}
+      end
     end)
+  end
+
+  def prettify_error({:error, :invalid_archive}) do
+    "Project archive is invalid. Archive must be a valid zip file"
+  end
+
+  def prettify_error({:error, :invalid_digest}) do
+    "Project archive is invalid. Archive must include #{@project_key}.json, #{@hierarchy_key}.json and #{@media_key}.json"
+  end
+
+  def prettify_error({:error, :missing_project_title}) do
+    "Project title not found in #{@project_key}.json"
+  end
+
+  def prettify_error({:error, :empty_project_title}) do
+    "Project title cannot be empty in #{@project_key}.json"
+  end
+
+  def prettify_error({:error, error}) do
+    "An unknown error occurred: #{Kernel.to_string(error)}"
   end
 end

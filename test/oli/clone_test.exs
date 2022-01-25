@@ -1,5 +1,7 @@
 defmodule Oli.CloneTest do
   use Oli.DataCase
+  import Ecto.Query, warn: false
+  alias Oli.Repo
 
   alias Oli.Authoring.Collaborators
   alias Oli.Publishing
@@ -83,8 +85,15 @@ defmodule Oli.CloneTest do
           root_resource_id: resource.id
         })
 
-      [head | tail] = Clone.clone_all_published_resources(publication.id, cloned_publication.id)
+      Clone.clone_all_published_resources(publication.id, cloned_publication.id)
+
       # 3 published resources
+      [head | tail] =
+        Oli.Repo.all(
+          from mapping in Oli.Publishing.PublishedResource,
+            where: mapping.publication_id == ^cloned_publication.id
+        )
+
       assert Enum.count([head | tail]) == 3
       assert head.publication_id == cloned_publication.id
     end
@@ -106,9 +115,13 @@ defmodule Oli.CloneTest do
 
       assert item_count == 0
 
-      cloned = Clone.clone_all_media_items(project.slug, duplicated.id)
-      assert Enum.count(cloned) == 1
-      assert hd(cloned).project_id == duplicated.id
+      Clone.clone_all_media_items(project.id, duplicated.id)
+
+      {:ok, {items, item_count}} =
+        MediaLibrary.items(duplicated.slug, %MediaLibrary.ItemOptions{})
+
+      assert item_count == 1
+      assert hd(items).project_id == duplicated.id
     end
 
     test "editing a cloned project revision -> in base project", %{

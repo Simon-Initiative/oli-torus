@@ -1,10 +1,11 @@
 defmodule OliWeb.Projects.TableModel do
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   use Surface.LiveComponent
 
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(author, sections, include_status?, local_tz) do
+  def new(%SessionContext{} = context, sections, include_status?) do
     column_specs =
       [
         %ColumnSpec{
@@ -41,8 +42,7 @@ defmodule OliWeb.Projects.TableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        local_tz: local_tz,
-        author: author
+        context: context
       }
     )
   end

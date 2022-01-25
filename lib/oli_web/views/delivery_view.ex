@@ -1,5 +1,6 @@
 defmodule OliWeb.DeliveryView do
   use OliWeb, :view
+  use Phoenix.Component
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -182,22 +183,22 @@ defmodule OliWeb.DeliveryView do
     user.author_id != nil
   end
 
-  def user_icon(user) do
-    case user.picture do
+  def user_icon(%{current_user: current_user} = assigns) do
+    case current_user.picture do
       nil ->
-        user_icon()
+        user_icon(%{})
 
       picture ->
-        ~E"""
+        ~H"""
         <div class="user-icon">
-          <img src="<%= picture %>" class="rounded-circle" />
+          <img src={picture} class="rounded-circle" />
         </div>
         """
     end
   end
 
-  def user_icon() do
-    ~E"""
+  def user_icon(assigns) do
+    ~H"""
     <div class="user-icon">
       <div class="user-img rounded-circle">
         <span class="material-icons text-secondary">account_circle</span>

@@ -368,6 +368,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateFacts = useSelector(selectInitStateFacts);
+  const initStateBindToFacts: any = {};
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
     const payloadData = {} as any;
@@ -402,7 +403,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
         }
       }
-      acc[target] = snapshot[target];
+      const operator = initStateFacts[key];
+      if (operator === 'bind to') {
+        initStateBindToFacts[key] = snapshot[target];
+      } else {
+        acc[target] = snapshot[target];
+      }
       return acc;
     }, {});
 
@@ -412,6 +418,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       snapshot,
       initStateFacts: finalInitSnapshot,
       domain: adaptivityDomain,
+      initStateBindToFacts,
     });
   };
 

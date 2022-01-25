@@ -184,13 +184,10 @@ defmodule Oli.TestHelpers do
     jwk
   end
 
-  def cache_lti_params(key, lti_params) do
-    {:ok, _lti_params} =
-      Lti_1p3.DataProviders.EctoProvider.create_or_update_lti_params(%Lti_1p3.Tool.LtiParams{
-        key: key,
-        params: lti_params,
-        exp: Timex.from_unix(lti_params["exp"])
-      })
+  def cache_lti_params(lti_params, user_id) do
+    {:ok, %{id: id}} = Oli.Lti.LtiParams.create_or_update_lti_params(lti_params, user_id)
+
+    id
   end
 
   def project_fixture(author, title \\ "test project") do

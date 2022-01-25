@@ -56,6 +56,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
 
+      Seeder.ensure_published(map.publication.id)
+
       Seeder.add_page(
         map,
         %{
@@ -232,6 +234,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_activity(%{title: "one", max_attempts: 2, content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
+
+      Seeder.ensure_published(map.publication.id)
 
       Seeder.add_page(
         map,
@@ -722,6 +726,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         |> Seeder.add_activity(%{title: "one", content: content}, :activity)
         |> Seeder.add_user(%{}, :user1)
 
+      Seeder.ensure_published(map.publication.id)
+
       attrs = %{
         title: "page1",
         content: %{
@@ -888,6 +894,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           :activity
         )
         |> Seeder.add_user(%{}, :user1)
+
+      Seeder.ensure_published(map.publication.id)
 
       attrs = %{
         title: "page1",

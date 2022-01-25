@@ -73,9 +73,9 @@ export const createNew = createAsyncThunk(
       },
     };
 
-    activity.model.authoring.parts = activity.model.partsLayout.map((part: { id: string }) => ({
+    /* activity.model.authoring.parts = activity.model.partsLayout.map((part: { id: string }) => ({
       id: part.id,
-    }));
+    })); */
 
     const { payload: defaultCorrect } = await dispatch(createCorrectRule({ isDefault: true }));
 

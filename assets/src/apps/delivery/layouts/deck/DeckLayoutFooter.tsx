@@ -450,9 +450,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (!enableHistory) {
-        dispatch(triggerCheck({ activityId: currentActivity?.id }));
-      } else if (
+      if (
         !isGoodFeedback &&
         nextActivityId?.trim().length &&
         nextActivityId !== currentActivityId
@@ -463,6 +461,8 @@ const DeckLayoutFooter: React.FC = () => {
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
+      } else if (!enableHistory) {
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
         setDisplayFeedbackIcon(false);

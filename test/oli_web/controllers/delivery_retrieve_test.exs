@@ -3,7 +3,6 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
   alias Oli.Seeder
   alias Lti_1p3.Tool.ContextRoles
-  alias OliWeb.Common.LtiSession
 
   setup [:setup_session]
 
@@ -207,20 +206,19 @@ defmodule OliWeb.DeliveryRetrieveTest do
       ContextRoles.get_role(:context_instructor)
     ])
 
-    lti_params =
-      Oli.Lti_1p3.TestHelpers.all_default_claims()
+    lti_params_id =
+      Oli.Lti.TestHelpers.all_default_claims()
       |> put_in(
         ["https://purl.imsglobal.org/spec/lti/claim/context", "id"],
         map.section.context_id
       )
-
-    cache_lti_params("params-key", lti_params)
+      |> cache_lti_params(user.id)
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
-      |> LtiSession.put_user_params("params-key")
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
       |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> OliWeb.Common.LtiSession.put_session_lti_params(lti_params_id)
 
     {:ok,
      instructor: instructor,
