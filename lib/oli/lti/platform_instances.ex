@@ -1,4 +1,4 @@
-defmodule Oli.Lti_1p3.PlatformInstances do
+defmodule Oli.Lti.PlatformInstances do
   import Ecto.Query, warn: false
 
   alias Oli.Repo

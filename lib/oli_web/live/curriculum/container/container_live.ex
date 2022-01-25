@@ -25,7 +25,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
-  alias Oli.Accounts.Author
   alias Oli.Repo
   alias Oli.Publishing
   alias Oli.Accounts
@@ -35,12 +34,15 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
+  alias OliWeb.Common.SessionContext
 
   def mount(
         %{"project_id" => project_slug} = params,
-        %{"current_author_id" => author_id},
+        %{"current_author_id" => _} = session,
         socket
       ) do
+    %SessionContext{author: author} = context = SessionContext.init(session)
+
     root_container = AuthoringResolver.root_container(project_slug)
     container_slug = Map.get(params, "container_slug")
 
@@ -66,8 +68,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         subscriptions = subscribe(container, children, rollup, project.slug)
 
-        author = Repo.get(Author, author_id)
-
         view_pref =
           case author.preferences do
             %{curriculum_view: curriculum_view} ->
@@ -79,6 +79,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         {:ok,
          assign(socket,
+           context: context,
            children: children,
            active: :curriculum,
            breadcrumbs:

@@ -1,10 +1,12 @@
 defmodule OliWeb.IngestController do
   use OliWeb, :controller
+
   alias OliWeb.Common.{Breadcrumb}
+  alias Oli.Interop.Ingest
 
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
-    render_ingest_page(conn, "index.html", title: "Ingest", breadcrumbs: set_breadcrumbs())
+    render_ingest_page(conn)
   end
 
   def upload(conn, %{"upload" => upload}) do
@@ -12,14 +14,18 @@ defmodule OliWeb.IngestController do
 
     path_upload = upload["digest"]
 
-    case Oli.Interop.Ingest.ingest(path_upload.path, author) do
+    case Ingest.ingest(path_upload.path, author) do
       {:ok, project} -> redirect(conn, to: Routes.project_path(conn, :overview, project))
-      {:error, error} -> render_ingest_page(conn, "error.html", title: "Ingest", error: error)
+      error -> render_ingest_page(conn, error: Ingest.prettify_error(error))
     end
   end
 
-  defp render_ingest_page(conn, page, keywords) do
-    render(conn, page, Keyword.put_new(keywords, :active, :ingest))
+  defp render_ingest_page(conn, keywords \\ []) do
+    render(
+      conn,
+      "index.html",
+      Keyword.merge([active: :ingest, title: "Ingest", breadcrumbs: set_breadcrumbs()], keywords)
+    )
   end
 
   defp set_breadcrumbs() do

@@ -1,8 +1,10 @@
 defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
   require Logger
+
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
 
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
@@ -17,8 +19,61 @@ defmodule Oli.Delivery.Attempts.Core do
     PartAttempt,
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    LMSGradeUpdate,
+    GradeUpdateBrowseOptions
   }
+
+  def browse_lms_grade_updates(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %GradeUpdateBrowseOptions{section_id: section_id} = options
+      ) do
+    by_section = dynamic([_, ra, _], ra.section_id == ^section_id)
+
+    filter_by_user =
+      if is_nil(options.user_id) do
+        true
+      else
+        dynamic([_, _, u], u.id == ^options.user_id)
+      end
+
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        text_search = String.trim(options.text_search)
+
+        dynamic(
+          [g, _, u],
+          ilike(g.details, ^"%#{text_search}%") or
+            ilike(g.result, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%")
+        )
+      end
+
+    query =
+      LMSGradeUpdate
+      |> join(:left, [g], ra in ResourceAccess, on: g.resource_access_id == ra.id)
+      |> join(:left, [_, ra], u in Oli.Accounts.User, on: ra.user_id == u.id)
+      |> where(^by_section)
+      |> where(^filter_by_text)
+      |> where(^filter_by_user)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([_, _, u], %{
+        user_email: u.email,
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :user_email -> order_by(query, [_, _, u], {^direction, u.email})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
 
   @doc """
   Select the model to use to power all aspects of an activity.  If an activity utilizes
@@ -188,6 +243,19 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Retrieves a preloaded resource access from its id.
+  """
+  def get_resource_access(resource_access_id) do
+    Repo.one(
+      from(a in ResourceAccess,
+        where: a.id == ^resource_access_id,
+        select: a,
+        preload: [:section, :user]
+      )
+    )
+  end
+
+  @doc """
   Retrieves all graded resource access for a given context
 
   `[%ResourceAccess{}, ...]`
@@ -205,8 +273,9 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.revision_id == r.id,
         where:
           s.slug == ^section_slug and s.status != :deleted and r.graded == true and
-            r.resource_id == ^resource_id,
-        select: a
+            a.resource_id == ^resource_id,
+        select: a,
+        distinct: a
       )
     )
   end
@@ -513,6 +582,33 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Creates an LMS grade update record.
+  ## Examples
+      iex> create_lms_grade_update(%{field: value})
+      {:ok, %LMSGradeUpdate{}}
+      iex> create_lms_grade_update(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_lms_grade_update(attrs \\ %{}) do
+    %LMSGradeUpdate{}
+    |> LMSGradeUpdate.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates an LMS grade update.
+  ## Examples
+      iex> update_lms_grade_update(grade_update, %{field: new_value})
+      {:ok, %LMSGradeUpdate{}}
+      iex> update_lms_grade_update(grade_update, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_lms_grade_update(grade_update, attrs) do
+    LMSGradeUpdate.changeset(grade_update, attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Updates an activity attempt.
   ## Examples
       iex> update_activity_attempt(revision, %{field: new_value})
@@ -528,13 +624,13 @@ defmodule Oli.Delivery.Attempts.Core do
   @doc """
   Updates an resource access.
   ## Examples
-      iex> update_resource_access(revision, %{field: new_value})
+      iex> update_resource_access(resource_access, %{field: new_value})
       {:ok, %ResourceAccess{}}
-      iex> update_resource_access(revision, %{field: bad_value})
+      iex> update_resource_access(resource_access, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_resource_access(activity_attempt, attrs) do
-    ResourceAccess.changeset(activity_attempt, attrs)
+  def update_resource_access(resource_access, attrs) do
+    ResourceAccess.changeset(resource_access, attrs)
     |> Repo.update()
   end
 

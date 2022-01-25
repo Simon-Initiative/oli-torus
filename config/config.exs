@@ -1,11 +1,11 @@
 # This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# and its dependencies with the aid of the Config module.
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
 
 # General application configuration
-use Mix.Config
+import Config
 
 config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
 
@@ -107,7 +107,7 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oban,
   repo: Oli.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, snapshots: 20, selections: 2, updates: 10]
+  queues: [default: 10, snapshots: 20, selections: 2, updates: 10, grades: 30]
 
 config :ex_money,
   auto_start_exchange_rate_service: false,
@@ -141,10 +141,11 @@ config :lti_1p3,
     repo: Oli.Repo,
     schemas: [
       user: Oli.Accounts.User,
-      registration: Oli.Lti_1p3.Tool.Registration,
-      deployment: Oli.Lti_1p3.Tool.Deployment
+      registration: Oli.Lti.Tool.Registration,
+      deployment: Oli.Lti.Tool.Deployment
     ]
-  ]
+  ],
+  ags_line_item_prefix: "oli-torus-"
 
 config :ex_aws,
   region: {:system, "AWS_REGION"}

@@ -1,4 +1,4 @@
-defmodule Oli.Lti_1p3.TestHelpers do
+defmodule Oli.Lti.TestHelpers do
   def all_default_claims() do
     %{}
     |> Map.merge(security_detail_data())
