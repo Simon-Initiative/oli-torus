@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.18.4">
 
-    <title>Oli.Lti.LineItem — OLI Torus v0.18.4</title>
+    <title>OliWeb.Grades.ObserveTableModel — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,15 +86,24 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Lti.LineItem <small class="app-vsn">(OLI Torus v0.18.4)</small>
+OliWeb.Grades.ObserveTableModel <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/line_item.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/grades/observe_table_model.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
 
       </h1>
 
+
+        <section id="moduledoc">
+<h2 id="module-properties" class="section-heading">
+  <a href="#module-properties" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
+.</li></ul>
+        </section>
 
 
         <section id="summary" class="details-list">
@@ -106,43 +115,33 @@ Oli.Lti.LineItem <small class="app-vsn">(OLI Torus v0.18.4)</small>
             Summary
           </h1>
 
-  <div class="summary-types summary">
-    <h2>
-      <a href="#types">Types</a>
-    </h2>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#t:t/0">t()</a>
-
-  </div>
-
-</div>
-
-  </div>
-
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#is_oli?/1">is_oli?(line_item)</a>
+    <a href="#mount/1">mount(socket)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#new/1">new(updates)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#parse_resource_id/1">parse_resource_id(line_item)</a>
+    <a href="#render/1">render(assigns)</a>
 
   </div>
 
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#to_resource_id/1">to_resource_id(resource_id)</a>
-
-  </div>
+    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
 
 </div>
 
@@ -150,53 +149,6 @@ Oli.Lti.LineItem <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
         </section>
 
-
-        <section id="types" class="details-list">
-          <h1 class="section-heading">
-            <a class="hover-link" href="#types">
-              <span class="icon-link" aria-hidden="true"></span>
-              <span class="sr-only">Link to this section</span>
-            </a>
-Types
-          </h1>
-          <div class="types-list">
-<section class="detail" id="t:t/0">
-
-  <div class="detail-header">
-    <a href="#t:t/0" class="detail-link" title="Link to this type">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this type</span>
-    </a>
-    <h1 class="signature">t()</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/line_item.ex#L9" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-      <h2>Specs</h2>
-      <div class="specs">
-
-          <pre>t() :: %Oli.Lti.LineItem{
-  id: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
-  label: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
-  resourceId: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
-  scoreMaximum: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">float</a>()
-}</pre>
-
-      </div>
-
-
-  </section>
-</section>
-
-          </div>
-        </section>
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -207,16 +159,38 @@ Types
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="is_oli?/1">
+<section class="detail" id="mount/1">
 
   <div class="detail-header">
-    <a href="#is_oli?/1" class="detail-link" title="Link to this function">
+    <a href="#mount/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">is_oli?(line_item)</h1>
+    <h1 class="signature">mount(socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/line_item.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/grades/observe_table_model.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="new/1">
+
+  <div class="detail-header">
+    <a href="#new/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">new(updates)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/grades/observe_table_model.ex#L5" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -229,16 +203,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="parse_resource_id/1">
+<section class="detail" id="render/1">
 
   <div class="detail-header">
-    <a href="#parse_resource_id/1" class="detail-link" title="Link to this function">
+    <a href="#render/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">parse_resource_id(line_item)</h1>
+    <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/line_item.ex#L25" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/grades/observe_table_model.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -248,29 +222,7 @@ Functions
 
   <section class="docstring">
 
-
-  </section>
-</section>
-<section class="detail" id="to_resource_id/1">
-
-  <div class="detail-header">
-    <a href="#to_resource_id/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">to_resource_id(resource_id)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/line_item.ex#L32" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
+<p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
   </section>
 </section>
 

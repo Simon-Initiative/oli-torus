@@ -10,7 +10,7 @@
     <title>OliWeb.Delivery.Sections.GatingAndScheduling.TableModel — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -130,7 +130,7 @@ OliWeb.Delivery.Sections.GatingAndScheduling.TableModel <small class="app-vsn">(
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#new/2">new(gating_condition_rows, section)</a>
+    <a href="#new/3">new(context, gating_condition_rows, section)</a>
 
   </div>
 
@@ -172,13 +172,6 @@ OliWeb.Delivery.Sections.GatingAndScheduling.TableModel <small class="app-vsn">(
   </div>
 
 </div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#render_user_column/3">render_user_column(assigns, gating_condition, _)</a>
-
-  </div>
-
-</div>
 
   </div>
 
@@ -216,16 +209,16 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="new/2">
+<section class="detail" id="new/3">
 
   <div class="detail-header">
-    <a href="#new/2" class="detail-link" title="Link to this function">
+    <a href="#new/3" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">new(gating_condition_rows, section)</h1>
+    <h1 class="signature">new(context, gating_condition_rows, section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L17" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -247,7 +240,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L12" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L11" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -269,7 +262,7 @@ Functions
     </a>
     <h1 class="signature">render_actions_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L120" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L116" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -291,7 +284,7 @@ Functions
     </a>
     <h1 class="signature">render_details_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L82" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L80" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -313,7 +306,7 @@ Functions
     </a>
     <h1 class="signature">render_resource_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L56" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -335,29 +328,7 @@ Functions
     </a>
     <h1 class="signature">render_type_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L70" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="render_user_column/3">
-
-  <div class="detail-header">
-    <a href="#render_user_column/3" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">render_user_column(assigns, gating_condition, _)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L105" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L68" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

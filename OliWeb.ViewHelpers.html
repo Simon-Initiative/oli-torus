@@ -10,7 +10,7 @@
     <title>OliWeb.ViewHelpers — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,24 +112,7 @@ OliWeb.ViewHelpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#brand_logo_html/2">brand_logo_html(conn_or_brand, opts \\ [])</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#dt/2">dt(datetime, opts \\ [])</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Converts a datetime to a specific timezone based on a user's session or specified timezone
-and returns a formatted string.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#dt/3">dt(datetime, conn, opts)</a>
+    <a href="#brand_logo/1">brand_logo(assigns)</a>
 
   </div>
 
@@ -141,16 +124,6 @@ and returns a formatted string.</p></div>
   </div>
 
     <div class="summary-synopsis"><p>Renders a link with text and an external icon which opens in a new tab</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#format_datetime/2">format_datetime(maybe_localized_datetime, opts \\ [])</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Formats a datetime by converting it to a string. If the timezone attached is UTC, then
-it is assumed this datetime has not been localized and the timezone is included.</p></div>
 
 </div>
 <div class="summary-row">
@@ -172,17 +145,6 @@ it is assumed this datetime has not been localized and the timezone is included.
     <a href="#is_section_instructor_or_admin?/2">is_section_instructor_or_admin?(section_slug, user)</a>
 
   </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#maybe_localized_datetime/2">maybe_localized_datetime(datetime, conn)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Converts a datetime to a specific timezone based on a user's session. This
-session timezone information is set and updated on the timezone api call every
-time a page is loaded.</p></div>
 
 </div>
 <div class="summary-row">
@@ -214,86 +176,16 @@ time a page is loaded.</p></div>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="brand_logo_html/2">
-
-    <span id="brand_logo_html/1"></span>
+<section class="detail" id="brand_logo/1">
 
   <div class="detail-header">
-    <a href="#brand_logo_html/2" class="detail-link" title="Link to this function">
+    <a href="#brand_logo/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">brand_logo_html(conn_or_brand, opts \\ [])</h1>
+    <h1 class="signature">brand_logo(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L13" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="dt/2">
-
-    <span id="dt/1"></span>
-
-  <div class="detail-header">
-    <a href="#dt/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">dt(datetime, opts \\ [])</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L95" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Converts a datetime to a specific timezone based on a user's session or specified timezone
-and returns a formatted string.</p><p>This session timezone information is set and updated on the timezone api call every time a
-page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
-  <a href="#dt/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Examples
-</h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="9762974729-1">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="9762974729-2">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="9762974729-3">)</span><span class="w">
-</span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-4">(</span><span class="n">datetime</span><span class="p" data-group-id="9762974729-4">)</span><span class="w">
-</span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-5">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9762974729-5">)</span><span class="w">
-</span><span class="s">&quot;January 1, 2022&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9762974729-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="9762974729-6">)</span><span class="w">
-</span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
-  </section>
-</section>
-<section class="detail" id="dt/3">
-
-  <div class="detail-header">
-    <a href="#dt/3" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">dt(datetime, conn, opts)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L117" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L12" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -317,7 +209,7 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
     </a>
     <h1 class="signature">external_link(text, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L33" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -330,55 +222,6 @@ page is loaded.</p><h2 id="dt/2-examples" class="section-heading">
 <p>Renders a link with text and an external icon which opens in a new tab</p>
   </section>
 </section>
-<section class="detail" id="format_datetime/2">
-
-    <span id="format_datetime/1"></span>
-
-  <div class="detail-header">
-    <a href="#format_datetime/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">format_datetime(maybe_localized_datetime, opts \\ [])</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L175" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Formats a datetime by converting it to a string. If the timezone attached is UTC, then
-it is assumed this datetime has not been localized and the timezone is included.</p><p>Precision of the datetime can be set to :date, :minutes, or :minutes (default)</p><h2 id="format_datetime/2-examples" class="section-heading">
-  <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
-  Examples
-</h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-1">(</span><span class="n">datetime</span><span class="p" data-group-id="9138205307-1">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-2">(</span><span class="p" data-group-id="9138205307-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="9138205307-3">}</span><span class="p" data-group-id="9138205307-2">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-4">(</span><span class="p" data-group-id="9138205307-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9138205307-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9138205307-4">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-6">(</span><span class="p" data-group-id="9138205307-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9138205307-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="9138205307-6">)</span><span class="w">
-</span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-8">(</span><span class="p" data-group-id="9138205307-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9138205307-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="9138205307-8">)</span><span class="w">
-</span><span class="s">&quot;8 minutes ago&quot;</span><span class="w">
-
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="9138205307-10">)</span><span class="w">
-</span><span class="s">&quot;5 hours ago&quot;</span><span class="w">
-
-</span><span class="c1"># author has preference show_relative_dates set to true</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9138205307-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="9138205307-11">)</span><span class="w">
-</span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
-  </section>
-</section>
 <section class="detail" id="is_admin?/2">
 
   <div class="detail-header">
@@ -388,7 +231,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_admin?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L55" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -410,7 +253,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_section_instructor?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L51" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -432,7 +275,7 @@ it is assumed this datetime has not been localized and the timezone is included.
     </a>
     <h1 class="signature">is_section_instructor_or_admin?(section_slug, user)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L47" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L39" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -443,30 +286,6 @@ it is assumed this datetime has not been localized and the timezone is included.
   <section class="docstring">
 
 
-  </section>
-</section>
-<section class="detail" id="maybe_localized_datetime/2">
-
-  <div class="detail-header">
-    <a href="#maybe_localized_datetime/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">maybe_localized_datetime(datetime, conn)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L132" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Converts a datetime to a specific timezone based on a user's session. This
-session timezone information is set and updated on the timezone api call every
-time a page is loaded.</p>
   </section>
 </section>
 <section class="detail" id="maybe_section_slug/1">
@@ -478,7 +297,7 @@ time a page is loaded.</p>
     </a>
     <h1 class="signature">maybe_section_slug(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L59" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L51" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -500,7 +319,7 @@ time a page is loaded.</p>
     </a>
     <h1 class="signature">preview_mode(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L34" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/views/view_helpers.ex#L26" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

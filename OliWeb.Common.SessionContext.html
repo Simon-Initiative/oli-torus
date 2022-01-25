@@ -7,10 +7,10 @@
     <meta name="generator" content="ExDoc v0.25.2">
     <meta name="project" content="OLI Torus v0.18.4">
 
-    <title>Oli.Lti.LTI_NRPS — OLI Torus v0.18.4</title>
+    <title>OliWeb.Common.SessionContext — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -86,9 +86,9 @@ OLI Torus
     <div id="content" class="content-inner">
 
       <h1>
-Oli.Lti.LTI_NRPS <small class="app-vsn">(OLI Torus v0.18.4)</small>
+OliWeb.Common.SessionContext <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
-          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_nrps.ex#L1" title="View Source" class="view-source" rel="help">
+          <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/session_context.ex#L1" title="View Source" class="view-source" rel="help">
             <span class="icon-code" aria-hidden="true"></span>
             <span class="sr-only">View Source</span>
           </a>
@@ -97,8 +97,7 @@ Oli.Lti.LTI_NRPS <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
 
         <section id="moduledoc">
-<p>Implementation of LTI Names and Roles Provisioning Service</p><p>For information on the standard, see:
-<a href="https://www.imsglobal.org/spec/lti-nrps/v2p0">https://www.imsglobal.org/spec/lti-nrps/v2p0</a></p><p>This module contains no dependencies on attempts, resources, or any other delivery specific construct.</p>
+<p>Session Context related information</p>
         </section>
 
 
@@ -111,33 +110,36 @@ Oli.Lti.LTI_NRPS <small class="app-vsn">(OLI Torus v0.18.4)</small>
             Summary
           </h1>
 
+  <div class="summary-types summary">
+    <h2>
+      <a href="#types">Types</a>
+    </h2>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#t:t/0">t()</a>
+
+  </div>
+
+</div>
+
+  </div>
+
   <div class="summary-functions summary">
     <h2>
       <a href="#functions">Functions</a>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#fetch_memberships/2">fetch_memberships(context_memberships_url, access_token)</a>
+    <a href="#init/0">init()</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#get_context_memberships_url/1">get_context_memberships_url(lti_launch_params)</a>
+    <a href="#init/1">init(conn)</a>
 
   </div>
-
-    <div class="summary-synopsis"><p>Returns the context memberships URL from LTI launch params. If not present returns nil.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#nrps_enabled?/1">nrps_enabled?(lti_launch_params)</a>
-
-  </div>
-
-    <div class="summary-synopsis"><p>Returns true if nrps is enabled (that is, to allow a context membership query).</p></div>
 
 </div>
 
@@ -145,6 +147,52 @@ Oli.Lti.LTI_NRPS <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
         </section>
 
+
+        <section id="types" class="details-list">
+          <h1 class="section-heading">
+            <a class="hover-link" href="#types">
+              <span class="icon-link" aria-hidden="true"></span>
+              <span class="sr-only">Link to this section</span>
+            </a>
+Types
+          </h1>
+          <div class="types-list">
+<section class="detail" id="t:t/0">
+
+  <div class="detail-header">
+    <a href="#t:t/0" class="detail-link" title="Link to this type">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this type</span>
+    </a>
+    <h1 class="signature">t()</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/session_context.ex#L22" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>t() :: %OliWeb.Common.SessionContext{
+  author: Oli.Accounts.Author.t(),
+  local_tz: <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(),
+  user: Oli.Accounts.User.t()
+}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+
+          </div>
+        </section>
 
         <section id="functions" class="details-list">
           <h1 class="section-heading">
@@ -155,16 +203,16 @@ Oli.Lti.LTI_NRPS <small class="app-vsn">(OLI Torus v0.18.4)</small>
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="fetch_memberships/2">
+<section class="detail" id="init/0">
 
   <div class="detail-header">
-    <a href="#fetch_memberships/2" class="detail-link" title="Link to this function">
+    <a href="#init/0" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">fetch_memberships(context_memberships_url, access_token)</h1>
+    <h1 class="signature">init()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_nrps.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/session_context.ex#L28" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -177,16 +225,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="get_context_memberships_url/1">
+<section class="detail" id="init/1">
 
   <div class="detail-header">
-    <a href="#get_context_memberships_url/1" class="detail-link" title="Link to this function">
+    <a href="#init/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">get_context_memberships_url(lti_launch_params)</h1>
+    <h1 class="signature">init(conn)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_nrps.ex#L65" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/session_context.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -196,29 +244,7 @@ Functions
 
   <section class="docstring">
 
-<p>Returns the context memberships URL from LTI launch params. If not present returns nil.</p>
-  </section>
-</section>
-<section class="detail" id="nrps_enabled?/1">
 
-  <div class="detail-header">
-    <a href="#nrps_enabled?/1" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">nrps_enabled?(lti_launch_params)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/lti/lti_nrps.ex#L55" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-<p>Returns true if nrps is enabled (that is, to allow a context membership query).</p>
   </section>
 </section>
 

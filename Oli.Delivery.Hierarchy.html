@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Hierarchy — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -342,26 +342,26 @@ Functions
 
 <p>Given a course section hierarchy, this function builds a &quot;navigation link map&quot; for a course section that is
 used during delivery to efficiently render the &quot;Previous&quot; and &quot;Next&quot; page links.</p><p>This function produces a map of resource ids (as string keys) to inner maps containing previous and next
-resource ids references (again as strings) as well as the page title and slug. An example navigation link map is:</p><pre><code class="makeup elixir"><span class="p" data-group-id="1247730233-1">%{</span><span class="w">
-  </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="1247730233-2">%{</span><span class="w">
+resource ids references (again as strings) as well as the page title and slug. An example navigation link map is:</p><pre><code class="makeup elixir"><span class="p" data-group-id="2567970846-1">%{</span><span class="w">
+  </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2567970846-2">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Introduction to Biology&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;intro_bio&quot;</span><span class="w">
-  </span><span class="p" data-group-id="1247730233-2">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="1247730233-3">%{</span><span class="w">
+  </span><span class="p" data-group-id="2567970846-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2567970846-3">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Photosynthesis&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;photosyn_2&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="p" data-group-id="1247730233-3">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="1247730233-4">%{</span><span class="w">
+  </span><span class="p" data-group-id="2567970846-3">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="2567970846-4">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Final Exam&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;final_exam&quot;</span><span class="w">
-  </span><span class="p" data-group-id="1247730233-4">}</span><span class="w">
-</span><span class="p" data-group-id="1247730233-1">}</span></code></pre><p>The above construct is designed to allow a lightweight, constant time determination
+  </span><span class="p" data-group-id="2567970846-4">}</span><span class="w">
+</span><span class="p" data-group-id="2567970846-1">}</span></code></pre><p>The above construct is designed to allow a lightweight, constant time determination
 (and then rendering) of Previous and Next links.  Given a resource id of the current
 page, at most three map lookups are required to gather all the information required to
 render links.  It is expected that this map is already in memory, retrieved from the

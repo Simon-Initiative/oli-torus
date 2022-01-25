@@ -10,7 +10,7 @@
     <title>OliWeb.Router.Helpers — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-7d776f5d33.js"></script>
+    <script src="dist/sidebar_items-460afc168a.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -816,7 +816,7 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#delivery_path/4">delivery_path(conn_or_endpoint, action, section_invite_slug, params)</a>
+    <a href="#delivery_path/4">delivery_path(conn_or_endpoint, action, section_slug, params)</a>
 
   </div>
 
@@ -837,7 +837,7 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#delivery_url/4">delivery_url(conn_or_endpoint, action, section_invite_slug, params)</a>
+    <a href="#delivery_url/4">delivery_url(conn_or_endpoint, action, section_slug, params)</a>
 
   </div>
 
@@ -1194,14 +1194,14 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#live_path/4">live_path(conn_or_endpoint, action, product_id, params)</a>
+    <a href="#live_path/4">live_path(conn_or_endpoint, action, community_id, params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#live_path/5">live_path(conn_or_endpoint, action, section_slug, user_id, params)</a>
+    <a href="#live_path/5">live_path(conn_or_endpoint, action, section_slug, section_resource_slug, params)</a>
 
   </div>
 
@@ -1229,14 +1229,14 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#live_url/4">live_url(conn_or_endpoint, action, product_id, params)</a>
+    <a href="#live_url/4">live_url(conn_or_endpoint, action, community_id, params)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#live_url/5">live_url(conn_or_endpoint, action, section_slug, user_id, params)</a>
+    <a href="#live_url/5">live_url(conn_or_endpoint, action, section_slug, section_resource_slug, params)</a>
 
   </div>
 
@@ -2127,14 +2127,14 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#resource_path/3">resource_path(conn_or_endpoint, action, project_id)</a>
+    <a href="#resource_path/3">resource_path(conn_or_endpoint, action, project)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#resource_path/4">resource_path(conn_or_endpoint, action, project_id, params)</a>
+    <a href="#resource_path/4">resource_path(conn_or_endpoint, action, project, params)</a>
 
   </div>
 
@@ -2148,14 +2148,14 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#resource_url/3">resource_url(conn_or_endpoint, action, project_id)</a>
+    <a href="#resource_url/3">resource_url(conn_or_endpoint, action, project)</a>
 
   </div>
 
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#resource_url/4">resource_url(conn_or_endpoint, action, project_id, params)</a>
+    <a href="#resource_url/4">resource_url(conn_or_endpoint, action, project, params)</a>
 
   </div>
 
@@ -4649,7 +4649,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">delivery_path(conn_or_endpoint, action, section_invite_slug, params)</h1>
+    <h1 class="signature">delivery_path(conn_or_endpoint, action, section_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -4715,7 +4715,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">delivery_url(conn_or_endpoint, action, section_invite_slug, params)</h1>
+    <h1 class="signature">delivery_url(conn_or_endpoint, action, section_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -5837,7 +5837,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">live_path(conn_or_endpoint, action, product_id, params)</h1>
+    <h1 class="signature">live_path(conn_or_endpoint, action, community_id, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -5859,7 +5859,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">live_path(conn_or_endpoint, action, section_slug, user_id, params)</h1>
+    <h1 class="signature">live_path(conn_or_endpoint, action, section_slug, section_resource_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -5947,7 +5947,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">live_url(conn_or_endpoint, action, product_id, params)</h1>
+    <h1 class="signature">live_url(conn_or_endpoint, action, community_id, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -5969,7 +5969,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">live_url(conn_or_endpoint, action, section_slug, user_id, params)</h1>
+    <h1 class="signature">live_url(conn_or_endpoint, action, section_slug, section_resource_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -8763,7 +8763,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">resource_path(conn_or_endpoint, action, project_id)</h1>
+    <h1 class="signature">resource_path(conn_or_endpoint, action, project)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -8785,7 +8785,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">resource_path(conn_or_endpoint, action, project_id, params)</h1>
+    <h1 class="signature">resource_path(conn_or_endpoint, action, project, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -8829,7 +8829,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">resource_url(conn_or_endpoint, action, project_id)</h1>
+    <h1 class="signature">resource_url(conn_or_endpoint, action, project)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -8851,7 +8851,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">resource_url(conn_or_endpoint, action, project_id, params)</h1>
+    <h1 class="signature">resource_url(conn_or_endpoint, action, project, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
