@@ -104,11 +104,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (userDataCacheExpiry.has(simId) && userDataCache.has(simId)) {
       const lastRefreshed = userDataCacheExpiry.get(simId) as number;
       const now = Date.now();
-      // allow updates every 1 minute
-      if (now - lastRefreshed < 1000 * 60) {
+      // allow updates every 1 second (we really just want to avoid the sim making rapid calls)
+      if (now - lastRefreshed < 1000) {
         data = userDataCache.get(simId);
       }
-    } else {
+    }
+    if (!data) {
       data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
       userDataCacheExpiry.set(simId, Date.now());
       userDataCache.set(simId, data);
