@@ -231,6 +231,20 @@ config :oli, :auth_providers,
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
 
+# Configure libcluster for horizontal scaling
+# Take into account that different strategies could use different config options
+config :libcluster,
+  topologies: [
+    oli: [
+      strategy:
+        Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "ClusterEC2.Strategy.Tags")]),
+      config: [
+        ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
+        ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", "")
+      ]
+    ]
+  ]
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix
