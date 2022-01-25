@@ -150,6 +150,41 @@ defmodule OliWeb.CognitoControllerTest do
              end) =~ error_message
     end
 
+    test "does not create user when the id token is corrupted", %{
+      conn: conn,
+      community: %Community{id: community_id},
+      section: %Section{slug: slug},
+      email: email
+    } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      # corrupt id token
+      corruputed_token =
+        id_token
+        |> String.split(".")
+        |> (fn [header | payload_and_key] -> [String.slice(header, 0..-2) | payload_and_key] end).()
+        |> Enum.join(".")
+
+      params = valid_params(community_id, corruputed_token, slug)
+
+      error_message = "Unknown error occurred - Elixir.Jason.DecodeError"
+
+      assert capture_log(fn ->
+               body =
+                 conn
+                 |> get(cognito_launch_path(conn, params))
+                 |> html_response(302)
+
+               assert body =~
+                        "You are being <a href=\"#{@error_url}?error=#{error_message}\">redirected</a>"
+
+               refute Accounts.get_user_by(%{email: email})
+             end) =~ error_message
+    end
+
     defp cognito_launch_path(conn, params), do: Routes.cognito_path(conn, :launch, params)
 
     defp mock_jwks_endpoint(url, jwk, :ok) do

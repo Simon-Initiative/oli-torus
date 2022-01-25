@@ -38,21 +38,16 @@ defmodule OliWeb.CognitoController do
                   to: Routes.page_delivery_path(conn, :index, valid_params.course_section_id)
                 )
 
-              {:error, %Ecto.Changeset{errors: errors}} ->
-                error_fields =
-                  errors
-                  |> Keyword.keys()
-                  |> Enum.join(", ")
+              {:error, %Ecto.Changeset{} = changeset} ->
+                error_fields = changeset_error_fields(changeset)
 
                 error_message = error_fields <> " - missing or invalid"
-                Logger.error(error_message)
 
                 redirect_with_error(conn, valid_params, error_message)
             end
 
           {false, _, _} ->
             error_message = "Unable to verify credentials"
-            Logger.error(error_message)
 
             redirect_with_error(conn, valid_params, error_message)
         end
@@ -60,15 +55,12 @@ defmodule OliWeb.CognitoController do
         {:error, error} ->
           error_message = snake_case_to_friendly(error)
 
-          Logger.error(error_message)
-
           redirect_with_error(conn, params, error_message)
       end
     rescue
       e ->
         %exception_type{} = e
         error_message = "Unknown error occurred - #{exception_type}"
-        Logger.error("#{uuid()} - #{error_message}")
 
         redirect_with_error(conn, params, error_message)
     end
@@ -92,10 +84,7 @@ defmodule OliWeb.CognitoController do
     if changeset.valid? do
       {:ok, apply_changes(changeset)}
     else
-      error_fields =
-        changeset.errors
-        |> Keyword.keys()
-        |> Enum.join(", ")
+      error_fields = changeset_error_fields(changeset)
 
       error_message = error_fields <> " - missing or invalid params"
 
@@ -149,10 +138,18 @@ defmodule OliWeb.CognitoController do
   defp get_error_url(_params), do: "/unauthorized"
 
   defp redirect_with_error(conn, params, error) do
+    Logger.error(error)
+
     error_url = get_error_url(params)
 
     conn
     |> redirect(external: "#{error_url}?error=#{error}")
     |> halt()
+  end
+
+  defp changeset_error_fields(changeset) do
+    changeset.errors
+    |> Keyword.keys()
+    |> Enum.join(", ")
   end
 end
