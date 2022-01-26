@@ -14,6 +14,7 @@ defmodule Oli.Accounts do
   alias Oli.Groups.CommunityAccount
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -612,5 +613,21 @@ defmodule Oli.Accounts do
         select: community
       )
     )
+  end
+
+  @doc """
+  Returns whether the user account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> user_confirmation_pending?(%{email_confirmation_token: "token", email_confirmed_at: nil})
+      true
+
+      iex> user_confirmation_pending?(%{email_confirmation_token: nil, email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def user_confirmation_pending?(user) do
+    EmailConfirmationContext.current_email_unconfirmed?(user, []) or
+      EmailConfirmationContext.pending_email_change?(user, [])
   end
 end
