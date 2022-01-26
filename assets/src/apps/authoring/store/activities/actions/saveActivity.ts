@@ -21,6 +21,17 @@ export const saveActivity = createAsyncThunk(
 
     const isReadOnlyMode = selectReadOnly(rootState);
 
+    if (!activity.authoring.parts?.length) {
+      activity.authoring.parts = [
+        {
+          id: '__default',
+          type: 'janus-text-flow',
+          inherited: false,
+          owner: 'self', // should be sequenceId, but not sure it's needed here
+        },
+      ];
+    }
+
     const changeData: ActivityUpdate = {
       title: activity.title as string,
       objectives: activity.objectives as ObjectiveMap,
@@ -59,6 +70,16 @@ export const bulkSaveActivity = createAsyncThunk(
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {
+        if (!activity.authoring.parts?.length) {
+          activity.authoring.parts = [
+            {
+              id: '__default',
+              type: 'janus-text-flow',
+              inherited: false,
+              owner: 'self', // should be sequenceId, but not sure it's needed here
+            },
+          ];
+        }
         const changeData: BulkActivityUpdate = {
           title: activity.title as string,
           objectives: activity.objectives as ObjectiveMap,
