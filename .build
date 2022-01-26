@@ -396,6 +396,7 @@ OliWeb.Common.Breadcrumb.html
 OliWeb.Common.Check.html
 OliWeb.Common.Confirm.html
 OliWeb.Common.DeleteModal.html
+OliWeb.Common.DeleteModalNoConfirmation.html
 OliWeb.Common.Filter.html
 OliWeb.Common.FormContainer.html
 OliWeb.Common.FormatDateTime.html
@@ -644,8 +645,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-37adaf0e71.js
-dist/sidebar_items-cbc601712e.js
+dist/search_items-6181404de5.js
+dist/sidebar_items-4cca110577.js
 index.html
 license.html
 readme.html
