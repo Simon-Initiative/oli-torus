@@ -14,15 +14,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
   const toolbar = useToolbar();
   const editor = useSlate();
 
-  const isOpen = React.useMemo(
-    () => !!thisDropdown.current && toolbar.submenu?.current === thisDropdown.current,
-    [thisDropdown.current, toolbar.submenu],
-  );
-
-  const content = React.useMemo(
-    () => <div className="editorToolbar__dropdownGroup">{props.children}</div>,
-    [props.children],
-  );
+  const isOpen = !!thisDropdown.current && toolbar.submenu?.current === thisDropdown.current;
 
   const onClick = React.useCallback(
     (e) => {
@@ -41,7 +33,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       positions={['bottom']}
       reposition={true}
       align={'start'}
-      content={content}
+      content={<div className="editorToolbar__dropdownGroup">{props.children}</div>}
     >
       <button
         className={classNames([

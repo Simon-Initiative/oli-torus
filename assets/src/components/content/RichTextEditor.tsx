@@ -35,10 +35,7 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           editMode={props.editMode}
           value={value}
           onEdit={(value, editor, operations) => props.onEdit(value, editor, operations)}
-          toolbarItems={getToolbarForContentType(
-            props.onRequestMedia,
-            props.preventLargeContent ? 'small' : undefined,
-          )}
+          toolbarInsertDescs={[]}
           placeholder={props.placeholder}
           style={props.style}
         >

@@ -103,10 +103,10 @@ export const schema: Schema = {
     validChildren: {},
   },
   code: {
-    isVoid: false,
+    isVoid: true,
     isBlock: true,
     isTopLevel: true,
-    validChildren: toObj(['code_line']),
+    validChildren: {},
   },
   code_line: {
     isVoid: false,

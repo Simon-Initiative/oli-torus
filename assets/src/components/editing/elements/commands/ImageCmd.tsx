@@ -6,7 +6,7 @@ import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
-import { image } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -50,7 +50,7 @@ const libraryCommand: Command = {
   execute: (context, editor) => {
     const at = editor.selection;
     // selectImage(context.projectSlug, undefined).then((src) =>
-    Transforms.insertNodes(editor, image(), at ? { at } : undefined);
+    Transforms.insertNodes(editor, Model.image(), at ? { at } : undefined);
     // );
   },
   precondition: (_editor) => {
@@ -70,7 +70,7 @@ function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | b
 
       onRequestMedia(request).then((r) => {
         if (typeof r === 'string') {
-          Transforms.insertNodes(editor, image(r), at ? { at } : undefined);
+          Transforms.insertNodes(editor, Model.image(r), at ? { at } : undefined);
         }
       });
     },

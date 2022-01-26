@@ -15,7 +15,7 @@ import {
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
-import { inputRef } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import React from 'react';
@@ -39,7 +39,7 @@ export const multiInputStem = (input: InputRef) => ({
 });
 
 export const defaultModel = (): MultiInputSchema => {
-  const input = inputRef();
+  const input = Model.inputRef();
 
   return {
     stem: multiInputStem(input),
@@ -130,7 +130,7 @@ function ensureHasInput(model: MultiInputSchema) {
 
   // Make new input ref, add to first paragraph of stem, add new input to model.inputs,
   // add new part.
-  const ref = inputRef();
+  const ref = Model.inputRef();
   const part = makePart(Responses.forTextInput(), [makeHint('')]);
   const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
@@ -203,7 +203,7 @@ function matchInputsToParts(model: MultiInputSchema) {
   unmatchedParts.forEach((part: Part) => {
     const rule = part.responses[0].rule;
     const type = rule.match(/{\d+}/) ? 'dropdown' : isTextRule(rule) ? 'text' : 'numeric';
-    const ref = inputRef();
+    const ref = Model.inputRef();
     // If it's a dropdown, change the part to a text input.
     model.inputs.push({
       id: ref.id,
@@ -241,7 +241,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
   unmatchedInputs.forEach((input: MultiInput) => {
     // add inputRef to end of first paragraph in stem
     const firstParagraph = model.stem.content.find((e) => e.type === 'p') as Paragraph | undefined;
-    firstParagraph?.children.push({ ...inputRef(), id: input.id });
+    firstParagraph?.children.push({ ...Model.inputRef(), id: input.id });
     firstParagraph?.children.push({ text: '' });
   });
 

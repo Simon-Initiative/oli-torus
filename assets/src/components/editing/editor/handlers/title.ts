@@ -1,6 +1,6 @@
 import React from 'react';
 import { Point, Range, Editor as SlateEditor, Transforms, Element } from 'slate';
-import { p } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: SlateEditor, e: React.KeyboardEvent) => {
   if (e.key === 'Enter') {
@@ -33,7 +33,7 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
         const nextMatch = SlateEditor.next(editor, { at: path });
         if (nextMatch) {
           const [, nextPath] = nextMatch;
-          Transforms.insertNodes(editor, p(), { at: nextPath });
+          Transforms.insertNodes(editor, Model.p(), { at: nextPath });
 
           const newNext = SlateEditor.next(editor, { at: path });
           if (newNext) {
@@ -43,7 +43,7 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
 
           // But if there is no next node, insert it at end
         } else {
-          Transforms.insertNodes(editor, p(), {
+          Transforms.insertNodes(editor, Model.p(), {
             mode: 'highest',
             at: SlateEditor.end(editor, []),
           });

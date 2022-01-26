@@ -3,7 +3,7 @@ import { KeyboardEvent } from 'react';
 import { getNearestBlock } from 'components/editing/utils';
 import { ReactEditor } from 'slate-react';
 import { schema, SchemaConfig } from 'data/content/model/schema';
-import { p } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: Editor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {
@@ -21,7 +21,7 @@ function handleVoidNewline(editor: Editor, _e: KeyboardEvent) {
 
       if (schemaItem.isVoid) {
         const path = ReactEditor.findPath(editor, node);
-        Transforms.insertNodes(editor, p(), {
+        Transforms.insertNodes(editor, Model.p(), {
           at: Path.next(path),
         });
 

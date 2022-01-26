@@ -1,7 +1,13 @@
 @use 'delivery/variables' as delivery;
 
 .code-editor {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  width: 100%;
+  border: 2px solid transparent;
+
+  &.active {
+    border: 2px solid $primary;
+  }
 
   pre {
     margin-bottom: 0;

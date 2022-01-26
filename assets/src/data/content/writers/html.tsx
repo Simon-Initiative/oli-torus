@@ -3,11 +3,13 @@ import { DropdownInput } from 'components/activities/common/delivery/inputs/Drop
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
   Blockquote,
-  Code,
   CodeLine,
+  CodeV1,
+  CodeV2,
   HeadingFive,
   HeadingFour,
   HeadingOne,
@@ -176,11 +178,25 @@ export class HtmlParser implements WriterImpl {
   mathLine(context: WriterContext, next: Next, _x: MathLine) {
     return next();
   }
-  code(context: WriterContext, next: Next, attrs: Code) {
+  code(context: WriterContext, next: Next, attrs: CodeV1 | CodeV2) {
+    const language = this.escapeXml(attrs.language);
+    const langClass = CodeLanguages.byPrettyName(language).highlightJs;
+    if ('code' in attrs) return this.codev2(context, next, attrs as CodeV2, langClass);
+    return this.codev1(context, next, attrs as CodeV1, langClass);
+  }
+  codev1(_context: WriterContext, next: Next, attrs: CodeV1, className: string) {
     return this.figure(
       attrs,
       <pre>
-        <code className={`language-${this.escapeXml(attrs.language)}`}>{next()}</code>
+        <code className={`language-${className}`}>{next()}</code>
+      </pre>,
+    );
+  }
+  codev2(_context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
+    return this.figure(
+      attrs,
+      <pre>
+        <code className={`language-${className}`}>{this.escapeXml(attrs.code)}</code>
       </pre>,
     );
   }

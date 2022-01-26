@@ -4,7 +4,7 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Heading } from 'components/misc/Heading';
-import { image } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -82,14 +82,14 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   }
 
   const addImage = (_e: any) => {
-    selectImage(projectSlug, image()).then((url: string) => {
+    selectImage(projectSlug, Model.image()).then((url: string) => {
       dispatch(ICActions.addResourceURL(url));
     });
   };
 
   const addSpreadsheet = (_e: any) => {
-    selectSpreadsheet(projectSlug, image()).then((img) => {
-      dispatch(ICActions.addResourceURL(img.src));
+    selectSpreadsheet(projectSlug, Model.image()).then((img) => {
+      img.src && dispatch(ICActions.addResourceURL(img.src));
     });
   };
 

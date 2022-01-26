@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "module": "es6",
+    "module": "ES2022",
     "target": "es6",
     "jsx": "preserve",
     "moduleResolution": "node",

@@ -1,5 +1,4 @@
 import { RichText } from 'components/activities/types';
-import { MediaDisplayMode } from 'data/content/model/other';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { BaseElement, Descendant, Text } from 'slate';
 import { Identifiable } from '../other';
@@ -10,7 +9,7 @@ interface SlateElement<Children extends Descendant[]> extends BaseElement, Ident
 
 export type ModelElement = TopLevel | Block | Inline;
 
-type TopLevel = TextBlock | List | Media | Table | Math | Code | Blockquote;
+type TopLevel = TextBlock | List | Media | Table | Math | (CodeV1 | CodeV2) | Blockquote;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
 type Inline = Hyperlink | Popup | InputRef;
 
@@ -58,44 +57,47 @@ export interface UnorderedList extends SlateElement<ListChildren> {
   type: 'ul';
 }
 
-type MediaChildren = Text[];
-export interface Image extends SlateElement<MediaChildren> {
+type VoidChildren = Text[];
+export interface Image extends SlateElement<VoidChildren> {
   type: 'img';
-  src: string | undefined;
+  src?: string;
   height?: number;
   width?: number;
   alt?: string;
   caption?: string;
-  display?: MediaDisplayMode;
+  // Legacy, unused;
+  display?: string;
 }
 
-export interface YouTube extends SlateElement<MediaChildren> {
+export interface YouTube extends SlateElement<VoidChildren> {
   type: 'youtube';
-  src: string | undefined;
+  src?: string;
   height?: number;
   width?: number;
   alt?: string;
   caption?: string;
-  display?: MediaDisplayMode;
+  // Legacy, unused;
+  display?: string;
 }
 
-export interface Audio extends SlateElement<MediaChildren> {
+export interface Audio extends SlateElement<VoidChildren> {
   type: 'audio';
-  src: string;
+  src?: string;
   alt?: string;
   caption?: string;
 }
 
 // Webpage and Iframe are synonymous. Webpage is used in most UI-related
 // code, and Iframe is used for the underlying slate data model.
-export interface Webpage extends SlateElement<MediaChildren> {
+export interface Webpage extends SlateElement<VoidChildren> {
   type: 'iframe';
-  src: string;
+  src?: string;
   height?: number;
   width?: number;
   alt?: string;
   caption?: string;
-  display?: MediaDisplayMode;
+  // Legacy, unused
+  display?: string;
 }
 
 export interface Table extends SlateElement<TableRow[]> {
@@ -107,11 +109,18 @@ export interface Math extends SlateElement<MathLine[]> {
   type: 'math';
 }
 
-export interface Code extends SlateElement<CodeLine[]> {
+export interface CodeV1 extends SlateElement<CodeLine[]> {
   type: 'code';
   language: string;
   caption?: string;
 }
+export interface CodeV2 extends SlateElement<VoidChildren> {
+  type: 'code';
+  code: string;
+  language: string;
+  caption?: string;
+}
+export type Code = CodeV2;
 
 export interface Blockquote extends SlateElement<Paragraph[]> {
   type: 'blockquote';

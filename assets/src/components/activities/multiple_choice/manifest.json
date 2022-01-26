@@ -2,6 +2,7 @@
   "id": "oli_multiple_choice",
   "friendlyName": "Multiple Choice",
   "description": "A traditional multiple choice question with one correct answer",
+  "icon": "radio_button_checked",
   "delivery": {
     "element": "oli-multiple-choice-delivery",
     "entry": "./delivery-entry.ts"

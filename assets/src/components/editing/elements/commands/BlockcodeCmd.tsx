@@ -1,7 +1,7 @@
 import { Editor, Element, Transforms } from 'slate';
 import { isActive } from '../../utils';
-import { code } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc, switchType } from 'components/editing/elements/commands/commands';
+import { Model } from 'data/content/model/elements/factories';
 
 const ui = {
   icon: 'code',
@@ -12,7 +12,7 @@ export const codeBlockInsertDesc = createButtonCommandDesc({
   ...ui,
   execute: (_context, editor) => {
     if (!editor.selection) return;
-    Transforms.insertNodes(editor, code(), { at: editor.selection });
+    Transforms.insertNodes(editor, Model.code(), { at: editor.selection });
   },
   precondition: (editor) => {
     return !isActive(editor, 'table');

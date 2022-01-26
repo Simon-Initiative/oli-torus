@@ -7,7 +7,7 @@ import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
-import { audio } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -34,9 +34,9 @@ export function selectAudio(
           onEdit={() => {}}
           mimeFilter={MIMETYPE_FILTERS.AUDIO}
           selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={[model.src]}
+          initialSelectionPaths={[model.src || '']}
           onSelectionChange={(audios: MediaItem[]) => {
-            selected.audio = audio(audios[0].url);
+            selected.audio = Model.audio(audios[0].url);
           }}
         />
       </ModalSelection>
@@ -49,7 +49,7 @@ export function selectAudio(
 const libraryCommand: Command = {
   execute: (context, editor: Editor) => {
     const at = editor.selection as any;
-    selectAudio(context.projectSlug, audio()).then((audio) =>
+    selectAudio(context.projectSlug, Model.audio()).then((audio) =>
       Transforms.insertNodes(editor, audio, { at }),
     );
   },
@@ -71,7 +71,7 @@ function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | b
 
       onRequestMedia(request).then((r) => {
         if (typeof r === 'string') {
-          Transforms.insertNodes(editor, audio(r), { at });
+          Transforms.insertNodes(editor, Model.audio(r), { at });
         }
       });
     },

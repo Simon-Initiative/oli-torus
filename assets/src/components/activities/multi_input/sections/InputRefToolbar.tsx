@@ -1,5 +1,5 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import { inputRef } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
@@ -20,7 +20,7 @@ export const InputRefToolbar: React.FC<InputRefToolbar> = (props) => {
         style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
         action={(e) => {
           e.preventDefault();
-          Transforms.insertNodes(editor, inputRef(), { select: true });
+          Transforms.insertNodes(editor, Model.inputRef(), { select: true });
         }}
       >
         Add Input

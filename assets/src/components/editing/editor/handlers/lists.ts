@@ -2,7 +2,7 @@ import { Transforms, Range, Node, Point, Path, Editor as SlateEditor, Element, T
 import { KeyboardEvent } from 'react';
 import { OrderedList, UnorderedList } from 'data/content/model/elements/types';
 import { ListItem } from '../../../../data/content/model/elements/types';
-import { ol, p, ul } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 // The key down handler required to allow special list processing.
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
@@ -41,7 +41,7 @@ export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
             for (let i = 0; i < parent.children.length; i += 1) {
               const item = parent.children[i];
               if (isList(item)) {
-                const newList = item.type === 'ul' ? ul() : ol();
+                const newList = item.type === 'ul' ? Model.ul() : Model.ol();
                 newList.children.pop();
 
                 Transforms.wrapNodes(editor, newList, { at: editor.selection });
@@ -52,7 +52,7 @@ export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
           }
 
           // Allow indent with the same list type as current parent
-          const newList = parent.type === 'ul' ? ul() : ol();
+          const newList = parent.type === 'ul' ? Model.ul() : Model.ol();
           newList.children.pop();
 
           Transforms.wrapNodes(editor, newList, { at: editor.selection });
@@ -124,7 +124,7 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
           Transforms.removeNodes(editor, { at: path });
 
           // Insert it ahead of the next node
-          Transforms.insertNodes(editor, p(), { at: Path.next(parentPath) });
+          Transforms.insertNodes(editor, Model.p(), { at: Path.next(parentPath) });
           Transforms.select(editor, Path.next(parentPath));
 
           e.preventDefault();

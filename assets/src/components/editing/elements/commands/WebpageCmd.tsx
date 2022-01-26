@@ -4,7 +4,7 @@ import { Transforms } from 'slate';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
 import { useState } from 'react';
-import { webpage } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import * as Settings from 'components/editing/elements/settings/Settings';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
@@ -80,7 +80,7 @@ const command: Command = {
           src = 'https://' + src;
         }
 
-        Transforms.insertNodes(editor, webpage(src), { at });
+        Transforms.insertNodes(editor, Model.webpage(src), { at });
       }
     });
   },

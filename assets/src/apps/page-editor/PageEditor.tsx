@@ -482,7 +482,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     ) => {
       this.update({
         content: this.state.content
-          .take(index)
+          .take(index + 1)
           .concat([[c.id, c]])
           .concat(this.state.content.skip(index)),
       });

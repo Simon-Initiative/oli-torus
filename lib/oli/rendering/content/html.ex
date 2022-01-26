@@ -166,6 +166,22 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
+  # V2 - presence of "code" attr
+  def code(
+        %Context{} = _context,
+        _next,
+        %{
+          "language" => language,
+          "code" => code
+        } = attrs
+      ) do
+        IO.inspect(language, label: "Language")
+    figure(attrs, [
+      ~s|<pre><code class="language-#{escape_xml!(code_languages()[language])}">#{escape_xml!(code)}</code></pre>\n|
+    ])
+  end
+
+  # V1 - content as children
   def code(
         %Context{} = _context,
         next,
@@ -174,7 +190,7 @@ defmodule Oli.Rendering.Content.Html do
         } = attrs
       ) do
     figure(attrs, [
-      ~s|<pre><code class="language-#{escape_xml!(language)}">|,
+      ~s|<pre><code class="language-#{escape_xml!(code_languages()[language])}">|,
       next.(),
       "</code></pre>\n"
     ])

@@ -22,20 +22,16 @@ export const WebpageEditor = (props: Props) => {
   return (
     <div
       {...props.attributes}
-      className={'embed-responsive embed-responsive-16by9 img-thumbnail position-relative'}
       style={borderStyle}
       contentEditable={false}
-      onClick={(_e) => {
-        ReactEditor.focus(editor);
-        Transforms.select(editor, ReactEditor.findPath(editor, props.model));
-      }}
+      className="embed-responsive embed-responsive-16by9 img-thumbnail webpage-editor"
     >
       {props.children}
       <iframe
-        onMouseDown={(e) => e.preventDefault()}
         className="embed-responsive-item"
         src={props.model.src}
         allowFullScreen
+        frameBorder={0}
       />
       <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
     </div>

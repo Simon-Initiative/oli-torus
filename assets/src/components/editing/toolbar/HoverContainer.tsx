@@ -30,14 +30,14 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
     [],
   );
 
-  const children = <div style={{ display: 'inline', ...props.style }}>{props.children}</div>;
+  const children = <span style={{ ...props.style }}>{props.children}</span>;
 
   if (!isOpen) return children;
 
   return (
     <Popover
       isOpen
-      padding={5}
+      padding={12}
       reposition={false}
       contentLocation={(state) => {
         // Setting state in render is bad practice, but react-tiny-popover is

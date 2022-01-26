@@ -3,7 +3,7 @@ import { CommandDesc, Command } from 'components/editing/elements/commands/inter
 import { Transforms } from 'slate';
 import { useState } from 'react';
 import { getQueryVariableFromString } from 'utils/params';
-import { youtube } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 export type YouTubeCreationProps = {
   onDone: (src: string) => void;
@@ -45,7 +45,7 @@ const command: Command = {
     //   src = src.substr(src.lastIndexOf('/') + 1);
     // }
 
-    Transforms.insertNodes(editor, youtube(), { at });
+    Transforms.insertNodes(editor, Model.youtube(), { at });
   },
   precondition: (_editor) => {
     return true;

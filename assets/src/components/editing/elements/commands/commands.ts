@@ -2,7 +2,7 @@ import { Editor, Element, Node, Text, Transforms } from 'slate';
 import { CommandDesc, Command } from './interfaces';
 import { elementsOfType, isMarkActive, textNodesInSelection } from '../../utils';
 import { Mark } from 'data/content/model/text';
-import { blockquote, code, ol, p, ul } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import { ReactEditor } from 'slate-react';
 
 interface CommandWrapperProps {
@@ -119,7 +119,7 @@ export const switchType = (editor: Editor, type: any) => {
           { type: 'li' },
           { match: (e) => Element.isElement(e) && e.type === 'p', mode: 'all' },
         );
-        return Transforms.wrapNodes(editor, ul(), {
+        return Transforms.wrapNodes(editor, Model.ul(), {
           match: (e) => Element.isElement(e) && e.type === 'li',
           mode: 'all',
         });
@@ -130,7 +130,7 @@ export const switchType = (editor: Editor, type: any) => {
             mode: 'all',
           }),
         ]);
-        return Transforms.wrapNodes(editor, blockquote(), {
+        return Transforms.wrapNodes(editor, Model.blockquote(), {
           match: (e) => Element.isElement(e) && e.type === 'p',
         });
       case type === 'code':
@@ -142,7 +142,7 @@ export const switchType = (editor: Editor, type: any) => {
             mode: 'all',
           },
         );
-        return Transforms.wrapNodes(editor, code(), {
+        return Transforms.wrapNodes(editor, Model.code(), {
           match: (e) => Element.isElement(e) && e.type === 'code_line',
           mode: 'all',
         });

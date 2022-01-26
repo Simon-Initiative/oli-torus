@@ -13,6 +13,7 @@ import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
 import { defaultActivityState } from 'data/activities/utils';
 import { getToolbarForContentType } from 'components/editing/toolbar/utils';
+import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 
 // content or referenced activities
 export const createEditor = (
@@ -34,6 +35,7 @@ export const createEditor = (
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
   onRegisterNewTag: (o: Tag) => void,
+  onAddItem: AddCallback,
 ): JSX.Element => {
   if (content.type === 'selection') {
     return (
@@ -63,7 +65,14 @@ export const createEditor = (
           content={content}
           onEdit={onEdit}
           projectSlug={projectSlug}
-          toolbarItems={getToolbarForContentType(null)}
+          toolbarInsertDescs={getToolbarForContentType(
+            resourceContext,
+            onAddItem,
+            editorMap,
+            index,
+            'all',
+          )}
+          // toolbarItems={getToolbarForContentType(null)}
         />
       </ContentBlock>
     );

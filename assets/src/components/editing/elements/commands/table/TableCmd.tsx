@@ -1,6 +1,6 @@
 import { CommandDesc, Command } from 'components/editing/elements/commands/interfaces';
 import { Editor, Transforms } from 'slate';
-import { td, tr, table } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import { SizePicker } from 'components/editing/elements/commands/table/SizePicker';
 import { isTopLevel } from 'components/editing/utils';
 
@@ -13,12 +13,12 @@ const command: Command = {
     for (let i = 0; i < params.rows; i += 1) {
       const tds = [];
       for (let j = 0; j < params.columns; j += 1) {
-        tds.push(td(''));
+        tds.push(Model.td(''));
       }
-      rows.push(tr(tds));
+      rows.push(Model.tr(tds));
     }
 
-    const t = table(rows);
+    const t = Model.table(rows);
     Transforms.insertNodes(editor, t, { at });
     Transforms.deselect(editor);
   },

@@ -16,70 +16,73 @@ import {
   Image,
   Audio,
   Blockquote,
+  ModelElement,
+  HeadingOne,
+  HeadingTwo,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
 
-export function create<ModelElement>(params: Partial<ModelElement>): ModelElement {
-  return Object.assign(
-    {
-      id: guid(),
-      children: [{ text: '' }],
-    } as any,
-    params,
-  ) as ModelElement;
+function create<E extends ModelElement>(params: Partial<E>): E {
+  return {
+    id: guid(),
+    children: [{ text: '' }],
+    ...params,
+  } as E;
 }
 
-// Helper functions for creating ModelElements
-export const td = (text: string) => create<TableData>({ type: 'td', children: [p(text)] });
+export const Model = {
+  h1: (text = '') => create<HeadingOne>({ type: 'h1', children: [{ text }] }),
 
-export const tr = (children: TableData[]) => create<TableRow>({ type: 'tr', children });
+  h2: (text = '') => create<HeadingTwo>({ type: 'h2', children: [{ text }] }),
 
-export const table = (children: TableRow[]) => create<Table>({ type: 'table', children });
+  td: (text: string) => create<TableData>({ type: 'td', children: [Model.p(text)] }),
 
-export const li = () => create<ListItem>({ type: 'li' });
+  tr: (children: TableData[]) => create<TableRow>({ type: 'tr', children }),
 
-export const ol = () => create<OrderedList>({ type: 'ol', children: [li()] });
+  table: (children: TableRow[]) => create<Table>({ type: 'table', children }),
 
-export const ul = () => create<UnorderedList>({ type: 'ul', children: [li()] });
+  li: () => create<ListItem>({ type: 'li' }),
 
-export const youtube = (src: string | undefined = undefined) =>
-  create<YouTube>({ type: 'youtube', src });
+  ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
-export const webpage = (src: string) => create<Webpage>({ type: 'iframe', src });
+  ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
 
-export const link = (href = '') =>
-  create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' });
+  youtube: (src?: string) => create<YouTube>({ type: 'youtube', src }),
 
-export const image = (src: string | undefined = undefined) =>
-  create<Image>({ type: 'img', src, display: 'block' });
+  webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
-export const audio = (src = '') => create<Audio>({ type: 'audio', src });
+  link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-export const p = (children?: (InputRef | Text)[] | string) => {
-  if (!children) return create<Paragraph>({ type: 'p' });
-  if (Array.isArray(children)) return create<Paragraph>({ type: 'p', children });
-  return create<Paragraph>({ type: 'p', children: [{ text: children }] });
+  image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
+
+  audio: (src?: string) => create<Audio>({ type: 'audio', src }),
+
+  p: (children?: (InputRef | Text)[] | string) => {
+    if (!children) return create<Paragraph>({ type: 'p' });
+    if (Array.isArray(children)) return create<Paragraph>({ type: 'p', children });
+    return create<Paragraph>({ type: 'p', children: [{ text: children }] });
+  },
+
+  blockquote: () =>
+    create<Blockquote>({
+      type: 'blockquote',
+    }),
+
+  code: (children = '') =>
+    create<Code>({
+      type: 'code',
+      code: children,
+      // Auto language
+      language: '',
+    }),
+
+  inputRef: () => create<InputRef>({ type: 'input_ref' }),
+
+  popup: () =>
+    create<Popup>({
+      type: 'popup',
+      trigger: 'hover',
+      content: [Model.p()],
+    }),
 };
-
-export const blockquote = (): Blockquote => ({
-  type: 'blockquote',
-  id: guid(),
-  children: [],
-});
-
-export const code = (children?: Text[]): Code => ({
-  type: 'code',
-  id: guid(),
-  language: 'Plain Text',
-  children: [{ type: 'code_line', id: guid(), children: children || [{ text: '' }] }],
-});
-
-export const inputRef = () => create<InputRef>({ type: 'input_ref' });
-
-export const popup = () =>
-  create<Popup>({
-    type: 'popup',
-    trigger: 'hover',
-    content: [p()],
-  });

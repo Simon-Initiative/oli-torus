@@ -4,13 +4,13 @@ import { StructuredContent } from 'data/content/resource';
 import { Editor } from 'components/editing/editor/Editor';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { ToolbarItem } from 'components/editing/elements/commands/interfaces';
+import { CommandDesc, ToolbarItem } from 'components/editing/elements/commands/interfaces';
 
 export type StructuredContentEditor = {
   editMode: boolean; // Whether or not we can edit
   content: StructuredContent; // Content to edit
   onEdit: (content: StructuredContent) => void; // Edit handler
-  toolbarItems: ToolbarItem[]; // Toolbar to use
+  toolbarInsertDescs: CommandDesc[]; // Content insertion options
   projectSlug: ProjectSlug;
 };
 
@@ -31,7 +31,7 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
         editMode={props.editMode}
         value={props.content.children}
         onEdit={onEdit}
-        toolbarItems={props.toolbarItems}
+        toolbarInsertDescs={props.toolbarInsertDescs}
       />
     </ErrorBoundary>
   );

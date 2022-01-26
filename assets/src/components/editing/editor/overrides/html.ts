@@ -1,30 +1,26 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { normalizeHref } from 'components/editing/elements/link/utils';
+import { Model } from 'data/content/model/elements/factories';
+import { Hyperlink, ModelElement } from 'data/content/model/elements/types';
 import { Editor, Node } from 'slate';
 import { jsx } from 'slate-hyperscript';
-import guid from 'utils/guid';
 
-const ELEMENT_TAGS: Record<string, Function> = {
-  A: (el: HTMLElement) => ({ type: 'a', url: el.getAttribute('href'), id: guid() }),
-  BLOCKQUOTE: () => ({ type: 'blockquote', id: guid() }),
-  H1: () => ({ type: 'h1', id: guid() }),
-  H2: () => ({ type: 'h2', id: guid() }),
-  H3: () => ({ type: 'h2', id: guid() }),
-  H4: () => ({ type: 'h2', id: guid() }),
-  H5: () => ({ type: 'h2', id: guid() }),
-  H6: () => ({ type: 'h2', id: guid() }),
-  IMG: (el: HTMLElement) => ({
-    type: 'img',
-    src: normalizeHref(el.getAttribute('src') || ''),
-    target: 'self',
-    id: guid(),
-  }),
-  OL: () => ({ type: 'ol', id: guid() }),
-  UL: () => ({ type: 'ul', id: guid() }),
-  LI: () => ({ type: 'li', id: guid() }),
-  P: () => ({ type: 'p', id: guid() }),
-  PRE: () => ({ type: 'code', language: 'Plain Text', id: guid() }),
-  CODE: () => ({ type: 'code_line', id: guid() }),
+const ELEMENT_TAGS: Record<string, (...args: any) => ModelElement> = {
+  A: (el: HTMLElement): Hyperlink => Model.link(el.getAttribute('href') ?? ''),
+  BLOCKQUOTE: Model.blockquote,
+  H1: Model.h1,
+  H2: Model.h2,
+  H3: Model.h2,
+  H4: Model.h2,
+  H5: Model.h2,
+  H6: Model.h2,
+  IMG: (el: HTMLElement) => Model.image(normalizeHref(el.getAttribute('src') ?? '')),
+  OL: Model.ol,
+  UL: Model.ul,
+  LI: Model.li,
+  P: Model.p,
+  // TODO: Fix pasted code
+  PRE: Model.code,
 };
 
 // COMPAT: `B` is omitted here because Google Docs uses `<b>` in weird ways.
@@ -85,6 +81,7 @@ export const withHtml = (editor: Editor): Editor => {
 
     if (html) {
       const parsed = new DOMParser().parseFromString(html, 'text/html');
+      console.log(parsed);
       const deserialized = deserialize(parsed.body);
       Editor.insertFragment(editor, deserialized as any);
       return;

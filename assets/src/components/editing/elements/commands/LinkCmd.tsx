@@ -1,7 +1,7 @@
 import { Transforms, Editor, Element } from 'slate';
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { isActive } from '../../utils';
-import { link } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 const command: Command = {
   execute: (_context, editor, _params) => {
@@ -15,7 +15,7 @@ const command: Command = {
     }
 
     const href = Editor.string(editor, selection);
-    Transforms.wrapNodes(editor, link(href), { split: true });
+    Transforms.wrapNodes(editor, Model.link(href), { split: true });
   },
   precondition: (editor) => {
     return !isActive(editor, ['code']);

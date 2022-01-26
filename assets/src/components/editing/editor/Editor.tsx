@@ -1,12 +1,22 @@
 import { withHtml } from 'components/editing/editor/overrides/html';
-import { p } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slate';
+import {
+  BaseRange,
+  createEditor,
+  Descendant,
+  Editor as SlateEditor,
+  Node,
+  NodeEntry,
+  Operation,
+  Range,
+  Transforms,
+} from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { classNames } from 'utils/classNames';
-import { CommandContext, ToolbarItem } from '../elements/commands/interfaces';
+import { CommandContext, CommandDesc, ToolbarItem } from '../elements/commands/interfaces';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -19,6 +29,8 @@ import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
 import { EditorToolbar } from 'components/editing/toolbar/EditorToolbar';
+import { ActivityEditContext } from 'data/content/activity';
+import { ResourceContent } from 'data/content/resource';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -26,7 +38,7 @@ export type EditorProps = {
   // The content to display
   value: Descendant[];
   // The insertion toolbar configuration
-  toolbarItems: ToolbarItem[];
+  toolbarInsertDescs: CommandDesc[];
   // Whether or not editing is allowed
   editMode: boolean;
   commandContext: CommandContext;
@@ -46,7 +58,7 @@ function emptyOnFocus() {
 function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
   return (
     prevProps.editMode === nextProps.editMode &&
-    prevProps.toolbarItems === nextProps.toolbarItems &&
+    prevProps.toolbarInsertDescs === nextProps.toolbarInsertDescs &&
     prevProps.value === nextProps.value &&
     prevProps.placeholder === nextProps.placeholder &&
     prevProps.children === nextProps.children
@@ -86,11 +98,22 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     hotkeyHandler(editor, e.nativeEvent, props.commandContext);
   }, []);
 
-  // const decorate: (entry: NodeEntry<Node>) => BaseRange[] = useCallback(([node, path]) => {
-  //   const ranges: BaseRange[] = []
+  const decorate = useCallback(
+    ([node, path]: NodeEntry<Node>): BaseRange[] => {
+      // placeholder decoration
+      if (
+        editor.selection &&
+        !SlateEditor.isEditor(node) &&
+        SlateEditor.string(editor, [path[0]]) === '' &&
+        Range.includes(editor.selection, path) &&
+        Range.isCollapsed(editor.selection)
+      )
+        return [{ ...editor.selection, placeholder: true } as BaseRange];
 
-  //   return ranges
-  // }, [])
+      return [];
+    },
+    [editor],
+  );
 
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(
@@ -98,9 +121,23 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       children,
     );
     return (
-      <span {...attributes}>
+      <span {...attributes} style={leaf.placeholder && { position: 'relative' }}>
         {markup}
         {leaf.youtubeInput && <span>Enter something</span>}
+        {leaf.placeholder && (
+          <span
+            style={{
+              opacity: 0.3,
+              position: 'absolute',
+              top: 0,
+              width: 'max-content',
+              lineHeight: '18px',
+            }}
+            contentEditable={false}
+          >
+            Start typing or press &apos;/&apos; to insert content
+          </span>
+        )}
       </span>
     );
   }, []);
@@ -119,22 +156,39 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     <React.Fragment>
       <Slate
         editor={editor}
-        value={props.value.length === 0 ? [p()] : props.value}
+        value={props.value.length === 0 ? [Model.p()] : props.value}
         onChange={onChange}
       >
         {props.children}
 
-        <EditorToolbar context={props.commandContext} />
+        <EditorToolbar
+          context={props.commandContext}
+          toolbarInsertDescs={props.toolbarInsertDescs}
+        />
 
         <Editable
           style={props.style}
           className={classNames(['slate-editor', 'overflow-auto', props.className])}
           readOnly={!props.editMode}
+          decorate={decorate}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder={props.placeholder ?? 'Enter some content here...'}
           onKeyDown={onKeyDown}
           onFocus={emptyOnFocus}
+          onPaste={(e) => {
+            const pastedText = e.clipboardData?.getData('text')?.trim();
+            const youtubeRegex =
+              /^(?:(?:https?:)?\/\/)?(?:(?:www|m)\.)?(?:(?:youtube\.com|youtu.be))(?:\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(?:\S+)?$/;
+            const matches = pastedText.match(youtubeRegex);
+            if (matches != null) {
+              // matches[0] === the entire url
+              // matches[1] === video id
+              const [, videoId] = matches;
+              e.preventDefault();
+              Transforms.insertNodes(editor, [Model.youtube(videoId)]);
+            }
+          }}
         />
       </Slate>
     </React.Fragment>

@@ -1,7 +1,9 @@
-import { Transforms, Node, Path, Editor, Element } from 'slate';
-import { td } from 'data/content/model/elements/factories';
+import { Transforms, Path, Editor, Element } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
+import { ModelElement } from 'data/content/model/elements/types';
+import { FormattedText } from 'data/content/model/text';
 
-export const normalize = (editor: Editor, node: Node, path: Path) => {
+export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
   if (Element.isElement(node) && node.type === 'table') {
     // Ensure that the number of cells in each row is the same
 
@@ -35,7 +37,7 @@ export const normalize = (editor: Editor, node: Node, path: Path) => {
         // Add as many empty td elements to bring this row back up to
         // the max td count
         while (count < max) {
-          Transforms.insertNodes(editor, td(''), { at: thisPath });
+          Transforms.insertNodes(editor, Model.td(''), { at: thisPath });
           count = count + 1;
         }
       });

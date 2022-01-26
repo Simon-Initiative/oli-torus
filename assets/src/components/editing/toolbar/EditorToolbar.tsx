@@ -1,6 +1,7 @@
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import { codeLanguageDesc } from 'components/editing/elements/commands/BlockcodeCmd';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commands';
-import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { CommandContext, CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { listSettings } from 'components/editing/elements/commands/ListsCmd';
 import { headingLevelDesc, headingTypeDescs } from 'components/editing/elements/commands/TitleCmd';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
@@ -18,13 +19,15 @@ import {
 } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { getHighestTopLevel, safeToDOMNode } from 'components/editing/utils';
-import { CodeLanguages } from 'data/content/model/other';
+import { ActivityEditContext } from 'data/content/activity';
+import { ResourceContent } from 'data/content/resource';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 
 interface Props {
   context: CommandContext;
+  toolbarInsertDescs: CommandDesc[];
 }
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
@@ -71,25 +74,25 @@ export const EditorToolbar = (props: Props) => {
     'Code (Block)': () => (
       <Toolbar.Group>
         <DropdownButton description={codeLanguageDesc(editor)}>
-          {CodeLanguages.map((language, i) => (
+          {CodeLanguages.all().map(({ prettyName }, i) => (
             <DescriptiveButton
               key={i}
               description={createButtonCommandDesc({
                 icon: '',
-                description: language,
+                description: prettyName,
                 active: (editor) => {
                   const topLevel = getHighestTopLevel(editor).valueOr<any>(undefined);
                   return (
                     Element.isElement(topLevel) &&
                     topLevel.type === 'code' &&
-                    topLevel.language === language
+                    topLevel.language === prettyName
                   );
                 },
                 execute: (_ctx, editor) => {
                   const [, at] = [...Editor.nodes(editor)][1];
                   Transforms.setNodes(
                     editor,
-                    { language },
+                    { language: prettyName },
                     { at, match: (e) => Element.isElement(e) && e.type === 'code' },
                   );
                   (window as any)?.hljs.highlightAll();
@@ -124,9 +127,12 @@ export const EditorToolbar = (props: Props) => {
   const insertMenu = (
     <Toolbar.Group>
       <DropdownButton description={addDesc}>
-        {addDescs(null).map((desc, i) => (
-          <DescriptiveButton key={i} description={desc} />
-        ))}
+        {addDescs(null)
+          .concat(props.toolbarInsertDescs)
+          .filter((desc) => desc.command.precondition(editor))
+          .map((desc, i) => (
+            <DescriptiveButton key={i} description={desc} />
+          ))}
       </DropdownButton>
     </Toolbar.Group>
   );

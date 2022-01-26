@@ -72,10 +72,9 @@ interface AddChoiceButtonProps {
   icon: Props['icon'];
   addOne: Props['addOne'];
 }
-const AddChoiceButton: React.FC<AddChoiceButtonProps> = ({ icon, addOne }) => {
+const AddChoiceButton: React.FC<AddChoiceButtonProps> = ({ addOne }) => {
   return (
     <div className="choicesAuthoring__addChoiceContainer">
-      <div className="choicesAuthoring__choiceIcon">{icon}</div>
       <AuthoringButtonConnected
         className=".btn .btn-link .pl-0 choicesAuthoring__addChoiceButton"
         action={addOne}

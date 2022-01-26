@@ -28,7 +28,13 @@ export const YouTubeEditor = (props: YouTubeProps) => {
     <div {...props.attributes} className="youtube-editor" contentEditable={false}>
       {props.children}
       <div className="embed-responsive embed-responsive-16by9 img-thumbnail" style={borderStyle}>
-        <iframe className="embed-responsive-item" src={fullSrc} allowFullScreen></iframe>
+        <iframe
+          className="embed-responsive-item"
+          src={fullSrc}
+          allowFullScreen
+          aria-label="Youtube video"
+          frameBorder={0}
+        ></iframe>
       </div>
       <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
     </div>

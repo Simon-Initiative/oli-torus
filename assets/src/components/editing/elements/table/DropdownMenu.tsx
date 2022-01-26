@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { ReactEditor } from 'slate-react';
 import { Transforms, Editor, Path, Element } from 'slate';
-import * as ContentModel from 'data/content/model/elements/factories';
 import { TableData, TableHeader, TableRow } from 'data/content/model/elements/types';
+import { Model } from 'data/content/model/elements/factories';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
@@ -34,9 +34,9 @@ export const DropdownMenu = (props: Props) => {
     const count = parent.children.length;
     const tds = [];
     for (let i = 0; i < count; i += 1) {
-      tds.push(ContentModel.td(''));
+      tds.push(Model.td(''));
     }
-    const row: TableRow = ContentModel.tr(tds);
+    const row: TableRow = Model.tr(tds);
 
     Transforms.insertNodes(editor, row, { at: parentPath });
   };
@@ -48,9 +48,9 @@ export const DropdownMenu = (props: Props) => {
     const count = parent.children.length;
     const tds = [];
     for (let i = 0; i < count; i += 1) {
-      tds.push(ContentModel.td(''));
+      tds.push(Model.td(''));
     }
-    const row: TableRow = ContentModel.tr(tds);
+    const row: TableRow = Model.tr(tds);
     Transforms.insertNodes(editor, row, { at: Path.next(parentPath) });
   };
 
@@ -63,7 +63,7 @@ export const DropdownMenu = (props: Props) => {
       const rows = table.children.length;
       for (let i = 0; i < rows; i += 1) {
         path[path.length - 2] = i;
-        Transforms.insertNodes(editor, ContentModel.td(''), { at: path });
+        Transforms.insertNodes(editor, Model.td(''), { at: path });
       }
     });
   };
@@ -77,7 +77,7 @@ export const DropdownMenu = (props: Props) => {
       const rows = table.children.length;
       for (let i = 0; i < rows; i += 1) {
         path[path.length - 2] = i;
-        Transforms.insertNodes(editor, ContentModel.td(''), { at: Path.next(path) });
+        Transforms.insertNodes(editor, Model.td(''), { at: Path.next(path) });
       }
     });
   };

@@ -1,6 +1,6 @@
 import { Transforms, Range, Path, Editor as SlateEditor, Element, Text } from 'slate';
 import { KeyboardEvent } from 'react';
-import { p as paragraph } from 'data/content/model/elements/factories';
+import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {
@@ -34,7 +34,7 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
         Transforms.removeNodes(editor);
 
         // Insert it ahead of the next node
-        Transforms.insertNodes(editor, paragraph(), {
+        Transforms.insertNodes(editor, Model.p(), {
           at: Path.next(path),
         });
         Transforms.select(editor, Path.next(path));

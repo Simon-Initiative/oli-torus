@@ -1,6 +1,5 @@
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
-import { popup } from 'data/content/model/elements/factories';
-import * as ContentModel from 'data/content/model/elements/types';
+import { Model } from 'data/content/model/elements/factories';
 import { Element, Transforms } from 'slate';
 import { isActive } from '../../utils';
 
@@ -15,7 +14,7 @@ const command: Command = {
       });
     }
 
-    Transforms.wrapNodes(editor, popup(), { split: true });
+    Transforms.wrapNodes(editor, Model.popup(), { split: true });
   },
   precondition: (_editor) => {
     return true;
