@@ -2,7 +2,7 @@ defmodule OliWeb.Api.PlatformInstanceController do
   use OliWeb, :controller
 
   alias Lti_1p3.DataProviders.EctoProvider.PlatformInstance
-  alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti.PlatformInstances
 
   action_fallback OliWeb.FallbackController
 

@@ -54,6 +54,16 @@ export const updateActivityPartInheritance = createAsyncThunk(
         }, [])
         .filter((part: any) => part);
 
+      // an activity must have at least one part, if it doesn't, then create a default one
+      if (combinedParts.length === 0) {
+        combinedParts.push({
+          id: '__default',
+          type: 'janus-text-flow',
+          inherited: false,
+          owner: child.custom.sequenceId,
+        });
+      }
+
       /* console.log(`COMBINED ${child.activitySlug}`, { combinedParts }); */
       // since we are not updating the partsLayout but rather the parts, it should be OK
       // to update each activity *now*

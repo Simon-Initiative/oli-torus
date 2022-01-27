@@ -1,12 +1,14 @@
 defmodule OliWeb.Sections.InviteView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+
+  import Oli.Utils.Time
+
   alias OliWeb.Common.{Breadcrumb}
   alias Oli.Delivery.Sections.SectionInvites
   alias OliWeb.Sections.Invites.Invitation
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Confirm
   alias OliWeb.Sections.Mount
-  import Oli.Utils.Time
 
   data breadcrumbs, :any
   data title, :string, default: "Invite Students"
@@ -62,7 +64,7 @@ defmodule OliWeb.Sections.InviteView do
     {#if length(@invitations) > 0}
       <div class="list-group">
       {#for invitation <- @invitations}
-        <Invitation invitation={invitation} delete="request_delete"/>
+        <Invitation id={invitation.id} invitation={invitation} delete="request_delete"/>
       {/for}
       </div>
     {/if}

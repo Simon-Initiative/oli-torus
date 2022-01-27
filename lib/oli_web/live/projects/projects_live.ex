@@ -3,22 +3,23 @@ defmodule OliWeb.Projects.ProjectsLive do
   LiveView implementation of projects view.
   """
 
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Oli.Repo
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.Breadcrumb
-  alias Oli.Authoring.Course
-  alias Oli.Authoring.Course.Project
-  alias Oli.Accounts.{Author}
-  alias OliWeb.Common.PagedTable
-  alias OliWeb.Common.TextSearch
-  alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Accounts
-  alias OliWeb.Projects.TableModel
+  use OliWeb, :surface_view
+
   import Phoenix.HTML.Form
   import OliWeb.ErrorHelpers
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
+
+  alias Oli.Repo.{Paging, Sorting}
+  alias OliWeb.Common.Breadcrumb
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.TextSearch
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Oli.Accounts
+  alias OliWeb.Common.SessionContext
+  alias OliWeb.Projects.TableModel
 
   @limit 25
 
@@ -38,8 +39,8 @@ defmodule OliWeb.Projects.ProjectsLive do
   data is_admin, :boolean, default: false
   data changeset, :any, default: Project.changeset(%Project{title: ""})
 
-  def mount(_, %{"current_author_id" => author_id} = session, socket) do
-    author = Repo.get(Author, author_id)
+  def mount(_, %{"current_author_id" => _} = session, socket) do
+    %SessionContext{author: author} = context = SessionContext.init(session)
     is_admin = Accounts.is_admin?(author)
 
     show_all =
@@ -65,13 +66,14 @@ defmodule OliWeb.Projects.ProjectsLive do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(author, projects, is_admin, Map.get(session, "local_tz"))
+    {:ok, table_model} = TableModel.new(context, projects, is_admin)
 
     total_count = determine_total(projects)
 
     {:ok,
      assign(
        socket,
+       context: context,
        author: author,
        projects: projects,
        table_model: table_model,

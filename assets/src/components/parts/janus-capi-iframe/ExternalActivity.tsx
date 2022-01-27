@@ -886,6 +886,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   }, [simFrame]);
 
   const handleBindToSim = () => {
+    if (!initStateBindToFacts) {
+      return;
+    }
     Object.keys(initStateBindToFacts).forEach((key: any) => {
       const formatted: Record<string, unknown> = {};
       const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');

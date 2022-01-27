@@ -1,7 +1,7 @@
 defmodule OliWeb.PlatformInstanceControllerTest do
   use OliWeb.ConnCase
 
-  alias Oli.Lti_1p3.PlatformInstances
+  alias Oli.Lti.PlatformInstances
 
   @create_attrs %{
     client_id: "some client_id",

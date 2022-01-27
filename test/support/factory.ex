@@ -3,10 +3,12 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
-  alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionResource}
+  alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.Institution
-  alias Oli.Publishing.Publication
+  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Resources.{Resource, Revision}
 
   def author_factory() do
     %Author{
@@ -154,6 +156,56 @@ defmodule Oli.Factory do
     %CommunityInstitution{
       community: insert(:community),
       institution: insert(:institution)
+    }
+  end
+
+  def published_resource_factory() do
+    %PublishedResource{
+      resource: insert(:resource),
+      publication: insert(:publication),
+      revision: insert(:revision),
+      author: insert(:author)
+    }
+  end
+
+  def section_project_publication_factory() do
+    %SectionsProjectsPublications{
+      project: insert(:project),
+      section: insert(:section),
+      publication: insert(:publication)
+    }
+  end
+
+  def section_resource_factory() do
+    %SectionResource{
+      project: insert(:project),
+      section: insert(:section),
+      resource_id: insert(:resource).id
+    }
+  end
+
+  def revision_factory() do
+    %Revision{
+      title: "Example revision",
+      slug: "example_revision",
+      resource: insert(:resource)
+    }
+  end
+
+  def resource_factory() do
+    %Resource{}
+  end
+
+  def gating_condition_factory() do
+    {:ok, start_date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
+    {:ok, end_date, _timezone} = DateTime.from_iso8601("2019-06-24 20:30:00Z")
+
+    %GatingCondition{
+      user: insert(:user),
+      section: insert(:section),
+      resource: insert(:resource),
+      type: :schedule,
+      data: %{end_datetime: end_date, start_datetime: start_date}
     }
   end
 end

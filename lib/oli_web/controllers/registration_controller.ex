@@ -3,7 +3,7 @@ defmodule OliWeb.RegistrationController do
 
   alias Oli.Repo
   alias Oli.Institutions
-  alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Lti.Tool.Registration
   alias OliWeb.Common.{Breadcrumb}
 
   def root_breadcrumbs() do

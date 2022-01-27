@@ -1,4 +1,4 @@
-defmodule Oli.Lti_1p3.Tool.Deployment do
+defmodule Oli.Lti.Tool.Deployment do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -7,7 +7,7 @@ defmodule Oli.Lti_1p3.Tool.Deployment do
     # associated with the lti connection
     field :deployment_id, :string
 
-    belongs_to :registration, Oli.Lti_1p3.Tool.Registration
+    belongs_to :registration, Oli.Lti.Tool.Registration
 
     belongs_to :institution, Oli.Institutions.Institution
 

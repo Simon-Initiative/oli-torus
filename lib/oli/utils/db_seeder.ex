@@ -20,6 +20,7 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
+  alias Oli.Delivery.Gating
 
   def base_project_with_resource(author) do
     {:ok, family} =
@@ -1212,5 +1213,20 @@ defmodule Oli.Seeder do
     end)
 
     map
+  end
+
+  def create_schedule_gating_condition(start_datetime, end_datetime, resource_id, section_id) do
+    {:ok, gating_condition} =
+      Gating.create_gating_condition(%{
+        type: :schedule,
+        data: %{
+          start_datetime: start_datetime,
+          end_datetime: end_datetime
+        },
+        resource_id: resource_id,
+        section_id: section_id
+      })
+
+    gating_condition
   end
 end

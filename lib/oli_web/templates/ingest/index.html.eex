@@ -3,6 +3,15 @@
   <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
   <hr class="my-4">
 
+    <%= case assigns[:error] do %>
+      <% nil -> %>
+
+      <% error -> %>
+        <div class="alert alert-danger" role="alert">
+          <%= error %>
+        </div>
+    <% end %>
+
     <%= form_for @conn, "ingest", [as: :upload, multipart: true], fn f -> %>
 
       <div class="form-group">

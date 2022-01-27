@@ -54,6 +54,16 @@ defmodule Oli.AccountsTest do
       author = insert(:author)
       assert [] == Accounts.search_authors_matching(String.slice(author.email, 0..3))
     end
+
+    test "user_confirmation_pending?/1 returns true when author has not a confirmed account" do
+      non_confirmed_author = insert(:author, email_confirmation_token: "token")
+      assert Accounts.user_confirmation_pending?(non_confirmed_author)
+    end
+
+    test "user_confirmation_pending?/1 returns false when author has a confirmed account" do
+      confirmed_author = insert(:author, email_confirmed_at: Timex.now())
+      refute Accounts.user_confirmation_pending?(confirmed_author)
+    end
   end
 
   describe "users" do
