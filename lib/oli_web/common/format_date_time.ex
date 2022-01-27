@@ -91,7 +91,12 @@ defmodule OliWeb.Common.FormatDateTime do
   Converts a datetime to a specific timezone based on a user's session. This
   session timezone information is set and updated on the timezone api call every
   time a page is loaded.
+
+  If NaiveDateTime is given it is assumed to be utc
   """
+  def maybe_localized_datetime(%NaiveDateTime{} = naive_date, nil),
+    do: Timex.to_datetime(naive_date, "Etc/UTC")
+
   def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
 
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),

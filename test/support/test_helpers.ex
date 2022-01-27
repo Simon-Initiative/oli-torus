@@ -11,6 +11,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
   alias Oli.PartComponents
+  alias Oli.Delivery.Sections
 
   import Mox
 
@@ -351,5 +352,39 @@ defmodule Oli.TestHelpers do
   def latest_record_index(table) do
     from(r in table, order_by: [desc: r.id], limit: 1, select: r.id)
     |> Repo.one!()
+  end
+
+  def make_sections(project, institution, prefix, n, attrs) do
+    65..(65 + (n - 1))
+    |> Enum.map(fn value -> List.to_string([value]) end)
+    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
+  end
+
+  def make(project, institution, title, attrs) do
+    {:ok, section} =
+      Sections.create_section(
+        Map.merge(
+          %{
+            title: title,
+            timezone: "1",
+            registration_open: true,
+            context_id: UUID.uuid4(),
+            institution_id:
+              if is_nil(institution) do
+                nil
+              else
+                institution.id
+              end,
+            base_project_id: project.id,
+            requires_payment: true,
+            amount: "$100.00",
+            grace_period_days: 5,
+            has_grace_period: true
+          },
+          attrs
+        )
+      )
+
+    section
   end
 end

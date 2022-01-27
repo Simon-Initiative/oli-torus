@@ -8,12 +8,6 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   alias Lti_1p3.Tool.ContextRoles
   import Ecto.Query, warn: false
 
-  def make_sections(project, institution, prefix, n, attrs) do
-    65..(65 + (n - 1))
-    |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
-  end
-
   def browse(offset, field, direction, text_search) do
     Browse.browse_sections(
       %Paging{offset: offset, limit: 3},
@@ -26,30 +20,6 @@ defmodule Oli.Delivery.Sections.BrowseTest do
         text_search: text_search
       }
     )
-  end
-
-  def make(project, institution, title, attrs) do
-    {:ok, section} =
-      Sections.create_section(
-        Map.merge(
-          %{
-            title: title,
-            timezone: "1",
-            registration_open: true,
-            context_id: UUID.uuid4(),
-            institution_id:
-              if is_nil(institution) do
-                nil
-              else
-                institution.id
-              end,
-            base_project_id: project.id
-          },
-          attrs
-        )
-      )
-
-    section
   end
 
   # For each section, enroll a different number of students. First section gets 1,
