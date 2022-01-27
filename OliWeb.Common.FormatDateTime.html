@@ -141,7 +141,7 @@ it is assumed this datetime has not been localized and the timezone is included.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#maybe_localized_datetime/2">maybe_localized_datetime(datetime, local_tz)</a>
+    <a href="#maybe_localized_datetime/2">maybe_localized_datetime(naive_date, local_tz)</a>
 
   </div>
 
@@ -193,27 +193,27 @@ page is loaded.</p><h2 id="date/2-examples" class="section-heading">
   Examples
 </h2>
 <pre><code class="makeup elixir"><span class="c1"># date can be given a %Plug.Conn{}, %SessionContext{} or local_tz string to localize the datetime</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="3310127511-1">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-1">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">conn</span><span class="p" data-group-id="6967982547-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="3310127511-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-2">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="n">context</span><span class="p" data-group-id="6967982547-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="3310127511-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-3">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;America/New_York&quot;</span><span class="p" data-group-id="6967982547-3">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
 </span><span class="c1"># if any of these are nil or omitted, the timezone will be displayed in UTC</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="3310127511-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-4">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="6967982547-4">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-5">(</span><span class="n">datetime</span><span class="p" data-group-id="3310127511-5">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-5">(</span><span class="n">datetime</span><span class="p" data-group-id="6967982547-5">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022 at 4:59:59 AM UTC&quot;</span><span class="w">
 
 </span><span class="c1"># additionally, conn or context can be provided as opts along with any other format_datetime opts</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">conn</span><span class="p">:</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="3310127511-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-6">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">conn</span><span class="p">:</span><span class="w"> </span><span class="n">conn</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="6967982547-6">)</span><span class="w">
 </span><span class="s">&quot;January 1, 2022&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="3310127511-7">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">context</span><span class="p">:</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="3310127511-7">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">date</span><span class="p" data-group-id="6967982547-7">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">context</span><span class="p">:</span><span class="w"> </span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="6967982547-7">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
   </section>
 </section>
@@ -250,7 +250,7 @@ page is loaded.</p><h2 id="date/2-examples" class="section-heading">
     </a>
     <h1 class="signature">format_datetime(maybe_localized_datetime, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/format_date_time.ex#L138" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/format_date_time.ex#L143" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -265,26 +265,26 @@ it is assumed this datetime has not been localized and the timezone is included.
   <a href="#format_datetime/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-1">(</span><span class="n">datetime</span><span class="p" data-group-id="4920910891-1">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-1">(</span><span class="n">datetime</span><span class="p" data-group-id="9124759889-1">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM UTC&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-2">(</span><span class="p" data-group-id="4920910891-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="4920910891-3">}</span><span class="p" data-group-id="4920910891-2">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-2">(</span><span class="p" data-group-id="9124759889-3">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime_utc</span><span class="p" data-group-id="9124759889-3">}</span><span class="p" data-group-id="9124759889-2">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-4">(</span><span class="p" data-group-id="4920910891-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="4920910891-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="4920910891-4">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-4">(</span><span class="p" data-group-id="9124759889-5">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9124759889-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:date</span><span class="p" data-group-id="9124759889-4">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-6">(</span><span class="p" data-group-id="4920910891-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="4920910891-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="4920910891-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-6">(</span><span class="p" data-group-id="9124759889-7">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9124759889-7">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:minutes</span><span class="p" data-group-id="9124759889-6">)</span><span class="w">
 </span><span class="s">&quot;December 31, 2021 at 11:59 PM&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-8">(</span><span class="p" data-group-id="4920910891-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="4920910891-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="4920910891-8">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-8">(</span><span class="p" data-group-id="9124759889-9">{</span><span class="ss">:localized</span><span class="p">,</span><span class="w"> </span><span class="n">datetime</span><span class="p" data-group-id="9124759889-9">}</span><span class="p">,</span><span class="w"> </span><span class="ss">precision</span><span class="p">:</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="9124759889-8">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="4920910891-10">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-10">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">:relative</span><span class="p" data-group-id="9124759889-10">)</span><span class="w">
 </span><span class="s">&quot;5 hours ago&quot;</span><span class="w">
 
 </span><span class="c1"># author has preference show_relative_dates set to true</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="4920910891-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="4920910891-11">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">dt</span><span class="p" data-group-id="9124759889-11">(</span><span class="n">datetime</span><span class="p">,</span><span class="w"> </span><span class="ss">author</span><span class="p">:</span><span class="w"> </span><span class="n">author</span><span class="p" data-group-id="9124759889-11">)</span><span class="w">
 </span><span class="s">&quot;8 minutes ago&quot;</span></code></pre>
   </section>
 </section>
@@ -295,9 +295,9 @@ it is assumed this datetime has not been localized and the timezone is included.
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">maybe_localized_datetime(datetime, local_tz)</h1>
+    <h1 class="signature">maybe_localized_datetime(naive_date, local_tz)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/format_date_time.ex#L95" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/common/format_date_time.ex#L97" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -309,7 +309,7 @@ it is assumed this datetime has not been localized and the timezone is included.
 
 <p>Converts a datetime to a specific timezone based on a user's session. This
 session timezone information is set and updated on the timezone api call every
-time a page is loaded.</p>
+time a page is loaded.</p><p>If NaiveDateTime is given it is assumed to be utc</p>
   </section>
 </section>
 
