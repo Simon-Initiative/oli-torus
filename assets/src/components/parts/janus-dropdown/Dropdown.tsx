@@ -263,7 +263,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
         /* console.log(`${notificationType.toString()} notification handled [Dropdown]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
-            //nothing to do
+            // nothing to do
             break;
           case NotificationType.CHECK_COMPLETE:
             // nothing to do
