@@ -415,6 +415,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       return acc;
     }, {});
+    console.log({ snapshotAR: snapshot, finalInitSnapshot });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,

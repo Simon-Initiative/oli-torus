@@ -85,7 +85,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             );
           }
           e.initStateFacts = processedInitStateFacts;
-          console.log({ AD_e_initStateFacts: e.initStateFacts });
+          console.log({ AD_e_initStateFacts: e.initStateFacts, scriptEnv });
         }
 
         pusher.emit(notificationType.toString(), e);
