@@ -111,8 +111,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         if (ogValue.indexOf('{') === -1) {
           modifiedValue = ogValue;
         } else if (condition?.operator === 'equalWithTolerance') {
-          //Usually the tolerance is 5.28,2 where 5.28 is actual value and 2 is the tolerance so in case the
-          // the tolerance is not specified and the value is 5.28 only, we need handle it so that it evaluates the actual value otherwise
+          //Usually the tolerance is 5.28,2 where 5.28 is actual value and 2 is the tolerance so we need to separate the value and send it in evaluateValueExpression()
+          //Also in case the tolerance is not specified and the value is 5.28 only, we need handle it so that it evaluates the actual value otherwise
           // it will evaluated as ""
           const actualValue =
             ogValue.lastIndexOf(',') !== -1
