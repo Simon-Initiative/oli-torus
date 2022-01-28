@@ -22,7 +22,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   feedbacks,
   onMinimize,
   onMaximize,
-  style,
+  style = {},
 }) => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityIds = (currentActivityTree || []).map((activity) => activity.id);
