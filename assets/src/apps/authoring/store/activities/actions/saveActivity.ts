@@ -13,7 +13,8 @@ import {
 } from '../../../../delivery/store/features/activities/slice';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { savePage } from '../../page/actions/savePage';
-import { selectResourceId, selectState as selectCurrentPage, updatePage } from '../../page/slice';
+import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
+import { createUndoAction } from '../../history/slice';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -22,6 +23,8 @@ export const saveActivity = createAsyncThunk(
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     const resourceId = selectResourceId(rootState);
+    const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
+    console.log(currentActivityState);
 
     const isReadOnlyMode = selectReadOnly(rootState);
 
@@ -44,7 +47,7 @@ export const saveActivity = createAsyncThunk(
     };
 
     if (!isReadOnlyMode) {
-      /* console.log('going to save acivity: ', { changeData, activity }); */
+      console.log('going to save acivity: ', { changeData, activity });
       const editResults = await edit(
         projectSlug,
         resourceId,
@@ -66,6 +69,14 @@ export const saveActivity = createAsyncThunk(
           await dispatch(savePage());
         }
       }
+      console.log('EDIT SAVE RESULTS', { editResults });
+
+      dispatch(
+        createUndoAction({
+          undo: [saveActivity({ activity: currentActivityState })],
+          redo: [saveActivity({ activity })],
+        }),
+      );
     }
 
     return;
@@ -79,7 +90,7 @@ export const bulkSaveActivity = createAsyncThunk(
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     const pageResourceId = selectResourceId(rootState);
-
+    const currentActivities = selectAllActivities(rootState);
     const isReadOnlyMode = selectReadOnly(rootState);
 
     dispatch(upsertActivities({ activities }));
@@ -106,6 +117,13 @@ export const bulkSaveActivity = createAsyncThunk(
         return changeData;
       });
       await bulkEdit(projectSlug, pageResourceId, updates);
+
+      dispatch(
+        createUndoAction({
+          undo: bulkSaveActivity({ activities: currentActivities }),
+          redo: bulkSaveActivity({ activities }),
+        }),
+      );
     }
     return;
   },

@@ -4,6 +4,7 @@ import groupsReducer, { GroupsSlice } from '../../delivery/store/features/groups
 import appReducer, { AppSlice } from './app/slice';
 import pageReducer, { PageSlice } from './page/slice';
 import partsReducer, { PartsSlice } from './parts/slice';
+import authHistorySlice, { HistorySlice } from './history/slice';
 
 const rootReducer = combineReducers({
   [AppSlice]: appReducer,
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
   [PartsSlice]: partsReducer,
   [GroupsSlice]: groupsReducer,
   [ActivitiesSlice]: activitiesReducer,
+  [HistorySlice]: authHistorySlice,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
