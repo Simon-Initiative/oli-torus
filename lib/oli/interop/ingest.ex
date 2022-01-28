@@ -398,7 +398,7 @@ defmodule Oli.Interop.Ingest do
   defp to_map(entries) do
     Enum.reduce(entries, %{}, fn {file, content}, map ->
       id_from_file = fn ->
-        f = List.to_string(file)
+        f = Path.basename(List.to_string(file))
         String.slice(f, 0, String.length(f) - 5)
       end
 
