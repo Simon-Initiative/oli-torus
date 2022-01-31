@@ -371,7 +371,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
     const payloadData = {} as any;
-    stateFacts.map((fact: any) => {
+    stateFacts.foreach((fact: any) => {
       const target = fact.target;
       // EverApp Information
       if (target.startsWith('app.')) {
