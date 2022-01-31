@@ -370,17 +370,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const initStateBindToFacts: any = {};
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
-    const payloadData = {} as any;
-    stateFacts.foreach((fact: any) => {
+    const payloadData = stateFacts.reduce((data: any, fact: any) => {
       const target = fact.target;
       // EverApp Information
       if (target.startsWith('app.')) {
         const data = target.split('.');
         const objId = data.splice(2).join('.');
         const value = snapshot[target];
-        payloadData[data[1]] = { ...payloadData[data[1]], [objId]: value };
+        data[data[1]] = { ...data[data[1]], [objId]: value };
       }
-    });
+      return data;
+    }, {});
     await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
   };
 
