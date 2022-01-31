@@ -390,13 +390,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
-    console.log({ snapshot, initState });
 
     const currentActivity = currentActivityTree
       ? currentActivityTree[currentActivityTree.length - 1]
       : null;
     const initState = currentActivity?.content?.custom?.facts || [];
 
+    console.log({ snapshot, initState });
     updateGlobalState(snapshot, initState);
     const finalInitSnapshot = initState.reduce((acc: any, initObject: any) => {
       let key = initObject.target;
