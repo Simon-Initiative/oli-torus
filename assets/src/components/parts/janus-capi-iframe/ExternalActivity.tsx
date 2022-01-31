@@ -318,7 +318,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [internalState, setInternalState] = useState(state || []);
 
   const sendToIframe = (data: any) => {
-    simFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
+    // using this hack to get latest reference to simFrame
+    setSimFrame((currentFrame) => {
+      /* console.log('DEBUG SEND TO IFRAME', { currentFrame, data }); */
+      currentFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
+      return currentFrame;
+    });
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {

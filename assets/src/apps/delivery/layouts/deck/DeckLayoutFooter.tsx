@@ -591,6 +591,7 @@ const DeckLayoutFooter: React.FC = () => {
             onMinimize={() => setDisplayFeedback(false)}
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}
+            style={{ width: containerWidth }}
           />
         </>
       )}
