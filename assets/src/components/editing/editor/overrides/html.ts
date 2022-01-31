@@ -19,7 +19,6 @@ const ELEMENT_TAGS: Record<string, (...args: any) => ModelElement> = {
   UL: Model.ul,
   LI: Model.li,
   P: Model.p,
-  // TODO: Fix pasted code
   PRE: Model.code,
 };
 
@@ -81,7 +80,6 @@ export const withHtml = (editor: Editor): Editor => {
 
     if (html) {
       const parsed = new DOMParser().parseFromString(html, 'text/html');
-      console.log(parsed);
       const deserialized = deserialize(parsed.body);
       Editor.insertFragment(editor, deserialized as any);
       return;

@@ -1,7 +1,7 @@
 import { Model } from 'data/content/model/elements/factories';
 import { Editor, Element, Path, Transforms } from 'slate';
 
-export const normalize = (editor: Editor, node: Editor, path: Path) => {
+export const normalize = (editor: Editor, node: Editor, _path: Path) => {
   // Ensure that we always have a paragraph as the first and last
   // nodes in the document, otherwise it can be impossible for a
   // user to position their cursor
@@ -14,12 +14,11 @@ export const normalize = (editor: Editor, node: Editor, path: Path) => {
     });
     return;
   }
-  console.log('last', last, Element.isElement(last), Editor.end(editor, []));
   if (!Element.isElement(last) || last.type !== 'p') {
     Transforms.insertNodes(editor, Model.p(), {
       mode: 'highest',
       at: Editor.end(editor, []),
     });
-    return; // Return here is necessary to enable multi-pass normalization
+    return;
   }
 };

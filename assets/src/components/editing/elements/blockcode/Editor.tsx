@@ -35,7 +35,7 @@ import 'ace-builds/src-noconflict/mode-typescript';
 import 'ace-builds/src-noconflict/mode-xml';
 import { classNames } from 'utils/classNames';
 import { ReactEditor, useSelected, useSlate } from 'slate-react';
-import { Transforms } from 'slate';
+import { Editor, Transforms } from 'slate';
 
 config.set('basePath', 'https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-noconflict/');
 config.setModuleUrl(
@@ -43,19 +43,23 @@ config.setModuleUrl(
   'https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-noconflict/worker-javascript.js',
 );
 
-// TODO: write version migrator
+const getInitialModel = (model: ContentModel.Code) => {
+  const editor = useSlate();
+  // v2 -- code in code attr
+  if (model.code) return model.code;
+
+  // v1 -- code is in code_line child elements
+  const code = Editor.string(editor, ReactEditor.findPath(editor, model));
+  return code;
+};
 
 type CodeProps = EditorProps<ContentModel.Code>;
 export const CodeEditor = (props: CodeProps) => {
   const isSelected = useSelected();
-  // console.log('is selected', isSelected);
-  // const [selected, setSelected] = React.useState(false);
-  const [value, setValue] = React.useState(props.model.code);
+  const [value, setValue] = React.useState(getInitialModel(props.model));
   const onEdit = onEditModel(props.model);
   const reactAce = React.useRef<AceEditor | null>(null);
   const aceEditor = reactAce.current?.editor;
-  const editor = useSlate();
-  // aceEditor?.on('blur', () => console.log('blurring event'));
 
   return (
     <div {...props.attributes} contentEditable={false}>
@@ -97,6 +101,7 @@ export const CodeEditor = (props: CodeProps) => {
           className={classNames(['code-editor', isSelected && 'active'])}
           ref={reactAce}
           mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
+          style={{ width: '100%' }}
           theme="github"
           onChange={(code) => {
             onEdit({ code });
@@ -109,7 +114,7 @@ export const CodeEditor = (props: CodeProps) => {
           setOptions={{
             fontSize: 16,
             showGutter: false,
-            minLines: 1,
+            minLines: 2,
             maxLines: Infinity,
           }}
           placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}

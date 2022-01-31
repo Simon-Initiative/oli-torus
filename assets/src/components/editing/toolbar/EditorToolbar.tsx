@@ -15,12 +15,9 @@ import {
   formattingDropdownDesc,
   additionalFormattingOptions,
   addDesc,
-  addDescs,
 } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { getHighestTopLevel, safeToDOMNode } from 'components/editing/utils';
-import { ActivityEditContext } from 'data/content/activity';
-import { ResourceContent } from 'data/content/resource';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
@@ -45,14 +42,6 @@ export const EditorToolbar = (props: Props) => {
       </DropdownButton>
     </Toolbar.Group>
   );
-
-  // ['paragraph', 'heading', 'list', 'quote', 'code'];
-
-  // paragraph: none
-  // heading: heading level
-  // list: list types (with active icon), outdent, indent
-  // quote: none
-  // code: language
 
   const blockSettings = {
     Heading: () => (
@@ -95,7 +84,6 @@ export const EditorToolbar = (props: Props) => {
                     { language: prettyName },
                     { at, match: (e) => Element.isElement(e) && e.type === 'code' },
                   );
-                  (window as any)?.hljs.highlightAll();
                 },
               })}
             />
@@ -127,8 +115,7 @@ export const EditorToolbar = (props: Props) => {
   const insertMenu = (
     <Toolbar.Group>
       <DropdownButton description={addDesc}>
-        {addDescs(null)
-          .concat(props.toolbarInsertDescs)
+        {props.toolbarInsertDescs
           .filter((desc) => desc.command.precondition(editor))
           .map((desc, i) => (
             <DescriptiveButton key={i} description={desc} />
@@ -137,7 +124,6 @@ export const EditorToolbar = (props: Props) => {
     </Toolbar.Group>
   );
 
-  /* {Filter for precondition} */
   return (
     <HoverContainer
       isOpen={isOpen}

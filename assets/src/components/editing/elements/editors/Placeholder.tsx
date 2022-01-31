@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { useSelected } from 'slate-react';
 
 interface Props {
-  attributes: unknown;
-  children: unknown;
+  attributes: any;
+  heading: JSX.Element;
 }
-export const Placeholder = (props: Props) => {
+export const Placeholder = (props: PropsWithChildren<Props>) => {
   const selected = useSelected();
   return (
     <div
@@ -16,17 +16,8 @@ export const Placeholder = (props: Props) => {
         contentEditable={false}
         style={{ border: selected ? '1px solid transparent' : '1px solid black', padding: 16 }}
       >
-        <header>
-          <h3 className="d-flex align-items-center">
-            <span className="material-icons mr-2">image</span>Image
-          </h3>
-        </header>
-        Upload an image from your media library or add one with a URL.
-        <div>
-          <button className="btn btn-primary mr-2">Upload</button>
-          <button className="btn btn-link">Insert from URL</button>
-          {props.children}
-        </div>
+        <header>{props.heading}</header>
+        {props.children}
       </div>
     </div>
   );

@@ -3,11 +3,11 @@ import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
 import { NormalizerContext } from 'components/editing/editor/normalizers/normalizer';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { ProjectSlug } from 'data/types';
 import React from 'react';
 import { Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { classNames } from 'utils/classNames';
+import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 
 type Props = {
   projectSlug: ProjectSlug;
@@ -35,7 +35,7 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           editMode={props.editMode}
           value={value}
           onEdit={(value, editor, operations) => props.onEdit(value, editor, operations)}
-          toolbarInsertDescs={[]}
+          toolbarInsertDescs={getToolbarForContentType('small')}
           placeholder={props.placeholder}
           style={props.style}
         >

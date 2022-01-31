@@ -66,13 +66,12 @@ export const createEditor = (
           onEdit={onEdit}
           projectSlug={projectSlug}
           toolbarInsertDescs={getToolbarForContentType(
+            'all',
             resourceContext,
             onAddItem,
             editorMap,
             index,
-            'all',
           )}
-          // toolbarItems={getToolbarForContentType(null)}
         />
       </ContentBlock>
     );

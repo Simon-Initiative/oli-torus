@@ -1,13 +1,8 @@
-import { invokeCreationFunc } from 'components/activities/creation';
-import { ActivityModelSchema } from 'components/activities/types';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { addActivity } from 'components/editing/toolbar/utils';
-import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { ActivityReference, ResourceContext } from 'data/content/resource';
-import * as Persistence from 'data/persistence/activity';
+import { ResourceContext } from 'data/content/resource';
 import React from 'react';
-import guid from 'utils/guid';
 
 interface Props {
   resourceContext: ResourceContext;

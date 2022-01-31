@@ -24,6 +24,7 @@
   }
 
   &__dropdownGroup {
+    display: inline-flex;
     padding: 8px;
     max-height: 400px;
     overflow-y: auto;
@@ -60,6 +61,9 @@
       &:active {
         border: 2px solid $primary;
       }
+    }
+    .editorToolbar__button--descriptive:last-of-type {
+      flex-basis: max-content;
     }
 
     &Indicator {

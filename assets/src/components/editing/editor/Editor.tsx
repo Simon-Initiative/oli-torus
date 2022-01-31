@@ -2,21 +2,11 @@ import { withHtml } from 'components/editing/editor/overrides/html';
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  BaseRange,
-  createEditor,
-  Descendant,
-  Editor as SlateEditor,
-  Node,
-  NodeEntry,
-  Operation,
-  Range,
-  Transforms,
-} from 'slate';
+import { createEditor, Descendant, Editor as SlateEditor, Operation, Transforms } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { classNames } from 'utils/classNames';
-import { CommandContext, CommandDesc, ToolbarItem } from '../elements/commands/interfaces';
+import { CommandContext, CommandDesc } from '../elements/commands/interfaces';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -29,8 +19,6 @@ import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
 import { EditorToolbar } from 'components/editing/toolbar/EditorToolbar';
-import { ActivityEditContext } from 'data/content/activity';
-import { ResourceContent } from 'data/content/resource';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -98,46 +86,15 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
     hotkeyHandler(editor, e.nativeEvent, props.commandContext);
   }, []);
 
-  const decorate = useCallback(
-    ([node, path]: NodeEntry<Node>): BaseRange[] => {
-      // placeholder decoration
-      if (
-        editor.selection &&
-        !SlateEditor.isEditor(node) &&
-        SlateEditor.string(editor, [path[0]]) === '' &&
-        Range.includes(editor.selection, path) &&
-        Range.isCollapsed(editor.selection)
-      )
-        return [{ ...editor.selection, placeholder: true } as BaseRange];
-
-      return [];
-    },
-    [editor],
-  );
-
   const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     const markup = Object.keys(leaf).reduce(
       (m, k) => (k in Marks ? markFor(k as Mark, m) : m),
       children,
     );
     return (
-      <span {...attributes} style={leaf.placeholder && { position: 'relative' }}>
+      <span {...attributes}>
         {markup}
         {leaf.youtubeInput && <span>Enter something</span>}
-        {leaf.placeholder && (
-          <span
-            style={{
-              opacity: 0.3,
-              position: 'absolute',
-              top: 0,
-              width: 'max-content',
-              lineHeight: '18px',
-            }}
-            contentEditable={false}
-          >
-            Start typing or press &apos;/&apos; to insert content
-          </span>
-        )}
       </span>
     );
   }, []);
@@ -170,7 +127,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           style={props.style}
           className={classNames(['slate-editor', 'overflow-auto', props.className])}
           readOnly={!props.editMode}
-          decorate={decorate}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
           placeholder={props.placeholder ?? 'Enter some content here...'}

@@ -1,11 +1,5 @@
 import { ReactEditor } from 'slate-react';
-import { Editor, Element, Range, Text, Transforms } from 'slate';
-import {
-  getHighestTopLevel,
-  getNearestBlock,
-  isActive,
-  isTopLevel,
-} from 'components/editing/utils';
+import { Editor, Transforms } from 'slate';
 import { CommandDesc } from 'components/editing/elements/commands/interfaces';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
@@ -21,105 +15,59 @@ import guid from 'utils/guid';
 import * as Persistence from 'data/persistence/activity';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commands';
 import { ModelElement } from 'data/content/model/elements/types';
+import { addDescs } from 'components/editing/toolbar/items';
+import { audioCmdDescBuilder } from 'components/editing/elements/commands/AudioCmd';
+import { codeBlockInsertDesc } from 'components/editing/elements/commands/BlockcodeCmd';
+import { imgCmdDescBuilder } from 'components/editing/elements/commands/ImageCmd';
+import { ytCmdDesc } from 'components/editing/elements/commands/YoutubeCmd';
 
 type ToolbarContentType = 'all' | 'small';
-// Can be extended to provide different insertion toolbar options based on resource type
 export function getToolbarForContentType(
-  resourceContext: ResourceContext,
-  onAddItem: AddCallback,
-  editorMap: ActivityEditorMap,
-  index: number,
   type = 'all' as ToolbarContentType,
+  resourceContext?: ResourceContext,
+  onAddItem?: AddCallback,
+  editorMap?: ActivityEditorMap,
+  index?: number,
 ): CommandDesc[] {
-  // return [];
+  if (type === 'small') {
+    return [codeBlockInsertDesc, imgCmdDescBuilder(null), ytCmdDesc, audioCmdDescBuilder(null)];
+  }
 
-  return Object.keys(editorMap).map((k: string) => {
-    const editorDesc: EditorDesc = editorMap[k];
-    const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
+  if (!resourceContext || !onAddItem || !editorMap || !index) return addDescs(null);
 
-    const commandDesc = createButtonCommandDesc({
-      icon: editorDesc.icon,
-      description: editorDesc.friendlyName,
-      execute: (_context, editor) => {
-        if (!editor.selection) return;
-        const after =
-          Editor.after(editor, editor.selection, { unit: 'block', voids: true }) ||
-          editor.selection.anchor;
-        const last = Editor.end(editor, []);
-        const content = !after
-          ? undefined
-          : [...Editor.nodes(editor, { at: { anchor: after, focus: last } })]
-              .slice(1)
-              .map((tuple) => tuple[0] as ModelElement);
+  return addDescs(null).concat(
+    Object.keys(editorMap).map((k: string) => {
+      const editorDesc: EditorDesc = editorMap[k];
+      const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
 
-        console.log('after', after);
-        console.log('content', content);
-        console.log('last', last);
+      const commandDesc = createButtonCommandDesc({
+        icon: editorDesc.icon,
+        description: editorDesc.friendlyName,
+        execute: (_context, editor) => {
+          if (!editor.selection) return;
+          const after =
+            Editor.after(editor, editor.selection, { unit: 'block', voids: true }) ||
+            editor.selection.anchor;
+          const last = Editor.end(editor, []);
+          const content = !after
+            ? undefined
+            : [...Editor.nodes(editor, { at: { anchor: after, focus: last } })]
+                .slice(1)
+                .map((tuple) => tuple[0] as ModelElement);
 
-        // Transforms.splitNodes
-        addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
-        onAddItem(createDefaultStructuredContent(content), index + 1);
-        Transforms.removeNodes(editor, { at: { anchor: after, focus: last }, mode: 'highest' });
-        ReactEditor.deselect(editor);
-        ReactEditor.blur(editor);
-      },
-      precondition: () => enabled,
-    });
+          addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
+          onAddItem(createDefaultStructuredContent(content), index + 1);
+          Transforms.removeNodes(editor, { at: { anchor: after, focus: last }, mode: 'highest' });
+          ReactEditor.deselect(editor);
+          ReactEditor.blur(editor);
+        },
+        precondition: () => enabled,
+      });
 
-    return commandDesc;
-  });
+      return commandDesc;
+    }),
+  );
 }
-
-//   return enabled ? (
-//     <a
-//       href="#"
-//       key={editorDesc.slug}
-//       className="list-group-item list-group-item-action flex-column align-items-start"
-//       onClick={(_e) => addActivity(editorDesc, resourceContext, onAddItem, editorMap, index)}
-//     >
-//       <div className="type-label"> {editorDesc.friendlyName}</div>
-//       <div className="type-description"> {editorDesc.description}</div>
-//     </a>
-//   ) : null;
-// })
-// .filter((e) => e !== null);
-
-//     const ui = {
-//   icon: 'code',
-//   description: 'Code (Block)',
-// };
-
-// export const codeBlockInsertDesc = createButtonCommandDesc({
-//   ...ui,
-//   execute: (_context, editor) => {
-//     if (!editor.selection) return;
-//     Transforms.insertNodes(editor, Model.code(), { at: editor.selection });
-//   },
-//   precondition: (editor) => {
-//     return !isActive(editor, 'table');
-//   },
-// });
-
-// if (type === 'small') {
-//   return [
-//     codeCmd,
-//     imageCommandBuilder(onRequestMedia),
-//     ytCmdDesc,
-//     audioCommandBuilder(onRequestMedia),
-//   ];
-// }
-// return [
-//   tableCommandDesc,
-//   codeCmd,
-//   {
-//     type: 'GroupDivider',
-//   },
-//   imageCommandBuilder(onRequestMedia),
-//   ytCmdDesc,
-//   audioCommandBuilder(onRequestMedia),
-//   webpageCmdDesc,
-// ];
-// })
 
 export const addActivity = (
   editorDesc: EditorDesc,

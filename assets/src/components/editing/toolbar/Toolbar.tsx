@@ -2,11 +2,6 @@ import React, { PropsWithChildren } from 'react';
 import { CommandContext } from '../elements/commands/interfaces';
 import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/useToolbar';
 
-/*
-{props.isPerformingAsyncAction ? (<LoadingSpinner size={LoadingSpinnerSize.Normal} />)
-: (<i className="fa fa-plus"></i>)}
-*/
-
 interface Props {
   context: CommandContext;
 }

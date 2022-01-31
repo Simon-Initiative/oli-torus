@@ -5,7 +5,7 @@ import { normalize as spacesNormalize } from 'components/editing/editor/normaliz
 import { normalize as listNormalize } from 'components/editing/editor/normalizers/lists';
 import { normalize as codeNormalize } from 'components/editing/editor/normalizers/code';
 import { Model } from 'data/content/model/elements/factories';
-import { Editor, Element, Node, NodeEntry, Path, Text, Transforms } from 'slate';
+import { Editor, Element, Node, NodeEntry, Text, Transforms } from 'slate';
 
 export interface NormalizerContext {
   // Node types normally not allowed in an editor
@@ -29,14 +29,12 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
         }
       }
 
-      const [parent, parentPath] = Editor.parent(editor, path);
+      const [parent, _parentPath] = Editor.parent(editor, path);
 
       // Check this node's parent constraints
       if (Editor.isEditor(parent)) {
         // Handle text nodes at the top level - they should be paragraphs.
-        console.log('parent is editor', node);
         if (Text.isText(node)) {
-          console.log('node is text', node, path);
           Transforms.wrapNodes(editor, Model.p(), { at: path });
           return;
         }

@@ -1,4 +1,4 @@
-import { Transforms, Node, Path, Editor, Element, Text } from 'slate';
+import { Transforms, Path, Editor, Element, Text } from 'slate';
 import { Model } from 'data/content/model/elements/factories';
 import { ModelElement } from 'data/content/model/elements/types';
 import { FormattedText } from 'data/content/model/text';
@@ -9,10 +9,8 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
 
   if (Element.isElement(parent)) {
     const config = schema[parent.type];
-    // lists
     if (['ol', 'ul'].includes(parent.type)) {
       if (Text.isText(node)) {
-        console.log('is text, wrapping');
         Transforms.wrapNodes(editor, Model.li(), { at: path });
         return;
       }

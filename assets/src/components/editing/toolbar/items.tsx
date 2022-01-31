@@ -20,10 +20,6 @@ import {
   codeBlockToggleDesc,
 } from 'components/editing/elements/commands/BlockcodeCmd';
 
-// const precondition = (editor: SlateEditor) => {
-//   return isTopLevel(editor) && isActive(editor, Object.keys(parentTextTypes));
-// };
-
 const paragraphDesc = createButtonCommandDesc({
   icon: 'subject',
   description: 'Paragraph',
@@ -39,12 +35,6 @@ const quoteToggleDesc = createButtonCommandDesc({
   active: (e) => isActive(e, 'blockquote'),
   execute: (_ctx, editor) => switchType(editor, 'blockquote'),
 });
-
-// type: 'CommandDesc',
-//   icon: () => 'format_list_bulleted',
-//   description: () => 'Unordered List',
-//   command: listCommandMaker('ul'),
-//   active: (editor) => isActive(editor, ['ul']),
 
 const listDesc = createButtonCommandDesc({
   icon: 'format_list_bulleted',
@@ -102,15 +92,7 @@ export const additionalFormattingOptions = [
   popupCmdDesc,
 ];
 
-const textTypes = ['paragraph', 'heading', 'list', 'quote', 'code'];
-
-export const textTypeDescs = [
-  paragraphDesc,
-  headingDesc,
-  listDesc,
-  quoteToggleDesc,
-  codeBlockToggleDesc,
-];
+export const textTypeDescs = [paragraphDesc, headingDesc, listDesc, quoteToggleDesc];
 
 export const formattingDropdownDesc: CommandDesc = {
   type: 'CommandDesc',

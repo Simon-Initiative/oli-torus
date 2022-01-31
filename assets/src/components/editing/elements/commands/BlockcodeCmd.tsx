@@ -26,7 +26,7 @@ export const codeBlockToggleDesc = createButtonCommandDesc({
 });
 
 export const codeLanguageDesc = (editor: Editor) => {
-  const [topLevel, at] = [...Editor.nodes(editor)][1];
+  const [topLevel, _at] = [...Editor.nodes(editor)][1];
   const lang = Element.isElement(topLevel) && topLevel.type === 'code' ? topLevel.language : 'Text';
 
   return createButtonCommandDesc({

@@ -73,8 +73,7 @@ export const Model = {
     create<Code>({
       type: 'code',
       code: children,
-      // Auto language
-      language: '',
+      language: 'Text',
     }),
 
   inputRef: () => create<InputRef>({ type: 'input_ref' }),
