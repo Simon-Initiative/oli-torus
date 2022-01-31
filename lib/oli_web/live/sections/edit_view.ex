@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.EditView do
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
         {#if @section.open_and_free}
-          <OpenFreeSettings is_admin={@is_admin} changeset={@changeset} disabled={false}/>
+          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false}/>
         {#else}
           <LtiSettings section={@section}/>
         {/if}

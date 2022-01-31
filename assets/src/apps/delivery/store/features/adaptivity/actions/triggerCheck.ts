@@ -8,9 +8,9 @@ import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
-  looksLikeJson,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
 import { selectExtrinsicState, updateExtrinsicState } from '../../attempt/slice';
@@ -20,64 +20,6 @@ import {
 } from '../../groups/selectors/deck';
 import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
 import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
-
-const handleParentChildActivityVariableSync = (
-  treeActivityIds: string[],
-  currentActivityId: string,
-  localizedSnapshot: Record<string, any>,
-) => {
-  try {
-    // handle parent/child variable sync  - Block Start
-    const filteredTreeActivityIds: string[] = treeActivityIds.filter(
-      (activity) => activity !== currentActivityId,
-    );
-    const parentVariables = filteredTreeActivityIds.map((item: string) => {
-      //need to filter all the variable that belong to parents of the current activity
-      const filteredParentScreenIdVariables = Object.keys(localizedSnapshot).filter((gotid) => {
-        if (
-          gotid.indexOf(item) !== -1 &&
-          gotid.startsWith(item) &&
-          !gotid.startsWith(currentActivityId)
-        ) {
-          const variables = gotid.split('|');
-          const v = gotid.replace(`${variables[0]}|stage`, `${currentActivityId}|stage`);
-          //need to make sure that the variabled doesn't exist for the current activity as we don't want to update the values of current activity
-          return Object.keys(localizedSnapshot).indexOf(v) === -1;
-        }
-      });
-      return [...filteredParentScreenIdVariables];
-    });
-    const updatedCurrentActivityVariables: Record<string, any> = {};
-    //now we are replacing the parent activity id with current activity Id
-    parentVariables.forEach((key) => {
-      key.forEach((item) => {
-        const variables = item.split('|');
-        const v = item.replace(`${variables[0]}|stage`, `${currentActivityId}|stage`);
-        updatedCurrentActivityVariables[v] = localizedSnapshot[item];
-      });
-    });
-    if (Object.keys(updatedCurrentActivityVariables).length) {
-      //formatting the variables for sending it to scripting
-      const finalCurrentActivityVariables: ApplyStateOperation[] = Object.keys(
-        updatedCurrentActivityVariables,
-      ).map((yup) => {
-        const val = updatedCurrentActivityVariables[yup];
-        const looksLikeJSON = typeof val === 'string' ? looksLikeJson(val) : false;
-        const globalOp: ApplyStateOperation = {
-          target: yup,
-          operator: '=',
-          value: updatedCurrentActivityVariables[yup],
-        };
-        return globalOp;
-      });
-
-      bulkApplyState(finalCurrentActivityVariables, defaultGlobalEnv);
-    }
-    // handle parent/child variable sync  - Block End
-  } catch (e) {
-    console.error('error in parent child variable sync', e);
-  }
-};
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
@@ -128,14 +70,12 @@ export const triggerCheck = createAsyncThunk(
 
     const treeActivityIds = currentActivityTree.map((a) => a.id);
     const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
-    handleParentChildActivityVariableSync(treeActivityIds, currentActivity.id, localizedSnapshot);
     const extrinsicSnapshot = Object.keys(localizedSnapshot).reduce(
       (acc: Record<string, any>, key) => {
         const isSessionVariable = key.startsWith('session.');
         const isVarVariable = key.startsWith('variables.');
-        //Once Beagle App functionality is integrated, this can be removed
-        const isBeagleVariable = key.startsWith('app.');
-        if (isSessionVariable || isVarVariable || isBeagleVariable) {
+        const isEverAppVariable = key.startsWith('app.');
+        if (isSessionVariable || isVarVariable || isEverAppVariable) {
           acc[key] = localizedSnapshot[key];
         }
         return acc;
@@ -184,9 +124,28 @@ export const triggerCheck = createAsyncThunk(
       const customRules = options.customRules || [];
       const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      console.log('PRE CHECK RESULT', { currentActivity, currentRules, localizedSnapshot });
-      const check_call_result = (await check(
+      let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
+      if (!requiredVariables) {
+        // assume they are all required since authoring hasn't specified
+        requiredVariables = Object.keys(localizedSnapshot);
+      }
+      const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
+        const isRequiredKey = requiredVariables.includes(key);
+        if (isRequiredKey) {
+          acc[key] = localizedSnapshot[key];
+        }
+        return acc;
+      }, {});
+
+      console.log('PRE CHECK RESULT', {
+        currentActivity,
+        currentRules,
         localizedSnapshot,
+        requiredVariables,
+        checkSnapshot,
+      });
+      const check_call_result = (await check(
+        checkSnapshot,
         rulesToCheck,
         scoringContext,
       )) as CheckResult;
@@ -200,6 +159,7 @@ export const triggerCheck = createAsyncThunk(
         currentRules,
         checkResult,
         localizedSnapshot,
+        checkSnapshot,
         currentActivityTreeAttempts,
         currentAttempt,
         currentActivityTree,
@@ -303,14 +263,45 @@ export const triggerCheck = createAsyncThunk(
       // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
 
-    // TODO: get score back from check result
-    bulkApplyState(
-      [
-        { target: 'session.currentQuestionScore', operator: '=', value: score },
-        { target: `session.visits.${currentActivity.id}`, operator: '=', value: 1 },
-      ],
-      defaultGlobalEnv,
-    );
+    const updateScoreAndVisit: ApplyStateOperation[] = [
+      { target: 'session.currentQuestionScore', operator: '=', value: score },
+    ];
+    /* console.log('VISITS', { visit: attempt.attemptNumber <= 2 }); */
+    // because visit count doesn't increase until AFTER checking is done, it could be 1 or 2 depending
+    // on whether or not it was correct
+    if (attempt.attemptNumber <= 2) {
+      updateScoreAndVisit.push({
+        target: `session.visits.${currentActivity.id}`,
+        operator: '+',
+        value: 1,
+      });
+    }
+    bulkApplyState(updateScoreAndVisit, defaultGlobalEnv);
+
+    // after these final extrinsic state updates, we need to write it again
+    // update redux first because we need to get the latest full extrnisic state to write to the server
+    const latestSnapshot = getEnvState(defaultGlobalEnv);
+    const latestExtrinsic = Object.keys(latestSnapshot).reduce((acc: Record<string, any>, key) => {
+      const isSessionVariable = key.startsWith('session.');
+      const isVarVariable = key.startsWith('variables.');
+      const isEverAppVariable = key.startsWith('app.');
+      if (isSessionVariable || isVarVariable || isEverAppVariable) {
+        acc[key] = latestSnapshot[key];
+      }
+      return acc;
+    }, {});
+    await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
+
+    if (!isPreviewMode) {
+      // update the server with the latest changes
+      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      /* console.log('trigger check last min extrinsic state', {
+        sectionSlug,
+        resourceAttemptGuid,
+        extrnisicState,
+      }); */
+      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
+    }
 
     await dispatch(
       setLastCheckResults({

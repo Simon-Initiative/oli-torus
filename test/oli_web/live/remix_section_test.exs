@@ -34,9 +34,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("##{revision1.resource_id}") |> has_element?()
-      assert view |> element("##{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
     test "remix section mount as instructor", %{
@@ -53,9 +53,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
-      assert view |> element("##{revision1.resource_id}") |> has_element?()
-      assert view |> element("##{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
     test "remix section mount as product manager", %{
@@ -86,8 +86,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      assert view |> element("##{revision1.resource_id}") |> has_element?()
-      assert view |> element("##{revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
     test "remix section navigation", %{
@@ -106,21 +106,21 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       # navigate to a lower unit
       view
-      |> element("##{unit1_container.revision.resource_id} button.entry-title")
+      |> element("#entry-#{unit1_container.revision.resource_id} button.entry-title")
       |> render_click()
 
-      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?() ==
+      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?() ==
                false
 
-      assert view |> element("##{nested_revision1.resource_id}") |> has_element?()
-      assert view |> element("##{nested_revision2.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{nested_revision1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{nested_revision2.resource_id}") |> has_element?()
 
       # navigate back to root container
       view
       |> element("#curriculum-back")
       |> render_click()
 
-      assert view |> element("##{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
     end
 
     test "remix section reorder and save", %{

@@ -1,6 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
-import { findReferencedActivitiesInConditions } from 'adaptivity/rules-engine';
+import {
+  findReferencedActivitiesInConditions,
+  getReferencedKeysInConditions,
+} from 'adaptivity/rules-engine';
 import {
   inferTypeFromComponentType,
   inferTypeFromOperatorAndValue,
@@ -88,6 +91,7 @@ export const updateActivityRules = createAsyncThunk(
         const activityRulesClone = clone(activityRules);
 
         const referencedSequenceIds: string[] = [];
+        let referencedVariableKeys: string[] = [];
 
         // ensure that all conditions and condition blocks are assigned an id
         await Promise.all(
@@ -105,6 +109,7 @@ export const updateActivityRules = createAsyncThunk(
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(
@@ -116,6 +121,9 @@ export const updateActivityRules = createAsyncThunk(
             }
           }),
         );
+
+        // ensure referencedVariableKeys are unique
+        referencedVariableKeys = [...new Set(referencedVariableKeys)];
 
         const childActivityClone = clone(childActivity);
         const referencedActivityIds: number[] = Array.from(new Set(referencedSequenceIds))
@@ -139,6 +147,19 @@ export const updateActivityRules = createAsyncThunk(
         ) {
           // console.log('RULE REFS: ', referencedActivityIds);
           childActivityClone.authoring.activitiesRequiredForEvaluation = referencedActivityIds;
+          activitiesToUpdate.push(childActivityClone);
+        }
+        if (
+          !isEqual(
+            childActivityClone.authoring.variablesRequiredForEvaluation,
+            referencedVariableKeys,
+          )
+        ) {
+          childActivityClone.authoring.variablesRequiredForEvaluation = referencedVariableKeys;
+          console.log('UPDATE VALUES REQUIRED FOR EVALUATION', {
+            referencedVariableKeys,
+            childActivityClone,
+          });
           activitiesToUpdate.push(childActivityClone);
         }
         childActivityClone.authoring.rules = activityRulesClone;

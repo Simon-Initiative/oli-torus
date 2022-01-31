@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :oli,
   env: :prod
@@ -55,3 +55,5 @@ config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.SesAdapter
 #       force_ssl: [hsts: true]
 #
 # Check `Plug.SSL` for all available options in `force_ssl`.
+
+config :appsignal, :config, ignore_actions: ["OliWeb.HealthController#index"]

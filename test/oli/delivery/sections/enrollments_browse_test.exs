@@ -1,17 +1,12 @@
 defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
   use Oli.DataCase
 
+  import Ecto.Query, warn: false
+
   alias Oli.Delivery.Sections
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias Lti_1p3.Tool.ContextRoles
-  import Ecto.Query, warn: false
-
-  def make_sections(project, institution, prefix, n, attrs) do
-    65..(65 + (n - 1))
-    |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
-  end
 
   def browse(section, offset, field, direction, text_search, is_student, is_instructor) do
     Sections.browse_enrollments(
@@ -24,30 +19,6 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
         text_search: text_search
       }
     )
-  end
-
-  def make(project, institution, title, attrs) do
-    {:ok, section} =
-      Sections.create_section(
-        Map.merge(
-          %{
-            title: title,
-            timezone: "1",
-            registration_open: true,
-            context_id: UUID.uuid4(),
-            institution_id:
-              if is_nil(institution) do
-                nil
-              else
-                institution.id
-              end,
-            base_project_id: project.id
-          },
-          attrs
-        )
-      )
-
-    section
   end
 
   # Create and enroll 11 users, with 6 being students and 5 being instructors
@@ -83,7 +54,28 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
         _ -> true
       end
 
-      Sections.enroll(user.id, section.id, roles)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, roles)
+
+      # Have the first enrolled student also have made a payment for this section
+      case index do
+        2 ->
+          Oli.Delivery.Paywall.create_payment(%{
+            type: :direct,
+            generation_date: DateTime.utc_now(),
+            application_date: DateTime.utc_now(),
+            amount: "$100.00",
+            provider_type: :stripe,
+            provider_id: "1",
+            provider_payload: %{},
+            pending_user_id: user.id,
+            pending_section_id: section.id,
+            enrollment_id: enrollment.id,
+            section_id: section.id
+          })
+
+        _ ->
+          true
+      end
     end)
   end
 
@@ -125,6 +117,18 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 11
       assert hd(results).name == "1"
+
+      # Verify that sorting by payment_date works, in both directions
+      results = browse(section1, 0, :payment_date, :asc, nil, false, false)
+      assert length(results) == 3
+      assert hd(results).total_count == 11
+      assert hd(results).name == "3"
+      refute is_nil(hd(results).payment_date)
+
+      results = browse(section1, 10, :payment_date, :desc, nil, false, false)
+      assert length(results) == 1
+      assert hd(results).total_count == 11
+      assert hd(results).name == "3"
 
       # Verify offset and reverse sort for enrollment_date
       results = browse(section1, 10, :enrollment_date, :desc, nil, false, false)

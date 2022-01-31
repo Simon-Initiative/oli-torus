@@ -14,6 +14,7 @@ defmodule Oli.Accounts do
   alias Oli.Groups.CommunityAccount
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
+  alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
 
   def browse_users(
         %Paging{limit: limit, offset: offset},
@@ -45,21 +46,24 @@ defmodule Oli.Accounts do
     query =
       User
       |> join(:left, [u], e in "enrollments", on: u.id == e.user_id)
+      |> join(:left, [u, _e], a in "authors", on: u.author_id == a.id)
       |> where(^filter_by_text)
       |> where(^filter_by_guest)
       |> limit(^limit)
       |> offset(^offset)
       |> preload(:author)
-      |> group_by([u, _], u.id)
-      |> select_merge([u, e], %{
+      |> group_by([u, _, _], u.id)
+      |> group_by([_, _, a], a.email)
+      |> select_merge([u, e, _], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()")
       })
 
     query =
       case field do
-        :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
-        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+        :enrollments_count -> order_by(query, [_, e, _], {^direction, count(e.id)})
+        :author -> order_by(query, [_, _, a], {^direction, a.email})
+        _ -> order_by(query, [u, _, _], {^direction, field(u, ^field)})
       end
 
     Repo.all(query)
@@ -145,6 +149,8 @@ defmodule Oli.Accounts do
   def get_user!(id), do: Repo.get!(User, id)
 
   def get_user!(id, preload: preloads), do: Repo.get!(User, id) |> Repo.preload(preloads)
+
+  def get_user(id, preload: preloads), do: Repo.get(User, id) |> Repo.preload(preloads)
 
   @doc """
   Gets a single user by query parameter
@@ -373,6 +379,18 @@ defmodule Oli.Accounts do
   def get_author!(id), do: Repo.get!(Author, id)
 
   @doc """
+    Gets a single author.
+    Returns nil if the Author does not exist.
+    ## Examples
+      iex> get_author(123)
+      %Author{}
+      iex> get_author(456)
+      nil
+
+  """
+  def get_author(id), do: Repo.get(Author, id)
+
+  @doc """
   Gets a single author with the count of communities for which the author is an admin.
 
   ## Examples
@@ -595,5 +613,21 @@ defmodule Oli.Accounts do
         select: community
       )
     )
+  end
+
+  @doc """
+  Returns whether the user account is waiting for confirmation or not.
+
+  ## Examples
+
+      iex> user_confirmation_pending?(%{email_confirmation_token: "token", email_confirmed_at: nil})
+      true
+
+      iex> user_confirmation_pending?(%{email_confirmation_token: nil, email_confirmed_at: ~U[2022-01-11 16:54:00Z]})
+      false
+  """
+  def user_confirmation_pending?(user) do
+    EmailConfirmationContext.current_email_unconfirmed?(user, []) or
+      EmailConfirmationContext.pending_email_change?(user, [])
   end
 end

@@ -548,6 +548,7 @@ defmodule OliWeb.Api.ActivityController do
   def transform(conn, %{"model" => model}) do
     case ActivityLifecycle.perform_test_transformation(model) do
       {:ok, transformed} -> json(conn, %{"result" => "success", "transformed" => transformed})
+      {:no_effect, original} -> json(conn, %{"result" => "success", "transformed" => original})
       {:error, _} -> error(conn, 500, "server error")
     end
   end

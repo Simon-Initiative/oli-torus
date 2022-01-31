@@ -18,6 +18,7 @@ const populateEntries = () => {
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
+    timezone: ['./src/phoenix/timezone.ts'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});

@@ -1,15 +1,11 @@
 defmodule OliWeb.Users.AuthorsDetailView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias Oli.Repo
-  alias OliWeb.Common.Breadcrumb
-  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Accounts
-  alias OliWeb.Router.Helpers, as: Routes
   use OliWeb.Common.Modal
-  alias Oli.Accounts.{Author, SystemRole}
-  alias OliWeb.Pow.AuthorContext
-  alias OliWeb.Users.Actions
+
   import OliWeb.Common.Utils
+
+  alias Oli.Accounts
+  alias Oli.Accounts.{Author, SystemRole}
 
   alias OliWeb.Accounts.Modals.{
     LockAccountModal,
@@ -19,6 +15,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
     RevokeAdminModal,
     ConfirmEmailModal
   }
+
+  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias OliWeb.Pow.AuthorContext
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Users.Actions
 
   prop author, :any
   data breadcrumbs, :any
@@ -46,13 +48,13 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def mount(
-        %{"user_id" => details_id},
+        %{"user_id" => user_id},
         %{"csrf_token" => csrf_token, "current_author_id" => author_id},
         socket
       ) do
-    author = Repo.get(Author, author_id)
+    author = Accounts.get_author(author_id)
 
-    case Repo.get(Author, details_id) do
+    case Accounts.get_author(user_id) do
       nil ->
         {:ok, redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
 
@@ -77,30 +79,16 @@ defmodule OliWeb.Users.AuthorsDetailView do
           <ReadOnly label="First Name" value={@user.given_name}/>
           <ReadOnly label="Last Name" value={@user.family_name}/>
           <ReadOnly label="Email" value={@user.email}/>
-          <ReadOnly label="Role" value={role(@user)}/>
+          <ReadOnly label="Role" value={role(@user.system_role_id)}/>
         </Group>
         <Group label="Actions" description="Actions that can be taken for this user">
           {#if @user.id != @author.id and @user.email != System.get_env("ADMIN_EMAIL", "admin@example.edu")}
             <Actions user={@user} csrf_token={@csrf_token} for_author={true}/>
-          {#else}
-            <div></div>
           {/if}
         </Group>
       </Groups>
     </div>
     """
-  end
-
-  def role(%{system_role_id: system_role_id}) do
-    admin_role_id = SystemRole.role_id().admin
-
-    case system_role_id do
-      ^admin_role_id ->
-        "Administrator"
-
-      _ ->
-        "Author"
-    end
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
@@ -122,15 +110,28 @@ defmodule OliWeb.Users.AuthorsDetailView do
       ) do
     email_confirmed_at = DateTime.truncate(DateTime.utc_now(), :second)
 
-    user =
-      socket.assigns.user
-      |> Author.noauth_changeset(%{email_confirmed_at: email_confirmed_at})
-      |> Repo.update!()
+    case Accounts.update_author(socket.assigns.user, %{email_confirmed_at: email_confirmed_at}) do
+      {:ok, user} ->
+        {:noreply,
+         socket
+         |> assign(user: user)
+         |> hide_modal()}
 
-    {:noreply,
-     socket
-     |> assign(user: user)
-     |> hide_modal()}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Error confirming author's email")}
+    end
+  end
+
+  def handle_event("show_unlock_account_modal", _, socket) do
+    modal = %{
+      component: UnlockAccountModal,
+      assigns: %{
+        id: "unlock_account",
+        user: socket.assigns.user
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
   end
 
   def handle_event(
@@ -147,6 +148,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
      |> hide_modal()}
   end
 
+  def handle_event("show_delete_account_modal", _, socket) do
+    modal = %{
+      component: DeleteAccountModal,
+      assigns: %{
+        id: "delete_account",
+        user: socket.assigns.user
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
   def handle_event(
         "delete_account",
         %{"id" => id},
@@ -157,10 +170,12 @@ defmodule OliWeb.Users.AuthorsDetailView do
     case Accounts.delete_author(author) do
       {:ok, _} ->
         {:noreply,
-         redirect(socket, to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
+         socket
+         |> put_flash(:info, "Author successfully deleted.")
+         |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
 
-      {:error, e} ->
-        {:noreply, put_flash(socket, :error, e)}
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, "Author couldn't be deleted.")}
     end
   end
 
@@ -169,18 +184,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
       component: LockAccountModal,
       assigns: %{
         id: "lock_account",
-        user: socket.assigns.user
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  def handle_event("show_unlock_account_modal", _, socket) do
-    modal = %{
-      component: UnlockAccountModal,
-      assigns: %{
-        id: "unlock_account",
         user: socket.assigns.user
       }
     }
@@ -246,18 +249,6 @@ defmodule OliWeb.Users.AuthorsDetailView do
      |> hide_modal()}
   end
 
-  def handle_event("show_delete_account_modal", _, socket) do
-    modal = %{
-      component: DeleteAccountModal,
-      assigns: %{
-        id: "delete_account",
-        user: socket.assigns.user
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
   defp change_system_role(socket, author, role_id) do
     case Accounts.update_author(author, %{system_role_id: role_id}) do
       {:ok, author} ->
@@ -265,6 +256,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
 
       {:error, _} ->
         put_flash(socket, :error, "Could not edit author")
+    end
+  end
+
+  defp role(system_role_id) do
+    admin_role_id = SystemRole.role_id().admin
+
+    case system_role_id do
+      ^admin_role_id ->
+        "Administrator"
+
+      _ ->
+        "Author"
     end
   end
 end

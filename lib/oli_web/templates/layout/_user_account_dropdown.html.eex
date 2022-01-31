@@ -9,7 +9,7 @@
       </div>
     </div>
     <div class="user-icon">
-      <%= user_icon(@current_user) %>
+      <%= user_icon(assigns) %>
     </div>
   </a>
   <%= if user_is_guest?(@conn) do %>

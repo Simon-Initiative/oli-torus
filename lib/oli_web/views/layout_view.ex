@@ -8,7 +8,6 @@ defmodule OliWeb.LayoutView do
       user_role_text: 2,
       user_role_color: 2,
       user_icon: 1,
-      user_icon: 0,
       account_linked?: 1,
       logo_link_path: 1
     ]

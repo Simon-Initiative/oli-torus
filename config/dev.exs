@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 from_boolean_env = fn key, default ->
   System.get_env(key, default)
@@ -15,7 +15,7 @@ config :oli,
   media_url: System.get_env("MEDIA_URL"),
   problematic_query_detection:
     from_boolean_env.("DEV_PROBLEMATIC_QUERY_DETECTION_ENABLED", "false"),
-  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
+  load_testing_mode: System.get_env("LOAD_TESTING_MODE", "disabled") |> String.to_existing_atom(),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
   blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID")
 
@@ -153,3 +153,7 @@ config :phoenix, :plug_init_mode, :runtime
 config :joken, default_signer: "secret"
 
 config :appsignal, :config, active: false
+
+# Configure AWS
+config :ex_aws,
+  region: System.get_env("AWS_REGION", "us-east-1")

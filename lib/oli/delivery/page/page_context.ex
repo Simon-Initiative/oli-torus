@@ -29,6 +29,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
+  alias Oli.Delivery.Sections.Section
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -62,7 +63,8 @@ defmodule Oli.Delivery.Page.PageContext do
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
-      objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
+      objectives:
+        rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts
     }
   end
@@ -76,13 +78,13 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_visit(String.t(), String.t(), Oli.Accounts.User) ::
+  @spec create_for_visit(Section, String.t(), Oli.Accounts.User) ::
           %PageContext{}
-  def create_for_visit(section_slug, page_slug, user) do
+  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
-    Attempts.track_access(page_revision.resource_id, section_slug, user.id)
+    Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
@@ -99,8 +101,7 @@ defmodule Oli.Delivery.Page.PageContext do
         {:ok,
          {state,
           %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-          {state, [resource_attempt], latest_attempts,
-           ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
+          assemble_final_context(state, resource_attempt, latest_attempts, page_revision)
 
         {:error, _} ->
           {:error, [], %{}}
@@ -122,15 +123,31 @@ defmodule Oli.Delivery.Page.PageContext do
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
-      objectives: rollup_objectives(latest_attempts, DeliveryResolver, section_slug),
+      objectives:
+        rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts
     }
+  end
+
+  defp assemble_final_context(state, resource_attempt, latest_attempts, %{
+         content: %{"advancedDelivery" => true}
+       }) do
+    {state, [resource_attempt], latest_attempts, latest_attempts}
+  end
+
+  defp assemble_final_context(state, resource_attempt, latest_attempts, page_revision) do
+    {state, [resource_attempt], latest_attempts,
+     ActivityContext.create_context_map(page_revision.graded, latest_attempts)}
   end
 
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
-  defp rollup_objectives(latest_attempts, resolver, section_slug) do
+  defp rollup_objectives(%{content: %{"advancedDelivery" => true}}, _, _, _) do
+    []
+  end
+
+  defp rollup_objectives(_, latest_attempts, resolver, section_slug) do
     Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
     |> ObjectivesRollup.rollup_objectives(resolver, section_slug)
   end

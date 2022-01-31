@@ -1,11 +1,13 @@
 /* eslint-disable react/prop-types */
 import { templatizeText } from 'apps/delivery/components/TextParser';
+import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ApplyStateOperation,
   bulkApplyState,
   defaultGlobalEnv,
+  getEnvState,
   getLocalizedStateSnapshot,
   getValue,
 } from '../../../../adaptivity/scripting';
@@ -40,6 +42,7 @@ import {
   selectEnableHistory,
   selectIsLegacyTheme,
   selectPageContent,
+  selectPreviewMode,
   setScore,
 } from '../../store/features/page/slice';
 import EverappContainer from './components/EverappContainer';
@@ -103,7 +106,7 @@ export interface NextButton {
 const initialNextButtonClassName = 'checkBtn';
 const wrongFeedbackNextButtonClassName = 'closeFeedbackBtn wrongFeedback';
 const correctFeedbackNextButtonClassName = 'closeFeedbackBtn correctFeedback';
-/* const componentEventService = ComponentEventService.getInstance(); */
+
 const NextButton: React.FC<NextButton> = ({
   text,
   handler,
@@ -169,6 +172,8 @@ const DeckLayoutFooter: React.FC = () => {
   const lastCheckTimestamp = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
+
+  const isPreviewMode = useSelector(selectPreviewMode);
 
   const [isLoading, setIsLoading] = useState(false);
   const [hasOnlyMutation, setHasOnlyMutation] = useState(false);
@@ -302,6 +307,20 @@ const DeckLayoutFooter: React.FC = () => {
         score: getValue('session.tutorialScore', defaultGlobalEnv) || 0,
       });
 
+      const everAppUpdates = mutationsModified.filter((op: ApplyStateOperation) => {
+        return op.target.indexOf('app') === 0;
+      });
+      if (everAppUpdates.length) {
+        const envState = getEnvState(defaultGlobalEnv);
+        const everAppState = everAppUpdates.reduce((acc: any, op: ApplyStateOperation) => {
+          const [, everAppId] = op.target.split('.');
+          acc[everAppId] = acc[everAppId] || {};
+          acc[everAppId][op.target.replace(`app.${everAppId}.`, '')] = envState[op.target];
+          return acc;
+        }, {});
+        updateGlobalUserState(everAppState, isPreviewMode);
+      }
+
       const latestSnapshot = getLocalizedStateSnapshot(
         (currentActivityTree || []).map((a) => a.id),
       );
@@ -398,10 +417,18 @@ const DeckLayoutFooter: React.FC = () => {
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
-  }, [lastCheckResults]);
+  }, [lastCheckResults, isPreviewMode]);
 
   const checkHandler = () => {
     setIsLoading(true);
+    /* console.log('CHECK BUTTON CLICKED', {
+      isGoodFeedback,
+      displayFeedback,
+      nextActivityId,
+      isLegacyTheme,
+      currentActivity,
+      displayFeedbackIcon,
+    }); */
     if (displayFeedback) setDisplayFeedback(false);
 
     // if (isGoodFeedback && canProceed) {
@@ -423,9 +450,7 @@ const DeckLayoutFooter: React.FC = () => {
       currentFeedbacks?.length > 0 &&
       displayFeedbackIcon
     ) {
-      if (currentPage.custom?.advancedAuthoring && !enableHistory) {
-        dispatch(triggerCheck({ activityId: currentActivity?.id }));
-      } else if (
+      if (
         !isGoodFeedback &&
         nextActivityId?.trim().length &&
         nextActivityId !== currentActivityId
@@ -436,6 +461,8 @@ const DeckLayoutFooter: React.FC = () => {
           nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
+      } else if (!enableHistory) {
+        dispatch(triggerCheck({ activityId: currentActivity?.id }));
       } else {
         dispatch(setIsGoodFeedback({ isGoodFeedback: false }));
         setDisplayFeedbackIcon(false);
@@ -498,8 +525,6 @@ const DeckLayoutFooter: React.FC = () => {
   const containerWidth =
     currentActivity?.custom?.width || currentPage?.custom?.defaultScreenWidth || 1100;
 
-  const containerClasses = ['checkContainer', 'rowRestriction', 'columnRestriction'];
-
   // effects
   useEffect(() => {
     // legacy usage expects the feedback header to be handled
@@ -532,7 +557,10 @@ const DeckLayoutFooter: React.FC = () => {
 
   return (
     <>
-      <div className={containerClasses.join(' ')} style={{ width: containerWidth }}>
+      <div
+        className={`checkContainer rowRestriction columnRestriction`}
+        style={{ width: containerWidth }}
+      >
         <NextButton
           isLoading={isLoading || !initPhaseComplete}
           text={nextButtonText}
@@ -543,18 +571,16 @@ const DeckLayoutFooter: React.FC = () => {
           showCheckBtn={currentActivity?.custom?.showCheckBtn}
         />
         {!isLegacyTheme && (
-          <>
-            <FeedbackContainer
-              minimized={!displayFeedback}
-              showIcon={displayFeedbackIcon}
-              showHeader={displayFeedbackHeader}
-              onMinimize={() => setDisplayFeedback(false)}
-              onMaximize={() => setDisplayFeedback(true)}
-              feedbacks={currentFeedbacks}
-            />
-            <HistoryNavigation />
-          </>
+          <FeedbackContainer
+            minimized={!displayFeedback}
+            showIcon={displayFeedbackIcon}
+            showHeader={displayFeedbackHeader}
+            onMinimize={() => setDisplayFeedback(false)}
+            onMaximize={() => setDisplayFeedback(true)}
+            feedbacks={currentFeedbacks}
+          />
         )}
+        <HistoryNavigation />
       </div>
       {isLegacyTheme && (
         <>
@@ -565,8 +591,8 @@ const DeckLayoutFooter: React.FC = () => {
             onMinimize={() => setDisplayFeedback(false)}
             onMaximize={() => setDisplayFeedback(true)}
             feedbacks={currentFeedbacks}
+            style={{ width: containerWidth }}
           />
-          <HistoryNavigation />
         </>
       )}
       <EverappContainer apps={currentPage?.custom?.everApps || []} />

@@ -16,15 +16,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   require Logger
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
-    %ActivityAttempt{
-      transformed_model: transformed_model,
-      resource_attempt: resource_attempt,
-      attempt_number: attempt_number
-    } =
+    activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
 
-    case Model.parse(transformed_model) do
+    %ActivityAttempt{
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number
+    } = activity_attempt
+
+    activity_model = select_model(activity_attempt)
+
+    case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
 
@@ -42,6 +45,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
+        variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
+
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
           section_slug,
@@ -50,7 +55,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           part_inputs,
           scoringContext,
           rules,
-          activitiesRequiredForEvaluation
+          activitiesRequiredForEvaluation,
+          variablesRequiredForEvaluation
         )
 
       e ->
@@ -65,28 +71,39 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         part_inputs,
         scoringContext,
         rules,
-        activitiesRequiredForEvaluation
+        activitiesRequiredForEvaluation,
+        variablesRequiredForEvaluation
       ) do
     state =
-      assemble_full_adaptive_state(resource_attempt, activitiesRequiredForEvaluation, part_inputs)
+      case variablesRequiredForEvaluation do
+        nil ->
+          assemble_full_adaptive_state(
+            resource_attempt,
+            activitiesRequiredForEvaluation,
+            part_inputs
+          )
 
-    encodeResults = true
+        _ ->
+          assemble_full_adaptive_state(
+            resource_attempt,
+            activitiesRequiredForEvaluation,
+            part_inputs
+          )
+          |> Map.take(variablesRequiredForEvaluation)
+      end
 
-    case NodeJS.call({"rules", :check}, [state, rules, scoringContext, encodeResults]) do
-      {:ok, check_results} ->
-        # Logger.debug("Check RESULTS: #{check_results}")
-        decoded = Base.decode64!(check_results)
-        # Logger.debug("Decoded: #{decoded}")
-        decodedResults = Poison.decode!(decoded)
-        dbg = decodedResults["debug"]
-        Logger.debug("Results #{Jason.encode!(dbg)}")
-
+    case Oli.Delivery.Attempts.ActivityLifecycle.RuleEvaluator.do_eval(
+           state,
+           rules,
+           scoringContext
+         ) do
+      {:ok, decodedResults} ->
         score = decodedResults["score"]
         out_of = decodedResults["out_of"]
         Logger.debug("Score: #{score}")
         Logger.debug("Out of: #{out_of}")
+
         client_evaluations = to_client_results(score, out_of, part_inputs)
-        Logger.debug("EV: #{Jason.encode!(client_evaluations)}")
 
         case apply_client_evaluation(
                section_slug,
@@ -98,13 +115,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             {:ok, decodedResults}
 
           {:error, err} ->
-            Logger.debug("Error in apply client results! #{err}")
+            Logger.error("Error in apply client results! #{err}")
 
             {:error, err}
         end
 
-      e ->
-        e
+      {:error, err} ->
+        Logger.error("Error in rule evaluation! #{err}")
+
+        {:error, err}
     end
   end
 
@@ -475,15 +494,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   defp evaluate_submissions(_, [], _), do: {:error, "nothing to process"}
 
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
-    %ActivityAttempt{
-      transformed_model: transformed_model,
-      attempt_number: attempt_number,
-      resource_attempt: resource_attempt
-    } =
+    activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
 
-    {:ok, %Model{parts: parts}} = Model.parse(transformed_model)
+    %ActivityAttempt{
+      resource_attempt: resource_attempt,
+      attempt_number: attempt_number
+    } = activity_attempt
+
+    activity_model = select_model(activity_attempt)
+
+    {:ok, %Model{parts: parts}} = Model.parse(activity_model)
 
     # We need to tie the attempt_guid from the part_inputs to the attempt_guid
     # from the %PartAttempt, and then the part id from the %PartAttempt to the

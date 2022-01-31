@@ -13,15 +13,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   import Oli.Delivery.Attempts.Core
   alias Oli.Activities.Realizer.Query.Source
   alias Oli.Resources.Revision
-  alias Oli.Activities.Model
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.Result
-  alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext, AttemptState}
+  alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
 
   @doc """
-  Creates an attempt hierarchy for a given resource visit context.
-
-  Returns {:ok, %AttemptState{}}
+  Creates an attempt hierarchy for a given resource visit context, optimized to
+  use a constant number of queries relative to the number of activities and parts.
+  Returns {:ok, %ResourceAttempt{}}
   """
   def create(%VisitContext{} = context) do
     {resource_access_id, next_attempt_number} =
@@ -62,82 +61,99 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        attempt_hierarchy =
-          Enum.reduce(activity_revisions, %{}, fn revision, m ->
-            case create_full_activity_attempt(
-                   resource_attempt,
-                   revision,
-                   !MapSet.member?(unscored, revision.resource_id)
-                 ) do
-              {:ok, {activity_attempt, part_attempts}} ->
-                Map.put(m, revision.resource_id, {activity_attempt, part_attempts})
-
-              e ->
-                Map.put(m, revision.resource_id, e)
-            end
-          end)
-
-        {:ok,
-         %AttemptState{
-           resource_attempt: resource_attempt,
-           attempt_hierarchy: attempt_hierarchy
-         }}
+        bulk_create_attempts(resource_attempt, activity_revisions, unscored)
+        {:ok, resource_attempt}
 
       error ->
         error
     end
   end
 
-  defp create_full_activity_attempt(
-         resource_attempt,
-         %Revision{resource_id: resource_id, id: id, content: model} = revision,
-         scoreable
-       ) do
-    with {:ok, parsed_model} <- Model.parse(model),
-         {:ok, transformed_model} <- Transformers.apply_transforms(model),
-         {:ok, activity_attempt} <-
-           create_activity_attempt(%{
-             resource_attempt_id: resource_attempt.id,
-             attempt_guid: UUID.uuid4(),
-             attempt_number: 1,
-             revision_id: id,
-             resource_id: resource_id,
-             transformed_model: transformed_model,
-             scoreable: scoreable
-           }),
-         {:ok, part_attempts} <- create_part_attempts(parsed_model, activity_attempt) do
-      # We simulate the effect of preloading the revision by setting it
-      # after we create the record. This is needed so that this function matches
-      # the contract of get_latest_attempt - namely that the revision association
-      # on activity attempt records is preloaded.
+  # Instead of one insertion query for every part attempt and one insertion query for
+  # every activity attempt, this implementation does the same with exactly three queries:
+  #
+  # 1. Bulk activity attempt creation (regardless of the number of attempts)
+  # 2. A query to fetch the newly created IDs and their corresponding resource_ids
+  # 3. A final bulk insert query to create the part attempts
+  #
+  defp bulk_create_attempts(resource_attempt, activity_revisions, unscored) do
+    # Use a common timestamp for all insertions
+    right_now =
+      DateTime.utc_now()
+      |> DateTime.truncate(:second)
 
-      {:ok, {Map.put(activity_attempt, :revision, revision), part_attempts}}
-    else
-      e -> Logger.error("failed to create full activity attempt: #{inspect(e)}")
+    # Create the activity attempts, in bulk
+    Enum.map(activity_revisions, fn r ->
+      scoreable = !MapSet.member?(unscored, r.resource_id)
+      create_raw_activity_attempt(r, scoreable)
+    end)
+    |> optimize_transformed_model()
+    |> bulk_create_activity_attempts(right_now, resource_attempt.id)
+
+    query_driven_part_attempt_creation(resource_attempt.id)
+  end
+
+  defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
+    placeholders = %{
+      now: now,
+      attempt_number: 1,
+      resource_attempt_id: resource_attempt_id
+    }
+
+    Repo.insert_all(ActivityAttempt, raw_attempts, placeholders: placeholders)
+  end
+
+  # This is the optimal way to bulk create part attempts: passing a query driven 'insert'
+  # to the database, instead of passing the raw payload of each record to create.
+  defp query_driven_part_attempt_creation(resource_attempt_id) do
+    query = """
+      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
+      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
+      FROM activity_attempts as a
+      LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
+      WHERE a.resource_attempt_id = $1;
+    """
+
+    Repo.query!(query, [resource_attempt_id])
+  end
+
+  # If all of the transformed_model attrs are nil, we do not need to include them in
+  # the query, as they will be set to nil by default
+  defp optimize_transformed_model(raw_attempts) do
+    case Enum.all?(raw_attempts, fn a -> is_nil(a.transformed_model) end) do
+      true -> Enum.map(raw_attempts, fn a -> Map.delete(a, :transformed_model) end)
+      _ -> raw_attempts
     end
   end
 
-  defp create_part_attempts(parsed_model, activity_attempt) do
-    Enum.reduce_while(parsed_model.parts, {:ok, %{}}, fn p, {:ok, m} ->
-      case create_part_attempt(%{
-             attempt_guid: UUID.uuid4(),
-             activity_attempt_id: activity_attempt.id,
-             attempt_number: 1,
-             part_id: p.id
-           }) do
-        {:ok, part_attempt} -> {:cont, {:ok, Map.put(m, p.id, part_attempt)}}
-        e -> {:halt, e}
+  defp create_raw_activity_attempt(
+         %Revision{resource_id: resource_id, id: id, content: model},
+         scoreable
+       ) do
+    transformed_model =
+      case Transformers.apply_transforms(model) do
+        {:ok, t} -> t
+        _ -> nil
       end
-    end)
+
+    %{
+      resource_attempt_id: {:placeholder, :resource_attempt_id},
+      attempt_guid: UUID.uuid4(),
+      attempt_number: {:placeholder, :attempt_number},
+      revision_id: id,
+      resource_id: resource_id,
+      transformed_model: transformed_model,
+      scoreable: scoreable,
+      inserted_at: {:placeholder, :now},
+      updated_at: {:placeholder, :now}
+    }
   end
 
   @doc """
   Retrieves the state of the latest attempts for a given resource attempt id.
-
   Return value is a map of activity ids to a two element tuple.  The first
   element is the latest activity attempt and the second is a map of part ids
   to their part attempts. As an example:
-
   %{
     232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
     233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
@@ -166,19 +182,6 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> results_to_activity_map
   end
 
-  @doc """
-  Retrieves the state of the latest attempts for a given resource attempt id and
-  a given list of activity ids.
-
-  Return value is a map of activity ids to a two element tuple.  The first
-  element is the latest activity attempt and the second is a map of part ids
-  to their part attempts. As an example:
-
-  %{
-    232 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
-    233 => {%ActivityAttempt{}, %{ "1" => %PartAttempt{}, "2" => %PartAttempt{}}}
-  }
-  """
   def get_latest_attempts(resource_attempt_id, activity_ids) do
     Repo.all(
       from(aa1 in ActivityAttempt,
@@ -195,13 +198,33 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
             pa1.activity_attempt_id == pa2.activity_attempt_id,
         where:
           aa1.resource_id in ^activity_ids and
-            aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and
-            is_nil(pa2.id),
+            aa1.resource_attempt_id == ^resource_attempt_id and is_nil(aa2.id) and is_nil(pa2.id),
         preload: [revision: r],
         select: {pa1, aa1}
       )
     )
     |> results_to_activity_map
+  end
+
+  def full_hierarchy(resource_attempt) do
+    get_latest_attempts(resource_attempt.id)
+  end
+
+  def thin_hierarchy(resource_attempt) do
+    map =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    get_thin_activity_context(resource_attempt.id)
+    |> Enum.map(fn {id, guid, type_id} ->
+      {id,
+       %{
+         id: id,
+         attemptGuid: guid,
+         deliveryElement: Map.get(map, type_id).delivery_element
+       }}
+    end)
+    |> Map.new()
   end
 
   # Take results in the form of a list of {part attempt, activity attempt} tuples

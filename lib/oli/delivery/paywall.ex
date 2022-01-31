@@ -38,10 +38,14 @@ defmodule Oli.Delivery.Paywall do
       from(
         p in Payment,
         where: p.enrollment_id == ^id,
+        limit: 1,
         select: p
       )
 
-    !is_nil(Repo.one(query))
+    case Repo.all(query) do
+      [] -> false
+      _ -> true
+    end
   end
 
   defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
@@ -260,7 +264,12 @@ defmodule Oli.Delivery.Paywall do
       %{id: id} ->
         case Repo.get_by(Payment, enrollment_id: id) do
           nil ->
-            update_payment(payment, %{enrollment_id: id, application_date: DateTime.utc_now()})
+            update_payment(payment, %{
+              enrollment_id: id,
+              pending_user_id: user.id,
+              pending_section_id: section.id,
+              application_date: DateTime.utc_now()
+            })
 
           _ ->
             {:error, {:already_paid}}
@@ -307,6 +316,42 @@ defmodule Oli.Delivery.Paywall do
       )
 
     Repo.one(query)
+  end
+
+  @doc """
+  Creates a new pending payment, ensuring that no other payments exists for this user
+  and section.
+  """
+  def create_pending_payment(%User{id: user_id}, %Section{id: section_id}, attrs) do
+    Oli.Repo.transaction(fn _ ->
+      query =
+        from(
+          p in Payment,
+          where: p.pending_section_id == ^section_id and p.pending_user_id == ^user_id
+        )
+
+      case Oli.Repo.one(query) do
+        # No payment record found for this user in this section
+        nil ->
+          case create_payment(
+                 Map.merge(attrs, %{pending_user_id: user_id, pending_section_id: section_id})
+               ) do
+            {:ok, r} -> r
+            {:error, e} -> Oli.Repo.rollback(e)
+          end
+
+        # A payment found, but this payment was never finalized. We will reuse this
+        # payment record.
+        %Payment{enrollment_id: nil, application_date: nil} = p ->
+          case update_payment(p, attrs) do
+            {:ok, r} -> r
+            {:error, e} -> Oli.Repo.rollback(e)
+          end
+
+        _ ->
+          Oli.Repo.rollback({:payment_already_exists})
+      end
+    end)
   end
 
   @doc """

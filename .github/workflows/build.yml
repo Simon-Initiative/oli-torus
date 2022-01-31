@@ -31,7 +31,7 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.12.0 # Define the elixir version [required]
+          elixir-version: 1.13.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
@@ -61,7 +61,7 @@ jobs:
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
-          elixir-version: 1.12.0 # Define the elixir version [required]
+          elixir-version: 1.13.0 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies

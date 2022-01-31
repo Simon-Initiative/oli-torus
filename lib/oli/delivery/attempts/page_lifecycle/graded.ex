@@ -54,20 +54,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       # Unlike ungraded pages, for graded pages we do not throw away attempts and create anew in the case
       # where the resource revision has changed.  Instead we return back the existing attempt tree and force
       # the page renderer to resolve this discrepancy by indicating the "revised" state.
+
+      {:ok, attempt_state} =
+        AttemptState.fetch_attempt_state(latest_resource_attempt, page_revision)
+
       if page_revision.id !== latest_resource_attempt.revision_id do
-        {:ok,
-         {:revised,
-          %AttemptState{
-            resource_attempt: latest_resource_attempt,
-            attempt_hierarchy: Hierarchy.get_latest_attempts(latest_resource_attempt.id)
-          }}}
+        {:ok, {:revised, attempt_state}}
       else
-        {:ok,
-         {:in_progress,
-          %AttemptState{
-            resource_attempt: latest_resource_attempt,
-            attempt_hierarchy: Hierarchy.get_latest_attempts(latest_resource_attempt.id)
-          }}}
+        {:ok, {:in_progress, attempt_state}}
       end
     end
   end
@@ -92,7 +86,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     case {page_revision.max_attempts > length(resource_attempts) or
             page_revision.max_attempts == 0, has_any_active_attempts?(resource_attempts)} do
       {true, false} ->
-        Hierarchy.create(context)
+        {:ok, resource_attempt} = Hierarchy.create(context)
+        AttemptState.fetch_attempt_state(resource_attempt, page_revision)
 
       {true, true} ->
         {:error, {:active_attempt_present}}
@@ -159,22 +154,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
     if resource_attempt.date_evaluated == nil do
-      # Leaving this hardcoded to 'total' seems to make sense, but perhaps in the
-      # future we do allow this to be configured
-
-      scoreable_attempts =
-        Enum.filter(resource_attempt.activity_attempts, fn activity_attempt ->
-          activity_attempt.scoreable
-        end)
-
+      # Only considering 'scoreable' attempts, add up, adjust and validate the
+      # 'grade' which consists of a tuple of {score, out_of}
       {score, out_of} =
-        Enum.reduce(scoreable_attempts, {0, 0}, fn p, {score, out_of} ->
-          {score + p.score, out_of + p.out_of}
-        end)
-
-      # Adaptive graded pages can specify a "totalScore" which overrides the calcualted
-      # out_of
-      out_of = override_out_of(out_of, resource_attempt.revision.content)
+        resource_attempt.activity_attempts
+        |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
+        |> Enum.reduce({0, 0}, &aggregation_reducer/2)
+        |> override_out_of(resource_attempt.revision.content)
+        |> ensure_valid_grade
 
       update_resource_attempt(resource_attempt, %{
         score: score,
@@ -186,27 +173,46 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp override_out_of(out_of, %{
+  defp aggregation_reducer(p, {score, out_of}) do
+    {score + p.score, out_of + p.out_of}
+  end
+
+  defp override_out_of({score, out_of}, %{
          "advancedDelivery" => true,
          "custom" => %{"totalScore" => total_score}
        }) do
-    case total_score do
-      value when is_binary(value) ->
-        case Float.parse(value) do
-          {v, _} -> v
-          _ -> out_of
-        end
+    adjusted =
+      case total_score do
+        value when is_binary(value) ->
+          case Float.parse(value) do
+            {v, _} -> v
+            _ -> out_of
+          end
 
-      value when is_float(value) or is_integer(value) ->
-        value
+        value when is_float(value) or is_integer(value) ->
+          value
 
-      _ ->
-        out_of
-    end
-    |> max(1.0)
+        _ ->
+          out_of
+      end
+
+    {score, adjusted}
   end
 
-  defp override_out_of(out_of, _), do: out_of
+  defp override_out_of(grade, _), do: grade
+
+  # Ensure that the out_of is 1.0 or greater, and ensure that
+  # the score is between 0.0 and the out_of, inclusive
+  def ensure_valid_grade({score, out_of}) do
+    out_of = max(out_of, 1.0)
+    score = max(score, 0.0) |> min(out_of)
+
+    {score, out_of}
+  end
+
+  def ensure_valid_grade(%Result{score: score, out_of: out_of}) do
+    ensure_valid_grade({score, out_of})
+  end
 
   defp roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
@@ -215,7 +221,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     %{scoring_strategy_id: strategy_id} =
       DeliveryResolver.from_resource_id(section_slug, access.resource_id)
 
-    %Result{score: score, out_of: out_of} = Scoring.calculate_score(strategy_id, graded_attempts)
+    {score, out_of} =
+      Scoring.calculate_score(strategy_id, graded_attempts)
+      |> ensure_valid_grade()
 
     update_resource_access(access, %{
       score: score,

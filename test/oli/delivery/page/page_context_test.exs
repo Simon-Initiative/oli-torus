@@ -46,6 +46,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
         objectives: %{"attached" => []}
       }
 
+      Seeder.ensure_published(map.publication.id)
+
       Seeder.add_page(map, attrs, :p1)
       |> Seeder.create_section_resources()
     end
@@ -71,7 +73,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
       Seeder.rebuild_section_resources(%{section: section, publication: publication})
 
-      context = PageContext.create_for_visit(section.slug, p1.revision.slug, user)
+      context = PageContext.create_for_visit(section, p1.revision.slug, user)
 
       # verify activities map
       assert Map.get(context.activities, a1.resource.id).model != nil

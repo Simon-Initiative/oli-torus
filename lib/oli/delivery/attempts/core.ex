@@ -1,9 +1,11 @@
 defmodule Oli.Delivery.Attempts.Core do
   import Ecto.Query, warn: false
 
-  alias Oli.Repo
+  require Logger
 
-  alias Oli.Delivery.Sections
+  alias Oli.Repo
+  alias Oli.Repo.{Paging, Sorting}
+
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
@@ -17,35 +19,185 @@ defmodule Oli.Delivery.Attempts.Core do
     PartAttempt,
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    LMSGradeUpdate,
+    GradeUpdateBrowseOptions
   }
+
+  def browse_lms_grade_updates(
+        %Paging{limit: limit, offset: offset},
+        %Sorting{field: field, direction: direction},
+        %GradeUpdateBrowseOptions{section_id: section_id} = options
+      ) do
+    by_section = dynamic([_, ra, _], ra.section_id == ^section_id)
+
+    filter_by_user =
+      if is_nil(options.user_id) do
+        true
+      else
+        dynamic([_, _, u], u.id == ^options.user_id)
+      end
+
+    filter_by_text =
+      if options.text_search == "" or is_nil(options.text_search) do
+        true
+      else
+        text_search = String.trim(options.text_search)
+
+        dynamic(
+          [g, _, u],
+          ilike(g.details, ^"%#{text_search}%") or
+            ilike(g.result, ^"%#{text_search}%") or
+            ilike(u.email, ^"%#{text_search}%")
+        )
+      end
+
+    query =
+      LMSGradeUpdate
+      |> join(:left, [g], ra in ResourceAccess, on: g.resource_access_id == ra.id)
+      |> join(:left, [_, ra], u in Oli.Accounts.User, on: ra.user_id == u.id)
+      |> where(^by_section)
+      |> where(^filter_by_text)
+      |> where(^filter_by_user)
+      |> limit(^limit)
+      |> offset(^offset)
+      |> select_merge([_, _, u], %{
+        user_email: u.email,
+        total_count: fragment("count(*) OVER()")
+      })
+
+    query =
+      case field do
+        :user_email -> order_by(query, [_, _, u], {^direction, u.email})
+        _ -> order_by(query, [p, _], {^direction, field(p, ^field)})
+      end
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Select the model to use to power all aspects of an activity.  If an activity utilizes
+  transformations, the transformed model will be stored on the activity attempt in the
+  `transformed_model` attribute.  Otherwise, that field will be `nil` indicating that the
+  original model from the revision of the activity should be used.  Allowing the
+  `transformed_model` to be nil is a significant storage and performance optimization,
+  particularly when the size and number of activities within a page becomes large.
+
+  This variant of this function allows the activity attempt and the revision to be passed
+  as separate arguments to support workflows where the revision is not expected to be
+  preloaded in the activity attempt. In situations where that revision is expected to be
+  preloaded, `select_model/1` can be used instead.
+
+  In both variants, a robustness feature exists that will inline retrieve the revision,
+  if needed and not specified.  This is clearly to prevent functional problems, but it can
+  lead to performance issues if done across a collection.  A warning is logged in this
+  case.
+  """
+  def select_model(%ActivityAttempt{transformed_model: nil, revision_id: revision_id}, nil) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: nil}, %Oli.Resources.Revision{
+        content: content
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{transformed_model: transformed_model}, _) do
+    transformed_model
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: nil,
+        revision_id: revision_id
+      }) do
+    perform_inline_fetch(revision_id)
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: nil,
+        revision: %Oli.Resources.Revision{
+          content: content
+        }
+      }) do
+    content
+  end
+
+  def select_model(%ActivityAttempt{
+        transformed_model: transformed_model
+      }) do
+    transformed_model
+  end
+
+  defp perform_inline_fetch(revision_id) do
+    Logger.warning(
+      "Inline fetch of revision for model selection. This can lead to performance problems if done as part of an iteration of a collection."
+    )
+
+    case Oli.Repo.get(Oli.Resources.Revision, revision_id) do
+      nil ->
+        Logger.error("Inline fetch could not locate revision")
+        nil
+
+      %Oli.Resources.Revision{content: content} ->
+        content
+    end
+  end
 
   @moduledoc """
   Core attempt related functions.
   """
 
   @doc """
-  Creates or updates an access record for a given resource, section context id and user. When
+  Creates or updates an access record for a given resource, section id and user. When
   created the access count is set to 1, otherwise on updates the
   access count is incremented.
   ## Examples
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:ok, %ResourceAccess{}}
-      iex> track_access(resource_id, section_slug, user_id)
+      iex> track_access(resource_id, section_id, user_id)
       {:error, %Ecto.Changeset{}}
   """
-  def track_access(resource_id, section_slug, user_id) do
-    section = Sections.get_section_by(slug: section_slug)
-
+  def track_access(resource_id, section_id, user_id) do
     Oli.Repo.insert!(
       %ResourceAccess{
         access_count: 1,
         user_id: user_id,
-        section_id: section.id,
+        section_id: section_id,
         resource_id: resource_id
       },
       on_conflict: [inc: [access_count: 1]],
       conflict_target: [:resource_id, :user_id, :section_id]
+    )
+  end
+
+  @doc """
+  For a given resource attempt id, this returns a list of the id and resource_id
+  for all activity attempt records that pertain to this resource attempt id.
+  """
+  def get_attempt_resource_id_pair(resource_attempt_id) do
+    Repo.all(
+      from(r in ActivityAttempt,
+        where: r.resource_attempt_id == ^resource_attempt_id,
+        select: map(r, [:id, :resource_id])
+      )
+    )
+  end
+
+  @doc """
+  For a given resource attempt id, this returns a list of three element tuples containing
+  the activity resource id, the activity attempt guid, and the id of the type of the
+  registered activity.
+  """
+  def get_thin_activity_context(resource_attempt_id) do
+    Repo.all(
+      from(a in ActivityAttempt,
+        join: r in Revision,
+        on: a.revision_id == r.id,
+        where: a.resource_attempt_id == ^resource_attempt_id,
+        select: {a.resource_id, a.attempt_guid, r.activity_type_id}
+      )
     )
   end
 
@@ -91,6 +243,19 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Retrieves a preloaded resource access from its id.
+  """
+  def get_resource_access(resource_access_id) do
+    Repo.one(
+      from(a in ResourceAccess,
+        where: a.id == ^resource_access_id,
+        select: a,
+        preload: [:section, :user]
+      )
+    )
+  end
+
+  @doc """
   Retrieves all graded resource access for a given context
 
   `[%ResourceAccess{}, ...]`
@@ -108,8 +273,9 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.revision_id == r.id,
         where:
           s.slug == ^section_slug and s.status != :deleted and r.graded == true and
-            r.resource_id == ^resource_id,
-        select: a
+            a.resource_id == ^resource_id,
+        select: a,
+        distinct: a
       )
     )
   end
@@ -251,23 +417,23 @@ defmodule Oli.Delivery.Attempts.Core do
   """
   def get_latest_resource_attempt(resource_id, section_slug, user_id) do
     Repo.one(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: ra1 in ResourceAttempt,
-        on: a.id == ra1.resource_access_id,
-        left_join: ra2 in ResourceAttempt,
+      ResourceAttempt
+      |> join(:left, [ra1], a in ResourceAccess, on: a.id == ra1.resource_access_id)
+      |> join(:left, [_, a], s in Section, on: a.section_id == s.id)
+      |> join(:left, [ra1, a, _], ra2 in ResourceAttempt,
         on:
           a.id == ra2.resource_access_id and ra1.id < ra2.id and
-            ra1.resource_access_id == ra2.resource_access_id,
-        where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
-            a.resource_id == ^resource_id and
-            is_nil(ra2),
-        select: ra1
+            ra1.resource_access_id == ra2.resource_access_id
       )
+      |> join(:left, [ra1, _, _, _], r in Revision, on: ra1.revision_id == r.id)
+      |> where(
+        [ra1, a, s, ra2, _],
+        a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+          a.resource_id == ^resource_id and
+          is_nil(ra2)
+      )
+      |> preload(:revision)
     )
-    |> Repo.preload([:revision])
   end
 
   @doc """
@@ -335,7 +501,7 @@ defmodule Oli.Delivery.Attempts.Core do
       Repo.all(
         from(activity_attempt in ActivityAttempt,
           where: activity_attempt.attempt_guid in ^activity_attempt_guids,
-          preload: [:part_attempts]
+          preload: [:part_attempts, :revision]
         )
       )
 
@@ -416,6 +582,33 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   @doc """
+  Creates an LMS grade update record.
+  ## Examples
+      iex> create_lms_grade_update(%{field: value})
+      {:ok, %LMSGradeUpdate{}}
+      iex> create_lms_grade_update(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_lms_grade_update(attrs \\ %{}) do
+    %LMSGradeUpdate{}
+    |> LMSGradeUpdate.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates an LMS grade update.
+  ## Examples
+      iex> update_lms_grade_update(grade_update, %{field: new_value})
+      {:ok, %LMSGradeUpdate{}}
+      iex> update_lms_grade_update(grade_update, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_lms_grade_update(grade_update, attrs) do
+    LMSGradeUpdate.changeset(grade_update, attrs)
+    |> Repo.update()
+  end
+
+  @doc """
   Updates an activity attempt.
   ## Examples
       iex> update_activity_attempt(revision, %{field: new_value})
@@ -431,13 +624,13 @@ defmodule Oli.Delivery.Attempts.Core do
   @doc """
   Updates an resource access.
   ## Examples
-      iex> update_resource_access(revision, %{field: new_value})
+      iex> update_resource_access(resource_access, %{field: new_value})
       {:ok, %ResourceAccess{}}
-      iex> update_resource_access(revision, %{field: bad_value})
+      iex> update_resource_access(resource_access, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_resource_access(activity_attempt, attrs) do
-    ResourceAccess.changeset(activity_attempt, attrs)
+  def update_resource_access(resource_access, attrs) do
+    ResourceAccess.changeset(resource_access, attrs)
     |> Repo.update()
   end
 

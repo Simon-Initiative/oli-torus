@@ -7,6 +7,10 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
     field(:score, :float)
     field(:out_of, :float)
 
+    # Completed LMS grade updates
+    field(:last_successful_grade_update_id, :integer)
+    field(:last_grade_update_id, :integer)
+
     belongs_to(:user, Oli.Accounts.User)
     belongs_to(:section, Oli.Delivery.Sections.Section)
     belongs_to(:resource, Oli.Resources.Resource)
@@ -20,7 +24,16 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
   @doc false
   def changeset(resource_access, attrs) do
     resource_access
-    |> cast(attrs, [:access_count, :score, :out_of, :user_id, :section_id, :resource_id])
+    |> cast(attrs, [
+      :access_count,
+      :score,
+      :out_of,
+      :last_successful_grade_update_id,
+      :last_grade_update_id,
+      :user_id,
+      :section_id,
+      :resource_id
+    ])
     |> validate_required([:access_count, :user_id, :section_id, :resource_id])
     |> validate_score()
     |> validate_out_of()
@@ -45,5 +58,12 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
         true -> []
       end
     end)
+  end
+
+  def last_grade_update_failed?(%Oli.Delivery.Attempts.Core.ResourceAccess{
+        last_grade_update_id: last_grade_update_id,
+        last_successful_grade_update_id: last_successful_grade_update_id
+      }) do
+    !is_nil(last_grade_update_id) and last_grade_update_id != last_successful_grade_update_id
   end
 end

@@ -20,6 +20,7 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Qa.Reviews
   alias Oli.Activities
+  alias Oli.Delivery.Gating
 
   def base_project_with_resource(author) do
     {:ok, family} =
@@ -532,7 +533,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, resource_tag).revision
     section = map.section
 
-    %ResourceAccess{id: id} = track_access(resource.id, section.slug, user.id)
+    %ResourceAccess{id: id} = track_access(resource.id, section.id, user.id)
 
     attrs =
       Map.merge(attrs, %{
@@ -557,7 +558,7 @@ defmodule Oli.Seeder do
     revision = Map.get(map, revision_tag)
     section = map.section
 
-    %ResourceAccess{id: id} = track_access(resource.id, section.slug, user.id)
+    %ResourceAccess{id: id} = track_access(resource.id, section.id, user.id)
 
     attrs =
       Map.merge(attrs, %{
@@ -613,6 +614,22 @@ defmodule Oli.Seeder do
       nil -> map
       t -> Map.put(map, t, attempt)
     end
+  end
+
+  def ensure_published(publication_id) do
+    case Repo.get(Publication, publication_id) do
+      nil ->
+        true
+
+      %Publication{published: nil} = p ->
+        Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
+    end
+
+    query = """
+    REFRESH MATERIALIZED VIEW part_mapping;
+    """
+
+    Oli.Repo.query!(query, [])
   end
 
   defp create_published_resource(publication, resource, revision) do
@@ -1196,5 +1213,20 @@ defmodule Oli.Seeder do
     end)
 
     map
+  end
+
+  def create_schedule_gating_condition(start_datetime, end_datetime, resource_id, section_id) do
+    {:ok, gating_condition} =
+      Gating.create_gating_condition(%{
+        type: :schedule,
+        data: %{
+          start_datetime: start_datetime,
+          end_datetime: end_datetime
+        },
+        resource_id: resource_id,
+        section_id: section_id
+      })
+
+    gating_condition
   end
 end

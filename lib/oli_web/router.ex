@@ -65,6 +65,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.SetDefaultPow, :user)
   end
 
+  pipeline :with_current_user do
+    plug(Oli.Plugs.SetCurrentUser)
+  end
+
   # set the layout to be workspace
   pipeline :workspace do
     plug(:put_root_layout, {OliWeb.LayoutView, "workspace.html"})
@@ -245,6 +249,9 @@ defmodule OliWeb.Router do
 
     # update session timezone information
     post("/timezone", StaticPageController, :timezone)
+
+    # general health check for application & db
+    get "/healthz", HealthController, :index
   end
 
   scope "/.well-known", OliWeb do
@@ -465,8 +472,12 @@ defmodule OliWeb.Router do
 
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api])
-
+    # This endpoint is secured via an API token
     post("/", Api.PaymentController, :new)
+  end
+
+  scope "/api/v1/payments", OliWeb do
+    pipe_through([:api, :delivery_protected, :with_current_user])
 
     # String payment intent creation
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
@@ -672,6 +683,8 @@ defmodule OliWeb.Router do
     live("/:section_slug", Sections.OverviewView)
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
+    live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
+    live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
     live("/:section_slug/grades/gradebook", Grades.GradebookView)
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
@@ -838,12 +851,11 @@ defmodule OliWeb.Router do
   # routes only accessible when load testing mode is enabled. These routes exist solely
   # to allow the load testing framework to do things like query for the available open and free
   # sections, to query for all of the pages in an individual section, etc.
-  if Oli.Utils.LoadTesting.enabled?() do
-    scope "/api/v1/testing", OliWeb do
-      pipe_through([:api])
 
-      get("/openfree", Api.OpenAndFreeController, :index)
-    end
+  scope "/api/v1/testing", OliWeb do
+    pipe_through([:api])
+
+    get("/openfree", Api.OpenAndFreeController, :index)
   end
 
   # routes only accessible to developers

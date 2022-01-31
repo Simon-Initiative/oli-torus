@@ -78,3 +78,32 @@
   line-height: 0.5;
   border-radius: 0.2rem;
 }
+
+
+.icon-chevron-up,
+.icon-chevron-down {
+  width: 12px;
+  height: 12px;
+  border: 3px solid transparent;
+  border-color: rgba(0, 0, 0, 0.6);
+  border-bottom: 0;
+  border-left: 0;
+  display: block;
+  position: relative;
+}
+.icon-chevron-up {
+  transform: rotate(315deg);
+  left: 0px;
+  top: 4px;
+}
+.icon-chevron-down {
+  transform: rotate(135deg);
+  left: 0px;
+  top: -3px;
+}
+
+.btn.move-btn {
+  &[disabled] {
+    opacity: 0.25;
+  }
+}
