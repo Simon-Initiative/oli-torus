@@ -391,14 +391,15 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
 
-    const currentActivity = currentActivityTree
-      ? currentActivityTree[currentActivityTree.length - 1]
-      : null;
+    const currentActivity =
+      currentActivityTree && currentActivityTree.length > 0
+        ? currentActivityTree[currentActivityTree.length - 1]
+        : null;
     const initState = currentActivity?.content?.custom?.facts || [];
 
     console.log({ snapshot, initState });
     updateGlobalState(snapshot, initState);
-    const finalInitSnapshot = initState.reduce((acc: any, initObject: any) => {
+    const finalInitSnapshot = initState?.reduce((acc: any, initObject: any) => {
       let key = initObject.target;
       if (key.indexOf('stage') === 0) {
         const lstVar = key.split('.');
@@ -423,7 +424,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
-      initStateFacts: finalInitSnapshot,
+      initStateFacts: finalInitSnapshot || {},
       domain: adaptivityDomain,
       initStateBindToFacts,
     });
