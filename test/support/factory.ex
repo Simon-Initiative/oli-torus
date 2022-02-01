@@ -3,8 +3,9 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
-  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionResource}
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications, SectionResource}
+  alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Publishing.{Publication, PublishedResource}
@@ -225,6 +226,23 @@ defmodule Oli.Factory do
       typ: "JWT",
       alg: "RS256",
       kid: UUID.uuid4()
+    }
+  end
+
+  def enrollment_factory() do
+    %Enrollment{
+      user: insert(:user),
+      section: insert(:section)
+    }
+  end
+
+  def payment_factory() do
+    %Payment{
+      type: :direct,
+      amount: Money.new(:USD, 25),
+      provider_type: :stripe,
+      section: insert(:section),
+      enrollment: insert(:enrollment)
     }
   end
 end

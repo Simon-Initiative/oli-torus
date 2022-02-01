@@ -1,17 +1,17 @@
 defmodule OliWeb.PaymentProviders.StripeController do
   use OliWeb, :controller
-  require Logger
+
+  import Oli.Utils
   import OliWeb.Api.Helpers
+
+  alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Providers.Stripe
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Paywall
-  import Oli.Utils
+
+  require Logger
 
   @doc """
-  Render the page to show a student that they do not have access because
-  of the paywall state.  This is the route that the enforce paywall plug
-  redirects to.
+  Renders the page to start the direct payment processing flow via stripe.
   """
   def show(conn, section, user, %{amount: decimal} = amount) do
     Logger.debug("StripeController:show", %{
