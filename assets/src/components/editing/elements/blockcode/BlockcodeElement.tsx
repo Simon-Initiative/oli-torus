@@ -120,8 +120,10 @@ export const CodeEditor = (props: CodeProps) => {
             }}
             placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
           />
-          {...props.children}
-          <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+          <>
+            {...props.children}
+            <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+          </>
         </>
       </HoverContainer>
     </div>
