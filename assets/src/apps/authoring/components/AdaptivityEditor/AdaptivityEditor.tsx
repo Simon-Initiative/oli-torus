@@ -106,7 +106,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
     }
     if (diff) {
       const activityClone = clone(currentActivity);
-      const rulesClone = [...currentActivity?.authoring.rules];
+      const rulesClone = currentActivity ? [...currentActivity.authoring.rules] : [];
       rulesClone[currentActivity?.authoring.rules.indexOf(existing)] = rule;
       activityClone.authoring.rules = rulesClone;
       // due to the way this works technically if we are *deleting" a condition with an external reference

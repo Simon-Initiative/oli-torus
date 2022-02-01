@@ -107,7 +107,7 @@ export class HtmlParser implements WriterImpl {
     return <h6>{next()}</h6>;
   }
   img(context: WriterContext, next: Next, attrs: Image) {
-    if (!attrs.src) return null;
+    if (!attrs.src) return <></>;
 
     return this.figure(
       attrs,
@@ -121,7 +121,7 @@ export class HtmlParser implements WriterImpl {
     );
   }
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
-    if (!attrs.src) return null;
+    if (!attrs.src) return <></>;
 
     return this.iframe(context, next, {
       ...attrs,
@@ -129,7 +129,7 @@ export class HtmlParser implements WriterImpl {
     });
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
-    if (!attrs.src) return null;
+    if (!attrs.src) return <></>;
 
     return this.figure(
       attrs,
@@ -139,7 +139,7 @@ export class HtmlParser implements WriterImpl {
     );
   }
   audio(context: WriterContext, next: Next, attrs: Audio) {
-    if (!attrs.src) return null;
+    if (!attrs.src) return <></>;
 
     return this.figure(
       attrs,

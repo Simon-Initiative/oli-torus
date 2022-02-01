@@ -97,30 +97,32 @@ export const CodeEditor = (props: CodeProps) => {
           </Toolbar>
         }
       >
-        <AceEditor
-          className={classNames(['code-editor', isSelected && 'active'])}
-          ref={reactAce}
-          mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
-          style={{ width: '100%' }}
-          theme="github"
-          onChange={(code) => {
-            onEdit({ code });
-            setValue(code);
-          }}
-          value={value}
-          highlightActiveLine
-          tabSize={2}
-          wrapEnabled
-          setOptions={{
-            fontSize: 16,
-            showGutter: false,
-            minLines: 2,
-            maxLines: Infinity,
-          }}
-          placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
-        />
-        {...props.children}
-        <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+        <>
+          <AceEditor
+            className={classNames(['code-editor', isSelected && 'active'])}
+            ref={reactAce}
+            mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
+            style={{ width: '100%' }}
+            theme="github"
+            onChange={(code) => {
+              onEdit({ code });
+              setValue(code);
+            }}
+            value={value}
+            highlightActiveLine
+            tabSize={2}
+            wrapEnabled
+            setOptions={{
+              fontSize: 16,
+              showGutter: false,
+              minLines: 2,
+              maxLines: Infinity,
+            }}
+            placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
+          />
+          {...props.children}
+          <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+        </>
       </HoverContainer>
     </div>
   );
