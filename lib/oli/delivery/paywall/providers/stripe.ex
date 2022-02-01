@@ -1,7 +1,8 @@
 defmodule Oli.Delivery.Paywall.Providers.Stripe do
+  import Oli.HTTP
+
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
-  import Oli.HTTP
 
   @zero_decimal_currencies ~w"bif clp djf gnf jpy kmf krw mga pyg rwf ugx vnd vuv xaf xof xpf"
   @zero_decimal_currencies_set MapSet.new(@zero_decimal_currencies)
