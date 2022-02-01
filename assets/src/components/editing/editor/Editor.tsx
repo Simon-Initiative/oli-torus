@@ -91,12 +91,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       (m, k) => (k in Marks ? markFor(k as Mark, m) : m),
       children,
     );
-    return (
-      <span {...attributes}>
-        {markup}
-        {leaf.youtubeInput && <span>Enter something</span>}
-      </span>
-    );
+    return <span {...attributes}>{markup}</span>;
   }, []);
 
   const onChange = (value: Descendant[]) => {

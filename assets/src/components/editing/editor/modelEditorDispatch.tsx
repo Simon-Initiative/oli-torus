@@ -1,21 +1,21 @@
-import { AudioEditor } from 'components/editing/elements/audio/Editor';
-import { CodeEditor } from 'components/editing/elements/blockcode/Editor';
-import { BlockQuoteEditor } from 'components/editing/elements/blockquote/Editor';
-import { InputRefEditor } from 'components/editing/elements/inputref/Editor';
-import { LinkEditor } from 'components/editing/elements/link/Editor';
-import { PopupEditor } from 'components/editing/elements/popup/Editor';
-import { TableEditor } from 'components/editing/elements/table/TableEditor';
-import { TdEditor } from 'components/editing/elements/table/TdEditor';
-import { ThEditor } from 'components/editing/elements/table/ThEditor';
-import { TrEditor } from 'components/editing/elements/table/TrEditor';
-import { WebpageEditor } from 'components/editing/elements/webpage/Editor';
-import { YouTubeEditor } from 'components/editing/elements/youtube/Editor';
+import { AudioEditor } from 'components/editing/elements/audio/AudioElement';
+import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeElement';
+import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
+import { InputRefEditor } from 'components/editing/elements/inputref/InputrefElement';
+import { LinkEditor } from 'components/editing/elements/link/LinkElement';
+import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
+import { TableEditor } from 'components/editing/elements/table/TableElement';
+import { TdEditor } from 'components/editing/elements/table/TdElement';
+import { ThEditor } from 'components/editing/elements/table/ThElement';
+import { TrEditor } from 'components/editing/elements/table/TrElement';
+import { WebpageEditor } from 'components/editing/elements/webpage/WebpageElement';
+import { YouTubeEditor } from 'components/editing/elements/youtube/YoutubeElement';
 import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import * as React from 'react';
 import { RenderElementProps } from 'slate-react';
 import { CommandContext } from '../elements/commands/interfaces';
-import { ImageEditor } from '../elements/image/Editor';
+import { ImageEditor } from '../elements/image/ImageElement';
 import { EditorProps } from '../elements/interfaces';
 
 export function editorFor(

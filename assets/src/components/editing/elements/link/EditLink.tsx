@@ -1,4 +1,4 @@
-import { onEnterApply } from 'components/editing/elements/settings/Settings';
+import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
 import { isInternalLink, normalizeHref, toInternalLink } from './utils';

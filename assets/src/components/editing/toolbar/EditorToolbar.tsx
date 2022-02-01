@@ -1,8 +1,7 @@
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
-import { codeLanguageDesc } from 'components/editing/elements/commands/BlockcodeCmd';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commands';
+import { codeLanguageDesc } from 'components/editing/elements/blockcode/codeblockActions';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandContext, CommandDesc } from 'components/editing/elements/commands/interfaces';
-import { listSettings } from 'components/editing/elements/commands/ListsCmd';
 import { headingLevelDesc, headingTypeDescs } from 'components/editing/elements/commands/TitleCmd';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
@@ -10,17 +9,18 @@ import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButto
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import {
   activeBlockType,
-  textTypeDescs,
   formatMenuCommands,
-  formattingDropdownDesc,
-  additionalFormattingOptions,
-  addDesc,
+  addItemDropdown,
+  toggleTextTypes,
+  formattingDropdownAction,
 } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { getHighestTopLevel, safeToDOMNode } from 'components/editing/utils';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+import { additionalFormattingOptions } from 'components/editing/elements/marks/toggleMarkActions';
+import { listSettings } from 'components/editing/elements/list/listActions';
 
 interface Props {
   context: CommandContext;
@@ -34,7 +34,7 @@ export const EditorToolbar = (props: Props) => {
   const blockToggling = (
     <Toolbar.Group>
       <DropdownButton description={activeBlockDesc}>
-        {textTypeDescs
+        {toggleTextTypes
           .filter((type) => !type.active?.(editor))
           .map((desc, i) => (
             <DescriptiveButton key={i} description={desc} />
@@ -98,7 +98,7 @@ export const EditorToolbar = (props: Props) => {
   ));
 
   const advancedFormatting = (
-    <DropdownButton description={formattingDropdownDesc}>
+    <DropdownButton description={formattingDropdownAction}>
       {additionalFormattingOptions.map((desc, i) => (
         <DescriptiveButton key={i} description={desc} />
       ))}
@@ -114,7 +114,7 @@ export const EditorToolbar = (props: Props) => {
 
   const insertMenu = (
     <Toolbar.Group>
-      <DropdownButton description={addDesc}>
+      <DropdownButton description={addItemDropdown}>
         {props.toolbarInsertDescs
           .filter((desc) => desc.command.precondition(editor))
           .map((desc, i) => (

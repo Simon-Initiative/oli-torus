@@ -23,6 +23,4 @@ export enum Marks {
   'strikethrough',
 }
 
-type Decoration = 'youtubeInput' | 'placeholder';
-
-export type FormattedText = Record<'text', string> & Partial<Record<Mark | Decoration, true>>;
+export type FormattedText = Record<'text', string> & Partial<Record<Mark, true>>;

@@ -34,12 +34,10 @@ export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
 
   const onDone = (params: any) => {
     props.setParentPopoverOpen?.(false);
-    // setIsPopoverOpen(false);
     props.command.execute(props.context, editor, params);
   };
   const onCancel = () => {
     props.setParentPopoverOpen?.(false);
-    // setIsPopoverOpen(false);
   };
 
   return (

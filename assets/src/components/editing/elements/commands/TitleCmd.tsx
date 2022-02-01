@@ -1,7 +1,8 @@
 import { Editor, Element, Transforms } from 'slate';
 import { getNearestBlock, isActive, isTopLevel } from '../../utils';
 import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
-import { createButtonCommandDesc, switchType } from 'components/editing/elements/commands/commands';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
 
 const parentTextTypes = {
   p: true,

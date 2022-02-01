@@ -175,9 +175,17 @@ defmodule Oli.Rendering.Content.Html do
           "code" => code
         } = attrs
       ) do
-        IO.inspect(language, label: "Language")
+    safe_language = escape_xml!(language)
+
+    language =
+      if Map.has_key?(code_languages(), safe_language) do
+        Map.get(code_languages(), safe_language)
+      else
+        "text"
+      end
+
     figure(attrs, [
-      ~s|<pre><code class="language-#{escape_xml!(code_languages()[language])}">#{escape_xml!(code)}</code></pre>\n|
+      ~s|<pre><code class="language-#{language}">#{escape_xml!(code)}</code></pre>\n|
     ])
   end
 
@@ -189,8 +197,17 @@ defmodule Oli.Rendering.Content.Html do
           "language" => language
         } = attrs
       ) do
+    safe_language = escape_xml!(language)
+
+    language =
+      if Map.has_key?(code_languages(), safe_language) do
+        Map.get(code_languages(), safe_language)
+      else
+        "text"
+      end
+
     figure(attrs, [
-      ~s|<pre><code class="language-#{escape_xml!(code_languages()[language])}">|,
+      ~s|<pre><code class="language-#{language}">|,
       next.(),
       "</code></pre>\n"
     ])

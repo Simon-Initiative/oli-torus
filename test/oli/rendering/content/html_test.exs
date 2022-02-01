@@ -48,7 +48,7 @@ defmodule Oli.Content.Content.HtmlTest do
                ~r/<div class=".*">\s*<iframe.* src="https:\/\/www.youtube.com\/embed\/fhdCslFcKFU"><\/iframe>\s*<\/div>/
 
       assert rendered_html_string =~
-               "<pre><code class=\"language-python\">import fresh-pots\n</code></pre>"
+               "<pre><code class=\"language-python\">import fresh-pots</code></pre>"
 
       assert rendered_html_string =~
                ~r/<iframe class=".*" allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/

@@ -1,3 +1,4 @@
+import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { ReactEditor } from 'slate-react';
 import { Editor, Transforms } from 'slate';
 import { CommandDesc } from 'components/editing/elements/commands/interfaces';
@@ -13,13 +14,12 @@ import { ActivityModelSchema } from 'components/activities/types';
 import { ActivityEditContext } from 'data/content/activity';
 import guid from 'utils/guid';
 import * as Persistence from 'data/persistence/activity';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commands';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { ModelElement } from 'data/content/model/elements/types';
-import { addDescs } from 'components/editing/toolbar/items';
-import { audioCmdDescBuilder } from 'components/editing/elements/commands/AudioCmd';
-import { codeBlockInsertDesc } from 'components/editing/elements/commands/BlockcodeCmd';
-import { imgCmdDescBuilder } from 'components/editing/elements/commands/ImageCmd';
-import { ytCmdDesc } from 'components/editing/elements/commands/YoutubeCmd';
+import { insertAudio } from 'components/editing/elements/audio/audioActions';
+import { insertImage } from 'components/editing/elements/image/imageActions';
+import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
+import { addItemActions } from 'components/editing/toolbar/items';
 
 type ToolbarContentType = 'all' | 'small';
 export function getToolbarForContentType(
@@ -30,12 +30,12 @@ export function getToolbarForContentType(
   index?: number,
 ): CommandDesc[] {
   if (type === 'small') {
-    return [codeBlockInsertDesc, imgCmdDescBuilder(null), ytCmdDesc, audioCmdDescBuilder(null)];
+    return [insertCodeblock, insertImage(null), ytCmdDesc, insertAudio(null)];
   }
 
-  if (!resourceContext || !onAddItem || !editorMap || !index) return addDescs(null);
+  if (!resourceContext || !onAddItem || !editorMap || !index) return addItemActions(null);
 
-  return addDescs(null).concat(
+  return addItemActions(null).concat(
     Object.keys(editorMap).map((k: string) => {
       const editorDesc: EditorDesc = editorMap[k];
       const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
