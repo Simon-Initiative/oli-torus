@@ -1,6 +1,6 @@
 import { Operations } from 'utils/pathOperations';
 
-const ID_PATH = (id: string) => `[?(@.id==${id})]`;
+const ID_PATH = (id: string) => `[?(@.id=='${id}')]`;
 
 type Predicate<T> = (x: T) => boolean;
 export interface List<T> {

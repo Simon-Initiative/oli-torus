@@ -269,11 +269,36 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  defp rewire_bank_selections(content, tag_map) do
+    PageContent.map(content, fn e ->
+      case e do
+        %{"type" => "selection", "logic" => logic} = ref ->
+          case logic do
+            %{"conditions" => %{"children" => [%{"fact" => "tags", "value" => originals}]}} ->
+              ids = Enum.map(originals, fn o -> retrieve(tag_map, o).resource_id end)
+
+              children = [%{"fact" => "tags", "value" => ids, "operator" => "equals"}]
+              conditions = Map.put(logic["conditions"], "children", children)
+              logic = Map.put(logic, "conditions", conditions)
+
+              Map.put(ref, "logic", logic)
+
+            _ ->
+              ref
+          end
+
+        other ->
+          other
+      end
+    end)
+  end
+
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     content =
       Map.get(page, "content")
       |> rewire_activity_references(activity_map)
+      |> rewire_bank_selections(tag_map)
 
     %{
       tags: transform_tags(page, tag_map),
@@ -310,7 +335,14 @@ defmodule Oli.Interop.Ingest do
         title -> title
       end
 
+    scope =
+      case Map.get(activity, "scope", "embedded") do
+        str when str in ~w(embedded banked) -> String.to_existing_atom(str)
+        _ -> :embedded
+      end
+
     %{
+      scope: scope,
       tags: transform_tags(activity, tag_map),
       title: title,
       content: Map.get(activity, "content"),
