@@ -7,6 +7,7 @@ import React from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
 import { initCommands } from 'components/editing/elements/inputref/inputrefActions';
+import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 
 export interface InputRefProps extends EditorProps<ContentModel.InputRef> {}
 export const InputRefEditor = (props: InputRefProps) => {
@@ -47,14 +48,6 @@ export const InputRefEditor = (props: InputRefProps) => {
       ? { fontWeight: 'bold', backgroundColor: 'lightblue' }
       : {};
 
-  const withToolbar = (target: React.ReactElement) => (
-    <HoverContainer isOpen={() => focused && selected} content={target}>
-      <Toolbar context={props.commandContext}>
-        {initCommands(input, inputRefContext.setInputType)}
-      </Toolbar>
-    </HoverContainer>
-  );
-
   const action = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
     inputRefContext?.setSelectedInputRef(props.model);
@@ -72,11 +65,20 @@ export const InputRefEditor = (props: InputRefProps) => {
         }
       }}
     >
-      {withToolbar(
+      <HoverContainer
+        content={
+          <Toolbar context={props.commandContext}>
+            <Toolbar.Group>
+              {initCommands(input, inputRefContext.setInputType).map((desc, i) => (
+                <CommandButton description={desc} key={i} />
+              ))}
+            </Toolbar.Group>
+          </Toolbar>
+        }
+        isOpen={focused && selected}
+      >
         <span
-          onClick={(e) => {
-            action(e);
-          }}
+          onClick={(e) => action(e)}
           style={Object.assign(activeStyle, {
             width: '160px',
             display: 'inline-block',
@@ -85,9 +87,9 @@ export const InputRefEditor = (props: InputRefProps) => {
           className="form-control"
         >
           {friendlyType(input.inputType)}
-        </span>,
-      )}
-      {props.children}
+          {props.children}
+        </span>
+      </HoverContainer>
     </span>
   );
 };

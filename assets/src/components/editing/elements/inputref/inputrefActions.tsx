@@ -4,7 +4,7 @@ import { CommandDesc } from 'components/editing/elements/commands/interfaces';
 export const initCommands = (
   model: MultiInput,
   setInputType: (id: string, updated: MultiInputType) => void,
-): CommandDesc[][] => {
+): CommandDesc[] => {
   const makeCommand = (description: string, type: MultiInputType): CommandDesc => ({
     type: 'CommandDesc',
     icon: () => '',
@@ -19,8 +19,8 @@ export const initCommands = (
   });
 
   return [
-    [makeCommand('Dropdown', 'dropdown')],
-    [makeCommand('Text', 'text')],
-    [makeCommand('Number', 'numeric')],
+    makeCommand('Dropdown', 'dropdown'),
+    makeCommand('Text', 'text'),
+    makeCommand('Number', 'numeric'),
   ];
 };
