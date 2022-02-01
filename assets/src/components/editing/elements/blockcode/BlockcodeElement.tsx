@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
@@ -54,7 +54,7 @@ const getInitialModel = (model: ContentModel.Code) => {
 };
 
 type CodeProps = EditorProps<ContentModel.Code>;
-export const CodeEditor = (props: CodeProps) => {
+export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
   const isSelected = useSelected();
   const [value, setValue] = React.useState(getInitialModel(props.model));
   const onEdit = onEditModel(props.model);
@@ -97,34 +97,30 @@ export const CodeEditor = (props: CodeProps) => {
           </Toolbar>
         }
       >
-        <>
-          <AceEditor
-            className={classNames(['code-editor', isSelected && 'active'])}
-            ref={reactAce}
-            mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
-            style={{ width: '100%' }}
-            theme="github"
-            onChange={(code) => {
-              onEdit({ code });
-              setValue(code);
-            }}
-            value={value}
-            highlightActiveLine
-            tabSize={2}
-            wrapEnabled
-            setOptions={{
-              fontSize: 16,
-              showGutter: false,
-              minLines: 2,
-              maxLines: Infinity,
-            }}
-            placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
-          />
-          <>
-            {...props.children}
-            <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
-          </>
-        </>
+        <AceEditor
+          className={classNames(['code-editor', isSelected && 'active'])}
+          ref={reactAce}
+          mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
+          style={{ width: '100%' }}
+          theme="github"
+          onChange={(code) => {
+            onEdit({ code });
+            setValue(code);
+          }}
+          value={value}
+          highlightActiveLine
+          tabSize={2}
+          wrapEnabled
+          setOptions={{
+            fontSize: 16,
+            showGutter: false,
+            minLines: 2,
+            maxLines: Infinity,
+          }}
+          placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
+        />
+        {props.children}
+        <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
       </HoverContainer>
     </div>
   );
