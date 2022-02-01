@@ -71,13 +71,6 @@ const lessonSchema: JSONSchema7 = {
           title: 'Enable History',
           type: 'boolean',
         },
-        ScoreOverview: {
-          type: 'object',
-          properties: {
-            enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
-            lessonMax: { type: 'number', title: 'Lesson Max' },
-          },
-        },
         customCSS: {
           title: 'Custom CSS',
           type: 'string',
@@ -138,10 +131,6 @@ export const lessonUiSchema: UiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
     },
-    ScoreOverview: {
-      'ui:ObjectFieldTemplate': CustomFieldTemplate,
-      'ui:title': 'Score Overview',
-    },
   },
   CustomLogic: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
@@ -179,10 +168,6 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageURL: model.custom.backgroundImageURL,
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
       },
-      ScoreOverview: {
-        enableLessonMax: model.custom.enableLessonMax,
-        lessonMax: model.custom.lessonMax,
-      },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
         logoutPanelImageURL: model.custom.logoutPanelImageURL,
@@ -218,8 +203,6 @@ export const transformSchemaToModel = (schema: any) => {
     custom: {
       defaultScreenWidth: schema.Properties.Size.width,
       defaultScreenHeight: schema.Properties.Size.height,
-      enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
-      lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,
