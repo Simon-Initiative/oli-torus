@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
+    "lib": ["es2019", "DOM"],
     "module": "ES2022",
     "target": "es6",
     "jsx": "preserve",
