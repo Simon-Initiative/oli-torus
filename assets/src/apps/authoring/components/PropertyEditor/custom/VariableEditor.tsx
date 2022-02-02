@@ -116,7 +116,7 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
             placement="left"
             overlay={
               <Tooltip id={`tooltip-${index}`}>
-                Expression: <strong>{element?.children?.props?.formData?.name}</strong>
+                Expression: <strong>{element?.children?.props?.formData?.expression}</strong>
               </Tooltip>
             }
           >
