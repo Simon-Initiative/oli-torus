@@ -374,8 +374,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const target = fact.target;
       // EverApp Information
       if (target.startsWith('app.')) {
-        const data = target.split('.');
-        const objId = data.splice(2).join('.');
+        const targetParts = target.split('.');
+        const objId = targetParts.splice(2).join('.');
         const value = snapshot[target];
         data[data[1]] = { ...data[data[1]], [objId]: value };
       }
