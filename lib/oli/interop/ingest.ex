@@ -48,8 +48,7 @@ defmodule Oli.Interop.Ingest do
   # Returns {:ok} if all refs are valid and {:error, [...invalid_refs]} if invalid idrefs are found.
   defp validate_idrefs(map) do
     all_id_refs =
-      Enum.reduce(map, [], fn {file, content}, acc ->
-        IO.inspect(file)
+      Enum.reduce(map, [], fn {_file, content}, acc ->
         find_all_id_refs(content) ++ acc
       end)
 
@@ -73,8 +72,6 @@ defmodule Oli.Interop.Ingest do
 
   defp idrefs_recursive_desc(el, idrefs) do
     # if this element contains an idref, add it to the list
-
-    IO.inspect(el)
 
     idrefs =
       case el["idref"] do
