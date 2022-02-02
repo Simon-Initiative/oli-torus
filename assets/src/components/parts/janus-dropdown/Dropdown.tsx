@@ -276,7 +276,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);
-                if (selectedIndex !== stateSelection || stateSelection === -1) {
+                if (selectedIndex !== stateSelection) {
                   setSelectedIndex(stateSelection);
                   setSelectedItem(optionLabels[stateSelection - 1]);
                   setTimeout(() => {
@@ -322,7 +322,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               const sSelectedIndex = changes[`stage.${id}.selectedIndex`];
               if (sSelectedIndex !== undefined) {
                 const stateSelection = Number(sSelectedIndex);
-                if (selectedIndex !== stateSelection) {
+                if (selectedIndex !== stateSelection || stateSelection === -1) {
                   setSelectedIndex(stateSelection);
                   setSelectedItem(optionLabels[stateSelection - 1]);
                   setTimeout(() => {
