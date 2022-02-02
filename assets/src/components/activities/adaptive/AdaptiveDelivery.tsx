@@ -71,23 +71,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             sharedAttemptStateMap.set(props.model.id, attempt);
             /* setAttemptState(attempt); */
           }
-        } else if (notificationType === NotificationType.CONTEXT_CHANGED) {
-          let processedInitStateFacts = {};
-          const initStateFacts = e.initStateFacts;
-          if (scriptEnv) {
-            processedInitStateFacts = Object.keys(initStateFacts).reduce(
-              (acc: any, key: string) => {
-                const target = key.split('|')[1];
-                acc[target] = getValue(key, scriptEnv);
-                return acc;
-              },
-              {},
-            );
-          }
-          e.initStateFacts = processedInitStateFacts;
-          console.log({ AD_e_initStateFacts: e.initStateFacts });
         }
-
         pusher.emit(notificationType.toString(), e);
       };
       const unsub = subscribeToNotification(

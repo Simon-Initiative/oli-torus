@@ -473,7 +473,7 @@ defmodule OliWeb.AdminLiveTest do
     test "confirms user email", %{
       conn: conn
     } do
-      %User{id: id} = insert(:user, %{email_confirmed_at: nil})
+      %User{id: id} = insert(:user, %{email_confirmation_token: "token"})
 
       {:ok, view, _html} = live(conn, live_view_user_detail_route(id))
 
@@ -573,6 +573,88 @@ defmodule OliWeb.AdminLiveTest do
       refute view
              |> render() =~
                first_author.given_name
+    end
+
+    test "shows confirmation pending message when author account was created but not confirmed yet",
+         %{conn: conn} do
+      non_confirmed_author = insert(:author, email_confirmation_token: "token")
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("##{non_confirmed_author.id} span[data-toggle=\"tooltip\"")
+             |> render() =~ "Confirmation Pending"
+    end
+
+    test "shows email confirmed message when author account was created and confirmed", %{
+      conn: conn
+    } do
+      confirmed_author = insert(:author, email_confirmed_at: Timex.now())
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("##{confirmed_author.id} span[data-toggle=\"tooltip\"")
+             |> render() =~ "Email Confirmed"
+    end
+
+    test "shows invitation pending message when author was invited by an admin and has not accepted yet",
+         %{conn: conn} do
+      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("##{invited_and_not_accepted_author.id} span[data-toggle=\"tooltip\"")
+             |> render() =~ "Invitation Pending"
+    end
+
+    test "shows invitation accepted message when author was invited by an admin and accepted", %{
+      conn: conn
+    } do
+      invited_author =
+        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("##{invited_author.id} span[data-toggle=\"tooltip\"")
+             |> render() =~ "Invitation Accepted"
+    end
+
+    test "shows confirmation pending message when author was invited by an admin and accepted with a different email, but has not confirmed yet",
+         %{conn: conn} do
+      accepted_with_different_email_author =
+        insert(:author,
+          email_confirmation_token: "token",
+          unconfirmed_email: "other_email",
+          invitation_token: "token",
+          invitation_accepted_at: Timex.now()
+        )
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element(
+               "##{accepted_with_different_email_author.id} span[data-toggle=\"tooltip\""
+             )
+             |> render() =~ "Confirmation Pending"
+    end
+
+    test "shows email confirmed message when author was invited by an admin and accepted with a different email, and has confirmed his account",
+         %{conn: conn} do
+      accepted_and_confirmed_with_different_email_author =
+        insert(:author,
+          email_confirmed_at: Timex.now(),
+          invitation_token: "token",
+          invitation_accepted_at: Timex.now()
+        )
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element(
+               "##{accepted_and_confirmed_with_different_email_author.id} span[data-toggle=\"tooltip\""
+             )
+             |> render() =~ "Email Confirmed"
     end
   end
 
@@ -674,7 +756,7 @@ defmodule OliWeb.AdminLiveTest do
     test "confirms author email", %{
       conn: conn
     } do
-      %Author{id: id} = insert(:author, %{email_confirmed_at: nil})
+      %Author{id: id} = insert(:author, %{email_confirmation_token: "token"})
 
       {:ok, view, _html} = live(conn, live_view_author_detail_route(id))
 
@@ -726,6 +808,96 @@ defmodule OliWeb.AdminLiveTest do
 
       author_role = Oli.Accounts.SystemRole.role_id().author
       assert %Author{system_role_id: ^author_role} = Accounts.get_author!(id)
+    end
+
+    test "shows email confirmation buttons when author account was created but not confirmed yet",
+         %{conn: conn} do
+      non_confirmed_author = insert(:author, email_confirmation_token: "token")
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(non_confirmed_author.id))
+
+      html = render(view)
+
+      assert html =~ "Resend confirmation link"
+      assert html =~ "Confirm email"
+    end
+
+    test "does not show email confirmation buttons when author account was created and confirmed",
+         %{conn: conn} do
+      confirmed_author = insert(:author, email_confirmed_at: Timex.now())
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(confirmed_author.id))
+
+      html = render(view)
+
+      refute html =~ "Resend confirmation link"
+      refute html =~ "Confirm email"
+    end
+
+    test "does not show email confirmation buttons when author was invited by an admin and has not accepted yet",
+         %{conn: conn} do
+      invited_and_not_accepted_author = insert(:author, invitation_token: "token")
+
+      {:ok, view, _html} =
+        live(conn, live_view_author_detail_route(invited_and_not_accepted_author.id))
+
+      html = render(view)
+
+      refute html =~ "Resend confirmation link"
+      refute html =~ "Confirm email"
+    end
+
+    test "does not show email confirmation buttons when author was invited by an admin and accepted",
+         %{conn: conn} do
+      invited_author =
+        insert(:author, invitation_token: "token", invitation_accepted_at: Timex.now())
+
+      {:ok, view, _html} = live(conn, live_view_author_detail_route(invited_author.id))
+
+      html = render(view)
+
+      refute html =~ "Resend confirmation link"
+      refute html =~ "Confirm email"
+    end
+
+    test "shows email confirmation buttons when author was invited by an admin and accepted with a different email, but has not confirmed yet",
+         %{conn: conn} do
+      accepted_with_different_email_author =
+        insert(:author,
+          email_confirmation_token: "token",
+          unconfirmed_email: "other_email",
+          invitation_token: "token",
+          invitation_accepted_at: Timex.now()
+        )
+
+      {:ok, view, _html} =
+        live(conn, live_view_author_detail_route(accepted_with_different_email_author.id))
+
+      html = render(view)
+
+      assert html =~ "Resend confirmation link"
+      assert html =~ "Confirm email"
+    end
+
+    test "does not show email confirmation buttons when author was invited by an admin and accepted with a different email, and has confirmed his account",
+         %{conn: conn} do
+      accepted_and_confirmed_with_different_email_author =
+        insert(:author,
+          email_confirmed_at: Timex.now(),
+          invitation_token: "token",
+          invitation_accepted_at: Timex.now()
+        )
+
+      {:ok, view, _html} =
+        live(
+          conn,
+          live_view_author_detail_route(accepted_and_confirmed_with_different_email_author.id)
+        )
+
+      html = render(view)
+
+      refute html =~ "Resend confirmation link"
+      refute html =~ "Confirm email"
     end
   end
 end

@@ -9,7 +9,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Revision
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
 
   def render(assigns) do
     ~F"""
@@ -197,16 +197,35 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         _,
         socket
       ) do
+    socket = clear_flash(socket)
+
     %{gating_condition: gating_condition, section: section} = socket.assigns
 
-    {:ok, _gc} = Gating.create_gating_condition(gating_condition)
+    socket =
+      case Gating.create_gating_condition(gating_condition) do
+        {:ok, _gating_condition} ->
+          {:ok, _section} = Gating.update_resource_gating_index(section)
 
-    {:ok, _section} = Gating.update_resource_gating_index(section)
+          socket
+          |> put_flash(:info, "Gating condition successfully created.")
+          |> redirect(
+            to:
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Sections.GatingAndScheduling,
+                section.slug
+              )
+          )
 
-    {:noreply,
-     redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
-     )}
+        {:error, %Ecto.Changeset{}} ->
+          put_flash(
+            socket,
+            :error,
+            "Gating condition couldn't be created."
+          )
+      end
+
+    {:noreply, socket}
   end
 
   def handle_event(
@@ -214,31 +233,80 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         _,
         socket
       ) do
-    %{gating_condition: gating_condition, section: section} = socket.assigns
+    socket = clear_flash(socket)
 
-    {:ok, _} =
-      Gating.get_gating_condition!(gating_condition.id)
-      |> Gating.update_gating_condition(gating_condition)
+    %{gating_condition: attrs, section: section} = socket.assigns
+    gating_condition = Gating.get_gating_condition!(attrs.id)
 
-    {:ok, _section} = Gating.update_resource_gating_index(section)
+    socket =
+      case Gating.update_gating_condition(gating_condition, attrs) do
+        {:ok, _gating_condition} ->
+          {:ok, _section} = Gating.update_resource_gating_index(section)
 
-    {:noreply,
-     redirect(socket,
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
-     )}
+          socket
+          |> put_flash(:info, "Gating condition successfully updated.")
+          |> redirect(
+            to:
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Sections.GatingAndScheduling,
+                section.slug
+              )
+          )
+
+        {:error, %Ecto.Changeset{}} ->
+          put_flash(
+            socket,
+            :error,
+            "Gating condition couldn't be updated."
+          )
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("show-delete-gating-condition", %{"id" => id}, socket) do
+    modal = %{
+      component: DeleteModalNoConfirmation,
+      assigns: %{
+        id: "delete_gating_condition",
+        description: "",
+        entity_type: "gating condition",
+        entity_id: id,
+        delete_enabled: true,
+        delete: "delete-gating-condition"
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
   end
 
   def handle_event("delete-gating-condition", %{"id" => id}, socket) do
-    %{section: section} = socket.assigns
+    socket = clear_flash(socket)
+    gating_condition = Gating.get_gating_condition!(String.to_integer(id))
 
-    {:ok, _deleted} =
-      Gating.get_gating_condition!(String.to_integer(id))
-      |> Gating.delete_gating_condition()
+    socket =
+      case Gating.delete_gating_condition(gating_condition) do
+        {:ok, _gating_condition} ->
+          socket
+          |> put_flash(:info, "Gating condition successfully deleted.")
+          |> redirect(
+            to:
+              Routes.live_path(
+                OliWeb.Endpoint,
+                OliWeb.Sections.GatingAndScheduling,
+                socket.assigns.section.slug
+              )
+          )
 
-    {:noreply,
-     socket
-     |> redirect(
-       to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, section.slug)
-     )}
+        {:error, %Ecto.Changeset{}} ->
+          put_flash(
+            socket,
+            :error,
+            "Gating condition couldn't be deleted."
+          )
+      end
+
+    {:noreply, socket |> hide_modal()}
   end
 end

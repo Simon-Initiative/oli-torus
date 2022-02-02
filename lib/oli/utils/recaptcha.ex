@@ -12,6 +12,10 @@ defmodule Oli.Utils.Recaptcha do
   ]
 
   @spec verify(String.t()) :: {:success, atom()}
+
+  def verify(""), do: {:success, false}
+  def verify(nil), do: {:success, false}
+
   def verify(response_string) do
     timeout = Application.fetch_env!(:oli, :recaptcha)[:timeout]
     url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]

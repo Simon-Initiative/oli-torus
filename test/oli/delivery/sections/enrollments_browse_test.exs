@@ -1,17 +1,12 @@
 defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
   use Oli.DataCase
 
+  import Ecto.Query, warn: false
+
   alias Oli.Delivery.Sections
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias Lti_1p3.Tool.ContextRoles
-  import Ecto.Query, warn: false
-
-  def make_sections(project, institution, prefix, n, attrs) do
-    65..(65 + (n - 1))
-    |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
-  end
 
   def browse(section, offset, field, direction, text_search, is_student, is_instructor) do
     Sections.browse_enrollments(
@@ -24,34 +19,6 @@ defmodule Oli.Delivery.Sections.EnrollmentsBrowseTest do
         text_search: text_search
       }
     )
-  end
-
-  def make(project, institution, title, attrs) do
-    {:ok, section} =
-      Sections.create_section(
-        Map.merge(
-          %{
-            title: title,
-            timezone: "1",
-            registration_open: true,
-            context_id: UUID.uuid4(),
-            institution_id:
-              if is_nil(institution) do
-                nil
-              else
-                institution.id
-              end,
-            base_project_id: project.id,
-            requires_payment: true,
-            amount: "$100.00",
-            grace_period_days: 5,
-            has_grace_period: true
-          },
-          attrs
-        )
-      )
-
-    section
   end
 
   # Create and enroll 11 users, with 6 being students and 5 being instructors

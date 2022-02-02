@@ -37,7 +37,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
       <div class="d-flex">
         <div :if={@create_or_update == :update}>
-          <button class="btn btn-danger ml-2" phx-click="delete-gating-condition" phx-value-id={@gating_condition.id}>Delete</button>
+          <button class="btn btn-danger ml-2" phx-click="show-delete-gating-condition" phx-value-id={@gating_condition.id}>Delete</button>
         </div>
         <div class="flex-grow-1"></div>
         <Link class="btn btn-outline-primary" to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>
