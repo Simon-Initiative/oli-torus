@@ -377,7 +377,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         const targetParts = target.split('.');
         const objId = targetParts.splice(2).join('.');
         const value = snapshot[target];
-        data[data[1]] = { ...data[data[1]], [objId]: value };
+        data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
       }
       return data;
     }, {});
