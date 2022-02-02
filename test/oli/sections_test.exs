@@ -665,7 +665,7 @@ defmodule Oli.SectionsTest do
         )
         |> Repo.all()
 
-      assert section_resources |> Enum.count() == 7
+      assert section_resources |> Enum.count() == 8
     end
 
     test "apply_publication_update/2 handles minor non-hierarchical updates",
