@@ -43,7 +43,8 @@ defmodule OliWeb.Api.LockController do
       {:error, {:not_authorized}} ->
         error(conn, 403, "unauthorized")
 
-      {:error, {:error}} ->
+      e ->
+        Oli.Utils.ErrorLogger.log_error(e, "Could not acquire lock")
         error(conn, 500, "server error")
     end
   end
@@ -52,10 +53,18 @@ defmodule OliWeb.Api.LockController do
     author = conn.assigns[:current_author]
 
     case PageEditor.release_lock(project_slug, resource_slug, author.email) do
-      {:ok, {:released}} -> json(conn, %{"type" => "released"})
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      _ -> error(conn, 500, "server error")
+      {:ok, {:released}} ->
+        json(conn, %{"type" => "released"})
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      e ->
+        Oli.Utils.ErrorLogger.log_error(e, "Could not release lock")
+        error(conn, 500, "server error")
     end
   end
 
