@@ -5,10 +5,14 @@ import { useDispatch, useSelector } from 'react-redux';
 import { selectPaths } from '../../store/app/slice';
 import { undo } from 'apps/authoring/store/history/actions/undo';
 import { redo } from 'apps/authoring/store/history/actions/redo';
+import { selectHasRedo, selectHasUndo } from 'apps/authoring/store/history/slice';
 
 const UndoRedoToolbar: React.FC = () => {
   const paths = useSelector(selectPaths);
   const dispatch = useDispatch();
+
+  const hasRedo = useSelector(selectHasRedo);
+  const hasUndo = useSelector(selectHasUndo);
 
   const handleUndo = () => {
     dispatch(undo(null));
@@ -29,11 +33,14 @@ const UndoRedoToolbar: React.FC = () => {
           </Tooltip>
         }
       >
-        <span>
-          <button className="px-2 btn btn-link" onClick={() => handleUndo()}>
-            <img src={`${paths?.images}/icons/icon-undo.svg`}></img>
-          </button>
-        </span>
+        <button
+          className="px-2 btn btn-link"
+          onClick={() => handleUndo()}
+          disabled={!hasUndo}
+          style={{ opacity: !hasUndo ? '0.5' : '1', pointerEvents: !hasUndo ? 'none' : 'auto' }}
+        >
+          <img src={`${paths?.images}/icons/icon-undo.svg`}></img>
+        </button>
       </OverlayTrigger>
       <OverlayTrigger
         placement="bottom"
@@ -44,11 +51,14 @@ const UndoRedoToolbar: React.FC = () => {
           </Tooltip>
         }
       >
-        <span>
-          <button className="px-2 btn btn-link" onClick={() => handleRedo()}>
-            <img src={`${paths?.images}/icons/icon-redo.svg`}></img>
-          </button>
-        </span>
+        <button
+          className="px-2 btn btn-link"
+          onClick={() => handleRedo()}
+          disabled={!hasRedo}
+          style={{ opacity: !hasRedo ? '0.5' : '1', pointerEvents: !hasRedo ? 'none' : 'auto' }}
+        >
+          <img src={`${paths?.images}/icons/icon-redo.svg`}></img>
+        </button>
       </OverlayTrigger>
     </>
   );

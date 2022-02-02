@@ -15,16 +15,16 @@ import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { savePage } from '../../page/actions/savePage';
 import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
 import { createUndoAction } from '../../history/slice';
+import cloneDeep from 'lodash/cloneDeep';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
-  async (payload: { activity: IActivity }, { dispatch, getState }) => {
-    const { activity } = payload;
+  async (payload: { activity: IActivity; undoable?: boolean }, { dispatch, getState }) => {
+    const { activity, undoable = true } = payload;
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     const resourceId = selectResourceId(rootState);
     const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
-    console.log(currentActivityState);
 
     const isReadOnlyMode = selectReadOnly(rootState);
 
@@ -47,7 +47,7 @@ export const saveActivity = createAsyncThunk(
     };
 
     if (!isReadOnlyMode) {
-      console.log('going to save acivity: ', { changeData, activity });
+      /*console.log('going to save acivity: ', { changeData, activity });*/
       const editResults = await edit(
         projectSlug,
         resourceId,
@@ -71,12 +71,15 @@ export const saveActivity = createAsyncThunk(
       }
       console.log('EDIT SAVE RESULTS', { editResults });
 
-      dispatch(
-        createUndoAction({
-          undo: [saveActivity({ activity: currentActivityState })],
-          redo: [saveActivity({ activity })],
-        }),
-      );
+      /*console.log('EDIT SAVE RESULTS', { editResults });*/
+      if (undoable) {
+        dispatch(
+          createUndoAction({
+            undo: [saveActivity({ activity: cloneDeep(currentActivityState), undoable: false })],
+            redo: [saveActivity({ activity: cloneDeep(activity), undoable: false })],
+          }),
+        );
+      }
     }
 
     return;

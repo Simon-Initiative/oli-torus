@@ -45,8 +45,6 @@ const slice: Slice<AuthoringHistoryState> = createSlice({
       state.present = past.shift();
       state.past = [...past];
       state.future = [...future];
-
-      return state;
     });
     builder.addCase(redo.fulfilled, (state) => {
       const { future, present, past } = state;
@@ -56,8 +54,6 @@ const slice: Slice<AuthoringHistoryState> = createSlice({
       state.present = future.shift();
       state.past = [...past];
       state.future = [...future];
-
-      return state;
     });
   },
 });

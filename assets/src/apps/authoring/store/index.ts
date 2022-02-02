@@ -1,9 +1,5 @@
-import { configureStore, createSerializableStateInvariantMiddleware } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
 import reducer from './rootReducer';
-
-const serializableMiddleware = createSerializableStateInvariantMiddleware({});
-
-//['history.undo', 'history.redo']
 
 const store = configureStore({
   reducer,
