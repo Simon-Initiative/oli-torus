@@ -10,6 +10,7 @@
 - Fix enrollments view rendering problem in sections that require payment
 - Ensure score can never exceed out of for graded pages
 - Ensure multiple payment attempts is handled correctly
+- Handle cases where recaptcha payload is missing
 
 ### Enhancements
 
