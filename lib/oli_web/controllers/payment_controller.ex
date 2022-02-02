@@ -133,12 +133,14 @@ defmodule OliWeb.PaymentController do
   @doc """
   Handles applying a user supplied code as a payment code.
   """
-  def apply_code(conn, %{
-        "g-recaptcha-response" => g_recaptcha_response,
-        "section_slug" => section_slug,
-        "code" => %{"value" => code}
-      }) do
-    if recaptcha_verified?(g_recaptcha_response) do
+  def apply_code(
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "code" => %{"value" => code}
+        } = params
+      ) do
+    if Map.get(params, "g-recaptcha-response", "") |> recaptcha_verified?() do
       user = conn.assigns.current_user
 
       case Oli.Delivery.Paywall.redeem_code(code, user, section_slug) do
@@ -157,7 +159,6 @@ defmodule OliWeb.PaymentController do
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    g_recaptcha_response != "" and
-      Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 end
