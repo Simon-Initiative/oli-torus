@@ -36,6 +36,9 @@ export const initializeFromContext = createAsyncThunk(
       pageState.custom.themeId = 'torus-default-light';
       pageState.additionalStylesheets = ['/css/delivery_adaptive_themes_default_light.css'];
     }
+    if (pageState.custom.maxScore === undefined) {
+      pageState.custom.maxScore = pageState.custom.totalScore;
+    }
     dispatch(loadPage(pageState));
 
     const children: any[] = Object.keys(params.context.activities).map((id) => ({

@@ -9,6 +9,7 @@ import EditingCanvas from './components/EditingCanvas/EditingCanvas';
 import HeaderNav from './components/HeaderNav';
 import LeftMenu from './components/LeftMenu/LeftMenu';
 import DiagnosticsWindow from './components/Modal/DiagnosticsWindow';
+import ScoringOverview from './components/Modal/ScoringOverview';
 import RightMenu from './components/RightMenu/RightMenu';
 import { SidePanel } from './components/SidePanel';
 import store from './store';
@@ -24,6 +25,7 @@ import {
   selectRevisionSlug,
   selectRightPanel,
   selectShowDiagnosticsWindow,
+  selectShowScoringOverview,
   selectTopPanel,
   setInitialConfig,
   setPanelState,
@@ -70,6 +72,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   }); */
 
   const showDiagnosticsWindow = useSelector(selectShowDiagnosticsWindow);
+  const showScoringOverview = useSelector(selectShowScoringOverview);
 
   const projectSlug = useSelector(selectProjectSlug);
   const revisionSlug = useSelector(selectRevisionSlug);
@@ -283,6 +286,8 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       )}
 
       {showDiagnosticsWindow && <DiagnosticsWindow />}
+
+      {showScoringOverview && <ScoringOverview />}
     </>
   );
 };
