@@ -186,7 +186,7 @@ defmodule OliWeb.Router do
   pipeline :superactivity do
     plug Plug.Static,
          at: "/superactivity",
-         from: System.get_env("SUPER_ACTIVITY_FOLDER")
+         from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
   scope "/superactivity", OliWeb do
