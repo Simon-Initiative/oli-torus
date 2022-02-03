@@ -125,19 +125,19 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const display = (c: any, id: string) => {
-    let cookieConsentEl = document.querySelector(id);
-    if (!cookieConsentEl) {
-      cookieConsentEl = document.createElement('div');
-      cookieConsentEl.id = id;
-      document.body.appendChild(cookieConsentEl);
+    let element = document.querySelector(id);
+    if (!element) {
+      element = document.createElement('div');
+      element.id = id;
+      document.body.appendChild(element);
     }
-    ReactDOM.render(c, cookieConsentEl);
+    ReactDOM.render(c, element);
   };
 
   const dismiss = (id: string) => {
-    const cookiePrefs = document.querySelector(id);
-    if (cookiePrefs) {
-      ReactDOM.unmountComponentAtNode(cookiePrefs);
+    const element = document.querySelector(id);
+    if (element) {
+      ReactDOM.unmountComponentAtNode(element);
     }
   };
 
@@ -152,7 +152,6 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         <input
           id={id}
           style={{ display: 'none' }}
-          // accept={mimeFilter && `${mimeFilter}`}
           multiple
           onChange={({ target: { files } }) => onFileUpload(files as FileList)}
           type="file"

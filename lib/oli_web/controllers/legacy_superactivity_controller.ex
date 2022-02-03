@@ -350,7 +350,7 @@ defmodule OliWeb.LegacySuperactivityController do
         client_evaluations =
           Enum.reduce(part_attempts, [], fn p, acc ->
             case p.date_evaluated do
-              nil -> acc ++ [create_evaluation(0, 100, p)]
+              nil -> acc ++ [create_evaluation(context, 0, 100, p)]
               _ -> acc
             end
           end)
@@ -368,7 +368,7 @@ defmodule OliWeb.LegacySuperactivityController do
             context.activity_attempt.attempt_guid,
             :normalize
           )
-          
+
           rest
         end)
 
@@ -377,14 +377,20 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp create_evaluation(score, out_of, part_attempt) do
-    {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "some-feedback"})
+  defp create_evaluation(context, score, out_of, part_attempt) do
+    {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "elsewhere"})
+
+    user_input =
+      case Enum.at(context.save_files, 0) do
+        nil -> "some-input"
+        _ -> Enum.at(context.save_files, 0).content
+      end
 
     %{
       attempt_guid: part_attempt.attempt_guid,
       client_evaluation: %ClientEvaluation{
         input: %StudentInput{
-          input: "some-input"
+          input: user_input
         },
         score: score,
         out_of: out_of,
@@ -395,7 +401,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp eval_numeric_score(context, score, out_of, part_attempt) do
     client_evaluations = [
-      create_evaluation(score, out_of, part_attempt)
+      create_evaluation(context, score, out_of, part_attempt)
     ]
 
     case ActivityEvaluation.apply_super_activity_evaluation(

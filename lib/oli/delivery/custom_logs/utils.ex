@@ -11,11 +11,8 @@ defmodule Oli.Delivery.CustomLogs.Utils do
       {:error, %Ecto.Changeset{}}
   """
   def create_activity_log(attrs \\ %{}) do
-    IO.inspect "doing the lords work #{inspect attrs}"
-    results = %CustomActivityLog{}
+    %CustomActivityLog{}
     |> CustomActivityLog.changeset(attrs)
     |> Repo.insert()
-    IO.inspect "the results #{inspect results}"
-    results
   end
 end
