@@ -53,6 +53,7 @@
           <%= live_component DropTarget, id: index, index: index %>
           <%= live_component EntryLive, %{
                   id: child.slug,
+                  context: @context,
                   editor: Map.get(@resources_being_edited, child.resource_id),
                   author: @author,
                   selected: child == @selected,

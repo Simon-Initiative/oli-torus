@@ -1,13 +1,14 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
-  import OliWeb.ViewHelpers
+
+  import OliWeb.Common.FormatDateTime
 
   require Logger
 
   alias Oli.Help.HelpContent
 
   def create(conn, params) do
-    with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response")),
+    with {:ok, true} <- validate_recapture(Map.get(params, "g-recaptcha-response", "")),
          {:ok, content_params} <- additional_help_context(conn, Map.get(params, "help")),
          {:ok, help_content} <- HelpContent.parse(content_params),
          {:ok, _} <-
@@ -79,7 +80,7 @@ defmodule OliWeb.HelpController do
           %{
             "account_email" => email,
             "account_name" => given_name <> " " <> family_name,
-            "account_created" => dt(current_user.inserted_at, conn: conn)
+            "account_created" => date(current_user.inserted_at)
           }
         )
       }

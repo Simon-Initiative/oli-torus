@@ -10,7 +10,7 @@ defmodule Oli.Branding do
 
   alias Oli.Branding.Brand
   alias Oli.Delivery.Sections.Section
-  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.Institution
   alias Oli.Utils
 
@@ -157,11 +157,13 @@ defmodule Oli.Branding do
   end
 
   def brand_logo_url(section \\ nil) do
-    Utils.get_base_url() <> brand_logo_path(section)
+    brand_logo_path(section)
+    |> Utils.ensure_absolute_url()
   end
 
   def brand_logo_url_dark(section \\ nil) do
-    Utils.get_base_url() <> brand_logo_path_dark(section)
+    brand_logo_path_dark(section)
+    |> Utils.ensure_absolute_url()
   end
 
   def brand_logo_path(section \\ nil) do

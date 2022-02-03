@@ -1,6 +1,8 @@
 defmodule Oli.Utils do
   require Logger
 
+  import Ecto.Changeset
+
   @doc """
   Generates a random hex string of the given length
   """
@@ -146,6 +148,17 @@ defmodule Oli.Utils do
     end
   end
 
+  def validate_dates_consistency(changeset, start_date_field, end_date_field) do
+    validate_change(changeset, start_date_field, fn _, field ->
+      # check if the start date is after the end date
+      if Timex.compare(field, get_field(changeset, end_date_field)) == 1 do
+        [{start_date_field, "must be before the end date"}]
+      else
+        []
+      end
+    end)
+  end
+
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
@@ -172,6 +185,33 @@ defmodule Oli.Utils do
       end
 
     "https://#{Keyword.get(url_config, :host, "localhost")}#{port}"
+  end
+
+  @doc """
+  Returns true if the given URL is absolute
+  """
+  def is_url_absolute(url) do
+    String.match?(url, ~r/^(?:[a-z]+:)?\/\//i)
+  end
+
+  @doc """
+  Returns the given url or path ensuring it is absolute. If a relative path is given, then
+  the configured base url will be prepended
+  """
+  def ensure_absolute_url(url) do
+    if is_url_absolute(url) do
+      url
+    else
+      get_base_url() <> ensure_prepended_slash(url)
+    end
+  end
+
+  defp ensure_prepended_slash(url) do
+    if String.starts_with?(url, "/") do
+      url
+    else
+      "/#{url}"
+    end
   end
 
   @doc """

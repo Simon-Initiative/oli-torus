@@ -2,6 +2,7 @@ import { UiSchema } from '@rjsf/core';
 import { JSONSchema7 } from 'json-schema';
 import AccordionTemplate from '../custom/AccordionTemplate';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+import VariableEditor, { FieldTemplate, ObjectFieldTemplate } from '../custom/VariableEditor';
 
 const lessonSchema: JSONSchema7 = {
   type: 'object',
@@ -70,13 +71,6 @@ const lessonSchema: JSONSchema7 = {
           title: 'Enable History',
           type: 'boolean',
         },
-        ScoreOverview: {
-          type: 'object',
-          properties: {
-            enableLessonMax: { type: 'boolean', title: 'Enable a Lesson Maximum' },
-            lessonMax: { type: 'number', title: 'Lesson Max' },
-          },
-        },
         customCSS: {
           title: 'Custom CSS',
           type: 'string',
@@ -90,9 +84,21 @@ const lessonSchema: JSONSchema7 = {
       title: 'Custom Logic',
       properties: {
         variables: {
-          type: 'string',
+          type: 'array',
           title: 'Variables',
-          format: 'textarea',
+          items: {
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                title: 'Name',
+              },
+              expression: {
+                type: 'string',
+                title: 'Expression',
+              },
+            },
+          },
         },
         customScript: {
           type: 'string',
@@ -125,13 +131,21 @@ export const lessonUiSchema: UiSchema = {
       'ui:ObjectFieldTemplate': CustomFieldTemplate,
       'ui:title': 'Finish Panel',
     },
-    ScoreOverview: {
-      'ui:ObjectFieldTemplate': CustomFieldTemplate,
-      'ui:title': 'Score Overview',
-    },
   },
   CustomLogic: {
     'ui:ObjectFieldTemplate': AccordionTemplate,
+    variables: {
+      'ui:ArrayFieldTemplate': VariableEditor,
+      items: {
+        'ui:ObjectFieldTemplate': ObjectFieldTemplate,
+        name: {
+          'ui:FieldTemplate': FieldTemplate,
+        },
+        expression: {
+          'ui:FieldTemplate': FieldTemplate,
+        },
+      },
+    },
   },
 };
 
@@ -154,10 +168,6 @@ export const transformModelToSchema = (model: any) => {
         backgroundImageURL: model.custom.backgroundImageURL,
         backgroundImageScaleContent: model.custom.backgroundImageScaleContent,
       },
-      ScoreOverview: {
-        enableLessonMax: model.custom.enableLessonMax,
-        lessonMax: model.custom.lessonMax,
-      },
       FinishPanel: {
         logoutMessage: model.custom.logoutMessage,
         logoutPanelImageURL: model.custom.logoutPanelImageURL,
@@ -167,7 +177,7 @@ export const transformModelToSchema = (model: any) => {
       enableHistory: model.custom.allowNavigation || model.custom.enableHistory || false,
     },
     CustomLogic: {
-      variables: JSON.stringify(model.custom.variables),
+      variables: model.custom.variables,
       customScript: model.customScript,
     },
   };
@@ -183,7 +193,7 @@ export const transformSchemaToModel = (schema: any) => {
 
   let variables = [];
   try {
-    variables = JSON.parse(schema.CustomLogic.variables);
+    variables = schema.CustomLogic.variables;
   } catch (e) {
     // console.warn('could not parse variables', e);
     // most likely just empty string
@@ -193,8 +203,6 @@ export const transformSchemaToModel = (schema: any) => {
     custom: {
       defaultScreenWidth: schema.Properties.Size.width,
       defaultScreenHeight: schema.Properties.Size.height,
-      enableLessonMax: schema.Properties.ScoreOverview.enableLessonMax,
-      lessonMax: schema.Properties.ScoreOverview.lessonMax,
       enableHistory: schema.Properties.enableHistory,
       variables,
       logoutMessage: schema.Properties.FinishPanel.logoutMessage,

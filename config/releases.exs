@@ -76,7 +76,7 @@ config :oli,
   email_from_address: System.get_env("EMAIL_FROM_ADDRESS", "admin@example.edu"),
   email_reply_to: System.get_env("EMAIL_REPLY_TO", "admin@example.edu"),
   slack_webhook_url: System.get_env("SLACK_WEBHOOK_URL"),
-  load_testing_mode: from_boolean_env.("LOAD_TESTING_MODE", "false"),
+  load_testing_mode: System.get_env("LOAD_TESTING_MODE", "disabled") |> String.to_existing_atom(),
   payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
   blackboard_application_client_id: System.get_env("BLACKBOARD_APPLICATION_CLIENT_ID"),
   branding: [
@@ -124,6 +124,18 @@ config :oli, :recaptcha,
   timeout: 5000,
   site_key: System.get_env("RECAPTCHA_SITE_KEY"),
   secret: System.get_env("RECAPTCHA_PRIVATE_KEY")
+
+rule_evaluator_provider =
+  case System.get_env("RULE_EVALUATOR_PROVIDER") do
+    nil -> Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator
+    provider -> Module.concat([Oli, Delivery, Attempts, ActivityLifecycle, provider])
+  end
+
+config :oli, :rule_evaluator,
+  dispatcher: rule_evaluator_provider,
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
+  aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
+  aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
 
 # Configure help
 # HELP_PROVIDER env var must be a string representing an existing provider module, such as "FreshdeskHelp"
@@ -185,10 +197,6 @@ config :oli, :footer,
   link_1_text: System.get_env("FOOTER_LINK_1_TEXT", ""),
   link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
   link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
-
-# Configure AWS
-config :ex_aws,
-  region: System.get_env("AWS_REGION", "us-east-1")
 
 # ## Using releases (Elixir v1.9+)
 #

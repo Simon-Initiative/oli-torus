@@ -3,23 +3,23 @@ defmodule Oli.Plugs.RequireLtiParams do
   import Phoenix.Controller
 
   alias OliWeb.Common.LtiSession
-  alias Lti_1p3
+  alias Oli.Lti.LtiParams
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    case LtiSession.get_user_params(conn) do
+    case LtiSession.get_session_lti_params(conn) do
       nil ->
         lms_signin_required(conn)
 
-      lti_params_key ->
+      lti_params_id ->
         # load cached lti params from database
-        load_lti_params(conn, lti_params_key)
+        load_lti_params(conn, lti_params_id)
     end
   end
 
-  defp load_lti_params(conn, lti_params_key) do
-    case Lti_1p3.Tool.get_lti_params_by_key(lti_params_key) do
+  defp load_lti_params(conn, lti_params_id) do
+    case LtiParams.get_lti_params(lti_params_id) do
       nil ->
         lms_signin_required(conn)
 

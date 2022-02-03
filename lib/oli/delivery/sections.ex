@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Oli.Lti_1p3.Tool.Deployment
-  alias Oli.Lti_1p3.Tool.Registration
+  alias Oli.Lti.Tool.Deployment
+  alias Oli.Lti.Tool.Registration
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
@@ -131,6 +131,19 @@ defmodule Oli.Delivery.Sections do
       user,
       section_slug,
       ContextRoles.get_role(:context_instructor)
+    )
+  end
+
+  @doc """
+  Determines if a user is a platform (institution) instructor.
+  """
+  def is_institution_instructor?(%User{} = user) do
+    PlatformRoles.has_roles?(
+      user,
+      [
+        PlatformRoles.get_role(:institution_instructor)
+      ],
+      :any
     )
   end
 
@@ -1303,9 +1316,11 @@ defmodule Oli.Delivery.Sections do
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
+    skip_set = MapSet.new(skip_resource_ids)
+
     published_resources_by_resource_id
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
-      resource_id not in skip_resource_ids && !is_structural?(rev)
+      !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
     end)
     |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
       [
@@ -1322,9 +1337,8 @@ defmodule Oli.Delivery.Sections do
 
   defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
-    page = ResourceType.get_id_by_type("page")
 
-    resource_type_id == container or resource_type_id == page
+    resource_type_id == container
   end
 
   @doc """

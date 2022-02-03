@@ -12,6 +12,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Delivery.Gating
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
+  alias OliWeb.Common.SessionContext
 
   @limit 25
 
@@ -41,14 +42,16 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       ) do
     case Mount.for(section_slug, session) do
       {:admin, _author, section} ->
-        {:ok, assign_defaults(socket, section)}
+        {:ok, assign_defaults(socket, section, session)}
 
       {:user, _current_user, section} ->
-        {:ok, assign_defaults(socket, section)}
+        {:ok, assign_defaults(socket, section, session)}
     end
   end
 
-  def assign_defaults(socket, section) do
+  def assign_defaults(socket, section, session) do
+    context = SessionContext.init(session)
+
     rows =
       Gating.browse_gating_conditions(
         section,
@@ -58,11 +61,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
     total_count = determine_total(rows)
 
-    {:ok, table_model} = TableModel.new(rows, section)
+    {:ok, table_model} = TableModel.new(context, rows, section)
 
     socket
     |> assign(
       title: "Gating and Scheduling",
+      context: context,
       section: section,
       breadcrumbs: set_breadcrumbs(section),
       table_model: table_model,

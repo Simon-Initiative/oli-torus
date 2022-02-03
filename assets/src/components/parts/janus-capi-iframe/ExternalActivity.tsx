@@ -1,3 +1,4 @@
+import { looksLikeJson } from 'adaptivity/scripting';
 import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
@@ -32,6 +33,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [ready, setReady] = useState<boolean>(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
+  const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>(null);
+  const [screenContext, setScreenContext] = useState('');
   const id: string = props.id;
 
   const [scriptEnv, setScriptEnv] = useState<any>();
@@ -315,12 +318,17 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [internalState, setInternalState] = useState(state || []);
 
   const sendToIframe = (data: any) => {
-    simFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
+    // using this hack to get latest reference to simFrame
+    setSimFrame((currentFrame) => {
+      /* console.log('DEBUG SEND TO IFRAME', { currentFrame, data }); */
+      currentFrame?.contentWindow?.postMessage(JSON.stringify(data), '*');
+      return currentFrame;
+    });
   };
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -400,15 +408,28 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 payload,
               });
               const currentMutateStateSnapshot = payload.mutateChanges;
-              //udpate the local key-value pair when variables changed by mutation i.e. from outside
-              Object.keys(currentMutateStateSnapshot).forEach((key) => {
-                externalActivityMap.set(
-                  `${simLife.ownerActivityId}|${key}`,
-                  currentMutateStateSnapshot[key],
-                );
-              });
-              processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
-              setSimIsInitStatePassedOnce(false);
+              const changedVariables = Object.keys(currentMutateStateSnapshot).reduce(
+                (acc: any, key: any) => {
+                  if (key.indexOf('stage.') === 0) {
+                    const value = currentMutateStateSnapshot[key];
+                    let initValue = initStateBindToFacts[key];
+                    const typeOfInitValue = typeof initValue;
+                    if (typeOfInitValue === 'object') {
+                      initValue = JSON.stringify(initValue);
+                    }
+                    if (value.toString() !== initValue?.toString()) {
+                      acc[key] = currentMutateStateSnapshot[key];
+                    }
+                  }
+                  return acc;
+                },
+                {},
+              );
+              if (Object.keys(changedVariables).length > 0) {
+                setScreenContext(NotificationType.STATE_CHANGED);
+                processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
+                setSimIsInitStatePassedOnce(false);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -429,7 +450,10 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+              console.log({ initFactsSnapshot_EA_CC: currentStateSnapshot });
 
+              setInitStateBindToFacts(payload.initStateBindToFacts);
+              setScreenContext(NotificationType.CONTEXT_CHANGED);
               processInitStateVariable(currentStateSnapshot, simLife.domain);
 
               setSimIsInitStatePassedOnce(false);
@@ -536,12 +560,13 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       Object.keys(filterVars).forEach((variable: any) => {
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
-        if (typeof formatted[variable].value === 'string') {
-          formatted[variable].value = templatizeText(
-            formatted[variable].value,
-            simLife.snapshot,
-            scriptEnv,
-          );
+        const value = formatted[variable].value;
+        if (typeof value === 'string') {
+          //we don't want to evaluate a JSON string
+          const looksLikeJSON = looksLikeJson(value);
+          formatted[variable].value = looksLikeJSON
+            ? value
+            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true);
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
@@ -717,10 +742,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           value: modifiedData?.width?.value || frameWidth,
         });
       }
-      props.onSave({
-        id,
-        responses: iFrameResponse,
-      });
       props.onResize({ id: `${id}`, settings: modifiedData });
       sendFormedResponse(
         simLife.handshake,
@@ -869,6 +890,30 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
   }, [simFrame]);
 
+  const handleBindToSim = () => {
+    if (!initStateBindToFacts) {
+      return;
+    }
+    Object.keys(initStateBindToFacts).forEach((key: any) => {
+      const formatted: Record<string, unknown> = {};
+      const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
+      const value = initStateBindToFacts[key];
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
+      });
+      const typeOfValue = typeof value;
+      if (cVar.type === CapiVariableTypes.ARRAY) {
+        const isMultidimensional = cVar.value.filter(Array.isArray).length;
+        if (isMultidimensional && typeOfValue === 'string') {
+          cVar.value = JSON.stringify(cVar.value);
+        }
+      }
+      formatted[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    });
+  };
+
   useEffect(() => {
     if (!simLife.ready || simIsInitStatePassedOnce || !initState) {
       return;
@@ -918,10 +963,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     });
     if (!simLife.init) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
+      handleBindToSim();
       simLife.init = true;
     }
     setSimIsInitStatePassedOnce(true);
-  }, [simLife, initState, simIsInitStatePassedOnce]);
+  }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
   const scrolling = allowScrolling ? 'yes' : 'no';
   return initStateReceived ? (
     <iframe

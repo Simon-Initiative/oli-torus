@@ -110,6 +110,17 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       if (typeof ogValue === 'string') {
         if (ogValue.indexOf('{') === -1) {
           modifiedValue = ogValue;
+        } else if (condition?.operator === 'equalWithTolerance') {
+          //Usually the tolerance is 5.28,2 where 5.28 is actual value and 2 is the tolerance so we need to separate the value and send it in evaluateValueExpression()
+          //Also in case the tolerance is not specified and the value is 5.28 only, we need handle it so that it evaluates the actual value otherwise
+          // it will evaluated as ""
+          const actualValue =
+            ogValue.lastIndexOf(',') !== -1
+              ? ogValue.substring(0, ogValue.lastIndexOf(','))
+              : ogValue;
+          const toleranceValue = ogValue.substring(ogValue.lastIndexOf(',') + 1);
+          const evaluatedValue = evaluateValueExpression(actualValue, env);
+          modifiedValue = `${evaluatedValue},${toleranceValue}`;
         } else {
           const evaluatedValue = evaluateValueExpression(ogValue, env);
           if (typeof evaluatedValue === 'string') {
@@ -263,6 +274,36 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
   });
 
   return Array.from(referencedActivities);
+};
+
+export const getReferencedKeysInConditions = (conditions: any) => {
+  const references: Set<string> = new Set();
+
+  conditions.forEach((condition: any) => {
+    // the fact *must* be a reference to a key we need
+    if (condition.fact) {
+      references.add(condition.fact);
+    }
+    // the value *might* contain a reference to a key we need
+    if (
+      typeof condition.value === 'string' &&
+      condition.value.search(/app\.|variables\.|stage\.|session\./) !== -1
+    ) {
+      // value could have more than one reference inside it
+      const exprs = extractAllExpressionsFromText(condition.value);
+      exprs.forEach((expr: string) => {
+        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+          references.add(expr);
+        }
+      });
+    }
+    if (condition.any || condition.all) {
+      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
+      childRefs.forEach((ref) => references.add(ref));
+    }
+  });
+
+  return Array.from(references);
 };
 
 export interface CheckResult {

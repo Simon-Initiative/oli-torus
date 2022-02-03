@@ -1,5 +1,5 @@
-name: 'Phoenix Builder'
-description: 'Build Phoenix App for Production'
+name: 'Torus Builder'
+description: 'Build Torus App for Production'
 inputs:
   build-sha:
     description: 'SHA of the build commit'
@@ -8,6 +8,6 @@ runs:
   using: 'docker'
   # image: 'Dockerfile'
   ## Use the prebuilt builder image on docker hub until github improves caching across builds
-  image: olisimon/amazonlinux-phoenix:1.5.9
+  image: olisimon/torus-builder:1.0.0
   args:
     - ${{ inputs.build-sha }}

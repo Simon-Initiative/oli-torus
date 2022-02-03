@@ -1,4 +1,0 @@
-
-<p>Course Ingest Error:</p>
-
-<%= @error %>

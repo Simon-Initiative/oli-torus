@@ -181,8 +181,8 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 attrs
                 |> Map.merge(%{"tool_jwk_id" => jwk_id, "institution_id" => 1})
 
-              %Oli.Lti_1p3.Tool.Registration{}
-              |> Oli.Lti_1p3.Tool.Registration.changeset(attrs)
+              %Oli.Lti.Tool.Registration{}
+              |> Oli.Lti.Tool.Registration.changeset(attrs)
               |> Oli.Repo.insert()
             end)
         end

@@ -129,6 +129,17 @@ defmodule OliWeb.Delivery.ManageUpdates do
      |> hide_modal()}
   end
 
+  @spec handle_info(
+          {:update_progress, any, any, any},
+          atom
+          | %{
+              :assigns => %{
+                :section => atom | %{:id => any, optional(any) => any},
+                optional(any) => any
+              },
+              optional(any) => any
+            }
+        ) :: {:noreply, any}
   def handle_info({:update_progress, section_id, publication_id, :complete}, socket) do
     %{section: section} = socket.assigns
 

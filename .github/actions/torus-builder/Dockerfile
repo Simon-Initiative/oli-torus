@@ -14,19 +14,18 @@ RUN ./configure
 RUN make && make install
 
 WORKDIR /tmp
-RUN wget "https://github.com/elixir-lang/elixir/archive/v1.12.0.tar.gz"
-RUN tar xfz v1.12.0.tar.gz
-WORKDIR /tmp/elixir-1.12.0/
+RUN wget "https://github.com/elixir-lang/elixir/archive/v1.13.2.tar.gz"
+RUN tar xfz v1.13.2.tar.gz
+WORKDIR /tmp/elixir-1.13.2/
 ENV PATH="${PATH}:/usr/local/bin"
 RUN make && make install
 
 RUN mix local.hex --force
 RUN mix local.rebar --force
-RUN mix archive.install hex phx_new 1.5.9
 
 # install node
 RUN yum install -y gcc-c++ make
-RUN curl -sL https://rpm.nodesource.com/setup_15.x | bash -
+RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
 RUN yum install -y nodejs
 RUN npm install -g yarn
 

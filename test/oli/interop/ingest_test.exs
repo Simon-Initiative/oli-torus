@@ -153,5 +153,99 @@ defmodule Oli.Interop.IngestTest do
       tagged_activity = Enum.filter(activities, fn p -> p.title == "CATA" end) |> hd
       assert tagged_activity.tags == [tag.resource_id]
     end
+
+    test "returns :invalid_digest error when digest is invalid", %{author: author} do
+      assert [] |> Ingest.process(author) == {:error, :invalid_digest}
+
+      assert [
+               {'file1', "some content"},
+               {'_media-manifest', "{}"},
+               {'_hierarchy', "{}"}
+             ]
+             |> Ingest.process(author) == {:error, :invalid_digest}
+
+      assert [
+               {'_project', "{}"},
+               {'file1', "some content"},
+               {'_hierarchy', "{}"}
+             ]
+             |> Ingest.process(author) == {:error, :invalid_digest}
+
+      assert [
+               {'_project', "{}"},
+               {'_media-manifest', "{}"},
+               {'file1', "some content"}
+             ]
+             |> Ingest.process(author) == {:error, :invalid_digest}
+    end
+
+    test "returns :missing_project_title error when project title is missing", %{author: author} do
+      assert simulate_unzipping()
+             |> Enum.map(fn item ->
+               case item do
+                 {'_project.json', contents} ->
+                   without_title =
+                     Jason.decode!(contents)
+                     |> Map.delete("title")
+                     |> Jason.encode!()
+
+                   {'_project.json', without_title}
+
+                 _ ->
+                   item
+               end
+             end)
+             |> Ingest.process(author) == {:error, :missing_project_title}
+    end
+
+    test "returns :empty_project_title error when project title is empty", %{author: author} do
+      assert simulate_unzipping()
+             |> Enum.map(fn item ->
+               case item do
+                 {'_project.json', contents} ->
+                   without_title =
+                     Jason.decode!(contents)
+                     |> Map.put("title", "")
+                     |> Jason.encode!()
+
+                   {'_project.json', without_title}
+
+                 _ ->
+                   item
+               end
+             end)
+             |> Ingest.process(author) == {:error, :empty_project_title}
+    end
+
+    test "returns :invalid_idrefs error when invalid iderefs are found", %{author: author} do
+      assert simulate_unzipping()
+             |> Enum.map(fn item ->
+               case item do
+                 {'_hierarchy.json', contents} ->
+                   with_invalid_idref =
+                     Jason.decode!(contents)
+                     |> update_in(
+                       ["children", Access.at(2), "children", Access.at(0), "children"],
+                       fn children ->
+                         children ++
+                           [
+                             %{
+                               "type" => "item",
+                               "children" => [],
+                               "idref" => "some-invalid-idref"
+                             }
+                           ]
+                       end
+                     )
+                     |> Jason.encode!()
+
+                   {'_hierarchy.json', with_invalid_idref}
+
+                 _ ->
+                   item
+               end
+             end)
+             |> Ingest.process(author) == {:error, {:invalid_idrefs, ["some-invalid-idref"]}}
+    end
   end
 end

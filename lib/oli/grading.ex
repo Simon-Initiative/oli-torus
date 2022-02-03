@@ -17,7 +17,8 @@ defmodule Oli.Grading do
   alias Oli.Grading.GradebookScore
   alias Oli.Activities.Realizer.Selection
   alias Lti_1p3.Tool.ContextRoles
-  alias Oli.Lti.LTI_AGS
+  alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.AGS.Score
   alias Oli.Resources.Revision
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
@@ -61,7 +62,7 @@ defmodule Oli.Grading do
     out_of_provider = fn -> determine_page_out_of(section.slug, revision) end
 
     # Next, fetch (and possibly create) the line item associated with this resource
-    case LTI_AGS.fetch_or_create_line_item(
+    case AGS.fetch_or_create_line_item(
            section.line_items_service_url,
            resource_access.resource_id,
            out_of_provider,
@@ -71,7 +72,7 @@ defmodule Oli.Grading do
       # Finally, post the score for this line item
       {:ok, line_item} ->
         case to_score(user.sub, resource_access)
-             |> LTI_AGS.post_score(line_item, token) do
+             |> AGS.post_score(line_item, token) do
           {:ok, _} -> {:ok, :synced}
           e -> e
         end
@@ -89,7 +90,7 @@ defmodule Oli.Grading do
     {:ok, dt} = DateTime.now("Etc/UTC")
     timestamp = DateTime.to_iso8601(dt)
 
-    %Oli.Lti.Score{
+    %Score{
       timestamp: timestamp,
       scoreGiven: resource_access.score,
       scoreMaximum: resource_access.out_of,

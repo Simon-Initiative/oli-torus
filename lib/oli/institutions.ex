@@ -9,8 +9,8 @@ defmodule Oli.Institutions do
   alias Oli.Repo.{Paging, Sorting}
 
   alias Oli.Institutions.{Institution, RegistrationBrowseOptions, PendingRegistration}
-  alias Oli.Lti_1p3.Tool.Registration
-  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Lti.Tool.Registration
+  alias Oli.Lti.Tool.Deployment
 
   @doc """
   Returns the list of institutions.
@@ -259,7 +259,7 @@ defmodule Oli.Institutions do
 
     query =
       Registration
-      |> join(:left, [r], d in Oli.Lti_1p3.Tool.Deployment, on: r.id == d.registration_id)
+      |> join(:left, [r], d in Oli.Lti.Tool.Deployment, on: r.id == d.registration_id)
       |> where(^filter_by_text)
       |> limit(^limit)
       |> offset(^offset)

@@ -242,7 +242,7 @@ defmodule Oli.SectionsTest do
       {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
 
       lti_params =
-        Oli.Lti_1p3.TestHelpers.all_default_claims()
+        Oli.Lti.TestHelpers.all_default_claims()
         |> put_in(["iss"], registration.issuer)
         |> put_in(["aud"], registration.client_id)
         |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
@@ -665,7 +665,7 @@ defmodule Oli.SectionsTest do
         )
         |> Repo.all()
 
-      assert section_resources |> Enum.count() == 7
+      assert section_resources |> Enum.count() == 8
     end
 
     test "apply_publication_update/2 handles minor non-hierarchical updates",

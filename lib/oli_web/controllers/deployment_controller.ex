@@ -2,7 +2,7 @@ defmodule OliWeb.DeploymentController do
   use OliWeb, :controller
 
   alias Oli.Institutions
-  alias Oli.Lti_1p3.Tool.Deployment
+  alias Oli.Lti.Tool.Deployment
   alias OliWeb.Common.{Breadcrumb}
 
   def root_breadcrumbs(registration_id) do
