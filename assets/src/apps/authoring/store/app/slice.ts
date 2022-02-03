@@ -51,6 +51,7 @@ export interface AppState {
   copiedPart: any | null;
   readonly: boolean;
   showDiagnosticsWindow: boolean;
+  showScoringOverview: boolean;
 }
 
 const initialState: AppState = {
@@ -71,6 +72,7 @@ const initialState: AppState = {
   copiedPart: null,
   readonly: true,
   showDiagnosticsWindow: false,
+  showScoringOverview: false,
 };
 
 export interface AppConfig {
@@ -135,6 +137,9 @@ const slice: Slice<AppState> = createSlice({
     setShowDiagnosticsWindow(state, action: PayloadAction<{ show: boolean }>) {
       state.showDiagnosticsWindow = action.payload.show;
     },
+    setShowScoringOverview(state, action: PayloadAction<{ show: boolean }>) {
+      state.showScoringOverview = action.payload.show;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(acquireEditingLock.fulfilled, (state) => {
@@ -171,6 +176,7 @@ export const {
   setCopiedPart,
   setReadonly,
   setShowDiagnosticsWindow,
+  setShowScoringOverview,
 } = slice.actions;
 
 export const selectState = (state: RootState): AppState => state[AppSlice] as AppState;
@@ -222,6 +228,11 @@ export const selectReadOnly = createSelector(selectState, (state: AppState) => s
 export const selectShowDiagnosticsWindow = createSelector(
   selectState,
   (state: AppState) => state.showDiagnosticsWindow,
+);
+
+export const selectShowScoringOverview = createSelector(
+  selectState,
+  (state: AppState) => state.showScoringOverview,
 );
 
 export default slice.reducer;

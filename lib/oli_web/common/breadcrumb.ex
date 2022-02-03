@@ -70,16 +70,27 @@ defmodule OliWeb.Common.Breadcrumb do
   end
 
   defp trail_to_helper(project_or_section_slug, revision_slug, resolver) do
-    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug),
-         {:ok, [_root | path]} =
-           Numbering.path_from_root_to(
+    with numberings <- Numbering.number_full_tree(resolver, project_or_section_slug) do
+      case Numbering.path_from_root_to(
              resolver,
              project_or_section_slug,
              revision_slug
            ) do
-      Enum.map(path, fn revision ->
-        make_breadcrumb(project_or_section_slug, revision, numberings)
-      end)
+        {:ok, [_root | path]} ->
+          Enum.map(path, fn revision ->
+            make_breadcrumb(project_or_section_slug, revision, numberings)
+          end)
+
+        {:error, :target_resource_not_found} ->
+          revision = resolver.from_revision_slug(project_or_section_slug, revision_slug)
+
+          [
+            new(%{
+              full_title: revision.title,
+              link: nil
+            })
+          ]
+      end
     end
   end
 

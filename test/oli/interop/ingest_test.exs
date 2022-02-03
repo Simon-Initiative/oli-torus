@@ -216,5 +216,36 @@ defmodule Oli.Interop.IngestTest do
              end)
              |> Ingest.process(author) == {:error, :empty_project_title}
     end
+
+    test "returns :invalid_idrefs error when invalid iderefs are found", %{author: author} do
+      assert simulate_unzipping()
+             |> Enum.map(fn item ->
+               case item do
+                 {'_hierarchy.json', contents} ->
+                   with_invalid_idref =
+                     Jason.decode!(contents)
+                     |> update_in(
+                       ["children", Access.at(2), "children", Access.at(0), "children"],
+                       fn children ->
+                         children ++
+                           [
+                             %{
+                               "type" => "item",
+                               "children" => [],
+                               "idref" => "some-invalid-idref"
+                             }
+                           ]
+                       end
+                     )
+                     |> Jason.encode!()
+
+                   {'_hierarchy.json', with_invalid_idref}
+
+                 _ ->
+                   item
+               end
+             end)
+             |> Ingest.process(author) == {:error, {:invalid_idrefs, ["some-invalid-idref"]}}
+    end
   end
 end

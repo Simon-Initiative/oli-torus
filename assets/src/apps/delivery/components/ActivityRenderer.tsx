@@ -26,19 +26,15 @@ import {
   CheckResults,
   selectHistoryNavigationActivity,
   selectInitPhaseComplete,
-  selectInitStateFacts,
   selectLastCheckResults,
   selectLastCheckTriggered,
   selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
-import { debounce } from 'lodash';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { templatizeText } from './TextParser';
-import { CapiVariableTypes } from 'adaptivity/capi';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -371,20 +367,20 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   // TODO: check if it needs to come from somewhere higher
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
-  const initStateFacts = useSelector(selectInitStateFacts);
   const initStateBindToFacts: any = {};
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const updateGlobalState = async (snapshot: any, stateFacts: any) => {
-    const payloadData = {} as any;
-    Object.keys(stateFacts).map((fact: string) => {
+    const payloadData = stateFacts.reduce((data: any, fact: any) => {
+      const target = fact.target;
       // EverApp Information
-      if (fact.startsWith('app.')) {
-        const data = fact.split('.');
-        const objId = data.splice(2).join('.');
-        const value = snapshot[fact];
-        payloadData[data[1]] = { ...payloadData[data[1]], [objId]: value };
+      if (target.startsWith('app.')) {
+        const targetParts = target.split('.');
+        const objId = targetParts.splice(2).join('.');
+        const value = snapshot[target];
+        data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
       }
-    });
+      return data;
+    }, {});
     await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
   };
 
@@ -395,32 +391,40 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // so it needs to ask the parent for it.
     const { snapshot } = await onRequestLatestState();
 
-    updateGlobalState(snapshot, initStateFacts);
-    const finalInitSnapshot = Object.keys(initStateFacts).reduce((acc: any, key: string) => {
-      let target = key;
-      if (target.indexOf('stage') === 0) {
-        const lstVar = target.split('.');
+    const currentActivity =
+      currentActivityTree && currentActivityTree.length > 0
+        ? currentActivityTree[currentActivityTree.length - 1]
+        : null;
+    const initState = currentActivity?.content?.custom?.facts || [];
+
+    console.log({ snapshot, initState });
+    updateGlobalState(snapshot, initState);
+    const finalInitSnapshot = initState?.reduce((acc: any, initObject: any) => {
+      let key = initObject.target;
+      if (key.indexOf('stage') === 0) {
+        const lstVar = key.split('.');
         if (lstVar?.length > 1) {
           const ownerActivity = currentActivityTree?.find(
             (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
           );
-          target = ownerActivity ? `${ownerActivity.id}|${target}` : `${target}`;
+          key = ownerActivity ? `${ownerActivity.id}|${key}` : `${key}`;
         }
       }
-      const operator = initStateFacts[key];
+      const operator = initObject.operator;
       if (operator === 'bind to') {
-        initStateBindToFacts[key] = snapshot[target];
+        initStateBindToFacts[initObject.target] = snapshot[key] || '';
       } else {
-        acc[target] = snapshot[target];
+        acc[initObject.target] = snapshot[key];
       }
       return acc;
     }, {});
+    console.log({ finalInitSnapshot });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
-      initStateFacts: finalInitSnapshot,
+      initStateFacts: finalInitSnapshot || {},
       domain: adaptivityDomain,
       initStateBindToFacts,
     });

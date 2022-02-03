@@ -1,15 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { ActivityModelSchema } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import {
   ActivitiesSlice,
   IActivity,
+  selectActivityById,
+  selectAllActivities,
   upsertActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
-import { selectResourceId } from '../../page/slice';
+import { savePage } from '../../page/actions/savePage';
+import { selectResourceId, selectState as selectCurrentPage, updatePage } from '../../page/slice';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -48,10 +52,22 @@ export const saveActivity = createAsyncThunk(
         changeData,
         false,
       );
-      /* console.log('EDIT SAVE RESULTS', { editResults }); */
+
+      // grab the activity before it's updated for the score check
+      const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
+
+      // update the activitiy before saving the page so that the score is correct
+      await dispatch(upsertActivity({ activity }));
+
+      const currentPage = selectCurrentPage(rootState);
+      if (!currentPage.custom.scoreFixed) {
+        // need to check if this update to an activity affects the total score
+        if (activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore) {
+          await dispatch(savePage());
+        }
+      }
     }
 
-    await dispatch(upsertActivity({ activity }));
     return;
   },
 );

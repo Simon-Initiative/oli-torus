@@ -33,58 +33,107 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  # verify that an in memory archive is valid by ensuring that it contains the three
+  # verify that an in memory digest is valid by ensuring that it contains the three
   # required keys (files): the "_project", the "_hierarchy" and the "_media-manifest"
   defp is_valid_digest?(map) do
-    Map.has_key?(map, @project_key) && Map.has_key?(map, @hierarchy_key) &&
-      Map.has_key?(map, @media_key)
+    if Map.has_key?(map, @project_key) && Map.has_key?(map, @hierarchy_key) &&
+         Map.has_key?(map, @media_key) do
+      {:ok, map}
+    else
+      {:error, :invalid_digest}
+    end
   end
-  
+
+  # Validates all idrefs in the content of the resource map.
+  # Returns {:ok} if all refs are valid and {:error, [...invalid_refs]} if invalid idrefs are found.
+  defp validate_idrefs(map) do
+    all_id_refs =
+      Enum.reduce(map, [], fn {_file, content}, acc ->
+        find_all_id_refs(content) ++ acc
+      end)
+
+    invalid_idrefs =
+      Enum.filter(all_id_refs, fn id_ref ->
+        !Map.has_key?(map, id_ref)
+      end)
+
+    case invalid_idrefs do
+      [] ->
+        {:ok}
+
+      invalid_idrefs ->
+        {:error, {:invalid_idrefs, invalid_idrefs}}
+    end
+  end
+
+  defp find_all_id_refs(content) do
+    idrefs_recursive_desc(content, [])
+  end
+
+  defp idrefs_recursive_desc(el, idrefs) do
+    # if this element contains an idref, add it to the list
+    idrefs =
+      case el["idref"] do
+        nil ->
+          idrefs
+
+        idref ->
+          [idref | idrefs]
+      end
+
+    # if this element contains children, recursively process them, otherwise return the list
+    case el["children"] do
+      nil ->
+        idrefs
+
+      children ->
+        Enum.reduce(children, idrefs, fn c, acc ->
+          idrefs_recursive_desc(c, acc)
+        end)
+    end
+  end
+
   # Process the unzipped entries of the archive
   def process(entries, as_author) do
     {resource_map, _error_map} = to_map(entries)
 
-    # Proceed only if the archive is valid
-    if is_valid_digest?(resource_map) do
-      Repo.transaction(fn _ ->
-        project_details = Map.get(resource_map, @project_key)
-        media_details = Map.get(resource_map, @media_key)
-        hierarchy_details = Map.get(resource_map, @hierarchy_key)
-
-        with {:ok, %{project: project, resource_revision: root_revision}} <-
-               create_project(project_details, as_author),
-             {:ok, tag_map} <- create_tags(project, resource_map, as_author),
-             {:ok, objective_map} <- create_objectives(project, resource_map, tag_map, as_author),
-             {:ok, {activity_map, _}} <-
-               create_activities(project, resource_map, objective_map, tag_map, as_author),
-             {:ok, {page_map, _}} <-
-               create_pages(
-                 project,
-                 resource_map,
-                 activity_map,
-                 objective_map,
-                 tag_map,
-                 as_author
-               ),
-             {:ok, _} <- create_media(project, media_details),
-             {:ok, _} <-
-               create_hierarchy(
-                 project,
-                 root_revision,
-                 page_map,
-                 tag_map,
-                 hierarchy_details,
-                 as_author
-               ),
-             {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
-          project
-        else
-          {:error, error} -> Repo.rollback(error)
-        end
-      end)
-    else
-      {:error, :invalid_digest}
-    end
+    Repo.transaction(fn _ ->
+      with {:ok, _} <- is_valid_digest?(resource_map),
+           {:ok} <- validate_idrefs(resource_map),
+           project_details <- Map.get(resource_map, @project_key),
+           media_details <- Map.get(resource_map, @media_key),
+           hierarchy_details <- Map.get(resource_map, @hierarchy_key),
+           {:ok, %{project: project, resource_revision: root_revision}} <-
+             create_project(project_details, as_author),
+           {:ok, tag_map} <- create_tags(project, resource_map, as_author),
+           {:ok, objective_map} <- create_objectives(project, resource_map, tag_map, as_author),
+           {:ok, {activity_map, _}} <-
+             create_activities(project, resource_map, objective_map, tag_map, as_author),
+           {:ok, {page_map, _}} <-
+             create_pages(
+               project,
+               resource_map,
+               activity_map,
+               objective_map,
+               tag_map,
+               as_author
+             ),
+           {:ok, _} <- create_media(project, media_details),
+           {:ok, _} <-
+             create_hierarchy(
+               project,
+               root_revision,
+               page_map,
+               tag_map,
+               hierarchy_details,
+               as_author
+             ),
+           {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
+        project
+      else
+        {:error, error} -> Repo.rollback(error)
+      end
+    end)
   end
 
   defp get_registration_map() do
@@ -220,11 +269,38 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  defp rewire_bank_selections(content, tag_map) do
+    PageContent.map(content, fn e ->
+      case e do
+        %{"type" => "selection", "logic" => logic} = ref ->
+          case logic do
+            %{"conditions" => %{"children" => [%{"fact" => "tags", "value" => originals}]}} ->
+              ids = Enum.map(originals, fn o -> retrieve(tag_map, o).resource_id end)
+
+              children = [%{"fact" => "tags", "value" => ids, "operator" => "equals"}]
+              conditions = Map.put(logic["conditions"], "children", children)
+              logic = Map.put(logic, "conditions", conditions)
+
+              Map.put(ref, "logic", logic)
+
+            _ ->
+              ref
+          end
+
+        other ->
+          other
+      end
+    end)
+  end
+
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     content =
       Map.get(page, "content")
       |> rewire_activity_references(activity_map)
+      |> rewire_bank_selections(tag_map)
+
+    graded = Map.get(page, "isGraded", false)
 
     %{
       tags: transform_tags(page, tag_map),
@@ -243,7 +319,13 @@ defmodule Oli.Interop.Ingest do
       },
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-      graded: false
+      graded: graded,
+      max_attempts:
+        if graded do
+          5
+        else
+          0
+        end
     }
     |> create_resource(project)
   end
@@ -261,7 +343,14 @@ defmodule Oli.Interop.Ingest do
         title -> title
       end
 
+    scope =
+      case Map.get(activity, "scope", "embedded") do
+        str when str in ~w(embedded banked) -> String.to_existing_atom(str)
+        _ -> :embedded
+      end
+
     %{
+      scope: scope,
       tags: transform_tags(activity, tag_map),
       title: title,
       content: Map.get(activity, "content"),
@@ -396,7 +485,7 @@ defmodule Oli.Interop.Ingest do
   # Convert the list of tuples of unzipped entries into a map
   # where the keys are the ids (with the .json extension dropped)
   # and the values are the JSON content, parsed into maps
-  defp to_map(entries) do
+  def to_map(entries) do
     Enum.reduce(entries, {%{}, %{}}, fn {file, content}, {resource_map, error_map} ->
       id_from_file = fn file ->
         file
@@ -441,6 +530,18 @@ defmodule Oli.Interop.Ingest do
 
   def prettify_error({:error, :empty_project_title}) do
     "Project title cannot be empty in #{@project_key}.json"
+  end
+
+  def prettify_error({:error, {:invalid_idrefs, invalid_idrefs}}) do
+    invalid_idrefs_str = Enum.join(invalid_idrefs, ", ")
+
+    case Enum.count(invalid_idrefs) do
+      1 ->
+        "Project contains an invalid idref reference: #{invalid_idrefs_str}"
+
+      count ->
+        "Project contains #{count} invalid idref references: #{invalid_idrefs_str}"
+    end
   end
 
   def prettify_error({:error, error}) do
