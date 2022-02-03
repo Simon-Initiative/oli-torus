@@ -10,11 +10,12 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   import XmlBuilder
   import Oli.Utils
 
-  def setup(%{date: date, email: nil}), do: setup(%{date: date, email: "Anonymous"})
+  def setup(%{date: date, sub: sub, email: nil}), do: setup(%{date: date, user_id: sub})
+  def setup(%{date: date, email: email}), do: setup(%{date: date, user_id: email})
 
-  def setup(%{date: date, email: email}) do
+  def setup(%{date: date, user_id: user_id}) do
     element(:meta, %{}, [
-      element(:user_id, email),
+      element(:user_id, user_id),
       element(:session_id, uuid()),
       element(:time, format_date(date)),
       element(:time_zone, "GMT")
