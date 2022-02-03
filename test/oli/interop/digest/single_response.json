@@ -82,7 +82,7 @@
       "previewText": ""
     }
   },
-  "objectives": [],
+  "objectives": {"1": []},
   "legacyId": "a_c0e9e0a69cba4931967143bf72ac2dd8",
   "subType": "oli_short_answer"
 }
