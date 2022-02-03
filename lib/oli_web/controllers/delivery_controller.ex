@@ -458,11 +458,12 @@ defmodule OliWeb.DeliveryController do
   end
 
   defp recaptcha_verified?(g_recaptcha_response) do
-    g_recaptcha_response != "" and
-      Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
+    Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}
   end
 
-  def create_user(conn, %{"g-recaptcha-response" => g_recaptcha_response}) do
+  def create_user(conn, params) do
+    g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
+
     if Oli.Utils.LoadTesting.enabled?() or recaptcha_verified?(g_recaptcha_response) do
       section = conn.assigns.section
 

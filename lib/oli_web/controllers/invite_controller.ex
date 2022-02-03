@@ -8,7 +8,9 @@ defmodule OliWeb.InviteController do
     render_invite_page(conn, "index.html", title: "Invite")
   end
 
-  def create(conn, %{"email" => email, "g-recaptcha-response" => g_recaptcha_response}) do
+  def create(conn, %{"email" => email} = params) do
+    g_recaptcha_response = Map.get(params, "g-recaptcha-response", "")
+
     case Oli.Utils.Recaptcha.verify(g_recaptcha_response) do
       {:success, true} ->
         invite_author(conn, email)

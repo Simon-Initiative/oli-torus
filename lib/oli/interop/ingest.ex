@@ -300,6 +300,8 @@ defmodule Oli.Interop.Ingest do
       |> rewire_activity_references(activity_map)
       |> rewire_bank_selections(tag_map)
 
+    graded = Map.get(page, "isGraded", false)
+
     %{
       tags: transform_tags(page, tag_map),
       title: Map.get(page, "title"),
@@ -317,7 +319,13 @@ defmodule Oli.Interop.Ingest do
       },
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-      graded: false
+      graded: graded,
+      max_attempts:
+        if graded do
+          5
+        else
+          0
+        end
     }
     |> create_resource(project)
   end
