@@ -1305,9 +1305,11 @@ defmodule Oli.Delivery.Sections do
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
+    skip_set = MapSet.new(skip_resource_ids)
+
     published_resources_by_resource_id
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
-      resource_id not in skip_resource_ids && !is_structural?(rev)
+      !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
     end)
     |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
       [
@@ -1324,9 +1326,8 @@ defmodule Oli.Delivery.Sections do
 
   defp is_structural?(%Revision{resource_type_id: resource_type_id}) do
     container = ResourceType.get_id_by_type("container")
-    page = ResourceType.get_id_by_type("page")
 
-    resource_type_id == container or resource_type_id == page
+    resource_type_id == container
   end
 
   @doc """
