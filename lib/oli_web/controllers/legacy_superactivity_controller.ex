@@ -26,27 +26,33 @@ defmodule OliWeb.LegacySuperactivityController do
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
     user = conn.assigns.current_user
 
-    activity_attempt =
-      Attempts.get_latest_activity_attempt(
-        Attempts.get_activity_attempt_by(attempt_guid: attempt_guid).resource_attempt_id
-      )
-      |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
+    attempt = Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
 
-    part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
+    case attempt do
+      nil ->
+        error(conn, 404, "Attempt not found")
 
-    %{"base" => base, "src" => src} = activity_attempt.revision.content
+      _ ->
+        activity_attempt =
+          Attempts.get_latest_activity_attempt(attempt.resource_attempt_id)
+          |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
-    context = %{
-      attempt_guid: activity_attempt.attempt_guid,
-      src_url: "https://#{conn.host}/superactivity/#{base}/#{src}",
-      activity_type: activity_attempt.revision.activity_type.slug,
-      server_url: "https://#{conn.host}/jcourse/superactivity/server",
-      user_guid: user.id,
-      mode: "delivery",
-      part_ids: part_ids
-    }
+        part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
 
-    json(conn, context)
+        %{"base" => base, "src" => src} = activity_attempt.revision.content
+
+        context = %{
+          attempt_guid: activity_attempt.attempt_guid,
+          src_url: "https://#{conn.host}/superactivity/#{base}/#{src}",
+          activity_type: activity_attempt.revision.activity_type.slug,
+          server_url: "https://#{conn.host}/jcourse/superactivity/server",
+          user_guid: user.id,
+          mode: "delivery",
+          part_ids: part_ids
+        }
+
+        json(conn, context)
+    end
   end
 
   def process(
@@ -364,10 +370,11 @@ defmodule OliWeb.LegacySuperactivityController do
             )
           end
 
-          rest = ActivityEvaluation.rollup_part_attempt_evaluations(
-            context.activity_attempt.attempt_guid,
-            :normalize
-          )
+          rest =
+            ActivityEvaluation.rollup_part_attempt_evaluations(
+              context.activity_attempt.attempt_guid,
+              :normalize
+            )
 
           rest
         end)
@@ -497,5 +504,11 @@ defmodule OliWeb.LegacySuperactivityController do
   defp get_timezone() do
     {zone, result} = System.cmd("date", ["+%Z"])
     if result == 0, do: String.trim(zone)
+  end
+
+  defp error(conn, code, reason) do
+    conn
+    |> Plug.Conn.send_resp(code, reason)
+    |> Plug.Conn.halt()
   end
 end
