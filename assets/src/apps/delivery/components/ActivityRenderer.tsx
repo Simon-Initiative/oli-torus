@@ -412,7 +412,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       const operator = initObject.operator;
       if (operator === 'bind to') {
-        initStateBindToFacts[initObject.target] = snapshot[key];
+        initStateBindToFacts[initObject.target] = snapshot[key] || '';
       } else {
         acc[initObject.target] = snapshot[key];
       }
