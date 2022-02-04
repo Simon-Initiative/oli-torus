@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Ensure user_id is unique in DataShop export
+
 ## 0.18.4 (2022-01-11)
 
 ### Bug Fixes
