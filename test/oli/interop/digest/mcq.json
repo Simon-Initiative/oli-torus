@@ -120,7 +120,7 @@
     }
 
   },
-  "objectives": [],
+  "objectives": {"1": []},
   "legacyId": "a_fd13a924cebc4be1be0915b498e86d22",
   "subType": "oli_multiple_choice"
 }

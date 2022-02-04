@@ -72,6 +72,7 @@ defmodule Oli.Interop.Ingest do
 
   defp idrefs_recursive_desc(el, idrefs) do
     # if this element contains an idref, add it to the list
+
     idrefs =
       case el["idref"] do
         nil ->
@@ -169,7 +170,7 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
-  defp create_activities(project, resource_map, _, tag_map, as_author) do
+  defp create_activities(project, resource_map, objective_map, tag_map, as_author) do
     registration_map = get_registration_map()
 
     {changes, activities} =
@@ -180,7 +181,14 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(activities, %{}, fn {id, activity}, map ->
-             case create_activity(project, activity, as_author, registration_map, tag_map) do
+             case create_activity(
+                    project,
+                    activity,
+                    as_author,
+                    registration_map,
+                    tag_map,
+                    objective_map
+                  ) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -232,9 +240,15 @@ defmodule Oli.Interop.Ingest do
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Objective" end)
 
+    with_children =
+      Enum.filter(objectives, fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() > 0 end)
+
+    without_children =
+      Enum.filter(objectives, fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() == 0 end)
+
     Repo.transaction(fn ->
-      case Enum.reduce_while(objectives, %{}, fn {id, o}, map ->
-             case create_objective(project, o, tag_map, as_author) do
+      case Enum.reduce_while(without_children ++ with_children, %{}, fn {id, o}, map ->
+             case create_objective(project, o, tag_map, as_author, map) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -330,11 +344,24 @@ defmodule Oli.Interop.Ingest do
     |> create_resource(project)
   end
 
-  defp create_activity(project, activity, as_author, registration_by_subtype, tag_map) do
+  defp create_activity(
+         project,
+         activity,
+         as_author,
+         registration_by_subtype,
+         tag_map,
+         objective_map
+       ) do
     objectives =
-      activity["content"]["authoring"]["parts"]
-      |> Enum.map(fn %{"id" => id} -> id end)
-      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e, []) end)
+      Map.get(activity, "objectives")
+      |> Map.keys()
+      |> Enum.reduce(%{}, fn k, m ->
+        mapped =
+          Map.get(activity, "objectives")[k]
+          |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
+
+        Map.put(m, k, mapped)
+      end)
 
     title =
       case Map.get(activity, "title") do
@@ -375,7 +402,7 @@ defmodule Oli.Interop.Ingest do
     |> create_resource(project)
   end
 
-  defp create_objective(project, objective, tag_map, as_author) do
+  defp create_objective(project, objective, tag_map, as_author, objective_map) do
     title =
       case Map.get(objective, "title") do
         nil -> "Empty"
@@ -389,6 +416,9 @@ defmodule Oli.Interop.Ingest do
       content: %{},
       author_id: as_author.id,
       objectives: %{},
+      children:
+        Map.get(objective, "objectives", [])
+        |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("objective")
     }
     |> create_resource(project)
