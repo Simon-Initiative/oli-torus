@@ -328,7 +328,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = true;
+    const boolWriteLog = false;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -937,6 +937,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       const cVar = new CapiVariable({
         key: baseKey,
         value,
+        shouldConvertNumbers: false,
       });
       const typeOfValue = typeof value;
       if (cVar.type === CapiVariableTypes.ARRAY) {
