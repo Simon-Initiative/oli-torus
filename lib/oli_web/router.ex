@@ -850,7 +850,7 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
-    get("/launch", CognitoController, :launch)
+    get("/launch/products/:product_id", CognitoController, :launch)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

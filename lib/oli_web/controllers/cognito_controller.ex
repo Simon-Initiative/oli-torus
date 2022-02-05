@@ -1,145 +1,100 @@
 defmodule OliWeb.CognitoController do
   use OliWeb, :controller
-  import Oli.HTTP
-  import Oli.Utils
-  import Ecto.Changeset
+
+  import Oli.{HTTP, Utils}
+
   require Logger
 
-  alias Oli.Accounts
-  alias Oli.Groups
-  alias Oli.Institutions
+  alias Oli.{Accounts, Groups, Institutions}
   alias Oli.Institutions.SsoJwk
 
   @jwks_relative_path "/.well-known/jwks.json"
 
-  def launch(conn, params) do
-    try do
-      with {:ok, valid_params} <- validate_query_params(params),
-           {:ok, %SsoJwk{pem: pem}} <- get_jwk(valid_params.id_token) do
-        jwk = JOSE.JWK.from_pem(pem)
-
-        case JOSE.JWT.verify_strict(jwk, ["RS256"], valid_params.id_token) do
-          {true, %{fields: jwt_fields}, _} ->
-            case Accounts.insert_or_update_lms_user(%{
-                   sub: Map.get(jwt_fields, "sub"),
-                   preferred_username: Map.get(jwt_fields, "cognito:username"),
-                   email: Map.get(jwt_fields, "email"),
-                   can_create_sections: true
-                 }) do
-              {:ok, user} ->
-                community_id = valid_params.community_id
-
-                Groups.create_community_account(%{user_id: user.id, community_id: community_id})
-
-                conn
-                |> use_pow_config(:user)
-                |> Pow.Plug.create(user)
-                |> redirect(
-                  to: Routes.page_delivery_path(conn, :index, valid_params.course_section_id)
-                )
-
-              {:error, %Ecto.Changeset{} = changeset} ->
-                error_fields = changeset_error_fields(changeset)
-
-                error_message = error_fields <> " - missing or invalid"
-
-                redirect_with_error(conn, valid_params, error_message)
-            end
-
-          {false, _, _} ->
-            error_message = "Unable to verify credentials"
-
-            redirect_with_error(conn, valid_params, error_message)
-        end
-      else
-        {:error, error} ->
-          error_message = snake_case_to_friendly(error)
-
-          redirect_with_error(conn, params, error_message)
-      end
-    rescue
-      e ->
-        %exception_type{} = e
-        error_message = "Unknown error occurred - #{exception_type}"
-
-        redirect_with_error(conn, params, error_message)
-    end
-  end
-
-  defp validate_query_params(params) do
-    data = %{}
-
-    types = %{
-      course_section_id: :string,
-      id_token: :string,
-      error_url: :string,
-      community_id: :string
-    }
-
-    changeset =
-      {data, types}
-      |> cast(params, Map.keys(types))
-      |> validate_required([:course_section_id, :id_token, :error_url, :community_id])
-
-    if changeset.valid? do
-      {:ok, apply_changes(changeset)}
+  def launch(
+        conn,
+        %{
+          "product_id" => product_id,
+          "cognito_id_token" => jwt,
+          "error_url" => _error_url,
+          "community_id" => community_id
+        } = params
+      ) do
+    with {:ok, jwk} <- get_jwk(jwt),
+         {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
+         {:ok, user} <- create_lms_user(jwt_fields),
+         {:ok, _account} <- create_community_account(user.id, community_id) do
+      conn
+      |> use_pow_config(:user)
+      |> Pow.Plug.create(user)
+      |> redirect(to: Routes.page_delivery_path(conn, :index, product_id))
     else
-      error_fields = changeset_error_fields(changeset)
+      {false, _, _} ->
+        redirect_with_error(conn, params, "Unable to verify credentials")
 
-      error_message = error_fields <> " - missing or invalid params"
+      {:error, error} ->
+        redirect_with_error(conn, params, snake_case_to_friendly(error))
 
-      {:error, error_message}
+      {:error, %Ecto.Changeset{}} ->
+        redirect_with_error(conn, params, "Invalid parameters")
     end
   end
 
-  defp get_cognito_jwks(issuer) do
+  def launch(conn, params) do
+    redirect_with_error(conn, params, "Missing parameters")
+  end
+
+  defp get_jwk(jwt) do
+    with {:ok, %{"kid" => kid}} <- Joken.peek_header(jwt),
+         {:ok, %{"iss" => issuer}} <- Joken.peek_claims(jwt),
+         {:ok, sso_jwk} <- find_or_fetch_jwt(kid, issuer) do
+      {:ok, JOSE.JWK.from_pem(sso_jwk.pem)}
+    else
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def find_or_fetch_jwt(kid, issuer) do
+    case Institutions.get_jwk_by(%{kid: kid}) do
+      %SsoJwk{} = jwk ->
+        {:ok, jwk}
+
+      nil ->
+        get_cognito_jwks(kid, issuer)
+    end
+  end
+
+  defp get_cognito_jwks(kid, issuer) do
     url = issuer <> @jwks_relative_path
 
     case http().get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        jwks =
-          body
-          |> Poison.decode!()
-          |> JOSE.JWK.from_map()
+        body
+        |> Poison.decode!()
+        |> JOSE.JWK.from_map()
+        |> persist_keys(kid)
 
-        {:ok, jwks}
-
-      {:ok, %HTTPoison.Response{body: body}} ->
-        {:error, "Error retrieving the JWKS - #{body}"}
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, "Error retrieving the JWKS - #{reason}"}
+      {:ok, %HTTPoison.Response{}} ->
+        {:error, "Error retrieving the JWKS"}
     end
   end
 
-  defp get_jwk(id_token) do
-    with {:ok, %{"kid" => kid}} <- Joken.peek_header(id_token),
-         {:ok, %{"iss" => issuer}} <- Joken.peek_claims(id_token),
-         nil <- Institutions.get_jwk_by(%{kid: kid}),
-         {:ok, %JOSE.JWK{keys: {_, keys}}} <- get_cognito_jwks(issuer) do
-      jwk =
-        keys
-        |> Enum.map(&Institutions.build_jwk/1)
-        |> Institutions.insert_bulk_jwks()
-        |> Enum.find(fn %SsoJwk{kid: jwk_kid} -> jwk_kid == kid end)
+  def persist_keys(%JOSE.JWK{keys: {_, keys}}, kid) do
+    key =
+      keys
+      |> Enum.map(&Institutions.build_jwk/1)
+      |> Institutions.insert_bulk_jwks()
+      |> Enum.find(fn %SsoJwk{kid: jwk_kid} -> jwk_kid == kid end)
 
-      {:ok, jwk}
-    else
-      {:error, error} ->
-        {:error, error}
-
-      %SsoJwk{} = jwk ->
-        {:ok, jwk}
-    end
+    if key, do: {:ok, key}, else: {:error, "Missing Key"}
   end
+
+  def persist_keys(_, _), do: {:error, "Error retrieving the JWKS"}
 
   defp get_error_url(%{"error_url" => error_url}), do: error_url
-  defp get_error_url(%{error_url: error_url}), do: error_url
   defp get_error_url(_params), do: "/unauthorized"
 
   defp redirect_with_error(conn, params, error) do
-    Logger.error(error)
-
     error_url = get_error_url(params)
 
     conn
@@ -147,9 +102,16 @@ defmodule OliWeb.CognitoController do
     |> halt()
   end
 
-  defp changeset_error_fields(changeset) do
-    changeset.errors
-    |> Keyword.keys()
-    |> Enum.join(", ")
+  defp create_lms_user(fields) do
+    Accounts.insert_or_update_lms_user(%{
+      sub: Map.get(fields, "sub"),
+      preferred_username: Map.get(fields, "cognito:username"),
+      email: Map.get(fields, "email"),
+      can_create_sections: true
+    })
+  end
+
+  defp create_community_account(user_id, community_id) do
+    Groups.create_community_account(%{user_id: user_id, community_id: community_id})
   end
 end
