@@ -34,7 +34,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
       _ ->
         activity_attempt =
-          Attempts.get_latest_activity_attempt(attempt.resource_attempt_id)
+          Attempts.get_latest_activity_attempt(attempt.resource_attempt_id, attempt.resource_id)
           |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
 
         part_ids = Enum.map(activity_attempt.part_attempts, fn x -> x.part_id end)
