@@ -30,6 +30,12 @@ const store = configureStore();
 
 export const Ordering: React.FC = () => {
   const { dispatch, model } = useAuthoringElementContext<OrderingSchema>();
+
+  const choices = model.choices.reduce((m: any, c) => {
+    m[c.id] = c;
+    return m;
+  }, {});
+
   return (
     <TabbedNavigation.Tabs>
       <TabbedNavigation.Tab label="Question">
@@ -46,7 +52,7 @@ export const Ordering: React.FC = () => {
 
       <TabbedNavigation.Tab label="Answer Key">
         <ResponseChoices
-          choices={getCorrectChoiceIds(model).map((id) => Choices.getOne(model, id))}
+          choices={getCorrectChoiceIds(model).map((id) => choices[id])}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
         />
         <SimpleFeedback partId={DEFAULT_PART_ID} />
