@@ -161,8 +161,9 @@ defmodule OliWeb.Api.ActivityController do
       {:error, {:not_authorized}} ->
         error(conn, 403, "unauthorized")
 
-      _ ->
-        error(conn, 500, "server error")
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not create secondary activity document", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -198,8 +199,9 @@ defmodule OliWeb.Api.ActivityController do
       {:error, {:not_authorized}} ->
         error(conn, 403, "unauthorized")
 
-      _ ->
-        error(conn, 500, "server error")
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not create activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -259,9 +261,15 @@ defmodule OliWeb.Api.ActivityController do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.retrieve(project_slug, activity_id, author) do
-      {:ok, rev} -> json(conn, document_to_result(rev))
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      _ -> error(conn, 500, "server error")
+      {:ok, rev} ->
+        json(conn, document_to_result(rev))
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not retrieve activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -302,8 +310,9 @@ defmodule OliWeb.Api.ActivityController do
       {:error, {:not_found}} ->
         error(conn, 404, "not found")
 
-      _ ->
-        error(conn, 500, "server error")
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not bulk retrieve activities", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -475,12 +484,24 @@ defmodule OliWeb.Api.ActivityController do
     update = conn.body_params
 
     case ActivityEditor.edit(project_slug, lock_id, activity_id, author.email, update) do
-      {:ok, _} -> json(conn, %{"result" => "success"})
-      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      {:error, {:lock_not_acquired}} -> error(conn, 400, "lock not acquired")
-      _ -> error(conn, 500, "server error")
+      {:ok, _} ->
+        json(conn, %{"result" => "success"})
+
+      {:error, {:invalid_update_field}} ->
+        error(conn, 400, "invalid update field")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      {:error, {:lock_not_acquired}} ->
+        error(conn, 400, "lock not acquired")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not edit activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -522,12 +543,24 @@ defmodule OliWeb.Api.ActivityController do
     updates = conn.body_params["updates"]
 
     case ActivityEditor.bulk_edit(project_slug, lock_id, author.email, updates) do
-      {:ok, _} -> json(conn, %{"result" => "success"})
-      {:error, {:invalid_update_field}} -> error(conn, 400, "invalid update field")
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      {:error, {:lock_not_acquired}} -> error(conn, 400, "lock not acquired")
-      _ -> error(conn, 500, "server error")
+      {:ok, _} ->
+        json(conn, %{"result" => "success"})
+
+      {:error, {:invalid_update_field}} ->
+        error(conn, 400, "invalid update field")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      {:error, {:lock_not_acquired}} ->
+        error(conn, 400, "lock not acquired")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not bulk update activities", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -539,17 +572,27 @@ defmodule OliWeb.Api.ActivityController do
       end)
 
     case ActivityEvaluation.evaluate_from_preview(model, parsed) do
-      {:ok, evaluations} -> json(conn, %{"result" => "success", "evaluations" => evaluations})
-      {:error, _} -> error(conn, 500, "server error")
+      {:ok, evaluations} ->
+        json(conn, %{"result" => "success", "evaluations" => evaluations})
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not evaluate for preview", e)
+        error(conn, 500, msg)
     end
   end
 
   @doc false
   def transform(conn, %{"model" => model}) do
     case ActivityLifecycle.perform_test_transformation(model) do
-      {:ok, transformed} -> json(conn, %{"result" => "success", "transformed" => transformed})
-      {:no_effect, original} -> json(conn, %{"result" => "success", "transformed" => original})
-      {:error, _} -> error(conn, 500, "server error")
+      {:ok, transformed} ->
+        json(conn, %{"result" => "success", "transformed" => transformed})
+
+      {:no_effect, original} ->
+        json(conn, %{"result" => "success", "transformed" => original})
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not apply transforms", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -588,12 +631,24 @@ defmodule OliWeb.Api.ActivityController do
     author = conn.assigns[:current_author]
 
     case ActivityEditor.delete(project_slug, lock_id, resource_id, author) do
-      {:ok, _} -> json(conn, %{"result" => "success"})
-      {:error, {:lock_not_acquired, _}} -> error(conn, 423, "locked")
-      {:error, {:not_applicable}} -> error(conn, 400, "not applicable to this resource")
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      _ -> error(conn, 500, "server error")
+      {:ok, _} ->
+        json(conn, %{"result" => "success"})
+
+      {:error, {:lock_not_acquired, _}} ->
+        error(conn, 423, "locked")
+
+      {:error, {:not_applicable}} ->
+        error(conn, 400, "not applicable to this resource")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not delete activity", e)
+        error(conn, 500, msg)
     end
   end
 
