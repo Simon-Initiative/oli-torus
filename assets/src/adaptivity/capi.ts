@@ -1,5 +1,10 @@
 import { ConditionProperties } from 'json-rules-engine';
-import { isStringArray, parseArray, parseBoolean } from 'utils/common';
+import {
+  isStringArray,
+  parseArray,
+  parseArrayWithoutStringConversion,
+  parseBoolean,
+} from 'utils/common';
 
 export enum CapiVariableTypes {
   NUMBER = 1,
@@ -40,6 +45,7 @@ export const coerceCapiValue = (
   value: any,
   capiType: CapiVariableTypes,
   allowedValues?: string[] | null,
+  shouldConvertNumbers?: boolean,
 ) => {
   switch (capiType) {
     case CapiVariableTypes.NUMBER:
@@ -65,7 +71,7 @@ export const coerceCapiValue = (
       return String(parseBoolean(value)); // for some reason these need to be strings
     case CapiVariableTypes.ARRAY:
     case CapiVariableTypes.ARRAY_POINT:
-      return parseArray(value);
+      return shouldConvertNumbers ? parseArray(value) : parseArrayWithoutStringConversion(value);
     default:
       return `${value}`;
   }
@@ -98,13 +104,13 @@ export interface ICapiVariableOptions {
   writeonly?: boolean;
   allowedValues?: string[];
   bindTo?: string;
+  shouldConvertNumbers?: boolean;
 }
 
 export interface JanusConditionProperties extends ConditionProperties {
   id: string;
   type?: CapiVariableTypes;
 }
-
 export class CapiVariable {
   public key: string;
   public type: CapiVariableTypes;
@@ -113,7 +119,7 @@ export class CapiVariable {
   public writeonly: boolean;
   public allowedValues: string[] | null;
   public bindTo: string | null;
-
+  public shouldConvertNumbers?: boolean;
   constructor(options: ICapiVariableOptions) {
     this.key = options.key;
     this.type = options.type || CapiVariableTypes.UNKNOWN;
@@ -121,11 +127,16 @@ export class CapiVariable {
     this.writeonly = !!options.writeonly;
     this.allowedValues = Array.isArray(options.allowedValues) ? options.allowedValues : null;
     this.bindTo = options.bindTo || null;
-
+    this.shouldConvertNumbers =
+      options.shouldConvertNumbers === undefined ? true : options.shouldConvertNumbers;
     if (this.type === CapiVariableTypes.UNKNOWN) {
       this.type = getCapiType(options.value);
     }
-
-    this.value = coerceCapiValue(options.value, this.type, this.allowedValues);
+    this.value = coerceCapiValue(
+      options.value,
+      this.type,
+      this.allowedValues,
+      this.shouldConvertNumbers,
+    );
   }
 }

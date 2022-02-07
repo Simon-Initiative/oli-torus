@@ -156,3 +156,61 @@ export const parseNumString = (item: string): string | number => {
 // Zips two arrays. E.g. zip([1,2,3], [4,5,6,7]) == [[1, 4], [2, 5], [3, 6]]
 export const zip = <T, U>(xs1: T[], xs2: U[]): [T, U][] =>
   xs1.reduce((acc, x, i) => (i > xs2.length - 1 ? acc : acc.concat([[x, xs2[i]]])), [] as [T, U][]);
+
+export const parseArrayWithoutStringConversion = (val: unknown): unknown[] => {
+  if (Array.isArray(val)) {
+    return val;
+  }
+
+  if (isStringArray(val)) {
+    try {
+      // its possible that we just get arrays of numbers which this should
+      // work fine for or even a normal stringified array
+      const json = JSON.parse(val as string);
+      if (Array.isArray(json)) {
+        return json.map((item: any) => {
+          return typeof item === 'number' ? item.toString() : item;
+        });
+      }
+    } catch (err) {
+      // guess it wasn't valid, now we'll try to parse it
+    }
+    const inner = (val as string).substring(1, (val as string).length - 1);
+    const isNested = isStringArray(inner);
+    if (isNested) {
+      // NOTE this will only support ONE level of nesting
+      // otherwise the comma will break it again
+      // maybe there is some better regex way
+      // tagging them with newline just for something to target for the split
+      const innerEls = inner
+        .replace(/\], \[/g, '],\n[')
+        .replace(/\],\[/g, '],\n[')
+        .split(/,\n/g);
+      return innerEls.map(parseArrayWithoutStringConversion);
+    } else {
+      const elements = inner.split(',');
+      const isEmpty = elements.length === 1 && elements[0] === '';
+      const parsedArray = isEmpty ? [] : elements;
+      if (isNested) {
+        return parsedArray.map(parseArrayWithoutStringConversion);
+      }
+      return parsedArray.map((element) => {
+        if (typeof element !== 'string') return element;
+        if (element.match(/^\s+$/)) {
+          return element;
+        } else {
+          return element.trim();
+        }
+      });
+    }
+  }
+
+  if (!val) {
+    return [];
+  } else if (typeof val === 'string') {
+    return val.split(',');
+  }
+  // if we hit this, it was something WAY off
+  const err = new Error('not a valid array');
+  throw err;
+};
