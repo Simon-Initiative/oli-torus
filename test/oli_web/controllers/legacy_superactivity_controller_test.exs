@@ -64,7 +64,7 @@ defmodule OliWeb.LegacySuperactivityControllerTest do
           )
         )
 
-      assert conn.resp_body =~ ~s(<super_activity_client server_time_zone="EST">)
+      assert conn.resp_body =~ ~s(<super_activity_client server_time_zone=)
 
       conn =
         recycle(conn)
