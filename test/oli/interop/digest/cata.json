@@ -263,7 +263,7 @@
       "previewText": ""
     }
   },
-  "objectives": [],
+  "objectives": {"1": []},
   "legacyId": "a_90d6f87478a24b5cbf508a59c6fd62a7",
   "subType": "oli_check_all_that_apply"
 }

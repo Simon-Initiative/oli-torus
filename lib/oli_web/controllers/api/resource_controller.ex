@@ -42,11 +42,21 @@ defmodule OliWeb.Api.ResourceController do
     author = conn.assigns[:current_author]
 
     case PageEditor.edit(project_slug, resource_slug, author.email, update) do
-      {:ok, revision} -> json(conn, %{"type" => "success", "revision_slug" => revision.slug})
-      {:error, {:lock_not_acquired, {_user, _updated_at}}} -> error(conn, 423, "locked")
-      {:error, {:not_found}} -> error(conn, 404, "not found")
-      {:error, {:not_authorized}} -> error(conn, 403, "unauthorized")
-      _ -> error(conn, 500, "server error")
+      {:ok, revision} ->
+        json(conn, %{"type" => "success", "revision_slug" => revision.slug})
+
+      {:error, {:lock_not_acquired, {_user, _updated_at}}} ->
+        error(conn, 423, "locked")
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not update resource", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -59,9 +69,11 @@ defmodule OliWeb.Api.ResourceController do
         conn
         |> json(%{"type" => "success", "revisionSlug" => revision.slug})
 
-      {:error, %Ecto.Changeset{} = _changeset} ->
+      {:error, %Ecto.Changeset{} = c} ->
+        {_, msg} = Oli.Utils.log_error("Could not create objective", c)
+
         conn
-        |> send_resp(500, "Objective could not be created")
+        |> send_resp(500, msg)
     end
   end
 
