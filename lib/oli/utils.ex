@@ -247,4 +247,17 @@ defmodule Oli.Utils do
     Jason.encode_to_iodata!(map)
     |> Jason.Formatter.pretty_print()
   end
+
+  @doc """
+  Converts a map with string keys into a map with atom keys.
+  """
+  def atomize_keys(map) do
+    for {key, val} <- map, into: %{}, do: {String.to_atom(key), val}
+  end
+
+  @doc """
+  Converts a string to a boolean.
+  """
+  def string_to_boolean("true"), do: true
+  def string_to_boolean(_bool), do: false
 end

@@ -811,6 +811,9 @@ defmodule OliWeb.Router do
     # Communities
     live("/communities/new", CommunityLive.NewView)
 
+    # System Message Banner
+    live("/system_messages", SystemMessageLive.IndexView)
+
     # Course Ingestion
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)
