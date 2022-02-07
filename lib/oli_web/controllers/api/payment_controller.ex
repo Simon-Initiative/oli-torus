@@ -92,8 +92,8 @@ defmodule OliWeb.Api.PaymentController do
           error(conn, 400, "invalid batch size")
 
         e ->
-          Oli.Utils.ErrorLogger.log_error(e, "Could not create payment code batch")
-          error(conn, 500, "server error")
+          {_, msg} = Oli.Utils.log_error("Could not create payment code batch", e)
+          error(conn, 500, msg)
       end
     else
       error(conn, 401, "Unauthorized")

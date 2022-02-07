@@ -162,8 +162,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not create secondary activity document")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not create secondary activity document", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -200,8 +200,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not create activity")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not create activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -268,8 +268,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 404, "not found")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not retrieve activity")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not retrieve activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -311,8 +311,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 404, "not found")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not bulk retrieve activities")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not bulk retrieve activities", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -500,8 +500,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 400, "lock not acquired")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not edit activity")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not edit activity", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -559,8 +559,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 400, "lock not acquired")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not bulk update activities")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not bulk update activities", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -576,8 +576,8 @@ defmodule OliWeb.Api.ActivityController do
         json(conn, %{"result" => "success", "evaluations" => evaluations})
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not evaluate for preview")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not evaluate for preview", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -591,8 +591,8 @@ defmodule OliWeb.Api.ActivityController do
         json(conn, %{"result" => "success", "transformed" => original})
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not apply transforms")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not apply transforms", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -647,8 +647,8 @@ defmodule OliWeb.Api.ActivityController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not delete activity")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not delete activity", e)
+        error(conn, 500, msg)
     end
   end
 

@@ -159,8 +159,8 @@ defmodule OliWeb.Api.ObjectivesController do
             error(conn, 404, "Not found")
 
           e ->
-            Oli.Utils.ErrorLogger.log_error(e, "Could not update objective")
-            error(conn, 500, "Objective could not be updated")
+            {_, msg} = Oli.Utils.log_error("Could not update objective", e)
+            error(conn, 500, msg)
         end
     end
   end
@@ -232,8 +232,8 @@ defmodule OliWeb.Api.ObjectivesController do
             |> json(%{"result" => "success", "resourceId" => revision.resource_id})
 
           e ->
-            Oli.Utils.ErrorLogger.log_error(e, "Could not create objective")
-            error(conn, 500, "Objective could not be created")
+            {_, msg} = Oli.Utils.log_error("Could not create objective", e)
+            error(conn, 500, msg)
         end
     end
   end

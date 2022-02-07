@@ -55,8 +55,8 @@ defmodule OliWeb.Api.ResourceController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not update resource")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not update resource", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -70,10 +70,10 @@ defmodule OliWeb.Api.ResourceController do
         |> json(%{"type" => "success", "revisionSlug" => revision.slug})
 
       {:error, %Ecto.Changeset{} = c} ->
-        Oli.Utils.ErrorLogger.log_error(c, "Could not create objective")
+        {_, msg} = Oli.Utils.log_error("Could not create objective", c)
 
         conn
-        |> send_resp(500, "Objective could not be created")
+        |> send_resp(500, msg)
     end
   end
 

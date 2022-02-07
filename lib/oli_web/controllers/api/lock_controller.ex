@@ -44,8 +44,8 @@ defmodule OliWeb.Api.LockController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not acquire lock")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not acquire lock", e)
+        error(conn, 500, msg)
     end
   end
 
@@ -63,8 +63,8 @@ defmodule OliWeb.Api.LockController do
         error(conn, 403, "unauthorized")
 
       e ->
-        Oli.Utils.ErrorLogger.log_error(e, "Could not release lock")
-        error(conn, 500, "server error")
+        {_, msg} = Oli.Utils.log_error("Could not release lock", e)
+        error(conn, 500, msg)
     end
   end
 
