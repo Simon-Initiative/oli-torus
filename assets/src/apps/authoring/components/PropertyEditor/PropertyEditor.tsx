@@ -53,8 +53,9 @@ const PropertyEditor: React.FC<PropertyEditorProps> = ({
         const changedPropType = findDiffType(changedProp);
 
         setFormData(updatedData);
-        if (triggerOnChange || changedPropType === 'boolean') {
+        if (triggerOnChange || changedPropType === 'boolean' || changedPropType === 'undefined') {
           // because 'id' is used to maintain selection, it MUST be onBlur or else bad things happen
+          // undefined means it is an item in an array that has been deleted
           if (updatedData.id === formData.id) {
             /* console.log('ONCHANGE P EDITOR TRIGGERED', {
               e,
