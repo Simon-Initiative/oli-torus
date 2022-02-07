@@ -81,6 +81,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const handleScoringChange = (partId: string, key: string) => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const scoring: ScoringStrategy = ScoringStrategy[key];
     dispatch(OliEmbeddedActions.updatePartScoringStrategy(partId, scoring));
@@ -201,6 +202,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
                     {Object.keys(ScoringStrategy).map((key: string) => (
                       <option key={key} value={key} selected={part.scoringStrategy === key}>
                         {
+                          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                           // @ts-ignore
                           ScoringStrategy[key]
                         }

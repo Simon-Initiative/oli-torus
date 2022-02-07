@@ -280,18 +280,6 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
-  def get_resource_access(resource_access_id) do
-    Repo.one(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        where:
-          a.id == ^resource_access_id,
-        select: a
-      )
-    )
-  end
-
   @doc """
   Retrieves all resource accesses for a given context and user
 

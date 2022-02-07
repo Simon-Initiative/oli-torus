@@ -46,6 +46,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
       });
   };
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   window.adjustIframeHeight = (i, f) => {
     const iframe = document.querySelector(f);

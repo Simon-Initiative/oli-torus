@@ -4,7 +4,7 @@ defmodule Oli.Interop.CustomActivities.File do
 
   def setup(
         %{
-          context: context
+          context: _context
         }
       ) do
     element(
