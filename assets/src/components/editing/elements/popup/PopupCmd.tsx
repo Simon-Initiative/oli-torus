@@ -1,4 +1,4 @@
-import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { Model } from 'data/content/model/elements/factories';
 import { Element, Transforms } from 'slate';
 import { isActive } from '../../utils';
@@ -21,7 +21,7 @@ const command: Command = {
   },
 };
 
-export const popupCmdDesc: CommandDesc = {
+export const popupCmdDesc: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'outbound',
   description: () => 'Popup Content',

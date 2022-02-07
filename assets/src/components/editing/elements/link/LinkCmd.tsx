@@ -1,5 +1,5 @@
 import { Transforms, Editor, Element } from 'slate';
-import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { isActive } from '../../utils';
 import { Model } from 'data/content/model/elements/factories';
 
@@ -22,7 +22,7 @@ const command: Command = {
   },
 };
 
-export const commandDesc: CommandDesc = {
+export const commandDesc: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'insert_link',
   description: () => 'Link (⌘L)',

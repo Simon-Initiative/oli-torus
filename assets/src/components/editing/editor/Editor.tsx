@@ -6,7 +6,7 @@ import { createEditor, Descendant, Editor as SlateEditor, Operation, Transforms 
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { classNames } from 'utils/classNames';
-import { CommandContext, CommandDesc } from '../elements/commands/interfaces';
+import { CommandContext, CommandDescription } from '../elements/commands/interfaces';
 import { hotkeyHandler } from './handlers/hotkey';
 import { onKeyDown as listOnKeyDown } from './handlers/lists';
 import { onKeyDown as quoteOnKeyDown } from './handlers/quote';
@@ -26,7 +26,7 @@ export type EditorProps = {
   // The content to display
   value: Descendant[];
   // The insertion toolbar configuration
-  toolbarInsertDescs: CommandDesc[];
+  toolbarInsertDescs: CommandDescription[];
   // Whether or not editing is allowed
   editMode: boolean;
   commandContext: CommandContext;

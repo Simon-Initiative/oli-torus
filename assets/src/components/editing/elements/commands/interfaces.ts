@@ -4,7 +4,7 @@ import { ID } from 'data/content/model/other';
 import { Editor } from 'slate';
 
 // For toolbar buttons
-export type CommandDesc = {
+export type CommandDescription = {
   type: 'CommandDesc';
   icon: (editor: Editor) => string;
   command: Command;
@@ -40,9 +40,3 @@ export type Command = {
     onCancel: () => void,
   ) => JSX.Element;
 };
-
-export type GroupDivider = {
-  type: 'GroupDivider';
-};
-
-export type ToolbarItem = CommandDesc | GroupDivider;

@@ -1,8 +1,10 @@
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import { codeLanguageDesc } from 'components/editing/elements/blockcode/codeblockActions';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { CommandContext, CommandDesc } from 'components/editing/elements/commands/interfaces';
-import { headingLevelDesc, headingTypeDescs } from 'components/editing/elements/commands/TitleCmd';
+import {
+  CommandContext,
+  CommandDescription,
+} from 'components/editing/elements/commands/interfaces';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
@@ -21,10 +23,14 @@ import { Editor, Element, Transforms } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
 import { additionalFormattingOptions } from 'components/editing/elements/marks/toggleMarkActions';
 import { listSettings } from 'components/editing/elements/list/listActions';
+import {
+  headingLevelDesc,
+  headingTypeDescs,
+} from 'components/editing/elements/heading/headingActions';
 
 interface Props {
   context: CommandContext;
-  toolbarInsertDescs: CommandDesc[];
+  toolbarInsertDescs: CommandDescription[];
 }
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();

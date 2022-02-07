@@ -1,7 +1,7 @@
 import { ModelElement } from 'data/content/model/elements/types';
 import { schema } from 'data/content/model/schema';
 import { FormattedText } from 'data/content/model/text';
-import { Editor, Element, Node, Path, Transforms } from 'slate';
+import { Editor, Element, Path, Transforms } from 'slate';
 
 export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
   const [parent, parentPath] = Editor.parent(editor, path);

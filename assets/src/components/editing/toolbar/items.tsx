@@ -1,5 +1,5 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
@@ -29,7 +29,7 @@ export const toggleTextTypes = [toggleParagraph, toggleHeading, toggleList, togg
 export const activeBlockType = (editor: Editor) =>
   toggleTextTypes.find((type) => type?.active?.(editor)) || toggleTextTypes[0];
 
-export const addItemDropdown: CommandDesc = {
+export const addItemDropdown: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'add',
   description: () => 'Add item',

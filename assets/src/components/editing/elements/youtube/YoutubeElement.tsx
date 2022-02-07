@@ -4,12 +4,12 @@ import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
-import { CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { Transforms } from 'slate';
 import { getQueryVariableFromString } from 'utils/params';
 import { Model } from 'data/content/model/elements/factories';
 
-export const ytCmdDesc: CommandDesc = {
+export const ytCmdDesc: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'play_circle_filled',
   description: () => 'YouTube',

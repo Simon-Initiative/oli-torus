@@ -1,6 +1,6 @@
 import { handleOutdent, handleIndent } from 'components/editing/editor/handlers/lists';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Command, CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
 import { isActive, isActiveList, isTopLevel } from 'components/editing/utils';
 import { Transforms, Editor, Element } from 'slate';
@@ -55,7 +55,7 @@ export const toggleList = createButtonCommandDesc({
   execute: (_ctx, editor) => switchType(editor, 'ul'),
 });
 
-export const toggleUnorderedList: CommandDesc = {
+export const toggleUnorderedList: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'format_list_bulleted',
   description: () => 'Unordered List',
@@ -63,7 +63,7 @@ export const toggleUnorderedList: CommandDesc = {
   active: (editor) => isActive(editor, ['ul']),
 };
 
-export const toggleOrderedList: CommandDesc = {
+export const toggleOrderedList: CommandDescription = {
   type: 'CommandDesc',
   icon: () => 'format_list_numbered',
   description: () => 'Ordered List',

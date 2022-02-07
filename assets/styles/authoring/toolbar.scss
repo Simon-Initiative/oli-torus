@@ -81,6 +81,13 @@
       &:active {
         border: 2px solid $primary;
       }
+
+      .toolbar-button-text {
+        min-width: 24px;
+        min-height: 24px;
+        text-align: center;
+        line-height: 32px;
+      }
     }
 
     .icon {

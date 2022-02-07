@@ -1,4 +1,4 @@
-import { CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { ButtonContent } from 'components/editing/toolbar/buttons/shared';
 import { useToolbar } from 'components/editing/toolbar/useToolbar';
 import React from 'react';
@@ -6,7 +6,7 @@ import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
 
 interface Props {
-  description: CommandDesc;
+  description: CommandDescription;
 }
 export const CommandButton = (props: Props) => {
   const editor = useSlate();

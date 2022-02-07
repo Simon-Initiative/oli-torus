@@ -1,5 +1,5 @@
 import { Editor } from 'slate';
-import { CommandDesc, Command } from './interfaces';
+import { CommandDescription, Command } from './interfaces';
 import { Mark } from 'data/content/model/text';
 
 interface CommandWrapperProps {
@@ -7,7 +7,7 @@ interface CommandWrapperProps {
   description: string;
   execute: Command['execute'];
   mark?: Mark;
-  active?: CommandDesc['active'];
+  active?: CommandDescription['active'];
   precondition?: Command['precondition'];
 }
 
@@ -21,7 +21,7 @@ function createCommandDesc({
   execute,
   active,
   precondition,
-}: CommandWrapperProps): CommandDesc {
+}: CommandWrapperProps): CommandDescription {
   return {
     type: 'CommandDesc',
     icon: () => icon,

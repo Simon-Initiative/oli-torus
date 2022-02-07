@@ -29,7 +29,7 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
         }
       }
 
-      const [parent, _parentPath] = Editor.parent(editor, path);
+      const [parent] = Editor.parent(editor, path);
 
       // Check this node's parent constraints
       if (Editor.isEditor(parent)) {

@@ -4,13 +4,13 @@ import { StructuredContent } from 'data/content/resource';
 import { Editor } from 'components/editing/editor/Editor';
 import { ProjectSlug } from 'data/types';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { CommandDesc, ToolbarItem } from 'components/editing/elements/commands/interfaces';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 
 export type StructuredContentEditor = {
   editMode: boolean; // Whether or not we can edit
   content: StructuredContent; // Content to edit
   onEdit: (content: StructuredContent) => void; // Edit handler
-  toolbarInsertDescs: CommandDesc[]; // Content insertion options
+  toolbarInsertDescs: CommandDescription[]; // Content insertion options
   projectSlug: ProjectSlug;
 };
 

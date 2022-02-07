@@ -1,11 +1,11 @@
 import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
-import { CommandDesc } from 'components/editing/elements/commands/interfaces';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 
 export const initCommands = (
   model: MultiInput,
   setInputType: (id: string, updated: MultiInputType) => void,
-): CommandDesc[] => {
-  const makeCommand = (description: string, type: MultiInputType): CommandDesc => ({
+): CommandDescription[] => {
+  const makeCommand = (description: string, type: MultiInputType): CommandDescription => ({
     type: 'CommandDesc',
     icon: () => '',
     description: () => description,
