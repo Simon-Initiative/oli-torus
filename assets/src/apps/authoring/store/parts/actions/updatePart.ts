@@ -43,7 +43,7 @@ export const updatePart = createAsyncThunk(
           type: partDef.type,
           owner: activitySequenceId,
         });
-      } else {
+      } else if (authorPart) {
         authorPart.id = payload.changes.id;
       }
 
