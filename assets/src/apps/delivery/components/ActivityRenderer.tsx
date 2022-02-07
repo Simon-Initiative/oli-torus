@@ -333,6 +333,40 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     ref.current.notify(NotificationType.CHECK_STARTED, { ts: lastCheckTriggered });
   }, [lastCheckTriggered]);
 
+  const handleInitStateVars = (initState: any, snapshot: any) => {
+    const finalInitSnapshot = initState?.reduce((acc: any, initObject: any) => {
+      let key = initObject.target;
+      const value = initObject.value;
+      if (key.indexOf('stage') === 0) {
+        const lstVar = key.split('.');
+        if (lstVar?.length > 1) {
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
+          );
+          key = ownerActivity ? `${ownerActivity.id}|${key}` : `${key}`;
+        }
+      }
+      if (initObject.operator === 'bind to') {
+        initStateBindToFacts[initObject.target] = snapshot[key] || '';
+      } else if (typeof value === 'string') {
+        if (
+          (typeof value === 'string' && value[0] === '{' && value[1] !== '"') ||
+          (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+        ) {
+          //this is a expression so we get the value from snapshot because this was already evaluated in deck.ts
+          acc[initObject.target] = snapshot[key];
+        } else {
+          acc[initObject.target] = initObject.value;
+        }
+      } else {
+        acc[initObject.target] = initObject.value;
+      }
+
+      return acc;
+    }, {});
+    return finalInitSnapshot;
+  };
+
   const notifyCheckComplete = async (results: CheckResults) => {
     if (!ref.current) {
       return;
@@ -396,28 +430,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         ? currentActivityTree[currentActivityTree.length - 1]
         : null;
     const initState = currentActivity?.content?.custom?.facts || [];
-
-    console.log({ snapshot, initState });
     updateGlobalState(snapshot, initState);
-    const finalInitSnapshot = initState?.reduce((acc: any, initObject: any) => {
-      let key = initObject.target;
-      if (key.indexOf('stage') === 0) {
-        const lstVar = key.split('.');
-        if (lstVar?.length > 1) {
-          const ownerActivity = currentActivityTree?.find(
-            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === lstVar[1]),
-          );
-          key = ownerActivity ? `${ownerActivity.id}|${key}` : `${key}`;
-        }
-      }
-      const operator = initObject.operator;
-      if (operator === 'bind to') {
-        initStateBindToFacts[initObject.target] = snapshot[key];
-      } else {
-        acc[initObject.target] = snapshot[key];
-      }
-      return acc;
-    }, {});
+    const finalInitSnapshot = handleInitStateVars(initState, snapshot);
     console.log({ finalInitSnapshot });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {

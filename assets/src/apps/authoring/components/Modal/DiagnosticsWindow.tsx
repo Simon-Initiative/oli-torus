@@ -12,6 +12,7 @@ import { createUpdater } from './diagnostics/actions';
 import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { setCurrentRule } from '../../store/app/slice';
+import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -55,24 +56,51 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
     const updater = createUpdater(problem.type)(problem, fixed, currentActivities);
     const result = await dispatch(updater);
 
+    const ruleId =
+      problem.type === DiagnosticTypes.INVALID_TARGET_MUTATE
+        ? problem.item.id
+        : problem.type === DiagnosticTypes.INVALID_TARGET_COND
+        ? problem.item.rule.id
+        : problem.type === DiagnosticTypes.INVALID_VALUE
+        ? problem.item.rule.id
+        : 'initState';
+
+    const activity = result.meta.arg.activity;
+    const rule = activity.authoring.rules.find((rule: AdaptiveRule) => rule.id === ruleId);
+
     // TODO: something if it fails
+    dispatch(setCurrentRule({ currentRule: rule }));
     onApplyFix();
+  };
+
+  const getCurrentRule = (problem: any) => {
+    switch (problem.type) {
+      case DiagnosticTypes.INVALID_TARGET_INIT:
+        return 'initState';
+      case DiagnosticTypes.INVALID_TARGET_COND:
+      case DiagnosticTypes.INVALID_VALUE:
+        return problem.item.rule;
+      case DiagnosticTypes.INVALID_TARGET_MUTATE:
+        return problem.item;
+    }
   };
 
   const handleProblemClick = async (problem: any) => {
     await dispatch(setCurrentActivityFromSequence(error.activity.custom.sequenceId));
-    switch (problem.type) {
-      case DiagnosticTypes.INVALID_TARGET_INIT:
-        dispatch(setCurrentRule({ currentRule: 'initState' }));
-        break;
-      case DiagnosticTypes.INVALID_TARGET_COND:
-      case DiagnosticTypes.INVALID_VALUE:
-        dispatch(setCurrentRule({ currentRule: problem.item.rule }));
-        break;
-      case DiagnosticTypes.INVALID_TARGET_MUTATE:
-        dispatch(setCurrentRule({ currentRule: problem.item }));
-        break;
-    }
+    setTimeout(() => {
+      switch (problem.type) {
+        case DiagnosticTypes.INVALID_TARGET_INIT:
+          dispatch(setCurrentRule({ currentRule: 'initState' }));
+          break;
+        case DiagnosticTypes.INVALID_TARGET_COND:
+        case DiagnosticTypes.INVALID_VALUE:
+          dispatch(setCurrentRule({ currentRule: problem.item.rule }));
+          break;
+        case DiagnosticTypes.INVALID_TARGET_MUTATE:
+          dispatch(setCurrentRule({ currentRule: problem.item }));
+          break;
+      }
+    }, 100);
   };
 
   const isRuleItem = (type: DiagnosticTypes) => DiagnosticRuleTypes.indexOf(type) > -1;

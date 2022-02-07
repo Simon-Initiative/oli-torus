@@ -56,10 +56,11 @@ defmodule Oli.Analytics.Datashop do
 
     Attempts.get_part_attempts_and_users(project.id)
     |> group_part_attempts_by_user_and_part
-    |> Enum.map(fn {{email, activity_slug, part_id}, part_attempts} ->
+    |> Enum.map(fn {{email, sub, activity_slug, part_id}, part_attempts} ->
       context = %{
         date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
         email: email,
+        sub: sub,
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
         dataset_name: dataset_name,
@@ -113,7 +114,8 @@ defmodule Oli.Analytics.Datashop do
   defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
     part_attempts_and_users
     |> Enum.group_by(
-      &{&1.user.email, &1.part_attempt.activity_attempt.revision.slug, &1.part_attempt.part_id},
+      &{&1.user.email, &1.user.sub, &1.part_attempt.activity_attempt.revision.slug,
+       &1.part_attempt.part_id},
       & &1.part_attempt
     )
   end

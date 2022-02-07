@@ -32,6 +32,8 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
 
+  useEffect(() => setTarget(action.params.target), [action.params.target]);
+
   const handleTargetChange = (e: any) => {
     const val = e.target.value;
     if (val === target) {
@@ -116,7 +118,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           type="text"
           className="form-control form-control-sm mr-2 flex-grow-1"
           id={`action-mutate-target-${uuid}`}
-          defaultValue={target}
+          value={target}
           onBlur={(e) => handleTargetChange(e)}
           title={target}
           placeholder="Target"
