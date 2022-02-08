@@ -5,11 +5,8 @@ import {
   SequenceEntryChild,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { clone } from 'utils/common';
-import {
-  GroupsSlice,
-  IGroup,
-  upsertGroup,
-} from '../../../../../../delivery/store/features/groups/slice';
+import { IGroup, upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 
 export const updateSequenceItemFromActivity = createAsyncThunk(
   `${GroupsSlice}/updateSequenceItemFromActivity`,

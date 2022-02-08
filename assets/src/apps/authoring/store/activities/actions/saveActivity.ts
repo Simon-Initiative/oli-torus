@@ -1,16 +1,16 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { ActivityModelSchema } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { ActivityUpdate, BulkActivityUpdate, bulkEdit, edit } from 'data/persistence/activity';
 import {
-  ActivitiesSlice,
   IActivity,
   selectActivityById,
   selectAllActivities,
   upsertActivities,
   upsertActivity,
 } from '../../../../delivery/store/features/activities/slice';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
+
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { savePage } from '../../page/actions/savePage';
 import { selectResourceId, selectState as selectCurrentPage, updatePage } from '../../page/slice';

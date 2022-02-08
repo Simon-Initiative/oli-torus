@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { create, Created } from 'data/persistence/activity';
-import { ActivitiesSlice } from '../../../../delivery/store/features/activities/slice';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { selectState as selectPageState } from '../../../../authoring/store/page/slice';
 import { selectActivityTypes, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { createSimpleText } from '../templates/simpleText';

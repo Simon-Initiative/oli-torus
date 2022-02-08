@@ -7,7 +7,8 @@ import {
   SequenceEntry,
   SequenceEntryChild,
 } from '../../../../../../delivery/store/features/groups/actions/sequence';
-import { GroupsSlice, upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
+import { upsertGroup } from '../../../../../../delivery/store/features/groups/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 
 export const addSequenceItem = createAsyncThunk(
   `${GroupsSlice}/addSequenceItem`,

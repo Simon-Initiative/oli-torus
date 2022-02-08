@@ -36,9 +36,9 @@ import {
   setScore,
 } from '../../page/slice';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
-import { GroupsSlice } from '../slice';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
+import { GroupsSlice } from '../name';
 
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,

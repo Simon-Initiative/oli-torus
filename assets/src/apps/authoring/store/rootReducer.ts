@@ -1,16 +1,21 @@
 import { combineReducers } from '@reduxjs/toolkit';
-import activitiesReducer, { ActivitiesSlice } from '../../delivery/store/features/activities/slice';
-import groupsReducer, { GroupsSlice } from '../../delivery/store/features/groups/slice';
-import appReducer, { AppSlice } from './app/slice';
-import pageReducer, { PageSlice } from './page/slice';
-import partsReducer, { PartsSlice } from './parts/slice';
+import ActivitiesSlice from '../../delivery/store/features/activities/name';
+import ActivitiesReducer from '../../delivery/store/features/activities/slice';
+import GroupsSlice from '../../delivery/store/features/groups/name';
+import GroupsReducer from '../../delivery/store/features/groups/slice';
+import AppReducer from './app/slice';
+import AppSlice from './app/name';
+import PageReducer from './page/slice';
+import PageSlice from './page/name';
+import PartsSlice from './parts/name';
+import PartsReducer from './parts/slice';
 
 const rootReducer = combineReducers({
-  [AppSlice]: appReducer,
-  [PageSlice]: pageReducer,
-  [PartsSlice]: partsReducer,
-  [GroupsSlice]: groupsReducer,
-  [ActivitiesSlice]: activitiesReducer,
+  [AppSlice]: AppReducer,
+  [PageSlice]: PageReducer,
+  [PartsSlice]: PartsReducer,
+  [GroupsSlice]: GroupsReducer,
+  [ActivitiesSlice]: ActivitiesReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
