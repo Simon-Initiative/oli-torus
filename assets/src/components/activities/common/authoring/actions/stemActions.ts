@@ -1,25 +1,23 @@
 import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
-import { HasPreviewText, RichText } from 'components/activities/types';
-import { toSimpleText } from 'data/content/text';
+import { HasPreviewText } from 'components/activities/types';
 import { Operations } from 'utils/pathOperations';
+import { toSimpleText } from 'components/editing/utils';
+import { Descendant } from 'slate';
 
 export const StemActions = {
-  editStem(content: RichText, stemPath = STEM_PATH) {
+  editStem(content: Descendant[], stemPath = STEM_PATH) {
     return (model: any) => {
       Operations.apply(model, Operations.replace(stemPath + '.content', content));
     };
   },
   editStemAndPreviewText(
-    content: RichText,
+    content: Descendant[],
     stemPath = STEM_PATH,
     previewTextPath = PREVIEW_TEXT_PATH,
   ) {
     return (model: any & HasPreviewText) => {
       StemActions.editStem(content, stemPath)(model);
-      Operations.apply(
-        model,
-        Operations.replace(previewTextPath, toSimpleText({ children: content })),
-      );
+      Operations.apply(model, Operations.replace(previewTextPath, toSimpleText(content)));
     };
   },
 };

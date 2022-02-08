@@ -9,6 +9,7 @@ import {
 } from '@reduxjs/toolkit';
 import { ActivityState } from 'components/activities/types';
 import { RootState } from '../../rootReducer';
+import AttemptSlice from './name';
 
 interface ExtrinsicState extends Record<string, unknown> {
   'session.attemptNumber': number;
@@ -25,7 +26,7 @@ const adapter: EntityAdapter<ActivityState> = createEntityAdapter<ActivityState>
 });
 
 const slice: Slice<AttemptState> = createSlice({
-  name: 'attempt',
+  name: AttemptSlice,
   initialState: adapter.getInitialState({
     resourceAttemptGuid: '',
     extrinsic: {
@@ -67,8 +68,6 @@ const slice: Slice<AttemptState> = createSlice({
     },
   },
 });
-
-export const AttemptSlice = slice.name;
 
 export const {
   setResourceAttemptGuid,

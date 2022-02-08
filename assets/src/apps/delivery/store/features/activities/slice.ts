@@ -10,6 +10,7 @@ import {
 } from '@reduxjs/toolkit';
 import { ObjectiveMap } from 'data/content/activity';
 import { RootState } from '../../rootReducer';
+import ActivitiesSlice from './name';
 export interface ActivityContent {
   custom?: any;
   partsLayout: any[];
@@ -34,7 +35,7 @@ export interface ActivitiesState extends EntityState<IActivity> {
 const adapter: EntityAdapter<IActivity> = createEntityAdapter<IActivity>();
 
 const slice: Slice<ActivitiesState> = createSlice({
-  name: 'activities',
+  name: ActivitiesSlice,
   initialState: adapter.getInitialState({
     currentActivityId: '' as EntityId,
   }),
@@ -59,8 +60,6 @@ const slice: Slice<ActivitiesState> = createSlice({
     },
   },
 });
-
-export const ActivitiesSlice = slice.name;
 
 export const {
   setActivities,

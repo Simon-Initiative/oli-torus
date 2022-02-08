@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
 import { MediaIcon } from './MediaIcon';
-import { Media, MediaItem } from 'types/media';
+import { MediaLibraryOption, MediaItem } from 'types/media';
 import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
@@ -96,7 +96,7 @@ export interface MediaManagerProps {
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths: string[];
-  onEdit: (updated: Media) => void;
+  onEdit: (updated: MediaLibraryOption) => void;
   onLoadCourseMediaNextPage: (
     projectSlug: string,
     mimeFilter: string[] | undefined,
@@ -495,8 +495,6 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     const selectedMediaItems = selection.map((guid) =>
       media.data.get(guid),
     ) as Immutable.List<MediaItem>;
-
-    const mediaItemRefs = media.references;
 
     if (selectedMediaItems.size > 1) {
       return (

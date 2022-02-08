@@ -1,6 +1,6 @@
+import { ModelElement } from 'data/content/model/elements/types';
 import React from 'react';
 import { Text } from 'slate';
-import { ModelElement } from '../model';
 import { WriterContext } from './context';
 
 export type Next = () => React.ReactElement;
@@ -43,7 +43,7 @@ export interface WriterImpl {
 }
 
 export type ContentItem = { type: 'content'; children: ModelElement[] };
-function isContentItem(value: any): value is ContentItem {
+export function isContentItem(value: any): value is ContentItem {
   return value && value.type === 'content' && value.children !== undefined;
 }
 

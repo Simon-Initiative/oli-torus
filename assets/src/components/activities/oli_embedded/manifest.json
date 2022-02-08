@@ -2,6 +2,7 @@
   "id": "oli_embedded",
   "friendlyName": "OLI Embedded",
   "description": "OLI Embedded activity",
+  "icon": "integration_instructions",
   "allowClientEvaluation": true,
   "delivery": {
     "element": "oli-embedded-delivery",

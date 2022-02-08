@@ -33,7 +33,7 @@ export const updateRule = (rule: any, problem: any, activities: any) => {
 
   if (diff) {
     const activityClone = clone(activity);
-    const rulesClone = [...activity?.authoring.rules];
+    const rulesClone = activity ? [...activity.authoring.rules] : [];
     rulesClone[activity?.authoring.rules.indexOf(existing)] = rule;
     activityClone.authoring.rules = rulesClone;
     return saveActivity({ activity: activityClone });
@@ -47,7 +47,8 @@ export const updatePath =
     const ruleClone = cloneDeep(problem.item);
     const actions = ruleClone.event?.params?.actions;
     const action = actions?.find((a: any) => a.type === t);
-    const actionsClone = [...item?.event?.params?.actions];
+    const actionsClone =
+      item && item.event && item.event.params ? [...item.event.params.actions] : [];
 
     const a = {
       ...action,
@@ -105,7 +106,7 @@ export const updateInitComponentPath = (problem: any, fixed: string, activities:
 
   if (diff) {
     const activityClone = clone(activity);
-    const factsClone = [...activity?.content.custom.facts];
+    const factsClone = activity ? [...activity.content.custom.facts] : [];
     factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
     activityClone.content.custom.facts = factsClone;
     return saveActivity({ activity: activityClone });

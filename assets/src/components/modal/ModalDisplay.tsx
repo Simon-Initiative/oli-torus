@@ -20,11 +20,11 @@ interface StateProps {
   modal: ModalState;
 }
 // eslint-disable-next-line
-interface OwnProps { }
+interface OwnProps {}
 // eslint-disable-next-line
-interface DispatchProps { }
+interface DispatchProps {}
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (state: State, _ownProps: OwnProps): StateProps => {
   const { modal } = state;
 
   return {
@@ -32,8 +32,8 @@ const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
   };
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
-  (window as any).oliDispatch = dispatch;
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
+  window.oliDispatch = dispatch;
 
   return {};
 };
@@ -44,3 +44,11 @@ export const controller = connect<StateProps, DispatchProps, OwnProps>(
 )(ModalDisplay);
 
 export { controller as ModalDisplay };
+
+declare global {
+  interface Window {
+    oliDispatch: Dispatch;
+    $: typeof $;
+  }
+}
+window.oliDispatch = window.oliDispatch || {};

@@ -11,7 +11,8 @@ import { createNew as createNewActivity } from '../../activities/actions/createN
 import { createNew as createNewGroup } from '../../groups/layouts/deck/actions/createNew';
 import { updateActivityPartInheritance } from '../../groups/layouts/deck/actions/updateActivityPartInheritance';
 import { updateActivityRules } from '../../groups/layouts/deck/actions/updateActivityRules';
-import { loadPage, PageSlice, PageState } from '../slice';
+import { loadPage, PageState } from '../slice';
+import PageSlice from '../name';
 import { savePage } from './savePage';
 
 export const initializeFromContext = createAsyncThunk(

@@ -56,4 +56,9 @@ function createSome(count: number) {
   return array;
 }
 
-(window as any).guid = guid;
+declare global {
+  interface Window {
+    guid: typeof guid;
+  }
+}
+window.guid = guid;

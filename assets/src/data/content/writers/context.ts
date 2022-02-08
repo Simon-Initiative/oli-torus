@@ -1,5 +1,5 @@
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
-import { ID } from 'data/content/model';
+import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
   sectionSlug?: string;

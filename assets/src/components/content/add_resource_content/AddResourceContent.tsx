@@ -40,7 +40,11 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
         isOpen={isPopoverOpen}
         align="start"
         positions={['bottom', 'left']}
-        content={() => <div className="add-resource-popover-content">{children}</div>}
+        content={() => (
+          <div onClick={(e) => togglePopover(e)} className="add-resource-popover-content">
+            {children}
+          </div>
+        )}
       >
         <div
           className={classNames([

@@ -15,7 +15,7 @@ import {
 } from 'components/activities/multi_input/schema';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
-import { makeResponse, Response } from 'components/activities/types';
+import { makeResponse, Response, RichText } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
@@ -84,7 +84,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           title="Targeted feedback"
           response={response}
           updateFeedback={(_id, content) =>
-            dispatch(ResponseActions.editResponseFeedback(response.id, content))
+            dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
           }
           removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
           key={response.id}

@@ -5,6 +5,7 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 import { Actions } from 'components/activities/ordering/actions';
 import { OrderingSchema } from 'components/activities/ordering/schema';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
+import { RichText } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { getTargetedResponseMappings } from 'data/activities/model/responses';
 import React from 'react';
@@ -18,7 +19,7 @@ export const TargetedFeedback: React.FC = () => {
           title="Targeted feedback"
           response={mapping.response}
           updateFeedback={(id, content) =>
-            dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content))
+            dispatch(ResponseActions.editResponseFeedback(mapping.response.id, content as RichText))
           }
           removeResponse={(id) => dispatch(ResponseActions.removeTargetedFeedback(id))}
           key={mapping.response.id}

@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
-    "module": "es6",
+    "lib": ["es2019", "DOM"],
+    "module": "ES2022",
     "target": "es6",
     "jsx": "preserve",
     "moduleResolution": "node",
@@ -14,6 +15,7 @@
     "sourceMap": true,
     "noEmitHelpers": false,
     "alwaysStrict": true,
+    "isolatedModules": true,
     "outDir": "./dev",
     "baseUrl": ".",
     "paths": {

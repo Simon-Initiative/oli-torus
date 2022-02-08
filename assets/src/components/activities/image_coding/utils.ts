@@ -1,11 +1,10 @@
 import { ImageCodingModelSchema } from './schema';
-import { ScoringStrategy } from '../types';
+import { ScoringStrategy, makeFeedback, makeStem, makeHint } from '../types';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
-import { fromText } from 'components/activities/adaptive/utils';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
   return {
-    stem: fromText(''),
+    stem: makeStem(''),
     isExample: false,
     starterCode: 'Sample Starter Code',
     solutionCode: 'Sample Solution Code',
@@ -14,8 +13,8 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
     regex: '', // from original, not clear how used or if needed
     feedback: [
       // order matters: feedback[score] is used for score in {0, 1}
-      fromText('Incorrect'),
-      fromText('Correct'),
+      makeFeedback('Incorrect'),
+      makeFeedback('Correct'),
     ],
     authoring: {
       parts: [
@@ -23,7 +22,7 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
           id: DEFAULT_PART_ID,
           scoringStrategy: ScoringStrategy.average,
           responses: [],
-          hints: [fromText(''), fromText(''), fromText('')],
+          hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
       previewText: '',
@@ -34,9 +33,3 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
 export function lastPart(path: string): string {
   return path.substring(path.lastIndexOf('/') + 1);
 }
-
-export const feedback = (text: string, match: string | number, score = 0) => ({
-  ...fromText(text),
-  match,
-  score,
-});

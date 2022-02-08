@@ -15,7 +15,8 @@ import {
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
 import { isTextRule } from 'data/activities/model/rules';
-import { InputRef, inputRef, Paragraph } from 'data/content/model';
+import { Model } from 'data/content/model/elements/factories';
+import { InputRef, Paragraph } from 'data/content/model/elements/types';
 import { elementsOfType } from 'data/content/utils';
 import React from 'react';
 import { clone } from 'utils/common';
@@ -38,7 +39,7 @@ export const multiInputStem = (input: InputRef) => ({
 });
 
 export const defaultModel = (): MultiInputSchema => {
-  const input = inputRef();
+  const input = Model.inputRef();
 
   return {
     stem: multiInputStem(input),
@@ -129,11 +130,13 @@ function ensureHasInput(model: MultiInputSchema) {
 
   // Make new input ref, add to first paragraph of stem, add new input to model.inputs,
   // add new part.
-  const ref = inputRef();
+  const ref = Model.inputRef();
   const part = makePart(Responses.forTextInput(), [makeHint('')]);
   const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
 
-  const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
+  const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
+    | Paragraph
+    | undefined;
   firstParagraph?.children.push(ref);
   firstParagraph?.children.push({ text: '' });
 
@@ -200,7 +203,7 @@ function matchInputsToParts(model: MultiInputSchema) {
   unmatchedParts.forEach((part: Part) => {
     const rule = part.responses[0].rule;
     const type = rule.match(/{\d+}/) ? 'dropdown' : isTextRule(rule) ? 'text' : 'numeric';
-    const ref = inputRef();
+    const ref = Model.inputRef();
     // If it's a dropdown, change the part to a text input.
     model.inputs.push({
       id: ref.id,
@@ -209,7 +212,9 @@ function matchInputsToParts(model: MultiInputSchema) {
     });
     part.responses = type === 'dropdown' ? Responses.forTextInput() : part.responses;
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
+    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
+      | Paragraph
+      | undefined;
     firstParagraph?.children.push(ref);
     firstParagraph?.children.push({ text: '' });
   });
@@ -235,8 +240,8 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
 
   unmatchedInputs.forEach((input: MultiInput) => {
     // add inputRef to end of first paragraph in stem
-    const firstParagraph = model.stem.content.find((elem) => elem.type === 'p');
-    firstParagraph?.children.push({ ...inputRef(), id: input.id });
+    const firstParagraph = model.stem.content.find((e) => e.type === 'p') as Paragraph | undefined;
+    firstParagraph?.children.push({ ...Model.inputRef(), id: input.id });
     firstParagraph?.children.push({ text: '' });
   });
 

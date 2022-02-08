@@ -9,7 +9,7 @@ import { b64DecodeUnicode } from 'utils/decode';
 
 let store = configureStore();
 
-(window as any).oliMountApplication = (mountPoint: any, paramString: any) => {
+window.oliMountApplication = (mountPoint: any, paramString: any) => {
   const params = JSON.parse(b64DecodeUnicode(paramString));
 
   ReactDOM.render(
@@ -21,11 +21,18 @@ let store = configureStore();
   );
 };
 
-(window as any).store = {
+window.store = {
   configureStore: (json: any) => {
     store = configureStore(json);
   },
 };
 
 // Expose other libraries to server-side rendered templates
-(window as any).Maybe = Maybe;
+window.Maybe = Maybe;
+declare global {
+  interface Window {
+    Maybe: typeof Maybe;
+    store: { configureStore: (json: any) => void };
+    oliMountApplication: (mountPoint: any, paramString: any) => void;
+  }
+}

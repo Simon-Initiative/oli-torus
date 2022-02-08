@@ -122,20 +122,32 @@ defmodule Oli.Content.Page.HtmlTest do
       )
     end
 
-    test "renders malformed images robustly", %{author: author} do
-      robustnesss_test(
-        author,
-        "./test/oli/rendering/page/image_missing_src.json",
-        "some specific content"
-      )
+    test "does not display images without a src", %{author: author} do
+      {:ok, page_content} = read_json_file("./test/oli/rendering/page/image_missing_src.json")
+
+      assert capture_log(fn ->
+        context = %Context{user: author, activity_map: %{}}
+        rendered_html = Page.render(context, page_content, Page.Html)
+
+        rendered_html_string =
+          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+        assert rendered_html_string == "<p>some specific content</p>\n"
+      end)
     end
 
-    test "renders malformed youtube videos robustly", %{author: author} do
-      robustnesss_test(
-        author,
-        "./test/oli/rendering/page/youtube_missing_src.json",
-        "some specific content"
-      )
+    test "does not display youtube videos without a src", %{author: author} do
+      {:ok, page_content} = read_json_file("./test/oli/rendering/page/youtube_missing_src.json")
+
+      assert capture_log(fn ->
+        context = %Context{user: author, activity_map: %{}}
+        rendered_html = Page.render(context, page_content, Page.Html)
+
+        rendered_html_string =
+          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+
+        assert rendered_html_string == "<p>some specific content</p>\n"
+      end)
     end
 
     test "renders malformed audio robustly", %{author: author} do

@@ -3,11 +3,13 @@ import { DropdownInput } from 'components/activities/common/delivery/inputs/Drop
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
   Blockquote,
-  Code,
   CodeLine,
+  CodeV1,
+  CodeV2,
   HeadingFive,
   HeadingFour,
   HeadingOne,
@@ -31,7 +33,8 @@ import {
   UnorderedList,
   Webpage,
   YouTube,
-} from 'data/content/model';
+} from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 import React from 'react';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
@@ -56,9 +59,11 @@ export class HtmlParser implements WriterImpl {
       code: (e) => <code>{e}</code>,
       sub: (e) => <sub>{e}</sub>,
       sup: (e) => <sup>{e}</sup>,
+      underline: (e) => <span style={{ textDecoration: 'underline' }}>{e}</span>,
+      strikethrough: (e) => <span style={{ textDecoration: 'line-through' }}>{e}</span>,
     };
     return Object.keys(textEntity)
-      .filter((attr) => textEntity[attr] === true)
+      .filter((attr: Mark | 'text') => textEntity[attr] === true)
       .map((attr) => supportedMarkTags[attr])
       .filter((mark) => mark)
       .reduce((acc, mark) => mark(acc), <>{text}</>);
@@ -102,6 +107,8 @@ export class HtmlParser implements WriterImpl {
     return <h6>{next()}</h6>;
   }
   img(context: WriterContext, next: Next, attrs: Image) {
+    if (!attrs.src) return <></>;
+
     return this.figure(
       attrs,
       <img
@@ -114,12 +121,16 @@ export class HtmlParser implements WriterImpl {
     );
   }
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
+    if (!attrs.src) return <></>;
+
     return this.iframe(context, next, {
       ...attrs,
       src: `https://www.youtube.com/embed/${this.escapeXml(attrs.src)}`,
     });
   }
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
+    if (!attrs.src) return <></>;
+
     return this.figure(
       attrs,
       <div className="embed-responsive embed-responsive-16by9">
@@ -128,6 +139,8 @@ export class HtmlParser implements WriterImpl {
     );
   }
   audio(context: WriterContext, next: Next, attrs: Audio) {
+    if (!attrs.src) return <></>;
+
     return this.figure(
       attrs,
       <audio controls src={this.escapeXml(attrs.src)}>
@@ -167,11 +180,25 @@ export class HtmlParser implements WriterImpl {
   mathLine(context: WriterContext, next: Next, _x: MathLine) {
     return next();
   }
-  code(context: WriterContext, next: Next, attrs: Code) {
+  code(context: WriterContext, next: Next, attrs: CodeV1 | CodeV2) {
+    const language = this.escapeXml(attrs.language);
+    const langClass = CodeLanguages.byPrettyName(language).highlightJs;
+    if ('code' in attrs) return this.codev2(context, next, attrs as CodeV2, langClass);
+    return this.codev1(context, next, attrs as CodeV1, langClass);
+  }
+  codev1(_context: WriterContext, next: Next, attrs: CodeV1, className: string) {
     return this.figure(
       attrs,
       <pre>
-        <code className={`language-${this.escapeXml(attrs.language)}`}>{next()}</code>
+        <code className={`language-${className}`}>{next()}</code>
+      </pre>,
+    );
+  }
+  codev2(_context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
+    return this.figure(
+      attrs,
+      <pre>
+        <code className={`language-${className}`}>{this.escapeXml(attrs.code)}</code>
       </pre>,
     );
   }

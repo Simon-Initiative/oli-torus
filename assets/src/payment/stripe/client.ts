@@ -146,4 +146,9 @@ function makePurchase(key: string, purchase: any) {
   });
 }
 
-(window as any).OLIPayments = { makePurchase };
+declare global {
+  interface Window {
+    OLIPayments: { makePurchase: typeof makePurchase };
+  }
+}
+window.OLIPayments = { makePurchase };

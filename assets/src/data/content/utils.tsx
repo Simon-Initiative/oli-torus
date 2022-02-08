@@ -1,22 +1,28 @@
-import { ContentItem, ContentTypes } from 'data/content/writers/writer';
+import { toSimpleText } from 'components/editing/utils';
+import { ModelElement } from 'data/content/model/elements/types';
+import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
 import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
-import { Text } from 'slate';
-import { isModelElement, MediaDisplayMode, ModelElement } from './model';
+import { Element, Range, Text } from 'slate';
+import { useFocused, useSelected, useSlate } from 'slate-react';
 import { StructuredContent } from './resource';
-import { toSimpleText } from './text';
 
-// float_left and float_right no longer supported as options
-export function displayModelToClassName(display: MediaDisplayMode | undefined) {
-  switch (display) {
-    case 'float_left':
-    case 'float_right':
-    case 'block':
-      return 'd-block';
-    default:
-      return 'd-block';
-  }
-}
+export const useElementSelected = () => {
+  const focused = useFocused();
+  const selected = useSelected();
+  const [ok, setOk] = React.useState(focused && selected);
+  React.useEffect(() => setOk(focused && selected), [focused, selected]);
+  return ok;
+};
+
+export const useCollapsedSelection = () => {
+  const editor = useSlate();
+  const selected = useElementSelected();
+  const p = () => !!editor.selection && Range.isCollapsed(editor.selection);
+  const [ok, setOk] = React.useState(selected && p());
+  React.useEffect(() => setOk(selected && p()), [selected, editor.selection]);
+  return ok;
+};
 
 export function getContentDescription(content: StructuredContent): JSX.Element {
   let simpleText;
@@ -63,34 +69,83 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
   return <i>Empty</i>;
 }
 
-export const centeredAbove = ({ popoverRect, childRect }: PopoverState, yOffset = 56) => {
+export const positionRect = ({
+  position,
+  childRect,
+  popoverRect,
+  padding,
+  align,
+}: PopoverState): DOMRect => {
+  const targetMidX = childRect.left + childRect.width / 2;
+  const targetMidY = childRect.top + childRect.height / 2;
+  const { width, height } = popoverRect;
+  let top = window.scrollY;
+  let left = window.scrollX;
+
+  switch (position) {
+    case 'left':
+      left += childRect.left - padding - width;
+      if (align === 'center' || !align) top += targetMidY - height / 2;
+      if (align === 'start') top += childRect.top;
+      if (align === 'end') top += childRect.bottom - height;
+      break;
+    case 'bottom':
+      top += childRect.bottom + padding;
+      if (align === 'center' || !align) left += targetMidX - width / 2;
+      if (align === 'start') left += childRect.left;
+      if (align === 'end') left += childRect.right - width;
+      break;
+    case 'right':
+      left += childRect.right + padding;
+      if (align === 'center' || !align) top += targetMidY - height / 2;
+      if (align === 'start') top += childRect.top;
+      if (align === 'end') top += childRect.bottom - height;
+      break;
+    case 'top':
+    default:
+      top += childRect.top - height - padding;
+      if (align === 'center' || !align) left += targetMidX - width / 2;
+      if (align === 'start') left += childRect.left;
+      if (align === 'end') left += childRect.right - width;
+      break;
+  }
+
   return {
-    top: childRect.top + window.scrollY - yOffset,
-    left: childRect.left + window.window.scrollX + childRect.width / 2 - popoverRect.width / 2,
+    top,
+    y: top,
+    left,
+    x: left,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    toJSON: () => {},
   };
 };
 
-const contentBfs = (
-  content: ContentTypes,
-  cb: (c: ContentItem | ModelElement | Text) => any,
-): void => {
-  if (Array.isArray(content)) {
-    return content.forEach((c: ContentItem | ModelElement) => contentBfs(c, cb));
-  }
-
-  cb(content);
-
-  if (Array.isArray(content.children)) {
-    return contentBfs(content.children, cb);
-  }
-};
-
 export const elementsOfType = (content: ContentTypes, type: string): ModelElement[] => {
+  const contentBfs = (
+    content: ContentTypes,
+    cb: (c: ContentItem | ModelElement | Text) => any,
+  ): void => {
+    if (Array.isArray(content))
+      return content.forEach((c: ContentItem | ModelElement) => contentBfs(c, cb));
+
+    cb(content);
+
+    if ((isContentItem(content) || Element.isElement(content)) && Array.isArray(content.children))
+      return contentBfs(
+        (content.children as Array<ModelElement>).filter(
+          (c: ModelElement) => c.type !== 'input_ref',
+        ),
+        cb,
+      );
+  };
+
   const elements: ModelElement[] = [];
-  contentBfs(content, (elem) => {
-    if (isModelElement(elem) && elem.type === type) {
-      elements.push(elem);
-    }
-  });
+  contentBfs(
+    content,
+    (elem) => Element.isElement(elem) && elem.type === type && elements.push(elem),
+  );
   return elements;
 };

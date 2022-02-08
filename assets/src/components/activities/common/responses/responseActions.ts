@@ -19,7 +19,7 @@ import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
 export const ResponseActions = {
-  addResponse(response: Response, partId: string, path = RESPONSES_PATH) {
+  addResponse(response: Response, partId: string, _path = RESPONSES_PATH) {
     return (model: HasParts) => {
       // Insert a new reponse just before the last response (which is the catch-all response)
       const responses = getResponsesByPartId(model, partId);
@@ -33,7 +33,7 @@ export const ResponseActions = {
     };
   },
 
-  removeResponse(responseId: ResponseId, path = RESPONSES_PATH) {
+  removeResponse(responseId: ResponseId, _path = RESPONSES_PATH) {
     return (model: HasParts) => {
       getParts(model).forEach((part) => {
         if (part.responses.find(({ id }) => id === responseId)) {

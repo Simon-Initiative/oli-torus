@@ -3,7 +3,7 @@ import { Maybe } from 'tsmonad';
 import { State, Dispatch } from 'state';
 import { fetchCourseMediaNextPage, resetMedia, fetchMediaItemByPath } from 'actions/media';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
-import { Media, MediaItem } from 'types/media';
+import { MediaLibraryOption, MediaItem } from 'types/media';
 import { MediaManager, SELECTION_TYPES } from './MediaManager';
 
 export { MIMETYPE_FILTERS, SELECTION_TYPES } from './MediaManager';
@@ -31,17 +31,17 @@ interface OwnProps {
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths?: string[];
-  onEdit: (updated: Media) => void;
+  onEdit: (updated: MediaLibraryOption) => void;
   onSelectionChange: (selection: MediaItem[]) => void;
 }
 
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
+const mapStateToProps = (state: State, _ownProps: OwnProps): StateProps => {
   return {
     media: state.media,
   };
 };
 
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
+const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   return {
     onLoadCourseMediaNextPage: (projectSlug, mimeFilter, searchText, orderBy, order) => {
       return dispatch(

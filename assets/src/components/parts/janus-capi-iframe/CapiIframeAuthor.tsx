@@ -197,7 +197,7 @@ const CapiIframeAuthor: React.FC<AuthorPartComponentProps<CapiIframeModel>> = (p
 
     const configDataState: any = configData
       ? [
-          ...configData?.map((cdVar: { key: any }) => {
+          ...configData.map((cdVar: { key: any }) => {
             return { ...cdVar, id: `stage.${id}.${cdVar.key}` };
           }),
         ]

@@ -535,44 +535,46 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     );
 
     return (
-      <div className="resource-editor row">
-        <div className="col-12">
-          <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
+      <React.StrictMode>
+        <div className="resource-editor row">
+          <div className="col-12">
+            <UndoToasts undoables={this.state.undoables} onInvokeUndo={this.onInvokeUndo} />
 
-          <Banner
-            dismissMessage={(msg: any) =>
-              this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
-            }
-            executeAction={(message: any, action: any) => action.execute(message)}
-            messages={this.state.messages}
-          />
-          <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
-            <PersistenceStatus persistence={this.state.persistence} />
-
-            <PreviewButton />
-          </TitleBar>
-          <div>
-            <Editors
-              {...props}
-              editMode={this.state.editMode}
-              objectives={this.state.allObjectives}
-              allTags={this.state.allTags}
-              childrenObjectives={this.state.childrenObjectives}
-              onRegisterNewObjective={onRegisterNewObjective}
-              onRegisterNewTag={onRegisterNewTag}
-              activityContexts={this.state.activityContexts}
-              onRemove={(key: string) => this.onRemove(key)}
-              onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}
-              onEditContentList={onEdit}
-              onActivityEdit={this.onActivityEdit}
-              onPostUndoable={this.onPostUndoable}
-              content={this.state.content}
-              onAddItem={onAddItem}
-              resourceContext={props}
+            <Banner
+              dismissMessage={(msg: any) =>
+                this.setState({ messages: this.state.messages.filter((m) => msg.guid !== m.guid) })
+              }
+              executeAction={(message: any, action: any) => action.execute(message)}
+              messages={this.state.messages}
             />
+            <TitleBar title={state.title} onTitleEdit={onTitleEdit} editMode={this.state.editMode}>
+              <PersistenceStatus persistence={this.state.persistence} />
+
+              <PreviewButton />
+            </TitleBar>
+            <div>
+              <Editors
+                {...props}
+                editMode={this.state.editMode}
+                objectives={this.state.allObjectives}
+                allTags={this.state.allTags}
+                childrenObjectives={this.state.childrenObjectives}
+                onRegisterNewObjective={onRegisterNewObjective}
+                onRegisterNewTag={onRegisterNewTag}
+                activityContexts={this.state.activityContexts}
+                onRemove={(key: string) => this.onRemove(key)}
+                onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}
+                onEditContentList={onEdit}
+                onActivityEdit={this.onActivityEdit}
+                onPostUndoable={this.onPostUndoable}
+                content={this.state.content}
+                onAddItem={onAddItem}
+                resourceContext={props}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </React.StrictMode>
     );
   }
 }
