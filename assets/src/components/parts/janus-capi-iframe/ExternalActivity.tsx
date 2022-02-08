@@ -937,6 +937,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       const cVar = new CapiVariable({
         key: baseKey,
         value,
+        shouldConvertNumbers: false,
       });
       const typeOfValue = typeof value;
       if (cVar.type === CapiVariableTypes.ARRAY) {

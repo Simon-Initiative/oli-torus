@@ -155,8 +155,12 @@ defmodule OliWeb.Api.ObjectivesController do
              {:ok, _} <- ObjectiveEditor.edit(slug, %{title: title}, author, project) do
           json(conn, %{"result" => "success"})
         else
-          {:error, {:not_found}} -> error(conn, 404, "Not found")
-          _ -> error(conn, 500, "Objective could not be updated")
+          {:error, {:not_found}} ->
+            error(conn, 404, "Not found")
+
+          e ->
+            {_, msg} = Oli.Utils.log_error("Could not update objective", e)
+            error(conn, 500, msg)
         end
     end
   end
@@ -227,8 +231,9 @@ defmodule OliWeb.Api.ObjectivesController do
             |> put_status(:created)
             |> json(%{"result" => "success", "resourceId" => revision.resource_id})
 
-          _ ->
-            error(conn, 500, "Objective could not be created")
+          e ->
+            {_, msg} = Oli.Utils.log_error("Could not create objective", e)
+            error(conn, 500, msg)
         end
     end
   end
