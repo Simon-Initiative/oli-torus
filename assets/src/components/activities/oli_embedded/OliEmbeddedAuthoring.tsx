@@ -52,7 +52,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   };
 
   const display = (c: any, id: string) => {
-    let element = document.querySelector(id);
+    let element = document.querySelector('#' + id);
     if (!element) {
       element = document.createElement('div');
       element.id = id;
@@ -76,7 +76,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         });
       })
       .catch((reason: any) => {
-        const id = '#upload_error';
+        const id = 'upload_error';
         display(errorModal(reason.message, id), id);
       });
   };
@@ -110,7 +110,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
   const id = guid();
 
   const dismiss = (id: string) => {
-    const element = document.querySelector(id);
+    const element = document.querySelector('#' + id);
     if (element) {
       ReactDOM.unmountComponentAtNode(element);
     }
