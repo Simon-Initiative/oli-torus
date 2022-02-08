@@ -55,7 +55,7 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
-  Maps the content elements of page content, preserving the as-is structure. Implementated as a
+  Maps the content elements of page content, preserving the as-is structure. Implemented as a
   convenience function, over top of map_reduce.
   """
   def map(content, map_fn) do
