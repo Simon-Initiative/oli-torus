@@ -6,6 +6,7 @@ import { Purpose as PurposeType, ResourceContent, StructuredContent } from 'data
 import * as Immutable from 'immutable';
 import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
+import { ActivityEditContext } from 'data/content/activity';
 
 const getDescription = (item: ResourceContent) => {
   return item.type === 'content' ? getContentDescription(item) : '';

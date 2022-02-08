@@ -375,4 +375,59 @@ html.authoring {
       }
     }
   }
+
+  // Editor toolbar
+  .editorToolbar {
+    border-top: 1px solid $body-color;
+    border-bottom: 1px solid $body-color;
+    background: $body-bg;
+
+    &__group {
+      background: $body-bg;
+      border-left: 1px solid $body-color;
+    }
+    &__group:last-of-type {
+      border-right: 1px solid $body-color;
+    }
+
+    &__dropdownGroup {
+      border: 1px solid $body-color;
+      background: $body-bg;
+    }
+
+    &__button {
+      background: $body-bg;
+
+      &--descriptive {
+        &:hover {
+          color: $primary;
+        }
+        &:focus,
+        &:active {
+          border: 2px solid $primary;
+        }
+      }
+
+      &Indicator {
+        &:hover {
+          color: $primary;
+        }
+        &:focus,
+        &:active {
+          border: 2px solid $primary;
+        }
+      }
+    }
+
+    &__button.active {
+      .editorToolbar__buttonIndicator {
+        background-color: $body-color;
+        color: $body-bg;
+      }
+    }
+    &__button--descriptive.active {
+      background-color: $body-color;
+      color: $body-bg;
+    }
+  }
 }

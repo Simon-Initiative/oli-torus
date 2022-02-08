@@ -15,7 +15,6 @@ import {
   makeUndoable,
   Part,
   PostUndoable,
-  RichText,
   Stem,
 } from 'components/activities/types';
 import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/utils';
@@ -24,18 +23,13 @@ import { List } from 'data/activities/model/list';
 import { getCorrectResponse, Responses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById, getParts } from 'data/activities/model/utils';
-import { InputRef } from 'data/content/model';
-import { Editor as SlateEditor, Operation } from 'slate';
-import { ReactEditor } from 'slate-react';
+import { InputRef } from 'data/content/model/elements/types';
+import { Descendant, Editor, Element, Operation } from 'slate';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
 export const MultiInputActions = {
-  editStemAndPreviewText(
-    content: RichText,
-    editor: SlateEditor & ReactEditor,
-    operations: Operation[],
-  ) {
+  editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: MultiInputSchema, post: PostUndoable) => {
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
 
@@ -55,8 +49,9 @@ export const MultiInputActions = {
         operations.find(
           (op) =>
             op.type === 'insert_node' &&
+            Element.isElement(op.node) &&
             op.node.type === 'input_ref' &&
-            model.inputs.find((input) => input.id === op.node.id),
+            model.inputs.find((input) => input.id === (op.node as InputRef).id),
         )
       ) {
         // duplicate input id, do nothing

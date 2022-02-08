@@ -33,13 +33,13 @@ export const SimpleFeedback: React.FC<Props> = ({ children, partId }) => {
       <FeedbackCard
         title="Feedback for correct answer"
         feedback={correctResponse.feedback}
-        update={(_id, content) => updateFeedback(correctResponse.id, content)}
+        update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
         placeholder="Encourage students or explain why the answer is correct"
       />
       <FeedbackCard
         title="Feedback for incorrect answers"
         feedback={incorrectResponse.feedback}
-        update={(_id, content) => updateFeedback(incorrectResponse.id, content)}
+        update={(_id, content) => updateFeedback(incorrectResponse.id, content as RichText)}
         placeholder="Enter catch-all feedback for incorrect answers"
       />
     </>

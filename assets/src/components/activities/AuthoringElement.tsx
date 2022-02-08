@@ -4,6 +4,7 @@ import React, { useContext } from 'react';
 import { Maybe } from 'tsmonad';
 import { ActivityModelSchema, MediaItemRequest, PostUndoable, Undoable } from './types';
 import { EventEmitter } from 'events';
+import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -160,6 +161,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
       value={{ projectSlug, editMode, dispatch, model, onRequestMedia }}
     >
       {children}
+      <ModalDisplay />
     </AuthoringElementContext.Provider>
   );
 };

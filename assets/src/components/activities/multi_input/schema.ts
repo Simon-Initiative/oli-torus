@@ -8,7 +8,7 @@ import {
   Choice,
   ChoiceId,
 } from 'components/activities/types';
-import { Identifiable } from 'data/content/model';
+import { Identifiable } from 'data/content/model/other';
 import { Maybe } from 'tsmonad';
 import { assertNever } from 'utils/common';
 

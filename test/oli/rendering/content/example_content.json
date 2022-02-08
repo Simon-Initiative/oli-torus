@@ -317,15 +317,11 @@
     },
     {
       "type": "code",
-      "language": "python",
+      "language": "Python",
+      "code": "import fresh-pots",
       "children": [
         {
-          "type": "code_line",
-          "children": [
-            {
-              "text": "import fresh-pots"
-            }
-          ]
+          "text": ""
         }
       ],
       "id": 4076323894

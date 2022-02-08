@@ -11,7 +11,7 @@ import { StemDelivery } from 'components/activities/common/stem/delivery/StemDel
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
-import { makeResponse, Manifest, Response } from 'components/activities/types';
+import { makeResponse, Manifest, Response, RichText } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
@@ -64,7 +64,7 @@ const ShortAnswer = () => {
                 title="Targeted feedback"
                 response={response}
                 updateFeedback={(id, content) =>
-                  dispatch(ResponseActions.editResponseFeedback(response.id, content))
+                  dispatch(ResponseActions.editResponseFeedback(response.id, content as RichText))
                 }
                 removeResponse={(id) => dispatch(ResponseActions.removeResponse(id))}
                 key={response.id}

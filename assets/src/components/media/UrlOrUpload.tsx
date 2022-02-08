@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Media, MediaItem } from 'types/media';
+import { MediaLibraryOption, MediaItem } from 'types/media';
 import { MediaManager, SELECTION_TYPES } from './manager/MediaManager.controller';
 
 type Source = 'upload' | 'url';
@@ -10,7 +10,7 @@ interface Props {
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths: string[];
-  onEdit: (updated: Media) => void;
+  onEdit: (updated: MediaLibraryOption) => void;
   onMediaSelectionChange: (items: MediaItem[]) => void;
 }
 export const UrlOrUpload = (props: Props) => {

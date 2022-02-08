@@ -65,8 +65,8 @@ type ActivityBankState = {
   canBeUpdated: boolean; // tracks whether or not the "Update" button should be enabled
 };
 
-const dismiss = () => (window as any).oliDispatch(modalActions.dismiss());
-const display = (c: any) => (window as any).oliDispatch(modalActions.display(c));
+const dismiss = () => window.oliDispatch(modalActions.dismiss());
+const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
   return new Promise((resolve, _reject) => {

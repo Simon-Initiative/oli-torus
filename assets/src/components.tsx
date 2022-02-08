@@ -14,7 +14,7 @@ export type ComponentName = keyof typeof registry;
 const store = configureStore();
 
 // Expose React/Redux APIs to server-side rendered templates
-(window as any).component = {
+const component = {
   mount: (componentName: ComponentName, element: HTMLElement, context: any = {}) => {
     maybe(registry[componentName]).lift((Component) => {
       ReactDOM.render(
@@ -26,6 +26,13 @@ const store = configureStore();
     });
   },
 };
+window.component = component;
 
 // Expose other libraries to server-side rendered templates
-(window as any).Maybe = Maybe;
+window.Maybe = Maybe;
+declare global {
+  interface Window {
+    component: typeof component;
+    Maybe: typeof Maybe;
+  }
+}

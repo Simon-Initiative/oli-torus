@@ -1,6 +1,8 @@
-import { Transforms, Range, Node, Point, Path, Editor as SlateEditor } from 'slate';
-import * as ContentModel from 'data/content/model';
+import { Transforms, Range, Node, Point, Path, Editor as SlateEditor, Element, Text } from 'slate';
 import { KeyboardEvent } from 'react';
+import { OrderedList, UnorderedList } from 'data/content/model/elements/types';
+import { ListItem } from '../../../../data/content/model/elements/types';
+import { Model } from 'data/content/model/elements/factories';
 
 // The key down handler required to allow special list processing.
 export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
@@ -13,13 +15,14 @@ export const onKeyDown = (editor: SlateEditor, e: KeyboardEvent) => {
   }
 };
 
-const isList = (n: Node) => n.type === 'ul' || n.type === 'ol';
+const isList = (n: Node): n is UnorderedList | OrderedList =>
+  Element.isElement(n) && (n.type === 'ul' || n.type === 'ol');
 
 // Handles a 'tab' key down event that may indent a list item.
-function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
+export function handleIndent(editor: SlateEditor, e?: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     const [match] = SlateEditor.nodes(editor, {
-      match: (n) => n.type === 'li',
+      match: (n) => Element.isElement(n) && n.type === 'li',
     });
 
     if (match) {
@@ -38,22 +41,22 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
             for (let i = 0; i < parent.children.length; i += 1) {
               const item = parent.children[i];
               if (isList(item)) {
-                const newList = item.type === 'ul' ? ContentModel.ul() : ContentModel.ol();
+                const newList = item.type === 'ul' ? Model.ul() : Model.ol();
                 newList.children.pop();
 
                 Transforms.wrapNodes(editor, newList, { at: editor.selection });
-                e.preventDefault();
+                e?.preventDefault();
                 return;
               }
             }
           }
 
           // Allow indent with the same list type as current parent
-          const newList = parent.type === 'ul' ? ContentModel.ul() : ContentModel.ol();
+          const newList = parent.type === 'ul' ? Model.ul() : Model.ol();
           newList.children.pop();
 
           Transforms.wrapNodes(editor, newList, { at: editor.selection });
-          e.preventDefault();
+          e?.preventDefault();
         }
       }
     }
@@ -61,10 +64,10 @@ function handleIndent(editor: SlateEditor, e: KeyboardEvent) {
 }
 
 // Handles a shift+tab press to possibly outdent a list item
-function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
+export function handleOutdent(editor: SlateEditor, e?: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     const [match] = SlateEditor.nodes(editor, {
-      match: (n) => n.type === 'li',
+      match: (n) => Element.isElement(n) && n.type === 'li',
     });
 
     if (match) {
@@ -83,7 +86,7 @@ function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
           // Lift the current node up one level, effectively promoting
           // it up as a list item into the parent list
           Transforms.liftNodes(editor, { at: editor.selection });
-          e.preventDefault();
+          e?.preventDefault();
         }
       }
     }
@@ -95,14 +98,18 @@ function handleOutdent(editor: SlateEditor, e: KeyboardEvent) {
 // in the editor passes through it
 function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
-    const [match] = SlateEditor.nodes(editor, {
-      match: (n) => n.type === 'li',
+    const [match] = SlateEditor.nodes<ListItem>(editor, {
+      match: (n) => Element.isElement(n) && n.type === 'li',
     });
 
     if (match) {
       const [node, path] = match;
 
-      if ((node.children as any).length === 1 && (node.children as any)[0].text === '') {
+      if (
+        node.children.length === 1 &&
+        Text.isText(node.children[0]) &&
+        node.children[0].text === ''
+      ) {
         const parentMatch = SlateEditor.parent(editor, path);
         const [parent, parentPath] = parentMatch;
         const grandParentMatch = SlateEditor.parent(editor, parentPath);
@@ -117,7 +124,7 @@ function handleTermination(editor: SlateEditor, e: KeyboardEvent) {
           Transforms.removeNodes(editor, { at: path });
 
           // Insert it ahead of the next node
-          Transforms.insertNodes(editor, ContentModel.p(), { at: Path.next(parentPath) });
+          Transforms.insertNodes(editor, Model.p(), { at: Path.next(parentPath) });
           Transforms.select(editor, Path.next(parentPath));
 
           e.preventDefault();

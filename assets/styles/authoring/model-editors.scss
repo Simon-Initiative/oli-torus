@@ -39,7 +39,8 @@
     }
   }
 
-  .youtube-editor {
+  .youtube-editor,
+  .webpage-editor {
     max-width: 700px;
     margin: 0 auto;
     iframe {
@@ -56,12 +57,13 @@
   }
 
   .resize-selection-box-handle {
-    border: 1px solid rgb(255, 255, 255);
-    width: 9px;
-    height: 9px;
+    border: 2px solid rgb(26, 115, 232);
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
     font-size: 0px;
     z-index: $z-content-2;
-    background-color: rgb(26, 115, 232);
+    background-color: white;
     position: absolute;
   }
 

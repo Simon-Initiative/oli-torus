@@ -1,5 +1,18 @@
-import { Mark, Marks, schema } from 'data/content/model';
-import { Editor, Element, Node, Operation, Text } from 'slate';
+import { RichText } from 'components/activities/types';
+import { ModelElement } from 'data/content/model/elements/types';
+import { schema } from 'data/content/model/schema';
+import { Mark } from 'data/content/model/text';
+import {
+  Descendant,
+  Editor,
+  Element,
+  InsertNodeOperation,
+  Node,
+  NodeEntry,
+  Operation,
+  RemoveNodeOperation,
+  Text,
+} from 'slate';
 import { ReactEditor } from 'slate-react';
 import { Maybe } from 'tsmonad';
 
@@ -16,7 +29,7 @@ export function hasMark(textNode: Text, mark: string): boolean {
   return Object.keys(textNode).some((k) => k === mark);
 }
 
-export function elementsOfType<T extends Element>(root: ReactEditor, type: string): T[] {
+export function elementsOfType<T extends Element>(root: Editor, type: string): T[] {
   return [...Node.elements(root)]
     .map(([element]) => element)
     .filter((elem) => Element.isElement(elem) && elem.type === type) as T[];
@@ -30,7 +43,7 @@ export function elementsAdded<T extends Element>(operations: Operation[], type: 
         Element.isElement(operation.node) &&
         operation.node.type === type,
     )
-    .map((operation) => operation.node as T);
+    .map((operation: InsertNodeOperation) => operation.node as T);
 }
 
 export function elementsRemoved<T extends Element>(operations: Operation[], type: string): T[] {
@@ -41,11 +54,11 @@ export function elementsRemoved<T extends Element>(operations: Operation[], type
         Element.isElement(operation.node) &&
         operation.node.type === type,
     )
-    .map((operation) => operation.node as T);
+    .map((operation: RemoveNodeOperation) => operation.node as T);
 }
 
 // Returns all the Text nodes in the current selection
-export function textNodesInSelection(editor: ReactEditor) {
+export function textNodesInSelection(editor: Editor) {
   const selection = editor.selection;
   if (!selection) {
     return [];
@@ -60,105 +73,82 @@ export function textNodesInSelection(editor: ReactEditor) {
     .reduce((acc, curr) => acc.concat(curr), []);
 }
 
-export function isMarkActive(editor: ReactEditor, mark: Mark): boolean {
-  return marksInPartOfSelection(editor).includes(mark);
-}
-
-// Returns a Mark[] that apply to the entire current selection
-export function marksInEntireSelection(editor: ReactEditor) {
-  const marks: any = {};
-  const textNodes = textNodesInSelection(editor);
-  textNodes.forEach((text) => {
-    Object.keys(text)
-      .filter((k) => k in Marks)
-      .forEach((mark) => (marks[mark] ? (marks[mark] += 1) : (marks[mark] = 1)));
-  });
-  return Object.entries(marks)
-    .filter(([, v]) => v === textNodes.length)
-    .map(([k]) => k as Mark);
-}
-
-// Returns a Mark[] of all marks that exist in any part of the current selection
-export function marksInPartOfSelection(editor: ReactEditor) {
-  const marks: any = {};
-  textNodesInSelection(editor).forEach((text) => {
-    Object.keys(text)
-      .filter((k) => k in Marks)
-      .forEach((mark) => (marks[mark] = true));
-  });
-  return Object.keys(marks);
+export function isMarkActive(editor: Editor, mark: Mark): boolean {
+  const marks = Editor.marks(editor);
+  return !!marks && !!marks[mark];
 }
 
 // Extracts the text from a hierarchy of nodes
-export function toSimpleText(node: Node): string {
+export function toSimpleText(nodes: RichText | Descendant[]): string;
+export function toSimpleText(node: Node): string;
+export function toSimpleText(node: Node | RichText | Descendant[]): string {
+  if (Array.isArray(node)) return toSimpleTextHelper({ children: node } as ModelElement, '');
   return toSimpleTextHelper(node, '');
 }
 
 function toSimpleTextHelper(node: Node, text: string): string {
-  return (node.children as any).reduce((p: string, c: any) => {
-    let updatedText = p;
-    if (c.text) {
-      updatedText += c.text;
-    }
-    if (c.children) {
-      return toSimpleTextHelper(c, updatedText);
-    }
-    return updatedText;
+  if (Text.isText(node)) return text + node.text;
+  return [...node.children].reduce((p, c) => {
+    if (Text.isText(c)) return p + c.text;
+    return toSimpleTextHelper(c, p);
   }, text);
 }
 
-export const isTopLevel = (editor: ReactEditor) => {
+export const isTopLevel = (editor: Editor) => {
   const [...nodes] = Editor.nodes(editor, {
     match: (n) => {
-      const attrs = (schema as any)[n.type as any];
-      return attrs && attrs.isTopLevel;
+      if (!Element.isElement(n)) return false;
+      return schema[n.type].isTopLevel;
     },
   });
   return nodes.every((node) => node[1].length === 1);
 };
 
-export const getHighestTopLevel = (editor: ReactEditor): Maybe<Node> => {
-  if (!editor.selection) {
-    return Maybe.nothing();
-  }
-  let [node, path] = Editor.node(editor, editor.selection);
+export const getHighestTopLevel = (editor: Editor): Maybe<Node> => {
+  if (!editor.selection) return Maybe.nothing();
 
-  // eslint-disable-next-line
-  while (true) {
-    // TopLevel node is selected, only Editor node as parent
-    if (path.length === 1) {
-      return Maybe.maybe(node);
-    }
-    // Editor is selected
-    if (path.length === 0) {
-      return Maybe.nothing();
-    }
-    const [nextNode, nextPath] = Editor.parent(editor, path);
-    path = nextPath;
-    node = nextNode;
+  const selectedNodes = [...Editor.nodes(editor)];
+  if (selectedNodes.length < 2) return Maybe.nothing();
+  // selectedNodes[0] == Editor, selectedNodes[1] == highestTopLevel
+  return Maybe.just(selectedNodes[1][0]);
+};
+
+export const safeToDOMNode = (editor: Editor, node: Node): Maybe<HTMLElement> => {
+  try {
+    return Maybe.just(ReactEditor.toDOMNode(editor, node));
+  } catch (_) {
+    // This can fail if the editor hasn't been persisted with a newly added node yet,
+    // even if the element is "in" the DOM.
+    return Maybe.nothing();
   }
 };
 
 // For the current selection, walk up through the data model to find the
 // immediate block parent.
-export const getNearestBlock = (editor: ReactEditor): Maybe<Node> => {
-  const block = Editor.above(editor, {
+export const getNearestBlock = (editor: Editor): Maybe<ModelElement> => {
+  const block: NodeEntry<ModelElement> | undefined = Editor.above(editor, {
     match: (n) => Editor.isBlock(editor, n),
   });
-  if (block) {
-    return Maybe.just(block[0]);
-  }
+  if (block) return Maybe.just(block[0]);
   return Maybe.nothing();
 };
 
-export const isActive = (editor: ReactEditor, type: string | string[]) => {
+export const isActive = (editor: Editor, type: string | string[]) => {
   const [match] = Editor.nodes(editor, {
     match: (n) =>
-      typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1,
+      Element.isElement(n) &&
+      (typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1),
   });
   return !!match;
 };
 
-export const isActiveList = (editor: ReactEditor) => {
+export const nearestOfType = (editor: Editor, type: string) => {
+  const [match] = Editor.nodes(editor, {
+    match: (n) => Element.isElement(n) && n.type === type,
+  });
+  return match[0];
+};
+
+export const isActiveList = (editor: Editor) => {
   return isActive(editor, ['ul', 'ol']);
 };

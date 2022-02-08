@@ -1,14 +1,15 @@
-import { ID } from 'data/content/model';
+import { ID } from 'data/content/model/other';
 import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { Response, RichText } from 'components/activities/types';
+import { Response } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
+import { Descendant } from 'slate';
 
 interface Props {
   title: React.ReactNode;
   response: Response;
-  updateFeedback: (responseId: ID, content: RichText) => void;
+  updateFeedback: (responseId: ID, content: Descendant[]) => void;
   removeResponse: (responseId: ID) => void;
 }
 export const ResponseCard: React.FC<Props> = (props) => {

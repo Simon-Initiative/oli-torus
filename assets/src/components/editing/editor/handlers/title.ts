@@ -1,6 +1,6 @@
 import React from 'react';
-import { Point, Range, Editor as SlateEditor, Transforms } from 'slate';
-import * as ContentModel from 'data/content/model';
+import { Point, Range, Editor as SlateEditor, Transforms, Element } from 'slate';
+import { Model } from 'data/content/model/elements/factories';
 
 export const onKeyDown = (editor: SlateEditor, e: React.KeyboardEvent) => {
   if (e.key === 'Enter') {
@@ -13,12 +13,13 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
     const [match] = SlateEditor.nodes(editor, {
       match: (n) =>
-        n.type === 'h1' ||
-        n.type === 'h2' ||
-        n.type === 'h3' ||
-        n.type === 'h4' ||
-        n.type === 'h5' ||
-        n.type === 'h6',
+        Element.isElement(n) &&
+        (n.type === 'h1' ||
+          n.type === 'h2' ||
+          n.type === 'h3' ||
+          n.type === 'h4' ||
+          n.type === 'h5' ||
+          n.type === 'h6'),
     });
 
     if (match) {
@@ -32,7 +33,7 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
         const nextMatch = SlateEditor.next(editor, { at: path });
         if (nextMatch) {
           const [, nextPath] = nextMatch;
-          Transforms.insertNodes(editor, ContentModel.p(), { at: nextPath });
+          Transforms.insertNodes(editor, Model.p(), { at: nextPath });
 
           const newNext = SlateEditor.next(editor, { at: path });
           if (newNext) {
@@ -42,7 +43,7 @@ function handleTitleTermination(editor: SlateEditor, e: React.KeyboardEvent) {
 
           // But if there is no next node, insert it at end
         } else {
-          Transforms.insertNodes(editor, ContentModel.p(), {
+          Transforms.insertNodes(editor, Model.p(), {
             mode: 'highest',
             at: SlateEditor.end(editor, []),
           });
