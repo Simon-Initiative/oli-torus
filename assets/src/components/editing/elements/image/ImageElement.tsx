@@ -30,7 +30,7 @@ export const ImageEditor = (props: Props) => {
         }
         attributes={props.attributes}
       >
-        Upload an image from your media library or add one with a URL.
+        <div className="mb-2">Upload an image from your media library or add one with a URL.</div>
         <div>
           <button
             className="btn btn-primary mr-2"
@@ -43,17 +43,7 @@ export const ImageEditor = (props: Props) => {
               );
             }}
           >
-            Upload
-          </button>
-          <button
-            className="btn btn-link"
-            onClick={(_e) => {
-              const src = prompt('Enter the image url:');
-              if (!src) return;
-              onEdit({ src });
-            }}
-          >
-            Insert from URL
+            Choose image
           </button>
           {props.children}
         </div>
