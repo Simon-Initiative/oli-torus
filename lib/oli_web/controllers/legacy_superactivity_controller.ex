@@ -147,7 +147,7 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command(command_name, context, _params) when command_name === "beginSession" do
+  defp process_command("beginSession", context, _params) do
     xml =
       SuperActivitySession.setup(%{
         context: context
@@ -158,12 +158,12 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command(command_name, context, _params) when command_name === "loadContentFile" do
+  defp process_command("loadContentFile", context, _params) do
     %{"modelXml" => modelXml} = context.activity_attempt.revision.content
     {:ok, modelXml}
   end
 
-  defp process_command(command_name, context, params) when command_name === "startAttempt" do
+  defp process_command("startAttempt", context, params) do
     case context.activity_attempt.date_evaluated do
       nil ->
         attempt_history(context)
@@ -186,11 +186,10 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(
-         command_name,
+         "scoreAttempt",
          context,
          %{"scoreValue" => score_value, "scoreId" => score_type} = params
-       )
-       when command_name === "scoreAttempt" do
+       ) do
     part_attempt =
       case Map.get(params, "partId") do
         nil ->
@@ -215,7 +214,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, context, _params) when command_name === "endAttempt" do
+  defp process_command("endAttempt", context, _params) do
     case finalize_activity_attempt(context) do
       {:ok, _} ->
         attempt_history(
@@ -234,7 +233,7 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(
-         command_name,
+         "writeFileRecord",
          context,
          %{
            "activityContextGuid" => attempt_guid,
@@ -245,8 +244,7 @@ defmodule OliWeb.LegacySuperactivityController do
            "mimeType" => mime_type,
            "userGuid" => user_id
          } = params
-       )
-       when command_name === "writeFileRecord" do
+       ) do
     {:ok, save_file} =
       case context.activity_attempt.date_evaluated do
         nil ->
@@ -305,13 +303,12 @@ defmodule OliWeb.LegacySuperactivityController do
   end
 
   defp process_command(
-         command_name,
+         "loadFileRecord",
          _context,
          %{
            "activityContextGuid" => attempt_guid
          } = params
-       )
-       when command_name === "loadFileRecord" do
+       ) do
     file_name = Map.get(params, "fileName")
     attempt_number = Map.get(params, "attemptNumber")
     user_id = Map.get(params, "userGuid")
@@ -330,7 +327,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, context, _params) when command_name === "deleteFileRecord" do
+  defp process_command("deleteFileRecord", context, _params) do
     # no op
     xml =
       FileDirectory.setup(%{
