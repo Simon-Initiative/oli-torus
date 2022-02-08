@@ -85,13 +85,8 @@ defmodule OliWeb.Pow.PowHelpers do
   end
 
   def current_pow_config(conn) do
-    case Pow.Plug.fetch_config(conn) do
-      nil ->
-        nil
-
-      pow_config ->
-        Keyword.get(pow_config, :user)
-    end
+    Pow.Plug.fetch_config(conn)
+    |> Keyword.get(:user)
   end
 
   ## provider_links forked from original pow_assent codebase to support custom styling for providers ##

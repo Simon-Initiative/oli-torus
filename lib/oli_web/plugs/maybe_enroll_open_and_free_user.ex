@@ -14,7 +14,12 @@ defmodule Oli.Plugs.MaybeEnrollOpenAndFreeUser do
   def call(conn, _opts) do
     with %{"section_slug" => section_slug} <- conn.path_params,
          {:ok, section} <-
-           Sections.get_section_by(slug: section_slug, open_and_free: true) |> trap_nil,
+           Sections.get_section_by(
+             slug: section_slug,
+             open_and_free: true,
+             requires_enrollment: false
+           )
+           |> trap_nil,
          user <- Pow.Plug.current_user(conn) do
       conn
       |> handle_user_for_section(user, section)

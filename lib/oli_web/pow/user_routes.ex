@@ -6,6 +6,23 @@ defmodule OliWeb.Pow.UserRoutes do
   alias Oli.Accounts.User
 
   @impl true
+  def session_path(conn, :new, query_params \\ []) do
+    case conn.params do
+      %{"section" => section} ->
+        Pow.Phoenix.Routes.path_for(
+          conn,
+          Pow.Phoenix.SessionController,
+          :new,
+          [],
+          Keyword.put(query_params, :section, section)
+        )
+
+      _ ->
+        Pow.Phoenix.Routes.path_for(conn, Pow.Phoenix.SessionController, :new, [], query_params)
+    end
+  end
+
+  @impl true
   def after_sign_in_path(conn) do
     conn
     |> request_path_or(
@@ -49,11 +66,55 @@ defmodule OliWeb.Pow.UserRoutes do
 
   # Pow stores the request redirect path in the assigns. If that value is
   # present, we use it. Otherwise, we specify default redirect paths.
-  def request_path_or(conn, alternative) do
+  defp request_path_or(conn, alternative) do
     if !is_nil(Map.get(conn.assigns, :request_path)) do
       conn.assigns.request_path
     else
       alternative
     end
   end
+
+  @impl true
+  def user_not_authenticated_path(conn) do
+    case conn.method do
+      "GET" ->
+        case conn.assigns do
+          %{section: section} ->
+            Pow.Phoenix.Routes.session_path(conn, :new,
+              request_path: Phoenix.Controller.current_path(conn),
+              section: section.slug
+            )
+
+          _ ->
+            Pow.Phoenix.Routes.session_path(conn, :new,
+              request_path: Phoenix.Controller.current_path(conn)
+            )
+        end
+
+      _method ->
+        Pow.Phoenix.Routes.session_path(conn, :new)
+    end
+  end
+
+  @impl true
+  def url_for(
+        conn,
+        PowEmailConfirmation.Phoenix.ConfirmationController = plug,
+        :show = verb,
+        [_token] = vars,
+        query_params
+      ) do
+    case conn.assigns do
+      %{current_user: %{enroll_after_email_confirmation: enroll_after_email_confirmation}}
+      when not is_nil(enroll_after_email_confirmation) ->
+        Pow.Phoenix.Routes.url_for(conn, plug, verb, vars, query_params) <>
+          "?section=#{enroll_after_email_confirmation}"
+
+      _ ->
+        Pow.Phoenix.Routes.url_for(conn, plug, verb, vars, query_params)
+    end
+  end
+
+  def url_for(conn, plug, verb, vars, query_params),
+    do: Pow.Phoenix.Routes.url_for(conn, plug, verb, vars, query_params)
 end
