@@ -8,6 +8,7 @@ import {
   Slice,
 } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
+import GroupsSlice from './name';
 
 export enum LayoutType {
   DECK = 'deck',
@@ -32,7 +33,7 @@ export interface GroupsState extends EntityState<IGroup> {
 const adapter: EntityAdapter<IGroup> = createEntityAdapter<IGroup>();
 
 const slice: Slice<GroupsState> = createSlice({
-  name: 'groups',
+  name: GroupsSlice,
   initialState: adapter.getInitialState({
     currentGroupId: -1,
   }),
@@ -63,8 +64,6 @@ const slice: Slice<GroupsState> = createSlice({
     },
   },
 });
-
-export const GroupsSlice = slice.name;
 
 export const { setCurrentGroupId, setGroups, upsertGroup } = slice.actions;
 

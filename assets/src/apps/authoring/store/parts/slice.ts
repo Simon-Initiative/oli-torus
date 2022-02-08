@@ -1,5 +1,6 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { RootState } from '../rootReducer';
+import PartsSlice from './name';
 
 export interface PartState {
   currentSelection: string;
@@ -10,7 +11,7 @@ const initialState: PartState = {
 };
 
 const slice: Slice<PartState> = createSlice({
-  name: 'parts',
+  name: PartsSlice,
   initialState,
   reducers: {
     setCurrentSelection(state, action: PayloadAction<{ selection: string }>) {
@@ -18,8 +19,6 @@ const slice: Slice<PartState> = createSlice({
     },
   },
 });
-
-export const PartsSlice = slice.name;
 
 export const { setCurrentSelection } = slice.actions;
 

@@ -6,10 +6,8 @@ import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
 import { isEqual } from 'lodash';
 import { selectActivityById } from '../../../../../../delivery/store/features/activities/slice';
 import { getSequenceLineage } from '../../../../../../delivery/store/features/groups/actions/sequence';
-import {
-  DeckLayoutGroup,
-  GroupsSlice,
-} from '../../../../../../delivery/store/features/groups/slice';
+import { DeckLayoutGroup } from '../../../../../../delivery/store/features/groups/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 
 export const updateActivityPartInheritance = createAsyncThunk(
   `${GroupsSlice}/updateActivityPartInheritance`,
