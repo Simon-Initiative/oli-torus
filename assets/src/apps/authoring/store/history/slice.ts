@@ -3,6 +3,7 @@ import { RootState } from '../rootReducer';
 import { undo } from './actions/undo';
 import { redo } from './actions/redo';
 import guid from 'utils/guid';
+import { HistorySlice } from './name';
 
 export interface UndoAction {
   id: string;
@@ -23,7 +24,7 @@ const initialState: AuthoringHistoryState = {
 };
 
 const slice: Slice<AuthoringHistoryState> = createSlice({
-  name: 'history',
+  name: HistorySlice,
   initialState,
   reducers: {
     createUndoAction(state, action: PayloadAction<UndoAction>) {
@@ -57,8 +58,6 @@ const slice: Slice<AuthoringHistoryState> = createSlice({
     });
   },
 });
-
-export const HistorySlice = slice.name;
 
 export const { createUndoAction } = slice.actions;
 
