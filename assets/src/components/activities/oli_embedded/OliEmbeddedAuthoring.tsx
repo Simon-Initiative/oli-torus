@@ -39,6 +39,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
             resolve(r as string);
           }
         });
+      } else {
+        reject('error');
       }
     });
   }
@@ -47,6 +49,16 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     select(projectSlug).then((url: string) => {
       dispatch(OliEmbeddedActions.addResourceURL(url));
     });
+  };
+
+  const display = (c: any, id: string) => {
+    let element = document.querySelector(id);
+    if (!element) {
+      element = document.createElement('div');
+      element.id = id;
+      document.body.appendChild(element);
+    }
+    ReactDOM.render(c, element);
   };
 
   const onFileUpload = (files: FileList) => {
@@ -64,8 +76,8 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         });
       })
       .catch((reason: any) => {
-        console.log(JSON.stringify(reason.message));
-        display(errorModal(reason.message), '#upload_error');
+        const id = '#upload_error';
+        display(errorModal(reason.message, id), id);
       });
   };
 
@@ -97,14 +109,21 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
   const id = guid();
 
-  const errorModal = (error: string) => {
+  const dismiss = (id: string) => {
+    const element = document.querySelector(id);
+    if (element) {
+      ReactDOM.unmountComponentAtNode(element);
+    }
+  };
+
+  const errorModal = (error: string, id: string) => {
     const footer = (
       <>
         <button
           type="button"
           className="btn btn-primary"
           onClick={() => {
-            dismiss('error_message');
+            dismiss(id);
           }}
         >
           Ok
@@ -117,29 +136,12 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         title="File Upload"
         footer={footer}
         onCancel={() => {
-          dismiss('error_message');
+          dismiss(id);
         }}
       >
         <div className="alert alert-warning">{error}</div>
       </ModalSelection>
     );
-  };
-
-  const display = (c: any, id: string) => {
-    let element = document.querySelector(id);
-    if (!element) {
-      element = document.createElement('div');
-      element.id = id;
-      document.body.appendChild(element);
-    }
-    ReactDOM.render(c, element);
-  };
-
-  const dismiss = (id: string) => {
-    const element = document.querySelector(id);
-    if (element) {
-      ReactDOM.unmountComponentAtNode(element);
-    }
   };
 
   return (

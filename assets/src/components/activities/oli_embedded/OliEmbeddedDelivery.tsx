@@ -30,6 +30,21 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
 
   useEffect(() => {
     fetchContext();
+    setInterval(() => {
+      const iframe: HTMLIFrameElement = document.querySelector(
+        '[data-activityguid="' + activityState.attemptGuid + '"]',
+      ) as HTMLIFrameElement;
+      if (iframe) {
+        const frameHeight = iframe.contentDocument?.body.scrollHeight + 'px';
+        if (frameHeight) {
+          iframe.style.height = frameHeight;
+          const htmlElement = iframe.contentWindow?.document.querySelector('html');
+          if (htmlElement) {
+            htmlElement.style.height = frameHeight;
+          }
+        }
+      }
+    }, 1000);
   }, []);
 
   const fetchContext = () => {
@@ -49,11 +64,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   window.adjustIframeHeight = (i, f) => {
-    const iframe = document.querySelector(f);
-    if (iframe) {
-      iframe.style.height = parseInt(i) + 50 + 'px';
-      iframe.contentWindow.document.querySelector('html').style.height = parseInt(i) + 50 + 'px';
-    }
+    // No-op. Here for backward compatibility
   };
 
   return (
@@ -63,7 +74,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
           id={activityState.attemptGuid}
           src={context.src_url}
           width="100%"
-          height="700"
+          // height="700"
           frameBorder={0}
           data-authenticationtoken="none"
           data-sessionid="1958e2f50a0000562295c9a569354ab5"
