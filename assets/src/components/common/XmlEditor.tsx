@@ -3,13 +3,13 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-javascript';
 import 'ace-builds/src-noconflict/theme-xcode';
 
-export type ActivityXmlEditorProps = {
+export type XmlEditorProps = {
   value: string;
   onChange: (newValue: string) => void;
   disabled: boolean;
 };
 
-export const ActivityXmlEditor = (props: ActivityXmlEditorProps) => {
+export const XmlEditor = (props: XmlEditorProps) => {
   const value = props.value === null ? '' : props.value;
   return (
     <AceEditor

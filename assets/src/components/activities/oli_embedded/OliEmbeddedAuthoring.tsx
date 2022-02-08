@@ -17,7 +17,7 @@ import { uploadFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
 import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
 import { lastPart } from 'components/activities/oli_embedded/utils';
-import { ActivityXmlEditor } from 'components/common/ActivityXmlEditor';
+import { XmlEditor } from 'components/common/XmlEditor';
 import ModalSelection from 'components/modal/ModalSelection';
 const store = configureStore();
 
@@ -146,7 +146,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
 
   return (
     <>
-      <ActivityXmlEditor
+      <XmlEditor
         value={model.modelXml}
         disabled={false}
         onChange={(newValue: string) => dispatch(OliEmbeddedActions.editActivityXml(newValue))}
