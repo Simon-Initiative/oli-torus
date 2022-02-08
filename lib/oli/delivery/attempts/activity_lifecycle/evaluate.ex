@@ -496,7 +496,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         results
 
       {:error, error} ->
-        Logger.debug("error inside apply_client_evaluation: #{error}")
+        Oli.Utils.log_error("error inside apply_client_evaluation", error)
         Repo.rollback(error)
 
       _ ->
