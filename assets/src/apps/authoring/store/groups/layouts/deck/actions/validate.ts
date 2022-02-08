@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AppSlice } from 'apps/authoring/store/app/slice';
+import { AppSlice } from 'apps/authoring/store/app/name';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
   findInHierarchy,

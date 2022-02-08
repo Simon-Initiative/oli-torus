@@ -1,7 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { acquireLock, releaseLock } from 'data/persistence/lock';
+import AppSlice from '../name';
 import { RootState } from '../../rootReducer';
-import { AppSlice, selectProjectSlug, selectRevisionSlug } from '../slice';
+import { selectProjectSlug, selectRevisionSlug } from '../slice';
 
 export const acquireEditingLock = createAsyncThunk(
   `${AppSlice}/acquireEditingLock`,

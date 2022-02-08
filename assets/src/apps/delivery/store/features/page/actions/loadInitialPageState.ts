@@ -16,7 +16,8 @@ import {
 } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
-import { loadPageState, PageSlice, PageState, selectResourceAttemptGuid } from '../slice';
+import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
+import PageSlice from '../name';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,

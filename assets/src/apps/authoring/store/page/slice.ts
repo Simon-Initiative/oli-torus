@@ -1,6 +1,7 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { ResourceId } from 'data/types';
 import { RootState } from '../rootReducer';
+import PageSlice from './name';
 
 export interface PageState {
   graded: boolean;
@@ -36,7 +37,7 @@ const initialState: PageState = {
 };
 
 const slice: Slice<PageState> = createSlice({
-  name: 'page',
+  name: PageSlice,
   initialState,
   reducers: {
     loadPage(state, action: PayloadAction<Partial<PageState>>) {
@@ -97,8 +98,6 @@ const slice: Slice<PageState> = createSlice({
     },
   },
 });
-
-export const PageSlice = slice.name;
 
 export const { loadPage, setIsGraded, setTitle, setObjectives, setRevisionSlug, updatePage } =
   slice.actions;

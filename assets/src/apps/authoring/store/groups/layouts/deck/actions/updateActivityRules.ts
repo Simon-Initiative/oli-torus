@@ -21,7 +21,7 @@ import {
   selectActivityById,
   upsertActivities,
 } from '../../../../../../delivery/store/features/activities/slice';
-import { GroupsSlice } from '../../../../../../delivery/store/features/groups/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 import { selectProjectSlug, selectReadOnly } from '../../../../app/slice';
 import { selectResourceId } from '../../../../page/slice';
 

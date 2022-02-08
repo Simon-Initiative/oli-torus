@@ -1,5 +1,6 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
+import AdaptivitySlice from './name';
 
 export interface CheckResults {
   timestamp: number;
@@ -46,7 +47,7 @@ const initialState: AdaptivityState = {
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
-  name: 'adaptivity',
+  name: AdaptivitySlice,
   initialState,
   reducers: {
     setIsGoodFeedback: (state, action: PayloadAction<{ isGood: boolean }>) => {
@@ -86,8 +87,6 @@ const slice: Slice<AdaptivityState> = createSlice({
     },
   },
 });
-
-export const AdaptivitySlice = slice.name;
 
 export const {
   setIsGoodFeedback,

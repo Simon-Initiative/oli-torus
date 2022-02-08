@@ -9,7 +9,7 @@ import { selectSequence } from 'apps/delivery/store/features/groups/selectors/de
 import merge from 'lodash/merge';
 import { clone } from 'utils/common';
 import { bulkSaveActivity, saveActivity } from '../../activities/actions/saveActivity';
-import { PartsSlice } from '../slice';
+import { PartsSlice } from '../name';
 
 export const updatePart = createAsyncThunk(
   `${PartsSlice}/updatePart`,

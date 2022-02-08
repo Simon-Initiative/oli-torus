@@ -3,11 +3,13 @@ import {
   savePartState,
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
+
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { saveActivity } from '../activities/actions/saveActivity';
 import { savePage } from '../page/actions/savePage';
 import { RootState } from '../rootReducer';
 import { acquireEditingLock } from './actions/locking';
+import { AppSlice } from './name';
 
 interface PartComponentRegistration {
   slug: string;
@@ -86,7 +88,7 @@ export interface AppConfig {
 }
 
 const slice: Slice<AppState> = createSlice({
-  name: 'mainApp',
+  name: AppSlice,
   initialState,
   reducers: {
     setInitialConfig(state, action: PayloadAction<AppConfig>) {
@@ -162,8 +164,6 @@ const slice: Slice<AppState> = createSlice({
     });
   },
 });
-
-export const AppSlice = slice.name;
 
 export const {
   setInitialConfig,

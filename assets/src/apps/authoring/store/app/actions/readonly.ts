@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AppSlice, selectReadOnly, setReadonly } from '../slice';
+import { selectReadOnly, setReadonly } from '../slice';
+import AppSlice from '../name';
 import { acquireEditingLock } from './locking';
 
 export const attemptDisableReadOnly = createAsyncThunk(

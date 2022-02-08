@@ -7,14 +7,8 @@ import { clone } from 'utils/common';
 import { selectAll as selectAllGroups } from '../../../../delivery/store/features/groups/slice';
 import { selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { RootState } from '../../rootReducer';
-import {
-  PageSlice,
-  PageState,
-  selectRevisionSlug,
-  selectState,
-  setRevisionSlug,
-  updatePage,
-} from '../slice';
+import { PageState, selectRevisionSlug, selectState, setRevisionSlug, updatePage } from '../slice';
+import PageSlice from '../name';
 
 export const savePage = createAsyncThunk(
   `${PageSlice}/savePage`,
