@@ -1,7 +1,6 @@
 import guid from 'utils/guid';
-import * as ContentModel from 'data/content/model';
 import { OliEmbeddedModelSchema } from './schema';
-import { RichText, ScoringStrategy } from '../types';
+import { makeStem, ScoringStrategy } from '../types';
 
 export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
   return {
@@ -20,7 +19,7 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
     </embed_activity>`,
     resourceBase: guid(),
     resourceURLs: [],
-    stem: fromText(''),
+    stem: makeStem(''),
     title: 'Embedded activity',
     authoring: {
       parts: [
@@ -41,19 +40,6 @@ export const defaultEmbeddedModel: () => OliEmbeddedModelSchema = () => {
     },
   };
 };
-
-export function fromText(text: string): { id: string; content: RichText } {
-  return {
-    id: guid() + '',
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: guid() + '',
-      }),
-    ],
-  };
-}
 
 export function lastPart(path: string): string {
   if (path.includes('webcontent')) {
