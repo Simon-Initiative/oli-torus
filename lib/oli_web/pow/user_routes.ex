@@ -4,6 +4,7 @@ defmodule OliWeb.Pow.UserRoutes do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
 
   @impl true
   def session_path(conn, :new, query_params \\ []) do
@@ -28,7 +29,7 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.params do
         %{"user" => %{"section" => section_slug}} ->
-          Routes.delivery_path(conn, :enroll, section_slug)
+          Routes.delivery_path(conn, :show_enroll, section_slug)
 
         _ ->
           Routes.delivery_path(conn, :open_and_free_index)
@@ -79,10 +80,28 @@ defmodule OliWeb.Pow.UserRoutes do
     case conn.method do
       "GET" ->
         case conn.assigns do
-          %{section: section} ->
+          # if section is open and free, redirect unauthenticated user to enroll as guest
+          %{
+            section: %Section{slug: section_slug, open_and_free: true, requires_enrollment: false}
+          } ->
+            Routes.delivery_path(conn, :show_enroll, section_slug)
+
+          # pass section slug along for use in sign in form to redirect to enroll after sign in,
+          # or embed in confirmation email link
+          %{
+            section: %Section{slug: section_slug}
+          } ->
             Pow.Phoenix.Routes.session_path(conn, :new,
               request_path: Phoenix.Controller.current_path(conn),
-              section: section.slug
+              section: section_slug
+            )
+
+          # if section is a string, then it represents a section slug from a confirmation email
+          # where a user will be automatically redirected to the enroll page after sign in
+          %{section: section_slug} when is_binary(section_slug) ->
+            Pow.Phoenix.Routes.session_path(conn, :new,
+              request_path: Phoenix.Controller.current_path(conn),
+              section: section_slug
             )
 
           _ ->

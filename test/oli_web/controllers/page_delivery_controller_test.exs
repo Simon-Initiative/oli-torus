@@ -396,11 +396,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       # redirected to enroll page
-      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :enroll, section.slug)
+      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
 
       conn =
         recycle(conn)
-        |> post(Routes.delivery_path(conn, :create_user, section.slug), %{
+        |> post(Routes.delivery_path(conn, :process_enroll, section.slug), %{
           "user_details" => %{
             "redirect_to" => "/sections/some_title"
           },
@@ -432,7 +432,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert user.sub == same_user.sub
     end
 
-    test "handles open and free user access when registration is closed", %{
+    test "redirect unenrolled user to enrollment page", %{
       conn: conn,
       section: section
     } do
@@ -446,85 +446,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
         Plug.Test.init_test_session(conn, lti_session: nil)
         |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-      {:ok, section} = Sections.update_section(section, %{registration_open: false})
-
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 403) =~ "Section Not Available"
+      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
 
-      # user that was previously enrolled should still be able to access
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          enrolled_user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 200) =~ "Course Overview"
-    end
-
-    test "handles open and free user access when date is before start date", %{
-      conn: conn,
-      section: section
-    } do
-      enrolled_user = user_fixture()
-      other_user = user_fixture()
-
-      {:ok, _enrollment} =
-        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      {:ok, section} =
-        Sections.update_section(section, %{
-          start_date: Timex.now() |> Timex.add(Timex.Duration.from_days(1))
-        })
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 403) =~ "Section Has Not Started"
-
-      # user that was previously enrolled should still be able to access
-      conn =
-        recycle(conn)
-        |> Pow.Plug.assign_current_user(
-          enrolled_user,
-          OliWeb.Pow.PowHelpers.get_pow_config(:user)
-        )
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 200) =~ "Course Overview"
-    end
-
-    test "handles open and free user access when date is after end date", %{
-      conn: conn,
-      section: section
-    } do
-      enrolled_user = user_fixture()
-      other_user = user_fixture()
-
-      {:ok, _enrollment} =
-        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      {:ok, section} =
-        Sections.update_section(section, %{
-          end_date: Timex.now() |> Timex.subtract(Timex.Duration.from_days(1))
-        })
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 403) =~ "Section Has Concluded"
-
-      # user that was previously enrolled should still be able to access
+      # user that was previously enrolled should be able to access without enrolling again
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(
@@ -540,23 +466,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "redirects to enroll page if no user is logged in", %{conn: conn, section: section} do
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
 
-      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :enroll, section.slug)
-    end
-
-    test "automatically enrolls user and redirects to section index page if user is logged in", %{
-      conn: conn,
-      section: section
-    } do
-      user = user_fixture()
-
-      conn =
-        Plug.Test.init_test_session(conn, [])
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
-
-      assert html_response(conn, 200) =~ section.title
-      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
     end
 
     test "handles open and free user access after author and another user have been deleted", %{
