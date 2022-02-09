@@ -1,8 +1,10 @@
-import { create, ID, Identifiable, ModelElement, Selection } from 'data/content/model';
+import { ModelElement } from 'data/content/model/elements/types';
+import { ID, Identifiable } from 'data/content/model/other';
 import { ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
+import { Model } from 'data/content/model/elements/factories';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
@@ -43,13 +45,7 @@ export interface HasContent {
 export function makeContent(text: string, id?: string): { id: string; content: RichText } {
   return {
     id: id ? id : guid(),
-    content: [
-      create({
-        type: 'p',
-        children: [{ text }],
-        id: guid(),
-      }),
-    ],
+    content: [Model.p(text)],
   };
 }
 

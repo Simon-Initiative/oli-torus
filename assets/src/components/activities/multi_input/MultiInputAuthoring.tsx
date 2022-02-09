@@ -8,7 +8,7 @@ import { QuestionTab } from 'components/activities/multi_input/sections/Question
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/utils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
-import { InputRef } from 'data/content/model';
+import { InputRef } from 'data/content/model/elements/types';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';

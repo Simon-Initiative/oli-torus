@@ -7,7 +7,8 @@ import {
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
 import { selectPreviewMode, selectSectionSlug } from '../../page/slice';
-import { AttemptSlice, selectById, upsertActivityAttemptState } from '../slice';
+import { selectById, upsertActivityAttemptState } from '../slice';
+import AttemptSlice from '../name';
 
 export const submitActivityState = createAsyncThunk(
   `${AttemptSlice}/submitActivityState`,

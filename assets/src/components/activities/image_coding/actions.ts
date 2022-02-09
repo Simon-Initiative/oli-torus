@@ -1,11 +1,12 @@
 import { ImageCodingModelSchema } from './schema';
 import { RichText, Hint as HintType, makeHint } from '../types';
 import { Maybe } from 'tsmonad';
-import { toSimpleText } from 'data/content/text';
-import { Identifiable } from 'data/content/model';
+import { Identifiable } from 'data/content/model/other';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
+import { toSimpleText } from 'components/editing/utils';
+import { Descendant } from 'slate';
 
 export class ICActions {
   private static getById<T extends Identifiable>(slice: T[], id: string): Maybe<T> {
@@ -16,33 +17,33 @@ export class ICActions {
     ICActions.getById(draftState.authoring.parts[0].hints, id);
 
   static editStem(content: RichText) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.stem.content = content;
-      const previewText = toSimpleText({ children: content });
+      const previewText = toSimpleText(content);
       draftState.authoring.previewText = previewText;
     };
   }
 
   static editStarterCode(text: string) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.starterCode = text;
     };
   }
 
   static editSolutionCode(text: string) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.solutionCode = text;
     };
   }
 
   static editIsExample(value: boolean) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.isExample = value;
     };
   }
 
   static addResourceURL(value: string) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       if (draftState.resourceURLs.indexOf(value) === -1) {
         draftState.resourceURLs.push(value);
       }
@@ -62,25 +63,25 @@ export class ICActions {
   }
 
   static editTolerance(value: number) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.tolerance = value;
     };
   }
 
   static editRegex(value: string) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       draftState.regex = value;
     };
   }
 
-  static editFeedback(score: number, content: RichText) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
-      draftState.feedback[score].content = content;
+  static editFeedback(score: number, content: Descendant[]) {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
+      draftState.feedback[score].content = content as RichText;
     };
   }
 
   static addCognitiveHint() {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       const newHint: HintType = makeHint('');
       // new hints are always cognitive hints. they should be inserted
       // right before the bottomOut hint at the end of the list
@@ -90,7 +91,7 @@ export class ICActions {
   }
 
   static editHint(id: string, content: RichText) {
-    return (draftState: ImageCodingModelSchema, post: PostUndoable) => {
+    return (draftState: ImageCodingModelSchema, _post: PostUndoable) => {
       ICActions.getHint(draftState, id).lift((hint) => (hint.content = content));
     };
   }

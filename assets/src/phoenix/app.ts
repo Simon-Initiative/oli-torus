@@ -43,16 +43,13 @@ const liveSocket = new LiveSocket('/live', Socket, {
 window.addEventListener('phx:page-loading-start', (_info) => NProgress.start());
 window.addEventListener('phx:page-loading-stop', (_info) => NProgress.done());
 
-(window as any).initActivityBridge = initActivityBridge;
-(window as any).initPreviewActivityBridge = initPreviewActivityBridge;
-
 // Expose React/Redux APIs to server-side rendered templates
 function mount(Component: any, element: HTMLElement, context: any = {}) {
   ReactDOM.render(React.createElement(Component, context), element);
 }
 
 // Global functions and objects:
-(window as any).OLI = {
+window.OLI = {
   initActivityBridge,
   initPreviewActivityBridge,
   showModal,
@@ -70,7 +67,7 @@ liveSocket.connect();
 // expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)
-(window as any).liveSocket = liveSocket;
+window.liveSocket = liveSocket;
 
 $(() => {
   ($('[data-toggle="popover"]') as any).popover();
@@ -108,3 +105,20 @@ $(() => {
 
   (window as any).hljs.highlightAll();
 });
+
+declare global {
+  interface Window {
+    liveSocket: typeof liveSocket;
+    OLI: {
+      initActivityBridge: typeof initActivityBridge;
+      initPreviewActivityBridge: typeof initPreviewActivityBridge;
+      showModal: typeof showModal;
+      enableSubmitWhenTitleMatches: typeof enableSubmitWhenTitleMatches;
+      selectCookieConsent: typeof selectCookieConsent;
+      selectCookiePreferences: typeof selectCookiePreferences;
+      retrieveCookies: typeof retrieveCookies;
+      onReady: typeof onReady;
+      CreateAccountPopup: (node: any, props: any) => void;
+    };
+  }
+}

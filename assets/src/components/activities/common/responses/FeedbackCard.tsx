@@ -1,13 +1,14 @@
-import { ID } from 'data/content/model';
+import { ID } from 'data/content/model/other';
 import React from 'react';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
-import { Feedback, RichText } from 'components/activities/types';
+import { Feedback } from 'components/activities/types';
 import { Card } from 'components/misc/Card';
+import { Descendant } from 'slate';
 
 export const FeedbackCard: React.FC<{
   feedback: Feedback;
   title: React.ReactNode;
-  update: (id: ID, content: RichText) => void;
+  update: (id: ID, content: Descendant[]) => void;
   placeholder?: string;
 }> = ({ title, feedback, update, placeholder }) => {
   return (

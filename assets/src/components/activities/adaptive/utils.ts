@@ -1,7 +1,5 @@
-import guid from 'utils/guid';
-import * as ContentModel from 'data/content/model';
 import { AdaptiveModelSchema } from './schema';
-import { RichText, ScoringStrategy } from '../types';
+import { ScoringStrategy, makeHint } from '../types';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultModel: () => AdaptiveModelSchema = () => {
@@ -20,7 +18,7 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
               actions: [{ id: 'action1', type: 'StateUpdateActionDesc', update: {} }],
             },
           ],
-          hints: [fromText(''), fromText(''), fromText('')],
+          hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
       transformations: [],
@@ -28,22 +26,3 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
     },
   };
 };
-
-export function fromText(text: string): { id: string; content: RichText } {
-  return {
-    id: guid() + '',
-    content: [
-      ContentModel.create<ContentModel.Paragraph>({
-        type: 'p',
-        children: [{ text }],
-        id: guid() + '',
-      }),
-    ],
-  };
-}
-
-export const feedback = (text: string, match: string | number, score = 0) => ({
-  ...fromText(text),
-  match,
-  score,
-});

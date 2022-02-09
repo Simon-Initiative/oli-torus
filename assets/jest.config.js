@@ -22,4 +22,5 @@ module.exports = {
   collectCoverage: true,
   cacheDirectory: './node_modules/.cache/jest',
   setupFilesAfterEnv: ['<rootDir>/setup-tests.js'],
+  testEnvironment: 'jest-environment-jsdom',
 };

@@ -132,6 +132,7 @@ export const Editors = (props: EditorsProps) => {
       onPostUndoable,
       onRegisterNewObjective,
       props.onRegisterNewTag,
+      onAddItem,
     );
 
     return (

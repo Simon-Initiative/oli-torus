@@ -4,8 +4,7 @@ const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const globImporter = require('node-sass-glob-importer');
-const TerserPlugin = require('terser-webpack-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 // Determines the entry points for the webpack by looking at activity
@@ -124,7 +123,7 @@ module.exports = (env, options) => ({
   devtool: 'source-map',
   optimization: {
     minimize: process.env.NODE_ENV == 'production',
-    minimizer: [new TerserPlugin()],
+    minimizer: [new ESBuildMinifyPlugin({ css: true })],
   },
   entry: populateEntries(),
   output: {
@@ -153,9 +152,9 @@ module.exports = (env, options) => ({
         test: /\.js(x?)$/,
         include: path.resolve(__dirname, 'src'),
         use: {
-          loader: 'babel-loader',
+          loader: 'esbuild-loader',
           options: {
-            cache: true,
+            loader: 'jsx',
           },
         },
       },
@@ -164,12 +163,11 @@ module.exports = (env, options) => ({
         include: path.resolve(__dirname, 'src'),
         use: [
           {
-            loader: 'babel-loader',
+            loader: 'esbuild-loader',
             options: {
-              cacheDirectory: true,
+              loader: 'tsx',
             },
           },
-          { loader: 'ts-loader' },
         ],
       },
       {

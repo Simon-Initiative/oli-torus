@@ -19,7 +19,8 @@ import {
   selectCurrentActivityTreeAttemptState,
 } from '../../groups/selectors/deck';
 import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
-import { AdaptivitySlice, setLastCheckResults, setLastCheckTriggered } from '../slice';
+import { setLastCheckResults, setLastCheckTriggered } from '../slice';
+import AdaptivitySlice from '../name';
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,

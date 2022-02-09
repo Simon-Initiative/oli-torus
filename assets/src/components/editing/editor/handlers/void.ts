@@ -1,10 +1,11 @@
-import { Transforms, Range, Node, Path } from 'slate';
-import * as ContentModel from 'data/content/model';
+import { Transforms, Range, Path, Editor } from 'slate';
 import { KeyboardEvent } from 'react';
 import { getNearestBlock } from 'components/editing/utils';
 import { ReactEditor } from 'slate-react';
+import { schema, SchemaConfig } from 'data/content/model/schema';
+import { Model } from 'data/content/model/elements/factories';
 
-export const onKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
+export const onKeyDown = (editor: Editor, e: KeyboardEvent) => {
   if (e.key === 'Enter') {
     handleVoidNewline(editor, e);
   }
@@ -12,15 +13,15 @@ export const onKeyDown = (editor: ReactEditor, e: KeyboardEvent) => {
 
 // Pressing the Enter key on any void block should insert an empty
 // paragraph after that node
-function handleVoidNewline(editor: ReactEditor, _e: KeyboardEvent) {
+function handleVoidNewline(editor: Editor, _e: KeyboardEvent) {
   if (editor.selection && Range.isCollapsed(editor.selection)) {
-    getNearestBlock(editor).lift((node: Node) => {
-      const nodeType = node.type as string;
-      const schemaItem: ContentModel.SchemaConfig = (ContentModel.schema as any)[nodeType];
+    getNearestBlock(editor).lift((node) => {
+      const nodeType = node.type;
+      const schemaItem: SchemaConfig = schema[nodeType];
 
       if (schemaItem.isVoid) {
         const path = ReactEditor.findPath(editor, node);
-        Transforms.insertNodes(editor, ContentModel.p(), {
+        Transforms.insertNodes(editor, Model.p(), {
           at: Path.next(path),
         });
 

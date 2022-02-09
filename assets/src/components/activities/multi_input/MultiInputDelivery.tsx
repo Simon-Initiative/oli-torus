@@ -12,6 +12,7 @@ import {
 } from 'components/activities/DeliveryElement';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
+import { toSimpleText } from 'components/editing/utils';
 import {
   activityDeliverySlice,
   ActivityDeliveryState,
@@ -22,7 +23,6 @@ import {
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
-import { toSimpleText } from 'data/content/text';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -84,7 +84,7 @@ export const MultiInputComponent: React.FC = () => {
                   .filter((c) => input.choiceIds.includes(c.id))
                   .map((choice) => ({
                     value: choice.id,
-                    displayValue: toSimpleText({ children: choice.content }),
+                    displayValue: toSimpleText(choice.content),
                   })),
               }
             : { id: input.id, inputType: input.inputType },

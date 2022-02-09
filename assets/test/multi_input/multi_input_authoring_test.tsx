@@ -19,7 +19,7 @@ import {
   Transform,
 } from 'components/activities/types';
 import { Responses } from 'data/activities/model/responses';
-import { inputRef } from 'data/content/model';
+import { Model } from 'data/content/model/elements/factories';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
@@ -27,7 +27,7 @@ import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
-const input = inputRef();
+const input = Model.inputRef();
 const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
 
 const _dropdownModel: MultiInputSchema = {

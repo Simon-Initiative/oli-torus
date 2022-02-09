@@ -1,0 +1,30 @@
+@use 'delivery/variables' as delivery;
+
+.popup__anchorText {
+  color: delivery.$orange;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.slate-editor .popup__anchorText {
+  cursor: inherit;
+  padding-right: 2px;
+}
+
+.popup__click {
+  text-decoration: underline;
+}
+
+.popup__content {
+  &.show {
+    max-width: 100% !important;
+  }
+  p:last-of-type {
+    margin: 0;
+  }
+}
+
+.popup__modalContent {
+  text-align: initial;
+  min-width: 600px;
+}

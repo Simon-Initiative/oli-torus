@@ -1,50 +1,110 @@
-@import "authoring/variables";
+@import 'authoring/variables';
 
 .react-tiny-popover-container {
-  z-index: $z-overlay-3;
+  z-index: $z-content-3;
 }
 
-.hovering-toolbar {
-  .btn-group {
-    padding-left: 5px;
-    padding-right: 5px;
-    border-radius: 4px;
-    background-image: linear-gradient(to bottom, rgba(49, 49, 47, 0.99), #262625);
-  }
+.editorToolbar {
+  display: inline-flex;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  background: white;
 
-  button {
-    .toolbar-button-text {
-      font-size: 12px;
-    }
+  &__group {
+    background: white;
+    border-left: 1px solid black;
 
-    &.btn-dark:not(:disabled):not(.disabled),
-    &.btn-dark:disabled,
-    &.btn-dark:hover {
-      white-space: nowrap;
-      padding: 0 0.25rem;
-      display: inline-block;
-      vertical-align: middle;
-      background-color: transparent;
-      border: none;
-      height: 42px;
-      min-width: 32px;
-      font-size: 16px;
-      span {
-        line-height: 42px;
-      }
-      &.active {
-        color: $cyan;
-      }
-    }
-    &.btn-dark:disabled {
-      color: #7b8a8b;
+    .editorToolbar__button:first-of-type,
+    .editorToolbar__button:last-of-type {
+      flex-basis: 42px;
     }
   }
-  .button-separator {
-    display: inline-block;
-    width: 1px;
-    margin: auto 6px;
-    height: 24px;
-    background: rgba(255, 255, 255, 0.2);
+  &__group:last-of-type {
+    border-right: 1px solid black;
+  }
+
+  &__dropdownGroup {
+    display: inline-flex;
+    padding: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    flex-basis: 100px;
+    border: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    background: white;
+  }
+
+  &__button {
+    text-align: left;
+    border: 0;
+    background: white;
+    flex-basis: 36px;
+    height: 42px;
+    padding: 12px 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+
+    &--descriptive {
+      padding: 6px 12px;
+      flex-basis: max-content;
+      justify-content: flex-start;
+      border: 2px solid transparent;
+      border-radius: 4px;
+
+      &:hover {
+        color: $primary;
+      }
+      &:focus,
+      &:active {
+        border: 2px solid $primary;
+      }
+    }
+    .editorToolbar__button--descriptive:last-of-type {
+      flex-basis: max-content;
+    }
+
+    &Indicator {
+      flex-basis: 32px;
+      height: 32px;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      &:hover {
+        color: $primary;
+      }
+      &:focus,
+      &:active {
+        border: 2px solid $primary;
+      }
+
+      .toolbar-button-text {
+        min-width: 24px;
+        min-height: 24px;
+        text-align: center;
+        line-height: 32px;
+      }
+    }
+
+    .icon {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 8px;
+    }
+  }
+
+  &__button.active {
+    .editorToolbar__buttonIndicator {
+      background-color: black;
+      color: white;
+    }
+  }
+  &__button--descriptive.active {
+    background-color: black;
+    color: white;
   }
 }

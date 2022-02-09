@@ -1,6 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
-import { ActivitiesSlice } from '../../../../delivery/store/features/activities/slice';
+import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { createFeedback } from './createFeedback';
 
 export const createCorrectRule = createAsyncThunk(

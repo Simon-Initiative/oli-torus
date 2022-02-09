@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Heading } from 'components/misc/Heading';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { ModelEditorProps } from '../schema';
-import { RichText, Feedback as FeedbackItem } from '../../types';
+import { Feedback as FeedbackItem } from '../../types';
 import { Description } from 'components/misc/Description';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
 import { ProjectSlug } from 'data/types';
+import { Descendant } from 'slate';
 
 interface FeedbackProps extends ModelEditorProps {
-  onEditResponse: (score: number, content: RichText) => void;
+  onEditResponse: (score: number, content: Descendant[]) => void;
   projectSlug: ProjectSlug;
   onRequestMedia: any;
 }

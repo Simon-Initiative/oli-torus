@@ -1,9 +1,8 @@
 import isHotkey from 'is-hotkey';
-import { ReactEditor } from 'slate-react';
-import { toggleMark } from 'components/editing/commands/commands';
-import { commandDesc as linkCmd } from 'components/editing/commands/LinkCmd';
-import { CommandContext } from 'components/editing/models/interfaces';
-import { Element, Node } from 'slate';
+import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
+import { Editor, Element, Node } from 'slate';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { toggleMark } from 'components/editing/elements/marks/toggleMarkActions';
 
 const isBoldHotkey = isHotkey('mod+b');
 const isItalicHotkey = isHotkey('mod+i');
@@ -11,11 +10,7 @@ const isCodeHotkey = isHotkey('mod+;');
 const isLinkHotkey = isHotkey('mod+l');
 const isDeleteKey = isHotkey(['Backspace', 'Delete']);
 
-export const hotkeyHandler = (
-  editor: ReactEditor,
-  e: KeyboardEvent,
-  commandContext: CommandContext,
-) => {
+export const hotkeyHandler = (editor: Editor, e: KeyboardEvent, commandContext: CommandContext) => {
   if (isBoldHotkey(e)) {
     toggleMark(editor, 'strong');
   } else if (isItalicHotkey(e)) {

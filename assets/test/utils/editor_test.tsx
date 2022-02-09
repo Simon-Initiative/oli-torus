@@ -5,19 +5,28 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { Editable, Slate, withReact } from 'slate-react';
 import { createEditor, Descendant, Element } from 'slate';
-import { InputRef, Mark, ModelElement, Paragraph } from 'data/content/model';
 import { editorFor, markFor } from 'components/editing/editor/modelEditorDispatch';
+import { ModelElement, InputRef, Paragraph } from 'data/content/model/elements/types';
+import { Mark } from 'data/content/model/text';
 
 const exampleContent = require('../writer/example_content.json');
 
 export const testEditor = withReact(createEditor());
 export const TestEditorComponent = () => {
   const [value, setValue] = React.useState<Descendant[]>(exampleContent.children);
+
+  // Mock for image element
+  (window as any).ResizeObserver = class ResizeObserver {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+
   return (
     <Slate editor={testEditor} value={value} onChange={setValue}>
       <Editable
         renderElement={(props) =>
-          editorFor(props.element as ModelElement, props, testEditor, { projectSlug: '' })
+          editorFor(props.element as ModelElement, props, { projectSlug: '' })
         }
         renderLeaf={({ attributes, children, leaf }) => (
           <span {...attributes}>

@@ -2,7 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { setCurrentActivityId } from '../../../../../../delivery/store/features/activities/slice';
 import { findInSequence } from '../../../../../../delivery/store/features/groups/actions/sequence';
 import { selectSequence } from '../../../../../../delivery/store/features/groups/selectors/deck';
-import { GroupsSlice } from '../../../../../../delivery/store/features/groups/slice';
+import GroupsSlice from '../../../../../../delivery/store/features/groups/name';
 
 export const setCurrentActivityFromSequence = createAsyncThunk(
   `${GroupsSlice}/layouts/deck/setCurrentActivityFromSequence`,

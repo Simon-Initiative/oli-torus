@@ -12,7 +12,7 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
   // to be passed into this function, instead of simply using a shared common state
   let store = configureStore();
 
-  (window as any).oliMountApplication = (mountPoint: any, params: any) => {
+  window.oliMountApplication = (mountPoint: any, params: any) => {
     let parsedContent: any = {};
     try {
       parsedContent = JSON.parse(b64DecodeUnicode(params.content));
@@ -58,12 +58,19 @@ export function defineApplication<T extends State>(Component: React.FunctionComp
     );
   };
 
-  (window as any).store = {
+  window.store = {
     configureStore: (json: any) => {
       store = configureStore(json);
     },
   };
 
   // Expose other libraries to server-side rendered templates
-  (window as any).Maybe = Maybe;
+  window.Maybe = Maybe;
+}
+declare global {
+  interface Window {
+    Maybe: typeof Maybe;
+    store: { configureStore: (json: any) => void };
+    oliMountApplication: (mountPoint: any, params: any) => void;
+  }
 }

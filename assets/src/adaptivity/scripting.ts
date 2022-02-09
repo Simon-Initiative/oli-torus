@@ -301,7 +301,7 @@ export const applyState = (
       break;
     default:
       errorMsg = `Unknown applyState operator ${JSON.stringify(operation.operator)}!`;
-      console.warn(errorMsg, {
+      console.log(errorMsg, {
         operation,
       });
       break;

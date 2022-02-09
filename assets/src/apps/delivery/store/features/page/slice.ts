@@ -1,6 +1,7 @@
 import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
 import { RootState } from '../../rootReducer';
+import PageSlice from './name';
 
 export interface PageState {
   userId: number;
@@ -80,8 +81,6 @@ const pageSlice = createSlice({
     },
   },
 });
-
-export const PageSlice = pageSlice.name;
 
 export const { loadPageState, setActiveEverapp, setScore, setShowHistory } = pageSlice.actions;
 

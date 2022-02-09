@@ -2,6 +2,7 @@
   "id": "oli_ordering",
   "friendlyName": "Ordering",
   "description": "A ordering activity where answer options must be placed in the correct order",
+  "icon": "list_alt",
   "delivery": {
     "element": "oli-ordering-delivery",
     "entry": "./delivery-entry.ts"

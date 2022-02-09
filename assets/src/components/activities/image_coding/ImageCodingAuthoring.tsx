@@ -4,7 +4,8 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Heading } from 'components/misc/Heading';
-import * as ContentModel from 'data/content/model';
+import { Model } from 'data/content/model/elements/factories';
+import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
@@ -80,15 +81,15 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     });
   }
 
-  const addImage = (e: any) => {
-    selectImage(projectSlug, ContentModel.image()).then((url: string) => {
+  const addImage = (_e: any) => {
+    selectImage(projectSlug, Model.image()).then((url: string) => {
       dispatch(ICActions.addResourceURL(url));
     });
   };
 
-  const addSpreadsheet = (e: any) => {
-    selectSpreadsheet(projectSlug, ContentModel.image()).then((img) => {
-      dispatch(ICActions.addResourceURL(img.src));
+  const addSpreadsheet = (_e: any) => {
+    selectSpreadsheet(projectSlug, Model.image()).then((img) => {
+      img.src && dispatch(ICActions.addResourceURL(img.src));
     });
   };
 
