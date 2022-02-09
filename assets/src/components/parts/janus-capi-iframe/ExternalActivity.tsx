@@ -450,8 +450,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
-              console.log({ initFactsSnapshot_EA_CC: currentStateSnapshot });
-
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
               processInitStateVariable(currentStateSnapshot, simLife.domain);

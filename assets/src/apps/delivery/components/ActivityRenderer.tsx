@@ -432,7 +432,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const initState = currentActivity?.content?.custom?.facts || [];
     updateGlobalState(snapshot, initState);
     const finalInitSnapshot = handleInitStateVars(initState, snapshot);
-    console.log({ finalInitSnapshot });
+    console.log({ finalInitSnapshot, initStateBindToFacts });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
