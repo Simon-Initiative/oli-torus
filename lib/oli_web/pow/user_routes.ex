@@ -7,23 +7,6 @@ defmodule OliWeb.Pow.UserRoutes do
   alias Oli.Delivery.Sections.Section
 
   @impl true
-  def session_path(conn, :new, query_params \\ []) do
-    case conn.params do
-      %{"section" => section} ->
-        Pow.Phoenix.Routes.path_for(
-          conn,
-          Pow.Phoenix.SessionController,
-          :new,
-          [],
-          Keyword.put(query_params, :section, section)
-        )
-
-      _ ->
-        Pow.Phoenix.Routes.path_for(conn, Pow.Phoenix.SessionController, :new, [], query_params)
-    end
-  end
-
-  @impl true
   def after_sign_in_path(conn) do
     conn
     |> request_path_or(
@@ -114,6 +97,26 @@ defmodule OliWeb.Pow.UserRoutes do
         Pow.Phoenix.Routes.session_path(conn, :new)
     end
   end
+
+  @impl true
+  def path_for(
+        %{params: %{"section" => section}} = conn,
+        Pow.Phoenix.SessionController,
+        :new,
+        [],
+        query_params
+      ),
+      do:
+        Pow.Phoenix.Routes.path_for(
+          conn,
+          Pow.Phoenix.SessionController,
+          :new,
+          [],
+          Keyword.put(query_params, :section, section)
+        )
+
+  def path_for(conn, plug, verb, vars, query_params),
+    do: Pow.Phoenix.Routes.path_for(conn, plug, verb, vars, query_params)
 
   @impl true
   def url_for(
