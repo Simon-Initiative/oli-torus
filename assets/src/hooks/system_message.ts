@@ -1,6 +1,6 @@
 export const SystemMessage = {
   mounted(): void {
-    this.el.addEventListener('click', (e: any) => {
+    this.el.addEventListener('click', (_e: any) => {
       const id = this.el.getAttribute('message-id');
 
       fetch('/set_session', {

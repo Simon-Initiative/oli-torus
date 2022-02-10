@@ -7,7 +7,12 @@ defmodule Oli.Factory do
   alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications, SectionResource}
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
+<<<<<<< HEAD
   alias Oli.Institutions.{Institution, SsoJwk}
+=======
+  alias Oli.Institutions.Institution
+  alias Oli.Notifications.SystemMessage
+>>>>>>> [MER-698] Add tests
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
 
@@ -243,6 +248,31 @@ defmodule Oli.Factory do
       provider_type: :stripe,
       section: insert(:section),
       enrollment: insert(:enrollment)
+    }
+  end
+
+  def system_message_factory() do
+    {:ok, start_date, _timezone} = DateTime.from_iso8601("2022-02-07 20:30:00Z")
+    {:ok, end_date, _timezone} = DateTime.from_iso8601("2022-02-07 21:30:00Z")
+
+    %SystemMessage{
+      message: sequence("Message"),
+      active: true,
+      start: start_date,
+      end: end_date
+    }
+  end
+
+  def active_system_message_factory() do
+    now = DateTime.utc_now()
+    start_date = DateTime.add(now, -3600)
+    end_date = DateTime.add(now, 3600)
+
+    %SystemMessage{
+      message: sequence("Message"),
+      active: true,
+      start: start_date,
+      end: end_date
     }
   end
 end
