@@ -9,6 +9,7 @@ defmodule OliWeb.PageDeliveryController do
 
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
@@ -82,7 +83,14 @@ defmodule OliWeb.PageDeliveryController do
           )
       end
     else
-      render(conn, "not_authorized.html")
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
     end
   end
 

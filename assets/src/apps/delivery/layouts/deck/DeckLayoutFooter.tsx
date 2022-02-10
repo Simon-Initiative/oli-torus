@@ -62,8 +62,20 @@ export const handleValueExpression = (
     ) {
       const variableList = value.match(/\{(.*?)\}/g);
       variableList?.forEach((item) => {
+        // if the variable is already targetted to another screen, we just want to make sure that the actual owner Id is used in expression.
         if (item.indexOf('|') > 0) {
-          // if the variable is already targetted to another screen, we don't need to do this.
+          //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
+          //it should be like {q.145225454.1|stage.input.value}
+          const modifiedValue = item.replace('{', '').replace('}', '');
+          const partVariable = modifiedValue.split('|')[1];
+          const variables = partVariable.split('.');
+          const ownerActivity = currentActivityTree?.find(
+            (activity) => !!activity.content.partsLayout.find((p: any) => p.id === variables[1]),
+          );
+          //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
+          if (ownerActivity) {
+            value = value.replace(`${item}`, `{${ownerActivity.id}|${partVariable}}`);
+          }
           return;
         }
         //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}

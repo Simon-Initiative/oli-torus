@@ -78,10 +78,6 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
-  pipeline :maybe_enroll_open_and_free do
-    plug(Oli.Plugs.MaybeEnrollOpenAndFreeUser)
-  end
-
   pipeline :maybe_gated_resource do
     plug(Oli.Plugs.MaybeGatedResource)
   end
@@ -602,7 +598,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :pow_email_layout
     ])
@@ -633,7 +628,6 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :pow_email_layout
     ])
@@ -650,7 +644,6 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_paywall,
@@ -728,8 +721,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug/enroll", DeliveryController, :enroll)
-    post("/:section_slug/create_user", DeliveryController, :create_user)
+    get("/:section_slug/enroll", DeliveryController, :show_enroll)
+    post("/:section_slug/enroll", DeliveryController, :process_enroll)
   end
 
   # Delivery Auth (Signin)

@@ -11,8 +11,15 @@
       </div>
     </div>
 
-    <%= form_for @conn, Routes.delivery_path(@conn, :create_user, @section.slug), fn _f -> %>
+    <%= form_for @conn, Routes.delivery_path(@conn, :process_enroll, @section.slug), fn _f -> %>
       <div class="form-label-group">
+
+        <%= if user_is_guest?(@conn) or assigns.current_user == nil do %>
+          <p>
+            You will be enrolled as a <b>Guest</b>. Participation will be anonymous and any progress made will not be saved.
+          </p>
+        <% end %>
+
         <div class="g-recaptcha" data-sitekey="<%= Application.fetch_env!(:oli, :recaptcha)[:site_key] %>"></div>
 
         <%= case assigns[:error] do %>
@@ -21,7 +28,12 @@
         <% end %>
       </div>
 
-      <%= submit "Enroll", class: "btn btn-md btn-primary btn-block" %>
+      <%= if user_is_guest?(@conn) or assigns.current_user == nil do %>
+        <%= submit "Enroll as Guest", class: "btn btn-md btn-primary btn-block" %>
+        <a href="<%= Routes.pow_session_path(@conn, :new, section: @section.slug) %>" class="btn btn-md btn-outline-primary btn-block mt-2">Sign In</a>
+      <% else %>
+        <%= submit "Enroll", class: "btn btn-md btn-primary btn-block" %>
+      <% end %>
     <% end %>
 
   <% end %>
