@@ -16,7 +16,26 @@ defmodule Oli.Delivery.Attempts.Scoring do
   Returns a `%Result{}` struct with the calculated score.
   """
   def calculate_score(strategy_id, items) when is_number(strategy_id) do
-    calculate_score(ScoringStrategy.get_type_by_id(strategy_id), items)
+    calculate_score(ScoringStrategy.get_type_by_id(strategy_id), translate_nils(items))
+  end
+
+  defp translate_nils(items) do
+    Enum.map(items, fn p ->
+      %{
+        score:
+          if is_nil(p.score) do
+            0
+          else
+            p.score
+          end,
+        out_of:
+          if is_nil(p.out_of) do
+            0
+          else
+            p.out_of
+          end
+      }
+    end)
   end
 
   # The average calculated here is normalized out of 100%, but then

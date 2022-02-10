@@ -464,6 +464,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     # find the latest part attempts
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
+    IO.inspect(part_attempts)
+
     # apply the scoring strategy and set the evaluation on the activity
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
