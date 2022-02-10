@@ -10,7 +10,7 @@
     <title>OliWeb.DeliveryController — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-54bf611bd4.js"></script>
+    <script src="dist/sidebar_items-0b02b20fef.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -133,20 +133,6 @@ OliWeb.DeliveryController <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#create_user/2">create_user(conn, params)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#enroll/2">enroll(conn, params)</a>
-
-  </div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
     <a href="#enroll_independent/2">enroll_independent(conn, map)</a>
 
   </div>
@@ -189,6 +175,13 @@ OliWeb.DeliveryController <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#process_enroll/2">process_enroll(conn, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#process_link_account_provider/2">process_link_account_provider(conn, map)</a>
 
   </div>
@@ -225,6 +218,13 @@ OliWeb.DeliveryController <small class="app-vsn">(OLI Torus v0.18.4)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#select_project/2">select_project(conn, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#show_enroll/2">show_enroll(conn, params)</a>
 
   </div>
 
@@ -324,50 +324,6 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="create_user/2">
-
-  <div class="detail-header">
-    <a href="#create_user/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">create_user(conn, params)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L464" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
-<section class="detail" id="enroll/2">
-
-  <div class="detail-header">
-    <a href="#enroll/2" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">enroll(conn, params)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L432" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
 <section class="detail" id="enroll_independent/2">
 
   <div class="detail-header">
@@ -377,7 +333,7 @@ Functions
     </a>
     <h1 class="signature">enroll_independent(conn, map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L447" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L486" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -488,6 +444,28 @@ Functions
     <h1 class="signature">process_create_and_link_account_user(conn, map)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L239" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="process_enroll/2">
+
+  <div class="detail-header">
+    <a href="#process_enroll/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">process_enroll(conn, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L452" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -624,6 +602,28 @@ Functions
     <h1 class="signature">select_project(conn, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L83" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="show_enroll/2">
+
+  <div class="detail-header">
+    <a href="#show_enroll/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">show_enroll(conn, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/controllers/delivery_controller.ex#L432" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

@@ -10,7 +10,7 @@
     <title>OliWeb.Pow.UserContext — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-54bf611bd4.js"></script>
+    <script src="dist/sidebar_items-0b02b20fef.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -129,7 +129,8 @@ OliWeb.Pow.UserContext <small class="app-vsn">(OLI Torus v0.18.4)</small>
 
   </div>
 
-    <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.26/Pow.Context.html#c:create/1"><code class="inline">Pow.Context.create/1</code></a>.</p></div>
+    <div class="summary-synopsis"><p>Overrides the default Pow.Ecto.Context <code class="inline">create</code> to set the virtual <code class="inline">enroll_after_email_confirmation</code>
+field after a user is created as part of an independent enrollment email confirmation</p></div>
 
 </div>
 <div class="summary-row">
@@ -255,7 +256,7 @@ Functions
     </a>
     <h1 class="signature">create(params)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_context.ex#L6" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/user_context.ex#L43" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -265,7 +266,8 @@ Functions
 
   <section class="docstring">
 
-<p>Callback implementation for <a href="https://hexdocs.pm/pow/1.0.26/Pow.Context.html#c:create/1"><code class="inline">Pow.Context.create/1</code></a>.</p>
+<p>Overrides the default Pow.Ecto.Context <code class="inline">create</code> to set the virtual <code class="inline">enroll_after_email_confirmation</code>
+field after a user is created as part of an independent enrollment email confirmation</p>
   </section>
 </section>
 <section class="detail" id="delete/1">
@@ -334,8 +336,6 @@ independent learners are queried</p>
 
       <h2>Specs</h2>
       <div class="specs">
-
-          <pre>lock(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
 
           <pre>lock(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
 
@@ -472,6 +472,13 @@ independent learners are queried</p>
   </div>
 
   <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>unlock(<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()) :: {:ok, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()}</pre>
+
+      </div>
 
 
   </section>
