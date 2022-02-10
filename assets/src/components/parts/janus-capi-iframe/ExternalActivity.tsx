@@ -33,7 +33,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [ready, setReady] = useState<boolean>(false);
   const [initState, setInitState] = useState<any>(null);
   const [initStateReceived, setInitStateReceived] = useState(false);
-  const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>(null);
+  const [initStateBindToFacts, setInitStateBindToFacts] = useState<any>({});
   const [screenContext, setScreenContext] = useState('');
   const id: string = props.id;
 
