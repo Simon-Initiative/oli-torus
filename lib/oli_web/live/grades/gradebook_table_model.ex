@@ -4,7 +4,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(enrollments, graded_pages, resource_accesses, section_slug) do
+  def new(enrollments, graded_pages, resource_accesses, section) do
     by_user =
       Enum.reduce(resource_accesses, %{}, fn ra, m ->
         case Map.has_key?(m, ra.user_id) do
@@ -20,7 +20,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
     rows =
       Enum.map(enrollments, fn user ->
         Map.get(by_user, user.id, %{})
-        |> Map.merge(%{user: user, id: user.id, section_slug: section_slug})
+        |> Map.merge(%{user: user, id: user.id, section: section})
       end)
 
     column_specs =
@@ -77,7 +77,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
          } = resource_access
        ) do
     link_type =
-      if ResourceAccess.last_grade_update_failed?(resource_access) do
+      if !row.section.open_and_free and ResourceAccess.last_grade_update_failed?(resource_access) do
         "badge badge-danger"
       else
         "badge badge-light"
@@ -85,7 +85,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
 
     if out_of == 0 or out_of == 0.0 do
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
         <span>{score}/{out_of} 0%</span>
       </a>
       """
@@ -116,7 +116,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         end
 
       ~F"""
-      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section_slug, row.id, resource_id)}>
+      <a class={link_type} href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
       {safe_score}/{safe_out_of} <small class="text-muted">{percentage}</small>
       </a>
       """
