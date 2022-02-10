@@ -35,6 +35,9 @@ import * as Extrinsic from 'data/persistence/extrinsic';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
+import { templatizeText } from './TextParser';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import { handleValueExpression } from '../layouts/deck/DeckLayoutFooter';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;
@@ -336,7 +339,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const handleInitStateVars = (initState: any, snapshot: any) => {
     const finalInitSnapshot = initState?.reduce((acc: any, initObject: any) => {
       let key = initObject.target;
+      let updatedValue = initObject.value;
       const value = initObject.value;
+      const typeOfOriginalValue = typeof value;
       if (key.indexOf('stage') === 0) {
         const lstVar = key.split('.');
         if (lstVar?.length > 1) {
@@ -354,14 +359,27 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
         ) {
           //this is a expression so we get the value from snapshot because this was already evaluated in deck.ts
-          acc[initObject.target] = snapshot[key];
+          updatedValue = snapshot[key];
         } else {
-          acc[initObject.target] = initObject.value;
+          updatedValue = initObject.value;
         }
       } else {
-        acc[initObject.target] = initObject.value;
+        updatedValue = initObject.value;
       }
-
+      if (initObject.type !== CapiVariableTypes.MATH_EXPR) {
+        // need handle the value expression i.e. value = MISSION CONTROL: Search the surface of {q:1476902665616:794|stage.simIFrame.Globals.SelectedObject} for the astrocache.
+        // otherwise, it will never be replace with actual value on screen
+        updatedValue = handleValueExpression(
+          currentActivityTree,
+          initObject.value,
+          initObject.operator,
+        );
+      }
+      const evaluatedValue =
+        typeOfOriginalValue === 'string' && initObject.type !== CapiVariableTypes.MATH_EXPR
+          ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, true)
+          : updatedValue;
+      acc[initObject.target] = evaluatedValue;
       return acc;
     }, {});
     return finalInitSnapshot;
@@ -432,7 +450,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const initState = currentActivity?.content?.custom?.facts || [];
     updateGlobalState(snapshot, initState);
     const finalInitSnapshot = handleInitStateVars(initState, snapshot);
-    console.log({ finalInitSnapshot });
+    console.log({ finalInitSnapshot, initStateBindToFacts });
 
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
