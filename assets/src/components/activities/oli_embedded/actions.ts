@@ -12,13 +12,13 @@ export class OliEmbeddedActions {
   }
 
   static editActivityXml(xml: string) {
-    return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       draftState.modelXml = xml;
     };
   }
 
   static addResourceURL(value: string) {
-    return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       if (draftState.resourceURLs.indexOf(value) === -1) {
         draftState.resourceURLs.push(value);
       }
@@ -26,7 +26,7 @@ export class OliEmbeddedActions {
   }
 
   static addNewPart() {
-    return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       draftState.authoring.parts.push({
         id: guid(),
         scoringStrategy: ScoringStrategy.average,
@@ -37,7 +37,7 @@ export class OliEmbeddedActions {
   }
 
   static removePart(partId: string) {
-    return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       if (draftState.authoring.parts.length > 1) {
         draftState.authoring.parts = draftState.authoring.parts.filter((p) => p.id !== partId);
       }
@@ -45,7 +45,7 @@ export class OliEmbeddedActions {
   }
 
   static updatePartScoringStrategy(partId: string, scoringStrategy: ScoringStrategy) {
-    return (draftState: OliEmbeddedModelSchema, post: PostUndoable) => {
+    return (draftState: OliEmbeddedModelSchema, _post: PostUndoable) => {
       const part = draftState.authoring.parts.find((p) => p.id === partId);
       if (part) {
         part.scoringStrategy = scoringStrategy;
