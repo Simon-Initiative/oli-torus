@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Ensure user_id is unique in DataShop export
-
 ## 0.18.4 (2022-01-11)
 
 ### Bug Fixes
@@ -13,6 +9,8 @@
 - Ensure score can never exceed out of for graded pages
 - Ensure multiple payment attempts is handled correctly
 - Handle cases where recaptcha payload is missing
+- Ensure user_id is unique in DataShop export
+- Only highlight failed grade sync cells when section is an LMS section
 
 ### Enhancements
 
