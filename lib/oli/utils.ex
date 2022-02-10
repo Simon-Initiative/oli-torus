@@ -3,6 +3,8 @@ defmodule Oli.Utils do
 
   import Ecto.Changeset
 
+  @urlRegex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
+
   @doc """
   Generates a random hex string of the given length
   """
@@ -260,4 +262,20 @@ defmodule Oli.Utils do
   """
   def string_to_boolean("true"), do: true
   def string_to_boolean(_bool), do: false
+
+  @doc """
+  Detects all urls in a string and replaces them with hyperlinks.
+  """
+  def find_and_linkify_urls_in_string(string) do
+    Regex.replace(@urlRegex, string, fn _, url ->
+      absolute_url =
+        if is_url_absolute(url) do
+          url
+        else
+          "//" <> url
+        end
+
+      "<a href=\"#{absolute_url}\" target=\"_blank\">#{url}</a>"
+    end)
+  end
 end

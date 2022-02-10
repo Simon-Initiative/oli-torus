@@ -58,7 +58,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
       </Form>
       {#if @show_confirm}
         <Confirm title="Confirm Message" id="dialog" ok="broadcast_message" cancel="cancel_modal">
-          Are you sure that you wish to <b> {if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
+          Are you sure that you wish to <b>{if @message_will_be_displayed, do: "send", else: "hide"}</b> this message to all users in the system?
         </Confirm>
       {/if}
     """
