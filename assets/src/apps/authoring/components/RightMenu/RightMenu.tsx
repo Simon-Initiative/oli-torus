@@ -143,7 +143,7 @@ const RightMenu: React.FC<any> = () => {
           cloneSequence.custom.bankShowCount = bankShowCount;
           cloneSequence.custom.bankEndTarget = bankEndTarget;
           dispatch(updateSequenceItem({ sequence: cloneSequence, group: currentGroup }));
-          dispatch(savePage());
+          dispatch(savePage({ undoable: true }));
         }
         //debounceSaveBankSettings(currentGroup, currentSequence, bankShowCount, bankEndTarget);
       }
@@ -159,7 +159,7 @@ const RightMenu: React.FC<any> = () => {
           cloneSequence.custom.bankShowCount = bankShowCount;
           cloneSequence.custom.bankEndTarget = bankEndTarget;
           dispatch(updateSequenceItem({ sequence: cloneSequence, group: group }));
-          dispatch(savePage());
+          dispatch(savePage({ undoable: true }));
         }
       },
       0,
@@ -197,11 +197,11 @@ const RightMenu: React.FC<any> = () => {
     debounce(
       (activity, currentActivity, group) => {
         /* console.log('SAVING ACTIVITY:', { activity }); */
-        dispatch(saveActivity({ activity }));
+        dispatch(saveActivity({ activity, undoable: true }));
 
         if (activity.title !== currentActivity?.title) {
           dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
-          dispatch(savePage());
+          dispatch(savePage({ undoable: true }));
         }
       },
       500,
@@ -215,7 +215,7 @@ const RightMenu: React.FC<any> = () => {
       (changes) => {
         /* console.log('SAVING PAGE', { changes }); */
         // update server
-        dispatch(savePage(changes));
+        dispatch(savePage({ ...changes, undoable: true }));
         // update redux
         // TODO: check if revision slug changes?
         dispatch(updatePage(changes));
@@ -395,7 +395,7 @@ const RightMenu: React.FC<any> = () => {
     }
     ogPart.custom = newJson.custom;
     if (!isEqual(cloneActivity, currentActivity)) {
-      dispatch(saveActivity({ activity: cloneActivity }));
+      dispatch(saveActivity({ activity: cloneActivity, undoable: true }));
     }
   };
   const DeleteComponentHandler = () => {
@@ -422,7 +422,7 @@ const RightMenu: React.FC<any> = () => {
     cloneActivity.content.partsLayout = cloneActivity.content.partsLayout.filter(
       (part: any) => part.id !== currentPartSelection,
     );
-    dispatch(saveActivity({ activity: cloneActivity }));
+    dispatch(saveActivity({ activity: cloneActivity, undoable: true }));
     dispatch(setCurrentSelection({ selection: '' }));
     dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));
   }, [currentPartSelection, currentActivity]);

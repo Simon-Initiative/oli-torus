@@ -152,7 +152,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
           rule,
         });
       }
-      dispatch(saveActivity({ activity: activityClone }));
+      dispatch(saveActivity({ activity: activityClone, undoable: true }));
     }
   };
 

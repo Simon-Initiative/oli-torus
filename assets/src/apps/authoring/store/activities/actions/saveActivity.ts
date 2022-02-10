@@ -66,7 +66,7 @@ export const saveActivity = createAsyncThunk(
       if (!currentPage.custom.scoreFixed) {
         // need to check if this update to an activity affects the total score
         if (activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore) {
-          await dispatch(savePage());
+          await dispatch(savePage({ undoable: false }));
         }
       }
       console.log('EDIT SAVE RESULTS', { editResults });
@@ -88,8 +88,8 @@ export const saveActivity = createAsyncThunk(
 
 export const bulkSaveActivity = createAsyncThunk(
   `${ActivitiesSlice}/bulkSaveActivity`,
-  async (payload: { activities: IActivity[] }, { dispatch, getState }) => {
-    const { activities } = payload;
+  async (payload: { activities: IActivity[]; undoable?: boolean }, { dispatch, getState }) => {
+    const { activities, undoable = false } = payload;
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     const pageResourceId = selectResourceId(rootState);
@@ -120,13 +120,14 @@ export const bulkSaveActivity = createAsyncThunk(
         return changeData;
       });
       await bulkEdit(projectSlug, pageResourceId, updates);
-
-      dispatch(
-        createUndoAction({
-          undo: bulkSaveActivity({ activities: currentActivities }),
-          redo: bulkSaveActivity({ activities }),
-        }),
-      );
+      if (undoable) {
+        dispatch(
+          createUndoAction({
+            undo: bulkSaveActivity({ activities: cloneDeep(currentActivities) }),
+            redo: bulkSaveActivity({ activities: cloneDeep(activities) }),
+          }),
+        );
+      }
     }
     return;
   },

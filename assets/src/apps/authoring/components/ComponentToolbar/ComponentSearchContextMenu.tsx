@@ -59,7 +59,7 @@ const ComponentSearchContextMenu: React.FC = () => {
   const updateActivityTreeParts = (list: any) => {
     const activity = cloneDeep((currentActivityTree || []).slice(-1)[0]);
     activity.content.partsLayout = list;
-    dispatch(saveActivity({ activity }));
+    dispatch(saveActivity({ activity, undoable: true }));
   };
 
   const moveComponentUp = (event: any, part: any, index: number) => {
