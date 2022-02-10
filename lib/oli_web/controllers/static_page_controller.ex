@@ -48,4 +48,13 @@ defmodule OliWeb.StaticPageController do
       "display" => "standalone"
     })
   end
+
+  def set_session(conn, %{"dismissed_message" => message_id}) do
+    dismissed_messages = get_session(conn, :dismissed_messages) || []
+    id = String.to_integer(message_id)
+
+    conn
+    |> put_session(:dismissed_messages, [id | dismissed_messages])
+    |> send_resp(200, "Ok")
+  end
 end

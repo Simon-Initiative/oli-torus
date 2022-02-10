@@ -8,6 +8,7 @@ import { CheckboxListener } from './checkbox_listener';
 import { SelectListener } from './select_listener';
 import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { CopyListener } from './copy_listener';
+import { SystemMessage } from './system_message';
 
 export const Hooks = {
   GraphNavigation,
@@ -21,4 +22,5 @@ export const Hooks = {
   SelectListener,
   DateTimeLocalInputListener,
   CopyListener,
+  SystemMessage,
 };

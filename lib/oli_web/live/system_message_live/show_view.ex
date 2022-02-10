@@ -8,11 +8,15 @@ defmodule OliWeb.SystemMessageLive.ShowView do
 
   def mount(
         _params,
-        _session,
+        session,
         socket
       ) do
     PubSub.subscribe_to_system_messages()
-    messages = Notifications.list_active_system_messages()
+    dismissed_messages = session["dismissed_messages"] || []
+
+    messages =
+      Notifications.list_active_system_messages()
+      |> filter_dismissed_messages(dismissed_messages)
 
     {:ok, assign(socket, messages: messages)}
   end
@@ -47,5 +51,9 @@ defmodule OliWeb.SystemMessageLive.ShowView do
 
   defp delete_system_message(id, messages) do
     Enum.filter(messages, fn m -> m.id != id end)
+  end
+
+  defp filter_dismissed_messages(messages, dismissed_messages) do
+    Enum.filter(messages, fn m -> m.id not in dismissed_messages end)
   end
 end
