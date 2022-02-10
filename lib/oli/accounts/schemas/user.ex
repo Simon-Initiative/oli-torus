@@ -71,6 +71,8 @@ defmodule Oli.Accounts.User do
     field :payment_date, :utc_datetime, virtual: true
     field :payment_id, :integer, virtual: true
 
+    field :enroll_after_email_confirmation, :string, virtual: true
+
     timestamps(type: :utc_datetime)
   end
 
