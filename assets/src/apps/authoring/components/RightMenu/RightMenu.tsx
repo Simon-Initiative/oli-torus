@@ -186,7 +186,7 @@ const RightMenu: React.FC<any> = () => {
           cloneActivity.title = title;
         }
         if (JSON.stringify(cloneActivity) !== JSON.stringify(currentActivity)) {
-          debounceSaveScreenSettings(cloneActivity, currentActivity, currentGroup);
+          debounceSaveScreenSettings(cloneActivity);
         }
       }
     },
@@ -195,14 +195,9 @@ const RightMenu: React.FC<any> = () => {
 
   const debounceSaveScreenSettings = useCallback(
     debounce(
-      (activity, currentActivity, group) => {
+      (activity) => {
         /* console.log('SAVING ACTIVITY:', { activity }); */
         dispatch(saveActivity({ activity, undoable: true }));
-
-        if (activity.title !== currentActivity?.title) {
-          dispatch(updateSequenceItemFromActivity({ activity: activity, group: group }));
-          dispatch(savePage({ undoable: true }));
-        }
       },
       500,
       { maxWait: 10000, leading: false },

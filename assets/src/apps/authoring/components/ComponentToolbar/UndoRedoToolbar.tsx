@@ -37,9 +37,9 @@ const UndoRedoToolbar: React.FC = () => {
           className="px-2 btn btn-link"
           onClick={() => handleUndo()}
           disabled={!hasUndo}
-          style={{ opacity: !hasUndo ? '0.5' : '1', pointerEvents: !hasUndo ? 'none' : 'auto' }}
+          style={{ opacity: !hasUndo ? '0.25' : '1', pointerEvents: !hasUndo ? 'none' : 'auto' }}
         >
-          <img src={`${paths?.images}/icons/icon-undo.svg`}></img>
+          <img src={`${paths?.images}/icons/icon-undo.svg`} className="icon-undo icon-history" />
         </button>
       </OverlayTrigger>
       <OverlayTrigger
@@ -55,9 +55,9 @@ const UndoRedoToolbar: React.FC = () => {
           className="px-2 btn btn-link"
           onClick={() => handleRedo()}
           disabled={!hasRedo}
-          style={{ opacity: !hasRedo ? '0.5' : '1', pointerEvents: !hasRedo ? 'none' : 'auto' }}
+          style={{ opacity: !hasRedo ? '0.25' : '1', pointerEvents: !hasRedo ? 'none' : 'auto' }}
         >
-          <img src={`${paths?.images}/icons/icon-redo.svg`}></img>
+          <img src={`${paths?.images}/icons/icon-redo.svg`} className="icon-redo icon-history" />
         </button>
       </OverlayTrigger>
     </>

@@ -16,6 +16,8 @@ import { savePage } from '../../page/actions/savePage';
 import { selectResourceId, selectState as selectCurrentPage } from '../../page/slice';
 import { createUndoAction } from '../../history/slice';
 import cloneDeep from 'lodash/cloneDeep';
+import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -25,6 +27,7 @@ export const saveActivity = createAsyncThunk(
     const projectSlug = selectProjectSlug(rootState);
     const resourceId = selectResourceId(rootState);
     const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
+    const group = selectCurrentGroup(rootState);
 
     const isReadOnlyMode = selectReadOnly(rootState);
 
@@ -63,12 +66,17 @@ export const saveActivity = createAsyncThunk(
       await dispatch(upsertActivity({ activity }));
 
       const currentPage = selectCurrentPage(rootState);
-      if (!currentPage.custom.scoreFixed) {
-        // need to check if this update to an activity affects the total score
-        if (activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore) {
-          await dispatch(savePage({ undoable: false }));
-        }
+
+      const updatePage =
+        activity.title !== currentActivityState?.title ||
+        (!currentPage.custom.scoreFixed &&
+          activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore);
+
+      if (updatePage) {
+        dispatch(updateSequenceItemFromActivity({ activity, group }));
+        await dispatch(savePage({}));
       }
+
       console.log('EDIT SAVE RESULTS', { editResults });
 
       /*console.log('EDIT SAVE RESULTS', { editResults });*/
