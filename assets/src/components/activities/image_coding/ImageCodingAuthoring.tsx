@@ -28,6 +28,8 @@ import { lastPart } from './utils';
 const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
   const { dispatch, model, onRequestMedia } = useAuthoringElementContext<ImageCodingModelSchema>();
 
+  console.log('onRequestMedia', onRequestMedia);
+
   const { projectSlug } = props;
 
   const sharedProps = {
@@ -36,6 +38,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     projectSlug,
     onRequestMedia,
   };
+
+  console.log('props onrequest', props.onRequestMedia);
 
   function selectImage(_projectSlug: string, _model: ContentModel.Image): Promise<string> {
     return new Promise((resolve, reject) => {
