@@ -123,6 +123,35 @@ defmodule Oli.Groups do
   # Communities accounts
 
   @doc """
+  Finds or creates a community account for a user. More efficient than using
+  many-to-many assoc.
+
+  ## Examples
+
+      iex> find_or_create_community_user_account(user_id, community_id)
+      {:ok, %CommunityAccount{}}
+
+      iex> find_or_create_community_user_account(bad_user_id, community_id)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def find_or_create_community_user_account(user_id, community_id) do
+    case Repo.one(
+           from(account in CommunityAccount,
+             where:
+               account.user_id == ^user_id and
+                 account.community_id == ^community_id
+           )
+         ) do
+      nil ->
+        create_community_account(%{user_id: user_id, community_id: community_id})
+
+      account ->
+        {:ok, account}
+    end
+  end
+
+  @doc """
   Creates a community account.
 
   ## Examples

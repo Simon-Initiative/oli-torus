@@ -45,6 +45,14 @@ defmodule Oli.Factory do
     }
   end
 
+  def community_user_account_factory() do
+    %CommunityAccount{
+      community: insert(:community),
+      user: insert(:user),
+      is_admin: false
+    }
+  end
+
   def community_account_factory(), do: struct!(community_admin_account_factory())
 
   def community_admin_account_factory() do

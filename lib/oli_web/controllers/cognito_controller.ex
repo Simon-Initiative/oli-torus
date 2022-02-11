@@ -5,8 +5,10 @@ defmodule OliWeb.CognitoController do
 
   require Logger
 
-  alias Oli.{Accounts, Groups, Institutions}
+  alias Oli.{Repo, Sections, Accounts, Groups, Institutions}
   alias Oli.Institutions.SsoJwk
+  alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.Section
 
   @jwks_relative_path "/.well-known/jwks.json"
 
@@ -21,13 +23,17 @@ defmodule OliWeb.CognitoController do
       ) do
     with {:ok, jwk} <- get_jwk(jwt),
          {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
+         %Section{} = section <- Sections.get_section_by(slug: product_id),
          {:ok, user} <- create_lms_user(jwt_fields),
          {:ok, _account} <- create_community_account(user.id, community_id) do
       conn
       |> use_pow_config(:user)
       |> Pow.Plug.create(user)
-      |> redirect(to: Routes.page_delivery_path(conn, :index, product_id))
+      |> redirect(to: redirect_path(conn, user, section.id))
     else
+      nil ->
+        redirect_with_error(conn, params, "Invalid product")
+
       {false, _, _} ->
         redirect_with_error(conn, params, "Unable to verify credentials")
 
@@ -112,6 +118,16 @@ defmodule OliWeb.CognitoController do
   end
 
   defp create_community_account(user_id, community_id) do
-    Groups.create_community_account(%{user_id: user_id, community_id: community_id})
+    Groups.find_or_create_community_user_account(user_id, community_id)
+  end
+
+  def redirect_path(conn, user, product_id) do
+    case Repo.preload(user, :enrollments).enrollments do
+      [] ->
+        Routes.independent_sections_path(conn, :new, source_id: "product:#{product_id}")
+
+      _ ->
+        Routes.delivery_path(conn, :open_and_free_index)
+    end
   end
 end
