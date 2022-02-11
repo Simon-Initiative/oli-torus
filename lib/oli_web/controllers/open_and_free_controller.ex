@@ -9,6 +9,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias OliWeb.Common.{Breadcrumb}
   alias Lti_1p3.Tool.{ContextRoles}
   alias Oli.Branding
+  alias OliWeb.Router.Helpers, as: Routes
 
   plug :add_assigns
 
@@ -89,7 +90,9 @@ defmodule OliWeb.OpenAndFreeController do
         {:ok, section} ->
           conn
           |> put_flash(:info, "Section created successfully.")
-          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
+          |> redirect(
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+          )
 
         _ ->
           changeset =
@@ -158,7 +161,9 @@ defmodule OliWeb.OpenAndFreeController do
         {:ok, section} ->
           conn
           |> put_flash(:info, "Section created successfully.")
-          |> redirect(to: OliWeb.OpenAndFreeView.get_path([conn.assigns.route, :show, section]))
+          |> redirect(
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+          )
 
         {:error, changeset} ->
           source_id = section_params["source_id"]
