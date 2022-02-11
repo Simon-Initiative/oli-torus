@@ -995,6 +995,10 @@ defmodule Oli.Seeder do
   end
 
   def add_activity(map, attrs, publication_tag, project_tag, author_tag, activity_tag) do
+    add_activity(map, attrs, publication_tag, project_tag, author_tag, activity_tag, Activities.get_registration_by_slug("oli_multiple_choice").id)
+  end
+
+  def add_activity(map, attrs, publication_tag, project_tag, author_tag, activity_tag, activity_type_id) do
     author = Map.get(map, author_tag)
     project = Map.get(map, project_tag)
     publication = Map.get(map, publication_tag)
@@ -1005,7 +1009,7 @@ defmodule Oli.Seeder do
     attrs =
       Map.merge(
         %{
-          activity_type_id: Activities.get_registration_by_slug("oli_multiple_choice").id,
+          activity_type_id: activity_type_id,
           author_id: author.id,
           objectives: %{"attached" => []},
           scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),

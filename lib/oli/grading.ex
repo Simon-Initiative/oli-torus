@@ -276,6 +276,15 @@ defmodule Oli.Grading do
     |> Enum.map(fn e -> e.user end)
   end
 
+  def fetch_instructors(section_slug) do
+    Sections.list_enrollments(section_slug)
+    |> Enum.filter(fn e ->
+      ContextRoles.contains_role?(e.context_roles, ContextRoles.get_role(:context_instructor))
+    end)
+    |> Enum.map(fn e -> e.user end)
+  end
+
+
   def fetch_resource_accesses(section_slug) do
     Attempts.get_graded_resource_access_for_context(section_slug)
     |> Enum.reduce(%{}, fn resource_access, acc ->

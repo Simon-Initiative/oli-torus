@@ -121,6 +121,7 @@ defmodule Oli.MixProject do
       {:premailex, "~> 0.3.0"},
       {:sched_ex, "~> 1.1"},
       {:shortuuid, "~> 2.1"},
+      {:sweet_xml, "~> 0.7.1"},
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
