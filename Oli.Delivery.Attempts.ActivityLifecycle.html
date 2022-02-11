@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.ActivityLifecycle — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-497bb15fc5.js"></script>
+    <script src="dist/sidebar_items-c2bb536ed0.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,31 @@ Oli.Delivery.Attempts.ActivityLifecycle <small class="app-vsn">(OLI Torus v0.18.
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#get_activity_attempt_save_file/4">get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_activity_attempt_save_files/3">get_activity_attempt_save_files(attempt_guid, user_id, attempt_number)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Query activity_save_file by attempt_guid and attempt_number</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#get_activity_save_file_by_guid/1">get_activity_save_file_by_guid(file_guid)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Query activity_save_file by file_guid</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#perform_test_transformation/1">perform_test_transformation(model)</a>
 
   </div>
@@ -140,6 +165,15 @@ new part attempts.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#save_activity_attempt_state_file/1">save_activity_attempt_state_file(changes)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Returns activity_attempt_save_file if a record matches attempt_guid and attempt_number, or creates and returns a new user</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#save_student_input/1">save_student_input(part_inputs)</a>
 
   </div>
@@ -163,6 +197,72 @@ part attempt record.</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="get_activity_attempt_save_file/4">
+
+  <div class="detail-header">
+    <a href="#get_activity_attempt_save_file/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L232" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="get_activity_attempt_save_files/3">
+
+  <div class="detail-header">
+    <a href="#get_activity_attempt_save_files/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_activity_attempt_save_files(attempt_guid, user_id, attempt_number)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L224" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Query activity_save_file by attempt_guid and attempt_number</p>
+  </section>
+</section>
+<section class="detail" id="get_activity_save_file_by_guid/1">
+
+  <div class="detail-header">
+    <a href="#get_activity_save_file_by_guid/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">get_activity_save_file_by_guid(file_guid)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L212" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Query activity_save_file by file_guid</p>
+  </section>
+</section>
 <section class="detail" id="perform_test_transformation/1">
 
   <div class="detail-header">
@@ -172,7 +272,7 @@ Functions
     </a>
     <h1 class="signature">perform_test_transformation(model)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L204" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L205" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -194,7 +294,7 @@ Functions
     </a>
     <h1 class="signature">request_hint(activity_attempt_guid, part_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L35" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L36" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -222,7 +322,7 @@ to whether there are more hints.</p><p>If there is not a hint available to fulfi
     </a>
     <h1 class="signature">reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous \\ false)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L88" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L89" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -236,6 +336,34 @@ to whether there are more hints.</p><p>If there is not a hint available to fulfi
 new part attempts.</p><p>The return value is of the form:</p><p><code class="inline">{:ok, %ActivityState, model}</code> where model is potentially a new model of the activity</p><p>If all attempts have been exhausted:</p><p><code class="inline">{:error, {:no_more_attempts}}</code></p><p>If the activity attempt cannot be found:</p><p><code class="inline">{:error, {:not_found}}</code></p>
   </section>
 </section>
+<section class="detail" id="save_activity_attempt_state_file/1">
+
+  <div class="detail-header">
+    <a href="#save_activity_attempt_state_file/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">save_activity_attempt_state_file(changes)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L256" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Returns activity_attempt_save_file if a record matches attempt_guid and attempt_number, or creates and returns a new user</p><h2 id="save_activity_attempt_state_file/1-examples" class="section-heading">
+  <a href="#save_activity_attempt_state_file/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">save_activity_attempt_state_file</span><span class="p" data-group-id="3872468461-1">(</span><span class="p" data-group-id="3872468461-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="3872468461-2">}</span><span class="p" data-group-id="3872468461-1">)</span><span class="w">
+</span><span class="p" data-group-id="3872468461-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3872468461-4">%</span><span class="nc" data-group-id="3872468461-4">ActivityAttemptSaveFile</span><span class="p" data-group-id="3872468461-4">{</span><span class="p" data-group-id="3872468461-4">}</span><span class="p" data-group-id="3872468461-3">}</span><span class="w">    </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Inserted or updated with success</span><span class="w">
+</span><span class="p" data-group-id="3872468461-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="n">changeset</span><span class="p" data-group-id="3872468461-5">}</span><span class="w">         </span><span class="o">-&gt;</span><span class="w"> </span><span class="c1"># Something went wrong</span></code></pre>
+  </section>
+</section>
 <section class="detail" id="save_student_input/1">
 
   <div class="detail-header">
@@ -245,7 +373,7 @@ new part attempts.</p><p>The return value is of the form:</p><p><code class="inl
     </a>
     <h1 class="signature">save_student_input(part_inputs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L179" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle.ex#L180" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

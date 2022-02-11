@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.ActivityLifecycle.Persistence — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-497bb15fc5.js"></script>
+    <script src="dist/sidebar_items-c2bb536ed0.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -126,6 +126,13 @@ On success, continue persistence by calling a roll_up function that will may or
 not roll up the results of the these part_attempts to the activity attempt</p></div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#persist_evaluations/4">persist_evaluations(arg, part_inputs, roll_up_fn, replace)</a>
+
+  </div>
+
+</div>
 
   </div>
 
@@ -165,6 +172,28 @@ persist the results of each evaluation to the corresponding part_attempt record
 On success, continue persistence by calling a roll_up function that will may or
 not roll up the results of the these part_attempts to the activity attempt</p><p>The return value here is {:ok, [%{}]}, where the maps in the array are the
 evaluation result that will be sent back to the client.</p>
+  </section>
+</section>
+<section class="detail" id="persist_evaluations/4">
+
+  <div class="detail-header">
+    <a href="#persist_evaluations/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">persist_evaluations(arg, part_inputs, roll_up_fn, replace)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/persistence.ex#L38" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 

@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.ActivityLifecycle.Evaluate — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-497bb15fc5.js"></script>
+    <script src="dist/sidebar_items-c2bb536ed0.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -123,8 +123,18 @@ Oli.Delivery.Attempts.ActivityLifecycle.Evaluate <small class="app-vsn">(OLI Tor
 
     <div class="summary-synopsis"><p>Processes a set of client evaluations for some number of parts for the given
 activity attempt guid.  If this collection of evaluations completes the activity
-the results of the part evalutions (including ones already having been evaluated)
+the results of the part evaluations (including ones already having been evaluated)
 will be rolled up to the activity attempt record.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#apply_super_activity_evaluation/3">apply_super_activity_evaluation(section_slug, activity_attempt_guid, client_evaluations)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Processes a set of client evaluations for some number of parts for the given
+activity attempt guid.  Does not rollup part evaluation up to activity attempt record.</p></div>
 
 </div>
 <div class="summary-row">
@@ -232,10 +242,42 @@ Functions
 
 <p>Processes a set of client evaluations for some number of parts for the given
 activity attempt guid.  If this collection of evaluations completes the activity
-the results of the part evalutions (including ones already having been evaluated)
+the results of the part evaluations (including ones already having been evaluated)
 will be rolled up to the activity attempt record.</p><p>The optional &quot;normalize_mode&quot; takes values of :normalize or :do_not_normalize.  The default
 :normalize mode will normalize the part based score and out_of to a range of 0 to 1.
 This ensures for all basic page based assessments that every activity has equal weight.</p><p>On success returns an <code class="inline">{:ok, results}</code> tuple where results in an array of maps. Each
+map instance contains the result of one of the evaluations in the form:</p><p><code class="inline">${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}</code></p><p>On failure returns <code class="inline">{:error, error}</code></p>
+  </section>
+</section>
+<section class="detail" id="apply_super_activity_evaluation/3">
+
+  <div class="detail-header">
+    <a href="#apply_super_activity_evaluation/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">apply_super_activity_evaluation(section_slug, activity_attempt_guid, client_evaluations)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L447" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>apply_super_activity_evaluation(<a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>(), [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()]) ::
+  {:ok, [<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">map</a>()]} | {:error, <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
+
+      </div>
+
+<p>Processes a set of client evaluations for some number of parts for the given
+activity attempt guid.  Does not rollup part evaluation up to activity attempt record.</p><p>On success returns an <code class="inline">{:ok, results}</code> tuple where results in an array of maps. Each
 map instance contains the result of one of the evaluations in the form:</p><p><code class="inline">${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}</code></p><p>On failure returns <code class="inline">{:error, error}</code></p>
   </section>
 </section>
@@ -390,7 +432,7 @@ submit all of the contained activites when the student clicks &quot;Submit Asses
     </a>
     <h1 class="signature">rollup_part_attempt_evaluations(activity_attempt_guid, normalize_mode)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L463" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/activity_lifecycle/evaluate.ex#L507" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
