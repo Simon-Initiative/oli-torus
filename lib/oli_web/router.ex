@@ -841,6 +841,11 @@ defmodule OliWeb.Router do
     live("/:project_id/history/:slug", RevisionHistory)
   end
 
+  # Support for cognito JWT auth currently used by Infiniscope
+  scope "/cognito", OliWeb do
+    get("/launch/products/:product_id", CognitoController, :launch)
+  end
+
   # routes only accessible when load testing mode is enabled. These routes exist solely
   # to allow the load testing framework to do things like query for the available open and free
   # sections, to query for all of the pages in an individual section, etc.

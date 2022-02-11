@@ -62,6 +62,12 @@ defmodule Oli.Utils do
     Phoenix.View.render(view, template, Map.put(assigns, :inner_content, content))
   end
 
+  def snake_case_to_friendly(input) when is_atom(input) do
+    input
+    |> Atom.to_string()
+    |> snake_case_to_friendly()
+  end
+
   def snake_case_to_friendly(snake_input) do
     String.split(snake_input, "_")
     |> Enum.map(fn word -> String.capitalize(word) end)
