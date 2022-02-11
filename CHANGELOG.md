@@ -17,6 +17,7 @@
 ### Enhancements
 
 - Optimize rendering and storage by allowing attempts to only store transformed models when necessary
+- Adds support for Legacy OLI custom activities
 
 ## 0.18.3 (2021-12-27)
 
