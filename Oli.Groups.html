@@ -10,7 +10,7 @@
     <title>Oli.Groups — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-0b02b20fef.js"></script>
+    <script src="dist/sidebar_items-497bb15fc5.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -251,6 +251,16 @@ Oli.Groups <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#find_or_create_community_user_account/2">find_or_create_community_user_account(user_id, community_id)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Finds or creates a community account for a user. More efficient than using
+many-to-many assoc.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#get_community/1">get_community(id)</a>
 
   </div>
@@ -427,8 +437,8 @@ Functions
   <a href="#change_community/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_community</span><span class="p" data-group-id="8659381970-1">(</span><span class="n">community</span><span class="p" data-group-id="8659381970-1">)</span><span class="w">
-</span><span class="p" data-group-id="8659381970-2">%</span><span class="nc" data-group-id="8659381970-2">Ecto.Changeset</span><span class="p" data-group-id="8659381970-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="8659381970-3">%</span><span class="nc" data-group-id="8659381970-3">Community</span><span class="p" data-group-id="8659381970-3">{</span><span class="p" data-group-id="8659381970-3">}</span><span class="p" data-group-id="8659381970-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_community</span><span class="p" data-group-id="7925469591-1">(</span><span class="n">community</span><span class="p" data-group-id="7925469591-1">)</span><span class="w">
+</span><span class="p" data-group-id="7925469591-2">%</span><span class="nc" data-group-id="7925469591-2">Ecto.Changeset</span><span class="p" data-group-id="7925469591-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7925469591-3">%</span><span class="nc" data-group-id="7925469591-3">Community</span><span class="p" data-group-id="7925469591-3">{</span><span class="p" data-group-id="7925469591-3">}</span><span class="p" data-group-id="7925469591-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community/1">
@@ -456,11 +466,11 @@ Functions
   <a href="#create_community/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community</span><span class="p" data-group-id="2633372709-1">(</span><span class="p" data-group-id="2633372709-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2633372709-2">}</span><span class="p" data-group-id="2633372709-1">)</span><span class="w">
-</span><span class="p" data-group-id="2633372709-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2633372709-4">%</span><span class="nc" data-group-id="2633372709-4">Community</span><span class="p" data-group-id="2633372709-4">{</span><span class="p" data-group-id="2633372709-4">}</span><span class="p" data-group-id="2633372709-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community</span><span class="p" data-group-id="6141235985-1">(</span><span class="p" data-group-id="6141235985-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6141235985-2">}</span><span class="p" data-group-id="6141235985-1">)</span><span class="w">
+</span><span class="p" data-group-id="6141235985-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6141235985-4">%</span><span class="nc" data-group-id="6141235985-4">Community</span><span class="p" data-group-id="6141235985-4">{</span><span class="p" data-group-id="6141235985-4">}</span><span class="p" data-group-id="6141235985-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community</span><span class="p" data-group-id="2633372709-5">(</span><span class="p" data-group-id="2633372709-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2633372709-6">}</span><span class="p" data-group-id="2633372709-5">)</span><span class="w">
-</span><span class="p" data-group-id="2633372709-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2633372709-8">%</span><span class="nc" data-group-id="2633372709-8">Ecto.Changeset</span><span class="p" data-group-id="2633372709-8">{</span><span class="p" data-group-id="2633372709-8">}</span><span class="p" data-group-id="2633372709-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community</span><span class="p" data-group-id="6141235985-5">(</span><span class="p" data-group-id="6141235985-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6141235985-6">}</span><span class="p" data-group-id="6141235985-5">)</span><span class="w">
+</span><span class="p" data-group-id="6141235985-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6141235985-8">%</span><span class="nc" data-group-id="6141235985-8">Ecto.Changeset</span><span class="p" data-group-id="6141235985-8">{</span><span class="p" data-group-id="6141235985-8">}</span><span class="p" data-group-id="6141235985-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_account/1">
@@ -474,7 +484,7 @@ Functions
     </a>
     <h1 class="signature">create_community_account(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L137" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L171" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -488,11 +498,11 @@ Functions
   <a href="#create_community_account/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account</span><span class="p" data-group-id="6842700979-1">(</span><span class="p" data-group-id="6842700979-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6842700979-2">}</span><span class="p" data-group-id="6842700979-1">)</span><span class="w">
-</span><span class="p" data-group-id="6842700979-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6842700979-4">%</span><span class="nc" data-group-id="6842700979-4">CommunityAccount</span><span class="p" data-group-id="6842700979-4">{</span><span class="p" data-group-id="6842700979-4">}</span><span class="p" data-group-id="6842700979-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account</span><span class="p" data-group-id="4144087364-1">(</span><span class="p" data-group-id="4144087364-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="4144087364-2">}</span><span class="p" data-group-id="4144087364-1">)</span><span class="w">
+</span><span class="p" data-group-id="4144087364-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4144087364-4">%</span><span class="nc" data-group-id="4144087364-4">CommunityAccount</span><span class="p" data-group-id="4144087364-4">{</span><span class="p" data-group-id="4144087364-4">}</span><span class="p" data-group-id="4144087364-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account</span><span class="p" data-group-id="6842700979-5">(</span><span class="p" data-group-id="6842700979-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6842700979-6">}</span><span class="p" data-group-id="6842700979-5">)</span><span class="w">
-</span><span class="p" data-group-id="6842700979-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6842700979-8">%</span><span class="nc" data-group-id="6842700979-8">Ecto.Changeset</span><span class="p" data-group-id="6842700979-8">{</span><span class="p" data-group-id="6842700979-8">}</span><span class="p" data-group-id="6842700979-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account</span><span class="p" data-group-id="4144087364-5">(</span><span class="p" data-group-id="4144087364-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4144087364-6">}</span><span class="p" data-group-id="4144087364-5">)</span><span class="w">
+</span><span class="p" data-group-id="4144087364-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4144087364-8">%</span><span class="nc" data-group-id="4144087364-8">Ecto.Changeset</span><span class="p" data-group-id="4144087364-8">{</span><span class="p" data-group-id="4144087364-8">}</span><span class="p" data-group-id="4144087364-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_account_from_author_email/2">
@@ -506,7 +516,7 @@ Functions
     </a>
     <h1 class="signature">create_community_account_from_author_email(email, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L156" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L190" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -520,11 +530,11 @@ Functions
   <a href="#create_community_account_from_author_email/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_author_email</span><span class="p" data-group-id="4985376083-1">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4985376083-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="4985376083-2">}</span><span class="p" data-group-id="4985376083-1">)</span><span class="w">
-</span><span class="p" data-group-id="4985376083-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4985376083-4">%</span><span class="nc" data-group-id="4985376083-4">CommunityAccount</span><span class="p" data-group-id="4985376083-4">{</span><span class="p" data-group-id="4985376083-4">}</span><span class="p" data-group-id="4985376083-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_author_email</span><span class="p" data-group-id="1500672798-1">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1500672798-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1500672798-2">}</span><span class="p" data-group-id="1500672798-1">)</span><span class="w">
+</span><span class="p" data-group-id="1500672798-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1500672798-4">%</span><span class="nc" data-group-id="1500672798-4">CommunityAccount</span><span class="p" data-group-id="1500672798-4">{</span><span class="p" data-group-id="1500672798-4">}</span><span class="p" data-group-id="1500672798-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_author_email</span><span class="p" data-group-id="4985376083-5">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4985376083-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="4985376083-6">}</span><span class="p" data-group-id="4985376083-5">)</span><span class="w">
-</span><span class="p" data-group-id="4985376083-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4985376083-8">%</span><span class="nc" data-group-id="4985376083-8">Ecto.Changeset</span><span class="p" data-group-id="4985376083-8">{</span><span class="p" data-group-id="4985376083-8">}</span><span class="p" data-group-id="4985376083-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_author_email</span><span class="p" data-group-id="1500672798-5">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1500672798-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1500672798-6">}</span><span class="p" data-group-id="1500672798-5">)</span><span class="w">
+</span><span class="p" data-group-id="1500672798-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1500672798-8">%</span><span class="nc" data-group-id="1500672798-8">Ecto.Changeset</span><span class="p" data-group-id="1500672798-8">{</span><span class="p" data-group-id="1500672798-8">}</span><span class="p" data-group-id="1500672798-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_account_from_email/3">
@@ -538,7 +548,7 @@ Functions
     </a>
     <h1 class="signature">create_community_account_from_email(user_type, email, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L202" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L236" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -552,11 +562,11 @@ Functions
   <a href="#create_community_account_from_email/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_email</span><span class="p" data-group-id="1374898104-1">(</span><span class="s">&quot;admin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1374898104-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1374898104-2">}</span><span class="p" data-group-id="1374898104-1">)</span><span class="w">
-</span><span class="p" data-group-id="1374898104-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1374898104-4">%</span><span class="nc" data-group-id="1374898104-4">CommunityAccount</span><span class="p" data-group-id="1374898104-4">{</span><span class="p" data-group-id="1374898104-4">}</span><span class="p" data-group-id="1374898104-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_email</span><span class="p" data-group-id="0206387230-1">(</span><span class="s">&quot;admin&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0206387230-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0206387230-2">}</span><span class="p" data-group-id="0206387230-1">)</span><span class="w">
+</span><span class="p" data-group-id="0206387230-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0206387230-4">%</span><span class="nc" data-group-id="0206387230-4">CommunityAccount</span><span class="p" data-group-id="0206387230-4">{</span><span class="p" data-group-id="0206387230-4">}</span><span class="p" data-group-id="0206387230-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="1374898104-5">(</span><span class="s">&quot;member&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1374898104-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1374898104-6">}</span><span class="p" data-group-id="1374898104-5">)</span><span class="w">
-</span><span class="p" data-group-id="1374898104-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1374898104-8">%</span><span class="nc" data-group-id="1374898104-8">Ecto.Changeset</span><span class="p" data-group-id="1374898104-8">{</span><span class="p" data-group-id="1374898104-8">}</span><span class="p" data-group-id="1374898104-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="0206387230-5">(</span><span class="s">&quot;member&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0206387230-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0206387230-6">}</span><span class="p" data-group-id="0206387230-5">)</span><span class="w">
+</span><span class="p" data-group-id="0206387230-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0206387230-8">%</span><span class="nc" data-group-id="0206387230-8">Ecto.Changeset</span><span class="p" data-group-id="0206387230-8">{</span><span class="p" data-group-id="0206387230-8">}</span><span class="p" data-group-id="0206387230-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_account_from_user_email/2">
@@ -570,7 +580,7 @@ Functions
     </a>
     <h1 class="signature">create_community_account_from_user_email(email, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L179" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L213" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -584,11 +594,11 @@ Functions
   <a href="#create_community_account_from_user_email/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="6906957748-1">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6906957748-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6906957748-2">}</span><span class="p" data-group-id="6906957748-1">)</span><span class="w">
-</span><span class="p" data-group-id="6906957748-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6906957748-4">%</span><span class="nc" data-group-id="6906957748-4">CommunityAccount</span><span class="p" data-group-id="6906957748-4">{</span><span class="p" data-group-id="6906957748-4">}</span><span class="p" data-group-id="6906957748-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="9343609034-1">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9343609034-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9343609034-2">}</span><span class="p" data-group-id="9343609034-1">)</span><span class="w">
+</span><span class="p" data-group-id="9343609034-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9343609034-4">%</span><span class="nc" data-group-id="9343609034-4">CommunityAccount</span><span class="p" data-group-id="9343609034-4">{</span><span class="p" data-group-id="9343609034-4">}</span><span class="p" data-group-id="9343609034-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="6906957748-5">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6906957748-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6906957748-6">}</span><span class="p" data-group-id="6906957748-5">)</span><span class="w">
-</span><span class="p" data-group-id="6906957748-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6906957748-8">%</span><span class="nc" data-group-id="6906957748-8">Ecto.Changeset</span><span class="p" data-group-id="6906957748-8">{</span><span class="p" data-group-id="6906957748-8">}</span><span class="p" data-group-id="6906957748-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_account_from_user_email</span><span class="p" data-group-id="9343609034-5">(</span><span class="s">&quot;example@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9343609034-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9343609034-6">}</span><span class="p" data-group-id="9343609034-5">)</span><span class="w">
+</span><span class="p" data-group-id="9343609034-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9343609034-8">%</span><span class="nc" data-group-id="9343609034-8">Ecto.Changeset</span><span class="p" data-group-id="9343609034-8">{</span><span class="p" data-group-id="9343609034-8">}</span><span class="p" data-group-id="9343609034-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_accounts_from_emails/3">
@@ -600,7 +610,7 @@ Functions
     </a>
     <h1 class="signature">create_community_accounts_from_emails(user_type, emails, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L225" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L259" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -614,11 +624,11 @@ Functions
   <a href="#create_community_accounts_from_emails/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_accounts_from_emails</span><span class="p" data-group-id="9986438897-1">(</span><span class="s">&quot;admin&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-2">[</span><span class="s">&quot;foo@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bar@bar.com&quot;</span><span class="p" data-group-id="9986438897-2">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-3">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9986438897-3">}</span><span class="p" data-group-id="9986438897-1">)</span><span class="w">
-</span><span class="p" data-group-id="9986438897-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-5">[</span><span class="p" data-group-id="9986438897-6">%</span><span class="nc" data-group-id="9986438897-6">CommunityAccount</span><span class="p" data-group-id="9986438897-6">{</span><span class="p" data-group-id="9986438897-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-7">%</span><span class="nc" data-group-id="9986438897-7">CommunityAccount</span><span class="p" data-group-id="9986438897-7">{</span><span class="p" data-group-id="9986438897-7">}</span><span class="p" data-group-id="9986438897-5">]</span><span class="p" data-group-id="9986438897-4">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_accounts_from_emails</span><span class="p" data-group-id="9370964675-1">(</span><span class="s">&quot;admin&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-2">[</span><span class="s">&quot;foo@foo.com&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;bar@bar.com&quot;</span><span class="p" data-group-id="9370964675-2">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-3">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9370964675-3">}</span><span class="p" data-group-id="9370964675-1">)</span><span class="w">
+</span><span class="p" data-group-id="9370964675-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-5">[</span><span class="p" data-group-id="9370964675-6">%</span><span class="nc" data-group-id="9370964675-6">CommunityAccount</span><span class="p" data-group-id="9370964675-6">{</span><span class="p" data-group-id="9370964675-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-7">%</span><span class="nc" data-group-id="9370964675-7">CommunityAccount</span><span class="p" data-group-id="9370964675-7">{</span><span class="p" data-group-id="9370964675-7">}</span><span class="p" data-group-id="9370964675-5">]</span><span class="p" data-group-id="9370964675-4">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_accounts_from_emails</span><span class="p" data-group-id="9986438897-8">(</span><span class="s">&quot;member&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-9">[</span><span class="s">&quot;example@foo.com&quot;</span><span class="p" data-group-id="9986438897-9">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-10">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9986438897-10">}</span><span class="p" data-group-id="9986438897-8">)</span><span class="w">
-</span><span class="p" data-group-id="9986438897-11">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9986438897-12">%</span><span class="nc" data-group-id="9986438897-12">Ecto.Changeset</span><span class="p" data-group-id="9986438897-12">{</span><span class="p" data-group-id="9986438897-12">}</span><span class="p" data-group-id="9986438897-11">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_accounts_from_emails</span><span class="p" data-group-id="9370964675-8">(</span><span class="s">&quot;member&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-9">[</span><span class="s">&quot;example@foo.com&quot;</span><span class="p" data-group-id="9370964675-9">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-10">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9370964675-10">}</span><span class="p" data-group-id="9370964675-8">)</span><span class="w">
+</span><span class="p" data-group-id="9370964675-11">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9370964675-12">%</span><span class="nc" data-group-id="9370964675-12">Ecto.Changeset</span><span class="p" data-group-id="9370964675-12">{</span><span class="p" data-group-id="9370964675-12">}</span><span class="p" data-group-id="9370964675-11">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_institution/1">
@@ -630,7 +640,7 @@ Functions
     </a>
     <h1 class="signature">create_community_institution(attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L555" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L589" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -644,11 +654,11 @@ Functions
   <a href="#create_community_institution/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution</span><span class="p" data-group-id="6248442218-1">(</span><span class="p" data-group-id="6248442218-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="6248442218-2">}</span><span class="p" data-group-id="6248442218-1">)</span><span class="w">
-</span><span class="p" data-group-id="6248442218-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6248442218-4">%</span><span class="nc" data-group-id="6248442218-4">CommunityInstitution</span><span class="p" data-group-id="6248442218-4">{</span><span class="p" data-group-id="6248442218-4">}</span><span class="p" data-group-id="6248442218-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution</span><span class="p" data-group-id="0658189532-1">(</span><span class="p" data-group-id="0658189532-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="0658189532-2">}</span><span class="p" data-group-id="0658189532-1">)</span><span class="w">
+</span><span class="p" data-group-id="0658189532-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0658189532-4">%</span><span class="nc" data-group-id="0658189532-4">CommunityInstitution</span><span class="p" data-group-id="0658189532-4">{</span><span class="p" data-group-id="0658189532-4">}</span><span class="p" data-group-id="0658189532-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution</span><span class="p" data-group-id="6248442218-5">(</span><span class="p" data-group-id="6248442218-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad_institution</span><span class="p" data-group-id="6248442218-6">}</span><span class="p" data-group-id="6248442218-5">)</span><span class="w">
-</span><span class="p" data-group-id="6248442218-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6248442218-8">%</span><span class="nc" data-group-id="6248442218-8">Ecto.Changeset</span><span class="p" data-group-id="6248442218-8">{</span><span class="p" data-group-id="6248442218-8">}</span><span class="p" data-group-id="6248442218-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution</span><span class="p" data-group-id="0658189532-5">(</span><span class="p" data-group-id="0658189532-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad_institution</span><span class="p" data-group-id="0658189532-6">}</span><span class="p" data-group-id="0658189532-5">)</span><span class="w">
+</span><span class="p" data-group-id="0658189532-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0658189532-8">%</span><span class="nc" data-group-id="0658189532-8">Ecto.Changeset</span><span class="p" data-group-id="0658189532-8">{</span><span class="p" data-group-id="0658189532-8">}</span><span class="p" data-group-id="0658189532-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_institution_from_institution_name/2">
@@ -662,7 +672,7 @@ Functions
     </a>
     <h1 class="signature">create_community_institution_from_institution_name(institution_name, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L574" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L608" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -676,11 +686,11 @@ Functions
   <a href="#create_community_institution_from_institution_name/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution_from_institution_name</span><span class="p" data-group-id="8811564725-1">(</span><span class="s">&quot;My institution&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8811564725-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="8811564725-2">}</span><span class="p" data-group-id="8811564725-1">)</span><span class="w">
-</span><span class="p" data-group-id="8811564725-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8811564725-4">%</span><span class="nc" data-group-id="8811564725-4">CommunityInstitution</span><span class="p" data-group-id="8811564725-4">{</span><span class="p" data-group-id="8811564725-4">}</span><span class="p" data-group-id="8811564725-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution_from_institution_name</span><span class="p" data-group-id="8826160055-1">(</span><span class="s">&quot;My institution&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8826160055-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="8826160055-2">}</span><span class="p" data-group-id="8826160055-1">)</span><span class="w">
+</span><span class="p" data-group-id="8826160055-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8826160055-4">%</span><span class="nc" data-group-id="8826160055-4">CommunityInstitution</span><span class="p" data-group-id="8826160055-4">{</span><span class="p" data-group-id="8826160055-4">}</span><span class="p" data-group-id="8826160055-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution_from_institution_name</span><span class="p" data-group-id="8811564725-5">(</span><span class="s">&quot;Bad institution&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8811564725-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="8811564725-6">}</span><span class="p" data-group-id="8811564725-5">)</span><span class="w">
-</span><span class="p" data-group-id="8811564725-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:institution_not_found</span><span class="p" data-group-id="8811564725-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institution_from_institution_name</span><span class="p" data-group-id="8826160055-5">(</span><span class="s">&quot;Bad institution&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8826160055-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="8826160055-6">}</span><span class="p" data-group-id="8826160055-5">)</span><span class="w">
+</span><span class="p" data-group-id="8826160055-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:institution_not_found</span><span class="p" data-group-id="8826160055-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_institutions_from_names/2">
@@ -692,7 +702,7 @@ Functions
     </a>
     <h1 class="signature">create_community_institutions_from_names(names, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L593" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L627" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -706,10 +716,10 @@ Functions
   <a href="#create_community_institutions_from_names/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institutions_from_names</span><span class="p" data-group-id="0817185683-1">(</span><span class="p" data-group-id="0817185683-2">[</span><span class="s">&quot;Institution 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Institution 2&quot;</span><span class="p" data-group-id="0817185683-2">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817185683-3">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="0817185683-3">}</span><span class="p" data-group-id="0817185683-1">)</span><span class="w">
-</span><span class="p" data-group-id="0817185683-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817185683-5">[</span><span class="p" data-group-id="0817185683-6">%</span><span class="nc" data-group-id="0817185683-6">CommunityInstitution</span><span class="p" data-group-id="0817185683-6">{</span><span class="p" data-group-id="0817185683-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817185683-7">%</span><span class="nc" data-group-id="0817185683-7">CommunityInstitution</span><span class="p" data-group-id="0817185683-7">{</span><span class="p" data-group-id="0817185683-7">}</span><span class="p" data-group-id="0817185683-5">]</span><span class="p" data-group-id="0817185683-4">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institutions_from_names</span><span class="p" data-group-id="0817185683-8">(</span><span class="p" data-group-id="0817185683-9">[</span><span class="s">&quot;Institution 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Institution 2&quot;</span><span class="p" data-group-id="0817185683-9">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817185683-10">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0817185683-10">}</span><span class="p" data-group-id="0817185683-8">)</span><span class="w">
-</span><span class="p" data-group-id="0817185683-11">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0817185683-12">%</span><span class="nc" data-group-id="0817185683-12">Ecto.Changeset</span><span class="p" data-group-id="0817185683-12">{</span><span class="p" data-group-id="0817185683-12">}</span><span class="p" data-group-id="0817185683-11">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institutions_from_names</span><span class="p" data-group-id="5160168130-1">(</span><span class="p" data-group-id="5160168130-2">[</span><span class="s">&quot;Institution 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Institution 2&quot;</span><span class="p" data-group-id="5160168130-2">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5160168130-3">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="5160168130-3">}</span><span class="p" data-group-id="5160168130-1">)</span><span class="w">
+</span><span class="p" data-group-id="5160168130-4">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5160168130-5">[</span><span class="p" data-group-id="5160168130-6">%</span><span class="nc" data-group-id="5160168130-6">CommunityInstitution</span><span class="p" data-group-id="5160168130-6">{</span><span class="p" data-group-id="5160168130-6">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5160168130-7">%</span><span class="nc" data-group-id="5160168130-7">CommunityInstitution</span><span class="p" data-group-id="5160168130-7">{</span><span class="p" data-group-id="5160168130-7">}</span><span class="p" data-group-id="5160168130-5">]</span><span class="p" data-group-id="5160168130-4">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_institutions_from_names</span><span class="p" data-group-id="5160168130-8">(</span><span class="p" data-group-id="5160168130-9">[</span><span class="s">&quot;Institution 1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Institution 2&quot;</span><span class="p" data-group-id="5160168130-9">]</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5160168130-10">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5160168130-10">}</span><span class="p" data-group-id="5160168130-8">)</span><span class="w">
+</span><span class="p" data-group-id="5160168130-11">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5160168130-12">%</span><span class="nc" data-group-id="5160168130-12">Ecto.Changeset</span><span class="p" data-group-id="5160168130-12">{</span><span class="p" data-group-id="5160168130-12">}</span><span class="p" data-group-id="5160168130-11">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_community_visibility/1">
@@ -723,7 +733,7 @@ Functions
     </a>
     <h1 class="signature">create_community_visibility(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L340" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L374" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -737,11 +747,11 @@ Functions
   <a href="#create_community_visibility/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_visibility</span><span class="p" data-group-id="5168275740-1">(</span><span class="p" data-group-id="5168275740-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="5168275740-2">}</span><span class="p" data-group-id="5168275740-1">)</span><span class="w">
-</span><span class="p" data-group-id="5168275740-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5168275740-4">%</span><span class="nc" data-group-id="5168275740-4">CommunityVisibility</span><span class="p" data-group-id="5168275740-4">{</span><span class="p" data-group-id="5168275740-4">}</span><span class="p" data-group-id="5168275740-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_community_visibility</span><span class="p" data-group-id="7164235925-1">(</span><span class="p" data-group-id="7164235925-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7164235925-2">}</span><span class="p" data-group-id="7164235925-1">)</span><span class="w">
+</span><span class="p" data-group-id="7164235925-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7164235925-4">%</span><span class="nc" data-group-id="7164235925-4">CommunityVisibility</span><span class="p" data-group-id="7164235925-4">{</span><span class="p" data-group-id="7164235925-4">}</span><span class="p" data-group-id="7164235925-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_visibility</span><span class="p" data-group-id="5168275740-5">(</span><span class="p" data-group-id="5168275740-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="5168275740-6">}</span><span class="p" data-group-id="5168275740-5">)</span><span class="w">
-</span><span class="p" data-group-id="5168275740-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5168275740-8">%</span><span class="nc" data-group-id="5168275740-8">Ecto.Changeset</span><span class="p" data-group-id="5168275740-8">{</span><span class="p" data-group-id="5168275740-8">}</span><span class="p" data-group-id="5168275740-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_community_visibility</span><span class="p" data-group-id="7164235925-5">(</span><span class="p" data-group-id="7164235925-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7164235925-6">}</span><span class="p" data-group-id="7164235925-5">)</span><span class="w">
+</span><span class="p" data-group-id="7164235925-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7164235925-8">%</span><span class="nc" data-group-id="7164235925-8">Ecto.Changeset</span><span class="p" data-group-id="7164235925-8">{</span><span class="p" data-group-id="7164235925-8">}</span><span class="p" data-group-id="7164235925-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_community/1">
@@ -767,11 +777,11 @@ Functions
   <a href="#delete_community/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community</span><span class="p" data-group-id="6653973705-1">(</span><span class="n">community</span><span class="p" data-group-id="6653973705-1">)</span><span class="w">
-</span><span class="p" data-group-id="6653973705-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6653973705-3">%</span><span class="nc" data-group-id="6653973705-3">Community</span><span class="p" data-group-id="6653973705-3">{</span><span class="p" data-group-id="6653973705-3">}</span><span class="p" data-group-id="6653973705-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community</span><span class="p" data-group-id="9681349888-1">(</span><span class="n">community</span><span class="p" data-group-id="9681349888-1">)</span><span class="w">
+</span><span class="p" data-group-id="9681349888-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9681349888-3">%</span><span class="nc" data-group-id="9681349888-3">Community</span><span class="p" data-group-id="9681349888-3">{</span><span class="p" data-group-id="9681349888-3">}</span><span class="p" data-group-id="9681349888-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community</span><span class="p" data-group-id="6653973705-4">(</span><span class="n">community</span><span class="p" data-group-id="6653973705-4">)</span><span class="w">
-</span><span class="p" data-group-id="6653973705-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6653973705-6">%</span><span class="nc" data-group-id="6653973705-6">Ecto.Changeset</span><span class="p" data-group-id="6653973705-6">{</span><span class="p" data-group-id="6653973705-6">}</span><span class="p" data-group-id="6653973705-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community</span><span class="p" data-group-id="9681349888-4">(</span><span class="n">community</span><span class="p" data-group-id="9681349888-4">)</span><span class="w">
+</span><span class="p" data-group-id="9681349888-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9681349888-6">%</span><span class="nc" data-group-id="9681349888-6">Ecto.Changeset</span><span class="p" data-group-id="9681349888-6">{</span><span class="p" data-group-id="9681349888-6">}</span><span class="p" data-group-id="9681349888-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_community_account/1">
@@ -783,7 +793,7 @@ Functions
     </a>
     <h1 class="signature">delete_community_account(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L272" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L306" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -797,10 +807,10 @@ Functions
   <a href="#delete_community_account/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_account</span><span class="p" data-group-id="4358531426-1">(</span><span class="p" data-group-id="4358531426-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="4358531426-2">}</span><span class="p" data-group-id="4358531426-1">)</span><span class="w">
-</span><span class="p" data-group-id="4358531426-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4358531426-4">%</span><span class="nc" data-group-id="4358531426-4">CommunityAccount</span><span class="p" data-group-id="4358531426-4">{</span><span class="p" data-group-id="4358531426-4">}</span><span class="p" data-group-id="4358531426-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_account</span><span class="p" data-group-id="6657601865-1">(</span><span class="p" data-group-id="6657601865-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="6657601865-2">}</span><span class="p" data-group-id="6657601865-1">)</span><span class="w">
+</span><span class="p" data-group-id="6657601865-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6657601865-4">%</span><span class="nc" data-group-id="6657601865-4">CommunityAccount</span><span class="p" data-group-id="6657601865-4">{</span><span class="p" data-group-id="6657601865-4">}</span><span class="p" data-group-id="6657601865-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_account</span><span class="p" data-group-id="4358531426-5">(</span><span class="p" data-group-id="4358531426-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="4358531426-6">}</span><span class="p" data-group-id="4358531426-5">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_account</span><span class="p" data-group-id="6657601865-5">(</span><span class="p" data-group-id="6657601865-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="6657601865-6">}</span><span class="p" data-group-id="6657601865-5">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -813,7 +823,7 @@ Functions
     </a>
     <h1 class="signature">delete_community_institution(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L628" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L662" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -827,11 +837,11 @@ Functions
   <a href="#delete_community_institution/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_institution</span><span class="p" data-group-id="5183038892-1">(</span><span class="p" data-group-id="5183038892-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="5183038892-2">}</span><span class="p" data-group-id="5183038892-1">)</span><span class="w">
-</span><span class="p" data-group-id="5183038892-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5183038892-4">%</span><span class="nc" data-group-id="5183038892-4">CommunityInstitution</span><span class="p" data-group-id="5183038892-4">{</span><span class="p" data-group-id="5183038892-4">}</span><span class="p" data-group-id="5183038892-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_institution</span><span class="p" data-group-id="8322286333-1">(</span><span class="p" data-group-id="8322286333-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="8322286333-2">}</span><span class="p" data-group-id="8322286333-1">)</span><span class="w">
+</span><span class="p" data-group-id="8322286333-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8322286333-4">%</span><span class="nc" data-group-id="8322286333-4">CommunityInstitution</span><span class="p" data-group-id="8322286333-4">{</span><span class="p" data-group-id="8322286333-4">}</span><span class="p" data-group-id="8322286333-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_institution</span><span class="p" data-group-id="5183038892-5">(</span><span class="p" data-group-id="5183038892-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="5183038892-6">}</span><span class="p" data-group-id="5183038892-5">)</span><span class="w">
-</span><span class="p" data-group-id="5183038892-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:not_found</span><span class="p" data-group-id="5183038892-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_institution</span><span class="p" data-group-id="8322286333-5">(</span><span class="p" data-group-id="8322286333-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="8322286333-6">}</span><span class="p" data-group-id="8322286333-5">)</span><span class="w">
+</span><span class="p" data-group-id="8322286333-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="ss">:not_found</span><span class="p" data-group-id="8322286333-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_community_visibility/1">
@@ -843,7 +853,7 @@ Functions
     </a>
     <h1 class="signature">delete_community_visibility(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L370" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L404" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -857,11 +867,42 @@ Functions
   <a href="#delete_community_visibility/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_visibility</span><span class="p" data-group-id="1009539500-1">(</span><span class="p" data-group-id="1009539500-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">project_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="1009539500-2">}</span><span class="p" data-group-id="1009539500-1">)</span><span class="w">
-</span><span class="p" data-group-id="1009539500-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1009539500-4">%</span><span class="nc" data-group-id="1009539500-4">CommunityVisibility</span><span class="p" data-group-id="1009539500-4">{</span><span class="p" data-group-id="1009539500-4">}</span><span class="p" data-group-id="1009539500-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_visibility</span><span class="p" data-group-id="2859161453-1">(</span><span class="p" data-group-id="2859161453-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">project_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="2859161453-2">}</span><span class="p" data-group-id="2859161453-1">)</span><span class="w">
+</span><span class="p" data-group-id="2859161453-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2859161453-4">%</span><span class="nc" data-group-id="2859161453-4">CommunityVisibility</span><span class="p" data-group-id="2859161453-4">{</span><span class="p" data-group-id="2859161453-4">}</span><span class="p" data-group-id="2859161453-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_visibility</span><span class="p" data-group-id="1009539500-5">(</span><span class="p" data-group-id="1009539500-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">project_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="1009539500-6">}</span><span class="p" data-group-id="1009539500-5">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_community_visibility</span><span class="p" data-group-id="2859161453-5">(</span><span class="p" data-group-id="2859161453-6">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">project_id</span><span class="p">:</span><span class="w"> </span><span class="n">bad</span><span class="p" data-group-id="2859161453-6">}</span><span class="p" data-group-id="2859161453-5">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
+  </section>
+</section>
+<section class="detail" id="find_or_create_community_user_account/2">
+
+  <div class="detail-header">
+    <a href="#find_or_create_community_user_account/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">find_or_create_community_user_account(user_id, community_id)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L138" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Finds or creates a community account for a user. More efficient than using
+many-to-many assoc.</p><h2 id="find_or_create_community_user_account/2-examples" class="section-heading">
+  <a href="#find_or_create_community_user_account/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Examples
+</h2>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">find_or_create_community_user_account</span><span class="p" data-group-id="5621385668-1">(</span><span class="n">user_id</span><span class="p">,</span><span class="w"> </span><span class="n">community_id</span><span class="p" data-group-id="5621385668-1">)</span><span class="w">
+</span><span class="p" data-group-id="5621385668-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5621385668-3">%</span><span class="nc" data-group-id="5621385668-3">CommunityAccount</span><span class="p" data-group-id="5621385668-3">{</span><span class="p" data-group-id="5621385668-3">}</span><span class="p" data-group-id="5621385668-2">}</span><span class="w">
+
+</span><span class="gp unselectable">iex&gt; </span><span class="n">find_or_create_community_user_account</span><span class="p" data-group-id="5621385668-4">(</span><span class="n">bad_user_id</span><span class="p">,</span><span class="w"> </span><span class="n">community_id</span><span class="p" data-group-id="5621385668-4">)</span><span class="w">
+</span><span class="p" data-group-id="5621385668-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5621385668-6">%</span><span class="nc" data-group-id="5621385668-6">Ecto.Changeset</span><span class="p" data-group-id="5621385668-6">{</span><span class="p" data-group-id="5621385668-6">}</span><span class="p" data-group-id="5621385668-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="get_community/1">
@@ -887,9 +928,9 @@ Functions
   <a href="#get_community/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community</span><span class="p" data-group-id="2167551939-1">(</span><span class="mi">1</span><span class="p" data-group-id="2167551939-1">)</span><span class="w">
-</span><span class="p" data-group-id="2167551939-2">%</span><span class="nc" data-group-id="2167551939-2">Community</span><span class="p" data-group-id="2167551939-2">{</span><span class="p" data-group-id="2167551939-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community</span><span class="p" data-group-id="2167551939-3">(</span><span class="mi">123</span><span class="p" data-group-id="2167551939-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community</span><span class="p" data-group-id="5729550437-1">(</span><span class="mi">1</span><span class="p" data-group-id="5729550437-1">)</span><span class="w">
+</span><span class="p" data-group-id="5729550437-2">%</span><span class="nc" data-group-id="5729550437-2">Community</span><span class="p" data-group-id="5729550437-2">{</span><span class="p" data-group-id="5729550437-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community</span><span class="p" data-group-id="5729550437-3">(</span><span class="mi">123</span><span class="p" data-group-id="5729550437-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -902,7 +943,7 @@ Functions
     </a>
     <h1 class="signature">get_community_account(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L243" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L277" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -916,9 +957,9 @@ Functions
   <a href="#get_community_account/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account</span><span class="p" data-group-id="4465752712-1">(</span><span class="mi">1</span><span class="p" data-group-id="4465752712-1">)</span><span class="w">
-</span><span class="p" data-group-id="4465752712-2">%</span><span class="nc" data-group-id="4465752712-2">CommunityAccount</span><span class="p" data-group-id="4465752712-2">{</span><span class="p" data-group-id="4465752712-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account</span><span class="p" data-group-id="4465752712-3">(</span><span class="mi">123</span><span class="p" data-group-id="4465752712-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account</span><span class="p" data-group-id="1584905376-1">(</span><span class="mi">1</span><span class="p" data-group-id="1584905376-1">)</span><span class="w">
+</span><span class="p" data-group-id="1584905376-2">%</span><span class="nc" data-group-id="1584905376-2">CommunityAccount</span><span class="p" data-group-id="1584905376-2">{</span><span class="p" data-group-id="1584905376-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account</span><span class="p" data-group-id="1584905376-3">(</span><span class="mi">123</span><span class="p" data-group-id="1584905376-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -931,7 +972,7 @@ Functions
     </a>
     <h1 class="signature">get_community_account_by!(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L258" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L292" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -946,11 +987,11 @@ more than one matches the criteria.</p><h2 id="get_community_account_by!/1-examp
   <a href="#get_community_account_by!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="1006494644-1">(</span><span class="p" data-group-id="1006494644-2">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="1006494644-2">}</span><span class="p" data-group-id="1006494644-1">)</span><span class="w">
-</span><span class="p" data-group-id="1006494644-3">%</span><span class="nc" data-group-id="1006494644-3">CommunityAccount</span><span class="p" data-group-id="1006494644-3">{</span><span class="p" data-group-id="1006494644-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="1006494644-4">(</span><span class="p" data-group-id="1006494644-5">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p" data-group-id="1006494644-5">}</span><span class="p" data-group-id="1006494644-4">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="3947222193-1">(</span><span class="p" data-group-id="3947222193-2">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="3947222193-2">}</span><span class="p" data-group-id="3947222193-1">)</span><span class="w">
+</span><span class="p" data-group-id="3947222193-3">%</span><span class="nc" data-group-id="3947222193-3">CommunityAccount</span><span class="p" data-group-id="3947222193-3">{</span><span class="p" data-group-id="3947222193-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="3947222193-4">(</span><span class="p" data-group-id="3947222193-5">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p" data-group-id="3947222193-5">}</span><span class="p" data-group-id="3947222193-4">)</span><span class="w">
 </span><span class="no">nil</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="1006494644-6">(</span><span class="p" data-group-id="1006494644-7">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="1006494644-7">}</span><span class="p" data-group-id="1006494644-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_account_by!</span><span class="p" data-group-id="3947222193-6">(</span><span class="p" data-group-id="3947222193-7">%{</span><span class="ss">author_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="3947222193-7">}</span><span class="p" data-group-id="3947222193-6">)</span><span class="w">
 </span><span class="nc">Ecto.MultipleResultsError</span></code></pre>
   </section>
 </section>
@@ -963,7 +1004,7 @@ more than one matches the criteria.</p><h2 id="get_community_account_by!/1-examp
     </a>
     <h1 class="signature">get_community_institution_by!(clauses)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L614" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L648" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -978,11 +1019,11 @@ more than one matches the criteria.</p><h2 id="get_community_institution_by!/1-e
   <a href="#get_community_institution_by!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="6231868800-1">(</span><span class="p" data-group-id="6231868800-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p" data-group-id="6231868800-2">}</span><span class="p" data-group-id="6231868800-1">)</span><span class="w">
-</span><span class="p" data-group-id="6231868800-3">%</span><span class="nc" data-group-id="6231868800-3">CommunityInstitution</span><span class="p" data-group-id="6231868800-3">{</span><span class="p" data-group-id="6231868800-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="6231868800-4">(</span><span class="p" data-group-id="6231868800-5">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p" data-group-id="6231868800-5">}</span><span class="p" data-group-id="6231868800-4">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="5690462123-1">(</span><span class="p" data-group-id="5690462123-2">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">institution_id</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p" data-group-id="5690462123-2">}</span><span class="p" data-group-id="5690462123-1">)</span><span class="w">
+</span><span class="p" data-group-id="5690462123-3">%</span><span class="nc" data-group-id="5690462123-3">CommunityInstitution</span><span class="p" data-group-id="5690462123-3">{</span><span class="p" data-group-id="5690462123-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="5690462123-4">(</span><span class="p" data-group-id="5690462123-5">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p" data-group-id="5690462123-5">}</span><span class="p" data-group-id="5690462123-4">)</span><span class="w">
 </span><span class="no">nil</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="6231868800-6">(</span><span class="p" data-group-id="6231868800-7">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="6231868800-7">}</span><span class="p" data-group-id="6231868800-6">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_institution_by!</span><span class="p" data-group-id="5690462123-6">(</span><span class="p" data-group-id="5690462123-7">%{</span><span class="ss">community_id</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p" data-group-id="5690462123-7">}</span><span class="p" data-group-id="5690462123-6">)</span><span class="w">
 </span><span class="nc">Ecto.MultipleResultsError</span></code></pre>
   </section>
 </section>
@@ -995,7 +1036,7 @@ more than one matches the criteria.</p><h2 id="get_community_institution_by!/1-e
     </a>
     <h1 class="signature">get_community_visibility(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L356" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L390" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1009,9 +1050,9 @@ more than one matches the criteria.</p><h2 id="get_community_institution_by!/1-e
   <a href="#get_community_visibility/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_visibility</span><span class="p" data-group-id="8166821473-1">(</span><span class="mi">1</span><span class="p" data-group-id="8166821473-1">)</span><span class="w">
-</span><span class="p" data-group-id="8166821473-2">%</span><span class="nc" data-group-id="8166821473-2">CommunityVisibility</span><span class="p" data-group-id="8166821473-2">{</span><span class="p" data-group-id="8166821473-2">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_visibility</span><span class="p" data-group-id="8166821473-3">(</span><span class="mi">123</span><span class="p" data-group-id="8166821473-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_community_visibility</span><span class="p" data-group-id="9094771121-1">(</span><span class="mi">1</span><span class="p" data-group-id="9094771121-1">)</span><span class="w">
+</span><span class="p" data-group-id="9094771121-2">%</span><span class="nc" data-group-id="9094771121-2">CommunityVisibility</span><span class="p" data-group-id="9094771121-2">{</span><span class="p" data-group-id="9094771121-2">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_community_visibility</span><span class="p" data-group-id="9094771121-3">(</span><span class="mi">123</span><span class="p" data-group-id="9094771121-3">)</span><span class="w">
 </span><span class="no">nil</span></code></pre>
   </section>
 </section>
@@ -1024,7 +1065,7 @@ more than one matches the criteria.</p><h2 id="get_community_institution_by!/1-e
     </a>
     <h1 class="signature">list_associated_communities(user_id, institution)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L417" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L451" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1039,11 +1080,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_associated_communities/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_associated_communities</span><span class="p" data-group-id="9500011902-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9500011902-2">%</span><span class="nc" data-group-id="9500011902-2">Institution</span><span class="p" data-group-id="9500011902-2">{</span><span class="p" data-group-id="9500011902-2">}</span><span class="p" data-group-id="9500011902-1">)</span><span class="w">
-</span><span class="p" data-group-id="9500011902-3">[</span><span class="p" data-group-id="9500011902-4">%</span><span class="nc" data-group-id="9500011902-4">Community</span><span class="p" data-group-id="9500011902-4">{</span><span class="p" data-group-id="9500011902-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9500011902-3">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_associated_communities</span><span class="p" data-group-id="4150038419-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4150038419-2">%</span><span class="nc" data-group-id="4150038419-2">Institution</span><span class="p" data-group-id="4150038419-2">{</span><span class="p" data-group-id="4150038419-2">}</span><span class="p" data-group-id="4150038419-1">)</span><span class="w">
+</span><span class="p" data-group-id="4150038419-3">[</span><span class="p" data-group-id="4150038419-4">%</span><span class="nc" data-group-id="4150038419-4">Community</span><span class="p" data-group-id="4150038419-4">{</span><span class="p" data-group-id="4150038419-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4150038419-3">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_associated_communities</span><span class="p" data-group-id="9500011902-5">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9500011902-6">%</span><span class="nc" data-group-id="9500011902-6">Institution</span><span class="p" data-group-id="9500011902-6">{</span><span class="p" data-group-id="9500011902-6">}</span><span class="p" data-group-id="9500011902-5">)</span><span class="w">
-</span><span class="p" data-group-id="9500011902-7">[</span><span class="p" data-group-id="9500011902-7">]</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_associated_communities</span><span class="p" data-group-id="4150038419-5">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4150038419-6">%</span><span class="nc" data-group-id="4150038419-6">Institution</span><span class="p" data-group-id="4150038419-6">{</span><span class="p" data-group-id="4150038419-6">}</span><span class="p" data-group-id="4150038419-5">)</span><span class="w">
+</span><span class="p" data-group-id="4150038419-7">[</span><span class="p" data-group-id="4150038419-7">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_communities/0">
@@ -1069,8 +1110,8 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_communities/0-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_communities</span><span class="p" data-group-id="0582467140-1">(</span><span class="p" data-group-id="0582467140-1">)</span><span class="w">
-</span><span class="p" data-group-id="0582467140-2">[</span><span class="p" data-group-id="0582467140-3">%</span><span class="nc" data-group-id="0582467140-3">Community</span><span class="p" data-group-id="0582467140-3">{</span><span class="p" data-group-id="0582467140-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0582467140-2">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_communities</span><span class="p" data-group-id="6894822918-1">(</span><span class="p" data-group-id="6894822918-1">)</span><span class="w">
+</span><span class="p" data-group-id="6894822918-2">[</span><span class="p" data-group-id="6894822918-3">%</span><span class="nc" data-group-id="6894822918-3">Community</span><span class="p" data-group-id="6894822918-3">{</span><span class="p" data-group-id="6894822918-3">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6894822918-2">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_admins/1">
@@ -1082,7 +1123,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_admins(community_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L290" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L324" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1096,11 +1137,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_admins/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_admins</span><span class="p" data-group-id="5619572951-1">(</span><span class="mi">1</span><span class="p" data-group-id="5619572951-1">)</span><span class="w">
-</span><span class="p" data-group-id="5619572951-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5619572951-3">[</span><span class="p" data-group-id="5619572951-4">%</span><span class="nc" data-group-id="5619572951-4">Author</span><span class="p" data-group-id="5619572951-4">{</span><span class="p" data-group-id="5619572951-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5619572951-3">]</span><span class="p" data-group-id="5619572951-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_admins</span><span class="p" data-group-id="9100261578-1">(</span><span class="mi">1</span><span class="p" data-group-id="9100261578-1">)</span><span class="w">
+</span><span class="p" data-group-id="9100261578-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9100261578-3">[</span><span class="p" data-group-id="9100261578-4">%</span><span class="nc" data-group-id="9100261578-4">Author</span><span class="p" data-group-id="9100261578-4">{</span><span class="p" data-group-id="9100261578-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9100261578-3">]</span><span class="p" data-group-id="9100261578-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_admins</span><span class="p" data-group-id="5619572951-5">(</span><span class="mi">123</span><span class="p" data-group-id="5619572951-5">)</span><span class="w">
-</span><span class="p" data-group-id="5619572951-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5619572951-7">[</span><span class="p" data-group-id="5619572951-7">]</span><span class="p" data-group-id="5619572951-6">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_admins</span><span class="p" data-group-id="9100261578-5">(</span><span class="mi">123</span><span class="p" data-group-id="9100261578-5">)</span><span class="w">
+</span><span class="p" data-group-id="9100261578-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9100261578-7">[</span><span class="p" data-group-id="9100261578-7">]</span><span class="p" data-group-id="9100261578-6">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_associated_publications/2">
@@ -1112,7 +1153,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_associated_publications(user_id, institution)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L433" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L467" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1126,11 +1167,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_associated_publications/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications</span><span class="p" data-group-id="4133511737-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4133511737-2">%</span><span class="nc" data-group-id="4133511737-2">Institution</span><span class="p" data-group-id="4133511737-2">{</span><span class="p" data-group-id="4133511737-2">}</span><span class="p" data-group-id="4133511737-1">)</span><span class="w">
-</span><span class="p" data-group-id="4133511737-3">[</span><span class="p" data-group-id="4133511737-4">%</span><span class="nc" data-group-id="4133511737-4">Publication</span><span class="p" data-group-id="4133511737-4">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4133511737-5">%</span><span class="nc" data-group-id="4133511737-5">Project</span><span class="p" data-group-id="4133511737-5">{</span><span class="p" data-group-id="4133511737-5">}</span><span class="p" data-group-id="4133511737-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="4133511737-3">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications</span><span class="p" data-group-id="7657450026-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7657450026-2">%</span><span class="nc" data-group-id="7657450026-2">Institution</span><span class="p" data-group-id="7657450026-2">{</span><span class="p" data-group-id="7657450026-2">}</span><span class="p" data-group-id="7657450026-1">)</span><span class="w">
+</span><span class="p" data-group-id="7657450026-3">[</span><span class="p" data-group-id="7657450026-4">%</span><span class="nc" data-group-id="7657450026-4">Publication</span><span class="p" data-group-id="7657450026-4">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="7657450026-5">%</span><span class="nc" data-group-id="7657450026-5">Project</span><span class="p" data-group-id="7657450026-5">{</span><span class="p" data-group-id="7657450026-5">}</span><span class="p" data-group-id="7657450026-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7657450026-3">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications</span><span class="p" data-group-id="4133511737-6">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="4133511737-7">%</span><span class="nc" data-group-id="4133511737-7">Institution</span><span class="p" data-group-id="4133511737-7">{</span><span class="p" data-group-id="4133511737-7">}</span><span class="p" data-group-id="4133511737-6">)</span><span class="w">
-</span><span class="p" data-group-id="4133511737-8">[</span><span class="p" data-group-id="4133511737-8">]</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications</span><span class="p" data-group-id="7657450026-6">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7657450026-7">%</span><span class="nc" data-group-id="7657450026-7">Institution</span><span class="p" data-group-id="7657450026-7">{</span><span class="p" data-group-id="7657450026-7">}</span><span class="p" data-group-id="7657450026-6">)</span><span class="w">
+</span><span class="p" data-group-id="7657450026-8">[</span><span class="p" data-group-id="7657450026-8">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_associated_publications_and_products/2">
@@ -1142,7 +1183,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_associated_publications_and_products(user_id, institution)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L465" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L499" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1156,11 +1197,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_associated_publications_and_products/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications_and_products</span><span class="p" data-group-id="1325848082-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1325848082-2">%</span><span class="nc" data-group-id="1325848082-2">Institution</span><span class="p" data-group-id="1325848082-2">{</span><span class="p" data-group-id="1325848082-2">}</span><span class="p" data-group-id="1325848082-1">)</span><span class="w">
-</span><span class="p" data-group-id="1325848082-3">[</span><span class="p" data-group-id="1325848082-4">{</span><span class="p" data-group-id="1325848082-5">%</span><span class="nc" data-group-id="1325848082-5">Publication</span><span class="p" data-group-id="1325848082-5">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1325848082-6">%</span><span class="nc" data-group-id="1325848082-6">Project</span><span class="p" data-group-id="1325848082-6">{</span><span class="p" data-group-id="1325848082-6">}</span><span class="p" data-group-id="1325848082-5">}</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="1325848082-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1325848082-7">{</span><span class="p" data-group-id="1325848082-8">%</span><span class="nc" data-group-id="1325848082-8">Publication</span><span class="p" data-group-id="1325848082-8">{</span><span class="p" data-group-id="1325848082-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1325848082-9">%</span><span class="nc" data-group-id="1325848082-9">Section</span><span class="p" data-group-id="1325848082-9">{</span><span class="p" data-group-id="1325848082-9">}</span><span class="p" data-group-id="1325848082-7">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1325848082-3">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications_and_products</span><span class="p" data-group-id="6825952588-1">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6825952588-2">%</span><span class="nc" data-group-id="6825952588-2">Institution</span><span class="p" data-group-id="6825952588-2">{</span><span class="p" data-group-id="6825952588-2">}</span><span class="p" data-group-id="6825952588-1">)</span><span class="w">
+</span><span class="p" data-group-id="6825952588-3">[</span><span class="p" data-group-id="6825952588-4">{</span><span class="p" data-group-id="6825952588-5">%</span><span class="nc" data-group-id="6825952588-5">Publication</span><span class="p" data-group-id="6825952588-5">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6825952588-6">%</span><span class="nc" data-group-id="6825952588-6">Project</span><span class="p" data-group-id="6825952588-6">{</span><span class="p" data-group-id="6825952588-6">}</span><span class="p" data-group-id="6825952588-5">}</span><span class="p">,</span><span class="w"> </span><span class="no">nil</span><span class="p" data-group-id="6825952588-4">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6825952588-7">{</span><span class="p" data-group-id="6825952588-8">%</span><span class="nc" data-group-id="6825952588-8">Publication</span><span class="p" data-group-id="6825952588-8">{</span><span class="p" data-group-id="6825952588-8">}</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6825952588-9">%</span><span class="nc" data-group-id="6825952588-9">Section</span><span class="p" data-group-id="6825952588-9">{</span><span class="p" data-group-id="6825952588-9">}</span><span class="p" data-group-id="6825952588-7">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6825952588-3">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications_and_products</span><span class="p" data-group-id="1325848082-10">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1325848082-11">%</span><span class="nc" data-group-id="1325848082-11">Institution</span><span class="p" data-group-id="1325848082-11">{</span><span class="p" data-group-id="1325848082-11">}</span><span class="p" data-group-id="1325848082-10">)</span><span class="w">
-</span><span class="p" data-group-id="1325848082-12">[</span><span class="p" data-group-id="1325848082-12">]</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_associated_publications_and_products</span><span class="p" data-group-id="6825952588-10">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6825952588-11">%</span><span class="nc" data-group-id="6825952588-11">Institution</span><span class="p" data-group-id="6825952588-11">{</span><span class="p" data-group-id="6825952588-11">}</span><span class="p" data-group-id="6825952588-10">)</span><span class="w">
+</span><span class="p" data-group-id="6825952588-12">[</span><span class="p" data-group-id="6825952588-12">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_institutions/1">
@@ -1172,7 +1213,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_institutions(community_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L532" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L566" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1186,11 +1227,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_institutions/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_institutions</span><span class="p" data-group-id="5353940675-1">(</span><span class="mi">1</span><span class="p" data-group-id="5353940675-1">)</span><span class="w">
-</span><span class="p" data-group-id="5353940675-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5353940675-3">[</span><span class="p" data-group-id="5353940675-4">%</span><span class="nc" data-group-id="5353940675-4">Institution</span><span class="p" data-group-id="5353940675-4">{</span><span class="p" data-group-id="5353940675-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5353940675-3">]</span><span class="p" data-group-id="5353940675-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_institutions</span><span class="p" data-group-id="7316785306-1">(</span><span class="mi">1</span><span class="p" data-group-id="7316785306-1">)</span><span class="w">
+</span><span class="p" data-group-id="7316785306-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7316785306-3">[</span><span class="p" data-group-id="7316785306-4">%</span><span class="nc" data-group-id="7316785306-4">Institution</span><span class="p" data-group-id="7316785306-4">{</span><span class="p" data-group-id="7316785306-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7316785306-3">]</span><span class="p" data-group-id="7316785306-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_institutions</span><span class="p" data-group-id="5353940675-5">(</span><span class="mi">123</span><span class="p" data-group-id="5353940675-5">)</span><span class="w">
-</span><span class="p" data-group-id="5353940675-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5353940675-7">[</span><span class="p" data-group-id="5353940675-7">]</span><span class="p" data-group-id="5353940675-6">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_institutions</span><span class="p" data-group-id="7316785306-5">(</span><span class="mi">123</span><span class="p" data-group-id="7316785306-5">)</span><span class="w">
+</span><span class="p" data-group-id="7316785306-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7316785306-7">[</span><span class="p" data-group-id="7316785306-7">]</span><span class="p" data-group-id="7316785306-6">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_members/2">
@@ -1204,7 +1245,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_members(community_id, limit \\ nil)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L312" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L346" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1218,11 +1259,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_members/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_members</span><span class="p" data-group-id="5064315922-1">(</span><span class="mi">1</span><span class="p" data-group-id="5064315922-1">)</span><span class="w">
-</span><span class="p" data-group-id="5064315922-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5064315922-3">[</span><span class="p" data-group-id="5064315922-4">%</span><span class="nc" data-group-id="5064315922-4">User</span><span class="p" data-group-id="5064315922-4">{</span><span class="p" data-group-id="5064315922-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5064315922-3">]</span><span class="p" data-group-id="5064315922-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_members</span><span class="p" data-group-id="2658766896-1">(</span><span class="mi">1</span><span class="p" data-group-id="2658766896-1">)</span><span class="w">
+</span><span class="p" data-group-id="2658766896-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2658766896-3">[</span><span class="p" data-group-id="2658766896-4">%</span><span class="nc" data-group-id="2658766896-4">User</span><span class="p" data-group-id="2658766896-4">{</span><span class="p" data-group-id="2658766896-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2658766896-3">]</span><span class="p" data-group-id="2658766896-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_members</span><span class="p" data-group-id="5064315922-5">(</span><span class="mi">123</span><span class="p" data-group-id="5064315922-5">)</span><span class="w">
-</span><span class="p" data-group-id="5064315922-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5064315922-7">[</span><span class="p" data-group-id="5064315922-7">]</span><span class="p" data-group-id="5064315922-6">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_members</span><span class="p" data-group-id="2658766896-5">(</span><span class="mi">123</span><span class="p" data-group-id="2658766896-5">)</span><span class="w">
+</span><span class="p" data-group-id="2658766896-6">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2658766896-7">[</span><span class="p" data-group-id="2658766896-7">]</span><span class="p" data-group-id="2658766896-6">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_community_visibilities/1">
@@ -1234,7 +1275,7 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
     </a>
     <h1 class="signature">list_community_visibilities(community_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L388" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/groups.ex#L422" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -1248,11 +1289,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#list_community_visibilities/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_visibilities</span><span class="p" data-group-id="1661749171-1">(</span><span class="mi">1</span><span class="p" data-group-id="1661749171-1">)</span><span class="w">
-</span><span class="p" data-group-id="1661749171-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1661749171-3">[</span><span class="p" data-group-id="1661749171-4">%</span><span class="nc" data-group-id="1661749171-4">CommunityVisibility</span><span class="p" data-group-id="1661749171-4">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="1661749171-5">%</span><span class="nc" data-group-id="1661749171-5">Project</span><span class="p" data-group-id="1661749171-5">{</span><span class="p" data-group-id="1661749171-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">section</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1661749171-4">}</span><span class="p">,</span><span class="w"> </span><span class="p">,</span><span class="n">...</span><span class="p" data-group-id="1661749171-3">]</span><span class="p" data-group-id="1661749171-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_community_visibilities</span><span class="p" data-group-id="6506259292-1">(</span><span class="mi">1</span><span class="p" data-group-id="6506259292-1">)</span><span class="w">
+</span><span class="p" data-group-id="6506259292-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6506259292-3">[</span><span class="p" data-group-id="6506259292-4">%</span><span class="nc" data-group-id="6506259292-4">CommunityVisibility</span><span class="p" data-group-id="6506259292-4">{</span><span class="ss">project</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="6506259292-5">%</span><span class="nc" data-group-id="6506259292-5">Project</span><span class="p" data-group-id="6506259292-5">{</span><span class="p" data-group-id="6506259292-5">}</span><span class="p">,</span><span class="w"> </span><span class="ss">section</span><span class="p">:</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6506259292-4">}</span><span class="p">,</span><span class="w"> </span><span class="p">,</span><span class="n">...</span><span class="p" data-group-id="6506259292-3">]</span><span class="p" data-group-id="6506259292-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_visibilities</span><span class="p" data-group-id="1661749171-6">(</span><span class="mi">123</span><span class="p" data-group-id="1661749171-6">)</span><span class="w">
-</span><span class="p" data-group-id="1661749171-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1661749171-8">[</span><span class="p" data-group-id="1661749171-8">]</span><span class="p" data-group-id="1661749171-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">list_community_visibilities</span><span class="p" data-group-id="6506259292-6">(</span><span class="mi">123</span><span class="p" data-group-id="6506259292-6">)</span><span class="w">
+</span><span class="p" data-group-id="6506259292-7">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6506259292-8">[</span><span class="p" data-group-id="6506259292-8">]</span><span class="p" data-group-id="6506259292-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="search_communities/1">
@@ -1278,11 +1319,11 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#search_communities/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">search_communities</span><span class="p" data-group-id="3042479572-1">(</span><span class="p" data-group-id="3042479572-2">%{</span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:active</span><span class="p" data-group-id="3042479572-2">}</span><span class="p" data-group-id="3042479572-1">)</span><span class="w">
-</span><span class="p" data-group-id="3042479572-3">[</span><span class="p" data-group-id="3042479572-4">%</span><span class="nc" data-group-id="3042479572-4">Community</span><span class="p" data-group-id="3042479572-4">{</span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:active</span><span class="p" data-group-id="3042479572-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="3042479572-3">]</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">search_communities</span><span class="p" data-group-id="0242384643-1">(</span><span class="p" data-group-id="0242384643-2">%{</span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:active</span><span class="p" data-group-id="0242384643-2">}</span><span class="p" data-group-id="0242384643-1">)</span><span class="w">
+</span><span class="p" data-group-id="0242384643-3">[</span><span class="p" data-group-id="0242384643-4">%</span><span class="nc" data-group-id="0242384643-4">Community</span><span class="p" data-group-id="0242384643-4">{</span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="ss">:active</span><span class="p" data-group-id="0242384643-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="0242384643-3">]</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">search_communities</span><span class="p" data-group-id="3042479572-5">(</span><span class="p" data-group-id="3042479572-6">%{</span><span class="ss">global_access</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="3042479572-6">}</span><span class="p" data-group-id="3042479572-5">)</span><span class="w">
-</span><span class="p" data-group-id="3042479572-7">[</span><span class="p" data-group-id="3042479572-7">]</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">search_communities</span><span class="p" data-group-id="0242384643-5">(</span><span class="p" data-group-id="0242384643-6">%{</span><span class="ss">global_access</span><span class="p">:</span><span class="w"> </span><span class="no">false</span><span class="p" data-group-id="0242384643-6">}</span><span class="p" data-group-id="0242384643-5">)</span><span class="w">
+</span><span class="p" data-group-id="0242384643-7">[</span><span class="p" data-group-id="0242384643-7">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_community/2">
@@ -1308,10 +1349,10 @@ user's institution belongs</p><h2 id="list_associated_communities/2-examples" cl
   <a href="#update_community/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_community</span><span class="p" data-group-id="7800671820-1">(</span><span class="n">community</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7800671820-2">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="7800671820-2">}</span><span class="p" data-group-id="7800671820-1">)</span><span class="w">
-</span><span class="p" data-group-id="7800671820-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7800671820-4">%</span><span class="nc" data-group-id="7800671820-4">Community</span><span class="p" data-group-id="7800671820-4">{</span><span class="p" data-group-id="7800671820-4">}</span><span class="p" data-group-id="7800671820-3">}</span><span class="w">
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_community</span><span class="p" data-group-id="7800671820-5">(</span><span class="n">community</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7800671820-6">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7800671820-6">}</span><span class="p" data-group-id="7800671820-5">)</span><span class="w">
-</span><span class="p" data-group-id="7800671820-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7800671820-8">%</span><span class="nc" data-group-id="7800671820-8">Ecto.Changeset</span><span class="p" data-group-id="7800671820-8">{</span><span class="p" data-group-id="7800671820-8">}</span><span class="p" data-group-id="7800671820-7">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_community</span><span class="p" data-group-id="0776629990-1">(</span><span class="n">community</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0776629990-2">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="0776629990-2">}</span><span class="p" data-group-id="0776629990-1">)</span><span class="w">
+</span><span class="p" data-group-id="0776629990-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0776629990-4">%</span><span class="nc" data-group-id="0776629990-4">Community</span><span class="p" data-group-id="0776629990-4">{</span><span class="p" data-group-id="0776629990-4">}</span><span class="p" data-group-id="0776629990-3">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_community</span><span class="p" data-group-id="0776629990-5">(</span><span class="n">community</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0776629990-6">%{</span><span class="ss">name</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="0776629990-6">}</span><span class="p" data-group-id="0776629990-5">)</span><span class="w">
+</span><span class="p" data-group-id="0776629990-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0776629990-8">%</span><span class="nc" data-group-id="0776629990-8">Ecto.Changeset</span><span class="p" data-group-id="0776629990-8">{</span><span class="p" data-group-id="0776629990-8">}</span><span class="p" data-group-id="0776629990-7">}</span></code></pre>
   </section>
 </section>
 
