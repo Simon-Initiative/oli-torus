@@ -8,9 +8,13 @@ import { Command } from 'components/editing/elements/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import {configureStore} from "state/store";
+import {Provider} from "react-redux";
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
+
+const store = configureStore();
 
 export function selectImage(
   projectSlug: string,
@@ -20,27 +24,29 @@ export function selectImage(
     let selectedUrl: string | undefined = undefined;
 
     const mediaLibrary = (
-      <ModalSelection
-        title="Select Image"
-        size={sizes.extraLarge}
-        onInsert={() => {
-          dismiss();
-          resolve(selectedUrl);
-        }}
-        onCancel={() => dismiss()}
-        disableInsert={true}
-        okLabel="Select"
-      >
-        <UrlOrUpload
-          onUrlChange={(url: string) => (selectedUrl = url)}
-          onMediaSelectionChange={(mediaOrUrl: MediaItem[]) => (selectedUrl = mediaOrUrl[0]?.url)}
-          projectSlug={projectSlug}
-          onEdit={() => {}}
-          mimeFilter={MIMETYPE_FILTERS.IMAGE}
-          selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
-        />
-      </ModalSelection>
+        <Provider store={store}>
+          <ModalSelection
+            title="Select Image"
+            size={sizes.extraLarge}
+            onInsert={() => {
+              dismiss();
+              resolve(selectedUrl);
+            }}
+            onCancel={() => dismiss()}
+            disableInsert={true}
+            okLabel="Select"
+          >
+            <UrlOrUpload
+              onUrlChange={(url: string) => (selectedUrl = url)}
+              onMediaSelectionChange={(mediaOrUrl: MediaItem[]) => (selectedUrl = mediaOrUrl[0]?.url)}
+              projectSlug={projectSlug}
+              onEdit={() => {}}
+              mimeFilter={MIMETYPE_FILTERS.IMAGE}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
+            />
+          </ModalSelection>
+        </Provider>
     );
 
     display(mediaLibrary);
