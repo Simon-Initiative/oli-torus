@@ -136,19 +136,24 @@ defmodule Oli.Groups do
 
   """
   def find_or_create_community_user_account(user_id, community_id) do
-    case Repo.one(
-           from(account in CommunityAccount,
-             where:
-               account.user_id == ^user_id and
-                 account.community_id == ^community_id
-           )
-         ) do
-      nil ->
-        create_community_account(%{user_id: user_id, community_id: community_id})
+    Repo.transaction(fn _ ->
+      case Repo.one(
+             from(account in CommunityAccount,
+               where:
+                 account.user_id == ^user_id and
+                   account.community_id == ^community_id
+             )
+           ) do
+        nil ->
+          {:ok, account} =
+            create_community_account(%{user_id: user_id, community_id: community_id})
 
-      account ->
-        {:ok, account}
-    end
+          account
+
+        account ->
+          account
+      end
+    end)
   end
 
   @doc """

@@ -24,8 +24,7 @@ defmodule OliWeb.CognitoController do
     with {:ok, jwk} <- get_jwk(jwt),
          {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
          %Section{} = section <- Sections.get_section_by(slug: product_id),
-         {:ok, user} <- create_lms_user(jwt_fields),
-         {:ok, _account} <- create_community_account(user.id, community_id) do
+         {:ok, user} <- setup_lms_user(jwt_fields, community_id) do
       conn
       |> use_pow_config(:user)
       |> Pow.Plug.create(user)
@@ -106,6 +105,17 @@ defmodule OliWeb.CognitoController do
     conn
     |> redirect(external: "#{error_url}?error=#{error}")
     |> halt()
+  end
+
+  defp setup_lms_user(fields, community_id) do
+    Repo.transaction(fn _ ->
+      with {:ok, user} <- create_lms_user(fields),
+           {:ok, _account} <- create_community_account(user.id, community_id) do
+        user
+      else
+        {:error, e} -> Repo.rollback(e)
+      end
+    end)
   end
 
   defp create_lms_user(fields) do
