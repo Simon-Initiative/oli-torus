@@ -124,14 +124,20 @@ defmodule Oli.Notifications do
     SystemMessage.changeset(system_message, attrs)
   end
 
+  defp message_active_and_time_greater_than_now?(true, time) when not is_nil(time) do
+    now = DateTime.utc_now()
+
+    DateTime.compare(now, time) == :lt
+  end
+
+  defp message_active_and_time_greater_than_now?(_, _), do: false
+
   defp schedule_message(
          %SystemMessage{id: id, active: active, start: start_time, end: end_time} = system_message
        ) do
     remove_existing_message_jobs(id)
 
-    now = DateTime.utc_now()
-
-    if active and not is_nil(start_time) and DateTime.compare(now, start_time) == :lt do
+    if message_active_and_time_greater_than_now?(active, start_time) do
       %{id: id, system_message: system_message, display: true}
       |> Oli.Notifications.Worker.new(
         tags: ["message-#{id}"],
@@ -141,7 +147,7 @@ defmodule Oli.Notifications do
       |> Oban.insert()
     end
 
-    if active and not is_nil(end_time) and DateTime.compare(now, end_time) == :lt do
+    if message_active_and_time_greater_than_now?(active, end_time) do
       %{id: id, system_message: system_message, display: false}
       |> Oli.Notifications.Worker.new(
         tags: ["message-#{id}"],

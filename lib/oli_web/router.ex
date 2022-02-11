@@ -229,7 +229,7 @@ defmodule OliWeb.Router do
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
 
-    get("/signout", OliWeb.SessionController, :signout)
+    delete("/signout", OliWeb.SessionController, :signout)
   end
 
   scope "/authoring" do
@@ -742,7 +742,7 @@ defmodule OliWeb.Router do
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
-    get("/signout", SessionController, :signout)
+    delete("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do

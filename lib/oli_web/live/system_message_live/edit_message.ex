@@ -2,6 +2,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
   use Surface.Component
 
   alias Oli.Notifications
+  alias OliWeb.Common.FormatDateTime
   alias Surface.Components.Form
 
   alias Surface.Components.Form.{
@@ -62,7 +63,7 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
   defp timezone_localized_datetime(nil, _timezone), do: nil
 
   defp timezone_localized_datetime(datetime, timezone) do
-    case OliWeb.Common.FormatDateTime.maybe_localized_datetime(datetime, timezone) do
+    case FormatDateTime.maybe_localized_datetime(datetime, timezone) do
       {:localized, datetime} ->
         datetime
 

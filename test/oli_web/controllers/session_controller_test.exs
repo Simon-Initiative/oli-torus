@@ -7,7 +7,7 @@ defmodule OliWeb.SessionControllerTest do
     test "signs out user and clears session data when logged in as an instructor", context do
       {:ok, conn: conn, user: _} = user_conn(context)
 
-      conn = get(conn, Routes.session_path(conn, :signout, type: :user))
+      conn = delete(conn, Routes.session_path(conn, :signout, type: :user))
 
       refute conn.assigns.current_user
       refute conn.private.plug_session["dismissed_messages"]
@@ -17,7 +17,7 @@ defmodule OliWeb.SessionControllerTest do
     test "signs out user and clears session data when logged in as an author", context do
       {:ok, conn: conn, author: _} = author_conn(context)
 
-      conn = get(conn, Routes.authoring_session_path(conn, :signout, type: :author))
+      conn = delete(conn, Routes.authoring_session_path(conn, :signout, type: :author))
 
       refute conn.assigns.current_author
       refute conn.private.plug_session["dismissed_messages"]

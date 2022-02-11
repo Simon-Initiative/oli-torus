@@ -97,7 +97,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
     id = String.to_integer(id)
     system_message = find_system_message(id, socket.assigns.messages)
 
-    message_attrs =
+    new_message_attrs =
       attrs
       |> Oli.Utils.atomize_keys()
       |> Map.update(:start, "", &datestring_to_utc_datetime(&1, socket.assigns.local_tz))
@@ -105,29 +105,18 @@ defmodule OliWeb.SystemMessageLive.IndexView do
       |> Map.put(:active, active)
       |> Map.put(:id, id)
 
-    message_was_being_displayed =
-      system_message
-      |> Map.from_struct()
-      |> message_displayed?()
-
-    message_will_be_displayed = message_displayed?(message_attrs)
-
-    # only show confirmation modal when:
-    # - the system message changed its status (was being displayed but not anymore, or vice versa) OR
-    # - the system message was being displayed and the message content changed
-    show_confirm =
-      message_was_being_displayed != message_will_be_displayed or
-        (message_was_being_displayed and attrs["message"] != system_message.message)
-
     socket =
-      if show_confirm do
+      if show_confirm_modal?(system_message, new_message_attrs) do
         assign(socket,
-          unsaved_system_message: message_attrs,
+          unsaved_system_message: new_message_attrs,
           show_confirm: true,
-          message_will_be_displayed: message_will_be_displayed
+          message_will_be_displayed: message_displayed?(new_message_attrs)
         )
       else
-        case Notifications.update_system_message(system_message, Map.delete(message_attrs, :id)) do
+        case Notifications.update_system_message(
+               system_message,
+               Map.delete(new_message_attrs, :id)
+             ) do
           {:ok, _system_message} ->
             socket
             |> put_flash(:info, "System message successfully updated.")
@@ -251,5 +240,20 @@ defmodule OliWeb.SystemMessageLive.IndexView do
     |> Timex.to_datetime(local_tz)
     |> DateTime.shift_zone("Etc/UTC")
     |> elem(1)
+  end
+
+  defp show_confirm_modal?(old_system_message, new_system_message) do
+    message_was_being_displayed =
+      old_system_message
+      |> Map.from_struct()
+      |> message_displayed?()
+
+    message_will_be_displayed = message_displayed?(new_system_message)
+
+    # only show confirmation modal when:
+    # - the system message changed its status (was being displayed but not anymore, or vice versa) OR
+    # - the system message was being displayed and the message content changed
+    message_was_being_displayed != message_will_be_displayed or
+      (message_was_being_displayed and new_system_message.message != old_system_message.message)
   end
 end

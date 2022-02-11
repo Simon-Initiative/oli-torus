@@ -50,10 +50,10 @@ defmodule OliWeb.SystemMessageLive.ShowView do
   end
 
   defp delete_system_message(id, messages) do
-    Enum.filter(messages, fn m -> m.id != id end)
+    Enum.filter(messages, &(&1.id != id))
   end
 
   defp filter_dismissed_messages(messages, dismissed_messages) do
-    Enum.filter(messages, fn m -> m.id not in dismissed_messages end)
+    Enum.filter(messages, &(&1.id not in dismissed_messages))
   end
 end
