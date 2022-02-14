@@ -384,17 +384,6 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    objectives =
-      Map.get(activity, "objectives")
-      |> Map.keys()
-      |> Enum.reduce(%{}, fn k, m ->
-        mapped =
-          Map.get(activity, "objectives")[k]
-          |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
-
-        Map.put(m, k, mapped)
-      end)
-
     title =
       case Map.get(activity, "title") do
         nil -> Map.get(activity, "subType")
@@ -414,12 +403,31 @@ defmodule Oli.Interop.Ingest do
       title: title,
       content: Map.get(activity, "content"),
       author_id: as_author.id,
-      objectives: objectives,
+      objectives: process_activity_objectives(activity, objective_map),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
       activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
     }
     |> create_resource(project)
+  end
+
+  defp process_activity_objectives(activity, objective_map) do
+    case Map.get(activity, "objectives", []) do
+      map when is_map(map) ->
+        Map.keys(map)
+        |> Enum.reduce(%{}, fn k, m ->
+          mapped =
+            Map.get(activity, "objectives")[k]
+            |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
+
+          Map.put(m, k, mapped)
+        end)
+
+      list when is_list(list) ->
+        activity["content"]["authoring"]["parts"]
+        |> Enum.map(fn %{"id" => id} -> id end)
+        |> Enum.reduce(%{}, fn e, m -> Map.put(m, e, []) end)
+    end
   end
 
   defp create_tag(project, tag, as_author) do
