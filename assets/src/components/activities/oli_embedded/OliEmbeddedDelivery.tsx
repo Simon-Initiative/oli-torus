@@ -32,13 +32,17 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     fetchContext();
     setInterval(() => {
       const iframe: HTMLIFrameElement = document.querySelector(
-        '[data-activityguid="' + activityState.attemptGuid + '"]',
+          '[data-activityguid="' + activityState.attemptGuid + '"]',
       ) as HTMLIFrameElement;
       if (iframe) {
-        const frameHeight = iframe.contentDocument?.body.scrollHeight + 'px';
+        const htmlElement = iframe.contentWindow?.document?.querySelector('html');
+        if (htmlElement) {
+          htmlElement.style.height = '';
+        }
+        const frameHeight = iframe.contentDocument?.body?.scrollHeight + 'px';
         if (frameHeight) {
           iframe.style.height = frameHeight;
-          const htmlElement = iframe.contentWindow?.document.querySelector('html');
+          const htmlElement = iframe.contentWindow?.document?.querySelector('html');
           if (htmlElement) {
             htmlElement.style.height = frameHeight;
           }
@@ -51,14 +55,14 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     fetch('/jcourse/superactivity/context/' + activityState.attemptGuid, {
       method: 'GET',
     })
-      .then((response) => response.json())
-      .then((json) => {
-        setContext(json);
-      })
-      .catch((error) => {
-        // :TODO: display error somehow
-        setPreview(true);
-      });
+        .then((response) => response.json())
+        .then((json) => {
+          setContext(json);
+        })
+        .catch((error) => {
+          // :TODO: display error somehow
+          setPreview(true);
+        });
   };
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -68,29 +72,29 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   };
 
   return (
-    <>
-      {context && (
-        <iframe
-          id={activityState.attemptGuid}
-          src={context.src_url}
-          width="100%"
-          // height="700"
-          frameBorder={0}
-          data-authenticationtoken="none"
-          data-sessionid="1958e2f50a0000562295c9a569354ab5"
-          data-resourcetypeid={context.activity_type}
-          data-superactivityserver={context.server_url}
-          data-activitymode={context.mode}
-          allowFullScreen={true}
-          data-activitycontextguid={activityState.attemptGuid}
-          data-activityguid={activityState.attemptGuid}
-          data-userguid={context.user_guid}
-          data-partids={context.part_ids}
-          data-mode="oli"
-        ></iframe>
-      )}
-      {preview && <h4>OLI Embedded activity does not yet support preview</h4>}
-    </>
+      <>
+        {context && (
+            <iframe
+                id={activityState.attemptGuid}
+                src={context.src_url}
+                width="100%"
+                // height="700"
+                frameBorder={0}
+                data-authenticationtoken="none"
+                data-sessionid="1958e2f50a0000562295c9a569354ab5"
+                data-resourcetypeid={context.activity_type}
+                data-superactivityserver={context.server_url}
+                data-activitymode={context.mode}
+                allowFullScreen={true}
+                data-activitycontextguid={activityState.attemptGuid}
+                data-activityguid={activityState.attemptGuid}
+                data-userguid={context.user_guid}
+                data-partids={context.part_ids}
+                data-mode="oli"
+            ></iframe>
+        )}
+        {preview && <h4>OLI Embedded activity does not yet support preview</h4>}
+      </>
   );
 };
 
@@ -98,12 +102,12 @@ export class OliEmbeddedDelivery extends DeliveryElement<OliEmbeddedModelSchema>
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<OliEmbeddedModelSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
-      <Provider store={store}>
-        <DeliveryElementProvider {...props}>
-          <EmbeddedDelivery {...props} />
-        </DeliveryElementProvider>
-      </Provider>,
-      mountPoint,
+        <Provider store={store}>
+          <DeliveryElementProvider {...props}>
+            <EmbeddedDelivery {...props} />
+          </DeliveryElementProvider>
+        </Provider>,
+        mountPoint,
     );
   }
 }
