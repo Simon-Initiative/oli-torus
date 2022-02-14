@@ -6,9 +6,16 @@ defmodule Oli.RegistrarTest do
   describe "activity registration" do
     test "register_local_activities/0 registers", _ do
       registrations = Activities.list_activity_registrations()
-      assert length(registrations) == 7
+      assert length(registrations) > 5
 
-      r = Enum.at(registrations, 1)
+      catas = registrations |> Enum.filter(&match?(%{
+        slug: "oli_check_all_that_apply",
+        title: "Check All That Apply"
+      }, &1))
+
+      assert catas |> length == 1
+
+      r = Enum.at(catas, 0)
 
       assert r.title == "Check All That Apply"
 
@@ -25,7 +32,7 @@ defmodule Oli.RegistrarTest do
     test "create_registered_activity_map/0 creates correctly", _ do
       map = Activities.create_registered_activity_map()
 
-      assert Map.keys(map) |> length == 7
+      assert Map.keys(map) |> length > 5
 
       r = Map.get(map, "oli_check_all_that_apply")
 

@@ -1,7 +1,6 @@
 defmodule Oli.Delivery.Attempts.PageLifecycle.Common do
   alias Oli.Delivery.Attempts.PageLifecycle.{
     ReviewContext,
-    Hierarchy,
     AttemptState
   }
 
@@ -17,11 +16,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Common do
         _ -> :finalized
       end
 
-    {:ok,
-     {status,
-      %AttemptState{
-        resource_attempt: resource_attempt,
-        attempt_hierarchy: Hierarchy.get_latest_attempts(resource_attempt.id)
-      }}}
+    {:ok, state} = AttemptState.fetch_attempt_state(resource_attempt, resource_attempt.revision)
+
+    {:ok, {status, state}}
   end
 end

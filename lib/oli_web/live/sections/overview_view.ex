@@ -78,6 +78,7 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Course Section ID" value={@section.slug}/>
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
+        <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
       </Group>
       <Group label="Instructors" description="Manage the users with instructor level access">
         <Instructors users={@instructors}/>

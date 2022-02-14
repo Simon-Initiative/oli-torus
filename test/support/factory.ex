@@ -3,10 +3,11 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
-  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionResource}
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications, SectionResource}
+  alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
-  alias Oli.Institutions.Institution
+  alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
 
@@ -42,6 +43,14 @@ defmodule Oli.Factory do
       key_contact: "keycontact@example.com",
       global_access: true,
       status: :active
+    }
+  end
+
+  def community_user_account_factory() do
+    %CommunityAccount{
+      community: insert(:community),
+      user: insert(:user),
+      is_admin: false
     }
   end
 
@@ -206,6 +215,34 @@ defmodule Oli.Factory do
       resource: insert(:resource),
       type: :schedule,
       data: %{end_datetime: end_date, start_datetime: start_date}
+    }
+  end
+
+  def sso_jwk_factory() do
+    %{private_key: private_key} = Lti_1p3.KeyGenerator.generate_key_pair()
+
+    %SsoJwk{
+      pem: private_key,
+      typ: "JWT",
+      alg: "RS256",
+      kid: UUID.uuid4()
+    }
+  end
+
+  def enrollment_factory() do
+    %Enrollment{
+      user: insert(:user),
+      section: insert(:section)
+    }
+  end
+
+  def payment_factory() do
+    %Payment{
+      type: :direct,
+      amount: Money.new(:USD, 25),
+      provider_type: :stripe,
+      section: insert(:section),
+      enrollment: insert(:enrollment)
     }
   end
 end

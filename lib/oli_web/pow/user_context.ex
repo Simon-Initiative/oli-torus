@@ -28,10 +28,35 @@ defmodule OliWeb.Pow.UserContext do
     |> Repo.update()
   end
 
-  @spec lock(map()) :: {:ok, map()} | {:error, map()}
+  @spec unlock(map()) :: {:ok, map()} | {:error, map()}
   def unlock(user) do
     user
     |> User.noauth_changeset(%{locked_at: nil})
     |> Repo.update()
+  end
+
+  @doc """
+  Overrides the default Pow.Ecto.Context `create` to set the virtual `enroll_after_email_confirmation`
+  field after a user is created as part of an independent enrollment email confirmation
+  """
+  @impl true
+  def create(params) do
+    %User{}
+    |> User.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, user} ->
+        case params do
+          %{"section" => section} ->
+            # set the `enroll_after_email_confirmation` virtual field from the given section param
+            {:ok, Map.put(user, :enroll_after_email_confirmation, section)}
+
+          _ ->
+            {:ok, user}
+        end
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 end

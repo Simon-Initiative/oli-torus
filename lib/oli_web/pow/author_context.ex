@@ -17,7 +17,7 @@ defmodule OliWeb.Pow.AuthorContext do
     |> Repo.update()
   end
 
-  @spec lock(map()) :: {:ok, map()} | {:error, map()}
+  @spec unlock(map()) :: {:ok, map()} | {:error, map()}
   def unlock(user) do
     user
     |> Author.noauth_changeset(%{locked_at: nil})

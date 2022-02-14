@@ -4,7 +4,7 @@ defmodule Oli.InstitutionsTest do
   import Oli.Factory
 
   alias Oli.Institutions
-  alias Oli.Institutions.Institution
+  alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Institutions.PendingRegistration
   alias Oli.Lti.Tool.Registration
 
@@ -454,6 +454,50 @@ defmodule Oli.InstitutionsTest do
                "some client_id",
                "some deployment_id"
              ) == nil
+    end
+
+    test "get_jwk_by/1 returns a jwk by clauses" do
+      jwk = insert(:sso_jwk)
+      %SsoJwk{kid: returned_kid} = Institutions.get_jwk_by(%{kid: jwk.kid})
+
+      assert returned_kid == jwk.kid
+    end
+
+    test "get_jwk_by/1 returns nil when jwk does not exist" do
+      refute Institutions.get_jwk_by(%{kid: "kid"})
+    end
+
+    test "insert_bulk_jwks/1 creates a list of JWKS" do
+      jwk_params = params_for(:sso_jwk)
+
+      [created_jwk] = Institutions.insert_bulk_jwks([jwk_params])
+
+      assert jwk_params.kid == created_jwk.kid
+      assert jwk_params.alg == created_jwk.alg
+      assert jwk_params.typ == created_jwk.typ
+      assert jwk_params.pem == created_jwk.pem
+    end
+
+    test "build_jwk/1 returns jwk params" do
+      jwks = %{
+        "keys" => [
+          %{
+            "alg" => "RS384",
+            "e" => "AQAB",
+            "kid" => "e2af476c-9b29-4264-83de-01f8cc6eddd0",
+            "kty" => "RSA",
+            "n" =>
+              "miXsq4jggnOC9gnay97IxGO_TbHYOT3JUrx8ABMz_joKayEmtEkDNNcWGvOE550DBvcUIUnF_8DIN4ikPatWvlQsW_AgidnCc87JnDmq9uF6yRF47UE_vyv6GygVj56lEMqnfGS6GtP1s-WVne9LR1P3VJ4i_5BgJnXfVnn79nJp8NlwS1hv5JP94HkQzzS-nEMsqclp2aOqFIGLVoceDbx-jnzFbgJtP8jEKku6F_MwmwR4cjnLA4RFYhTh4-jwi8z17CWLIIpVxLKLwND49WqJGu_cv4IBxZLDccHcEIbv2Sw6oOKKqRzC28WvDnLeVnU3hSSC3hcJcUkG5g0f9nY4KDF2WXticyEseHP64hIDUPn26R3e6YDM9cgMRibYVSvoDDR6qzp9b5iajqiVFMZD70PPk0wqqMnpD0T19N3Bf3wSJjZA76aphsmmhh0xEB373xGObhrLGWDdj8jS7kPf2O8MbeQjQEFjPnDNfqh1Tr-fWi_9oKvrpEJ6-3J6zH3c9-zhoLMbLWgyZeF_R4XVYdRTb-Ske0JIkzB3O-5wYtMBUtL8cqN9o3NupOGwkCPQxW6e8skZm1ylr8gIG5Gsp98q1jdsEwDoUJvyqiThPyOKDoLDff0a8fpu2JWBUiLNso2WJ0oY4Z_z3yhNPtr0wnWCCT7nDF5mle2w50c",
+            "typ" => "JWT",
+            "use" => "sig"
+          }
+        ]
+      }
+
+      %JOSE.JWK{keys: {_, [key]}} = JOSE.JWK.from_map(jwks)
+
+      assert %{typ: "JWT", alg: "RS384", kid: "e2af476c-9b29-4264-83de-01f8cc6eddd0"} ==
+               Institutions.build_jwk(key) |> Map.delete(:pem)
     end
   end
 end

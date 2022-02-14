@@ -353,6 +353,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       if (initObject.operator === 'bind to') {
         initStateBindToFacts[initObject.target] = snapshot[key] || '';
+        return acc;
       } else if (typeof value === 'string') {
         if (
           (typeof value === 'string' && value[0] === '{' && value[1] !== '"') ||

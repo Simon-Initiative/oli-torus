@@ -55,16 +55,13 @@ defmodule OliWeb.OpenAndFreeControllerTest do
           section: Enum.into(@create_attrs, %{project_slug: project.slug})
         )
 
-      assert %{id: id} = redirected_params(conn)
-      assert redirected_to(conn) == Routes.admin_open_and_free_path(conn, :show, id)
+      assert %{section_slug: slug} = redirected_params(conn)
+      assert redirected_to(conn) == Routes.live_path(conn, OliWeb.Sections.OverviewView, slug)
 
       conn = recycle_author_session(conn, admin)
 
-      conn = get(conn, Routes.admin_open_and_free_path(conn, :show, id))
-      assert html_response(conn, 200) =~ "Section"
-
       # can access open and free index and pages
-      section = Sections.get_section!(id)
+      section = Sections.get_section_by(slug: slug)
 
       conn =
         conn

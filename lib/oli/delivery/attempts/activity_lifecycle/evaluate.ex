@@ -370,7 +370,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   @doc """
   Processes a set of client evaluations for some number of parts for the given
   activity attempt guid.  If this collection of evaluations completes the activity
-  the results of the part evalutions (including ones already having been evaluated)
+  the results of the part evaluations (including ones already having been evaluated)
   will be rolled up to the activity attempt record.
 
   The optional "normalize_mode" takes values of :normalize or :do_not_normalize.  The default
@@ -422,41 +422,85 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               {false, client_evaluations} -> {no_roll_up, client_evaluations}
             end
 
-          case client_evaluations
-               |> Enum.map(fn %{
-                                attempt_guid: attempt_guid,
-                                client_evaluation: %ClientEvaluation{
-                                  score: score,
-                                  out_of: out_of,
-                                  feedback: feedback
-                                }
-                              } ->
-                 {:ok,
-                  %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
-                    type: "FeedbackActionResult",
-                    attempt_guid: attempt_guid,
-                    feedback: feedback,
-                    score: score,
-                    out_of: out_of
-                  }}
-               end)
-               |> (fn evaluations -> {:ok, evaluations} end).()
-               |> persist_evaluations(part_inputs, roll_up_fn) do
-            {:ok, results} ->
-              results
-
-            {:error, error} ->
-              Logger.debug("error inside apply_client_evaluation: #{error}")
-              Repo.rollback(error)
-
-            _ ->
-              Repo.rollback("unknown error")
-          end
+          persist_client_evaluations(part_inputs, client_evaluations, roll_up_fn, false)
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
 
       _ ->
         {:error, "Activity type does not allow client evaluation"}
+    end
+  end
+
+  @doc """
+  Processes a set of client evaluations for some number of parts for the given
+  activity attempt guid.  Does not rollup part evaluation up to activity attempt record.
+
+  On success returns an `{:ok, results}` tuple where results in an array of maps. Each
+  map instance contains the result of one of the evaluations in the form:
+
+  `${score: score, out_of: out_of, feedback: feedback, attempt_guid, attempt_guid}`
+
+  On failure returns `{:error, error}`
+  """
+  @spec apply_super_activity_evaluation(String.t(), String.t(), [map()]) ::
+          {:ok, [map()]} | {:error, any}
+  def apply_super_activity_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+    # verify this activity type allows client evaluation
+    activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    activity_registration_slug = activity_attempt.revision.activity_type.slug
+
+    part_inputs =
+      Enum.map(client_evaluations, fn %{
+                                        attempt_guid: attempt_guid,
+                                        client_evaluation: %ClientEvaluation{input: input}
+                                      } ->
+        %{attempt_guid: attempt_guid, input: input}
+      end)
+
+    case Oli.Activities.get_registration_by_slug(activity_registration_slug) do
+      %Oli.Activities.ActivityRegistration{allow_client_evaluation: true} ->
+        Repo.transaction(fn ->
+          no_roll_up = fn result -> result end
+
+          persist_client_evaluations(part_inputs, client_evaluations, no_roll_up, true)
+        end)
+        |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
+
+      _ ->
+        {:error, "Activity type does not allow client evaluation"}
+    end
+  end
+
+  defp persist_client_evaluations(part_inputs, client_evaluations, roll_up_fn, replace) do
+    case client_evaluations
+         |> Enum.map(fn %{
+                          attempt_guid: attempt_guid,
+                          client_evaluation: %ClientEvaluation{
+                            score: score,
+                            out_of: out_of,
+                            feedback: feedback
+                          }
+                        } ->
+      {:ok,
+        %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
+          type: "FeedbackActionResult",
+          attempt_guid: attempt_guid,
+          feedback: feedback,
+          score: score,
+          out_of: out_of
+        }}
+    end)
+         |> (fn evaluations -> {:ok, evaluations} end).()
+         |> persist_evaluations(part_inputs, roll_up_fn, replace) do
+      {:ok, results} ->
+        results
+
+      {:error, error} ->
+        Oli.Utils.log_error("error inside apply_client_evaluation", error)
+        Repo.rollback(error)
+
+      _ ->
+        Repo.rollback("unknown error")
     end
   end
 
