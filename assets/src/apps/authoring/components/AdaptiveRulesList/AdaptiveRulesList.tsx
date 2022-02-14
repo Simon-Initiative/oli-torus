@@ -150,6 +150,26 @@ const AdaptiveRulesList: React.FC = () => {
     );
   };
 
+  const changeIds = (obj: any) =>
+    ('id' in Object(obj) && (obj.id = `${obj.id}-copy`)) ||
+    Object.values(Object(obj)).forEach(changeIds);
+
+  const handleDuplicateRule = (rule: AdaptiveRule, index: number) => {
+    const ruleClone: IActivity = clone(rule);
+    changeIds(ruleClone);
+    console.log(ruleClone);
+    /*const indexToRename = activityClone.authoring.rules.findIndex(
+      (r: AdaptiveRule) => r.id === rule.id,
+    );
+    activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
+    debounceSaveChanges(activityClone);
+    setRuleToEdit(undefined);
+    handleSelectRule(
+      currentRule.id === rule.id ? activityClone.authoring.rules[indexToRename] : currentRule,
+    );
+    */
+  };
+
   const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {
     // process the rules to make a defaultRule sandwich before displaying them
     const defaultCorrectIndex = rules.findIndex(
@@ -230,8 +250,30 @@ const AdaptiveRulesList: React.FC = () => {
             <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
           </button>
           {!item.default && (
+            <button
+              className="dropdown-item"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveRule(index, 'down');
+                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+              }}
+            >
+              <i className="fas fa-arrow-down mr-2" /> Move Down
+            </button>
+          )}
+          {!item.default && (
             <>
               <div className="dropdown-divider"></div>
+              <button
+                className="dropdown-item"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDuplicateRule(item, index);
+                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                }}
+              >
+                <i className="fas fa-copy mr-2" /> Duplicate
+              </button>
               <button
                 className="dropdown-item text-danger"
                 onClick={(e) => {
