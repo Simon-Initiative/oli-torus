@@ -5,6 +5,7 @@ defmodule Oli.Notifications do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Oli.{Notifications.SystemMessage, Repo}
 
   # ------------------------------------------------------------
@@ -84,16 +85,20 @@ defmodule Oli.Notifications do
       {:error, %Ecto.Changeset{}}
   """
   def update_system_message(%SystemMessage{} = system_message, attrs) do
-    system_message
-    |> SystemMessage.changeset(attrs)
-    |> Repo.update()
-    |> case do
-      {:ok, system_message} ->
-        schedule_message(system_message)
+    changeset = SystemMessage.changeset(system_message, attrs)
+
+    res =
+      Multi.new()
+      |> Multi.update(:system_message, changeset)
+      |> Multi.run(:schedule, &maybe_schedule_message(&1, &2))
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{system_message: system_message}} ->
         {:ok, system_message}
 
-      {:error, error} ->
-        {:error, error}
+      {:error, :system_message, changeset, _} ->
+        {:error, changeset}
     end
   end
 
@@ -124,44 +129,46 @@ defmodule Oli.Notifications do
     SystemMessage.changeset(system_message, attrs)
   end
 
-  defp message_active_and_time_greater_than_now?(true, time) when not is_nil(time) do
-    now = DateTime.utc_now()
-
-    DateTime.compare(now, time) == :lt
-  end
-
-  defp message_active_and_time_greater_than_now?(_, _), do: false
-
-  defp schedule_message(
-         %SystemMessage{id: id, active: active, start: start_time, end: end_time} = system_message
-       ) do
-    remove_existing_message_jobs(id)
-
-    if message_active_and_time_greater_than_now?(active, start_time) do
-      %{id: id, system_message: system_message, display: true}
-      |> Oli.Notifications.Worker.new(
-        tags: ["message-#{id}"],
-        scheduled_at: start_time,
-        replace: [:scheduled_at]
-      )
-      |> Oban.insert()
-    end
-
-    if message_active_and_time_greater_than_now?(active, end_time) do
-      %{id: id, system_message: system_message, display: false}
-      |> Oli.Notifications.Worker.new(
-        tags: ["message-#{id}"],
-        scheduled_at: end_time,
-        replace: [:scheduled_at]
-      )
-      |> Oban.insert()
-    end
-  end
-
-  defp remove_existing_message_jobs(id) do
+  defp remove_existing_message_jobs(id, repo) do
     message_tag = "message-#{id}"
 
     from(j in Oban.Job, where: j.worker == "Oli.Notifications.Worker" and ^message_tag in j.tags)
-    |> Repo.delete_all()
+    |> repo.delete_all()
+  end
+
+  defp schedule_message_toggle_if_active(
+         %SystemMessage{id: id, active: true} = system_message,
+         time,
+         display
+       )
+       when not is_nil(time) do
+    now = DateTime.utc_now()
+
+    if DateTime.compare(now, time) == :lt do
+      %{id: id, system_message: system_message, display: display}
+      |> Oli.Notifications.Worker.new(
+        tags: ["message-#{id}"],
+        scheduled_at: time,
+        replace: [:scheduled_at]
+      )
+      |> Oban.insert()
+    end
+  end
+
+  defp schedule_message_toggle_if_active(_system_message, _time, _display), do: nil
+
+  defp maybe_schedule_message(
+         repo,
+         %{
+           system_message:
+             %SystemMessage{id: id, start: start_time, end: end_time} = system_message
+         }
+       ) do
+    remove_existing_message_jobs(id, repo)
+
+    schedule_message_toggle_if_active(system_message, start_time, true)
+    schedule_message_toggle_if_active(system_message, end_time, false)
+
+    {:ok, true}
   end
 end

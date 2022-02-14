@@ -7,12 +7,8 @@ defmodule Oli.Factory do
   alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications, SectionResource}
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
-<<<<<<< HEAD
   alias Oli.Institutions.{Institution, SsoJwk}
-=======
-  alias Oli.Institutions.Institution
   alias Oli.Notifications.SystemMessage
->>>>>>> [MER-698] Add tests
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
 

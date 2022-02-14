@@ -17,14 +17,15 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
 
   prop system_message, :struct, required: true
   prop timezone, :string, required: true
+  prop save, :event, required: true
 
   def render(assigns) do
     changeset = Notifications.change_system_message(assigns.system_message)
 
     ~F"""
-      <Form for={changeset} submit="save" class="d-flex align-items-center">
+      <Form for={changeset} submit={@save} class="d-flex align-items-center">
         <HiddenInput form={:system_message} field={:id} value={@system_message.id}/>
-        <div class="flex-grow-20 py-2 px-3">
+        <div class="flex-xl-grow-1 py-2 px-3">
           <Field name={:message} class="form-group">
             <TextArea
               class="form-control"

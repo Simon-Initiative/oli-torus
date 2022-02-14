@@ -42,7 +42,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   def render(assigns) do
     ~F"""
       {#for message <- @messages}
-        <EditMessage system_message={current_message(@unsaved_system_message, message)} timezone={@local_tz}/>
+        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} timezone={@local_tz}/>
       {/for}
       <Form for={:system_message} submit="create">
         <Field name={:message} class="form-group">
