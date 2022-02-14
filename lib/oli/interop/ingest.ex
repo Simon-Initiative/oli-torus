@@ -426,7 +426,10 @@ defmodule Oli.Interop.Ingest do
       list when is_list(list) ->
         activity["content"]["authoring"]["parts"]
         |> Enum.map(fn %{"id" => id} -> id end)
-        |> Enum.reduce(%{}, fn e, m -> Map.put(m, e, []) end)
+        |> Enum.reduce(%{}, fn e, m ->
+          objectives = Enum.map(list, fn id -> Map.get(objective_map, id).resource_id end)
+          Map.put(m, e, objectives)
+        end)
     end
   end
 
