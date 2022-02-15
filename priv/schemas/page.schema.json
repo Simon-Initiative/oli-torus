@@ -1,6 +1,6 @@
 {
-  "$id": "https://oli.cmu.edu/schemas/page.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://oli.cmu.edu/schemas/page.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "title": "OLI Workbook Page",
   "description": "A workbook page that contains learning materials and activities",
   "type": "object",
@@ -8,7 +8,7 @@
     "model": {
       "type": "array",
       "items": {
-        "$ref": "https://oli.cmu.edu/torus/resource-content.schema.json"
+        "$ref": "http://oli.cmu.edu/schemas/resource-content.schema.json"
       }
     }
   },

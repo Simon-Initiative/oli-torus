@@ -1,6 +1,6 @@
 {
-  "$id": "https://oli.cmu.edu/schemas/model-element.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "http://oli.cmu.edu/schemas/model-element.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Model Element",
   "description": "A content model element",
   "oneOf": [
@@ -145,7 +145,7 @@
     "paragraph": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -163,7 +163,7 @@
     "heading-one": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -181,7 +181,7 @@
     "heading-two": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -199,7 +199,7 @@
     "heading-three": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -217,7 +217,7 @@
     "heading-four": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -235,7 +235,7 @@
     "heading-five": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -253,7 +253,7 @@
     "heading-six": {
       "allOf": [
         {
-          "$ref": "https://oli.cmu.edu/schemas/slate-element.schema.json"
+          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
         },
         {
           "type": "object",
@@ -723,7 +723,7 @@
     "rich-text": {
       "type": "array",
       "items": {
-        "$ref": "/"
+        "$ref": "#"
       }
     }
   }

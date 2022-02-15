@@ -82,6 +82,7 @@ defmodule Oli.MixProject do
       {:ex_aws, "~> 2.1.6"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws_lambda, "~> 2.0"},
+      {:ex_json_schema, "~> 0.9.1"},
       {:ex_machina, "~> 2.7.0", only: :test},
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
