@@ -6,10 +6,13 @@ import { selectActivityTypes, selectProjectSlug, selectReadOnly } from '../../ap
 import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
 import { RootState } from 'apps/delivery/store/rootReducer';
+import { createUndoAction } from '../../history/slice';
+import { savePage } from '../../page/actions/savePage';
 
 export const createNew = createAsyncThunk(
   `${ActivitiesSlice}/createNew`,
   async (payload: any = {}, { dispatch, getState }) => {
+    const { undoable = false } = payload;
     const rootState = getState() as any;
     const projectSlug = selectProjectSlug(rootState);
     // how to choose activity type? for now hard code to oli_adaptive?

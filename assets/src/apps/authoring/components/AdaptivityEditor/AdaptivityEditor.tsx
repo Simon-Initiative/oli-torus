@@ -11,7 +11,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
-import { selectCurrentRule } from '../../../authoring/store/app/slice';
+import { selectCurrentRule, setCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import {
   findInSequence,
@@ -19,6 +19,7 @@ import {
   getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
+import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
@@ -55,6 +56,8 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
   const hasFeedback = actions.find((action: any) => action.type === 'feedback');
   const hasNavigation = actions.find((action: any) => action.type === 'navigation');
+
+  useEffect(() => console.log(currentRule), [currentRule]);
 
   useEffect(() => {
     if (!currentRule) return;
@@ -153,6 +156,7 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         });
       }
       dispatch(saveActivity({ activity: activityClone, undoable: true }));
+      // setTimeout(() => dispatch(setCurrentRule({ currentRule: rule })));
     }
   };
 

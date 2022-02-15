@@ -1,4 +1,6 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
+import { AdaptiveRule } from 'apps/authoring/components/AdaptiveRulesList/AdaptiveRulesList';
+import { selectCurrentActivity } from 'apps/delivery/store/features/activities/slice';
 import {
   savePartState,
   savePartStateToTree,
@@ -128,7 +130,7 @@ const slice: Slice<AppState> = createSlice({
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
     setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
-      state.currentRule = action.payload.currentRule;
+      state.currentRule = action.payload.currentRule.id ?? action.payload.currentRule;
     },
     setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
@@ -200,10 +202,18 @@ export const selectRightPanelActiveTab = createSelector(
   selectState,
   (state: AppState) => state.rightPanelActiveTab,
 );
-export const selectCurrentRule = createSelector(
+export const selectCurrentRuleId = createSelector(
   selectState,
   (state: AppState) => state.currentRule,
 );
+
+export const selectCurrentRule = createSelector(
+  selectCurrentRuleId,
+  selectCurrentActivity,
+  (id: any, activity: any) =>
+    activity?.authoring.rules.find((rule: AdaptiveRule) => rule.id === id) ?? id,
+);
+
 export const selectCopiedPart = createSelector(selectState, (state: AppState) => state.copiedPart);
 
 export const selectVisible = createSelector(selectState, (state: AppState) => state.visible);
