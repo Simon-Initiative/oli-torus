@@ -84,6 +84,7 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly label="Last Name" value={@user.family_name}/>
             <ReadOnly label="Email" value={@user.email}/>
             <ReadOnly label="Guest" value={boolean(@user.guest)}/>
+            <ReadOnly label="Is 13 or older" value={boolean(@user.age_verified)}/>
             <div class="form-control mb-3">
               <Field name={:independent_learner}>
                 <Checkbox/>

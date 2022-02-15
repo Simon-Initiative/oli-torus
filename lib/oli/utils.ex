@@ -154,6 +154,14 @@ defmodule Oli.Utils do
     end
   end
 
+  def validate_acceptance_if(changeset, field, condition, message \\ "must be accepted") do
+    if condition.(changeset) do
+      Ecto.Changeset.validate_acceptance(changeset, field, message: message)
+    else
+      changeset
+    end
+  end
+
   def validate_dates_consistency(changeset, start_date_field, end_date_field) do
     validate_change(changeset, start_date_field, fn _, field ->
       # check if the start date is after the end date
