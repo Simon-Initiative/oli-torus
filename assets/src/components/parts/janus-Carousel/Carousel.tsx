@@ -229,23 +229,31 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     setCurrentSlide(currentSlide);
   };
 
+  // useeffect that destroys swiper when component unmounts
+  useEffect(() => {
+    return () => {
+      swiper.destroy(true, true);
+    };
+  }, []);
+
   return ready ? (
     <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
       {images.length > 0 && (
         <Swiper
           modules={[Navigation, Pagination, A11y, Keyboard, Zoom]}
           slidesPerView={1}
-          loop
-          navigation
+          loop={true}
+          navigation={true}
           zoom={carouselZoom ? { maxRatio: 3 } : false}
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
           onSwiper={(swiper) => {
             setSwiper(swiper);
-            swiper.slideTo(currentSlide);
+            swiper.slideTo(1);
           }}
           onSlideChange={(swiper) => {
             handleSlideChange(swiper.realIndex);
+            swiper.update();
           }}
           onImagesReady={() => {
             setImagesLoaded(true);
