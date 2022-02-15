@@ -1,0 +1,20 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/resource-content.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Content Element",
+  "description": "A workbook page content element",
+  "oneOf": [
+    {
+      "$ref": "https://oli.cmu.edu/torus/group-content.schema.json"
+    },
+    {
+      "$ref": "https://oli.cmu.edu/torus/structured-content.schema.json"
+    },
+    {
+      "$ref": "https://oli.cmu.edu/torus/activity-reference.schema.json"
+    },
+    {
+      "$ref": "https://oli.cmu.edu/schemas/activity-bank-selection.schema.json"
+    }
+  ]
+}

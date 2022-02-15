@@ -1,0 +1,47 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/slate-element.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Slate Element",
+  "description": "Element described by slate editor",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/descendant"
+      }
+    }
+  },
+  "$defs": {
+    "descendant": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/base-element"
+        },
+        {
+          "$ref": "#/$defs/text"
+        }
+      ]
+    },
+    "base-element": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/descendant"
+          }
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "text": "string"
+      }
+    }
+  }
+}

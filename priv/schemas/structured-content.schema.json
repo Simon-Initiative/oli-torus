@@ -1,0 +1,30 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/group-content.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Structured Content",
+  "description": "An ordered set of structured content",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "content"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "https://oli.cmu.edu/torus/model-element.schema.json"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "purpose",
+    "children"
+  ]
+}

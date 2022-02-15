@@ -1,0 +1,46 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/selection.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Editor Selection",
+  "description": "An editor selection",
+  "type": "object",
+  "properties": {
+    "focus": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "offset": {
+          "type": "number"
+        }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "offset": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "description": ""
+        },
+        {
+          "type": "number",
+          "description": ""
+        }
+      ]
+    }
+  }
+}

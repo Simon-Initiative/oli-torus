@@ -1,0 +1,49 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/activity-bank-selection.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Activity Reference",
+  "description": "An activity reference",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "selection"
+    },
+    "id": {
+      "type": "string"
+    },
+    "logic": {
+      "$ref": "#/$defs/bank-logic"
+    },
+    "count": {
+      "type": "number"
+    },
+    "purpose": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "logic",
+    "count",
+    "purpose"
+  ],
+  "$defs": {
+    "bank-logic": {
+      "type": "object",
+      "properties": {
+        "conditions": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            "#/$defs/expression",
+            "#/$defs/clause"
+          ]
+        }
+      }
+    },
+    "expression": {},
+    "clause": {}
+  }
+}

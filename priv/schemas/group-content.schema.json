@@ -1,0 +1,33 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/group-content.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Group Content",
+  "description": "A grouping of content with a particular layout",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": [
+        "number",
+        "string"
+      ]
+    },
+    "type": {
+      "const": "group"
+    },
+    "layout": {
+      "type": "string"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "https://oli.cmu.edu/torus/resource-content.schema.json"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "layout",
+    "children"
+  ]
+}

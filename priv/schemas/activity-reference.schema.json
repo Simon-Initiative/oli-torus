@@ -1,0 +1,27 @@
+{
+  "$id": "https://oli.cmu.edu/schemas/activity-reference.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Activity Reference",
+  "description": "An activity reference",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "activity-reference"
+    },
+    "id": {
+      "type": "string"
+    },
+    "activitySlug": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "activitySlug",
+    "purpose"
+  ]
+}
