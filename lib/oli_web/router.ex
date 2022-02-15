@@ -78,10 +78,6 @@ defmodule OliWeb.Router do
     plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
   end
 
-  pipeline :maybe_enroll_open_and_free do
-    plug(Oli.Plugs.MaybeEnrollOpenAndFreeUser)
-  end
-
   pipeline :maybe_gated_resource do
     plug(Oli.Plugs.MaybeGatedResource)
   end
@@ -183,6 +179,17 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.AuthorizeCommunity)
   end
 
+  pipeline :superactivity do
+    plug Plug.Static,
+         at: "/superactivity",
+         from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
+  end
+
+  scope "/superactivity", OliWeb do
+    pipe_through :superactivity
+    get "/*path", LegacySuperactivityController, :file_not_found
+  end
+
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)
@@ -199,9 +206,17 @@ defmodule OliWeb.Router do
 
   scope "/" do
     pipe_through([:delivery, :skip_csrf_protection])
-
+    post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
+    get("/jcourse/superactivity/context/:attempt_guid", OliWeb.LegacySuperactivityController, :context)
+    post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
     pow_assent_authorization_post_callback_routes()
   end
+
+  # scope "/" do
+  #   pipe_through([:delivery, :skip_csrf_protection])
+  #   post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
+  #   pow_assent_authorization_post_callback_routes()
+  # end
 
   scope "/authoring", as: :authoring do
     pipe_through([:browser, :authoring, :registration_captcha, :pow_email_layout])
@@ -583,7 +598,6 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :delivery,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :pow_email_layout
     ])
@@ -614,7 +628,6 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :pow_email_layout
     ])
@@ -631,7 +644,6 @@ defmodule OliWeb.Router do
       :browser,
       :delivery,
       :require_section,
-      :maybe_enroll_open_and_free,
       :delivery_protected,
       :maybe_gated_resource,
       :enforce_paywall,
@@ -709,8 +721,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
-    get("/:section_slug/enroll", DeliveryController, :enroll)
-    post("/:section_slug/create_user", DeliveryController, :create_user)
+    get("/:section_slug/enroll", DeliveryController, :show_enroll)
+    post("/:section_slug/enroll", DeliveryController, :process_enroll)
   end
 
   # Delivery Auth (Signin)
@@ -846,6 +858,11 @@ defmodule OliWeb.Router do
     ])
 
     live("/:project_id/history/:slug", RevisionHistory)
+  end
+
+  # Support for cognito JWT auth currently used by Infiniscope
+  scope "/cognito", OliWeb do
+    get("/launch/products/:product_id", CognitoController, :launch)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

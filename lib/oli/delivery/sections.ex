@@ -751,6 +751,17 @@ defmodule Oli.Delivery.Sections do
     {section_resource_id, numbering_tracker, processed_ids}
   end
 
+  def get_project_by_section_resource(section_id, resource_id) do
+    Repo.one(
+      from s in SectionResource,
+      join: p in Project,
+      on: s.project_id == p.id,
+      where:
+        s.section_id == ^section_id and s.resource_id == ^resource_id,
+      select: p
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication
@@ -1389,5 +1400,29 @@ defmodule Oli.Delivery.Sections do
     section
     |> Map.put(:start_date, start_date)
     |> Map.put(:end_date, end_date)
+  end
+
+  @doc """
+  Returns {:available, section} if the section is available fo enrollment.
+
+  Otherwise returns {:unavailable, reason} where reasons is one of:
+  :registration_closed, :before_start_date, :after_end_date
+  """
+  def available?(section) do
+    now = Timex.now()
+
+    cond do
+      section.registration_open != true ->
+        {:unavailable, :registration_closed}
+
+      not is_nil(section.start_date) and Timex.before?(now, section.start_date) ->
+        {:unavailable, :before_start_date}
+
+      not is_nil(section.end_date) and Timex.after?(now, section.end_date) ->
+        {:unavailable, :after_end_date}
+
+      true ->
+        {:available, section}
+    end
   end
 end

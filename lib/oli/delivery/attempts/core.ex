@@ -411,6 +411,18 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  def get_latest_activity_attempt(resource_attempt_id, resource_id) do
+    Repo.one(
+      from(aa in ActivityAttempt,
+        left_join: aa2 in ActivityAttempt,
+        on:
+        aa2.resource_id == ^resource_id and aa.resource_attempt_id == aa2.resource_attempt_id and aa.id < aa2.id,
+        where: aa.resource_id == ^resource_id and aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
+        select: aa
+      )
+    ) |> Repo.preload(revision: [:activity_type])
+  end
+
   @doc """
   Retrieves the latest resource attempt for a given resource id,
   context id and user id.  If no attempts exist, returns nil.

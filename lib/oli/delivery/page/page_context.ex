@@ -42,20 +42,23 @@ defmodule Oli.Delivery.Page.PageContext do
   """
   @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
   def create_for_review(section_slug, attempt_guid, _) do
-    {progress_state, resource_attempts, latest_attempts, activities, page_revision} =
+    {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
          {state,
           %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: latest_attempts}}} ->
-          page_revision = Oli.Resources.get_revision!(resource_attempt.revision_id)
-
-          {state, [resource_attempt], latest_attempts,
-           ActivityContext.create_context_map(page_revision.graded, latest_attempts),
-           page_revision}
+          assemble_final_context(
+            state,
+            resource_attempt,
+            latest_attempts,
+            resource_attempt.revision
+          )
 
         {:error, _} ->
           {:error, [], %{}}
       end
+
+    page_revision = hd(resource_attempts).revision
 
     %PageContext{
       review_mode: true,

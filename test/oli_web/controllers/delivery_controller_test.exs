@@ -61,7 +61,11 @@ defmodule OliWeb.DeliveryControllerTest do
                "Let's create a new section for your course. Please select one of the options below:"
     end
 
-    test "handles instructor with no section", %{conn: conn, lti_param_ids: lti_param_ids, user: user} do
+    test "handles instructor with no section", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids,
+      user: user
+    } do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
 
       conn =
@@ -73,7 +77,11 @@ defmodule OliWeb.DeliveryControllerTest do
                "Let's create a new section for your course. Please select one of the options below:"
     end
 
-    test "handles instructor with section", %{conn: conn, lti_param_ids: lti_param_ids, user: user} do
+    test "handles instructor with section", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids,
+      user: user
+    } do
       {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
 
       conn =
@@ -192,28 +200,97 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 302) =~ "redirect"
     end
+
+    test "redirect unenrolled user to enrollment page", %{
+      conn: conn,
+      section: section
+    } do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} =
+        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          end_date: Timex.now() |> Timex.subtract(Timex.Duration.from_days(1))
+        })
+
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Has Concluded"
+    end
+
+    test "handles open and free user access when registration is closed", %{
+      conn: conn,
+      section: section
+    } do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} =
+        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} = Sections.update_section(section, %{registration_open: false})
+
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Not Available"
+    end
   end
 
   describe "open and free" do
     setup [:setup_open_and_free_session]
 
     test "shows enroll page if user is not enrolled", %{conn: conn, oaf_section_1: section} do
-      conn = get(conn, Routes.delivery_path(conn, :enroll, section.slug))
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 200) =~ "<h5 class=\"card-title\">#{section.title}</h5>"
-      assert html_response(conn, 200) =~ Routes.delivery_path(conn, :create_user, section.slug)
+      assert html_response(conn, 200) =~ Routes.delivery_path(conn, :process_enroll, section.slug)
     end
 
-    test "enroll redirects to _ if user is already enrolled", %{
+    test "enroll redirects to section overview if user is already enrolled", %{
       conn: conn,
       oaf_section_1: section,
       user: user
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      conn = get(conn, Routes.delivery_path(conn, :enroll, section.slug))
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 302) =~ Routes.page_delivery_path(conn, :index, section.slug)
+    end
+
+    test "handles open and free user access when date is before start date", %{
+      conn: conn,
+      oaf_section_1: section
+    } do
+      enrolled_user = user_fixture()
+      other_user = user_fixture()
+
+      {:ok, _enrollment} =
+        Sections.enroll(enrolled_user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(other_user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          start_date: Timex.now() |> Timex.add(Timex.Duration.from_days(1))
+        })
+
+      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
+
+      assert html_response(conn, 403) =~ "Section Has Not Started"
     end
   end
 
@@ -270,23 +347,24 @@ defmodule OliWeb.DeliveryControllerTest do
           },
           student.id
         ),
-      student_no_section: cache_lti_params(
-        %{
-          "iss" => registration.issuer,
-          "aud" => registration.client_id,
-          "sub" => student_no_section.sub,
-          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-            "id" => "some-new-context-id",
-            "title" => "some new title"
+      student_no_section:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => student_no_section.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => "some-new-context-id",
+              "title" => "some new title"
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
           },
-          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-            "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
-          ],
-          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-        },
-        student_no_section.id
-      ),
+          student_no_section.id
+        ),
       instructor:
         cache_lti_params(
           %{
@@ -305,41 +383,43 @@ defmodule OliWeb.DeliveryControllerTest do
           },
           instructor.id
         ),
-      instructor_no_section: cache_lti_params(
-        %{
-          "iss" => registration.issuer,
-          "aud" => registration.client_id,
-          "sub" => instructor_no_section.sub,
-          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-            "id" => "some-new-context-id",
-            "title" => "some new title"
+      instructor_no_section:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => instructor_no_section.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => "some-new-context-id",
+              "title" => "some new title"
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
           },
-          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
-          ],
-          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-        },
-        instructor_no_section.id
-      ),
-      student_instructor_no_section: cache_lti_params(
-        %{
-          "iss" => registration.issuer,
-          "aud" => registration.client_id,
-          "sub" => student_instructor_no_section.sub,
-          "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
-          "https://purl.imsglobal.org/spec/lti/claim/context" => %{
-            "id" => "some-new-context-id",
-            "title" => "some new title"
+          instructor_no_section.id
+        ),
+      student_instructor_no_section:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => student_instructor_no_section.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => "some-new-context-id",
+              "title" => "some new title"
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
           },
-          "https://purl.imsglobal.org/spec/lti/claim/roles" => [
-            "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor",
-            "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
-          ],
-          "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
-        },
-        student_instructor_no_section.id
-      ),
+          student_instructor_no_section.id
+        )
     }
 
     conn =
@@ -351,6 +431,7 @@ defmodule OliWeb.DeliveryControllerTest do
      conn: conn,
      author: author,
      institution: institution,
+     section: section,
      user: user,
      student: student,
      student_no_section: student_no_section,
