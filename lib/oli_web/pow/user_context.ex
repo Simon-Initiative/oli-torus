@@ -10,6 +10,8 @@ defmodule OliWeb.Pow.UserContext do
   alias Oli.Repo
   alias Oli.Accounts.User
 
+  require Logger
+
   @doc """
   Overrides the existing pow get_by/1 and ensures only
   independent learners are queried
@@ -46,6 +48,12 @@ defmodule OliWeb.Pow.UserContext do
     |> Repo.insert()
     |> case do
       {:ok, user} ->
+        if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do
+          Logger.info(
+            "User (id: #{user.id}, email: #{user.email}) created successfully with age verification"
+          )
+        end
+
         case params do
           %{"section" => section} ->
             # set the `enroll_after_email_confirmation` virtual field from the given section param

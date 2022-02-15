@@ -39,6 +39,13 @@
       <%= label f, :password_confirmation, "Confirm New Password", class: "control-label" %>
       <%= error_tag f, :password_confirmation %>
     </div>
+    <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
+      <div class="custom-control custom-checkbox mb-3">
+        <%= checkbox f, :age_verified, class: "custom-control-input", autofocus: focusHelper(f, :age_verified) %>
+        <%= label f, :age_verified, "I am 13 or older", class: "custom-control-label w-100" %>
+        <div class="text-danger"><%= error_tag f, :age_verified, true %></div>
+      </div>
+    <% end %>
     <%= if assigns[:link_account] do %>
       <%= hidden_input f, :link_account, value: @link_account %>
     <% end %>
