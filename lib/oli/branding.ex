@@ -185,7 +185,7 @@ defmodule Oli.Branding do
   end
 
   defp brand_with_defaults(section) do
-    Map.merge(get_default_brand(), get_most_relevant_brand(section))
+    Map.merge(get_default_brand(), get_most_relevant_brand(section), fn _k, v1, v2 -> v2 || v1 end)
   end
 
   defp get_most_relevant_brand(section) do

@@ -214,6 +214,8 @@ defmodule Oli.Utils do
   Returns the given url or path ensuring it is absolute. If a relative path is given, then
   the configured base url will be prepended
   """
+  def ensure_absolute_url(nil), do: ""
+
   def ensure_absolute_url(url) do
     if is_url_absolute(url) do
       url
