@@ -32,7 +32,8 @@ defmodule Oli.Factory do
       guest: false,
       independent_learner: true,
       can_create_sections: true,
-      locked_at: nil
+      locked_at: nil,
+      age_verified: true
     }
   end
 
