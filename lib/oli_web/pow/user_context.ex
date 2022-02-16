@@ -44,7 +44,7 @@ defmodule OliWeb.Pow.UserContext do
   @impl true
   def create(params) do
     %User{}
-    |> User.changeset(params)
+    |> User.verification_changeset(params)
     |> Repo.insert()
     |> case do
       {:ok, user} ->

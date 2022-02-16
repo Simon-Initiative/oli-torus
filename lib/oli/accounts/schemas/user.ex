@@ -113,11 +113,6 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
-    |> validate_acceptance_if(
-      :age_verified,
-      &is_age_verification_enabled/1,
-      "You must verify you are old enough to access our site in order to continue"
-    )
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
@@ -162,11 +157,56 @@ defmodule Oli.Accounts.User do
       :age_verified
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
+  Creates a changeset that if configured, runs the age check validation.
+  Used on user creation through frontend form.
+  """
+  def verification_changeset(user, attrs \\ %{}) do
+    user
+    |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :author_id,
+      :guest,
+      :independent_learner,
+      :research_opt_out,
+      :state,
+      :locked_at,
+      :email_confirmed_at,
+      :can_create_sections,
+      :age_verified
+    ])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> validate_acceptance_if(
       :age_verified,
       &is_age_verification_enabled/1,
       "You must verify you are old enough to access our site in order to continue"
     )
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
