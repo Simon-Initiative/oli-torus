@@ -130,7 +130,7 @@ const slice: Slice<AppState> = createSlice({
       state.rightPanelActiveTab = action.payload.rightPanelActiveTab;
     },
     setCurrentRule(state, action: PayloadAction<{ currentRule: any }>) {
-      state.currentRule = action.payload.currentRule.id ?? action.payload.currentRule;
+      state.currentRule = action?.payload?.currentRule?.id ?? action?.payload?.currentRule;
     },
     setCopiedPart(state, action: PayloadAction<{ copiedPart: any }>) {
       state.copiedPart = action.payload.copiedPart;
