@@ -136,7 +136,9 @@
     "text": {
       "type": "object",
       "properties": {
-        "text": "string"
+        "text": {
+          "type": "string"
+        }
       },
       "required": [
         "text"
@@ -313,10 +315,16 @@
         "children": {
           "type": "array",
           "items": {
-            "type": [
-              "#/$defs/ordered-list",
-              "#/$defs/unordered-list",
-              "#/$defs/text"
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ordered-list"
+              },
+              {
+                "$ref": "#/$defs/unordered-list"
+              },
+              {
+                "$ref": "#/$defs/text"
+              }
             ]
           }
         }
@@ -459,7 +467,7 @@
         "children": {
           "type": "array",
           "items": {
-            "type": "#/$defs/table-row"
+            "$ref": "#/$defs/table-cell"
           }
         }
       },

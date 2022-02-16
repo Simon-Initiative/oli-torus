@@ -1,0 +1,21 @@
+{
+  "$id": "http://oli.cmu.edu/schemas/activity-sequence.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Activity Reference",
+  "description": "An activity reference",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "activity-reference"
+    },
+    "custom": {},
+    "activity_id": {
+      "type": "integer"
+    }
+  },
+  "required": [
+    "type",
+    "custom",
+    "activity_id"
+  ]
+}

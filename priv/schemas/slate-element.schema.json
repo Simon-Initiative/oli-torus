@@ -44,7 +44,9 @@
     "text": {
       "type": "object",
       "properties": {
-        "text": "string"
+        "text": {
+          "type": "string"
+        }
       }
     }
   }

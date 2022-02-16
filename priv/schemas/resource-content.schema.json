@@ -15,6 +15,9 @@
     },
     {
       "$ref": "http://oli.cmu.edu/schemas/activity-bank-selection.schema.json"
+    },
+    {
+      "$ref": "http://oli.cmu.edu/schemas/activity-sequence.schema.json"
     }
   ]
 }
