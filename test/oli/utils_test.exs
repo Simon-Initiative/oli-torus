@@ -32,6 +32,10 @@ defmodule Oli.UtilsTest do
              ) ==
                "https://already-aboslute:8080/keeps/path?and=all&params=true"
     end
+
+    test "returns an empty string when the input url is nil" do
+      assert Utils.ensure_absolute_url(nil) == ""
+    end
   end
 
   describe "find_and_linkify_urls_in_string/1" do
