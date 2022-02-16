@@ -228,6 +228,8 @@ defmodule OliWeb.Router do
     # handle linking accounts when using a social account provider to login
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
+
+    delete("/signout", OliWeb.SessionController, :signout)
   end
 
   scope "/authoring" do
@@ -264,6 +266,9 @@ defmodule OliWeb.Router do
 
     # update session timezone information
     post("/timezone", StaticPageController, :timezone)
+
+    # update limited session information
+    post "/set_session", StaticPageController, :set_session
 
     # general health check for application & db
     get "/healthz", HealthController, :index
@@ -737,7 +742,7 @@ defmodule OliWeb.Router do
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
-    get("/signout", DeliveryController, :signout)
+    delete("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do
@@ -810,6 +815,9 @@ defmodule OliWeb.Router do
 
     # Communities
     live("/communities/new", CommunityLive.NewView)
+
+    # System Message Banner
+    live("/system_messages", SystemMessageLive.IndexView)
 
     # Course Ingestion
     get("/ingest", IngestController, :index)

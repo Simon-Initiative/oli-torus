@@ -387,4 +387,12 @@ defmodule Oli.TestHelpers do
 
     section
   end
+
+  def set_timezone(%{conn: conn}) do
+    timezone = DateTime.utc_now().time_zone
+
+    conn = Plug.Test.init_test_session(conn, %{local_tz: timezone})
+
+    {:ok, conn: conn}
+  end
 end

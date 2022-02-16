@@ -408,13 +408,6 @@ defmodule OliWeb.DeliveryController do
     end)
   end
 
-  def signout(conn, _params) do
-    conn
-    |> use_pow_config(:user)
-    |> Pow.Plug.delete()
-    |> redirect(to: Routes.static_page_path(conn, :index))
-  end
-
   def signin(conn, %{"section" => section}) do
     conn
     |> use_pow_config(:user)
