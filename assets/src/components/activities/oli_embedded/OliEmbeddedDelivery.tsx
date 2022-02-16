@@ -35,10 +35,14 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
         '[data-activityguid="' + activityState.attemptGuid + '"]',
       ) as HTMLIFrameElement;
       if (iframe) {
-        const frameHeight = iframe.contentDocument?.body.scrollHeight + 'px';
+        const htmlElement = iframe.contentWindow?.document?.querySelector('html');
+        if (htmlElement) {
+          htmlElement.style.height = '';
+        }
+        const frameHeight = iframe.contentDocument?.body?.scrollHeight + 'px';
         if (frameHeight) {
           iframe.style.height = frameHeight;
-          const htmlElement = iframe.contentWindow?.document.querySelector('html');
+          const htmlElement = iframe.contentWindow?.document?.querySelector('html');
           if (htmlElement) {
             htmlElement.style.height = frameHeight;
           }
