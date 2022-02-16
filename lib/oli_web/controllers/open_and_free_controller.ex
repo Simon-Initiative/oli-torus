@@ -1,14 +1,13 @@
 defmodule OliWeb.OpenAndFreeController do
   use OliWeb, :controller
-  alias Oli.Repo
+
+  alias Oli.{Repo, Predefined, Publishing, Branding}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
-  alias Oli.Predefined
   alias Oli.Authoring.Course
-  alias Oli.Publishing
-  alias OliWeb.Common.{Breadcrumb}
-  alias Lti_1p3.Tool.{ContextRoles}
-  alias Oli.Branding
+  alias OliWeb.Common.Breadcrumb
+  alias Lti_1p3.Tool.ContextRoles
+
   alias OliWeb.Router.Helpers, as: Routes
 
   plug :add_assigns
@@ -36,6 +35,11 @@ defmodule OliWeb.OpenAndFreeController do
           Oli.Publishing.get_publication!(String.to_integer(id)) |> Repo.preload(:project)
 
         {publication.project, "Source Project", :project_slug}
+
+      "project:" <> id ->
+        project = Course.get_project!(id)
+
+        {project, "Source Project", :project_slug}
     end
   end
 

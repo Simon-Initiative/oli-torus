@@ -7,6 +7,8 @@ defmodule OliWeb.CognitoController do
 
   alias Oli.{Repo, Sections, Accounts, Groups, Institutions}
   alias Oli.Institutions.SsoJwk
+  alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
 
@@ -15,7 +17,6 @@ defmodule OliWeb.CognitoController do
   def launch(
         conn,
         %{
-          "product_id" => product_id,
           "cognito_id_token" => jwt,
           "error_url" => _error_url,
           "community_id" => community_id
@@ -23,15 +24,15 @@ defmodule OliWeb.CognitoController do
       ) do
     with {:ok, jwk} <- get_jwk(jwt),
          {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
-         %Section{} = section <- Sections.get_section_by(slug: product_id),
+         anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, user} <- setup_lms_user(jwt_fields, community_id) do
       conn
       |> use_pow_config(:user)
       |> Pow.Plug.create(user)
-      |> redirect(to: redirect_path(conn, user, section.id))
+      |> redirect(to: redirect_path(conn, user, anchor))
     else
       nil ->
-        redirect_with_error(conn, params, "Invalid product")
+        redirect_with_error(conn, params, "Invalid product or project")
 
       {false, _, _} ->
         redirect_with_error(conn, params, "Unable to verify credentials")
@@ -107,6 +108,14 @@ defmodule OliWeb.CognitoController do
     |> halt()
   end
 
+  defp fetch_product_or_project(%{"project_slug" => slug}) do
+    Course.get_project_by_slug(slug)
+  end
+
+  defp fetch_product_or_project(%{"product_slug" => slug}) do
+    Sections.get_section_by(slug: slug)
+  end
+
   defp setup_lms_user(fields, community_id) do
     Repo.transaction(fn _ ->
       with {:ok, user} <- create_lms_user(fields),
@@ -131,13 +140,21 @@ defmodule OliWeb.CognitoController do
     Groups.find_or_create_community_user_account(user_id, community_id)
   end
 
-  def redirect_path(conn, user, product_id) do
+  def redirect_path(conn, user, anchor) do
     case Repo.preload(user, :enrollments).enrollments do
       [] ->
-        Routes.independent_sections_path(conn, :new, source_id: "product:#{product_id}")
+        create_section_url(conn, anchor)
 
       _ ->
         Routes.delivery_path(conn, :open_and_free_index)
     end
+  end
+
+  defp create_section_url(conn, %Project{} = project) do
+    Routes.independent_sections_path(conn, :new, source_id: "project:#{project.id}")
+  end
+
+  defp create_section_url(conn, %Section{} = product) do
+    Routes.independent_sections_path(conn, :new, source_id: "product:#{product.id}")
   end
 end
