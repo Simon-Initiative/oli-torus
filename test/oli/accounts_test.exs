@@ -4,7 +4,7 @@ defmodule Oli.AccountsTest do
   import Oli.Factory
 
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -105,6 +105,27 @@ defmodule Oli.AccountsTest do
 
     test "create_user/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
+    end
+
+    test "changeset/2 runs age verification check when enabled" do
+      Config.Reader.read!("test/config/age_verification_config.exs")
+      |> Application.put_all_env()
+
+      assert %Ecto.Changeset{
+               errors: [
+                 age_verified:
+                   {"You must verify you are old enough to access our site in order to continue",
+                    [validation: :acceptance]}
+               ]
+             } = User.noauth_changeset(%User{}, params_for(:user, %{age_verified: false}))
+
+      assert %Ecto.Changeset{errors: []} = User.noauth_changeset(%User{}, params_for(:user))
+
+      Config.Reader.read!("test/config/config.exs")
+      |> Application.put_all_env()
+
+      assert %Ecto.Changeset{errors: []} =
+               User.noauth_changeset(%User{}, params_for(:user, %{age_verified: false}))
     end
 
     test "update_user/2 with valid data updates the user", %{user: user} do

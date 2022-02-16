@@ -42,14 +42,10 @@
     </div>
 
     <%= if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true" do %>
-      <div class="mb-2">
-        <input
-          type="checkbox"
-          id="age-verification"
-          oninvalid="this.setCustomValidity('You must verify you are old enough to access our site in order to continue.')"
-          oninput="this.setCustomValidity('')"
-          required>
-        <label for="age-verification">I am 13 or older</label>
+      <div class="custom-control custom-checkbox mb-3">
+        <%= checkbox f, :age_verified, class: "custom-control-input", autofocus: focusHelper(f, :age_verified) %>
+        <%= label f, :age_verified, "I am 13 or older", class: "custom-control-label w-100" %>
+        <div class="text-danger"><%= error_tag f, :age_verified, true %></div>
       </div>
     <% end %>
 
