@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { parseBool } from 'utils/common';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
@@ -226,6 +226,12 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   // Toggle popup open/close
   const handleToggleIcon = (toggleVal: boolean) => {
     setShowPopup(toggleVal);
+    if (toggleVal === false) {
+      // set focus on inputRef
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
     // optimistically write state
     props.onSave({
       id,
@@ -256,10 +262,13 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     return activityHost && ReactDOM.createPortal(<PopupWindow {...windowProps} />, activityHost);
   };
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   return ready ? (
     <React.Fragment>
       {popupVisible ? (
         <input
+          ref={inputRef}
           data-janus-type={tagName}
           role="button"
           {...(iconSrc
