@@ -2,7 +2,7 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.{Section, SectionInvites}
+  alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
   alias Oli.Institutions
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
@@ -476,17 +476,8 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def enroll_independent(conn, %{"section_invite_slug" => invite_slug}) do
-    section_invite = SectionInvites.get_section_invite(invite_slug)
-
-    if !SectionInvites.link_expired?(section_invite) do
-      section = SectionInvites.get_section_by_invite_slug(invite_slug)
-      render(conn, "enroll.html", section: section)
-    else
-      conn
-      |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InvalidSectionInviteView))
-    end
-  end
+  def enroll_independent(conn, %{"section_invite_slug" => _invite_slug}),
+    do: render(conn, "enroll.html", section: conn.assigns.section)
 
   defp recaptcha_verified?(g_recaptcha_response) do
     Oli.Utils.Recaptcha.verify(g_recaptcha_response) == {:success, true}

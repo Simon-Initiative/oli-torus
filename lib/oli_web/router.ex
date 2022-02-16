@@ -616,6 +616,17 @@ defmodule OliWeb.Router do
     get("/", DeliveryController, :open_and_free_index)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_protected,
+      :pow_email_layout
+    ])
+
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
