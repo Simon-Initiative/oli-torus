@@ -105,6 +105,8 @@
 }
 
 .add-resource-popover {
+  overflow-x: auto;
+  width: 500px;
   z-index: 500;
   border-radius: 6px;
 
@@ -114,6 +116,8 @@
   }
 
   .add-resource-popover-content {
+    height: 400px;
+    width: 500px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;

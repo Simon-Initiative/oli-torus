@@ -1,8 +1,9 @@
 import { ActivityEditContext } from 'data/content/activity';
 import { ResourceContent } from 'data/content/resource';
 import React, { useState } from 'react';
-import { Popover } from 'react-tiny-popover';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
+import guid from 'utils/guid';
 
 export type AddCallback = (
   content: ResourceContent,
@@ -21,40 +22,21 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   isLast,
   children,
 }) => {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [latestClickEvent, setLatestClickEvent] = useState<MouseEvent>();
-  const togglePopover = (e: React.MouseEvent) => {
-    setIsPopoverOpen(!isPopoverOpen);
-    setLatestClickEvent(e.nativeEvent);
-  };
+  const [id] = useState(guid());
 
   return (
     <>
-      <Popover
-        containerClassName="add-resource-popover"
-        onClickOutside={(e) => {
-          if (e !== latestClickEvent) {
-            setIsPopoverOpen(false);
-          }
-        }}
-        isOpen={isPopoverOpen}
-        align="start"
-        positions={['bottom', 'left']}
-        content={() => (
-          <div onClick={(e) => togglePopover(e)} className="add-resource-popover-content">
-            {children}
-          </div>
-        )}
+      <OverlayTrigger
+        trigger="click"
+        placement={isLast ? 'top-start' : 'bottom-start'}
+        rootClose={true}
+        overlay={
+          <Popover id={id} className="add-resource-popover">
+            <Popover.Content className="add-resource-popover-content">{children}</Popover.Content>
+          </Popover>
+        }
       >
-        <div
-          className={classNames([
-            'add-resource-content',
-            isPopoverOpen ? 'active' : '',
-            isLast ? 'add-resource-content-last' : '',
-            editMode ? '' : 'disabled',
-          ])}
-          onClick={togglePopover}
-        >
+        <div className={classNames(['add-resource-content', editMode ? '' : 'disabled'])}>
           {editMode && (
             <>
               <div className="insert-button-container">
@@ -66,36 +48,26 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
             </>
           )}
         </div>
-      </Popover>
-      <LastAddContentButton
-        isLast={typeof isLast === 'boolean' && isLast}
-        editMode={editMode}
-        togglePopover={togglePopover}
-      />
-    </>
-  );
-};
+      </OverlayTrigger>
 
-interface LastAddContentButtonProps {
-  isLast: boolean;
-  editMode: boolean;
-  togglePopover: (e: React.MouseEvent) => void;
-  content?: React.ReactNode;
-}
-const LastAddContentButton: React.FC<LastAddContentButtonProps> = ({
-  isLast,
-  editMode,
-  togglePopover,
-  content,
-}) => {
-  if (!isLast) {
-    return null;
-  }
-  return (
-    <div className="insert-label my-4 text-center">
-      <button onClick={togglePopover} disabled={!editMode} className="btn btn-sm btn-light">
-        {content || 'Add Content or Activity'}
-      </button>
-    </div>
+      {isLast && (
+        <OverlayTrigger
+          trigger="click"
+          placement="top"
+          rootClose={true}
+          overlay={
+            <Popover id="last-content-add-button" className="add-resource-popover">
+              <Popover.Content className="add-resource-popover-content">{children}</Popover.Content>
+            </Popover>
+          }
+        >
+          <div className="insert-label my-4 text-center">
+            <button disabled={!editMode} className="btn btn-sm btn-light">
+              Add Content or Activity
+            </button>
+          </div>
+        </OverlayTrigger>
+      )}
+    </>
   );
 };

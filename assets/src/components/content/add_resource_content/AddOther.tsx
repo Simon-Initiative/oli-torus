@@ -10,17 +10,19 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
   return (
     <>
       <div className="list-group">
-        <a
-          href="#"
+        <button
           key={'static_activity_bank'}
           className="list-group-item list-group-item-action flex-column align-items-start"
-          onClick={() => onAddItem(createDefaultSelection(), index)}
+          onClick={() => {
+            onAddItem(createDefaultSelection(), index);
+            document.body.click();
+          }}
         >
           <div className="type-label">Activity Bank Selection</div>
           <div className="type-description">
             Select different activities at random according to defined criteria
           </div>
-        </a>
+        </button>
       </div>
     </>
   );
