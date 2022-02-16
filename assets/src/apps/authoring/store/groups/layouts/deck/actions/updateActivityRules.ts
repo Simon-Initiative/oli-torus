@@ -67,6 +67,39 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
   );
 };
 
+const updateOwnerScreenIdInConditions = async (conditions: any, deck: any, rootState: any) => {
+  await Promise.all(
+    conditions.map(async (condition: any) => {
+      //if fact has '|' in it then it is a reference to another screen. We need to check and update the owner screen Id
+      if (
+        condition.fact.indexOf('|') > 0 &&
+        condition.fact.indexOf('stage.') !== 0 &&
+        condition.fact.indexOf('session.') !== 0
+      ) {
+        const [parts] = condition.fact.split('|');
+        if (parts.length > 1) {
+          const sequenceId = parts[0];
+          const activityLineage = getSequenceLineage(deck.children, sequenceId);
+          const activityTree: IActivity[] = activityLineage
+            ?.map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
+            .filter((activity) => !!activity) as IActivity[];
+          const [, partId] = condition.fact.split('.');
+          if (activityTree) {
+            activityTree?.map((activity) => {
+              activity.authoring?.parts.map((p: any) => {
+                if (p.id === partId) {
+                  condition.fact = condition.fact.replace(sequenceId, p.owner);
+                  return;
+                }
+              });
+            });
+          }
+        }
+      }
+    }),
+  );
+};
+
 export const updateActivityRules = createAsyncThunk(
   `${GroupsSlice}/updateActivityRules`,
   async (deck: any, { dispatch, getState }) => {
@@ -108,6 +141,7 @@ export const updateActivityRules = createAsyncThunk(
               .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
+            await updateOwnerScreenIdInConditions(conditionsToUpdate, deck, rootState);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
             rule.conditions = rootCondition;
