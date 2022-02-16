@@ -6,6 +6,8 @@ defmodule Oli.Authoring.Clone do
   alias Oli.Authoring.{Collaborators, Locks}
   alias Oli.Repo
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Authors.AuthorProject
 
   def clone_project(project_slug, author) do
     Repo.transaction(fn ->
@@ -73,5 +75,29 @@ defmodule Oli.Authoring.Clone do
     """
 
     Repo.query!(query, [cloned_project_id, base_project_id])
+  end
+
+  @doc """
+  Returns true if the given author already is a collaborator on a project that was cloned from the
+  project specified by the given project slug.
+  """
+  def existing_clones(project_slug, author) do
+    from(
+      project in Project,
+      join: p in Project,
+      on: project.id == p.project_id,
+      join: ap in AuthorProject,
+      on:
+        p.id ==
+          ap.project_id and ap.author_id == ^author.id,
+      where: project.slug == ^project_slug,
+      select: p
+    )
+    |> Repo.all()
+  end
+
+  def already_has_clone?(project_slug, author) do
+    existing_clones(project_slug, author)
+    |> Enum.count() > 0
   end
 end

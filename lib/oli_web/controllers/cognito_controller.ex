@@ -49,6 +49,64 @@ defmodule OliWeb.CognitoController do
     redirect_with_error(conn, params, "Missing parameters")
   end
 
+  def launch_clone(
+        conn,
+        %{
+          "cognito_id_token" => jwt,
+          "error_url" => _error_url
+        } = params
+      ) do
+    with {:ok, jwk} <- get_jwk(jwt),
+         {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
+         anchor when not is_nil(anchor) <- fetch_product_or_project(params),
+         {:ok, author} <- find_or_create_author(jwt_fields, community_id) do
+      conn
+      |> use_pow_config(:author)
+      |> Pow.Plug.create(author)
+      |> redirect(to: clone_or_prompt(conn, user, anchor))
+    else
+      nil ->
+        redirect_with_error(conn, params, "Invalid product or project")
+
+      {false, _, _} ->
+        redirect_with_error(conn, params, "Unable to verify credentials")
+
+      {:error, error} ->
+        redirect_with_error(conn, params, snake_case_to_friendly(error))
+
+      {:error, %Ecto.Changeset{}} ->
+        redirect_with_error(conn, params, "Invalid parameters")
+    end
+  end
+
+  def launch_clone(conn, params) do
+    redirect_with_error(conn, params, "Missing parameters")
+  end
+
+  def prompt(conn, %{"project_slug" => project_slug}) do
+    author = conn.assigns.current_author
+    projects = Oli.Clone.existing_clones(project_slug, author)
+
+    render(conn, "index.html", projects: projects, project_slug: project_slug)
+  end
+
+  def create(conn, %{"project_slug" => project_slug}) do
+
+    author = conn.assigns.current_author
+
+    case Oli.Clone.clone_project(project_slug, author) do
+      {:ok, dupe} ->
+        redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug)
+
+      {:error, error} ->
+        redirect_with_error(conn, %{}, snake_case_to_friendly(error))
+    end
+  end
+
+  def create(conn, params) do
+    redirect_with_error(conn, params, "Missing parameters")
+  end
+
   defp get_jwk(jwt) do
     with {:ok, %{"kid" => kid}} <- Joken.peek_header(jwt),
          {:ok, %{"iss" => issuer}} <- Joken.peek_claims(jwt),
@@ -116,6 +174,21 @@ defmodule OliWeb.CognitoController do
     Sections.get_section_by(slug: slug)
   end
 
+  defp ensure_authoring_account(fields, community_id) do
+    Repo.transaction(fn _ ->
+      with {:ok, author} <- find_or_create_author(fields),
+           {:ok, _account} <- create_community_account(user.id, community_id) do
+        author
+      else
+        {:error, e} -> Repo.rollback(e)
+      end
+    end)
+  end
+
+  defp find_or_create_author(fields) do
+    {:ok, nil}
+  end
+
   defp setup_lms_user(fields, community_id) do
     Repo.transaction(fn _ ->
       with {:ok, user} <- create_lms_user(fields),
@@ -148,6 +221,28 @@ defmodule OliWeb.CognitoController do
       _ ->
         Routes.delivery_path(conn, :open_and_free_index)
     end
+  end
+
+  defp clone_or_prompt(conn, author, %Project{} = project) do
+    if project.allow_duplication do
+      if already_has_clone?(project.slug, author) do
+        Routes.cognito_path(conn, :prompt, project_slug: project.slug)
+      else
+        case Oli.Clone.clone_project(project.slug, author) do
+          {:ok, dupe} ->
+            Routes.project_path(conn, :overview, dupe.slug)
+
+          {:error, error} ->
+            redirect_with_error(conn, %{}, snake_case_to_friendly(error))
+        end
+      end
+    else
+      # route to "this is not supported"
+    end
+  end
+
+  defp clone_or_prompt(conn, author, %Section{} = _product) do
+    # route to "this is not supported"
   end
 
   defp create_section_url(conn, %Project{} = project) do
