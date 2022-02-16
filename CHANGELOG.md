@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- Ensure user_id is unique in DataShop export
-
 ## 0.18.4 (2022-01-11)
 
 ### Bug Fixes
@@ -13,10 +9,27 @@
 - Ensure score can never exceed out of for graded pages
 - Ensure multiple payment attempts is handled correctly
 - Handle cases where recaptcha payload is missing
+- Ensure user_id is unique in DataShop export
+- Only highlight failed grade sync cells when section is an LMS section
+- Fix adding image/audio in page editor
+- Fix add resource content positioning issues
 
 ### Enhancements
 
 - Optimize rendering and storage by allowing attempts to only store transformed models when necessary
+- Adds support for Legacy OLI custom activities
+
+### Release Notes
+
+- Set up support for Legacy OLI activities as follows:
+  - Check out a copy of the repo https://github.com/Simon-Initiative/torus_superactivity to a local folder
+  - Configure torus oli.env file to include a variable named SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above, e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
+  - Ensure the folder is readable to the running torus instance
+- The following environment configs are now available:
+
+```
+SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legacy activities
+```
 
 ## 0.18.3 (2021-12-27)
 

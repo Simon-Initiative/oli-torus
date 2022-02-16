@@ -20,7 +20,7 @@
 
     <h3><%= Map.get(@conn.assigns, :title, "") %></h3>
     <div class="page-controls">
-      <%= link "Sign out", to: Routes.authoring_pow_session_path(@conn, :delete), method: :delete, class: "btn btn-sm btn-primary" %>
+      <%= link "Sign out", to: Routes.authoring_session_path(@conn, :signout, type: :author), method: :delete, id: "signout-link", class: "btn btn-sm btn-primary" %>
     </div>
 
   </div>

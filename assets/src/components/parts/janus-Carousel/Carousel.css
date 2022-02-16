@@ -1,14 +1,13 @@
-@import '~swiper/swiper-bundle.css';
-
 .janus-image-carousel div {
   display: unset;
   margin-top: unset;
 }
-.janus-image-carousel .swiper-container {
+.janus-image-carousel .swiper {
   width: 100%;
   height: 100%;
 }
-.janus-image-carousel .swiper-container,
+
+.janus-image-carousel .swiper,
 .janus-image-carousel .swiper-pagination,
 .janus-image-carousel .swiper-wrapper {
   display: flex;

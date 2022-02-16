@@ -1,36 +1,12 @@
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 
+/* ------- UI helpers ------- */
+
+// Get element from DOM
 function get(selector: string): any {
   return document.querySelector(selector) as any;
 }
 
-// Calls stripe.confirmCardPayment
-// If the card requires authentication Stripe shows a pop-up modal to
-// prompt the user to enter authentication details without leaving your page.
-const payWithCard = (stripe: any, card: any, clientSecret: any) => {
-  loading(true);
-  stripe
-    .confirmCardPayment(clientSecret, {
-      payment_method: {
-        card,
-      },
-    })
-    .then((result: any) => {
-      if (result.error) {
-        fetch('/api/v1/payments/s/failure', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ clientSecret, reason: result.error.message }),
-        });
-        showError(result.error.message);
-      } else {
-        orderComplete(result.paymentIntent);
-      }
-    });
-};
-/* ------- UI helpers ------- */
 // Shows a success message when the payment is complete
 const orderComplete = (intent: any) => {
   fetch('/api/v1/payments/s/success', {
@@ -55,6 +31,7 @@ const orderComplete = (intent: any) => {
 
   loading(false);
 };
+
 // Show the customer the error from Stripe if their card fails to charge
 const showError = (errorMsgText: any) => {
   loading(false);
@@ -64,6 +41,7 @@ const showError = (errorMsgText: any) => {
     errorMsg.textContent = '';
   }, 4000);
 };
+
 // Show a spinner on payment submission
 const loading = (isLoading: boolean) => {
   if (isLoading) {
@@ -76,6 +54,36 @@ const loading = (isLoading: boolean) => {
     get('#spinner').classList.add('hidden');
     get('#button-text').classList.remove('hidden');
   }
+};
+
+/* ------------------------- */
+
+// Calls stripe.confirmCardPayment
+// If the card requires authentication Stripe shows a pop-up modal to
+// prompt the user to enter authentication details without leaving your page.
+const payWithCard = (stripe: any, card: any, clientSecret: any) => {
+  loading(true);
+
+  stripe
+    .confirmCardPayment(clientSecret, {
+      payment_method: {
+        card,
+      },
+    })
+    .then((result: any) => {
+      if (result.error) {
+        fetch('/api/v1/payments/s/failure', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ clientSecret, reason: result.error.message }),
+        });
+        showError(result.error.message);
+      } else {
+        orderComplete(result.paymentIntent);
+      }
+    });
 };
 
 // Ask the Torus server to create an intent with Stripe, and
@@ -123,6 +131,7 @@ function initPaymentForm(stripe: Stripe, purchase: any) {
     },
   };
   const card = elements.create('card', { style: style });
+
   // Stripe injects an iframe into the DOM
   card.mount('#card-element');
   card.on('change', function (event: any) {
@@ -130,6 +139,7 @@ function initPaymentForm(stripe: Stripe, purchase: any) {
     get('#submit').disabled = event.empty;
     get('#card-error').textContent = event.error ? event.error.message : '';
   });
+
   const form = document.getElementById('payment-form') as any;
   form.addEventListener('submit', (event: any) => {
     event.preventDefault();
@@ -139,7 +149,7 @@ function initPaymentForm(stripe: Stripe, purchase: any) {
 }
 
 function makePurchase(key: string, purchase: any) {
-  loadStripe(key).then((stripe) => {
+  loadStripe(key).then((stripe: any) => {
     if (stripe !== null) {
       initPaymentForm(stripe, purchase);
     }

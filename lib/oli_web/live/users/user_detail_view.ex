@@ -84,6 +84,9 @@ defmodule OliWeb.Users.UsersDetailView do
             <ReadOnly label="Last Name" value={@user.family_name}/>
             <ReadOnly label="Email" value={@user.email}/>
             <ReadOnly label="Guest" value={boolean(@user.guest)}/>
+            {#if Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"}
+              <ReadOnly label="Confirmed is 13 or older on creation" value={boolean(@user.age_verified)}/>
+            {/if}
             <div class="form-control mb-3">
               <Field name={:independent_learner}>
                 <Checkbox/>

@@ -751,6 +751,17 @@ defmodule Oli.Delivery.Sections do
     {section_resource_id, numbering_tracker, processed_ids}
   end
 
+  def get_project_by_section_resource(section_id, resource_id) do
+    Repo.one(
+      from s in SectionResource,
+      join: p in Project,
+      on: s.project_id == p.id,
+      where:
+        s.section_id == ^section_id and s.resource_id == ^resource_id,
+      select: p
+    )
+  end
+
   def rebuild_section_resources(
         section: %Section{id: section_id} = section,
         publication: publication

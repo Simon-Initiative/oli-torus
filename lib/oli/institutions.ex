@@ -8,7 +8,7 @@ defmodule Oli.Institutions do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
-  alias Oli.Institutions.{Institution, RegistrationBrowseOptions, PendingRegistration}
+  alias Oli.Institutions.{Institution, PendingRegistration, RegistrationBrowseOptions, SsoJwk}
   alias Oli.Lti.Tool.Registration
   alias Oli.Lti.Tool.Deployment
 
@@ -592,5 +592,51 @@ defmodule Oli.Institutions do
         where: ilike(i.name, ^q)
       )
     )
+  end
+
+  @doc """
+  Gets a JWK by clauses. Will raise an error if
+  more than one matches the criteria.
+
+  ## Examples
+
+      iex> get_jwk_by(%{kid: "123"})
+      %SsoJwk{}
+      iex> get_jwk_by(%{kid: "bad_kid"})
+      nil
+      iex> get_jwk_by(%{alg: "HS256"})
+      Ecto.MultipleResultsError
+  """
+  def get_jwk_by(clauses), do: Repo.get_by(SsoJwk, clauses)
+
+  @doc """
+  Inserts a list of JWK.
+
+  ## Examples
+
+      iex> insert_bulk_jwks([%{...}, %{...}])
+      [%SsoJwk{}, %SsoJwk{}]
+  """
+  def insert_bulk_jwks(sso_jwks) do
+    Enum.map(sso_jwks, fn attrs ->
+      %SsoJwk{}
+      |> SsoJwk.changeset(attrs)
+      |> Repo.insert()
+      |> elem(1)
+    end)
+  end
+
+  @doc """
+  Builds a JWK map.
+
+  ## Examples
+
+      iex> build_jwk(key)
+      %{typ: "JWT", alg: "RS256", kid: "123", pem: "something"}
+  """
+  def build_jwk({_, _, _, %{"kid" => kid, "alg" => alg}} = key) do
+    {_, pem} = JOSE.JWK.to_pem(key)
+
+    %{typ: "JWT", alg: alg, kid: kid, pem: pem}
   end
 end

@@ -8,8 +8,8 @@ import { Command } from 'components/editing/elements/commands/interfaces';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
+import { Provider } from 'react-redux';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
