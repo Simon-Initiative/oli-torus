@@ -40,6 +40,34 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     end
   end
 
+  describe "new" do
+    setup [:create_fixtures]
+
+    test "renders form from product", %{conn: conn, section: section} do
+      conn =
+        get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "product:#{section.id}"))
+
+      assert html_response(conn, 200) =~ "Source Product"
+    end
+
+    test "renders form from publication", %{conn: conn, publication: publication} do
+      conn =
+        get(
+          conn,
+          Routes.admin_open_and_free_path(conn, :new, source_id: "publication:#{publication.id}")
+        )
+
+      assert html_response(conn, 200) =~ "Source Project"
+    end
+
+    test "renders form from project", %{conn: conn, project: project} do
+      conn =
+        get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "project:#{project.id}"))
+
+      assert html_response(conn, 200) =~ "Source Project"
+    end
+  end
+
   describe "create open_and_free" do
     setup [:create_fixtures]
 

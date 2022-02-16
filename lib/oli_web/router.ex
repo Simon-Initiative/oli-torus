@@ -181,8 +181,8 @@ defmodule OliWeb.Router do
 
   pipeline :superactivity do
     plug Plug.Static,
-         at: "/superactivity",
-         from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
+      at: "/superactivity",
+      from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
   scope "/superactivity", OliWeb do
@@ -207,7 +207,13 @@ defmodule OliWeb.Router do
   scope "/" do
     pipe_through([:delivery, :skip_csrf_protection])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
-    get("/jcourse/superactivity/context/:attempt_guid", OliWeb.LegacySuperactivityController, :context)
+
+    get(
+      "/jcourse/superactivity/context/:attempt_guid",
+      OliWeb.LegacySuperactivityController,
+      :context
+    )
+
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
     pow_assent_authorization_post_callback_routes()
   end
@@ -862,7 +868,8 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
-    get("/launch/products/:product_id", CognitoController, :launch)
+    get("/launch/products/:product_slug", CognitoController, :launch)
+    get("/launch/projects/:project_slug", CognitoController, :launch)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely
