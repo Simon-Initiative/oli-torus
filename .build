@@ -266,6 +266,10 @@ Oli.Lti.PlatformInstances.html
 Oli.Lti.Tool.Deployment.html
 Oli.Lti.Tool.Registration.html
 Oli.Mailer.html
+Oli.Notifications.PubSub.html
+Oli.Notifications.SystemMessage.html
+Oli.Notifications.Worker.html
+Oli.Notifications.html
 Oli.PartComponents.Manifest.html
 Oli.PartComponents.PartComponentMapEntry.html
 Oli.PartComponents.PartComponentRegistration.html
@@ -656,10 +660,14 @@ OliWeb.Sections.PaywallSettings.html
 OliWeb.Sections.SectionsTableModel.html
 OliWeb.Sections.SectionsView.html
 OliWeb.Sections.UnlinkSection.html
+OliWeb.SessionController.html
 OliWeb.SetLiveCSRF.html
 OliWeb.SharedView.html
 OliWeb.StaticPageController.html
 OliWeb.StaticPageView.html
+OliWeb.SystemMessageLive.EditMessage.html
+OliWeb.SystemMessageLive.IndexView.html
+OliWeb.SystemMessageLive.ShowView.html
 OliWeb.Telemetry.html
 OliWeb.UIPaletteView.html
 OliWeb.UserSocket.html
@@ -684,8 +692,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-bfb2c40d37.js
-dist/sidebar_items-c2bb536ed0.js
+dist/search_items-3da3fdfaa4.js
+dist/sidebar_items-de07502c41.js
 index.html
 license.html
 readme.html

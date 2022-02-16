@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-c2bb536ed0.js"></script>
+    <script src="dist/sidebar_items-de07502c41.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -2167,6 +2167,41 @@ consumable by various tools such as Excel (CSV) or an LMS API.</p></div>
     <a href="Oli.Mailer.html">Oli.Mailer</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Notifications.html">Oli.Notifications</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>The Notifications context.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Notifications.PubSub.html">Oli.Notifications.PubSub</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>This module encapsulates all broadcasting functionality for system notifications.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Notifications.SystemMessage.html">Oli.Notifications.SystemMessage</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Notifications.Worker.html">Oli.Notifications.Worker</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>An Oban worker that broadcasts a message for scheduled system messages. It receives a map representing the system
+message, and a boolean that defines whether it will be displayed or hidden.</p></div>
 
 </div>
 <div class="summary-row">
@@ -5695,6 +5730,13 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="OliWeb.SessionController.html">OliWeb.SessionController</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="OliWeb.SetLiveCSRF.html">OliWeb.SetLiveCSRF</a>
 
   </div>
@@ -5719,6 +5761,55 @@ when the client connects, or reconnects to the stateful view.
     <a href="OliWeb.StaticPageView.html">OliWeb.StaticPageView</a>
 
   </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.SystemMessageLive.EditMessage.html">OliWeb.SystemMessageLive.EditMessage</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-73" class="section-heading">
+  <a href="#properties-73" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>system_message</strong> <em>:struct, required: true</em></li><li><strong>timezone</strong> <em>:string, required: true</em></li></ul><h2 id="events-18" class="section-heading">
+  <a href="#events-18" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Events
+</h2>
+<ul><li><strong>save, required: true</strong></li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.SystemMessageLive.IndexView.html">OliWeb.SystemMessageLive.IndexView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-74" class="section-heading">
+  <a href="#properties-74" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="OliWeb.SystemMessageLive.ShowView.html">OliWeb.SystemMessageLive.ShowView</a>
+
+  </div>
+
+    <div class="summary-synopsis"><h2 id="properties-75" class="section-heading">
+  <a href="#properties-75" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+  Properties
+</h2>
+<ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
+The session is signed and stored on the client, then provided back to the server
+when the client connects, or reconnects to the stateful view.
+.</li></ul></div>
 
 </div>
 <div class="summary-row">
@@ -5748,8 +5839,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-73" class="section-heading">
-  <a href="#properties-73" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-76" class="section-heading">
+  <a href="#properties-76" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>for_author</strong> <em>:boolean, default: false</em></li><li><strong>user</strong> <em>:any, required: true</em></li><li><strong>csrf_token</strong> <em>:any, required: true</em></li></ul></div>
@@ -5761,8 +5852,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-74" class="section-heading">
-  <a href="#properties-74" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-77" class="section-heading">
+  <a href="#properties-77" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -5777,8 +5868,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-75" class="section-heading">
-  <a href="#properties-75" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-78" class="section-heading">
+  <a href="#properties-78" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -5791,8 +5882,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-76" class="section-heading">
-  <a href="#properties-76" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-79" class="section-heading">
+  <a href="#properties-79" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -5807,8 +5898,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-77" class="section-heading">
-  <a href="#properties-77" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-80" class="section-heading">
+  <a href="#properties-80" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -5821,8 +5912,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-78" class="section-heading">
-  <a href="#properties-78" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-81" class="section-heading">
+  <a href="#properties-81" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -5837,8 +5928,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-79" class="section-heading">
-  <a href="#properties-79" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-82" class="section-heading">
+  <a href="#properties-82" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
@@ -5851,8 +5942,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-80" class="section-heading">
-  <a href="#properties-80" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-83" class="section-heading">
+  <a href="#properties-83" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
@@ -5874,8 +5965,8 @@ when the client connects, or reconnects to the stateful view.
 
   </div>
 
-    <div class="summary-synopsis"><h2 id="properties-81" class="section-heading">
-  <a href="#properties-81" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
+    <div class="summary-synopsis"><h2 id="properties-84" class="section-heading">
+  <a href="#properties-84" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live view.</li><li><strong>session</strong> <em>:map</em> - The request info necessary for the view, such as params, cookie session info, etc.
