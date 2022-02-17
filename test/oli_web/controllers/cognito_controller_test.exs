@@ -7,15 +7,95 @@ defmodule OliWeb.CognitoControllerTest do
   alias Oli.{Accounts, Groups}
   alias Oli.Delivery.Sections
 
-  describe "launch" do
-    setup do
-      community = insert(:community, name: "Infiniscope")
-      section = insert(:section, %{slug: "open_section", open_and_free: true})
-      email = build(:user).email
+  setup do
+    community = insert(:community, name: "Infiniscope")
+    section = insert(:section, %{slug: "open_section", open_and_free: true})
+    email = build(:user).email
 
-      [community: community, section: section, email: email]
+    [community: community, section: section, email: email]
+  end
+
+  describe "index" do
+    test "redirects user to my courses", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      {:ok, _user} =
+        Accounts.insert_or_update_lms_user(%{
+          sub: "user999",
+          preferred_username: "user999",
+          email: email,
+          can_create_sections: true
+        })
+
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params = valid_index_params(community.id, id_token)
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
     end
 
+    test "does not create user when the cognito_id_token is malformed", %{
+      conn: conn,
+      community: community
+    } do
+      params = valid_index_params(community.id, "bad_token")
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Token Malformed\">redirected</a>.</body></html>"
+    end
+
+    test "does not create user when the JWKS endpoint is not working", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :error))
+
+      params =
+        community.id
+        |> valid_index_params(id_token)
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Error retrieving the jwks\">redirected</a>.</body></html>"
+    end
+
+    test "does not create user when it fails to verify the id token", %{
+      conn: conn,
+      community: community,
+      email: email
+    } do
+      {id_token, jwk, issuer} = generate_token(email, "RS384")
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params =
+        community.id
+        |> valid_index_params(id_token)
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Unable to verify credentials\">redirected</a>.</body></html>"
+    end
+  end
+
+  describe "launch" do
     test "prompts a user with no enrollments to create section from product", %{
       conn: conn,
       community: community,
@@ -346,6 +426,14 @@ defmodule OliWeb.CognitoControllerTest do
       %{
         "community_id" => community_id,
         "cognito_id_token" => id_token,
+        "error_url" => "https://www.example.com/lesson/34"
+      }
+    end
+
+    defp valid_index_params(community_id, id_token) do
+      %{
+        "community_id" => community_id,
+        "id_token" => id_token,
         "error_url" => "https://www.example.com/lesson/34"
       }
     end
