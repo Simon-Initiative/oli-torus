@@ -897,7 +897,7 @@ defmodule OliWeb.Router do
       :authoring
     ])
 
-    get("/prompt", CognitoController, :prompt)
+    get("/prompt/:project_slug", CognitoController, :prompt)
     get("/clone/:project_slug", CognitoController, :clone)
   end
 
