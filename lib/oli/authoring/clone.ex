@@ -78,8 +78,7 @@ defmodule Oli.Authoring.Clone do
   end
 
   @doc """
-  Returns true if the given author already is a collaborator on a project that was cloned from the
-  project specified by the given project slug.
+  Returns the existing clones from a parent project that an author might have.
   """
   def existing_clones(project_slug, author) do
     from(
@@ -96,6 +95,10 @@ defmodule Oli.Authoring.Clone do
     |> Repo.all()
   end
 
+  @doc """
+  Returns true if the given author already is a collaborator on a project that was cloned from the
+  project specified by the given project slug.
+  """
   def already_has_clone?(project_slug, author) do
     existing_clones(project_slug, author)
     |> Enum.count() > 0
