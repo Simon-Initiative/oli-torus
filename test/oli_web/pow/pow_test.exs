@@ -54,7 +54,10 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Learner Sign In"
+      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+
+      assert html_response(conn, 200) =~
+               "This sign in page is for <b>Independent Learner and Educator</b> accounts."
 
       # sign user in
       conn =
@@ -95,7 +98,7 @@ defmodule OliWeb.Common.PowTest do
           }
         )
 
-      assert html_response(conn, 200) =~ "Create a Learner Account"
+      assert html_response(conn, 200) =~ "Create a Learner/Educator Account"
 
       assert html_response(conn, 200) =~
                "You must verify you are old enough to access our site in order to continue"
