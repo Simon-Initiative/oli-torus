@@ -425,7 +425,7 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/authoring/project/"
     end
 
-    test "properly redirects to the intersitial page to prompt if they really want to clone again",
+    test "properly redirects to the interstitial page to prompt if they really want to clone again",
          %{
            conn: conn,
            community: community,
@@ -448,7 +448,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/cognito/prompt?project_slug="
+               "<html><body>You are being <a href=\"/cognito/prompt"
     end
 
     test "forbids a user with an authoring account to clone a project that does not allow duplication",

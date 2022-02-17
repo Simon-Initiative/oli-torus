@@ -267,7 +267,7 @@ defmodule OliWeb.CognitoController do
   defp clone_or_prompt(conn, author, %Project{} = project) do
     if project.allow_duplication do
       if Oli.Authoring.Clone.already_has_clone?(project.slug, author) do
-        redirect(conn, to: Routes.cognito_path(conn, :prompt, project_slug: project.slug))
+        redirect(conn, to: Routes.cognito_path(conn, :prompt, project.slug))
       else
         case Oli.Authoring.Clone.clone_project(project.slug, author) do
           {:ok, dupe} ->
