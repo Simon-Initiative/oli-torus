@@ -10,7 +10,7 @@
   </p>
 
   <ul>
-    <% for p <- @projects do %>
+    <%= for p <- @projects do %>
       <li><%= link p.title, to: Routes.project_path(@conn, :overview, @project_slug) %></li>
     <% end %>
   </ul>
