@@ -14,6 +14,37 @@ defmodule OliWeb.CognitoController do
 
   @jwks_relative_path "/.well-known/jwks.json"
 
+  def index(
+        conn,
+        %{
+          "id_token" => jwt,
+          "error_url" => _error_url,
+          "community_id" => community_id
+        } = params
+      ) do
+    with {:ok, jwk} <- get_jwk(jwt),
+         {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
+         {:ok, user} <- setup_lms_user(jwt_fields, community_id) do
+      conn
+      |> use_pow_config(:user)
+      |> Pow.Plug.create(user)
+      |> redirect(to: Routes.delivery_path(conn, :open_and_free_index))
+    else
+      {false, _, _} ->
+        redirect_with_error(conn, params, "Unable to verify credentials")
+
+      {:error, error} ->
+        redirect_with_error(conn, params, snake_case_to_friendly(error))
+
+      {:error, %Ecto.Changeset{}} ->
+        redirect_with_error(conn, params, "Invalid parameters")
+    end
+  end
+
+  def index(conn, params) do
+    redirect_with_error(conn, params, "Missing parameters")
+  end
+
   def launch(
         conn,
         %{
