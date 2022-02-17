@@ -157,6 +157,40 @@ defmodule Oli.Groups do
   end
 
   @doc """
+  Finds or creates a community account for an author. More efficient than using
+  many-to-many assoc.
+
+  ## Examples
+
+      iex> find_or_create_community_author_account(author_id, community_id)
+      {:ok, %CommunityAccount{}}
+
+      iex> find_or_create_community_author_account(bad_author_id, community_id)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def find_or_create_community_author_account(author_id, community_id) do
+    Repo.transaction(fn _ ->
+      case Repo.one(
+             from(account in CommunityAccount,
+               where:
+                 account.author_id == ^author_id and
+                   account.community_id == ^community_id
+             )
+           ) do
+        nil ->
+          {:ok, account} =
+            create_community_account(%{author_id: author_id, community_id: community_id})
+
+          account
+
+        account ->
+          account
+      end
+    end)
+  end
+
+  @doc """
   Creates a community account.
 
   ## Examples

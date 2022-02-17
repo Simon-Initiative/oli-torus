@@ -7,15 +7,16 @@ defmodule OliWeb.CognitoControllerTest do
   alias Oli.{Accounts, Groups}
   alias Oli.Delivery.Sections
 
-  setup do
-    community = insert(:community, name: "Infiniscope")
-    section = insert(:section, %{slug: "open_section", open_and_free: true})
-    email = build(:user).email
-
-    [community: community, section: section, email: email]
-  end
-
   describe "index" do
+    setup do
+      community = insert(:community, name: "Infiniscope")
+      section = insert(:section, %{slug: "open_section", open_and_free: true})
+      email = build(:user).email
+      author_email = insert(:author).email
+
+      [community: community, section: section, email: email, author_email: author_email]
+    end
+
     test "redirects user to my courses", %{
       conn: conn,
       community: community,
@@ -111,6 +112,15 @@ defmodule OliWeb.CognitoControllerTest do
   end
 
   describe "launch" do
+    setup do
+      community = insert(:community, name: "Infiniscope")
+      section = insert(:section, %{slug: "open_section", open_and_free: true})
+      email = build(:user).email
+      author_email = insert(:author).email
+
+      [community: community, section: section, email: email, author_email: author_email]
+    end
+
     test "prompts a user with no enrollments to create section from product", %{
       conn: conn,
       community: community,
@@ -374,83 +384,195 @@ defmodule OliWeb.CognitoControllerTest do
              |> html_response(302) =~
                "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Unable to verify credentials\">redirected</a>.</body></html>"
     end
+  end
 
-    defp mock_jwks_endpoint(url, jwk, :ok) do
-      fn ^url ->
-        {:ok,
-         %HTTPoison.Response{
-           status_code: 200,
-           body:
-             Jason.encode!(%{
-               keys: [
-                 jwk.pem
-                 |> JOSE.JWK.from_pem()
-                 |> JOSE.JWK.to_public()
-                 |> JOSE.JWK.to_map()
-                 |> (fn {_kty, public_jwk} -> public_jwk end).()
-                 |> Map.put("typ", jwk.typ)
-                 |> Map.put("alg", jwk.alg)
-                 |> Map.put("kid", jwk.kid)
-                 |> Map.put("use", "sig")
-               ]
-             })
-         }}
-      end
+  describe "launch_clone" do
+    setup do
+      community = insert(:community, name: "Infiniscope")
+      section = insert(:section, %{slug: "open_section", open_and_free: true})
+      email = build(:user).email
+      author_email = insert(:author).email
+
+      Oli.Seeder.base_project_with_resource2()
+      |> Map.put(:community, community)
+      |> Map.put(:section, section)
+      |> Map.put(:email, email)
+      |> Map.put(:author_email, author_email)
     end
 
-    defp mock_jwks_endpoint(url, _jwk, :error) do
-      fn ^url ->
-        {:ok, %HTTPoison.Response{status_code: 404, body: "jwks not present"}}
-      end
+    test "allows a user with an authoring account to clone a project they do not already have cloned",
+         %{
+           conn: conn,
+           community: community,
+           author_email: email,
+           project: project
+         } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      Oli.Authoring.Course.update_project(project, %{allow_duplication: true})
+
+      params =
+        community.id
+        |> valid_params(id_token)
+        |> Map.put("project_slug", project.slug)
+
+      assert conn
+             |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/authoring/project/"
     end
 
-    defp generate_token(email, alg \\ "RS256") do
-      jwk = build(:sso_jwk, alg: alg)
-      signer = Joken.Signer.create(alg, %{"pem" => jwk.pem}, %{"kid" => jwk.kid})
-      claims = build_claims(email)
+    test "properly redirects to the intersitial page to prompt if they really want to clone again",
+         %{
+           conn: conn,
+           community: community,
+           author_email: email,
+           project: project
+         } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
 
-      {:ok, claims} =
-        Joken.Config.default_claims()
-        |> Joken.generate_claims(claims)
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
 
-      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+      Oli.Authoring.Course.update_project(project, %{allow_duplication: true})
+      Oli.Authoring.Clone.clone_project(project.slug, Oli.Accounts.get_author_by_email(email))
 
-      {id_token, jwk, claims["iss"]}
+      params =
+        community.id
+        |> valid_params(id_token)
+        |> Map.put("project_slug", project.slug)
+
+      assert conn
+             |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/cognito/prompt?project_slug="
     end
 
-    defp build_claims(email) do
-      %{
-        "at_hash" => UUID.uuid4(),
-        "sub" => "user999",
-        "email_verified" => true,
-        "iss" => "issuer",
-        "cognito:username" => "user999",
-        "origin_jti" => UUID.uuid4(),
-        "aud" => UUID.uuid4(),
-        "event_id" => UUID.uuid4(),
-        "token_use" => "id",
-        "auth_time" => 1_642_608_077,
-        "exp" => 1_642_611_677,
-        "iat" => 1_642_608_077,
-        "jti" => UUID.uuid4(),
-        "email" => email
-      }
+    test "forbids a user with an authoring account to clone a project that does not allow duplication",
+         %{
+           conn: conn,
+           community: community,
+           author_email: email,
+           project: project
+         } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params =
+        community.id
+        |> valid_params(id_token)
+        |> Map.put("project_slug", project.slug)
+
+      assert conn
+             |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/unauthorized?error=This is not supported"
     end
 
-    defp valid_params(community_id, id_token) do
-      %{
-        "community_id" => community_id,
-        "cognito_id_token" => id_token,
-        "error_url" => "https://www.example.com/lesson/34"
-      }
-    end
+    test "forbids a user with an authoring account to clone a product",
+         %{
+           conn: conn,
+           community: community,
+           author_email: email,
+           section: section
+         } do
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
 
-    defp valid_index_params(community_id, id_token) do
-      %{
-        "community_id" => community_id,
-        "id_token" => id_token,
-        "error_url" => "https://www.example.com/lesson/34"
-      }
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params =
+        community.id
+        |> valid_params(id_token)
+        |> Map.put("product_slug", section.slug)
+
+      assert conn
+             |> get(Routes.product_clone_path(conn, :launch_clone, section.slug, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/unauthorized?error=This is not supported"
     end
+  end
+
+  defp mock_jwks_endpoint(url, jwk, :ok) do
+    fn ^url ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             keys: [
+               jwk.pem
+               |> JOSE.JWK.from_pem()
+               |> JOSE.JWK.to_public()
+               |> JOSE.JWK.to_map()
+               |> (fn {_kty, public_jwk} -> public_jwk end).()
+               |> Map.put("typ", jwk.typ)
+               |> Map.put("alg", jwk.alg)
+               |> Map.put("kid", jwk.kid)
+               |> Map.put("use", "sig")
+             ]
+           })
+       }}
+    end
+  end
+
+  defp mock_jwks_endpoint(url, _jwk, :error) do
+    fn ^url ->
+      {:ok, %HTTPoison.Response{status_code: 404, body: "jwks not present"}}
+    end
+  end
+
+  defp generate_token(email, alg \\ "RS256") do
+    jwk = build(:sso_jwk, alg: alg)
+    signer = Joken.Signer.create(alg, %{"pem" => jwk.pem}, %{"kid" => jwk.kid})
+    claims = build_claims(email)
+
+    {:ok, claims} =
+      Joken.Config.default_claims()
+      |> Joken.generate_claims(claims)
+
+    {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+    {id_token, jwk, claims["iss"]}
+  end
+
+  defp build_claims(email) do
+    %{
+      "at_hash" => UUID.uuid4(),
+      "sub" => "user999",
+      "email_verified" => true,
+      "iss" => "issuer",
+      "cognito:username" => "user999",
+      "origin_jti" => UUID.uuid4(),
+      "aud" => UUID.uuid4(),
+      "event_id" => UUID.uuid4(),
+      "token_use" => "id",
+      "auth_time" => 1_642_608_077,
+      "exp" => 1_642_611_677,
+      "iat" => 1_642_608_077,
+      "jti" => UUID.uuid4(),
+      "email" => email
+    }
+  end
+
+  defp valid_params(community_id, id_token) do
+    %{
+      "community_id" => community_id,
+      "cognito_id_token" => id_token,
+      "error_url" => "https://www.example.com/lesson/34"
+    }
+  end
+
+  defp valid_index_params(community_id, id_token) do
+    %{
+      "community_id" => community_id,
+      "id_token" => id_token,
+      "error_url" => "https://www.example.com/lesson/34"
+    }
   end
 end

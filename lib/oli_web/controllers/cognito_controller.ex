@@ -84,17 +84,18 @@ defmodule OliWeb.CognitoController do
         conn,
         %{
           "cognito_id_token" => jwt,
-          "error_url" => _error_url
+          "error_url" => _error_url,
+          "community_id" => community_id
         } = params
       ) do
     with {:ok, jwk} <- get_jwk(jwt),
          {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt),
          anchor when not is_nil(anchor) <- fetch_product_or_project(params),
-         {:ok, author} <- find_or_create_author(jwt_fields, community_id) do
+         {:ok, author} <- ensure_authoring_account(jwt_fields, community_id) do
       conn
       |> use_pow_config(:author)
       |> Pow.Plug.create(author)
-      |> redirect(to: clone_or_prompt(conn, user, anchor))
+      |> clone_or_prompt(author, anchor)
     else
       nil ->
         redirect_with_error(conn, params, "Invalid product or project")
@@ -116,18 +117,17 @@ defmodule OliWeb.CognitoController do
 
   def prompt(conn, %{"project_slug" => project_slug}) do
     author = conn.assigns.current_author
-    projects = Oli.Clone.existing_clones(project_slug, author)
+    projects = Oli.Authoring.Clone.existing_clones(project_slug, author)
 
     render(conn, "index.html", projects: projects, project_slug: project_slug)
   end
 
   def create(conn, %{"project_slug" => project_slug}) do
-
     author = conn.assigns.current_author
 
-    case Oli.Clone.clone_project(project_slug, author) do
+    case Oli.Authoring.Clone.clone_project(project_slug, author) do
       {:ok, dupe} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug)
+        redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug))
 
       {:error, error} ->
         redirect_with_error(conn, %{}, snake_case_to_friendly(error))
@@ -207,8 +207,9 @@ defmodule OliWeb.CognitoController do
 
   defp ensure_authoring_account(fields, community_id) do
     Repo.transaction(fn _ ->
-      with {:ok, author} <- find_or_create_author(fields),
-           {:ok, _account} <- create_community_account(user.id, community_id) do
+      with {:ok, author} <- find_or_create_author(fields, community_id),
+           {:ok, _account} <-
+             Groups.find_or_create_community_author_account(author.id, community_id) do
         author
       else
         {:error, e} -> Repo.rollback(e)
@@ -216,8 +217,11 @@ defmodule OliWeb.CognitoController do
     end)
   end
 
-  defp find_or_create_author(fields) do
-    {:ok, nil}
+  defp find_or_create_author(fields, _communit_id) do
+    case Accounts.get_author_by_email(fields["email"]) do
+      nil -> {:ok, nil}
+      author -> {:ok, author}
+    end
   end
 
   defp setup_lms_user(fields, community_id) do
@@ -256,24 +260,24 @@ defmodule OliWeb.CognitoController do
 
   defp clone_or_prompt(conn, author, %Project{} = project) do
     if project.allow_duplication do
-      if already_has_clone?(project.slug, author) do
-        Routes.cognito_path(conn, :prompt, project_slug: project.slug)
+      if Oli.Authoring.Clone.already_has_clone?(project.slug, author) do
+        redirect(conn, to: Routes.cognito_path(conn, :prompt, project_slug: project.slug))
       else
-        case Oli.Clone.clone_project(project.slug, author) do
+        case Oli.Authoring.Clone.clone_project(project.slug, author) do
           {:ok, dupe} ->
-            Routes.project_path(conn, :overview, dupe.slug)
+            redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug))
 
           {:error, error} ->
             redirect_with_error(conn, %{}, snake_case_to_friendly(error))
         end
       end
     else
-      # route to "this is not supported"
+      redirect_with_error(conn, %{}, "This is not supported")
     end
   end
 
-  defp clone_or_prompt(conn, author, %Section{} = _product) do
-    # route to "this is not supported"
+  defp clone_or_prompt(conn, _author, %Section{} = _product) do
+    redirect_with_error(conn, %{}, "This is not supported")
   end
 
   defp create_section_url(conn, %Project{} = project) do
