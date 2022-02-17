@@ -898,7 +898,7 @@ defmodule OliWeb.Router do
     ])
 
     get("/prompt", CognitoController, :prompt)
-    get("/clone", CognitoController, :clone)
+    get("/clone/:project_slug", CognitoController, :clone)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

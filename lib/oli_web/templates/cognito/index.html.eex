@@ -5,7 +5,7 @@
   <p>You have already created one or more copies of this course.</p>
 
   <p>Would you like to
-    <%= link "create another copy", to: Routes.cognito_path(@conn, :create, @project_slug) %>
+    <%= link "create another copy", to: Routes.cognito_path(@conn, :clone, @project_slug) %>
     or access one of your existing copies?
   </p>
 

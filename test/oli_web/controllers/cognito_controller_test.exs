@@ -496,6 +496,61 @@ defmodule OliWeb.CognitoControllerTest do
              |> html_response(302) =~
                "<html><body>You are being <a href=\"/unauthorized?error=This is not supported"
     end
+
+    test "properly redirects to the project page after a selection to clone again",
+         %{
+           conn: conn,
+           author_email: email,
+           project: project
+         } do
+      author = Oli.Accounts.get_author_by_email(email)
+      Oli.Authoring.Course.update_project(project, %{allow_duplication: true})
+      Oli.Authoring.Clone.clone_project(project.slug, author)
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :clone, project.slug))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/authoring/project"
+    end
+
+    test "fails if the project does not allow duplication, protecting against explicit misuse",
+         %{
+           conn: conn,
+           author_email: email,
+           project: project
+         } do
+      author = Oli.Accounts.get_author_by_email(email)
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :clone, project.slug))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/unauthorized?error=This is not supported"
+    end
+
+    test "fails if the project does not exist given the supplied slug",
+         %{
+           conn: conn,
+           author_email: email
+         } do
+      author = Oli.Accounts.get_author_by_email(email)
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :clone, "this_project_slug_does_not_exist"))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/unauthorized?error=This is not supported"
+    end
   end
 
   defp mock_jwks_endpoint(url, jwk, :ok) do

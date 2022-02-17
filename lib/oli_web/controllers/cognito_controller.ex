@@ -122,19 +122,25 @@ defmodule OliWeb.CognitoController do
     render(conn, "index.html", projects: projects, project_slug: project_slug)
   end
 
-  def create(conn, %{"project_slug" => project_slug}) do
+  def clone(conn, %{"project_slug" => project_slug}) do
     author = conn.assigns.current_author
 
-    case Oli.Authoring.Clone.clone_project(project_slug, author) do
-      {:ok, dupe} ->
-        redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug))
+    case Oli.Authoring.Course.get_project_by_slug(project_slug) do
+      %Project{allow_duplication: true} ->
+        case Oli.Authoring.Clone.clone_project(project_slug, author) do
+          {:ok, dupe} ->
+            redirect(conn, to: Routes.project_path(conn, :overview, dupe.slug))
 
-      {:error, error} ->
-        redirect_with_error(conn, %{}, snake_case_to_friendly(error))
+          {:error, error} ->
+            redirect_with_error(conn, %{}, snake_case_to_friendly(error))
+        end
+
+      _ ->
+        redirect_with_error(conn, %{}, "This is not supported")
     end
   end
 
-  def create(conn, params) do
+  def clone(conn, params) do
     redirect_with_error(conn, params, "Missing parameters")
   end
 
