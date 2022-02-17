@@ -48,7 +48,7 @@ defmodule OliWeb.CognitoControllerTest do
     } do
       params =
         community.id
-        |> valid_params("12")
+        |> valid_index_params("12")
         |> Map.delete("id_token")
 
       assert conn
