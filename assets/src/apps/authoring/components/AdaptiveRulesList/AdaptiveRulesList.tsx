@@ -10,7 +10,11 @@ import {
   selectCurrentActivity,
 } from '../../../delivery/store/features/activities/slice';
 import { getIsLayer, getIsBank } from '../../../delivery/store/features/groups/actions/sequence';
-import { createCorrectRule, createIncorrectRule } from '../../store/activities/actions/rules';
+import {
+  createCorrectRule,
+  createIncorrectRule,
+  duplicateRule,
+} from '../../store/activities/actions/rules';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
@@ -95,6 +99,16 @@ const AdaptiveRulesList: React.FC = () => {
     handleSelectRule(newIncorrectRule);
   };
 
+  const handleDuplicateRule = async (rule: AdaptiveRule, index: number) => {
+    const { payload: newRule } = await dispatch<any>(duplicateRule(rule));
+
+    const activityClone: IActivity = clone(currentActivity);
+    activityClone.authoring.rules.splice(index + 1, 0, newRule);
+    activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
+    debounceSaveChanges(activityClone);
+    handleSelectRule(newRule);
+  };
+
   const handleDeleteRule = (rule: AdaptiveRule) => {
     const activityClone: IActivity = clone(currentActivity);
     const indexToDelete = activityClone.authoring.rules.findIndex(
@@ -148,26 +162,6 @@ const AdaptiveRulesList: React.FC = () => {
     handleSelectRule(
       currentRule.id === rule.id ? activityClone.authoring.rules[indexToRename] : currentRule,
     );
-  };
-
-  const changeIds = (obj: any) =>
-    ('id' in Object(obj) && (obj.id = `${obj.id}-copy`)) ||
-    Object.values(Object(obj)).forEach(changeIds);
-
-  const handleDuplicateRule = (rule: AdaptiveRule, index: number) => {
-    const ruleClone: IActivity = clone(rule);
-    changeIds(ruleClone);
-    console.log(ruleClone);
-    /*const indexToRename = activityClone.authoring.rules.findIndex(
-      (r: AdaptiveRule) => r.id === rule.id,
-    );
-    activityClone.authoring.rules[indexToRename].name = ruleToEdit.name;
-    debounceSaveChanges(activityClone);
-    setRuleToEdit(undefined);
-    handleSelectRule(
-      currentRule.id === rule.id ? activityClone.authoring.rules[indexToRename] : currentRule,
-    );
-    */
   };
 
   const reorderDefaultRules = (rules: AdaptiveRule[], saveChanges?: boolean) => {

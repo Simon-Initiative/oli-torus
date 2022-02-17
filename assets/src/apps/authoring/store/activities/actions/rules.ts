@@ -2,6 +2,46 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import guid from 'utils/guid';
 import ActivitiesSlice from '../../../../delivery/store/features/activities/name';
 import { createFeedback } from './createFeedback';
+import isArray from 'lodash/isArray';
+import partialRight from 'lodash/partialRight';
+import isObject from 'lodash/isObject';
+import set from 'lodash/set';
+import cloneDeep from 'lodash/cloneDeep';
+import reduce from 'lodash/reduce';
+import has from 'lodash/has';
+import { AdaptiveRule } from 'apps/authoring/components/AdaptiveRulesList/AdaptiveRulesList';
+import isString from 'lodash/isString';
+
+const newId = (val: string) => {
+  const idx = val?.indexOf(':');
+  return `${val?.substring(0, idx)}:${guid()}`;
+};
+
+function replace(source: any, key: string): any {
+  console.log('replace', source, key);
+  return isArray(source)
+    ? source.map((v: any) => replace(v, key))
+    : isObject(source)
+    ? reduce(
+        has(source, key) ? set(source, key, newId(source[key])) : source,
+        (res: any, v: any, i: string | number) => {
+          res[i] = replace(v, key);
+          return res;
+        },
+        {},
+      )
+    : source;
+}
+
+export const duplicateRule = createAsyncThunk(
+  `${ActivitiesSlice}/duplicateRule`,
+  async (payload: AdaptiveRule) => {
+    const clone = cloneDeep(payload);
+    const replaced = replace(clone, 'id');
+    // console.log(replaced, payload);
+    return replaced;
+  },
+);
 
 export const createCorrectRule = createAsyncThunk(
   `${ActivitiesSlice}/createCorrectRule`,
