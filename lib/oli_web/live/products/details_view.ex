@@ -60,7 +60,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-md-8">
-          <Edit product={@product} changeset={@changeset} available_brands={@available_brands}/>
+          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} is_admin={@is_admin}/>
         </div>
       </div>
       <div class="row py-5 border-bottom">

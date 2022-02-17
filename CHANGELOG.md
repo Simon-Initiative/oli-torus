@@ -11,6 +11,7 @@
 - Handle cases where recaptcha payload is missing
 - Ensure user_id is unique in DataShop export
 - Only highlight failed grade sync cells when section is an LMS section
+- Only allow admins to edit paywall settings
 
 ### Enhancements
 
@@ -20,8 +21,8 @@
 ### Release Notes
 
 - Set up support for Legacy OLI activities as follows:
-  - Check out a copy of the repo https://github.com/Simon-Initiative/torus_superactivity to a local folder 
-  - Configure torus oli.env file to include a variable named SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above, e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity 
+  - Check out a copy of the repo https://github.com/Simon-Initiative/torus_superactivity to a local folder
+  - Configure torus oli.env file to include a variable named SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above, e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
   - Ensure the folder is readable to the running torus instance
 - The following environment configs are now available:
 
