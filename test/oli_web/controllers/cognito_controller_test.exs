@@ -42,6 +42,21 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
     end
 
+    test "redirects to provided error_url with missing params", %{
+      conn: conn,
+      community: community
+    } do
+      params =
+        community.id
+        |> valid_params("12")
+        |> Map.delete("id_token")
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing parameters\">redirected</a>.</body></html>"
+    end
+
     test "does not create user when the cognito_id_token is malformed", %{
       conn: conn,
       community: community
@@ -220,7 +235,7 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
     end
 
-    test "redirects to provided error_url with error message", %{
+    test "redirects to provided error_url with missing params", %{
       conn: conn,
       community: community,
       section: section
@@ -283,7 +298,7 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Invalid product or project\">redirected</a>.</body></html>"
     end
 
-    test "redirects to unauthorized url with missing error url", %{
+    test "redirects to unauthorized url with missing error_url", %{
       conn: conn,
       community: community,
       section: section

@@ -41,6 +41,10 @@ defmodule OliWeb.CognitoController do
     end
   end
 
+  def index(conn, params) do
+    redirect_with_error(conn, params, "Missing parameters")
+  end
+
   def launch(
         conn,
         %{
