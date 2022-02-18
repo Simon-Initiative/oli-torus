@@ -8,20 +8,21 @@
     "type": {
       "const": "activity-reference"
     },
-    "id": {
-      "type": "string"
-    },
-    "activitySlug": {
-      "type": "string"
+    "activity_id": {
+      "type": "integer"
     },
     "purpose": {
-      "type": "string"
+      "enum": [
+        "none",
+        "checkpoint",
+        "didigetthis",
+        "learnbydoing"
+      ]
     }
   },
   "required": [
     "type",
-    "id",
-    "activitySlug",
+    "activity_id",
     "purpose"
   ]
 }

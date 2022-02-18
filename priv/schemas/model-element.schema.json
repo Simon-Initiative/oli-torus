@@ -3,7 +3,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Model Element",
   "description": "A content model element",
-  "oneOf": [
+  "anyOf": [
     {
       "$ref": "#/$defs/top-level"
     },
@@ -16,7 +16,7 @@
   ],
   "$defs": {
     "top-level": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/$defs/text-block"
         },
@@ -44,7 +44,7 @@
       ]
     },
     "block": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/$defs/table-row"
         },
@@ -63,7 +63,10 @@
       ]
     },
     "inline": {
-      "oneOf": [
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
         {
           "$ref": "#/$defs/hyperlink"
         },
@@ -76,13 +79,60 @@
       ]
     },
     "text-block": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/$defs/paragraph"
         },
         {
           "$ref": "#/$defs/heading"
         }
+      ]
+    },
+    "paragraph": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "p"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "input-ref": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "input_ref"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
       ]
     },
     "heading": {
@@ -107,6 +157,114 @@
         }
       ]
     },
+    "heading-one": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h1"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-two": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h2"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-three": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h3"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-four": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h4"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-five": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h5"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-six": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h6"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
     "list": {
       "oneOf": [
         {
@@ -114,159 +272,6 @@
         },
         {
           "$ref": "#/$defs/unordered-list"
-        }
-      ]
-    },
-    "media": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/image"
-        },
-        {
-          "$ref": "#/$defs/youtube"
-        },
-        {
-          "$ref": "#/$defs/audio"
-        },
-        {
-          "$ref": "#/$defs/webpage"
-        }
-      ]
-    },
-    "text": {
-      "type": "object",
-      "properties": {
-        "text": {
-          "type": "string"
-        }
-      },
-      "required": [
-        "text"
-      ]
-    },
-    "paragraph": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "p"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-one": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h1"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-two": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h2"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-three": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h3"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-four": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h4"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-five": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h5"
-            }
-          },
-          "required": [
-            "type"
-          ]
-        }
-      ]
-    },
-    "heading-six": {
-      "allOf": [
-        {
-          "$ref": "http://oli.cmu.edu/schemas/slate-element.schema.json"
-        },
-        {
-          "type": "object",
-          "properties": {
-            "type": {
-              "const": "h6"
-            }
-          },
-          "required": [
-            "type"
-          ]
         }
       ]
     },
@@ -279,7 +284,14 @@
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/list-item"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/list-item"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
           }
         }
       },
@@ -297,7 +309,14 @@
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/list-item"
+            "anyOf": [
+              {
+                "$ref": "#/$defs/list-item"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
           }
         }
       },
@@ -315,20 +334,30 @@
         "children": {
           "type": "array",
           "items": {
-            "oneOf": [
+            "anyOf": [
               {
-                "$ref": "#/$defs/ordered-list"
-              },
-              {
-                "$ref": "#/$defs/unordered-list"
-              },
-              {
-                "$ref": "#/$defs/text"
+                "$ref": "#"
               }
             ]
           }
         }
       }
+    },
+    "media": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/image"
+        },
+        {
+          "$ref": "#/$defs/youtube"
+        },
+        {
+          "$ref": "#/$defs/audio"
+        },
+        {
+          "$ref": "#/$defs/webpage"
+        }
+      ]
     },
     "image": {
       "type": "object",
@@ -340,10 +369,10 @@
           "type": "string"
         },
         "height": {
-          "type": "integer"
+          "type": "string"
         },
         "width": {
-          "type": "integer"
+          "type": "string"
         },
         "alt": {
           "type": "string"
@@ -369,10 +398,10 @@
           "type": "string"
         },
         "height": {
-          "type": "integer"
+          "type": "string"
         },
         "width": {
-          "type": "integer"
+          "type": "string"
         },
         "alt": {
           "type": "string"
@@ -418,10 +447,10 @@
           "type": "string"
         },
         "height": {
-          "type": "integer"
+          "type": "string"
         },
         "width": {
-          "type": "integer"
+          "type": "string"
         },
         "alt": {
           "type": "string"
@@ -477,7 +506,7 @@
       ]
     },
     "table-cell": {
-      "oneOf": [
+      "anyOf": [
         {
           "$ref": "#/$defs/table-header"
         },
@@ -495,7 +524,7 @@
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/table-cell-child"
+            "$ref": "#"
           }
         }
       },
@@ -508,37 +537,18 @@
       "type": "object",
       "properties": {
         "type": {
-          "const": "th"
+          "const": "td"
         },
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/table-cell-child"
+            "$ref": "#"
           }
         }
       },
       "required": [
         "type",
         "children"
-      ]
-    },
-    "table-cell-child": {
-      "oneOf": [
-        {
-          "$ref": "#/$defs/paragraph"
-        },
-        {
-          "$ref": "#/$defs/image"
-        },
-        {
-          "$ref": "#/$defs/youtube"
-        },
-        {
-          "$ref": "#/$defs/audio"
-        },
-        {
-          "$ref": "#/$defs/math"
-        }
       ]
     },
     "math": {
@@ -682,25 +692,6 @@
       "required": [
         "type",
         "href",
-        "target",
-        "children"
-      ]
-    },
-    "input-ref": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "input_ref"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
-        }
-      },
-      "required": [
-        "type",
         "children"
       ]
     },

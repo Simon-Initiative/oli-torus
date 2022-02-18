@@ -1,0 +1,273 @@
+{
+  "content": {
+    "authoring": {
+      "correct": [
+        [
+          "197359854",
+          "2262107079"
+        ],
+        "4075191741"
+      ],
+      "incorrect": [
+        [
+          "2891433049"
+        ],
+        "356707875"
+      ],
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "2427668079",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "2311357842"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "2106922201",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "1251387669"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "1760727316",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "1200885668"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Yes"
+                        }
+                      ],
+                      "id": "1653132021",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 3,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 3,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "573816189"
+              },
+              "id": "4075191741",
+              "rule": "(!(input like {2891433049})) && (input like {2262107079} && (input like {197359854}))",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No"
+                        }
+                      ],
+                      "id": "3606749900",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 2,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 2,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "191277972"
+              },
+              "id": "356707875",
+              "rule": "(!((!(input like {2891433049})) && (input like {2262107079} && (input like {197359854}))))",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Check all that apply: 1 and 2 are correct",
+      "transformations": [
+        {
+          "id": "1585711933",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Choice 1"
+                }
+              ],
+              "id": "826091067",
+              "type": "p"
+            }
+          ],
+          "selection": null
+        },
+        "id": "197359854"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Choice 2"
+                }
+              ],
+              "id": "493978474",
+              "type": "p"
+            }
+          ],
+          "selection": null
+        },
+        "id": "2262107079"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Three"
+                }
+              ],
+              "id": "2963847984",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 5,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 5,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "2891433049"
+      }
+    ],
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Check all that apply: 1 and 2 are correct"
+              }
+            ],
+            "id": "3697009323",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 41,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 41,
+            "path": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "id": "3445719549"
+    },
+    "type": "SimpleCATA"
+  },
+  "id": "2689",
+  "objectives": {
+    "1": []
+  },
+  "originalFile": "",
+  "subType": "oli_check_all_that_apply",
+  "tags": [],
+  "title": "Check All That Apply",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

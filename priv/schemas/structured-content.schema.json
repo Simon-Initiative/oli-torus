@@ -12,7 +12,12 @@
       "const": "content"
     },
     "purpose": {
-      "type": "string"
+      "enum": [
+        "none",
+        "example",
+        "learnmore",
+        "manystudentswonder"
+      ]
     },
     "children": {
       "type": "array",

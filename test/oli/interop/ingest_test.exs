@@ -27,7 +27,7 @@ defmodule Oli.Interop.IngestTest do
   end
 
   def verify_export(entries) do
-    assert length(entries) == 11
+    assert length(entries) == 29
 
     m = Enum.reduce(entries, %{}, fn {f, c}, m -> Map.put(m, f, c) end)
 
@@ -41,7 +41,8 @@ defmodule Oli.Interop.IngestTest do
 
     assert length(Map.get(hierarchy, "children")) == 1
     unit = Map.get(hierarchy, "children") |> hd
-    assert Map.get(unit, "title") == "Analog and Digital Unit"
+    assert Map.get(unit, "title") == "Unit 1"
+    assert length(Map.get(unit, "children")) == 6
   end
 
   # This mimics the result of unzipping a digest file, but instead reads the individual
@@ -80,7 +81,7 @@ defmodule Oli.Interop.IngestTest do
 
       # verify project
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
-      assert project.title == "KTH CS101"
+      assert project.title == "The Cuisine of Northern Spain"
       assert p.title == project.title
 
       # verify project access for author
@@ -98,59 +99,65 @@ defmodule Oli.Interop.IngestTest do
 
       # verify correct number of hierarchy elements were created
       containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")
-      # 4 defined in the course, plus 1 for the root
-      assert length(containers) == 4 + 1
+      # 1 defined in the course, plus 1 for the root
+      assert length(containers) == 1 + 1
 
       # verify correct number of practice pages were created
       practice_pages =
         Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "page")
         |> Enum.filter(fn p -> !p.graded end)
 
-      assert length(practice_pages) == 3
+      assert length(practice_pages) == 6
 
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
       # verify that the page that had a link to another page had that link rewired correctly
-      src = Enum.filter(practice_pages, fn p -> p.title == "Analog and Digital Page" end) |> hd
+      src = Enum.filter(practice_pages, fn p -> p.title == "Introduction" end) |> hd
 
       dest =
-        Enum.filter(practice_pages, fn p -> p.title == "Contents: Analog and Digital Page" end)
+        Enum.filter(practice_pages, fn p -> p.title == "Food and Drink of Galicia" end)
         |> hd
 
       link =
         Enum.at(src.content["model"], 0)
         |> Map.get("children")
+        |> Enum.at(6)
+        |> Map.get("children")
         |> Enum.at(1)
         |> Map.get("children")
-        |> Enum.at(5)
+        |> Enum.at(0)
+        |> Map.get("children")
+        |> Enum.at(0)
+        |> Map.get("children")
+        |> Enum.at(1)
 
+      assert link["type"] == "a"
       assert link["href"] == "/course/link/#{dest.slug}"
+      assert link["target"] == "self"
 
       # spot check some elements to ensure that they were correctly constructed:
 
       # check an internal hierarchy node, one that contains references to only
       # other hierarchy nodes
-      c = by_title(project, "Analog and Digital Unit")
-      assert length(c.children) == 3
+      c = by_title(project, "Unit 1")
+      assert length(c.children) == 6
       children = AuthoringResolver.from_resource_id(project.slug, c.children)
-      assert Enum.at(children, 0).title == "Contents: Analog and Digital"
-      assert Enum.at(children, 1).title == "Analog and Digital"
-      assert Enum.at(children, 2).title == "Analog and Digital Quiz"
-
-      # check a leaf hierarchy node, one that contains only page references
-      c = by_title(project, "Analog and Digital")
-      assert length(c.children) == 1
-      children = AuthoringResolver.from_resource_id(project.slug, c.children)
-      assert Enum.at(children, 0).title == "Analog and Digital Page"
+      assert Enum.at(children, 0).title == "Introduction"
+      assert Enum.at(children, 1).title == "Food and Drink of Galicia"
+      assert Enum.at(children, 2).title == "Cuisine of Asturias"
+      assert Enum.at(children, 4).title == "Final Quiz"
 
       # verify that all the activities were created correctly
       activities = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "activity")
-      assert length(activities) == 3
+      assert length(activities) == 10
 
       # verify the one activity that had a tag had the tag applied properly
       tag = Enum.filter(tags, fn p -> p.title == "Easy" end) |> hd
-      tagged_activity = Enum.filter(activities, fn p -> p.title == "CATA" end) |> hd
+
+      tagged_activity =
+        Enum.filter(activities, fn p -> p.title == "MCQ Sidre Pour Height" end) |> hd
+
       assert tagged_activity.tags == [tag.resource_id]
     end
 
@@ -225,7 +232,7 @@ defmodule Oli.Interop.IngestTest do
                    with_invalid_idref =
                      Jason.decode!(contents)
                      |> update_in(
-                       ["children", Access.at(2), "children", Access.at(0), "children"],
+                       ["children", Access.at(0), "children"],
                        fn children ->
                          children ++
                            [
@@ -246,6 +253,48 @@ defmodule Oli.Interop.IngestTest do
                end
              end)
              |> Ingest.process(author) == {:error, {:invalid_idrefs, ["some-invalid-idref"]}}
+    end
+
+    test "returns :invalid_json error when json fails schema validation", %{author: author} do
+      assert {:error,
+              {
+                :invalid_json,
+                "35",
+                _schema,
+                [
+                  {"Expected exactly one of the schemata to match, but none of them did.",
+                   "#/model/3"}
+                ],
+                _content
+              }} =
+               simulate_unzipping()
+               |> Enum.map(fn item ->
+                 case item do
+                   {'35.json', contents} ->
+                     with_invalid_json =
+                       Jason.decode!(contents)
+                       |> update_in(
+                         ["content", "model"],
+                         fn model ->
+                           model ++
+                             [
+                               %{
+                                 "invalid-type" => "invalid",
+                                 "missing-children-id-purpose" => nil,
+                                 "invalid-idref" => "some-invalid-idref"
+                               }
+                             ]
+                         end
+                       )
+                       |> Jason.encode!()
+
+                     {'35.json', with_invalid_json}
+
+                   _ ->
+                     item
+                 end
+               end)
+               |> Ingest.process(author)
     end
   end
 end

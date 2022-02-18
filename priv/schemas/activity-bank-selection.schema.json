@@ -12,13 +12,18 @@
       "type": "string"
     },
     "logic": {
-      "$ref": "#/$defs/bank-logic"
+      "$ref": "#/$defs/logic"
     },
     "count": {
-      "type": "number"
+      "type": "integer"
     },
     "purpose": {
-      "type": "string"
+      "enum": [
+        "none",
+        "checkpoint",
+        "didigetthis",
+        "learnbydoing"
+      ]
     }
   },
   "required": [
@@ -29,21 +34,102 @@
     "purpose"
   ],
   "$defs": {
-    "bank-logic": {
+    "logic": {
       "type": "object",
       "properties": {
         "conditions": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "null"
             },
-            "#/$defs/expression",
-            "#/$defs/clause"
+            {
+              "$ref": "#/$defs/expression"
+            },
+            {
+              "$ref": "#/$defs/clause"
+            }
           ]
         }
       }
     },
-    "expression": {},
-    "clause": {}
+    "expression": {
+      "type": "object",
+      "properties": {
+        "fact": {
+          "enum": [
+            "objectives",
+            "tags",
+            "text",
+            "type"
+          ]
+        },
+        "operator": {
+          "enum": [
+            "contains",
+            "does_not_contain",
+            "equals",
+            "does_not_equal"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        }
+      },
+      "required": [
+        "fact",
+        "operator",
+        "value"
+      ]
+    },
+    "clause": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "enum": [
+            "all",
+            "any"
+          ]
+        },
+        "children": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/clause"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expression"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "operator",
+        "children"
+      ]
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
   }
 }

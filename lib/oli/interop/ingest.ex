@@ -348,7 +348,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     with content <- Map.get(page, "content"),
-         :ok <- validate_json(page["id"], content, @page_schema),
+         :ok <- validate_json(content, @page_schema, page["id"]),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
       graded = Map.get(page, "isGraded", false)
@@ -382,13 +382,13 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp validate_json(id, content, schema) do
+  defp validate_json(content, schema, element_id) do
     case ExJsonSchema.Validator.validate(schema, content) do
       :ok ->
         :ok
 
       {:error, errors} ->
-        {:error, {:invalid_json, id, schema, errors}}
+        {:error, {:invalid_json, element_id, schema, errors, content}}
     end
   end
 
@@ -651,11 +651,8 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  def prettify_error({:error, {:invalid_json, id, schema, errors}}) do
-    invalid_json_str =
-      Enum.map_join(errors, ", ", fn {err, path} -> "#{err} (#{id}.json#{path})" end)
-
-    "Invalid JSON found in #{schema.schema["title"]} element with id '#{id}' using schema '#{schema.schema["$id"]}'. #{invalid_json_str}"
+  def prettify_error({:error, {:invalid_json, element_id, schema, _errors, _content}}) do
+    "Invalid JSON found in '#{element_id}' according to schema #{schema.schema["$id"]}"
   end
 
   def prettify_error({:error, error}) do
