@@ -369,6 +369,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       if (
         initObject.type !== CapiVariableTypes.MATH_EXPR &&
+        updatedValue &&
         updatedValue.toString().indexOf('{') !== -1 &&
         updatedValue.toString().indexOf('}') !== -1
       ) {
