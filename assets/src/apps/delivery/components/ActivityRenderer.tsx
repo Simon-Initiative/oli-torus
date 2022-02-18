@@ -378,7 +378,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
       const evaluatedValue =
         typeOfOriginalValue === 'string' && initObject.type !== CapiVariableTypes.MATH_EXPR
-          ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, true)
+          ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, false)
           : updatedValue;
       acc[initObject.target] = evaluatedValue;
       return acc;

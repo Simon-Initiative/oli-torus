@@ -1,3 +1,4 @@
+import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
 import { parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
@@ -70,6 +71,12 @@ export const getExpressionStringForValue = (
         if (testResult?.result !== null) {
           //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
           actuallyAString = expressions?.length ? false : true;
+        } else {
+          const fooValue = getValue('foo', testEnv);
+          if (fooValue === undefined) {
+            val = typeof val === 'string' ? templatizeText(val, env, defaultGlobalEnv, false) : val;
+            actuallyAString = val.includes('{') && val.includes('}') ? false : true;
+          }
         }
       } catch (e) {
         // if we have parsing error then we're guessing it's CSS
