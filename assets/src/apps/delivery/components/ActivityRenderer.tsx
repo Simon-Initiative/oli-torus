@@ -367,7 +367,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       } else {
         updatedValue = initObject.value;
       }
-      if (initObject.type !== CapiVariableTypes.MATH_EXPR) {
+      if (
+        initObject.type !== CapiVariableTypes.MATH_EXPR &&
+        updatedValue.toString().indexOf('{') !== -1 &&
+        updatedValue.toString().indexOf('}') !== -1
+      ) {
         // need handle the value expression i.e. value = MISSION CONTROL: Search the surface of {q:1476902665616:794|stage.simIFrame.Globals.SelectedObject} for the astrocache.
         // otherwise, it will never be replace with actual value on screen
         updatedValue = handleValueExpression(
@@ -377,7 +381,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         );
       }
       const evaluatedValue =
-        typeOfOriginalValue === 'string' && initObject.type !== CapiVariableTypes.MATH_EXPR
+        typeOfOriginalValue === 'string' &&
+        initObject.type !== CapiVariableTypes.MATH_EXPR &&
+        value.indexOf('{') !== -1 &&
+        value.indexOf('}') !== -1
           ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, false)
           : updatedValue;
       acc[initObject.target] = evaluatedValue;

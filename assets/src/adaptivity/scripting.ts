@@ -75,8 +75,10 @@ export const getExpressionStringForValue = (
           const fooValue = getValue('foo', testEnv);
           if (fooValue === undefined) {
             val = typeof val === 'string' ? templatizeText(val, env, defaultGlobalEnv, false) : val;
-            actuallyAString = val.includes('{') && val.includes('}') ? false : true;
+          } else {
+            val = fooValue;
           }
+          actuallyAString = val.includes('{') && val.includes('}') ? false : true;
         }
       } catch (e) {
         // if we have parsing error then we're guessing it's CSS
@@ -379,7 +381,7 @@ export const extractExpressionFromText = (text: string) => {
 // extract all expressions from a string
 export const extractAllExpressionsFromText = (text: string): string[] => {
   const expressions = [];
-  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+  if (text.toString().indexOf('{') !== -1 && text.toString().indexOf('}') !== -1) {
     const expr = extractExpressionFromText(text);
     const rest = text.substring(text.indexOf(expr) + expr.length + 1);
     expressions.push(expr);
