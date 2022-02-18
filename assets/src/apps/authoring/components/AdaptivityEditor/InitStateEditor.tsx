@@ -247,7 +247,6 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
   };
 
   const handleChange = (id: string, key: string, value: string) => {
-    if (value.trim() === '') return;
     const initStateClone = clone(initState);
     const indexToUpdate = initStateClone.findIndex((rule: InitialState) => rule.id === id);
     if (initStateClone[indexToUpdate][key] === value) return;
