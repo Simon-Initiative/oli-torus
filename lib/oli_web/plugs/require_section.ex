@@ -3,6 +3,8 @@ defmodule Oli.Plugs.RequireSection do
   import Phoenix.Controller
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionInvites
+  alias OliWeb.Router.Helpers, as: Routes
 
   def init(opts), do: opts
 
@@ -17,6 +19,26 @@ defmodule Oli.Plugs.RequireSection do
             conn
             |> assign(:section, section)
             |> put_session(:section_slug, section_slug)
+        end
+
+      %{"section_invite_slug" => section_invite_slug} ->
+        section_invite = SectionInvites.get_section_invite(section_invite_slug)
+
+        unless SectionInvites.link_expired?(section_invite) do
+          case SectionInvites.get_section_by_invite_slug(section_invite_slug) do
+            nil ->
+              section_not_found(conn)
+
+            section ->
+              conn
+              |> assign(:section, section)
+          end
+        else
+          conn
+          |> redirect(
+            to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InvalidSectionInviteView)
+          )
+          |> halt()
         end
 
       _ ->

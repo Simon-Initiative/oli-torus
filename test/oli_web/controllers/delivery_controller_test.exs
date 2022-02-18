@@ -8,6 +8,8 @@ defmodule OliWeb.DeliveryControllerTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Delivery.Sections
 
+  import Oli.Factory
+
   describe "delivery_controller index" do
     setup [:setup_lti_session]
 
@@ -291,6 +293,51 @@ defmodule OliWeb.DeliveryControllerTest do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
       assert html_response(conn, 403) =~ "Section Has Not Started"
+    end
+  end
+
+  @moduletag :capture_log
+  describe "enroll independent (without user logged in)" do
+    test "redirects to invalid join when invite slug does not exist", %{conn: conn} do
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, "some_invitation"))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/join/invalid\">redirected"
+    end
+
+    test "redirects to login form with section slug as query param", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/session/new?request_path=%2Fsections%2Fjoin%2F#{section_invite.slug}&amp;section=#{section.slug}\">redirected"
+    end
+  end
+
+  @moduletag :capture_log
+  describe "enroll independent (with user logged in)" do
+    setup [:user_conn]
+
+    test "redirects to invalid join view", %{conn: conn} do
+      section = insert(:section)
+      date_expires = DateTime.add(DateTime.utc_now(), -3600)
+      section_invite = insert(:section_invite, %{section: section, date_expires: date_expires})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/join/invalid\">redirected"
+    end
+
+    test "shows enroll view", %{conn: conn} do
+      section = insert(:section)
+      section_invite = insert(:section_invite, %{section: section})
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 200) =~ "Enroll in Course Section"
     end
   end
 

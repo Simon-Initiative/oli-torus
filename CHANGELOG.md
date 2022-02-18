@@ -13,6 +13,7 @@
 - Only highlight failed grade sync cells when section is an LMS section
 - Fix adding image/audio in page editor
 - Fix add resource content positioning issues
+- Only allow admins to edit paywall settings
 
 ### Enhancements
 
