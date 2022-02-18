@@ -1,6 +1,6 @@
 import chroma from 'chroma-js';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
-import React, { CSSProperties } from 'react';
+import React, { CSSProperties, useEffect, useRef } from 'react';
 import { ContextProps, InitResultProps } from './types';
 
 interface PopupWindowProps {
@@ -112,23 +112,32 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     return result;
   };
 
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (closeBtnRef.current) {
+      closeBtnRef.current.focus();
+    }
+  }, []);
+
   return (
     <div
       className={`info-icon-popup ${config?.customCssClass ? config.customCssClass : ''}`}
       style={popupModalStyles}
     >
       <div className="popup-background" style={popupBGStyles}>
-        <PartsLayoutRenderer onPartInit={handlePartInit} parts={parts}></PartsLayoutRenderer>
         <button
           aria-label="Close"
           className="close"
           style={popupCloseStyles}
           onClick={handleCloseIconClick}
+          ref={closeBtnRef}
         >
           <span aria-hidden={true} style={closeButtonSpanStyles}>
             x
           </span>
         </button>
+        <PartsLayoutRenderer onPartInit={handlePartInit} parts={parts}></PartsLayoutRenderer>
       </div>
     </div>
   );

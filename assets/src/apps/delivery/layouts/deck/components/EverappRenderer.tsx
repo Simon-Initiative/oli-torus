@@ -13,7 +13,7 @@ import { ActivityState, StudentResponse } from 'components/activities/types';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getEverAppActivity, udpateAttemptGuid } from '../EverApps';
+import { getEverAppActivity, updateAttemptGuid } from '../EverApps';
 
 export interface Everapp {
   id: string;
@@ -88,7 +88,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
     // can't save it like normal, instead setData should cover it
     const result = await updateGlobalUserState(updatedState, isPreviewMode);
 
-    console.log('EVERAPP SAVE PART', {
+    /* console.log('EVERAPP SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
@@ -96,7 +96,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
       responseMap,
       updatedState,
       result,
-    });
+    }); */
 
     const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
     const {
@@ -148,20 +148,18 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
       </div>
 
       <div className="appContainer">
-        {isOpen && (
-          <ActivityRenderer
-            key={everApp.id}
-            activity={getEverAppActivity(everApp, everApp.url, index)}
-            attempt={udpateAttemptGuid(index, everApp) as ActivityState}
-            onActivitySave={async () => true}
-            onActivitySubmit={async () => true}
-            onActivitySavePart={handleActivitySavePart}
-            onActivitySubmitPart={handleActivitySubmitPart}
-            onActivityReady={handleEverappActivityReady}
-            onRequestLatestState={handleRequestLatestState}
-            adaptivityDomain="app"
-          />
-        )}
+        <ActivityRenderer
+          key={everApp.id}
+          activity={getEverAppActivity(everApp, everApp.url, index)}
+          attempt={updateAttemptGuid(index, everApp) as ActivityState}
+          onActivitySave={async () => true}
+          onActivitySubmit={async () => true}
+          onActivitySavePart={handleActivitySavePart}
+          onActivitySubmitPart={handleActivitySubmitPart}
+          onActivityReady={handleEverappActivityReady}
+          onRequestLatestState={handleRequestLatestState}
+          adaptivityDomain="app"
+        />
       </div>
     </div>
   );

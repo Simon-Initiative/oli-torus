@@ -24,13 +24,7 @@ export const FixTargetButton: React.FC<SolutionProps> = ({
     }
   };
 
-  const handleTargetChange = (e: any) => {
-    const val = e.target.value;
-    console.log(val);
-    if (val === target) {
-      // since using blur, don't need to update if there is no change
-      return;
-    }
+  const handleTargetChange = (val: any) => {
     setTarget(val);
     setIsDirty(true);
   };
@@ -43,7 +37,7 @@ export const FixTargetButton: React.FC<SolutionProps> = ({
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="target">
           <VariablePicker
-            targetRef={targetRef}
+            onTargetChange={(value) => handleTargetChange(value)}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
             context="mutate"
@@ -54,7 +48,7 @@ export const FixTargetButton: React.FC<SolutionProps> = ({
           className="form-control form-control-sm mr-2 flex-grow-1"
           id={`action-mutate-target-${uuid}`}
           defaultValue={target}
-          onBlur={(e) => handleTargetChange(e)}
+          onBlur={(e) => handleTargetChange(e.target.value)}
           title={target}
           placeholder="Target"
           ref={targetRef}

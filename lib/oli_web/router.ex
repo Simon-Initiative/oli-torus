@@ -181,8 +181,8 @@ defmodule OliWeb.Router do
 
   pipeline :superactivity do
     plug Plug.Static,
-         at: "/superactivity",
-         from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
+      at: "/superactivity",
+      from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
   scope "/superactivity", OliWeb do
@@ -207,7 +207,13 @@ defmodule OliWeb.Router do
   scope "/" do
     pipe_through([:delivery, :skip_csrf_protection])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
-    get("/jcourse/superactivity/context/:attempt_guid", OliWeb.LegacySuperactivityController, :context)
+
+    get(
+      "/jcourse/superactivity/context/:attempt_guid",
+      OliWeb.LegacySuperactivityController,
+      :context
+    )
+
     post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
     pow_assent_authorization_post_callback_routes()
   end
@@ -228,6 +234,8 @@ defmodule OliWeb.Router do
     # handle linking accounts when using a social account provider to login
     get("/auth/:provider/link", OliWeb.DeliveryController, :process_link_account_provider)
     get("/auth/:provider/link/callback", OliWeb.DeliveryController, :link_account_callback)
+
+    delete("/signout", OliWeb.SessionController, :signout)
   end
 
   scope "/authoring" do
@@ -264,6 +272,9 @@ defmodule OliWeb.Router do
 
     # update session timezone information
     post("/timezone", StaticPageController, :timezone)
+
+    # update limited session information
+    post "/set_session", StaticPageController, :set_session
 
     # general health check for application & db
     get "/healthz", HealthController, :index
@@ -605,6 +616,17 @@ defmodule OliWeb.Router do
     get("/", DeliveryController, :open_and_free_index)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_protected,
+      :pow_email_layout
+    ])
+
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
@@ -737,7 +759,7 @@ defmodule OliWeb.Router do
   scope "/course", OliWeb do
     pipe_through([:browser, :delivery_protected, :pow_email_layout])
 
-    get("/signout", DeliveryController, :signout)
+    delete("/signout", SessionController, :signout)
   end
 
   scope "/course", OliWeb do
@@ -811,6 +833,9 @@ defmodule OliWeb.Router do
     # Communities
     live("/communities/new", CommunityLive.NewView)
 
+    # System Message Banner
+    live("/system_messages", SystemMessageLive.IndexView)
+
     # Course Ingestion
     get("/ingest", IngestController, :index)
     post("/ingest", IngestController, :upload)
@@ -862,7 +887,9 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
-    get("/launch/products/:product_id", CognitoController, :launch)
+    get("/launch", CognitoController, :index)
+    get("/launch/products/:product_slug", CognitoController, :launch)
+    get("/launch/projects/:project_slug", CognitoController, :launch)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

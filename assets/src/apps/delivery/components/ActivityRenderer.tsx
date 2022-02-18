@@ -478,12 +478,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       mutateChanges,
     });
   };
+
   useEffect(() => {
     if (!mutationTriggered || !ref.current) {
       return;
     }
     notifyStateMutation();
   }, [mutationTriggered]);
+
   const handleStateChangeEvents = async (changes: any) => {
     if (!ref.current) {
       return;
@@ -505,12 +507,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
     }
   };
+
   useEffect(() => {
     defaultGlobalEnv.addListener('change', handleStateChangeEvents);
     return () => {
       defaultGlobalEnv.removeListener('change', handleStateChangeEvents);
     };
   }, [activity.id]);
+
   const elementProps = {
     ref,
     graded: false,

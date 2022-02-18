@@ -76,7 +76,7 @@ const ScoringOverview: React.FC<{
     debounce(
       (custom) => {
         console.log('debounceSavePage', custom);
-        dispatch(savePage({ custom }));
+        dispatch(savePage({ custom, undoable: true }));
         dispatch(updatePage({ custom }));
       },
       500,

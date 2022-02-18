@@ -224,7 +224,7 @@ export const getEverAppActivity = (everAppObj: any, url: string, index: number) 
   return updatedObject;
 };
 
-export const udpateAttemptGuid = (index: number, everAppObj: any) => {
+export const updateAttemptGuid = (index: number, everAppObj: any) => {
   const updatedObject = clone(everAppActivityState);
   updatedObject.attemptGuid = `${everAppActivityState.attemptGuid}_${index}`;
   updatedObject.parts[0].partId = everAppObj.id;

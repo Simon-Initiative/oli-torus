@@ -43,8 +43,13 @@ defmodule Oli.Delivery.Sections.SectionInvites do
   Gets the attached section when given a section invite slug.
   """
   def get_section_by_invite_slug(section_invite_slug) when is_binary(section_invite_slug) do
-    section_invite = get_section_invite(section_invite_slug)
-    Sections.get_section!(section_invite.section_id)
+    case get_section_invite(section_invite_slug) do
+      nil ->
+        nil
+
+      section_invite ->
+        Sections.get_section!(section_invite.section_id)
+    end
   end
 
   @doc """
@@ -58,8 +63,10 @@ defmodule Oli.Delivery.Sections.SectionInvites do
   end
 
   @doc """
-  Determines if a user is an administrator in a given section.
+  Determines if a section invite link is expired
   """
+  def link_expired?(nil), do: true
+
   def link_expired?(%SectionInvite{} = section_invite) do
     NaiveDateTime.compare(now(), section_invite.date_expires) == :gt
   end

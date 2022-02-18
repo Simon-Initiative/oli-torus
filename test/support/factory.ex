@@ -3,10 +3,20 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
-  alias Oli.Delivery.Sections.{Section, SectionsProjectsPublications, SectionResource}
   alias Oli.Delivery.Gating.GatingCondition
+
+  alias Oli.Delivery.Sections.{
+    Enrollment,
+    Section,
+    SectionsProjectsPublications,
+    SectionResource,
+    SectionInvite
+  }
+
+  alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
+  alias Oli.Notifications.SystemMessage
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
 
@@ -31,7 +41,8 @@ defmodule Oli.Factory do
       guest: false,
       independent_learner: true,
       can_create_sections: true,
-      locked_at: nil
+      locked_at: nil,
+      age_verified: true
     }
   end
 
@@ -225,6 +236,58 @@ defmodule Oli.Factory do
       typ: "JWT",
       alg: "RS256",
       kid: UUID.uuid4()
+    }
+  end
+
+  def enrollment_factory() do
+    %Enrollment{
+      user: insert(:user),
+      section: insert(:section)
+    }
+  end
+
+  def payment_factory() do
+    %Payment{
+      type: :direct,
+      amount: Money.new(:USD, 25),
+      provider_type: :stripe,
+      section: insert(:section),
+      enrollment: insert(:enrollment)
+    }
+  end
+
+  def system_message_factory() do
+    {:ok, start_date, _timezone} = DateTime.from_iso8601("2022-02-07 20:30:00Z")
+    {:ok, end_date, _timezone} = DateTime.from_iso8601("2022-02-07 21:30:00Z")
+
+    %SystemMessage{
+      message: sequence("Message"),
+      active: true,
+      start: start_date,
+      end: end_date
+    }
+  end
+
+  def active_system_message_factory() do
+    now = DateTime.utc_now()
+    start_date = DateTime.add(now, -3600)
+    end_date = DateTime.add(now, 3600)
+
+    %SystemMessage{
+      message: sequence("Message"),
+      active: true,
+      start: start_date,
+      end: end_date
+    }
+  end
+
+  def section_invite_factory() do
+    date_expires = DateTime.add(DateTime.utc_now(), 3600)
+
+    %SectionInvite{
+      section: insert(:section),
+      slug: sequence("exampleinvite"),
+      date_expires: date_expires
     }
   end
 end

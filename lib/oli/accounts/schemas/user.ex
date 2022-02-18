@@ -40,6 +40,7 @@ defmodule Oli.Accounts.User do
     field :state, :map, default: %{}
     field :locked_at, :utc_datetime
     field :can_create_sections, :boolean, default: false
+    field :age_verified, :boolean
 
     has_many :user_identities,
              Oli.UserIdentities.UserIdentity,
@@ -108,7 +109,8 @@ defmodule Oli.Accounts.User do
       :state,
       :locked_at,
       :email_confirmed_at,
-      :can_create_sections
+      :can_create_sections,
+      :age_verified
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
@@ -151,9 +153,60 @@ defmodule Oli.Accounts.User do
       :locked_at,
       :email_confirmed_at,
       :email_confirmation_token,
-      :can_create_sections
+      :can_create_sections,
+      :age_verified
     ])
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> maybe_create_unique_sub()
+    |> lowercase_email()
+    |> maybe_name_from_given_and_family()
+  end
+
+  @doc """
+  Creates a changeset that if configured, runs the age check validation.
+  Used on user creation through frontend form.
+  """
+  def verification_changeset(user, attrs \\ %{}) do
+    user
+    |> pow_changeset(attrs)
+    |> pow_extension_changeset(attrs)
+    |> cast(attrs, [
+      :sub,
+      :name,
+      :given_name,
+      :family_name,
+      :middle_name,
+      :nickname,
+      :preferred_username,
+      :profile,
+      :picture,
+      :website,
+      :email,
+      :email_verified,
+      :gender,
+      :birthdate,
+      :zoneinfo,
+      :locale,
+      :phone_number,
+      :phone_number_verified,
+      :address,
+      :author_id,
+      :guest,
+      :independent_learner,
+      :research_opt_out,
+      :state,
+      :locked_at,
+      :email_confirmed_at,
+      :can_create_sections,
+      :age_verified
+    ])
+    |> validate_required_if([:email], &is_independent_learner_not_guest/1)
+    |> validate_acceptance_if(
+      :age_verified,
+      &is_age_verification_enabled/1,
+      "You must verify you are old enough to access our site in order to continue"
+    )
+    |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
     |> lowercase_email()
     |> maybe_name_from_given_and_family()
@@ -191,6 +244,9 @@ defmodule Oli.Accounts.User do
         false
     end
   end
+
+  defp is_age_verification_enabled(_changeset),
+    do: Application.fetch_env!(:oli, :age_verification)[:is_enabled] == "true"
 end
 
 # define implementations required for LTI 1.3 library integration

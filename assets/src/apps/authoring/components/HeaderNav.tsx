@@ -11,6 +11,7 @@ import {
 } from '../store/app/slice';
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
+import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
 
 interface HeaderNavProps {
   panelState: any;
@@ -56,6 +57,9 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
         }}
       >
         <div className="btn-toolbar" role="toolbar">
+          <div className="btn-group pl-3 align-items-center" role="group" aria-label="Third group">
+            <UndoRedoToolbar />
+          </div>
           <div className="btn-group px-3 border-right align-items-center" role="group">
             <AddComponentToolbar />
             <ComponentSearchContextMenu />
