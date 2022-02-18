@@ -69,9 +69,14 @@ defmodule Oli.SectionInvitesTest do
 
       assert SectionInvites.link_expired?(invite) == true
       assert SectionInvites.link_expired?(invite.slug) == true
+
+      assert SectionInvites.link_expired?(nil) == true
     end
 
     test "getters work", %{section_invite: section_invite, section: section} do
+      refute SectionInvites.get_section_invite("other_invite")
+      refute SectionInvites.get_section_by_invite_slug("other_invite")
+
       assert SectionInvites.get_section_invite(section_invite.slug) == section_invite
       assert SectionInvites.get_section_by_invite_slug(section_invite.slug).id == section.id
     end

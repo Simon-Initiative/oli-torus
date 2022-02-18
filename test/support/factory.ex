@@ -4,7 +4,15 @@ defmodule Oli.Factory do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
   alias Oli.Delivery.Gating.GatingCondition
-  alias Oli.Delivery.Sections.{Enrollment, Section, SectionsProjectsPublications, SectionResource}
+
+  alias Oli.Delivery.Sections.{
+    Enrollment,
+    Section,
+    SectionsProjectsPublications,
+    SectionResource,
+    SectionInvite
+  }
+
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
@@ -270,6 +278,16 @@ defmodule Oli.Factory do
       active: true,
       start: start_date,
       end: end_date
+    }
+  end
+
+  def section_invite_factory() do
+    date_expires = DateTime.add(DateTime.utc_now(), 3600)
+
+    %SectionInvite{
+      section: insert(:section),
+      slug: sequence("exampleinvite"),
+      date_expires: date_expires
     }
   end
 end
