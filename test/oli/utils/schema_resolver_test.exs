@@ -4,7 +4,7 @@ defmodule Oli.Utils.SchemaResolverTest do
   describe "schema resolver" do
     test "activity-bank-selection schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/activity-bank-selection.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/activity-bank-selection.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -12,7 +12,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "activity-reference schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/activity-reference.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/activity-reference.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -20,7 +20,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "group-content schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/group-content.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/group-content.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -28,7 +28,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "model-element schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/model-element.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/model-element.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -36,7 +36,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "page schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/page.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/page.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -44,7 +44,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "resource-content schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/resource-content.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/resource-content.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -52,7 +52,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "selection schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/selection.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/selection.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()
@@ -60,7 +60,7 @@ defmodule Oli.Utils.SchemaResolverTest do
 
     test "structured-content schema", _ do
       %ExJsonSchema.Schema.Root{} =
-        "#{:code.priv_dir(:oli)}/schemas/structured-content.schema.json"
+        "#{:code.priv_dir(:oli)}/schemas/v0-1-0/structured-content.schema.json"
         |> File.read!()
         |> Jason.decode!()
         |> ExJsonSchema.Schema.resolve()

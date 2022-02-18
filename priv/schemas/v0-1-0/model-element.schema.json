@@ -1,5 +1,5 @@
 {
-  "$id": "http://oli.cmu.edu/schemas/model-element.schema.json",
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/model-element.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Model Element",
   "description": "A content model element",

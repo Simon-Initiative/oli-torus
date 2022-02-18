@@ -1,5 +1,5 @@
 {
-  "$id": "http://oli.cmu.edu/schemas/group-content.schema.json",
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/group-content.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Group Content",
   "description": "A grouping of content with a particular layout",
@@ -19,7 +19,7 @@
     "children": {
       "type": "array",
       "items": {
-        "$ref": "http://oli.cmu.edu/schemas/resource-content.schema.json"
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource-content.schema.json"
       }
     }
   },
