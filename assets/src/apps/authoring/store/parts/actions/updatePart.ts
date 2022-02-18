@@ -9,6 +9,7 @@ import { selectSequence } from 'apps/delivery/store/features/groups/selectors/de
 import merge from 'lodash/merge';
 import { clone } from 'utils/common';
 import { bulkSaveActivity, saveActivity } from '../../activities/actions/saveActivity';
+import { createUndoAction } from '../../history/slice';
 import { PartsSlice } from '../name';
 
 export const updatePart = createAsyncThunk(
@@ -16,6 +17,10 @@ export const updatePart = createAsyncThunk(
   async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, payload.activityId);
+
+    const undo: any[] = [];
+    const redo: any[] = [];
+
     if (!activity) {
       throw new Error(`Activity: ${payload.activityId} not found!`);
     }
@@ -52,10 +57,12 @@ export const updatePart = createAsyncThunk(
         const hierarchy = getHierarchy(sequence, activitySequenceId);
         const allInvolved = flattenHierarchy(hierarchy);
         const activitiesToUpdate: IActivity[] = [];
+        const orig: any[] = [];
         allInvolved.forEach((item: any) => {
           const activity = selectActivityById(rootState, item.resourceId);
           if (activity) {
             const cloned = clone(activity);
+            orig.push(cloned);
             const part = cloned.authoring.parts.find(
               (part: any) => part.id === payload.partId && part.owner === activitySequenceId,
             );
@@ -66,7 +73,9 @@ export const updatePart = createAsyncThunk(
           }
         });
         if (activitiesToUpdate.length) {
-          await dispatch(bulkSaveActivity({ activities: activitiesToUpdate }));
+          await dispatch(bulkSaveActivity({ activities: activitiesToUpdate, undoable: false }));
+          undo.unshift(bulkSaveActivity({ activities: orig, undoable: false }));
+          redo.unshift(bulkSaveActivity({ activities: activitiesToUpdate, undoable: false }));
         }
       }
     }
@@ -75,6 +84,16 @@ export const updatePart = createAsyncThunk(
     // TODO: payload.changes is Partial<Part>
     merge(partDef, payload.changes);
 
-    await dispatch(saveActivity({ activity: activityClone }));
+    await dispatch(saveActivity({ activity: activityClone, undoable: false }));
+
+    undo.unshift(saveActivity({ activity, undoable: false }));
+    redo.unshift(saveActivity({ activity: activityClone, undoable: false }));
+
+    dispatch(
+      createUndoAction({
+        undo,
+        redo,
+      }),
+    );
   },
 );

@@ -71,7 +71,7 @@ export const initializeFromContext = createAsyncThunk(
       const { payload: newGroup } = await dispatch(createNewGroup({ children: newSequence }));
 
       // write model to server now or else the above created activity will be orphaned
-      await dispatch(savePage());
+      await dispatch(savePage({ undoable: true }));
 
       pageModel = [newGroup];
     }

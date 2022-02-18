@@ -52,6 +52,6 @@ export const addPart = createAsyncThunk(
     const activitiesToUpdate = [activityClone, ...childrenToUpdate];
 
     /* console.log('adding new part', { newPartData, activityClone, currentSequence }); */
-    dispatch(bulkSaveActivity({ activities: activitiesToUpdate }));
+    dispatch(bulkSaveActivity({ activities: activitiesToUpdate, undoable: true }));
   },
 );
