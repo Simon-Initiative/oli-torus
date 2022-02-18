@@ -616,6 +616,17 @@ defmodule OliWeb.Router do
     get("/", DeliveryController, :open_and_free_index)
 
     live("/join/invalid", Sections.InvalidSectionInviteView)
+  end
+
+  scope "/sections", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :require_section,
+      :delivery_protected,
+      :pow_email_layout
+    ])
+
     get("/join/:section_invite_slug", DeliveryController, :enroll_independent)
   end
 
@@ -876,6 +887,7 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
+    get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
   end
