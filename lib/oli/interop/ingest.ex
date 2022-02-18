@@ -8,7 +8,7 @@ defmodule Oli.Interop.Ingest do
   @hierarchy_key "_hierarchy"
   @media_key "_media-manifest"
 
-  @page_schema "#{:code.priv_dir(:oli)}/schemas/page.schema.json"
+  @page_schema "priv/schemas/v0-1-0/page.schema.json"
                |> File.read!()
                |> Jason.decode!()
                |> ExJsonSchema.Schema.resolve()
