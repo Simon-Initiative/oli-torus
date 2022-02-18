@@ -9,9 +9,12 @@ import { MediaItem } from 'types/media';
 import { Command } from 'components/editing/elements/commands/interfaces';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { configureStore } from 'state/store';
+import { Provider } from 'react-redux';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
+const store = configureStore();
 
 export function selectAudio(
   projectSlug: string,
@@ -21,26 +24,28 @@ export function selectAudio(
     const selected: { audio: null | ContentModel.Audio } = { audio: null };
 
     const mediaLibrary = (
-      <ModalSelection
-        title="Embed audio"
-        onInsert={() => {
-          dismiss();
-          if (selected.audio) resolve(selected.audio);
-        }}
-        onCancel={() => dismiss()}
-        disableInsert={true}
-      >
-        <MediaManager
-          projectSlug={projectSlug}
-          onEdit={() => {}}
-          mimeFilter={MIMETYPE_FILTERS.AUDIO}
-          selectionType={SELECTION_TYPES.SINGLE}
-          initialSelectionPaths={[model.src || '']}
-          onSelectionChange={(audios: MediaItem[]) => {
-            selected.audio = Model.audio(audios[0].url);
+      <Provider store={store}>
+        <ModalSelection
+          title="Embed audio"
+          onInsert={() => {
+            dismiss();
+            if (selected.audio) resolve(selected.audio);
           }}
-        />
-      </ModalSelection>
+          onCancel={() => dismiss()}
+          disableInsert={true}
+        >
+          <MediaManager
+            projectSlug={projectSlug}
+            onEdit={() => {}}
+            mimeFilter={MIMETYPE_FILTERS.AUDIO}
+            selectionType={SELECTION_TYPES.SINGLE}
+            initialSelectionPaths={[model.src || '']}
+            onSelectionChange={(audios: MediaItem[]) => {
+              selected.audio = Model.audio(audios[0].url);
+            }}
+          />
+        </ModalSelection>
+      </Provider>
     );
 
     display(mediaLibrary);

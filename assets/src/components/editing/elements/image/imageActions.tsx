@@ -13,7 +13,6 @@ import { Provider } from 'react-redux';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
-
 const store = configureStore();
 
 export function selectImage(
