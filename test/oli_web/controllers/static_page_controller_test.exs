@@ -3,7 +3,10 @@ defmodule OliWeb.StaticPageControllerTest do
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/")
+
     assert html_response(conn, 200) =~ "Welcome to"
+    assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+    assert html_response(conn, 200) =~ "Authoring Sign In"
   end
 
   describe "set_session" do
@@ -18,7 +21,7 @@ defmodule OliWeb.StaticPageControllerTest do
 
       conn = post(conn, Routes.static_page_path(conn, :set_session), dismissed_message: "1")
 
-      assert get_session(conn, :dismissed_messages) == [1,2]
+      assert get_session(conn, :dismissed_messages) == [1, 2]
     end
   end
 end
