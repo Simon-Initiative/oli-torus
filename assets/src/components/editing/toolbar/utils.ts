@@ -14,18 +14,26 @@ import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
 import { addItemActions } from 'components/editing/toolbar/items';
 
 type ToolbarContentType = 'all' | 'small';
-export function getToolbarForContentType(
-  type = 'all' as ToolbarContentType,
-  resourceContext?: ResourceContext,
-  onAddItem?: AddCallback,
-  editorMap?: ActivityEditorMap,
-  index?: number,
-): CommandDescription[] {
+interface Opts {
+  type?: ToolbarContentType;
+  resourceContext?: ResourceContext;
+  onAddItem?: AddCallback;
+  editorMap?: ActivityEditorMap;
+  index?: number;
+  onRequestMedia?: any;
+}
+export function getToolbarForContentType(opts: Opts): CommandDescription[] {
+  const { type, resourceContext, onAddItem, editorMap, index, onRequestMedia }: Opts = {
+    type: 'all',
+    onRequestMedia: null,
+    ...opts,
+  };
+
   if (type === 'small') {
-    return [insertCodeblock, insertImage(null), ytCmdDesc, insertAudio(null)];
+    return [insertCodeblock, insertImage(onRequestMedia), ytCmdDesc, insertAudio(onRequestMedia)];
   }
 
-  if (!resourceContext || !onAddItem || !editorMap || !index) return addItemActions(null);
+  if (!resourceContext || !onAddItem || !editorMap || !index) return addItemActions(onRequestMedia);
 
   // Adding activities from a text editor and splitting the content is currently disabled.
   // return addItemActions(null).concat(
@@ -61,7 +69,7 @@ export function getToolbarForContentType(
   //   }),
   // );
 
-  return addItemActions(null);
+  return addItemActions(onRequestMedia);
 }
 
 export const addActivity = (

@@ -74,7 +74,7 @@ const SequenceEditor: React.FC<any> = () => {
     dispatch(setCurrentActivityFromSequence(newSequenceEntry.custom.sequenceId));
 
     // will write the current groups
-    await dispatch(savePage());
+    await dispatch(savePage({ undoable: false }));
   };
   const handleItemAdd = async (
     parentItem: SequenceEntry<SequenceEntryChild> | undefined,
@@ -249,7 +249,7 @@ const SequenceEditor: React.FC<any> = () => {
     const newSequence = clone(flattenHierarchy(hierarchyCopy));
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
-    await dispatch(savePage());
+    await dispatch(savePage({ undoable: false }));
   };
 
   const handleItemDelete = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
@@ -276,7 +276,7 @@ const SequenceEditor: React.FC<any> = () => {
     });
     const newGroup = { ...currentGroup, children: sequenceItems };
     dispatch(upsertGroup({ group: newGroup }));
-    await dispatch(savePage());
+    await dispatch(savePage({ undoable: false }));
     setShowConfirmDelete(false);
     setItemToDelete(undefined);
   };
@@ -292,7 +292,7 @@ const SequenceEditor: React.FC<any> = () => {
     const newSequence = flattenHierarchy(hierarchyCopy);
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
-    await dispatch(savePage());
+    await dispatch(savePage({ undoable: false }));
   };
 
   const handleItemClone = async (item: SequenceHierarchyItem<SequenceEntryType>) => {
@@ -320,7 +320,7 @@ const SequenceEditor: React.FC<any> = () => {
     copiedActivity.resourceId = newActivity.resourceId;
     copiedActivity.activitySlug = newActivity.activitySlug;
     copiedActivity.title = newTitle;
-    dispatch(saveActivity({ activity: copiedActivity }));
+    dispatch(saveActivity({ activity: copiedActivity, undoable: false }));
     await dispatch(upsertActivity({ activity: copiedActivity }));
     addNewSequence(newSequenceEntry, item.activitySlug);
   };
@@ -345,7 +345,7 @@ const SequenceEditor: React.FC<any> = () => {
     const newGroup = { ...currentGroup, children: newSequence };
     dispatch(upsertGroup({ group: newGroup }));
     await dispatch(upsertActivity({ activity: activityClone }));
-    await dispatch(savePage());
+    await dispatch(savePage({ undoable: false }));
     setItemToRename(undefined);
   };
 

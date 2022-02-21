@@ -78,7 +78,7 @@ export const updateActivityPartInheritance = createAsyncThunk(
     });
     if (activitiesToUpdate.length) {
       /* console.log('ACTIVITIES TO UPDATE: ', { activitiesToUpdate }); */
-      await dispatch(bulkSaveActivity({ activities: activitiesToUpdate }));
+      await dispatch(bulkSaveActivity({ activities: activitiesToUpdate, undoable: true }));
       if (!isReadOnlyMode) {
         const projectSlug = selectProjectSlug(rootState);
         const pageResourceId = selectResourceId(rootState);

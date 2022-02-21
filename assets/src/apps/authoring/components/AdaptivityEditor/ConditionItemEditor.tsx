@@ -31,11 +31,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
   const [value, setValue] = useState<any>(condition.value);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
-  const handleFactChange = (e: any) => {
-    const val = e.target.value;
-    if (val === fact) {
-      return;
-    }
+  const handleFactChange = (val: any) => {
     setFact(val);
     onChange({ fact: val });
   };
@@ -67,7 +63,6 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
     onChange({ value: val });
   };
 
-  const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const getFilteredConditionOperatorOptions = (): ConditionOperatorOption[] => {
@@ -99,12 +94,16 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
     }, 10);
   }, [targetType]);
 
+  React.useEffect(() => {
+    setFact(condition.fact);
+  }, [condition.fact]);
+
   return (
     <div key={parentIndex} className="d-flex mt-1">
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="Target">
           <VariablePicker
-            targetRef={targetRef}
+            onTargetChange={(value) => handleFactChange(value)}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
             context="condition"
@@ -119,11 +118,11 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
           className="form-control form-control-sm flex-grow-1 mr-2"
           type="text"
           placeholder="Target"
-          defaultValue={fact}
-          onBlur={(e) => handleFactChange(e)}
+          value={fact}
+          onChange={(e) => setFact(e.target.value)}
+          onBlur={(e) => handleFactChange(e.target.value)}
           title={fact}
           tabIndex={0}
-          ref={targetRef}
         />
       </div>
       <label className="sr-only" htmlFor={`target-type-${parentIndex}`}>

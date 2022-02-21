@@ -32,8 +32,10 @@ enum FilterItems {
 }
 interface VariablePickerProps {
   placement?: OverlayPlacements;
-  targetRef: React.RefObject<HTMLInputElement>;
-  typeRef: React.RefObject<HTMLSelectElement>;
+  targetRef?: React.RefObject<HTMLInputElement>;
+  typeRef?: React.RefObject<HTMLSelectElement>;
+  onTargetChange?: (value: any) => any;
+  onTypeChange?: (value: any) => any;
   context: 'init' | 'mutate' | 'condition';
 }
 
@@ -47,6 +49,8 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   targetRef,
   typeRef,
   context,
+  onTargetChange,
+  onTypeChange,
 }) => {
   const currentLesson = useSelector(selectPageState);
   const sequence = useSelector(selectSequence);
@@ -65,24 +69,34 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
   const [allParts, setAllParts] = useState([]);
 
   const setTargetRef = (setTo: string) => {
-    setTimeout(() => {
-      if (targetRef?.current) {
-        targetRef.current.value = setTo;
-        targetRef.current.click();
-        targetRef.current.focus();
-      }
-    });
+    if (targetRef) {
+      setTimeout(() => {
+        if (targetRef?.current) {
+          targetRef.current.value = setTo;
+          targetRef.current.click();
+          targetRef.current.focus();
+        }
+      });
+    }
+    if (onTargetChange) {
+      onTargetChange(setTo);
+    }
   };
   const setTypeRef = (setTo: string) => {
-    const event = new Event('change', { bubbles: true });
-    setTimeout(() => {
-      if (typeRef?.current) {
-        typeRef.current.value = setTo;
-        typeRef.current.click();
-        typeRef.current.dispatchEvent(event);
-        typeRef.current.focus();
-      }
-    });
+    if (typeRef) {
+      const event = new Event('change', { bubbles: true });
+      setTimeout(() => {
+        if (typeRef?.current) {
+          typeRef.current.value = setTo;
+          typeRef.current.click();
+          typeRef.current.dispatchEvent(event);
+          typeRef.current.focus();
+        }
+      });
+    }
+    if (onTypeChange) {
+      onTypeChange(setTo);
+    }
   };
 
   const onChangeHandler = (

@@ -17,15 +17,17 @@ export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, edito
       const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
 
       return enabled ? (
-        <a
-          href="#"
+        <button
           key={editorDesc.slug}
           className="list-group-item list-group-item-action flex-column align-items-start"
-          onClick={(_e) => addActivity(editorDesc, resourceContext, onAddItem, editorMap, index)}
+          onClick={(_e) => {
+            addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
+            document.body.click();
+          }}
         >
           <div className="type-label"> {editorDesc.friendlyName}</div>
           <div className="type-description"> {editorDesc.description}</div>
-        </a>
+        </button>
       ) : null;
     })
     .filter((e) => e !== null);

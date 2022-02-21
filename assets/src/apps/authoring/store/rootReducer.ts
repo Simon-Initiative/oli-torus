@@ -9,6 +9,8 @@ import PageReducer from './page/slice';
 import PageSlice from './page/name';
 import PartsSlice from './parts/name';
 import PartsReducer from './parts/slice';
+import HistorySlice from './history/name';
+import HistoryReducer from './history/slice';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,
@@ -16,6 +18,7 @@ const rootReducer = combineReducers({
   [PartsSlice]: PartsReducer,
   [GroupsSlice]: GroupsReducer,
   [ActivitiesSlice]: ActivitiesReducer,
+  [HistorySlice]: HistoryReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
