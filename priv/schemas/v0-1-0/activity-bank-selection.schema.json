@@ -1,8 +1,8 @@
 {
   "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
-  "title": "Activity Reference",
-  "description": "An activity reference",
+  "title": "Activity Bank Selection",
+  "description": "An activity bank selection",
   "type": "object",
   "properties": {
     "type": {
