@@ -85,18 +85,19 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
-  Returns the list of gating_conditions for a section and list of resource ids
+  Returns the list of gating_conditions for a section, a user, and list of resource ids
 
   ## Examples
 
-      iex> list_gating_conditions(123, [1,2,3])
+      iex> list_gating_conditions(123, 34, [1,2,3])
       [%GatingCondition{}, ...]
 
   """
-  def list_gating_conditions(section_id, resource_ids) do
+  def list_gating_conditions(section_id, user_id, resource_ids) do
     from(gc in GatingCondition,
       where:
         gc.section_id == ^section_id and
+          (is_nil(gc.user_id) or gc.user_id == ^user_id) and
           gc.resource_id in ^resource_ids
     )
     |> Repo.all()
@@ -213,22 +214,24 @@ defmodule Oli.Delivery.Gating do
   @doc """
   Returns true if all gating conditions pass for a resource and it's ancestors
   """
-  def resource_open(
+  def blocked_by(
         section,
+        user,
         resource_id
       )
       when is_integer(resource_id),
-      do: resource_open(section, Integer.to_string(resource_id))
+      do: blocked_by(section, user, Integer.to_string(resource_id))
 
-  def resource_open(
+  def blocked_by(
         %Section{id: section_id, resource_gating_index: resource_gating_index},
+        %User{id: user_id},
         resource_id
       ) do
     if Map.has_key?(resource_gating_index, resource_id) do
-      list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
-      |> Enum.all?(&condition_open/1)
+      list_gating_conditions(section_id, user_id, Map.get(resource_gating_index, resource_id))
+      |> blocks_access()
     else
-      true
+      []
     end
   end
 
@@ -240,35 +243,54 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
+  From a collection of gating conditions, return the conditions that block access to
+  the resource.  This takes into account user-specific overrides.
+  """
+  def blocks_access(gating_conditions) do
+    # Get the set of user-specific conditions, if any.  Map them by their parent_id
+    # (which is the id of the parent user-wide condition)
+    user_specific_map =
+      Enum.reduce(gating_conditions, %{}, fn gc, m ->
+        if is_nil(gc.parent_id) do
+          m
+        else
+          Map.put(m, gc.parent_id, gc)
+        end
+      end)
+
+    Enum.reduce(gating_conditions, [], fn gc, blocks ->
+      # Consider only the user-wide conditions
+      if is_nil(gc.user_id) do
+        # But allow a user-specific condition to override
+        condition =
+          case Map.get(user_specific_map, gc.id) do
+            nil -> gc
+            user_specific -> user_specific
+          end
+
+        if condition_open(condition) do
+          blocks
+        else
+          [condition | blocks]
+        end
+      else
+        blocks
+      end
+    end)
+  end
+
+  @doc """
   Returns a list of reasons why one or more gating conditions blocked access
   """
   def details(
-        section,
-        resource_id,
+        blocking_gates,
         format_datetime: format_datetime
       )
-      when is_integer(resource_id),
-      do: details(section, Integer.to_string(resource_id), format_datetime: format_datetime)
-
-  def details(
-        %Section{id: section_id, resource_gating_index: resource_gating_index},
-        resource_id,
-        format_datetime: format_datetime
-      )
-      when is_binary(resource_id) do
-    if Map.has_key?(resource_gating_index, resource_id) do
-      list_gating_conditions(section_id, Map.get(resource_gating_index, resource_id))
-      |> Enum.reduce([], fn gc, acc ->
-        [details(gc, format_datetime: format_datetime) | acc]
-      end)
-      |> Enum.filter(fn reason -> reason != nil end)
-    else
-      []
-    end
+      when is_list(blocking_gates) do
+    Enum.map(blocking_gates, fn gc -> details(gc, format_datetime: format_datetime) end)
   end
 
-  # Returns true if the gating conditions passes
-  defp details(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
+  def details(%GatingCondition{type: type} = gating_condition, format_datetime: format_datetime) do
     ConditionTypes.types()
     |> Enum.find(fn {_name, ct} -> ct.type() == type end)
     |> then(fn {_name, ct} ->

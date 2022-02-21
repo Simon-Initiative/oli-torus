@@ -10,6 +10,7 @@ defmodule Oli.Delivery.GatingTest do
 
     setup do
       Seeder.base_project_with_resource4()
+      |> Seeder.add_users_to_section(:section_1, [:user_a, :user_b])
     end
 
     @update_attrs %{type: :schedule, data: %{}}
@@ -47,36 +48,49 @@ defmodule Oli.Delivery.GatingTest do
       assert !Enum.find(gcs, fn gc -> gc.id == another_section_gating_condition.id end)
     end
 
-    test "list_gating_conditions/2 returns all gating_conditions for a given section and list of resource_ids",
+    test "list_gating_conditions/3 returns all gating_conditions for a given section, user and list of resource_ids",
          %{
            container: %{resource: container_resource},
            page1: page1,
            page2: page2,
            section_1: section,
-           section_2: section2
+           user_a: user_a,
+           user_b: user_b
          } do
-      gating_condition1 =
+      _gc_1 =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          user_id: user_a.id,
+          resource_id: container_resource.id
+        })
+
+      _gc_2 =
         gating_condition_fixture(%{section_id: section.id, resource_id: container_resource.id})
 
-      gating_condition2 =
-        gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
+      gc_3 =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          user_id: user_a.id,
+          resource_id: page1.id
+        })
 
-      gating_condition3 =
-        gating_condition_fixture(%{section_id: section.id, resource_id: page2.id})
+      gc_4 = gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
-      another_section_gating_condition =
-        gating_condition_fixture(%{section_id: section2.id, resource_id: page2.id})
+      _gc_5 =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          user_id: user_b.id,
+          resource_id: page1.id
+        })
 
-      gcs = Gating.list_gating_conditions(section.id)
+      _gc_6 = gating_condition_fixture(%{section_id: section.id, resource_id: page2.id})
+
+      gcs = Gating.list_gating_conditions(section.id, user_a.id, [page1.id])
 
       # ensure all defined gating conditions for section are returned
-      assert Enum.count(gcs) == 3
-      assert Enum.find(gcs, fn gc -> gc.id == gating_condition1.id end)
-      assert Enum.find(gcs, fn gc -> gc.id == gating_condition2.id end)
-      assert Enum.find(gcs, fn gc -> gc.id == gating_condition3.id end)
-
-      # ensure all defined gating conditions for another section are not
-      assert !Enum.find(gcs, fn gc -> gc.id == another_section_gating_condition.id end)
+      assert Enum.count(gcs) == 2
+      assert Enum.find(gcs, fn gc -> gc.id == gc_3.id end)
+      assert Enum.find(gcs, fn gc -> gc.id == gc_4.id end)
     end
 
     test "get_gating_condition!/1 returns the gating_condition with given id", %{
@@ -201,13 +215,14 @@ defmodule Oli.Delivery.GatingTest do
       assert index[another_section_gating_condition.resource_id] == nil
     end
 
-    test "resource_open/2 returns true if all ancestor gating conditions pass", %{
+    test "blocked_by/3 returns empty list if all ancestor gating conditions pass", %{
       unit1_container: %{resource: unit1},
       page1: page1,
       nested_page1: nested_page1,
       nested_page2: nested_page2,
       page2: page2,
-      section_1: section
+      section_1: section,
+      user_a: user_a
     } do
       _page2_gating_condition =
         gating_condition_fixture(%{section_id: section.id, resource_id: page2.id})
@@ -232,13 +247,13 @@ defmodule Oli.Delivery.GatingTest do
       {:ok, section} = Gating.update_resource_gating_index(section)
 
       # check resource that has no gating condition defined
-      assert Gating.resource_open(section, page1.id) == true
+      assert Gating.blocked_by(section, user_a, page1.id) == []
 
       # check nested resource that has gating condition defined for itself and its container
-      assert Gating.resource_open(section, nested_page1.id) == true
+      assert Gating.blocked_by(section, user_a, nested_page1.id) == []
 
       # check for a resource that is gated and condition is not satisfied
-      assert Gating.resource_open(section, nested_page2.id) == false
+      assert Gating.blocked_by(section, user_a, nested_page2.id) != []
 
       # change unit to have ended yesterday, check that nested resource is now gated properly
       Gating.update_gating_condition(unit_gating_condition, %{
@@ -246,7 +261,7 @@ defmodule Oli.Delivery.GatingTest do
       })
 
       # nested resource should no longer be accessible since unit is gated by a schedule that ended yesterday
-      assert Gating.resource_open(section, nested_page1.id) == false
+      assert Gating.blocked_by(section, user_a, nested_page1.id) != []
     end
   end
 end

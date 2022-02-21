@@ -13,6 +13,8 @@ defmodule Oli.Delivery.Gating.GatingConditionData do
     # schedule strategy data
     field :start_datetime, :utc_datetime
     field :end_datetime, :utc_datetime
+    field :source_resource_id, :integer
+    field :minimum_percentage_score, :float
   end
 
   @doc false
@@ -20,7 +22,9 @@ defmodule Oli.Delivery.Gating.GatingConditionData do
     gating_condition_data
     |> cast(attrs, [
       :start_datetime,
-      :end_datetime
+      :end_datetime,
+      :source_resource_id,
+      :minimum_percentage_score
     ])
     |> validate_dates_consistency(:start_datetime, :end_datetime)
   end
