@@ -178,6 +178,13 @@ $workspace-bg: $body-bg;
 $workspace-logo-bg: $gray-800;
 $workspace-breadcrumb-bg: $gray-800;
 
+// Auth providers buttons
+
+$google-button-background-color: #4285F4;
+$google-button-font-color: $white;
+
+$github-button-background-color: $black;
+$github-button-font-color: $white;
 ///////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: DO NOT MODIFY IMPORT
 // This import is required and must always be after the last variable
