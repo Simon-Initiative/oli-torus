@@ -93,8 +93,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Settings"
     end
   end
@@ -111,12 +110,10 @@ defmodule OliWeb.Sections.EditLiveTest do
     test "loads section data correctly", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Settings"
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Manage the course section settings"
 
       assert has_element?(view, "input[value=\"#{section.title}\"]")
@@ -134,8 +131,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Settings"
 
       assert view

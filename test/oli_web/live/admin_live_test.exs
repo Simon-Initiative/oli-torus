@@ -101,12 +101,10 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~
                "All administrative actions taken in the system are logged for auditing purposes."
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Account Management"
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Access and manage all users and authors"
 
       assert has_element?(
@@ -138,12 +136,10 @@ defmodule OliWeb.AdminLiveTest do
     test "loads content management links correctly", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_route)
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Content Management"
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Access and manage created content"
 
       assert has_element?(
@@ -180,12 +176,10 @@ defmodule OliWeb.AdminLiveTest do
     test "loads system management links correctly", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_route)
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "System Management"
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Manage and support system level functionality"
 
       assert has_element?(
@@ -271,12 +265,10 @@ defmodule OliWeb.AdminLiveTest do
       view
       |> render_hook("text_search_change", %{value: ""})
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                user_1.given_name
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                user_2.given_name
     end
 
@@ -514,23 +506,19 @@ defmodule OliWeb.AdminLiveTest do
       view
       |> render_hook("text_search_change", %{value: "testing"})
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                author_1.given_name
 
-      refute view
-             |> render() =~
+      refute render(view) =~
                author_2.given_name
 
       view
       |> render_hook("text_search_change", %{value: ""})
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                author_1.given_name
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                author_2.given_name
     end
 
@@ -562,16 +550,14 @@ defmodule OliWeb.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                first_author.given_name
 
       view
       |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
-      refute view
-             |> render() =~
+      refute render(view) =~
                first_author.given_name
     end
 
