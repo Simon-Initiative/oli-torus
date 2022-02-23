@@ -229,12 +229,9 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
 
       let bgColor = 'transparent';
       if (palette.fillColor >= 0) {
-        const color = chroma(palette.fillColor || 0).alpha(palette.fillAlpha || 0);
-        // for few use cases, chroma(palette.fillColor || 0).alpha(palette.fillAlpha || 0) was sometimes getting evaluated to a numeric number(i.e. 1)
-        //hence 1.css() was throwing error as it is not a supported fuction for number.
-        if (typeof color === 'object') {
-          bgColor = color.css();
-        }
+        bgColor = chroma(palette.fillColor || 0)
+          .alpha(palette.fillAlpha === 'NaN' ? 0 : palette.fillAlpha || 0)
+          .css();
       }
       styles.backgroundColor = bgColor;
     }
