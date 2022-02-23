@@ -1,5 +1,5 @@
 import React, { createRef, CSSProperties, useCallback, useEffect, useState } from 'react';
-import SwiperCore, { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
+import { A11y, Keyboard, Navigation, Pagination, Zoom } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
@@ -7,8 +7,13 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { PartComponentProps } from '../types/parts';
-import './Carousel.css';
 import { CarouselModel } from './schema';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/scrollbar';
+import 'swiper/css/zoom';
+import './Carousel.css';
 
 interface CarouselImageModel {
   url: string;
@@ -29,7 +34,6 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
   const [swiper, setSwiper] = useState<any>(null);
 
   // initialize the swiper
-  SwiperCore.use([Navigation, Pagination, A11y, Keyboard, Zoom]);
   const initialize = useCallback(async (pModel) => {
     // set defaults
     const dZoom = typeof pModel.zoom === 'boolean' ? pModel.zoom : carouselZoom;
@@ -225,22 +229,31 @@ const Carousel: React.FC<PartComponentProps<CarouselModel>> = (props) => {
     setCurrentSlide(currentSlide);
   };
 
+  // useeffect that destroys swiper when component unmounts
+  useEffect(() => {
+    return () => {
+      swiper.destroy(true, true);
+    };
+  }, []);
+
   return ready ? (
     <div data-janus-type={tagName} className={`janus-image-carousel`} style={styles}>
       {images.length > 0 && (
         <Swiper
+          modules={[Navigation, Pagination, A11y, Keyboard, Zoom]}
           slidesPerView={1}
-          loop
-          navigation
+          loop={true}
+          navigation={true}
           zoom={carouselZoom ? { maxRatio: 3 } : false}
           keyboard={{ enabled: true }}
           pagination={{ clickable: true }}
           onSwiper={(swiper) => {
             setSwiper(swiper);
-            swiper.slideTo(currentSlide);
+            swiper.slideTo(1);
           }}
           onSlideChange={(swiper) => {
             handleSlideChange(swiper.realIndex);
+            swiper.update();
           }}
           onImagesReady={() => {
             setImagesLoaded(true);

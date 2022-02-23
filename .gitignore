@@ -71,3 +71,4 @@ supervisord.pid
 stacks.out
 .mnesia
 yarn-error.log
+/priv/superactivity/

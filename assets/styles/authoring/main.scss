@@ -80,3 +80,11 @@ a:not([href]) {
     color: $white;
   }
 }
+
+.system-banner {
+  margin-bottom: 0.4em !important;
+
+  span{
+    color: black;
+  }
+}

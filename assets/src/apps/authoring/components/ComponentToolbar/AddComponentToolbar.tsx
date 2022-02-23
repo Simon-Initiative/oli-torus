@@ -6,9 +6,9 @@ import {
   setCopiedPart,
   setRightPanelActiveTab,
 } from 'apps/authoring/store/app/slice';
+
 import { addPart } from 'apps/authoring/store/parts/actions/addPart';
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
-import { findInSequenceByResourceId } from 'apps/delivery/store/features/groups/actions/sequence';
 import {
   selectCurrentActivityTree,
   selectSequence,
@@ -16,7 +16,6 @@ import {
 import React, { Fragment, useCallback, useState } from 'react';
 import { ListGroup, Overlay, OverlayTrigger, Popover, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
-import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 
@@ -32,6 +31,7 @@ const AddComponentToolbar: React.FC = () => {
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentSequence = useSelector(selectSequence);
   const copiedPart = useSelector(selectCopiedPart);
+
   // console.log('AVAILABLE PART COMPONENTS', availablePartComponents);
 
   const addPartToCurrentScreen = (newPartData: any) => {

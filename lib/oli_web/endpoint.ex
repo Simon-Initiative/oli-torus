@@ -28,6 +28,8 @@ defmodule OliWeb.Endpoint do
     only: ~w(css fonts images js custom favicons favicon.ico robots.txt flame_graphs)
   )
 
+  plug Plug.Static, at: "/schemas", from: {:oli, "priv/schemas"}, gzip: true
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
@@ -48,7 +50,8 @@ defmodule OliWeb.Endpoint do
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
     length: 20_000_000,
-    json_decoder: Phoenix.json_library()
+    json_decoder: Phoenix.json_library(),
+    body_reader: {OliWeb.CacheBodyReader, :read_body, []}
   )
 
   plug(Plug.MethodOverride)

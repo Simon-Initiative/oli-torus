@@ -1,0 +1,60 @@
+{
+  "content": {
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "Here is a final quiz as an opportunity to assess what you have learned in this short course on the cuisine of Northern Spain.  "
+              }
+            ],
+            "id": "2996058112",
+            "type": "p"
+          }
+        ],
+        "id": "88931420",
+        "purpose": "none",
+        "selection": {
+          "anchor": {
+            "offset": 126,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 126,
+            "path": [
+              0,
+              0
+            ]
+          }
+        },
+        "type": "content"
+      },
+      {
+        "activity_id": 41,
+        "children": [],
+        "id": "3379490725",
+        "purpose": "none",
+        "type": "activity-reference"
+      },
+      {
+        "activity_id": 42,
+        "children": [],
+        "id": "836466528",
+        "purpose": "none",
+        "type": "activity-reference"
+      }
+    ]
+  },
+  "id": "39",
+  "isGraded": true,
+  "objectives": [],
+  "originalFile": "",
+  "tags": [],
+  "title": "Final Quiz",
+  "type": "Page",
+  "unresolvedReferences": []
+}

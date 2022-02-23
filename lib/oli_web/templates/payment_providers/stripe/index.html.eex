@@ -6,6 +6,7 @@
 * {
   box-sizing: border-box;
 }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 16px;
@@ -29,9 +30,11 @@ body {
   border-radius: 7px;
   padding: 40px;
 }
+
 form {
   align-self: center;
 }
+
 input {
   border-radius: 6px;
   margin-bottom: 10px;
@@ -42,18 +45,22 @@ input {
   width: 100%;
   background: white;
 }
+
 .result-message {
   line-height: 22px;
   font-size: 16px;
 }
+
 .result-message a {
   color: rgb(89, 111, 214);
   font-weight: 600;
   text-decoration: none;
 }
+
 .hidden {
   display: none;
 }
+
 #card-error {
   color: rgb(105, 115, 134);
   text-align: left;
@@ -61,6 +68,7 @@ input {
   line-height: 17px;
   margin-top: 12px;
 }
+
 #card-element {
   border-radius: 4px 4px 0 0 ;
   padding: 12px;
@@ -69,9 +77,11 @@ input {
   width: 100%;
   background: white;
 }
+
 #payment-request-button {
   margin-bottom: 32px;
 }
+
 /* Buttons and links */
 button {
   background: #5469d4;
@@ -88,19 +98,23 @@ button {
   box-shadow: 0px 4px 5.5px 0px rgba(0, 0, 0, 0.07);
   width: 100%;
 }
+
 button:hover {
   filter: contrast(115%);
 }
+
 button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
 /* spinner/processing state, errors */
 .spinner,
 .spinner:before,
 .spinner:after {
   border-radius: 50%;
 }
+
 .spinner {
   color: #ffffff;
   font-size: 22px;
@@ -114,11 +128,13 @@ button:disabled {
   -ms-transform: translateZ(0);
   transform: translateZ(0);
 }
+
 .spinner:before,
 .spinner:after {
   position: absolute;
   content: "";
 }
+
 .spinner:before {
   width: 10.4px;
   height: 20.4px;
@@ -131,6 +147,7 @@ button:disabled {
   -webkit-animation: loading 2s infinite ease 1.5s;
   animation: loading 2s infinite ease 1.5s;
 }
+
 .spinner:after {
   width: 10.4px;
   height: 10.2px;
@@ -143,6 +160,7 @@ button:disabled {
   -webkit-animation: loading 2s infinite ease;
   animation: loading 2s infinite ease;
 }
+
 @-webkit-keyframes loading {
   0% {
     -webkit-transform: rotate(0deg);
@@ -153,6 +171,7 @@ button:disabled {
     transform: rotate(360deg);
   }
 }
+
 @keyframes loading {
   0% {
     -webkit-transform: rotate(0deg);
@@ -163,6 +182,7 @@ button:disabled {
     transform: rotate(360deg);
   }
 }
+
 @media only screen and (max-width: 600px) {
   form {
     width: 80vw;
@@ -170,38 +190,35 @@ button:disabled {
 }
 </style>
 
-  <div class="payment-content">
+<div class="payment-content">
+  <div class="summary">
+    <label>Course Section</label>
+    <input type="text" disabled value="<%= @section.title %>"/>
 
-    <div class="summary">
-      <label>Course Section</label>
-      <input type="text" disabled value="<%= @section.title %>"/>
+    <label>User</label>
+    <input type="text" disabled value="<%= @user_name %>"/>
 
-      <label>User</label>
-      <input type="text" disabled value="<%= @user_name %>"/>
+    <label>Amount</label>
+    <input type="text" disabled value="<%= @cost %>"/>
 
-      <label>Amount</label>
-      <input type="text" disabled value="<%= @cost %>"/>
+    <hr class="mt-3 mb-3"/>
 
-      <hr class="mt-3 mb-3"/>
+    <form id="payment-form">
+      <div id="card-element"><!--Stripe.js injects the Card Element--></div>
 
-      <form id="payment-form">
-        <div id="card-element"><!--Stripe.js injects the Card Element--></div>
-        <button id="submit" class="mt-3">
-          <div class="spinner hidden" id="spinner"></div>
-          <span id="button-text">Pay now</span>
-        </button>
-        <p id="card-error" role="alert"></p>
-        <p class="result-message hidden">
-          Payment succeeded, you can now
-          <a href="" target="_blank">access your course section.</a>
-        </p>
-      </form>
+      <button id="submit" class="mt-3">
+        <div class="spinner hidden" id="spinner"></div>
+        <span id="button-text">Pay now</span>
+      </button>
 
-
-
-    </div>
+      <p id="card-error" role="alert"></p>
+      <p class="result-message hidden">
+        Payment succeeded, you can now
+        <a href="" target="_blank">access your course section.</a>
+      </p>
+    </form>
   </div>
-
+</div>
 
 <script>
   window.OLIPayments.makePurchase("<%= @api_key %>", <%= raw(@purchase) %>);

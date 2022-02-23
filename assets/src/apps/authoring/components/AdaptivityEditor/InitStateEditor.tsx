@@ -35,9 +35,16 @@ interface InitStateItemProps {
   onDelete: (id: string) => void;
 }
 const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete }) => {
-  const targetRef = useRef<HTMLInputElement>(null);
   const typeRef = useRef<HTMLSelectElement>(null);
+
+  const [target, setTarget] = useState(state.target);
+
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
+
+  const handleTargetChange = (val: any) => {
+    setTarget(val);
+    onChange(state.id, 'target', val);
+  };
 
   // update adding operator if targetType changes from number
   useEffect(() => {
@@ -48,6 +55,10 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
     }
   }, [state.type]);
 
+  React.useEffect(() => {
+    setTarget(state.target);
+  }, [state.target]);
+
   return (
     <div
       key={state.id}
@@ -56,7 +67,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
       <div className="input-group input-group-sm flex-grow-1">
         <div className="input-group-prepend" title="Target">
           <VariablePicker
-            targetRef={targetRef}
+            onTargetChange={(value) => handleTargetChange(value)}
             typeRef={typeRef}
             placement={OverlayPlacements.TOP}
             context="init"
@@ -71,11 +82,11 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           className="form-control form-control-sm flex-grow-1 mr-2"
           type="text"
           placeholder="Target"
-          defaultValue={state.target}
-          onBlur={(e) => onChange(state.id, 'target', e.target.value)}
-          title={state.target}
+          value={target}
+          onChange={(e) => setTarget(e.target.value)}
+          onBlur={(e) => handleTargetChange(e.target.value)}
+          title={target}
           tabIndex={0}
-          ref={targetRef}
         />
       </div>
 
@@ -198,7 +209,7 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
     const activityClone = clone(currentActivity);
     const initStateClone = clone(initState);
     activityClone.content.custom.facts = initStateClone;
-    dispatch(saveActivity({ activity: activityClone }));
+    dispatch(saveActivity({ activity: activityClone, undoable: true }));
     setIsDirty(false);
   }, [isDirty]);
 
@@ -236,7 +247,6 @@ export const InitStateEditor: React.FC<InitStateEditorProps> = () => {
   };
 
   const handleChange = (id: string, key: string, value: string) => {
-    if (value.trim() === '') return;
     const initStateClone = clone(initState);
     const indexToUpdate = initStateClone.findIndex((rule: InitialState) => rule.id === id);
     if (initStateClone[indexToUpdate][key] === value) return;

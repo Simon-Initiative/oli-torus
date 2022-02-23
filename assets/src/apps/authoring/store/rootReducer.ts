@@ -11,6 +11,8 @@ import PartsSlice from './parts/name';
 import PartsReducer from './parts/slice';
 import ClipboardSlice from './clipboard/name';
 import ClipboardReducer from './clipboard/slice';
+import HistorySlice from './history/name';
+import HistoryReducer from './history/slice';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,
@@ -19,6 +21,7 @@ const rootReducer = combineReducers({
   [GroupsSlice]: GroupsReducer,
   [ActivitiesSlice]: ActivitiesReducer,
   [ClipboardSlice]: ClipboardReducer,
+  [HistorySlice]: HistoryReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

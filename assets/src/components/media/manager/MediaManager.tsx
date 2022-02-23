@@ -356,9 +356,12 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     );
   }
 
-  isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) =>
-    selectionType !== SELECTION_TYPES.NONE &&
-    (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
+  isItemSelectable = (selectionType: SELECTION_TYPES, item: MediaItem) => {
+    const ret =
+      selectionType !== SELECTION_TYPES.NONE &&
+      (!this.props.mimeFilter || this.props.mimeFilter.includes(item.mimeType));
+    return ret;
+  };
 
   renderMediaList(disabled: boolean) {
     const { media, selectionType } = this.props;

@@ -1,0 +1,276 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": "Reread the Cider section"
+                      }
+                    ],
+                    "id": "1045392128",
+                    "type": "p"
+                  }
+                ],
+                "selection": {
+                  "anchor": {
+                    "offset": 24,
+                    "path": [
+                      0,
+                      0
+                    ]
+                  },
+                  "focus": {
+                    "offset": 24,
+                    "path": [
+                      0,
+                      0
+                    ]
+                  }
+                }
+              },
+              "id": "1235839873"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "4164872574",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "3976065050"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "3918483939",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "3176785033"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Correct"
+                        }
+                      ],
+                      "id": "3582318604",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "2387390274"
+              },
+              "id": "3651814675",
+              "rule": "input like {3889942927}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No, Asturian cider is actually dry"
+                        }
+                      ],
+                      "id": "2671149804",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 34,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 34,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "760048381"
+              },
+              "id": "3541772352",
+              "rule": "input like {584457882}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Why is Asturian Cider typically poured from a height above one's head?",
+      "transformations": [
+        {
+          "id": "2770901034",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "The oxygenation adds carbonation and a bit of flavor to the cider"
+                }
+              ],
+              "id": "402867328",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 38,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 38,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "3889942927"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Cider is naturally sweet and this pouring style enhances that sweetness"
+                }
+              ],
+              "id": "1154344617",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 71,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 71,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "584457882"
+      }
+    ],
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Why is Asturian Cider typically poured from a height above one's head?"
+              }
+            ],
+            "id": "105251297",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 70,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 70,
+            "path": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "id": "2514266211"
+    }
+  },
+  "id": "36",
+  "objectives": {
+    "1": [
+      "28"
+    ]
+  },
+  "originalFile": "",
+  "subType": "oli_multiple_choice",
+  "tags": [
+    "id1"
+  ],
+  "title": "MCQ Sidre Pour Height",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

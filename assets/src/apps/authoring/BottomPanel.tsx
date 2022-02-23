@@ -64,7 +64,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
   const debounceSaveChanges = useCallback(
     debounce(
       (activity) => {
-        dispatch(saveActivity({ activity }));
+        dispatch(saveActivity({ activity, undoable: true }));
       },
       500,
       { maxWait: 10000, leading: false },

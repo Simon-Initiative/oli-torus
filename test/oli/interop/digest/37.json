@@ -1,0 +1,416 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": "Reread the section on Fabada"
+                      }
+                    ],
+                    "id": "554200302",
+                    "type": "p"
+                  }
+                ],
+                "selection": {
+                  "anchor": {
+                    "offset": 28,
+                    "path": [
+                      0,
+                      0
+                    ]
+                  },
+                  "focus": {
+                    "offset": 28,
+                    "path": [
+                      0,
+                      0
+                    ]
+                  }
+                }
+              },
+              "id": "4211592617"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "3722660994",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "2978023576"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "2863130404",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "603822508"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Correct"
+                        }
+                      ],
+                      "id": "1153519480",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "1048586312"
+              },
+              "id": "3737290472",
+              "rule": "input like {404488393}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No, fabada is a bean stew"
+                        }
+                      ],
+                      "id": "914670944",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 25,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 25,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "167425920"
+              },
+              "id": "2444037469",
+              "rule": "input like {1848271280}",
+              "score": 0
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No, goat meat is not included in a traditional fabada"
+                        }
+                      ],
+                      "id": "3727940334",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 53,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 53,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "1141310182"
+              },
+              "id": "3124911495",
+              "rule": "input like {3962178651}",
+              "score": 0
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No, eggs are not part of this dish"
+                        }
+                      ],
+                      "id": "4031710834",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 34,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 34,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "2656891518"
+              },
+              "id": "1946464972",
+              "rule": "input like {4145534410}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Fabada is a stew made of:",
+      "transformations": [
+        {
+          "id": "1847161949",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Beans and pork"
+                }
+              ],
+              "id": "297963205",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 14,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 14,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "404488393"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Shellfish"
+                }
+              ],
+              "id": "4185483583",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 9,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 9,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "1848271280"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Mountain goat"
+                }
+              ],
+              "id": "707392175",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 13,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 13,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "3962178651"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Eggs"
+                }
+              ],
+              "id": "1308637018",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 4,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 4,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "4145534410"
+      }
+    ],
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Fabada is a stew made of:"
+              }
+            ],
+            "id": "3557333685",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 25,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 25,
+            "path": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "id": "623463683"
+    }
+  },
+  "id": "37",
+  "objectives": {
+    "1": [
+      "27",
+      "26",
+      "23"
+    ]
+  },
+  "originalFile": "",
+  "subType": "oli_multiple_choice",
+  "tags": [
+    "id2"
+  ],
+  "title": "MCQ Fabada Ingredients",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

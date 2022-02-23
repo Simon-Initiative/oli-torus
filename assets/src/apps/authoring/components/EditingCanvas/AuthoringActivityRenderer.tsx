@@ -125,7 +125,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       if (target?.id === elementProps.id) {
         const { model } = e.detail;
         /* console.log('AAR handleActivityEdit', { model }); */
-        dispatch(saveActivity({ activity: model }));
+        dispatch(saveActivity({ activity: model, undoable: true }));
         // why were we clearing the selection on edit?...
         // dispatch(setCurrentSelection({ selection: '' }));
         // dispatch(setRightPanelActiveTab({ rightPanelActiveTab: RightPanelTabs.SCREEN }));

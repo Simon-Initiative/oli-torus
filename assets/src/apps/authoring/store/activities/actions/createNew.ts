@@ -5,7 +5,6 @@ import { selectState as selectPageState } from '../../../../authoring/store/page
 import { selectActivityTypes, selectProjectSlug, selectReadOnly } from '../../app/slice';
 import { createSimpleText } from '../templates/simpleText';
 import { createCorrectRule, createIncorrectRule } from './rules';
-import { RootState } from 'apps/delivery/store/rootReducer';
 
 export const createNew = createAsyncThunk(
   `${ActivitiesSlice}/createNew`,

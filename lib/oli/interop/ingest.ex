@@ -8,6 +8,11 @@ defmodule Oli.Interop.Ingest do
   @hierarchy_key "_hierarchy"
   @media_key "_media-manifest"
 
+  @page_schema "priv/schemas/v0-1-0/page.schema.json"
+               |> File.read!()
+               |> Jason.decode!()
+               |> ExJsonSchema.Schema.resolve()
+
   @doc """
   Ingest a course digest archive that is sitting on the file system
   and turn it into a course project.  Gives the author specified access
@@ -343,6 +348,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     with content <- Map.get(page, "content"),
+         :ok <- validate_json(content, @page_schema, page["id"]),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
       graded = Map.get(page, "isGraded", false)
@@ -376,6 +382,16 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
+  defp validate_json(content, schema, element_id) do
+    case ExJsonSchema.Validator.validate(schema, content) do
+      :ok ->
+        :ok
+
+      {:error, errors} ->
+        {:error, {:invalid_json, element_id, schema, errors, content}}
+    end
+  end
+
   defp create_activity(
          project,
          activity,
@@ -384,17 +400,6 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    objectives =
-      Map.get(activity, "objectives")
-      |> Map.keys()
-      |> Enum.reduce(%{}, fn k, m ->
-        mapped =
-          Map.get(activity, "objectives")[k]
-          |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
-
-        Map.put(m, k, mapped)
-      end)
-
     title =
       case Map.get(activity, "title") do
         nil -> Map.get(activity, "subType")
@@ -414,12 +419,34 @@ defmodule Oli.Interop.Ingest do
       title: title,
       content: Map.get(activity, "content"),
       author_id: as_author.id,
-      objectives: objectives,
+      objectives: process_activity_objectives(activity, objective_map),
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
       activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
       scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
     }
     |> create_resource(project)
+  end
+
+  defp process_activity_objectives(activity, objective_map) do
+    case Map.get(activity, "objectives", []) do
+      map when is_map(map) ->
+        Map.keys(map)
+        |> Enum.reduce(%{}, fn k, m ->
+          mapped =
+            Map.get(activity, "objectives")[k]
+            |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
+
+          Map.put(m, k, mapped)
+        end)
+
+      list when is_list(list) ->
+        activity["content"]["authoring"]["parts"]
+        |> Enum.map(fn %{"id" => id} -> id end)
+        |> Enum.reduce(%{}, fn e, m ->
+          objectives = Enum.map(list, fn id -> Map.get(objective_map, id).resource_id end)
+          Map.put(m, e, objectives)
+        end)
+    end
   end
 
   defp create_tag(project, tag, as_author) do
@@ -633,6 +660,10 @@ defmodule Oli.Interop.Ingest do
       count ->
         "Project contains #{count} invalid activity bank selection references: #{invalid_refs_str}"
     end
+  end
+
+  def prettify_error({:error, {:invalid_json, element_id, schema, _errors, _content}}) do
+    "Invalid JSON found in '#{element_id}' according to schema #{schema.schema["$id"]}"
   end
 
   def prettify_error({:error, error}) do

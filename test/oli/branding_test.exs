@@ -30,6 +30,17 @@ defmodule Oli.BrandingTest do
       brand
     end
 
+    defp default_brand do
+      default_branding = Application.get_env(:oli, :branding)
+
+      %Brand{
+        name: Keyword.get(default_branding, :name),
+        logo: Keyword.get(default_branding, :logo),
+        logo_dark: Keyword.get(default_branding, :logo_dark),
+        favicons: Keyword.get(default_branding, :favicons)
+      }
+    end
+
     test "list_brands/0 returns all brands" do
       brand = brand_fixture()
       assert Branding.list_brands() == [brand]
@@ -197,6 +208,19 @@ defmodule Oli.BrandingTest do
         Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
 
       assert Branding.brand_logo_url_dark(section) == "#{Oli.Utils.get_base_url()}/some_logo_dark"
+    end
+
+    @tag capture_log: true
+    test "brand_logo_url_dark returns default brand logo url when section brand logo is nil", %{
+      section: section
+    } do
+      section_brand = brand_fixture(%{logo_dark: nil})
+
+      {:ok, section} =
+        Oli.Delivery.Sections.update_section(section, %{brand_id: section_brand.id})
+
+      assert Branding.brand_logo_url_dark(section) ==
+               "#{Oli.Utils.get_base_url()}" <> default_brand().logo_dark
     end
 
     @tag capture_log: true

@@ -98,6 +98,32 @@ defmodule Oli.GroupsTest do
     alias Oli.Groups.CommunityAccount
     alias Oli.Accounts.{Author, User}
 
+    test "find_or_create_community_user_account/2 finds existing account" do
+      existing_account = insert(:community_user_account)
+
+      {:ok, account} =
+        Groups.find_or_create_community_user_account(
+          existing_account.user_id,
+          existing_account.community_id
+        )
+
+      assert account.id == existing_account.id
+    end
+
+    test "find_or_create_community_user_account/2 creates new account" do
+      existing_account = insert(:community_user_account)
+      community = insert(:community)
+
+      {:ok, account} =
+        Groups.find_or_create_community_user_account(
+          existing_account.user_id,
+          community.id
+        )
+
+      assert account.id != existing_account.id
+      assert account.community_id == community.id
+    end
+
     test "create_community_account/1 with valid data creates a community account" do
       params = params_for(:community_account)
 

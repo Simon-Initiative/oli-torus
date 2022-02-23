@@ -4,7 +4,7 @@ defmodule Oli.AccountsTest do
   import Oli.Factory
 
   alias Oli.Accounts
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -76,7 +76,8 @@ defmodule Oli.AccountsTest do
       sub: "some sub",
       picture: "some picture",
       password: "some_pass123",
-      password_confirmation: "some_pass123"
+      password_confirmation: "some_pass123",
+      age_verified: true
     }
     @update_attrs %{
       email: "some_updated_email@example.com",
@@ -105,6 +106,38 @@ defmodule Oli.AccountsTest do
 
     test "create_user/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
+    end
+
+    test "verification_changeset/2 runs age verification check when enabled" do
+      Config.Reader.read!("test/config/age_verification_config.exs")
+      |> Application.put_all_env()
+
+      assert %Ecto.Changeset{
+               errors: [
+                 age_verified:
+                   {"You must verify you are old enough to access our site in order to continue",
+                    [validation: :acceptance]}
+               ]
+             } =
+               User.verification_changeset(
+                 %User{},
+                 Map.merge(@valid_attrs, %{
+                   age_verified: false
+                 })
+               )
+
+      assert %Ecto.Changeset{errors: []} = User.verification_changeset(%User{}, @valid_attrs)
+
+      Config.Reader.read!("test/config/config.exs")
+      |> Application.put_all_env()
+
+      assert %Ecto.Changeset{errors: []} =
+               User.verification_changeset(
+                 %User{},
+                 Map.merge(@valid_attrs, %{
+                   age_verified: false
+                 })
+               )
     end
 
     test "update_user/2 with valid data updates the user", %{user: user} do

@@ -74,3 +74,11 @@ form .form-label-group .help-block {
     border-bottom: $list-group-border-width solid $list-group-border-color;
   }
 }
+
+.system-banner {
+  margin-bottom: 0.4em !important;
+
+  span{
+    color: black;
+  }
+}

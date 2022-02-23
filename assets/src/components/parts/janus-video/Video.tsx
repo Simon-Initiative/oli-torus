@@ -308,12 +308,12 @@ const Video: React.FC<PartComponentProps<VideoModel>> = (props) => {
         ...youtubeOpts.playerVars,
         start: startTime || 0,
       };
-      if (endTime && endTime >= 0) {
-        youtubeOpts.playerVars = {
-          ...youtubeOpts.playerVars,
-          end: endTime || 0,
-        };
-      }
+    }
+    if (endTime && endTime >= 0) {
+      youtubeOpts.playerVars = {
+        ...youtubeOpts.playerVars,
+        end: endTime || 0,
+      };
     }
   } else {
     finalSrc = `${finalSrc}#t=${startTime}${endTime > 0 ? `,${endTime}` : ''}`;

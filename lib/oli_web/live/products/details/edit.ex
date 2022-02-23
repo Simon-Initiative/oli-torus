@@ -8,6 +8,7 @@ defmodule OliWeb.Products.Details.Edit do
   prop product, :any, default: nil
   prop changeset, :any, default: nil
   prop available_brands, :any, default: nil
+  prop is_admin, :boolean
 
   defp statuses do
     [{"Active", "active"}, {"Disabled", "deleted"}]
@@ -53,14 +54,14 @@ defmodule OliWeb.Products.Details.Edit do
           <div class="form-row">
 
             <div class="custom-control custom-switch" style="width: 200px;">
-              <%= checkbox f, :requires_payment, class: "custom-control-input" <> error_class(f, :requires_payment, "is-invalid"), autofocus: focusHelper(f, :requires_payment) %>
+              <%= checkbox f, :requires_payment, disabled: !@is_admin, class: "custom-control-input" <> error_class(f, :requires_payment, "is-invalid"), autofocus: focusHelper(f, :requires_payment) %>
               <%= label f, :requires_payment, "Requires Payment", class: "custom-control-label" %>
               <%= error_tag f, :requires_payment %>
             </div>
 
             <div class="form-group">
               <%= label f, :amount %>
-              <%= text_input f, :amount, class: "form-control", disabled: !get_field(@changeset, :requires_payment)%>
+              <%= text_input f, :amount, class: "form-control", disabled: !@is_admin or !get_field(@changeset, :requires_payment)%>
               <div><%= error_tag f, :amount %></div>
             </div>
 
@@ -70,7 +71,7 @@ defmodule OliWeb.Products.Details.Edit do
 
             <div class="custom-control custom-switch" style="width: 200px;">
               <%= checkbox f, :has_grace_period,
-                disabled: !get_field(@changeset, :requires_payment),
+                disabled: !@is_admin or !get_field(@changeset, :requires_payment),
                 class: "custom-control-input" <> error_class(f, :has_grace_period, "is-invalid"), autofocus: focusHelper(f, :requires_payment) %>
               <%= label f, :has_grace_period, "Has Grace Period", class: "custom-control-label" %>
               <%= error_tag f, :has_grace_period %>
@@ -78,13 +79,13 @@ defmodule OliWeb.Products.Details.Edit do
 
             <div class="form-group" style="max-width: 200px;">
               <%= label f, :grace_period_days %>
-              <%= text_input f, :grace_period_days, type: :number, class: "form-control", disabled: !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period) %>
+              <%= text_input f, :grace_period_days, type: :number, class: "form-control", disabled: !@is_admin or !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period) %>
               <div><%= error_tag f, :grace_period_days %></div>
             </div>
 
             <div class="form-group ml-3" style="max-width: 230px;">
               <%= label f, :grace_period_strategy %>
-              <%= select f, :grace_period_strategy, strategies(), disabled: !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period),
+              <%= select f, :grace_period_strategy, strategies(), disabled: !@is_admin or !get_field(@changeset, :requires_payment) or !get_field(@changeset, :has_grace_period),
                 class: "form-control " <> error_class(f, :grace_period_strategy, "is-invalid"),
                 autofocus: focusHelper(f, :grace_period_strategy) %>
               <div><%= error_tag f, :grace_period_strategy %></div>

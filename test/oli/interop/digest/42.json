@@ -1,0 +1,328 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "3566865719",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "217373385"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "117464798",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "869553798"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "4068053049",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "3850651137"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Yes"
+                        }
+                      ],
+                      "id": "35502516",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 3,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 3,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "2230602088"
+              },
+              "id": "3872260861",
+              "rule": "input like {1140798647}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Beyos is an Asturian cheese, but Cabrales is the cheese that Asturias is most well known for"
+                        }
+                      ],
+                      "id": "2887735398",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 92,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 92,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "3533203050"
+              },
+              "id": "1692219054",
+              "rule": "input like {2264915565}",
+              "score": 0
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "No, that is an English cheese"
+                        }
+                      ],
+                      "id": "1789533583",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 29,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 29,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "855053315"
+              },
+              "id": "584678291",
+              "rule": "input like {4238456170}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Which cheese is Asturias most famous for?",
+      "transformations": [
+        {
+          "id": "2999345774",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ]
+    },
+    "choices": [
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Cabrales"
+                }
+              ],
+              "id": "2615119788",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 8,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 8,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "1140798647"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Beyos"
+                }
+              ],
+              "id": "3699718668",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 5,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 5,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "2264915565"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Stilton"
+                }
+              ],
+              "id": "3338613821",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 7,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 7,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "4238456170"
+      }
+    ],
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Which cheese is Asturias most famous for?"
+              }
+            ],
+            "id": "3461753632",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 41,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 41,
+            "path": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "id": "1120144535"
+    }
+  },
+  "id": "42",
+  "objectives": {
+    "1": [
+      "23"
+    ]
+  },
+  "originalFile": "",
+  "subType": "oli_multiple_choice",
+  "tags": [],
+  "title": "MCQ Asturian Dish",
+  "type": "Activity",
+  "unresolvedReferences": []
+}
