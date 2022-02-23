@@ -1,0 +1,254 @@
+{
+  "content": {
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "Overview"
+              }
+            ],
+            "id": "4277321065",
+            "type": "h3"
+          },
+          {
+            "children": [
+              {
+                "text": "The "
+              },
+              {
+                "em": true,
+                "text": "food and drink"
+              },
+              {
+                "text": " of "
+              },
+              {
+                "children": [
+                  {
+                    "text": "Galicia"
+                  }
+                ],
+                "href": "https://www.wikipedia.com/wiki/Galicia",
+                "id": "4122374822",
+                "target": "self",
+                "type": "a"
+              },
+              {
+                "text": ", an autonomous community in northwest corner of Spain, is influenced by its proximity to the Atlantic Ocean and its Celtic history.   "
+              }
+            ],
+            "id": "4277321065",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "4277321065",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "em": true,
+                "text": "Galician"
+              },
+              {
+                "text": " cuisine often uses fish and shellfish. The empanada is a meat or fish pie, with a bread-like base, top and crust with the meat or fish filling usually being in a tomato sauce including onions and garlic. eeeeee galego is a hearty soup whose main ingredients are potatoes and a local vegetable named grelo (Broccoli rabe). The latter is also employed in Lacon con grelos, a typical carnival dish, consisting of pork shoulder boiled with grelos, potatoes and chorizo. Centolla is the equivalent of king crab. It is prepared by being boiled alive, having its main body opened like a shell, and then having its innards mixed vigorously. There are several regional varieties of cheese. The best-known one is the so-called tetilla, named after its breast-like shape. Other highly regarded varieties include the San Simon cheese from Vilalba and the creamy cheese produced in the Arzo-Ulloa area. A classical is filloas, crope-like pancakes made with flour, broth or milk, and eggs. When cooked at a pig slaughter festival, they may also contain the animal's blood. A famous almond cake called Tarta de Santiago (St. James' cake) is a Galician sweet speciality mainly produced in Santiago de Compostela and all around Galicia.  "
+              }
+            ],
+            "id": "3204110615",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "Featured Dish - \"Pulpo a la Gallega\""
+              }
+            ],
+            "id": "3204110615",
+            "type": "h3"
+          },
+          {
+            "children": [
+              {
+                "text": "Octopus is a popular dish in Galicia and the most famous preparation is \"Pulpo a la Gallega\". In this dish, Octopus is boiled (traditionally in a copper pot) and served in a wooden plate, cut into small pieces and laced with olive oil, sea salt and pimenton (Spanish paprika). Pulpo a la gallega, or in Galician \"Polbo a Feira\", roughly translates as \"Fair-style Octopus\", or most commonly translated as \"Galician-style Octopus\".  "
+              }
+            ],
+            "id": "362515519",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "Featured Drink - \"Orujo\""
+              }
+            ],
+            "id": "2218742646",
+            "type": "h3"
+          },
+          {
+            "children": [
+              {
+                "text": "Orujo is a pomace brandy (a "
+              },
+              {
+                "strong": true,
+                "text": "liquor"
+              },
+              {
+                "text": " obtained from the distillation of marc, the solid remains left after pressing of the grape) from northern Spain. It is a transparent spirit with an alcohol content over 50% (100 proof). Its name comes from the expression \"aguardiente de orujo\" (pomace spirit)."
+              }
+            ],
+            "id": "601172466",
+            "type": "p"
+          }
+        ],
+        "id": "2442805407",
+        "purpose": "none",
+        "selection": {
+          "anchor": {
+            "offset": 0,
+            "path": [
+              2,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 0,
+            "path": [
+              2,
+              0
+            ]
+          }
+        },
+        "type": "content"
+      },
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "For more information regarding the cuisine of Galicia, check out the following resources:"
+              }
+            ],
+            "id": "2106402561",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "text": "Wikipedia article on "
+                  },
+                  {
+                    "children": [
+                      {
+                        "text": "Galician Cuisine"
+                      }
+                    ],
+                    "href": "https://en.wikipedia.org/wiki/Galician_cuisine",
+                    "id": "2069136206",
+                    "target": "self",
+                    "type": "a"
+                  },
+                  {
+                    "text": ""
+                  }
+                ],
+                "id": "2106402561",
+                "type": "li"
+              },
+              {
+                "children": [
+                  {
+                    "text": "An "
+                  },
+                  {
+                    "children": [
+                      {
+                        "text": "article"
+                      }
+                    ],
+                    "href": "https://theculturetrip.com/europe/spain/articles/the-most-typical-dishes-from-galicia-you-should-try/",
+                    "id": "477624632",
+                    "target": "self",
+                    "type": "a"
+                  },
+                  {
+                    "text": " on typical dishes in Galicia"
+                  }
+                ],
+                "id": "2106402561",
+                "type": "li"
+              }
+            ],
+            "type": "ol"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "3797281835",
+            "type": "p"
+          },
+          {
+            "alt": "Some alt text",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "display": "block",
+            "id": "3687850999",
+            "src": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/hake.png",
+            "type": "img"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2410820565",
+            "type": "p"
+          }
+        ],
+        "id": "3211484666",
+        "purpose": "example",
+        "selection": {
+          "anchor": {
+            "offset": 0,
+            "path": [
+              2,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 0,
+            "path": [
+              2,
+              0
+            ]
+          }
+        },
+        "type": "content"
+      }
+    ]
+  },
+  "id": "32",
+  "isGraded": false,
+  "objectives": [],
+  "originalFile": "",
+  "tags": [],
+  "title": "Food and Drink of Galicia",
+  "type": "Page",
+  "unresolvedReferences": []
+}

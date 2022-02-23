@@ -1,0 +1,216 @@
+{
+  "content": {
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "The Spanish region of Asturias is situated in a mountainous setting with vast greenery and lush vegetation, but bordered on the north by the Atlantic Ocean. "
+              }
+            ],
+            "id": "336460700",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "Asturias is especially known for its seafood, such as fresh squid, crab, shrimp and sea bass. Salmon are caught in Asturian rivers, notably the Sella; the first fish of the season is called campanu (Bable word for campana), a bell tolled to signal the first catch.  "
+              }
+            ],
+            "id": "336460700",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "Asturian cheeses, especially Cabrales, are also famous throughout Spain and beyond; Cabrales is known for its pungent odour and strong flavour. Asturias is often called \"the land of cheeses\" (el pais de los quesos) due to the product's diversity and quality in this region. "
+              }
+            ],
+            "id": "336460700",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "Featured Dish \"Fabada\""
+              }
+            ],
+            "id": "336460700",
+            "type": "h3"
+          },
+          {
+            "children": [
+              {
+                "text": "The most famous regional dish is fabada Asturiana, a rich stew made with the Asturian typical large white beans (fabes de la Granja), pork shoulder (llacon), morcilla, chorizo, and saffron. "
+              }
+            ],
+            "id": "3078458866",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "3078458866",
+            "type": "p"
+          },
+          {
+            "caption": "Fabada",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "display": "block",
+            "id": "932870605",
+            "src": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/fabada.jpg",
+            "type": "img"
+          },
+          {
+            "children": [
+              {
+                "text": "Featured Drink \"Sidre\""
+              }
+            ],
+            "id": "3078458866",
+            "type": "h3"
+          },
+          {
+            "children": [
+              {
+                "text": "Apple groves foster the production of "
+              },
+              {
+                "strong": true,
+                "text": "the"
+              },
+              {
+                "text": " traditional alcoholic drink, a natural cider (sidra). It is a very dry cider, and unlike French or English natural ciders, uses predominantly acidic apples, rather than "
+              },
+              {
+                "strong": true,
+                "text": "sweet"
+              },
+              {
+                "text": " or bittersweet. The proportions are: acidic 40%, sub-acidic 30-25%, sweet 10-15%, bittersweet 15-20%, bitter 5%."
+              }
+            ],
+            "id": "3135765354",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "em": true,
+                "text": "Sidra"
+              },
+              {
+                "text": " is traditionally poured in by an expert server (or escanciador): the bottle is raised high above his or her head to oxygenate the brew as it moves into the glass below. A small amount (~120ml) is poured at a time (called a cuon), as it must be drunk immediately before the sidra loses its carbonation. Any sidra left in the glass is poured onto a woodchip-strewn floor or a trough along the bottom of the bar."
+              }
+            ],
+            "id": "3135765354",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "World re-known chef Jose Andres, originally from Asturias, on pouring sidre:"
+              }
+            ],
+            "id": "2510565805",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "children": [
+                  {
+                    "text": "\"To me this is probably one of the most difficult things to do. Look at how he's hitting the rim of the glass. Look at all of the oxygen they're putting. I mean, I love this tradition. He doesn't even look at the glass! C'mon! He's like a Jedi!\""
+                  }
+                ],
+                "type": "p"
+              }
+            ],
+            "id": "751086436",
+            "type": "blockquote"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "1170557855",
+            "type": "p"
+          },
+          {
+            "alt": "Pouring spanish cider",
+            "caption": "Pouring Sidre",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "display": "block",
+            "id": "80320028",
+            "src": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/pouring.jpg",
+            "type": "img"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2802225468",
+            "type": "p"
+          }
+        ],
+        "id": "3425254309",
+        "purpose": "none",
+        "selection": {
+          "anchor": {
+            "offset": 155,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 155,
+            "path": [
+              0,
+              0
+            ]
+          }
+        },
+        "type": "content"
+      },
+      {
+        "activity_id": 37,
+        "children": [],
+        "id": "4055709658",
+        "purpose": "didigetthis",
+        "type": "activity-reference"
+      },
+      {
+        "activity_id": 36,
+        "children": [],
+        "id": "517529804",
+        "purpose": "didigetthis",
+        "type": "activity-reference"
+      }
+    ]
+  },
+  "id": "35",
+  "isGraded": false,
+  "objectives": [],
+  "originalFile": "",
+  "tags": [],
+  "title": "Cuisine of Asturias",
+  "type": "Page",
+  "unresolvedReferences": []
+}

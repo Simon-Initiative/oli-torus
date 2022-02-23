@@ -1,4 +1,53 @@
 {
-  "mediaItems": [],
+  "mediaItems": [
+    {
+      "file": "",
+      "fileSize": 203654,
+      "md5": "9A0AAFA3E0130EB5AC8E976E010FD0D4",
+      "mimeType": "image/png",
+      "name": "Create Curriculum.png",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/Create Curriculum.png"
+    },
+    {
+      "file": "",
+      "fileSize": 132871,
+      "md5": "C35CD8325894EE00FC691AF3DD15CB82",
+      "mimeType": "image/jpeg",
+      "name": "fabada.jpg",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/fabada.jpg"
+    },
+    {
+      "file": "",
+      "fileSize": 1178573,
+      "md5": "712D573210361E21DD10B19B03BE64A3",
+      "mimeType": "image/png",
+      "name": "hake.png",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/hake.png"
+    },
+    {
+      "file": "",
+      "fileSize": 541444,
+      "md5": "D490334948001BF1C67EEC6EA549BC6E",
+      "mimeType": "image/jpeg",
+      "name": "lunch.jpeg",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/lunch.jpeg"
+    },
+    {
+      "file": "",
+      "fileSize": 648974,
+      "md5": "B58C9DA7CF548977C6AB3058A04AD074",
+      "mimeType": "image/jpeg",
+      "name": "padron.jpeg",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/padron.jpeg"
+    },
+    {
+      "file": "",
+      "fileSize": 67982,
+      "md5": "BB7A52C87E2D199B829A5F7231CE42A6",
+      "mimeType": "image/jpeg",
+      "name": "pouring.jpg",
+      "url": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/pouring.jpg"
+    }
+  ],
   "type": "MediaManifest"
 }

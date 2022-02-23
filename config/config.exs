@@ -189,6 +189,10 @@ config :oli, :footer,
   link_2_location: System.get_env("FOOTER_LINK_2_LOCATION", ""),
   link_2_text: System.get_env("FOOTER_LINK_2_TEXT", "")
 
+config :ex_json_schema,
+       :remote_schema_resolver,
+       {Oli.Utils.SchemaResolver, :resolve}
+
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
 

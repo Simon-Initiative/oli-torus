@@ -1,0 +1,18 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/page.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "OLI Workbook Page",
+  "description": "A workbook page that contains learning materials and activities",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource-content.schema.json"
+      }
+    }
+  },
+  "required": [
+    "model"
+  ]
+}
