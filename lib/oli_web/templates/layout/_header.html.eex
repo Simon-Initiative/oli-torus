@@ -14,7 +14,7 @@
             <%= render "_user_account_dropdown.html", assigns %>
         <% else %>
         <%= if @conn.request_path == "/" do %>
-            <%= link "Sign in", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
+            <%= link "Learner/Educator Sign In", to: Routes.pow_session_path(@conn, :new), class: "btn btn-primary my-2 my-sm-0" %>
       <% end %>
     <% end %>
     </div>
