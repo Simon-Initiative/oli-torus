@@ -23,7 +23,7 @@
     width: fit-content;
     margin: 0.5em auto;
     padding: 0;
-    border: 0.5px solid $secondary;
+    border: 0.05rem solid $secondary;
     border-radius: 0.25rem;
   }
 
@@ -142,18 +142,18 @@
     align-items: center;
 
     .google-icon-container{
-      padding-right: 6px;
+      padding-right: 0.5rem;
 
       .google-icon{
         background-color: white;
-        width: 40px;
-        padding: 4px;
+        width: 2.5rem;
+        padding: 0.2rem;
         border-radius: 0.25rem 0rem 0rem 0.25rem;
       }
     }
 
     .google-text-container{
-      padding: 0 8px;
+      padding: 0 0.5rem;
     }
   }
 }
@@ -173,16 +173,16 @@
     align-items: center;
 
     .github-icon-container{
-      padding-right: 6px;
-      padding-left: 2px;
+      padding-right: 0.5rem;
+      padding-left: 0.1rem;
 
       .github-icon{
-        font-size: 40px;
+        font-size: 2.5rem;
       }
     }
 
     .github-text-container{
-      padding: 0 8px;
+      padding: 0 0.5rem;
     }
   }
 }
