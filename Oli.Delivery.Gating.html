@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Gating — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-9126bd7f94.js"></script>
+    <script src="dist/sidebar_items-3b13da3c6c.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -284,8 +284,8 @@ Functions
   <a href="#change_gating_condition/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_gating_condition</span><span class="p" data-group-id="4044988461-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="4044988461-1">)</span><span class="w">
-</span><span class="p" data-group-id="4044988461-2">%</span><span class="nc" data-group-id="4044988461-2">Ecto.Changeset</span><span class="p" data-group-id="4044988461-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="4044988461-3">%</span><span class="nc" data-group-id="4044988461-3">GatingCondition</span><span class="p" data-group-id="4044988461-3">{</span><span class="p" data-group-id="4044988461-3">}</span><span class="p" data-group-id="4044988461-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_gating_condition</span><span class="p" data-group-id="5018536523-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="5018536523-1">)</span><span class="w">
+</span><span class="p" data-group-id="5018536523-2">%</span><span class="nc" data-group-id="5018536523-2">Ecto.Changeset</span><span class="p" data-group-id="5018536523-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="5018536523-3">%</span><span class="nc" data-group-id="5018536523-3">GatingCondition</span><span class="p" data-group-id="5018536523-3">{</span><span class="p" data-group-id="5018536523-3">}</span><span class="p" data-group-id="5018536523-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="create_gating_condition/1">
@@ -313,11 +313,11 @@ Functions
   <a href="#create_gating_condition/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="7497754012-1">(</span><span class="p" data-group-id="7497754012-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7497754012-2">}</span><span class="p" data-group-id="7497754012-1">)</span><span class="w">
-</span><span class="p" data-group-id="7497754012-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7497754012-4">%</span><span class="nc" data-group-id="7497754012-4">GatingCondition</span><span class="p" data-group-id="7497754012-4">{</span><span class="p" data-group-id="7497754012-4">}</span><span class="p" data-group-id="7497754012-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="1754647952-1">(</span><span class="p" data-group-id="1754647952-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="1754647952-2">}</span><span class="p" data-group-id="1754647952-1">)</span><span class="w">
+</span><span class="p" data-group-id="1754647952-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1754647952-4">%</span><span class="nc" data-group-id="1754647952-4">GatingCondition</span><span class="p" data-group-id="1754647952-4">{</span><span class="p" data-group-id="1754647952-4">}</span><span class="p" data-group-id="1754647952-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="7497754012-5">(</span><span class="p" data-group-id="7497754012-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7497754012-6">}</span><span class="p" data-group-id="7497754012-5">)</span><span class="w">
-</span><span class="p" data-group-id="7497754012-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7497754012-8">%</span><span class="nc" data-group-id="7497754012-8">Ecto.Changeset</span><span class="p" data-group-id="7497754012-8">{</span><span class="p" data-group-id="7497754012-8">}</span><span class="p" data-group-id="7497754012-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="1754647952-5">(</span><span class="p" data-group-id="1754647952-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1754647952-6">}</span><span class="p" data-group-id="1754647952-5">)</span><span class="w">
+</span><span class="p" data-group-id="1754647952-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1754647952-8">%</span><span class="nc" data-group-id="1754647952-8">Ecto.Changeset</span><span class="p" data-group-id="1754647952-8">{</span><span class="p" data-group-id="1754647952-8">}</span><span class="p" data-group-id="1754647952-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_gating_condition/1">
@@ -343,11 +343,11 @@ Functions
   <a href="#delete_gating_condition/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="7106122638-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="7106122638-1">)</span><span class="w">
-</span><span class="p" data-group-id="7106122638-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7106122638-3">%</span><span class="nc" data-group-id="7106122638-3">GatingCondition</span><span class="p" data-group-id="7106122638-3">{</span><span class="p" data-group-id="7106122638-3">}</span><span class="p" data-group-id="7106122638-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="3797957823-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="3797957823-1">)</span><span class="w">
+</span><span class="p" data-group-id="3797957823-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3797957823-3">%</span><span class="nc" data-group-id="3797957823-3">GatingCondition</span><span class="p" data-group-id="3797957823-3">{</span><span class="p" data-group-id="3797957823-3">}</span><span class="p" data-group-id="3797957823-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="7106122638-4">(</span><span class="n">gating_condition</span><span class="p" data-group-id="7106122638-4">)</span><span class="w">
-</span><span class="p" data-group-id="7106122638-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7106122638-6">%</span><span class="nc" data-group-id="7106122638-6">Ecto.Changeset</span><span class="p" data-group-id="7106122638-6">{</span><span class="p" data-group-id="7106122638-6">}</span><span class="p" data-group-id="7106122638-5">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="3797957823-4">(</span><span class="n">gating_condition</span><span class="p" data-group-id="3797957823-4">)</span><span class="w">
+</span><span class="p" data-group-id="3797957823-5">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="3797957823-6">%</span><span class="nc" data-group-id="3797957823-6">Ecto.Changeset</span><span class="p" data-group-id="3797957823-6">{</span><span class="p" data-group-id="3797957823-6">}</span><span class="p" data-group-id="3797957823-5">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="details/3">
@@ -419,10 +419,10 @@ have gating conditions associated with them</p>
   <a href="#get_gating_condition!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="8424893380-1">(</span><span class="mi">123</span><span class="p" data-group-id="8424893380-1">)</span><span class="w">
-</span><span class="p" data-group-id="8424893380-2">%</span><span class="nc" data-group-id="8424893380-2">GatingCondition</span><span class="p" data-group-id="8424893380-2">{</span><span class="p" data-group-id="8424893380-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="1967560101-1">(</span><span class="mi">123</span><span class="p" data-group-id="1967560101-1">)</span><span class="w">
+</span><span class="p" data-group-id="1967560101-2">%</span><span class="nc" data-group-id="1967560101-2">GatingCondition</span><span class="p" data-group-id="1967560101-2">{</span><span class="p" data-group-id="1967560101-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="8424893380-3">(</span><span class="mi">456</span><span class="p" data-group-id="8424893380-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="1967560101-3">(</span><span class="mi">456</span><span class="p" data-group-id="1967560101-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -449,8 +449,8 @@ have gating conditions associated with them</p>
   <a href="#list_gating_conditions/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="6255264488-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6255264488-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="6255264488-2">]</span><span class="p" data-group-id="6255264488-1">)</span><span class="w">
-</span><span class="p" data-group-id="6255264488-3">[</span><span class="p" data-group-id="6255264488-4">%</span><span class="nc" data-group-id="6255264488-4">GatingCondition</span><span class="p" data-group-id="6255264488-4">{</span><span class="p" data-group-id="6255264488-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="6255264488-3">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="7244987294-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7244987294-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="7244987294-2">]</span><span class="p" data-group-id="7244987294-1">)</span><span class="w">
+</span><span class="p" data-group-id="7244987294-3">[</span><span class="p" data-group-id="7244987294-4">%</span><span class="nc" data-group-id="7244987294-4">GatingCondition</span><span class="p" data-group-id="7244987294-4">{</span><span class="p" data-group-id="7244987294-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="7244987294-3">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_gating_conditions/2">
@@ -476,8 +476,8 @@ have gating conditions associated with them</p>
   <a href="#list_gating_conditions/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="8262886322-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="8262886322-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="8262886322-2">]</span><span class="p" data-group-id="8262886322-1">)</span><span class="w">
-</span><span class="p" data-group-id="8262886322-3">[</span><span class="p" data-group-id="8262886322-4">%</span><span class="nc" data-group-id="8262886322-4">GatingCondition</span><span class="p" data-group-id="8262886322-4">{</span><span class="p" data-group-id="8262886322-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="8262886322-3">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="5611280674-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5611280674-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="5611280674-2">]</span><span class="p" data-group-id="5611280674-1">)</span><span class="w">
+</span><span class="p" data-group-id="5611280674-3">[</span><span class="p" data-group-id="5611280674-4">%</span><span class="nc" data-group-id="5611280674-4">GatingCondition</span><span class="p" data-group-id="5611280674-4">{</span><span class="p" data-group-id="5611280674-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5611280674-3">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="resource_open/2">
@@ -525,11 +525,11 @@ have gating conditions associated with them</p>
   <a href="#update_gating_condition/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="2762536185-1">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2762536185-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="2762536185-2">}</span><span class="p" data-group-id="2762536185-1">)</span><span class="w">
-</span><span class="p" data-group-id="2762536185-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2762536185-4">%</span><span class="nc" data-group-id="2762536185-4">GatingCondition</span><span class="p" data-group-id="2762536185-4">{</span><span class="p" data-group-id="2762536185-4">}</span><span class="p" data-group-id="2762536185-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="9554944480-1">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9554944480-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="9554944480-2">}</span><span class="p" data-group-id="9554944480-1">)</span><span class="w">
+</span><span class="p" data-group-id="9554944480-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9554944480-4">%</span><span class="nc" data-group-id="9554944480-4">GatingCondition</span><span class="p" data-group-id="9554944480-4">{</span><span class="p" data-group-id="9554944480-4">}</span><span class="p" data-group-id="9554944480-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="2762536185-5">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2762536185-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2762536185-6">}</span><span class="p" data-group-id="2762536185-5">)</span><span class="w">
-</span><span class="p" data-group-id="2762536185-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2762536185-8">%</span><span class="nc" data-group-id="2762536185-8">Ecto.Changeset</span><span class="p" data-group-id="2762536185-8">{</span><span class="p" data-group-id="2762536185-8">}</span><span class="p" data-group-id="2762536185-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="9554944480-5">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9554944480-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="9554944480-6">}</span><span class="p" data-group-id="9554944480-5">)</span><span class="w">
+</span><span class="p" data-group-id="9554944480-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9554944480-8">%</span><span class="nc" data-group-id="9554944480-8">Ecto.Changeset</span><span class="p" data-group-id="9554944480-8">{</span><span class="p" data-group-id="9554944480-8">}</span><span class="p" data-group-id="9554944480-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_resource_gating_index/1">
