@@ -9,6 +9,8 @@ import PageReducer from './page/slice';
 import PageSlice from './page/name';
 import PartsSlice from './parts/name';
 import PartsReducer from './parts/slice';
+import ClipboardSlice from './clipboard/name';
+import ClipboardReducer from './clipboard/slice';
 
 const rootReducer = combineReducers({
   [AppSlice]: AppReducer,
@@ -16,6 +18,7 @@ const rootReducer = combineReducers({
   [PartsSlice]: PartsReducer,
   [GroupsSlice]: GroupsReducer,
   [ActivitiesSlice]: ActivitiesReducer,
+  [ClipboardSlice]: ClipboardReducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;

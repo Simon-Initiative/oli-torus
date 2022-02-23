@@ -1,3 +1,10 @@
+import {
+  copyItem,
+  pasteItem,
+  selectCopiedItem,
+  selectCopiedType,
+  CopyableItemTypes,
+} from 'apps/authoring/store/clipboard/slice';
 import { usePrevious } from 'components/hooks/usePrevious';
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -19,6 +26,7 @@ import { saveActivity } from '../../store/activities/actions/saveActivity';
 import { selectCurrentRule, setCurrentRule } from '../../store/app/slice';
 import ContextAwareToggle from '../Accordion/ContextAwareToggle';
 import ConfirmDelete from '../Modal/DeleteConfirmationModal';
+import set from 'lodash/set';
 
 export interface AdaptiveRule {
   id?: string;
@@ -30,6 +38,10 @@ export interface AdaptiveRule {
   correct: boolean;
   conditions: Record<string, unknown>;
   event: Record<string, unknown>;
+}
+
+export interface InitState {
+  facts: any[];
 }
 
 const AdaptiveRulesList: React.FC = () => {
@@ -51,7 +63,12 @@ const AdaptiveRulesList: React.FC = () => {
     sequenceTypeLabel = 'screen';
   }
 
-  const handleSelectRule = (rule?: AdaptiveRule, isInitState?: boolean) => {
+  const copied = useSelector(selectCopiedItem);
+  const copiedType = useSelector(selectCopiedType);
+
+  useEffect(() => console.log(copied), [copied]);
+
+  const handleSelectRule = (rule?: AdaptiveRule | InitState, isInitState?: boolean) => {
     if (isInitState) {
       // TODO: refactor initState string to enum
       dispatch(setCurrentRule({ currentRule: 'initState' }));
@@ -107,6 +124,38 @@ const AdaptiveRulesList: React.FC = () => {
     activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
     debounceSaveChanges(activityClone);
     handleSelectRule(newRule);
+  };
+
+  const handleCopyRule = async (rule: AdaptiveRule | 'initState') => {
+    const copyRule =
+      rule === 'initState' ? { facts: currentActivity?.content?.custom?.facts } : rule;
+
+    const { payload: newRule } = await dispatch<any>(duplicateRule(copyRule));
+
+    await dispatch<any>(
+      copyItem({ type: rule === 'initState' ? 'initState' : 'rule', item: newRule }),
+    );
+  };
+
+  const handlePasteRule = async (
+    item: AdaptiveRule | InitState,
+    type: CopyableItemTypes | null,
+    index: number | 'initState',
+  ) => {
+    const copyRule = copied;
+    let activityClone: IActivity = clone(currentActivity);
+    const { payload: copy } = await dispatch<any>(copyItem({ type: 'initState', item: copyRule }));
+    if (type === 'initState') {
+      activityClone = set(activityClone, 'content.custom.facts', copied.facts);
+    } else if (typeof index === 'number') {
+      activityClone.authoring.rules.splice(index + 1, 0, item);
+      activityClone.authoring.rules = reorderDefaultRules(activityClone.authoring.rules);
+    }
+
+    await dispatch<any>(pasteItem({}));
+
+    debounceSaveChanges(activityClone);
+    handleSelectRule(item, type === 'initState');
   };
 
   const handleDeleteRule = (rule: AdaptiveRule) => {
@@ -206,9 +255,9 @@ const AdaptiveRulesList: React.FC = () => {
 
   const RuleItemContextMenu = (props: {
     id: string;
-    item: AdaptiveRule;
-    index: number;
-    arr: AdaptiveRule[];
+    item: AdaptiveRule | 'initState';
+    index: number | 'initState';
+    arr?: AdaptiveRule[];
   }) => {
     const { id, item, index, arr } = props;
 
@@ -233,78 +282,111 @@ const AdaptiveRulesList: React.FC = () => {
           className="dropdown-menu"
           aria-labelledby={`rule-list-item-${id}-context-trigger`}
         >
-          <button
-            className="dropdown-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-              setRuleToEdit(item);
-            }}
-          >
-            <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
-          </button>
-          {!item.default && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMoveRule(index, 'down');
-                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-              }}
-            >
-              <i className="fas fa-arrow-down mr-2" /> Move Down
-            </button>
-          )}
-          {!item.default && (
-            <>
-              <div className="dropdown-divider"></div>
+          <>
+            {item !== 'initState' && (
               <button
                 className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDuplicateRule(item, index);
                   ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                  setRuleToEdit(item);
                 }}
               >
-                <i className="fas fa-copy mr-2" /> Duplicate
+                <i className="fas fa-i-cursor align-text-top mr-2" /> Rename
               </button>
+            )}
+          </>
+          {(item === 'initState' || !item.default || (item.default && item.correct)) && (
+            <>
               <button
-                className="dropdown-item text-danger"
+                className="dropdown-item"
                 onClick={(e) => {
                   e.stopPropagation();
+                  handleCopyRule(item);
                   ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-                  setItemToDelete(item);
-                  setShowConfirmDelete(true);
                 }}
               >
-                <i className="fas fa-trash mr-2" /> Delete
+                <i className="fas fa-copy mr-2" /> Copy
               </button>
-              <div className="dropdown-divider"></div>
+              <button
+                className="dropdown-item"
+                disabled={!copied}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePasteRule(copied, copiedType, index);
+                  ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                }}
+              >
+                <i className="fas fa-clipboard mr-2" /> Insert copied rule
+              </button>
             </>
           )}
-          {index > 1 && !item.default && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMoveRule(index, 'up');
-                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-              }}
-            >
-              <i className="fas fa-arrow-up mr-2" /> Move Up
-            </button>
-          )}
-          {index < arr.length - 2 && !item.default && (
-            <button
-              className="dropdown-item"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleMoveRule(index, 'down');
-                ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
-              }}
-            >
-              <i className="fas fa-arrow-down mr-2" /> Move Down
-            </button>
+          {item !== 'initState' && index !== 'initState' && (
+            <>
+              {!item.default && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveRule(index, 'down');
+                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                  }}
+                >
+                  <i className="fas fa-arrow-down mr-2" /> Move Down
+                </button>
+              )}
+              {!item.default && (
+                <>
+                  <div className="dropdown-divider"></div>
+                  <button
+                    className="dropdown-item"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDuplicateRule(item, index);
+                      ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                    }}
+                  >
+                    <i className="fas fa-copy mr-2" /> Duplicate
+                  </button>
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                      setItemToDelete(item);
+                      setShowConfirmDelete(true);
+                    }}
+                  >
+                    <i className="fas fa-trash mr-2" /> Delete
+                  </button>
+                  <div className="dropdown-divider"></div>
+                </>
+              )}
+              {index > 1 && !item.default && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveRule(index, 'up');
+                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                  }}
+                >
+                  <i className="fas fa-arrow-up mr-2" /> Move Up
+                </button>
+              )}
+              {arr && index < arr.length - 2 && !item.default && (
+                <button
+                  className="dropdown-item"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveRule(index, 'down');
+                    ($(`#rule-list-item-${id}-context-menu`) as any).dropdown('toggle');
+                  }}
+                >
+                  <i className="fas fa-arrow-down mr-2" /> Move Down
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -379,6 +461,14 @@ const AdaptiveRulesList: React.FC = () => {
                 >
                   <i className="fa fa-times mr-2" /> New Incorrect Rule
                 </button>
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    handlePasteRule(copied, copiedType, 0);
+                  }}
+                >
+                  <i className="fas fa-clipboard mr-2" /> Insert copied rule
+                </button>
               </div>
             </div>
           </OverlayTrigger>
@@ -400,6 +490,7 @@ const AdaptiveRulesList: React.FC = () => {
                     <span className="title font-italic">Initial State</span>
                   </span>
                 </div>
+                <RuleItemContextMenu id={guid()} item={'initState'} index={'initState'} />
               </div>
             </ListGroup.Item>
           )}
