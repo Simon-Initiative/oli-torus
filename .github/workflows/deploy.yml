@@ -10,6 +10,11 @@ jobs:
   deploy-release:
     runs-on: ubuntu-latest
 
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+      deploy_host: ${{ steps.info.outputs.deploy_host }}
+
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -35,6 +40,9 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
 
+    environment:
+
+
     steps:
       - name: 🧾 Build info
         id: info
@@ -44,3 +52,15 @@ jobs:
           echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
 
       - run: echo "deploying ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} to ${{ steps.info.outputs.deploy_host }}"
+
+  deployment:
+    runs-on: ubuntu-latest
+    needs: deploy-release
+
+    environment:
+      app_version: ${{ needs.deploy-release.outputs.app_version }}
+      sha_short: ${{ needs.deploy-release.outputs.sha_short }}
+      deploy_host: ${{ needs.deploy-release.outputs.deploy_host }}
+
+    steps:
+      - run: echo "deploying ${{ needs.deploy-release.outputs.sha_short }}"
