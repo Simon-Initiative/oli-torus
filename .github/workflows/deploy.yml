@@ -43,6 +43,7 @@ jobs:
 
     environment:
       name: ${{ needs.deploy-release.outputs.deploy_host }}
+      url: ${{ needs.deploy-release.outputs.deploy_host }}
 
     steps:
       - run: echo "deploying ${{ github.sha }}"
