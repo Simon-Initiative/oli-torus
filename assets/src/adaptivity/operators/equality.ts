@@ -88,7 +88,7 @@ export const equalWithToleranceOperator = (
     return false;
   }
   if (Number.isNaN(modifiedFactValue)) {
-    return false;
+    return calledFromNotEqualToToleranceOperator ? true : false;
   }
   const [baseValue, tolerance] = arrValue;
 
