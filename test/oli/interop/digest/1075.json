@@ -1,0 +1,141 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "1290850083",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "2547880742"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "1009820392",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "1358400294"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "1996882609",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "2060948831"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": ""
+                        }
+                      ],
+                      "id": "996045821",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": null
+                },
+                "id": "740082385"
+              },
+              "id": "3403914227",
+              "rule": "input like {answerj}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": ""
+                        }
+                      ],
+                      "id": "278096631",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": null
+                },
+                "id": "1248615824"
+              },
+              "id": "2996671916",
+              "rule": "input like {.*}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "",
+      "transformations": []
+    },
+    "inputType": "text",
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2042882888",
+            "type": "p"
+          }
+        ],
+        "selection": null
+      },
+      "id": "2682336924"
+    }
+  },
+  "id": "1075",
+  "objectives": {
+    "1": []
+  },
+  "originalFile": "",
+  "subType": "oli_short_answer",
+  "tags": [],
+  "title": "Single Response",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

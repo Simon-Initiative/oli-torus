@@ -1,0 +1,53 @@
+{
+  "content": {
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "a"
+              }
+            ],
+            "id": "2720948986",
+            "type": "p"
+          }
+        ],
+        "id": "203946985",
+        "purpose": "none",
+        "selection": {
+          "anchor": {
+            "offset": 1,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 1,
+            "path": [
+              0,
+              0
+            ]
+          }
+        },
+        "type": "content"
+      },
+      {
+        "activity_id": 1075,
+        "children": [],
+        "id": "1056296288",
+        "purpose": "none",
+        "type": "activity-reference"
+      }
+    ]
+  },
+  "id": "1074",
+  "isGraded": false,
+  "objectives": [],
+  "originalFile": "",
+  "tags": [],
+  "title": "New Page",
+  "type": "Page",
+  "unresolvedReferences": []
+}

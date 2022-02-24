@@ -1,0 +1,35 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/group-content.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Structured Content",
+  "description": "An ordered set of structured content",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "content"
+    },
+    "purpose": {
+      "enum": [
+        "none",
+        "example",
+        "learnmore",
+        "manystudentswonder"
+      ]
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/model-element.schema.json"
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "purpose",
+    "children"
+  ]
+}

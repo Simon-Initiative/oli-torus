@@ -16,7 +16,7 @@ defmodule OliWeb.IngestController do
 
     case Ingest.ingest(path_upload.path, author) do
       {:ok, project} -> redirect(conn, to: Routes.project_path(conn, :overview, project))
-      error -> render_ingest_page(conn, error: Ingest.prettify_error(error))
+      error -> render_ingest_page(conn, error: error)
     end
   end
 

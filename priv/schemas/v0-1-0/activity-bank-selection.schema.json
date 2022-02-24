@@ -1,0 +1,135 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Activity Bank Selection",
+  "description": "An activity bank selection",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "selection"
+    },
+    "id": {
+      "type": "string"
+    },
+    "logic": {
+      "$ref": "#/$defs/logic"
+    },
+    "count": {
+      "type": "integer"
+    },
+    "purpose": {
+      "enum": [
+        "none",
+        "checkpoint",
+        "didigetthis",
+        "learnbydoing"
+      ]
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "logic",
+    "count",
+    "purpose"
+  ],
+  "$defs": {
+    "logic": {
+      "type": "object",
+      "properties": {
+        "conditions": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/expression"
+            },
+            {
+              "$ref": "#/$defs/clause"
+            }
+          ]
+        }
+      }
+    },
+    "expression": {
+      "type": "object",
+      "properties": {
+        "fact": {
+          "enum": [
+            "objectives",
+            "tags",
+            "text",
+            "type"
+          ]
+        },
+        "operator": {
+          "enum": [
+            "contains",
+            "does_not_contain",
+            "equals",
+            "does_not_equal"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/value"
+        }
+      },
+      "required": [
+        "fact",
+        "operator",
+        "value"
+      ]
+    },
+    "clause": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "enum": [
+            "all",
+            "any"
+          ]
+        },
+        "children": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/clause"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/expression"
+              }
+            }
+          ]
+        }
+      },
+      "required": [
+        "operator",
+        "children"
+      ]
+    },
+    "value": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        {
+          "type": "string"
+        }
+      ]
+    }
+  }
+}

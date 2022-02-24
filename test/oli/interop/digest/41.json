@@ -1,0 +1,278 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "2597310472",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "1665518650"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "357958185",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "1271043648"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "430533174",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "4136728565"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Correct"
+                        }
+                      ],
+                      "id": "3396636133",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 7,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "1183740206"
+              },
+              "id": "3491909280",
+              "rule": "input like {29309909}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": ""
+                        }
+                      ],
+                      "id": "3016264987",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": null
+                },
+                "id": "920625949"
+              },
+              "id": "2643918440",
+              "rule": "input like {.*}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Which of the following is a dish that is famous in Galicia? ",
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "1128623449",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ],
+      "version": 2
+    },
+    "choices": [
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Pulpo a la Gallega"
+                }
+              ],
+              "id": "1475307891",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 18,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 18,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "29309909"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Fabada"
+                }
+              ],
+              "id": "1522786311",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 6,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 6,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "566882343"
+      },
+      {
+        "content": {
+          "model": [
+            {
+              "children": [
+                {
+                  "text": "Paella"
+                }
+              ],
+              "id": "3253185566",
+              "type": "p"
+            }
+          ],
+          "selection": {
+            "anchor": {
+              "offset": 6,
+              "path": [
+                0,
+                0
+              ]
+            },
+            "focus": {
+              "offset": 6,
+              "path": [
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "id": "316726729"
+      }
+    ],
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Which of the following is a dish that is famous in Galicia? "
+              }
+            ],
+            "id": "3326506773",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 60,
+            "path": [
+              0,
+              0
+            ]
+          },
+          "focus": {
+            "offset": 60,
+            "path": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "id": "3750353007"
+    }
+  },
+  "id": "41",
+  "objectives": {
+    "1": [
+      "22"
+    ]
+  },
+  "originalFile": "",
+  "subType": "oli_multiple_choice",
+  "tags": [],
+  "title": "MCQ Galician Dish",
+  "type": "Activity",
+  "unresolvedReferences": []
+}
