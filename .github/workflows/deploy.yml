@@ -32,7 +32,7 @@ jobs:
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
 
-  deployment-info:
+  deployment:
     runs-on: ubuntu-latest
 
     steps:

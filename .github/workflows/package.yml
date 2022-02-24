@@ -94,7 +94,7 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: doc # The folder the action should deploy.
 
-  deployment-info:
+  deployment:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest'
 
