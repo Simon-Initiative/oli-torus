@@ -108,7 +108,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
       let borderColor = 'transparent';
       if (palette.lineColor! >= 0) {
         borderColor = chroma(palette.lineColor || 0)
-          .alpha(palette.lineAlpha || 0)
+          .alpha(palette.lineAlpha?.toString() === 'NaN' ? 0 : palette.lineAlpha || 0)
           .css();
       }
       paletteStyles.borderColor = borderColor;
@@ -116,7 +116,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
       let bgColor = 'transparent';
       if (palette.fillColor! >= 0) {
         bgColor = chroma(palette.fillColor || 0)
-          .alpha(palette.fillAlpha || 0)
+          .alpha(palette.fillAlpha?.toString() === 'NaN' ? 0 : palette.fillAlpha || 0)
           .css();
       }
       paletteStyles.backgroundColor = bgColor;
