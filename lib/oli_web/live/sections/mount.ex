@@ -33,8 +33,9 @@ defmodule OliWeb.Sections.Mount do
             ensure_instructor(section, user_id)
 
           {user_id, author_id} ->
-            case ensure_instructor(section, user_id) do
-              {:error, _} -> ensure_admin(section, author_id)
+            # prioritize system admin over instructor
+            case ensure_admin(section, author_id) do
+              {:error, _} -> ensure_instructor(section, user_id)
               e -> e
             end
         end

@@ -92,7 +92,30 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+      {:ok, view, html} = live(conn, live_view_overview_route(section.slug))
+
+      refute html =~
+               "<nav aria-label=\"breadcrumb"
+
+      assert render(view) =~
+               "Overview"
+    end
+  end
+
+  describe "admin is prioritized over instructor when both logged in" do
+    setup [:admin_conn, :user_conn]
+
+    test "loads correctly", %{
+      conn: conn,
+      user: user
+    } do
+      section = insert(:section, %{type: :enrollable})
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, html} = live(conn, live_view_overview_route(section.slug))
+
+      assert html =~
+               "<nav aria-label=\"breadcrumb"
 
       assert render(view) =~
                "Overview"
