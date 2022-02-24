@@ -41,10 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: deploy-release
 
-    env:
-      app_version: ${{ needs.deploy-release.outputs.app_version }}
-      sha_short: ${{ needs.deploy-release.outputs.sha_short }}
-      deploy_host: ${{ needs.deploy-release.outputs.deploy_host }}
+    environment:
+      name: ${{ needs.deploy-release.outputs.deploy_host }}
 
     steps:
       - run: echo "deploying ${{ github.sha }}"

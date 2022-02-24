@@ -105,10 +105,8 @@ jobs:
     needs: package-deploy
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest'
 
-    env:
-      app_version: ${{ needs.package-deploy.outputs.app_version }}
-      sha_short: ${{ needs.package-deploy.outputs.sha_short }}
-      deploy_host: ${{ needs.package-deploy.outputs.deploy_host }}
+    environment:
+      name: ${{ needs.package-deploy.outputs.deploy_host }}
 
     steps:
       - run: echo "deploying ${{ github.sha }}"
