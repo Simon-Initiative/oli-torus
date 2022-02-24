@@ -31,3 +31,15 @@ jobs:
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
+
+  deployment-info:
+    runs-on: ubuntu-latest
+      - name: 🧾 Build info
+        id: info
+        run: |
+          echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+          echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
+          echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
+
+    steps:
+      - run: echo "deploying ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} to ${{ steps.info.outputs.deploy_host }}"
