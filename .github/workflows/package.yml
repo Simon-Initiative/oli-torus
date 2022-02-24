@@ -96,7 +96,6 @@ jobs:
 
   deployment-info:
     runs-on: ubuntu-latest
-    # only deploy docs if the workflow is running on the master branch
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest'
 
       - name: 🧾 Build info
