@@ -372,7 +372,7 @@ export const extractExpressionFromText = (text: string) => {
 // extract all expressions from a string
 export const extractAllExpressionsFromText = (text: string): string[] => {
   const expressions = [];
-  if (text.indexOf('{') !== -1 && text.indexOf('}') !== -1) {
+  if (text.toString().indexOf('{') !== -1 && text.toString().indexOf('}') !== -1) {
     const expr = extractExpressionFromText(text);
     const rest = text.substring(text.indexOf(expr) + expr.length + 1);
     expressions.push(expr);
