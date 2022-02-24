@@ -34,6 +34,8 @@ jobs:
 
   deployment-info:
     runs-on: ubuntu-latest
+
+    steps:
       - name: 🧾 Build info
         id: info
         run: |
@@ -41,5 +43,4 @@ jobs:
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
           echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
 
-    steps:
       - run: echo "deploying ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }} to ${{ steps.info.outputs.deploy_host }}"
