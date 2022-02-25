@@ -9,7 +9,10 @@
       "const": "activity-reference"
     },
     "activity_id": {
-      "type": ["integer", "string"]
+      "type": [
+        "integer",
+        "string"
+      ]
     },
     "purpose": {
       "enum": [
