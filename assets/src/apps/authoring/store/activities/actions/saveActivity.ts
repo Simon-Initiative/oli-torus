@@ -18,6 +18,7 @@ import { createUndoAction } from '../../history/slice';
 import cloneDeep from 'lodash/cloneDeep';
 import { updateSequenceItemFromActivity } from '../../groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { selectCurrentGroup } from 'apps/delivery/store/features/groups/slice';
+import { diff } from 'deep-object-diff';
 
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
@@ -104,7 +105,12 @@ export const bulkSaveActivity = createAsyncThunk(
     const currentActivities = selectAllActivities(rootState);
     const isReadOnlyMode = selectReadOnly(rootState);
 
-    dispatch(upsertActivities({ activities }));
+    console.log(
+      'bulkSaveActivity',
+      currentActivities,
+      activities,
+      diff(currentActivities, activities),
+    );
 
     if (!isReadOnlyMode) {
       const updates: BulkActivityUpdate[] = activities.map((activity) => {
@@ -129,13 +135,15 @@ export const bulkSaveActivity = createAsyncThunk(
       });
       await bulkEdit(projectSlug, pageResourceId, updates);
       if (undoable) {
-        dispatch(
+        await dispatch(
           createUndoAction({
-            undo: bulkSaveActivity({ activities: cloneDeep(currentActivities) }),
-            redo: bulkSaveActivity({ activities: cloneDeep(activities) }),
+            undo: [bulkSaveActivity({ activities: cloneDeep(currentActivities) })],
+            redo: [bulkSaveActivity({ activities: cloneDeep(activities) })],
           }),
         );
       }
+
+      dispatch(upsertActivities({ activities }));
     }
     return;
   },
