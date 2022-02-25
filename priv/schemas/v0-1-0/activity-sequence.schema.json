@@ -10,7 +10,10 @@
     },
     "custom": {},
     "activity_id": {
-      "type": "integer"
+      "type": [
+        "integer",
+        "string"
+      ]
     }
   },
   "required": [
