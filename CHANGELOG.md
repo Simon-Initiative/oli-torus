@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.18.4 (2022-01-11)
+## Unreleased
+
+### Bug Fixes
+### Enhancements
+
+
+## 0.18.4 (2022-02-24)
 
 ### Bug Fixes
 
@@ -26,8 +32,10 @@
   - Check out a copy of the repo https://github.com/Simon-Initiative/torus_superactivity to a local folder
   - Configure torus oli.env file to include a variable named SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above, e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
   - Ensure the folder is readable to the running torus instance
-- The following environment configs are now available:
 
+**Environment Configs**
+
+The following environment configs are now available:
 ```
 SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legacy activities
 ```

@@ -88,14 +88,14 @@ export const equalWithToleranceOperator = (
     return false;
   }
   if (Number.isNaN(modifiedFactValue)) {
-    return false;
+    return calledFromNotEqualToToleranceOperator;
   }
   const [baseValue, tolerance] = arrValue;
 
   //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
   //so `equalWithToleranceOperator/notEqualWithToleranceOperator 32.06` should not fire true if the number is a NaN.
   if (typeof baseValue === 'number' && Number.isNaN(factValue)) {
-    return calledFromNotEqualToToleranceOperator ? true : false;
+    return calledFromNotEqualToToleranceOperator;
   }
   const valuesWithTolerance = getValueWithTolerance(baseValue, baseValue, tolerance);
   const isInRange =

@@ -200,7 +200,7 @@ const TextFlowAuthor: React.FC<AuthorPartComponentProps<TextFlowModel>> = (props
       let bgColor = 'transparent';
       if (palette.fillColor! >= 0) {
         bgColor = chroma(palette.fillColor || 0)
-          .alpha(palette.fillAlpha || 0)
+          .alpha(palette.fillAlpha?.toString() === 'NaN' ? 0 : palette.fillAlpha || 0)
           .css();
       }
       styles.backgroundColor = bgColor;
