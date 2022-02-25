@@ -19,6 +19,7 @@ defmodule Oli.Delivery.Gating do
         %Section{id: section_id, slug: section_slug},
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
+        parent_gate_id,
         text_search \\ nil
       ) do
     filter_by_text =
@@ -32,6 +33,19 @@ defmodule Oli.Delivery.Gating do
             ilike(u.email, ^"%#{text_search}%") or
             ilike(u.given_name, ^"%#{text_search}%") or
             ilike(u.family_name, ^"%#{text_search}%")
+        )
+      end
+
+    filter_by_parent_gate_id =
+      if is_nil(parent_gate_id) do
+        dynamic(
+          [gc, _, _],
+          is_nil(gc.parent_id)
+        )
+      else
+        dynamic(
+          [gc, _, _],
+          gc.parent_id == ^parent_gate_id
         )
       end
 
@@ -49,9 +63,11 @@ defmodule Oli.Delivery.Gating do
         on: rev.resource_id == gc.resource_id
       )
       |> where(^filter_by_text)
-      |> where([gc, _], gc.section_id == ^section_id)
+      |> where(^filter_by_parent_gate_id)
+      |> where([gc, _, _], gc.section_id == ^section_id)
       |> limit(^limit)
       |> offset(^offset)
+      |> preload([gc, _, _], [:user])
       |> select_merge([gc, _, rev], %{
         total_count: fragment("count(*) OVER()"),
         revision: rev
@@ -59,13 +75,17 @@ defmodule Oli.Delivery.Gating do
 
     query =
       case field do
-        :title -> order_by(query, [_gc, _u, rev], {^direction, rev.title})
-        :user -> order_by(query, [gc_, u, _rev], {^direction, u.name})
+        :title -> order_by(query, [_gc, _u, rev, _], {^direction, rev.title})
+        :user -> order_by(query, [gc_, u, _rev, _], {^direction, u.name})
         :details -> query
-        _ -> order_by(query, [gc, _u, _rev], {^direction, field(gc, ^field)})
+        _ -> order_by(query, [gc, _u, _rev, _], {^direction, field(gc, ^field)})
       end
 
     Repo.all(query)
+  end
+
+  def count_exceptions(gate_id) do
+    Repo.one(from gc in GatingCondition, select: count("*"), where: gc.parent_id == ^gate_id)
   end
 
   @doc """
@@ -156,19 +176,33 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
-  Deletes a gating_condition.
+  Deletes a gating_condition, including any student-specific exceptions.
 
   ## Examples
 
       iex> delete_gating_condition(gating_condition)
-      {:ok, %GatingCondition{}}
+      {:ok, %GatingCondition{}, 1}
+
+      iex> delete_gating_condition(gating_condition_with_exceptions)
+      {:ok, %GatingCondition{}, 5}
 
       iex> delete_gating_condition(gating_condition)
       {:error, %Ecto.Changeset{}}
 
   """
+  def delete_gating_condition(%GatingCondition{id: id, parent_id: nil} = gating_condition) do
+    case from(gc in GatingCondition, where: gc.id == ^id or gc.parent_id == ^id)
+         |> Repo.delete_all() do
+      {0, _} -> {:error, "Could not delete gating condition"}
+      {count, _} -> {:ok, gating_condition, count}
+    end
+  end
+
   def delete_gating_condition(%GatingCondition{} = gating_condition) do
-    Repo.delete(gating_condition)
+    case Repo.delete(gating_condition) do
+      {:ok, gc} -> {:ok, gc, 1}
+      e -> e
+    end
   end
 
   @doc """

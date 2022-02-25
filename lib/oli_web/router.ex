@@ -731,7 +731,18 @@ defmodule OliWeb.Router do
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
-    live("/:section_slug/gating_and_scheduling/:id/edit", Sections.GatingAndScheduling.Edit)
+
+    live(
+      "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+      Sections.GatingAndScheduling.New
+    )
+
+    live("/:section_slug/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
+
+    live(
+      "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+      Sections.GatingAndScheduling
+    )
   end
 
   ### Sections - Enrollment

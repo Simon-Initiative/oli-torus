@@ -150,7 +150,7 @@ defmodule Oli.Delivery.GatingTest do
       gating_condition =
         gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
 
-      assert {:ok, %GatingCondition{}} = Gating.delete_gating_condition(gating_condition)
+      assert {:ok, %GatingCondition{}, 1} = Gating.delete_gating_condition(gating_condition)
 
       assert_raise Ecto.NoResultsError, fn ->
         Gating.get_gating_condition!(gating_condition.id)
