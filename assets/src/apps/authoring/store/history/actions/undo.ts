@@ -8,6 +8,9 @@ export const undo = createAsyncThunk(
   async (payload: null, { getState, dispatch }) => {
     const rootState = getState() as any;
     const present = selectPresentAction(rootState) || { undo: [] };
+
+    console.log(present);
+
     reverse(present.undo).forEach((a: PayloadAction) => {
       dispatch(a);
     });
