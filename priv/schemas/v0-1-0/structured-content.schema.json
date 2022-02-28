@@ -1,5 +1,5 @@
 {
-  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/group-content.schema.json",
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/structured-content.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Structured Content",
   "description": "An ordered set of structured content",
