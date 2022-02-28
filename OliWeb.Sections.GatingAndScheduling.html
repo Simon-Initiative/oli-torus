@@ -10,7 +10,7 @@
     <title>OliWeb.Sections.GatingAndScheduling — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b93e282dad.js"></script>
+    <script src="dist/sidebar_items-8f861a77c9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -123,7 +123,7 @@ when the client connects, or reconnects to the stateful view.
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#assign_defaults/3">assign_defaults(socket, section, session)</a>
+    <a href="#assign_defaults/5">assign_defaults(socket, section, session, parent_gate, title)</a>
 
   </div>
 
@@ -131,6 +131,13 @@ when the client connects, or reconnects to the stateful view.
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#breadcrumb/2">breadcrumb(previous, section)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#breadcrumb_exceptions/3">breadcrumb_exceptions(previous, section, parent_gate)</a>
 
   </div>
 
@@ -151,6 +158,13 @@ when the client connects, or reconnects to the stateful view.
   </div>
 
     <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_params/3"><code class="inline">Phoenix.LiveView.handle_params/3</code></a>.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#hide_modal/1">hide_modal(socket)</a>
+
+  </div>
 
 </div>
 <div class="summary-row">
@@ -180,7 +194,14 @@ when the client connects, or reconnects to the stateful view.
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#set_breadcrumbs/1">set_breadcrumbs(section)</a>
+    <a href="#render_modal/1">render_modal(assigns)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#set_breadcrumbs/2">set_breadcrumbs(section, parent_gate)</a>
 
   </div>
 
@@ -200,16 +221,16 @@ when the client connects, or reconnects to the stateful view.
 Functions
           </h1>
           <div class="functions-list">
-<section class="detail" id="assign_defaults/3">
+<section class="detail" id="assign_defaults/5">
 
   <div class="detail-header">
-    <a href="#assign_defaults/3" class="detail-link" title="Link to this function">
+    <a href="#assign_defaults/5" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">assign_defaults(socket, section, session)</h1>
+    <h1 class="signature">assign_defaults(socket, section, session, parent_gate, title)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L52" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L95" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -231,7 +252,29 @@ Functions
     </a>
     <h1 class="signature">breadcrumb(previous, section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L24" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L26" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="breadcrumb_exceptions/3">
+
+  <div class="detail-header">
+    <a href="#breadcrumb_exceptions/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">breadcrumb_exceptions(previous, section, parent_gate)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L40" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -253,7 +296,7 @@ Functions
     </a>
     <h1 class="signature">handle_event(event, params, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L142" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L3" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -275,7 +318,7 @@ Functions
     </a>
     <h1 class="signature">handle_params(params, _, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L89" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L138" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -286,6 +329,28 @@ Functions
   <section class="docstring">
 
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:handle_params/3"><code class="inline">Phoenix.LiveView.handle_params/3</code></a>.</p>
+  </section>
+</section>
+<section class="detail" id="hide_modal/1">
+
+  <div class="detail-header">
+    <a href="#hide_modal/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">hide_modal(socket)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 <section class="detail" id="mount/3">
@@ -319,7 +384,7 @@ Functions
     </a>
     <h1 class="signature">patch_with(socket, changes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L150" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L231" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -341,7 +406,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L119" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -354,16 +419,38 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveView.html#c:render/1"><code class="inline">Phoenix.LiveView.render/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="set_breadcrumbs/1">
+<section class="detail" id="render_modal/1">
 
   <div class="detail-header">
-    <a href="#set_breadcrumbs/1" class="detail-link" title="Link to this function">
+    <a href="#render_modal/1" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">set_breadcrumbs(section)</h1>
+    <h1 class="signature">render_modal(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L19" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="set_breadcrumbs/2">
+
+  <div class="detail-header">
+    <a href="#set_breadcrumbs/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">set_breadcrumbs(section, parent_gate)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling.ex#L20" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

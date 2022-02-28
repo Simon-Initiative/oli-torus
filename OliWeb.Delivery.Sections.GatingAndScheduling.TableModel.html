@@ -10,7 +10,7 @@
     <title>OliWeb.Delivery.Sections.GatingAndScheduling.TableModel — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b93e282dad.js"></script>
+    <script src="dist/sidebar_items-8f861a77c9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -130,7 +130,7 @@ OliWeb.Delivery.Sections.GatingAndScheduling.TableModel <small class="app-vsn">(
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#new/3">new(context, gating_condition_rows, section)</a>
+    <a href="#new/4">new(context, gating_condition_rows, section, is_parent_gate?)</a>
 
   </div>
 
@@ -142,13 +142,6 @@ OliWeb.Delivery.Sections.GatingAndScheduling.TableModel <small class="app-vsn">(
   </div>
 
     <div class="summary-synopsis"><p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p></div>
-
-</div>
-<div class="summary-row">
-  <div class="summary-signature">
-    <a href="#render_actions_column/3">render_actions_column(assigns, gating_condition, _)</a>
-
-  </div>
 
 </div>
 <div class="summary-row">
@@ -168,6 +161,13 @@ OliWeb.Delivery.Sections.GatingAndScheduling.TableModel <small class="app-vsn">(
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#render_type_column/3">render_type_column(assigns, gating_condition, _)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#render_user_column/3">render_user_column(assigns, gating_condition, _)</a>
 
   </div>
 
@@ -209,16 +209,16 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:mount/1"><code class="inline">Phoenix.LiveComponent.mount/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="new/3">
+<section class="detail" id="new/4">
 
   <div class="detail-header">
-    <a href="#new/3" class="detail-link" title="Link to this function">
+    <a href="#new/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">new(context, gating_condition_rows, section)</h1>
+    <h1 class="signature">new(context, gating_condition_rows, section, is_parent_gate?)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L17" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -240,7 +240,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L11" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L10" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -253,28 +253,6 @@ Functions
 <p>Callback implementation for <a href="https://hexdocs.pm/phoenix_live_view/0.16.2/Phoenix.LiveComponent.html#c:render/1"><code class="inline">Phoenix.LiveComponent.render/1</code></a>.</p>
   </section>
 </section>
-<section class="detail" id="render_actions_column/3">
-
-  <div class="detail-header">
-    <a href="#render_actions_column/3" class="detail-link" title="Link to this function">
-      <span class="icon-link" aria-hidden="true"></span>
-      <span class="sr-only">Link to this function</span>
-    </a>
-    <h1 class="signature">render_actions_column(assigns, gating_condition, _)</h1>
-
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L116" class="view-source" rel="help" title="View Source">
-       <span class="icon-code" aria-hidden="true"></span>
-       <span class="sr-only">View Source</span>
-     </a>
-
-
-  </div>
-
-  <section class="docstring">
-
-
-  </section>
-</section>
 <section class="detail" id="render_details_column/3">
 
   <div class="detail-header">
@@ -284,7 +262,7 @@ Functions
     </a>
     <h1 class="signature">render_details_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L80" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L85" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -306,7 +284,7 @@ Functions
     </a>
     <h1 class="signature">render_resource_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L56" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L60" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -328,7 +306,29 @@ Functions
     </a>
     <h1 class="signature">render_type_column(assigns, gating_condition, _)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L68" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L73" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="render_user_column/3">
+
+  <div class="detail-header">
+    <a href="#render_user_column/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">render_user_column(assigns, gating_condition, _)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/table_model.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

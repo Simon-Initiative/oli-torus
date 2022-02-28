@@ -10,7 +10,7 @@
     <title>OliWeb.Sections.GatingAndScheduling.Form — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-b93e282dad.js"></script>
+    <script src="dist/sidebar_items-8f861a77c9.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -102,7 +102,7 @@ OliWeb.Sections.GatingAndScheduling.Form <small class="app-vsn">(OLI Torus v0.18
   Properties
 </h2>
 <ul><li><strong>id</strong> <em>:string, required: true</em> - The id of the live component (required by LiveView for stateful components).
-.</li><li><strong>section</strong> <em>:struct, required: true</em></li><li><strong>gating_condition</strong> <em>:map, required: true</em></li><li><strong>create_or_update</strong> <em>:atom, default: :create</em></li></ul>
+.</li><li><strong>section</strong> <em>:struct, required: true</em></li><li><strong>gating_condition</strong> <em>:map, required: true</em></li><li><strong>parent_gate</strong> <em>:struct, required: true</em></li><li><strong>count_exceptions</strong> <em>:integer, required: true</em></li><li><strong>create_or_update</strong> <em>:atom, default: :create</em></li></ul>
         </section>
 
 
@@ -145,6 +145,13 @@ OliWeb.Sections.GatingAndScheduling.Form <small class="app-vsn">(OLI Torus v0.18
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#maybe_type_selected/2">maybe_type_selected(arg1, t)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#maybe_user_value/1">maybe_user_value(arg1)</a>
 
   </div>
 
@@ -249,7 +256,7 @@ Functions
     </a>
     <h1 class="signature">maybe_resource_value(arg1)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L65" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L126" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -271,7 +278,29 @@ Functions
     </a>
     <h1 class="signature">maybe_type_selected(arg1, t)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L70" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L139" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="maybe_user_value/1">
+
+  <div class="detail-header">
+    <a href="#maybe_user_value/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">maybe_user_value(arg1)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L131" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -315,7 +344,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L16" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -337,7 +366,7 @@ Functions
     </a>
     <h1 class="signature">render_condition_options(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L78" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/sections/gating_and_scheduling/form.ex#L147" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
