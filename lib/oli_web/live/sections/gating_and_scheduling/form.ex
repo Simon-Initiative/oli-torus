@@ -54,7 +54,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     <div class="form-group">
       <label for="resource">Student</label>
       <div class="input-group mb-3">
-        <input type="text" id="user" readonly class="form-control" placeholder="Select a student..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-resource-picker" {...maybe_user_value(assigns)}>
+        <input type="text" id="user" readonly class="form-control" placeholder="Select a student..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-user-picker" {...maybe_user_value(assigns)}>
         <div class="input-group-append">
           <button class="btn btn-outline-primary" type="button" phx-click="show-user-picker">Select</button>
         </div>
