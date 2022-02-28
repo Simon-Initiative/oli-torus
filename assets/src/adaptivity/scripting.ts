@@ -68,18 +68,22 @@ export const getExpressionStringForValue = (
         const testEnv = new Environment(env);
         const testResult = evalScript(`let foo = ${val};`, testEnv);
         if (testResult?.result !== null) {
-          const evaluatedValuess = evalScript(expressions[0], env).result;
-          if (evaluatedValuess !== undefined) {
-            val = evaluatedValuess;
-            actuallyAString = false;
-          } else {
-            //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
-            actuallyAString = expressions?.length ? false : true;
+          //lets evaluat everything if first and last char are {}
+          if (val[0] === '{' && val[val.length - 1] === '}') {
+            const evaluatedValuess = evalScript(expressions[0], env).result;
+            if (evaluatedValuess !== undefined) {
+              val = evaluatedValuess;
+              actuallyAString = false;
+            } else {
+              //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+              actuallyAString = expressions?.length ? false : true;
+            }
           }
         } else {
           let evaluatedValue = getValue('foo', testEnv);
           if (evaluatedValue === undefined) {
-            if (expressions.length === 1 && `{${expressions}}` === val) {
+            //lets evaluat everything if first and last char are {}
+            if (val[0] === '{' && val[val.length - 1] === '}') {
               try {
                 evaluatedValue = evalScript(expressions[0], env).result;
                 if (evaluatedValue !== undefined) {
