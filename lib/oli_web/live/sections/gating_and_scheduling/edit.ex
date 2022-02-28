@@ -9,7 +9,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
   alias Oli.Delivery.Gating
 
   def mount(
-        %{"id" => gating_condition_id} = params,
+        %{"id" => gating_condition_id},
         %{"section_slug" => section_slug} = session,
         socket
       ) do

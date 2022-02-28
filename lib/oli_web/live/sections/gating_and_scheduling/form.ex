@@ -47,7 +47,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     """
   end
 
-  defp render_user_selection(%{parent_gate: nil} = assigns), do: nil
+  defp render_user_selection(%{parent_gate: nil} = _assigns), do: nil
 
   defp render_user_selection(assigns) do
     ~F"""
@@ -77,7 +77,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     """
   end
 
-  defp render_resource_selection(assigns), do: nil
+  defp render_resource_selection(_assigns), do: nil
 
   defp render_exceptions(%{parent_gate: nil, gating_condition: gating_condition} = assigns) do
     if Map.has_key?(gating_condition, :id) do

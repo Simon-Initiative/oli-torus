@@ -3,27 +3,24 @@ defmodule OliWeb.Common.EnrollmentBrowser.EnrollmentPicker do
   use OliWeb.Common.Modal
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.{TextSearch, PagedTable}
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
   alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.EnrollmentBrowser.TableModel
   alias Oli.Delivery.Sections
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
-  alias OliWeb.Sections.Mount
-  alias OliWeb.Common.SessionContext
 
   @limit 10
   @default_options %EnrollmentBrowseOptions{
     is_student: true,
     is_instructor: false,
-    text_search: nil
+    text_search: ""
   }
 
   prop section, :any, default: nil
   prop context, :any
-  data tabel_model, :struct
+  data table_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: @limit

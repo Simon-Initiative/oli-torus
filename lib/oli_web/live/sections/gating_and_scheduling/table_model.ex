@@ -1,7 +1,6 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   use OliWeb, :surface_component
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Link}
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
@@ -105,7 +104,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: context} = assigns,
+        %{context: _context} = assigns,
         %GatingCondition{
           type: :always_open
         },
@@ -113,7 +112,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
       ) do
     ~F"""
       <div>
-        Bypass
+        Allows access to this resource
       </div>
     """
   end

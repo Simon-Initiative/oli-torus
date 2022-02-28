@@ -276,7 +276,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     socket =
       case Gating.create_gating_condition(gating_condition) do
-        {:ok, gc} ->
+        {:ok, _gc} ->
           {:ok, _section} = Gating.update_resource_gating_index(section)
 
           socket

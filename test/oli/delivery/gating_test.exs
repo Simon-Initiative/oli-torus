@@ -157,6 +157,28 @@ defmodule Oli.Delivery.GatingTest do
       end
     end
 
+    test "delete_gating_condition/1 deletes the gating_condition and the exception", %{
+      page1: page1,
+      section_1: section,
+      user_a: user
+    } do
+      gating_condition =
+        gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
+
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page1.id,
+        parent_id: gating_condition.id,
+        user_id: user.id
+      })
+
+      assert {:ok, %GatingCondition{}, 2} = Gating.delete_gating_condition(gating_condition)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Gating.get_gating_condition!(gating_condition.id)
+      end
+    end
+
     test "change_gating_condition/1 returns a gating_condition changeset", %{
       page1: page1,
       section_1: section
@@ -262,6 +284,97 @@ defmodule Oli.Delivery.GatingTest do
 
       # nested resource should no longer be accessible since unit is gated by a schedule that ended yesterday
       assert Gating.blocked_by(section, user_a, nested_page1.id) != []
+    end
+
+    test "blocked_by/3 allows student exception to override an otherwise active gate", %{
+      page2: page2,
+      section_1: section,
+      user_a: user_a,
+      user_b: user_b
+    } do
+      # Create a situation where a resource is gated for all students, but overridden (and bypassed) by
+      # a student specific gate
+      parent =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page2.id,
+          data: %{start_datetime: tomorrow()}
+        })
+
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page2.id,
+        parent_id: parent.id,
+        user_id: user_a.id,
+        data: %{start_datetime: yesterday()}
+      })
+
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      # check resource that has no gating condition defined for user_a, but it blocked for user_b
+      assert Gating.blocked_by(section, user_a, page2.id) == []
+      refute Gating.blocked_by(section, user_b, page2.id) == []
+    end
+
+    test "blocked_by/3 allows always_allow student exception to override an otherwise active gate",
+         %{
+           page2: page2,
+           section_1: section,
+           user_a: user_a,
+           user_b: user_b
+         } do
+      # Create a situation where a resource is gated for all students, but overridden by an always_open
+      parent =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page2.id,
+          data: %{start_datetime: tomorrow()}
+        })
+
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page2.id,
+        parent_id: parent.id,
+        user_id: user_a.id,
+        type: :always_open
+      })
+
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      # check resource that has no gating condition defined for user_a, but it blocked for user_b
+      assert Gating.blocked_by(section, user_a, page2.id) == []
+      refute Gating.blocked_by(section, user_b, page2.id) == []
+    end
+
+    test "blocked_by/3 allows always_open as a gate, but a student exception can be blocked",
+         %{
+           page2: page2,
+           section_1: section,
+           user_a: user_a,
+           user_b: user_b
+         } do
+      # Create a situation where a resource is gated by :always_open, which allows all students to access it,
+      # but then a student-specific exception exists that makes the resource unavailable to just that student
+      parent =
+        gating_condition_fixture(%{
+          section_id: section.id,
+          resource_id: page2.id,
+          type: :always_open
+        })
+
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page2.id,
+        parent_id: parent.id,
+        user_id: user_a.id,
+        data: %{start_datetime: tomorrow()}
+      })
+
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      # check resource that has no gating condition defined for user_b, but it blocked for user_a
+      refute Gating.blocked_by(section, user_a, page2.id) == []
+      assert Gating.blocked_by(section, user_b, page2.id) == []
     end
   end
 end

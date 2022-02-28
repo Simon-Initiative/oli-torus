@@ -1,6 +1,5 @@
 defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
-  alias OliWeb.Router.Helpers, as: Routes
   import OliWeb.Common.Utils
   use Surface.Component
 
