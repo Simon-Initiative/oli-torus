@@ -54,7 +54,16 @@ export const templatizeText = (
       if (isFromTrapStates) {
         return text;
       } else {
-        return '';
+        if (vars.length === 1 && `{${vars[0]}}` === templatizedText) {
+          const evaluatedValue = evalScript(vars[0], env).result;
+          if (evaluatedValue !== undefined) {
+            return evaluatedValue;
+          } else {
+            return '';
+          }
+        } else {
+          return '';
+        }
       }
     }
     let strValue = stateValue;
