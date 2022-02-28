@@ -46,11 +46,13 @@ export const templatizeText = (
             stateValue = result.result;
           }
         } catch (ex) {
-          const functionExpression = v.substring(1, v.length - 1);
-
-          const result = evalScript(functionExpression, innerEnv);
-          if (result?.result !== undefined && !result?.result?.message) {
-            stateValue = result.result;
+          if (v[0] === '{' && v[v.length - 1] === '}') {
+            //lets evaluat everything if first and last char are {}
+            const functionExpression = v.substring(1, v.length - 1);
+            const result = evalScript(functionExpression, innerEnv);
+            if (result?.result !== undefined && !result?.result?.message) {
+              stateValue = result.result;
+            }
           }
         }
       } catch (e) {
