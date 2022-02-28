@@ -3,6 +3,7 @@ defmodule Oli.Factory do
 
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
+  alias Oli.Branding.Brand
   alias Oli.Delivery.Gating.GatingCondition
 
   alias Oli.Delivery.Sections.{
@@ -149,7 +150,21 @@ defmodule Oli.Factory do
       institution: insert(:institution),
       base_project: insert(:project),
       slug: sequence("examplesection"),
-      type: :blueprint
+      type: :blueprint,
+      open_and_free: false,
+      description: "A description",
+      brand: insert(:brand)
+    }
+  end
+
+  def brand_factory() do
+    %Brand{
+      name: "Some brand",
+      slug: sequence("examplebrand"),
+      logo: "www.logo.com",
+      logo_dark: "www.logodark.com",
+      favicons: "www.favicons.com",
+      institution: insert(:institution)
     }
   end
 
