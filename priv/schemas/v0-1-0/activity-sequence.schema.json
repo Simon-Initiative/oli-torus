@@ -1,0 +1,24 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Activity Sequence",
+  "description": "An activity sequence",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "activity-reference"
+    },
+    "custom": {},
+    "activity_id": {
+      "type": [
+        "integer",
+        "string"
+      ]
+    }
+  },
+  "required": [
+    "type",
+    "custom",
+    "activity_id"
+  ]
+}

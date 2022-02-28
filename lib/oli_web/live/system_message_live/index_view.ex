@@ -11,6 +11,8 @@ defmodule OliWeb.SystemMessageLive.IndexView do
   alias Surface.Components.Form
   alias Surface.Components.Form.{ErrorTag, Field, TextArea}
 
+  @utc_timezone "Etc/UTC"
+
   data title, :string, default: "Type a System Message"
   data breadcrumbs, :list
   data show_confirm, :boolean, default: false
@@ -28,21 +30,35 @@ defmodule OliWeb.SystemMessageLive.IndexView do
       ]
   end
 
-  def mount(_, %{"local_tz" => local_tz}, socket) do
+  def mount(_, session, socket) do
     messages = Notifications.list_system_messages()
+    is_local_timezone_set = Map.has_key?(session, "local_tz")
+
+    local_tz =
+      if is_local_timezone_set do
+        session["local_tz"]
+      else
+        @utc_timezone
+      end
 
     {:ok,
      assign(socket,
        messages: messages,
-       local_tz: local_tz,
+       is_local_timezone_set: is_local_timezone_set,
+       local_timezone: local_tz,
        breadcrumbs: breadcrumb()
      )}
   end
 
   def render(assigns) do
     ~F"""
+      {#unless @is_local_timezone_set}
+        <div class="alert alert-info" role="alert">
+          The local timezone is not set in your browser. UTC is used by default.
+        </div>
+      {/unless}
       {#for message <- @messages}
-        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} timezone={@local_tz}/>
+        <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} timezone={@local_timezone}/>
       {/for}
       <Form for={:system_message} submit="create">
         <Field name={:message} class="form-group">
@@ -100,8 +116,8 @@ defmodule OliWeb.SystemMessageLive.IndexView do
     new_message_attrs =
       attrs
       |> Oli.Utils.atomize_keys()
-      |> Map.update(:start, "", &datestring_to_utc_datetime(&1, socket.assigns.local_tz))
-      |> Map.update(:end, "", &datestring_to_utc_datetime(&1, socket.assigns.local_tz))
+      |> Map.update(:start, "", &datestring_to_utc_datetime(&1, socket.assigns.local_timezone))
+      |> Map.update(:end, "", &datestring_to_utc_datetime(&1, socket.assigns.local_timezone))
       |> Map.put(:active, active)
       |> Map.put(:id, id)
 

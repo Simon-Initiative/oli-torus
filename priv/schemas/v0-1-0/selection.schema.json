@@ -1,0 +1,46 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/selection.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Editor Selection",
+  "description": "An editor selection",
+  "type": "object",
+  "properties": {
+    "focus": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "offset": {
+          "type": "number"
+        }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "offset": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "number",
+          "description": ""
+        },
+        {
+          "type": "number",
+          "description": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,7 +1,7 @@
 defmodule OliWeb.Pow.PowHelpers do
   alias PowAssent.Plug
 
-  alias Phoenix.{HTML, HTML.Link, Naming}
+  alias Phoenix.{HTML, HTML.Link, HTML.Tag, Naming}
   alias PowAssent.Phoenix.AuthorizationController
 
   def get_pow_config(:user) do
@@ -143,7 +143,13 @@ defmodule OliWeb.Pow.PowHelpers do
     opts =
       Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
-    Link.link([icon, msg], opts)
+    provider_name = provider_name(provider, downcase: true)
+
+    msg_box = Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
+
+    button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+
+    Link.link(button_box, opts)
   end
 
   defp invitation_token_query_params(%{assigns: %{invited_user: %{invitation_token: token}}}),
@@ -180,16 +186,26 @@ defmodule OliWeb.Pow.PowHelpers do
     opts =
       Keyword.merge(opts, class: "btn btn-md #{provider_class(provider)} btn-block social-signin")
 
-    Link.link([icon, msg], opts)
+    provider_name = provider_name(provider, downcase: true)
+
+    msg_box = Tag.content_tag(:div, msg, class: provider_name <> "-text-container")
+
+    button_box = Tag.content_tag(:div, [icon, msg_box], class: provider_name <> "-auth-container")
+
+    Link.link(button_box, opts)
   end
 
   def provider_icon(provider) do
     case provider do
       :google ->
-        HTML.raw("<i class=\"fab fa-google fa-lg mr-2\"></i>")
+        HTML.raw(
+          "<div class=\"#{provider_name(provider, downcase: true)}-icon-container\"><img class=\"#{provider_name(provider, downcase: true)}-icon\" src=\"/images/icons/google-icon.svg\"/></div>"
+        )
 
       :github ->
-        HTML.raw("<i class=\"fab fa-github fa-lg mr-2\"></i>")
+        HTML.raw(
+          "<div class=\"#{provider_name(provider, downcase: true)}-icon-container\"><i class=\"fab fa-github #{provider_name(provider, downcase: true)}-icon\"></i></div>"
+        )
 
       _ ->
         HTML.raw(nil)
@@ -198,8 +214,7 @@ defmodule OliWeb.Pow.PowHelpers do
 
   def provider_class(provider) do
     provider
-    |> Naming.humanize()
-    |> String.downcase()
+    |> provider_name(downcase: true)
     |> (&"provider-#{&1}").()
   end
 
@@ -207,5 +222,11 @@ defmodule OliWeb.Pow.PowHelpers do
     provider
     |> Naming.humanize()
     |> String.upcase()
+  end
+
+  def provider_name(provider, downcase: true) do
+    provider
+    |> Naming.humanize()
+    |> String.downcase()
   end
 end

@@ -1,3 +1,4 @@
+import { CapiVariableTypes } from 'adaptivity/capi';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
@@ -12,6 +13,7 @@ import {
 export interface TextFlowModel extends JanusAbsolutePositioned, JanusCustomCss {
   overrideWidth?: boolean;
   overrideHeight?: boolean;
+  visible?: boolean;
   nodes: any[]; // TODO
   palette: ColorPalette;
 }
@@ -26,6 +28,11 @@ export const schema: JSONSchema7Object = {
     type: 'boolean',
     default: true,
     description: 'enable to use the value provided by the width field',
+  },
+  visible: {
+    type: 'boolean',
+    default: true,
+    description: 'controls the visibility of the text',
   },
   customCssClass: { type: 'string' },
   palette: {
@@ -59,6 +66,7 @@ export const createSchema = (context?: CreationContext): Partial<TextFlowModel> 
   return {
     overrideWidth: true,
     overrideHeight: false,
+    visible: true,
     customCssClass: '',
     nodes: [
       {
@@ -108,7 +116,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
       let borderColor = 'transparent';
       if (palette.lineColor! >= 0) {
         borderColor = chroma(palette.lineColor || 0)
-          .alpha(palette.lineAlpha || 0)
+          .alpha(palette.lineAlpha?.toString() === 'NaN' ? 0 : palette.lineAlpha || 0)
           .css();
       }
       paletteStyles.borderColor = borderColor;
@@ -116,7 +124,7 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
       let bgColor = 'transparent';
       if (palette.fillColor! >= 0) {
         bgColor = chroma(palette.fillColor || 0)
-          .alpha(palette.fillAlpha || 0)
+          .alpha(palette.fillAlpha?.toString() === 'NaN' ? 0 : palette.fillAlpha || 0)
           .css();
       }
       paletteStyles.backgroundColor = bgColor;
@@ -131,10 +139,11 @@ export const transformModelToSchema = (model: Partial<TextFlowModel>) => {
 };
 
 export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
-  const { overrideHeight, overrideWidth, customCssClass, palette } = schema;
+  const { overrideHeight, overrideWidth, visible, customCssClass, palette } = schema;
   const result: Partial<TextFlowModel> = {
     ...schema,
     overrideHeight: !!overrideHeight,
+    visible: !!visible,
     overrideWidth: !!overrideWidth,
     customCssClass: customCssClass || '',
   };
@@ -154,7 +163,9 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
 
   return result;
 };
-
+export const adaptivitySchema = {
+  visible: CapiVariableTypes.BOOLEAN,
+};
 export const getCapabilities = () => ({
   configure: true,
 });

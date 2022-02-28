@@ -204,6 +204,14 @@ $activity-purpose-checkpoint-color: lighten($blue, 10%);
 $activity-purpose-didigetthis-color: lighten($purple, 10%);
 $activity-purpose-learnbydoing-color: lighten($green, 10%);
 
+// Auth providers buttons
+
+$google-button-background-color: #4285F4;
+$google-button-font-color: $white;
+
+$github-button-background-color: $black;
+$github-button-font-color: $white;
+
 ///////////////////////////////////////////////////////////////////////////////
 // IMPORTANT: DO NOT MODIFY IMPORT
 // This import is required and must always be after the last variable

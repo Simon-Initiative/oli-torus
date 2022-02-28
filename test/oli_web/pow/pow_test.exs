@@ -44,6 +44,20 @@ defmodule OliWeb.Common.PowTest do
       assert html_response(conn, 302) =~
                Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
     end
+
+    test "shows auth providers sign in buttons", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.authoring_pow_session_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Sign in with Google"
+      assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
+    end
   end
 
   describe "pow user" do
@@ -54,7 +68,10 @@ defmodule OliWeb.Common.PowTest do
         conn
         |> get(Routes.pow_session_path(conn, :new))
 
-      assert html_response(conn, 200) =~ "Learner Sign In"
+      assert html_response(conn, 200) =~ "Learner/Educator Sign In"
+
+      assert html_response(conn, 200) =~
+               "This sign in page is for <b>Independent Learner and Educator</b> accounts."
 
       # sign user in
       conn =
@@ -73,6 +90,17 @@ defmodule OliWeb.Common.PowTest do
 
       assert html_response(conn, 302) =~
                Routes.delivery_path(conn, :open_and_free_index)
+    end
+
+    test "shows auth providers sign in buttons", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.pow_session_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Sign in with Google"
+      assert response =~ "div class=\"google-auth-container\""
     end
   end
 
@@ -95,7 +123,7 @@ defmodule OliWeb.Common.PowTest do
           }
         )
 
-      assert html_response(conn, 200) =~ "Create a Learner Account"
+      assert html_response(conn, 200) =~ "Create a Learner/Educator Account"
 
       assert html_response(conn, 200) =~
                "You must verify you are old enough to access our site in order to continue"
@@ -123,6 +151,33 @@ defmodule OliWeb.Common.PowTest do
 
       assert %User{email: @user_email, email_confirmed_at: nil} =
                Accounts.get_user_by(%{email: @user_email})
+    end
+
+    test "shows auth providers sign in buttons", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.pow_registration_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Sign in with Google"
+      assert response =~ "div class=\"google-auth-container\""
+    end
+  end
+
+  describe "pow author signup" do
+    test "shows auth providers sign in buttons", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.authoring_pow_registration_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Sign in with Google"
+      assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
     end
   end
 

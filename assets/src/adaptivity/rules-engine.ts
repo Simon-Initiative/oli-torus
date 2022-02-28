@@ -65,11 +65,16 @@ const applyToEveryCondition = (top: TopLevelCondition | NestedCondition, callbac
 };
 
 const evaluateValueExpression = (value: string, env: Environment) => {
+  if (typeof value !== 'string') {
+    return value;
+  }
   let result = value;
   const looksLikeJSON = looksLikeJson(value);
   // only if there is {} in it should it be processed, otherwise it's just a string
   if (value.indexOf('{') === -1 || looksLikeJSON) {
-    return value;
+    const evaluatedVal = evalScript(value, env).result;
+    result = evaluatedVal === undefined ? value : evaluatedVal;
+    return result;
   }
   // it might be that it's still just a string, if it's a JSON value (TODO, is this really something that would be authored?)
   // handle {{{q:1498672976730:866|stage.unknownabosrbance.Current Display Value}-{q:1522195641637:1014|stage.slide13_y_intercept.value}}/{q:1498673825305:874|stage.slide13_slope.value}}
@@ -107,30 +112,44 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           typeof value === 'string' ? evaluateValueExpression(value, env) : value,
         );
       }
-      if (typeof ogValue === 'string') {
-        if (ogValue.indexOf('{') === -1) {
-          modifiedValue = ogValue;
-        } else if (condition?.operator === 'equalWithTolerance') {
-          //Usually the tolerance is 5.28,2 where 5.28 is actual value and 2 is the tolerance so we need to separate the value and send it in evaluateValueExpression()
-          //Also in case the tolerance is not specified and the value is 5.28 only, we need handle it so that it evaluates the actual value otherwise
-          // it will evaluated as ""
-          const actualValue =
-            ogValue.lastIndexOf(',') !== -1
-              ? ogValue.substring(0, ogValue.lastIndexOf(','))
-              : ogValue;
-          const toleranceValue = ogValue.substring(ogValue.lastIndexOf(',') + 1);
-          const evaluatedValue = evaluateValueExpression(actualValue, env);
-          modifiedValue = `${evaluatedValue},${toleranceValue}`;
-        } else {
-          const evaluatedValue = evaluateValueExpression(ogValue, env);
-          if (typeof evaluatedValue === 'string') {
-            //if the converted value is string then we don't have to stringify (e.g. if the evaluatedValue = L and we stringyfy it then the value becomes '"L"' instead if 'L'
-            // hence a trap state checking 'L' === 'L' returns false as the expression becomes 'L' === '"L"')
-            modifiedValue = evaluatedValue;
+      if (
+        condition?.operator === 'equalWithTolerance' ||
+        condition?.operator === 'notEqualWithTolerance'
+      ) {
+        //Usually the tolerance is 5.28,2 where 5.28 is actual value and 2 is the tolerance so we need to separate the value and send it in evaluateValueExpression()
+        //Also in case the tolerance is not specified and the value is 5.28 only, we need handle it so that it evaluates the actual value otherwise
+        // it will evaluated as ""
+        let actualValue = ogValue;
+        let toleranceValue = 0;
+        if (typeof ogValue === 'object') {
+          if (ogValue.length === 2) {
+            actualValue = ogValue[0];
+            toleranceValue = ogValue[1];
           } else {
-            //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
-            modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
+            actualValue = ogValue;
           }
+        } else if (ogValue.lastIndexOf(',') !== -1) {
+          const tolerance = ogValue.split(',');
+          actualValue = tolerance[0];
+          toleranceValue = tolerance.length == 2 ? tolerance[1] : 0;
+        } else {
+          actualValue = ogValue;
+        }
+        const evaluatedValue = evaluateValueExpression(actualValue, env);
+        modifiedValue = `${evaluatedValue},${toleranceValue}`;
+      } else if (typeof ogValue === 'string' && ogValue.indexOf('{') === -1) {
+        modifiedValue = ogValue;
+      } else {
+        const evaluatedValue = evaluateValueExpression(ogValue, env);
+        if (typeof evaluatedValue === 'string') {
+          //if the converted value is string then we don't have to stringify (e.g. if the evaluatedValue = L and we stringyfy it then the value becomes '"L"' instead if 'L'
+          // hence a trap state checking 'L' === 'L' returns false as the expression becomes 'L' === '"L"')
+          modifiedValue = evaluatedValue;
+        } else if (typeof modifiedValue === 'number') {
+          return modifiedValue;
+        } else if (typeof ogValue === 'string') {
+          //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
+          modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
         }
       }
       //if it type ===3 then it is a array. We need to wrap it in [] if it is not already wrapped.

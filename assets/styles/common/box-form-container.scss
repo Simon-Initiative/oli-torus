@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap');
+
 .box-form-container {
   --input-padding-x: 1.5rem;
   --input-padding-y: 0.75rem;
@@ -17,17 +19,12 @@
   }
 
   .social-signin.btn {
-    font-size: 80%;
-    letter-spacing: 0.1rem;
-    font-weight: bold;
     transition: all 0.2s;
-    text-transform: uppercase;
-    background-color: $secondary;
-    color: $white;
-
-    &:hover {
-      background-color: darken($secondary, 10%);
-    }
+    width: fit-content;
+    margin: 0.5em auto;
+    padding: 0;
+    border: 0.05rem solid $secondary;
+    border-radius: 0.25rem;
   }
 
   .form-label-group {
@@ -129,23 +126,63 @@
 }
 
 .provider-google {
-  color: white !important;
-  background-color: #ea4335 !important;
+  font-family: 'Roboto', sans-serif !important;
+  color: $google-button-font-color !important;
+  background-color: $google-button-background-color !important;
+  padding: 0 !important;
 
   &.btn {
     &:hover {
-      background-color: darken(#ea4335, 10%) !important;
+      background-color: darken($google-button-background-color, 3%) !important;
+    }
+  }
+
+  .google-auth-container{
+    display: flex;
+    align-items: center;
+
+    .google-icon-container{
+      padding-right: 0.5rem;
+
+      .google-icon{
+        background-color: white;
+        width: 2.5rem;
+        padding: 0.2rem;
+        border-radius: 0.25rem 0rem 0rem 0.25rem;
+      }
+    }
+
+    .google-text-container{
+      padding: 0 0.5rem;
     }
   }
 }
 
 .provider-github {
-  color: white !important;
-  background-color: #24292e !important;
+  color: $github-button-font-color !important;
+  background-color: $github-button-background-color !important;
 
   &.btn {
     &:hover {
-      background-color: darken(#24292e, 10%) !important;
+      background-color: darken($github-button-background-color, 3%) !important;
+    }
+  }
+
+  .github-auth-container{
+    display: flex;
+    align-items: center;
+
+    .github-icon-container{
+      padding-right: 0.5rem;
+      padding-left: 0.1rem;
+
+      .github-icon{
+        font-size: 2.5rem;
+      }
+    }
+
+    .github-text-container{
+      padding: 0 0.5rem;
     }
   }
 }

@@ -1,0 +1,193 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "373612778",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "2028991487"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "4153232947",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "3158490711"
+            },
+            {
+              "content": {
+                "model": [
+                  {
+                    "children": [
+                      {
+                        "text": ""
+                      }
+                    ],
+                    "id": "34826459",
+                    "type": "p"
+                  }
+                ],
+                "selection": null
+              },
+              "id": "379751068"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Thanks"
+                        }
+                      ],
+                      "id": "3999202723",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 6,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 6,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "1047164986"
+              },
+              "id": "3374546649",
+              "rule": "input like {*}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": {
+                  "model": [
+                    {
+                      "children": [
+                        {
+                          "text": "Thanks"
+                        }
+                      ],
+                      "id": "3012661872",
+                      "type": "p"
+                    }
+                  ],
+                  "selection": {
+                    "anchor": {
+                      "offset": 6,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    },
+                    "focus": {
+                      "offset": 6,
+                      "path": [
+                        0,
+                        0
+                      ]
+                    }
+                  }
+                },
+                "id": "2181959411"
+              },
+              "id": "3632849809",
+              "rule": "input like {.*}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Please comment on your experience with this course.  This has no bearing on your grade. ",
+      "transformations": []
+    },
+    "inputType": "text",
+    "stem": {
+      "content": {
+        "model": [
+          {
+            "children": [
+              {
+                "text": "Please "
+              },
+              {
+                "strong": true,
+                "text": "comment"
+              },
+              {
+                "text": " on your experience with this course.  This has no bearing on your grade. "
+              }
+            ],
+            "id": "588476085",
+            "type": "p"
+          }
+        ],
+        "selection": {
+          "anchor": {
+            "offset": 0,
+            "path": [
+              0,
+              1
+            ]
+          },
+          "focus": {
+            "offset": 7,
+            "path": [
+              0,
+              1
+            ]
+          }
+        }
+      },
+      "id": "916234183"
+    }
+  },
+  "id": "44",
+  "objectives": {
+    "1": []
+  },
+  "originalFile": "",
+  "subType": "oli_short_answer",
+  "tags": [],
+  "title": "Single Response",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

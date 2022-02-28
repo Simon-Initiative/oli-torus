@@ -1,0 +1,314 @@
+{
+  "content": {
+    "model": [
+      {
+        "children": [
+          {
+            "children": [
+              {
+                "text": "Welcome to this short course on the cuisine of Northern Spain. "
+              }
+            ],
+            "id": "3219906296",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": "This course will introduce the dishes and drink that are typical of the Spanish regions of Galicia and Asturias.  Since this course intends to serve as merely an introduction to this topic, links will be provided throughout to provide access to additional materials."
+              }
+            ],
+            "id": "3219906296",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "3219906296",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2503251711",
+            "src": "15gQbPGt9kc",
+            "type": "youtube"
+          },
+          {
+            "children": [
+              {
+                "text": "Featured Dishes"
+              }
+            ],
+            "id": "3219906296",
+            "type": "h2"
+          },
+          {
+            "children": [
+              {
+                "text": "This course will provide an overview of the cuisine of each region and also feature one dish and one drink from each region.  Those features are:"
+              }
+            ],
+            "id": "3219906296",
+            "type": "p"
+          },
+          {
+            "caption": "Featured dishes and drinks",
+            "children": [
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Region"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "59502747",
+                    "type": "th"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Dish"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "2280402773",
+                    "type": "th"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Drink"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "4006536658",
+                    "type": "th"
+                  }
+                ],
+                "id": "1490570278",
+                "type": "tr"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": ""
+                          },
+                          {
+                            "children": [
+                              {
+                                "text": "Galicia"
+                              }
+                            ],
+                            "href": "/course/link/food_and_drink_of_galicia",
+                            "id": "2184727840",
+                            "target": "self",
+                            "type": "a"
+                          },
+                          {
+                            "text": ""
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "3854460050",
+                    "type": "td"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Pulpo a la Gallega"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "484758925",
+                    "type": "td"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Orujo"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "3976170629",
+                    "type": "td"
+                  }
+                ],
+                "id": "2769895118",
+                "type": "tr"
+              },
+              {
+                "children": [
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": ""
+                          },
+                          {
+                            "children": [
+                              {
+                                "text": "Asturias"
+                              }
+                            ],
+                            "href": "/course/link/cuisine_of_asturias_y9u8f",
+                            "id": "1368047551",
+                            "target": "self",
+                            "type": "a"
+                          },
+                          {
+                            "text": ""
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "1918943774",
+                    "type": "td"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Fabada"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "2988970857",
+                    "type": "td"
+                  },
+                  {
+                    "children": [
+                      {
+                        "children": [
+                          {
+                            "text": "Sidre"
+                          }
+                        ],
+                        "type": "p"
+                      }
+                    ],
+                    "id": "3197090105",
+                    "type": "td"
+                  }
+                ],
+                "id": "3166668427",
+                "type": "tr"
+              }
+            ],
+            "id": "2711946973",
+            "type": "table"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "811012056",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "811012056",
+            "type": "p"
+          },
+          {
+            "alt": "An image of padron peppers",
+            "caption": "Padron peppers in Galicia",
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "999163295",
+            "src": "https://d2xvti2irp4c7t.cloudfront.net/media/the_cuisine_of_northern_spain/padron.jpeg",
+            "type": "img"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "1926538817",
+            "type": "p"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2387722369",
+            "src": "7SpYiLmRE-4",
+            "type": "youtube"
+          },
+          {
+            "children": [
+              {
+                "text": ""
+              }
+            ],
+            "id": "2864059553",
+            "type": "p"
+          }
+        ],
+        "id": "3892174174",
+        "purpose": "none",
+        "selection": null,
+        "type": "content"
+      }
+    ]
+  },
+  "id": "31",
+  "isGraded": false,
+  "objectives": [],
+  "originalFile": "",
+  "tags": [],
+  "title": "Introduction",
+  "type": "Page",
+  "unresolvedReferences": []
+}

@@ -119,7 +119,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   // this effect is to cover the case when the user is clicking "off" of a part to deselect it
   useEffect(() => {
     const handleHostClick = (e: any) => {
-      const path = e.path;
+      const path = e.path || (e.composedPath && e.composedPath());
       const pathIds =
         path?.map((node: HTMLElement) => node.getAttribute && node.getAttribute('id')) || [];
       // console.log('HOST CLICK', { pathIds, path, e });
@@ -219,7 +219,7 @@ const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
   };
 
   const handlePartDelete = useCallback(async () => {
-    // console.log('AUTHOR PART DELETE', { selectedPart });
+    // console.log('AUTHOR PART DELETE', { selectedPart }, selectedPartId);
     const filteredParts = parts.filter((part) => part.id !== selectedPart.id);
     props.onChange(filteredParts);
     // optimistically update local state

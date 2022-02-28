@@ -1,5 +1,5 @@
 defmodule OliWeb.SystemMessageLive.ShowView do
-  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView
 
   alias Oli.Notifications
   alias Oli.Notifications.PubSub

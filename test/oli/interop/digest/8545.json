@@ -1,0 +1,160 @@
+{
+  "content": {
+    "authoring": {
+      "parts": [
+        {
+          "hints": [
+            {
+              "content": [
+                {
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "id": "1583563843",
+                  "type": "p"
+                }
+              ],
+              "id": "2194690253"
+            },
+            {
+              "content": [
+                {
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "id": "2372226075",
+                  "type": "p"
+                }
+              ],
+              "id": "2164090013"
+            },
+            {
+              "content": [
+                {
+                  "children": [
+                    {
+                      "text": ""
+                    }
+                  ],
+                  "id": "3673201587",
+                  "type": "p"
+                }
+              ],
+              "id": "2195675847"
+            }
+          ],
+          "id": "1",
+          "responses": [
+            {
+              "feedback": {
+                "content": [
+                  {
+                    "children": [
+                      {
+                        "text": "Correct"
+                      }
+                    ],
+                    "id": "2359639415",
+                    "type": "p"
+                  }
+                ],
+                "id": "2550509729"
+              },
+              "id": "3244383511",
+              "rule": "input like {656240064}",
+              "score": 1
+            },
+            {
+              "feedback": {
+                "content": [
+                  {
+                    "children": [
+                      {
+                        "text": "Incorrect"
+                      }
+                    ],
+                    "id": "3368139561",
+                    "type": "p"
+                  }
+                ],
+                "id": "2584744407"
+              },
+              "id": "3230397878",
+              "rule": "input like {.*}",
+              "score": 0
+            }
+          ],
+          "scoringStrategy": "average"
+        }
+      ],
+      "previewText": "Let's try \" a < > test",
+      "targeted": [],
+      "transformations": [
+        {
+          "id": "1291733059",
+          "operation": "shuffle",
+          "path": "choices"
+        }
+      ],
+      "version": 2
+    },
+    "choices": [
+      {
+        "content": [
+          {
+            "children": [
+              {
+                "text": "Choice A"
+              }
+            ],
+            "id": "3791029652",
+            "type": "p"
+          }
+        ],
+        "id": "656240064"
+      },
+      {
+        "content": [
+          {
+            "children": [
+              {
+                "text": "Choice B"
+              }
+            ],
+            "id": "3330267716",
+            "type": "p"
+          }
+        ],
+        "id": "1201447932"
+      }
+    ],
+    "stem": {
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Let's try \" a < > test"
+            }
+          ],
+          "id": "4152282852",
+          "type": "p"
+        }
+      ],
+      "id": "794192279"
+    }
+  },
+  "id": "8545",
+  "objectives": {
+    "1": []
+  },
+  "originalFile": "",
+  "subType": "oli_multiple_choice",
+  "tags": [],
+  "title": "Multiple Choice",
+  "type": "Activity",
+  "unresolvedReferences": []
+}

@@ -99,6 +99,9 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
   const [model, setModel] = useState<any>(props.model);
   const [ready, setReady] = useState<boolean>(false);
   const [scriptEnv, setScriptEnv] = useState<any>();
+  const [textVisible, setTextVisible] = useState<boolean>(
+    props.model.visible === undefined ? true : props.model.visible,
+  );
   const id: string = props.id;
 
   const handleStylingChanges = () => {
@@ -163,12 +166,20 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
             {
               const { mutateChanges: changes } = payload;
               setState({ ...state, ...changes });
+              const visible = changes[`stage.${id}.visible`];
+              if (visible !== undefined) {
+                setTextVisible(!!visible);
+              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
             {
               const { snapshot } = payload;
               setState({ ...state, ...snapshot });
+              const visible = snapshot[`stage.${id}.visible`];
+              if (visible !== undefined) {
+                setTextVisible(!!visible);
+              }
             }
             break;
         }
@@ -208,6 +219,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
     styles.fontSize = `${fontSize}px`;
   }
 
+  styles.visibility = textVisible ? 'visible' : 'hidden';
   if (palette) {
     if (palette.useHtmlProps) {
       styles.backgroundColor = palette.backgroundColor;
@@ -230,7 +242,7 @@ const TextFlow: React.FC<PartComponentProps<TextFlowModel>> = (props: any) => {
       let bgColor = 'transparent';
       if (palette.fillColor >= 0) {
         bgColor = chroma(palette.fillColor || 0)
-          .alpha(palette.fillAlpha || 0)
+          .alpha(palette.fillAlpha === 'NaN' ? 0 : palette.fillAlpha || 0)
           .css();
       }
       styles.backgroundColor = bgColor;

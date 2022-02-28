@@ -39,6 +39,7 @@ import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 import { GroupsSlice } from '../name';
+import { templatizeText } from 'apps/delivery/components/TextParser';
 
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
@@ -172,7 +173,11 @@ export const initializeActivity = createAsyncThunk(
       if (s.type === CapiVariableTypes.MATH_EXPR) {
         return { ...s, target: `${ownerActivity.id}|${s.target}` };
       }
-      const modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
+      let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
+      modifiedValue =
+        typeof modifiedValue === 'string'
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          : modifiedValue;
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };

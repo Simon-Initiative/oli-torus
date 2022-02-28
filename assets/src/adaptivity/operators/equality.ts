@@ -74,7 +74,11 @@ export const notIsAnyOfOperator = (factValue: any, value: any) =>
 export const isNaNOperator = (factValue: any, value: any) =>
   parseBoolean(value) === (Number.parseFloat(factValue).toString() === 'NaN');
 
-export const equalWithToleranceOperator = (factValue: any, value: any) => {
+export const equalWithToleranceOperator = (
+  factValue: any,
+  value: any,
+  calledFromNotEqualToToleranceOperator = false,
+) => {
   const modifiedFactValue = typeof factValue === 'string' ? parseFloat(factValue) : factValue;
   /* console.log('EQT1', { factValue, value, modifiedFactValue }); */
   let arrValue: any[];
@@ -84,9 +88,15 @@ export const equalWithToleranceOperator = (factValue: any, value: any) => {
     return false;
   }
   if (Number.isNaN(modifiedFactValue)) {
-    return false;
+    return calledFromNotEqualToToleranceOperator;
   }
   const [baseValue, tolerance] = arrValue;
+
+  //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
+  //so `equalWithToleranceOperator/notEqualWithToleranceOperator 32.06` should not fire true if the number is a NaN.
+  if (typeof baseValue === 'number' && Number.isNaN(factValue)) {
+    return calledFromNotEqualToToleranceOperator;
+  }
   const valuesWithTolerance = getValueWithTolerance(baseValue, baseValue, tolerance);
   const isInRange =
     modifiedFactValue >= valuesWithTolerance.minToleranceValue &&
@@ -131,8 +141,9 @@ export const getValueWithTolerance = (
   }
   return newValue;
 };
-export const notEqualWithToleranceOperator = (factValue: any, value: any) =>
-  !equalWithToleranceOperator(factValue, value);
+export const notEqualWithToleranceOperator = (factValue: any, value: any) => {
+  return !equalWithToleranceOperator(factValue, value, true);
+};
 
 export const notEqual = (factValue: any, value: any) => {
   const typeOfValue = typeof value;

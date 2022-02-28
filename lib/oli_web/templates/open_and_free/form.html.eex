@@ -59,7 +59,7 @@
 
   <div class="form-row d-flex flex-row px-1 my-4">
     <div class="flex-grow-1 mr-2">
-      Allow New Enrollments
+      Registration Open
     </div>
 
     <div class="custom-control custom-switch" style="width: 88px;">
@@ -79,13 +79,13 @@
 
   <div class="form-row d-flex flex-row px-1 my-4">
     <div class="flex-grow-1 mr-2">
-      Allow Guests (Unenrolled Students)
+      Requires Enrollment
     </div>
 
     <div class="custom-control custom-switch" style="width: 88px;">
-      <%= checkbox f, :requires_enrollment, checked_value: "false", unchecked_value: "true", class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
+      <%= checkbox f, :requires_enrollment, class: "custom-control-input" <> error_class(f, :requires_enrollment, "is-invalid"), autofocus: focusHelper(f, :requires_enrollment) %>
       <%= label f, :requires_enrollment, class: "custom-control-label" do %>
-        <%= if @changeset.data.requires_enrollment do "No" else "Yes" end %>
+        <%= if @changeset.data.requires_enrollment do "Yes" else "No" end %>
       <% end %>
       <%= error_tag f, :requires_enrollment %>
     </div>
