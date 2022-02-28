@@ -10,8 +10,6 @@ defmodule Oli.Delivery.Gating.GatingCondition do
     field :type, Ecto.Enum,
       values: [
         :schedule,
-        :start,
-        :finish,
         :always_open
       ]
 
