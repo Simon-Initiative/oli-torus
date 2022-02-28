@@ -39,11 +39,19 @@ export const templatizeText = (
           // currently (TODO #2)
           v = `{${v}}`;
         }
-        const result = evalScript(v, innerEnv);
-        /* console.log('trying to eval text', { v, result }); */
-        innerEnv = result.env;
-        if (result?.result && !result?.result?.message) {
-          stateValue = result.result;
+        try {
+          const result = evalScript(v, innerEnv);
+          innerEnv = result.env;
+          if (result?.result && !result?.result?.message) {
+            stateValue = result.result;
+          }
+        } catch (ex) {
+          const functionExpression = v.substring(1, v.length - 1);
+
+          const result = evalScript(functionExpression, innerEnv);
+          if (result?.result !== undefined && !result?.result?.message) {
+            stateValue = result.result;
+          }
         }
       } catch (e) {
         // ignore?
