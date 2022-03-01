@@ -176,7 +176,7 @@ export const initializeActivity = createAsyncThunk(
       let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
       modifiedValue =
         typeof modifiedValue === 'string'
-          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, true)
           : modifiedValue;
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess

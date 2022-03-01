@@ -91,17 +91,14 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      assert view
-             |> render() =~
+      assert render(view) =~
                "Edit Gating Condition"
 
       assert has_element?(view, "input[value=\"#{revision.title}\"]")
 
-      assert view
-             |> render() =~ Date.to_string(gating_condition.data.start_datetime)
+      assert render(view) =~ Date.to_string(gating_condition.data.start_datetime)
 
-      assert view
-             |> render() =~ Date.to_string(gating_condition.data.end_datetime)
+      assert render(view) =~ Date.to_string(gating_condition.data.end_datetime)
     end
 
     test "displays a confirm modal before deleting a gating condition", %{

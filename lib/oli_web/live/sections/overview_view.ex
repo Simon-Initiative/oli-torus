@@ -2,13 +2,12 @@ defmodule OliWeb.Sections.OverviewView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
-  alias OliWeb.Sections.{Instructors, UnlinkSection}
-  alias OliWeb.Sections.Mount
+  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
 
   prop user, :any
   data breadcrumbs, :any

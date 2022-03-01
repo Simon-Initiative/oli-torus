@@ -17,11 +17,26 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     """
   end
 
-  def init(socket, module, section, title, gating_condition_id \\ nil) do
+  def init(socket, module, section, context, title, parent_gate_id, gating_condition_id \\ nil) do
+    parent_gate =
+      case parent_gate_id do
+        nil -> nil
+        id -> Gating.get_gating_condition!(id)
+      end
+
     gating_condition =
       case gating_condition_id do
         nil ->
-          %{section_id: section.id}
+          %{
+            section_id: section.id,
+            parent_id: parent_gate_id,
+            resource_id:
+              if is_nil(parent_gate) do
+                nil
+              else
+                parent_gate.resource_id
+              end
+          }
 
         id ->
           Gating.get_gating_condition!(id)
@@ -29,11 +44,22 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
             %{title: resource_title} =
               DeliveryResolver.from_resource_id(section.slug, gc.resource_id)
 
+            user =
+              if is_nil(gc.user_id) do
+                nil
+              else
+                Oli.Accounts.get_user!(gc.user_id)
+              end
+
             gc
             |> Map.take([:id, :type, :section_id, :resource_id])
             |> Map.put(
               :resource_title,
               resource_title
+            )
+            |> Map.put(
+              :user,
+              user
             )
             |> Map.put(
               :data,
@@ -44,16 +70,19 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     socket
     |> assign(
+      parent_gate: parent_gate,
+      context: context,
+      count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, module, title),
+      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate),
       gating_condition: gating_condition,
       modal: nil
     )
   end
 
-  defp set_breadcrumbs(section, module, title) do
-    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section)
+  defp set_breadcrumbs(section, module, title, parent_gate) do
+    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate)
     |> breadcrumb(section, module, title)
   end
 
@@ -64,6 +93,46 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           full_title: title
         })
       ]
+  end
+
+  defp count_exceptions(_, nil), do: nil
+
+  defp count_exceptions(nil, gating_condition_id) do
+    Gating.count_exceptions(gating_condition_id)
+  end
+
+  defp count_exceptions(_, _), do: nil
+
+  def handle_event("show-user-picker", _, socket) do
+    %{section: section, context: context} = socket.assigns
+
+    modal_assigns = %{
+      id: "select_user",
+      section: section,
+      context: context,
+      on_select: "select_user",
+      on_cancel: "cancel_select_user"
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{
+         component: OliWeb.Common.EnrollmentBrowser.SelectUserModal,
+         assigns: modal_assigns
+       }
+     )}
+  end
+
+  def handle_event("select_user", %{"id" => id}, socket) do
+    user = Oli.Accounts.get_user!(id)
+
+    socket =
+      assign(socket,
+        gating_condition:
+          Map.put(socket.assigns.gating_condition, :user_id, id) |> Map.put(:user, user)
+      )
+
+    {:noreply, socket |> hide_modal()}
   end
 
   def handle_event("show-resource-picker", _, socket) do
@@ -126,6 +195,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   end
 
   def handle_event("cancel_select_resource", _, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
+  def handle_event("cancel_select_user", _, socket) do
     {:noreply, hide_modal(socket)}
   end
 
@@ -203,7 +276,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     socket =
       case Gating.create_gating_condition(gating_condition) do
-        {:ok, _gating_condition} ->
+        {:ok, _gc} ->
           {:ok, _section} = Gating.update_resource_gating_index(section)
 
           socket
@@ -266,12 +339,26 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   end
 
   def handle_event("show-delete-gating-condition", %{"id" => id}, socket) do
+    description =
+      case socket.assigns.count_exceptions do
+        nil -> ""
+        0 -> ""
+        1 -> "Gating condition with 1 student exception"
+        n -> "Gating Condition with #{n} student exceptions"
+      end
+
+    entity_type =
+      case socket.assigns.parent_gate do
+        nil -> "gating condition"
+        _ -> "student exception"
+      end
+
     modal = %{
       component: DeleteModalNoConfirmation,
       assigns: %{
         id: "delete_gating_condition",
-        description: "",
-        entity_type: "gating condition",
+        description: description,
+        entity_type: entity_type,
         entity_id: id,
         delete_enabled: true,
         delete: "delete-gating-condition"
@@ -287,7 +374,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
     socket =
       case Gating.delete_gating_condition(gating_condition) do
-        {:ok, _gating_condition} ->
+        {:ok, _gating_condition, _} ->
           socket
           |> put_flash(:info, "Gating condition successfully deleted.")
           |> redirect(

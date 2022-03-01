@@ -163,7 +163,24 @@ if Application.fetch_env!(:oli, :env) == :dev do
 
     Collaborators.add_collaborator(admin_author, seeds.project)
 
-    Oli.Publishing.publish_project(seeds.project, "Initial publish")
+    {:ok, publication} = Oli.Publishing.publish_project(seeds.project, "Initial publish")
+
+    section_params =
+      %{}
+      |> Map.put("title", "Example Course Section")
+      |> Map.put("type", :enrollable)
+      |> Map.put("base_project_id", seeds.project.id)
+      |> Map.put("open_and_free", true)
+      |> Map.put("context_id", UUID.uuid4())
+      |> Map.put("timezone", "US/Mountain")
+
+    section =
+      with {:ok, section} <- Oli.Delivery.Sections.create_section(section_params),
+           {:ok, section} <- Oli.Delivery.Sections.create_section_resources(section, publication) do
+        section
+      else
+        {:error, changeset} -> IO.inspect(changeset)
+      end
 
     # create any seeds defined in seeds.json
     case Utils.read_json_file("./seeds.json") do
@@ -234,9 +251,13 @@ if Application.fetch_env!(:oli, :env) == :dev do
                 locale: "en-US"
               }
 
-              {:ok, _user} =
+              {:ok, user} =
                 User.noauth_changeset(%User{}, params)
                 |> Repo.insert()
+
+              Oli.Delivery.Sections.enroll(user.id, section.id, [
+                Lti_1p3.Tool.ContextRoles.get_role(:context_learner)
+              ])
             end)
         end
 

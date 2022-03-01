@@ -786,7 +786,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   };
 
   useEffect(() => {
-    if (!simFrame) {
+    if (!simFrame || !scriptEnv) {
       return;
     }
     //console.log('%c DEBUG SIM LIFE RESET', 'background: purple; color: #fff;', { simLife });
@@ -886,7 +886,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
     };
-  }, [simFrame]);
+  }, [simFrame, scriptEnv]);
 
   const handleBindToSim = () => {
     if (!initStateBindToFacts) {

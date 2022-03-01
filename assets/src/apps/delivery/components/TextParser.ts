@@ -39,11 +39,21 @@ export const templatizeText = (
           // currently (TODO #2)
           v = `{${v}}`;
         }
-        const result = evalScript(v, innerEnv);
-        /* console.log('trying to eval text', { v, result }); */
-        innerEnv = result.env;
-        if (result?.result && !result?.result?.message) {
-          stateValue = result.result;
+        try {
+          const result = evalScript(v, innerEnv);
+          innerEnv = result.env;
+          if (result?.result && !result?.result?.message) {
+            stateValue = result.result;
+          }
+        } catch (ex) {
+          if (v[0] === '{' && v[v.length - 1] === '}') {
+            //lets evaluat everything if first and last char are {}
+            const functionExpression = v.substring(1, v.length - 1);
+            const result = evalScript(functionExpression, innerEnv);
+            if (result?.result !== undefined && !result?.result?.message) {
+              stateValue = result.result;
+            }
+          }
         }
       } catch (e) {
         // ignore?
@@ -54,7 +64,16 @@ export const templatizeText = (
       if (isFromTrapStates) {
         return text;
       } else {
-        return '';
+        if (vars.length === 1 && `{${vars[0]}}` === templatizedText) {
+          const evaluatedValue = evalScript(vars[0], env).result;
+          if (evaluatedValue !== undefined) {
+            return evaluatedValue;
+          } else {
+            return '';
+          }
+        } else {
+          return '';
+        }
       }
     }
     let strValue = stateValue;
