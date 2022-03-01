@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix inability to search in projects and users view
+
 ### Enhancements
 
 - Allow for student-specific gating exceptions
