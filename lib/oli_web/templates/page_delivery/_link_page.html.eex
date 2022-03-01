@@ -6,6 +6,7 @@
     Routes.page_delivery_path(@conn, :page, @section_slug, @node.revision.slug)
   end
 %>
+
 <%= link to: url, class: link_class do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="page-title">

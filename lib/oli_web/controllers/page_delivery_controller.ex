@@ -351,6 +351,8 @@ defmodule OliWeb.PageDeliveryController do
 
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
+    is_container = ResourceType.get_type_by_id(context.page.resource_type_id) == "container"
+
     section = conn.assigns.section
 
     render_context = %Context{
@@ -373,12 +375,23 @@ defmodule OliWeb.PageDeliveryController do
 
     all_activities = Activities.list_activity_registrations()
 
+    hierarchy_node =
+      if is_container do
+        section.slug
+        |> Oli.Publishing.DeliveryResolver.full_hierarchy()
+        |> Oli.Delivery.Hierarchy.find_in_hierarchy(fn node ->
+          node.resource_id == context.page.resource_id
+        end)
+      else
+        nil
+      end
+
     {:ok, {previous, next}} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(
       conn,
-      if ResourceType.get_type_by_id(context.page.resource_type_id) == "container" do
+      if is_container do
         "container.html"
       else
         "page.html"
@@ -402,7 +415,9 @@ defmodule OliWeb.PageDeliveryController do
         resource_attempt: hd(context.resource_attempts),
         attempt_guid: hd(context.resource_attempts).attempt_guid,
         latest_attempts: context.latest_attempts,
-        section: section
+        section: section,
+        children: context.page.children,
+        hierarchy_node: hierarchy_node
       }
     )
   end

@@ -264,7 +264,9 @@ defmodule Oli.Delivery.Hierarchy do
     {map, _} =
       flatten(root)
       |> Enum.filter(fn node ->
-        Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) == "page"
+        Enum.find(["page", "container"], fn type ->
+          Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) == type
+        end)
       end)
       |> Enum.reduce({%{}, nil}, fn node, {map, previous} ->
         this_id = Integer.to_string(node.revision.resource_id)
