@@ -158,14 +158,18 @@ config :oli, OliWeb.Endpoint,
     host: host,
     port: String.to_integer(System.get_env("PORT", "443"))
   ],
-  https: [
-    port: 443,
-    otp_app: :oli,
-    keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
-    certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt")
-  ],
   secret_key_base: secret_key_base,
   live_view: [signing_salt: live_view_salt]
+
+if System.get_env("SSL_CERT_PATH") && System.get_env("SSL_KEY_PATH") do
+  config :oli, OliWeb.Endpoint,
+    https: [
+      port: 443,
+      otp_app: :oli,
+      keyfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.key"),
+      certfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.crt")
+    ]
+end
 
 # Configure Mnesia directory (used by pow persistent sessions)
 config :mnesia, :dir, to_charlist(System.get_env("MNESIA_DIR", ".mnesia"))
