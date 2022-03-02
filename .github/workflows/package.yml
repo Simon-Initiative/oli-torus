@@ -12,6 +12,12 @@ on:
 jobs:
   package-deploy:
     runs-on: ubuntu-latest
+
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+      deploy_host: ${{ steps.info.outputs.deploy_host }}
+
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -93,3 +99,15 @@ jobs:
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: doc # The folder the action should deploy.
+
+  deployment:
+    runs-on: ubuntu-latest
+    needs: package-deploy
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest'
+
+    environment:
+      name: ${{ needs.package-deploy.outputs.deploy_host }}
+      url: ${{ needs.package-deploy.outputs.deploy_host }}
+
+    steps:
+      - run: echo "deploying ${{ github.sha }}"
