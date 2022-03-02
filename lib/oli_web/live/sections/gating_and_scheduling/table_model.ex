@@ -104,7 +104,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: context} = assigns,
+        %{context: _} = assigns,
         %GatingCondition{
           type: :started
         },
@@ -118,7 +118,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: context} = assigns,
+        %{context: _} = assigns,
         %GatingCondition{
           type: :finished,
           data: %GatingConditionData{
@@ -135,7 +135,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
-        %{context: context} = assigns,
+        %{context: _} = assigns,
         %GatingCondition{
           type: :finished
         },

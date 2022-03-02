@@ -46,7 +46,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Started do
             resource_id: source_id
           }
         },
-        opts \\ []
+        _ \\ []
       ) do
     section = Sections.get_section!(section_id)
 

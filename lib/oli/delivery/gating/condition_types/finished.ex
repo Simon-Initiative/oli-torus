@@ -60,7 +60,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Finished do
             minimum_percentage: minimum_percentage
           }
         },
-        opts \\ []
+        _ \\ []
       ) do
     section = Sections.get_section!(section_id)
 
