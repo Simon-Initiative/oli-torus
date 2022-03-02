@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Gating do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Hierarchy
   alias Oli.Accounts.User
+  alias Oli.Delivery.Gating.ConditionTypes.ConditionContext
   alias Oli.Delivery.Gating.ConditionTypes
 
   def browse_gating_conditions(
@@ -257,30 +258,35 @@ defmodule Oli.Delivery.Gating do
       do: blocked_by(section, user, Integer.to_string(resource_id))
 
   def blocked_by(
-        %Section{id: section_id, resource_gating_index: resource_gating_index},
-        %User{id: user_id},
+        %Section{id: section_id, resource_gating_index: resource_gating_index} = section,
+        %User{id: user_id} = user,
         resource_id
       ) do
+    context = ConditionContext.init(user, section)
+
     if Map.has_key?(resource_gating_index, resource_id) do
       list_gating_conditions(section_id, user_id, Map.get(resource_gating_index, resource_id))
-      |> blocks_access()
+      |> blocks_access(context)
     else
       []
     end
   end
 
   # Returns true if the gating condition passes
-  defp condition_open(%GatingCondition{type: type} = gating_condition) do
+  defp evaluate_condition(
+         %GatingCondition{type: type} = gating_condition,
+         %ConditionContext{} = context
+       ) do
     ConditionTypes.types()
     |> Enum.find(fn {_name, ct} -> ct.type() == type end)
-    |> then(fn {_name, ct} -> ct.open?(gating_condition) end)
+    |> then(fn {_name, ct} -> ct.evaluate(gating_condition, context) end)
   end
 
   @doc """
   From a collection of gating conditions, return the conditions that block access to
   the resource.  This takes into account user-specific overrides.
   """
-  def blocks_access(gating_conditions) do
+  def blocks_access(gating_conditions, %ConditionContext{} = context) do
     # Get the set of user-specific conditions, if any.  Map them by their parent_id
     # (which is the id of the parent user-wide condition)
     user_specific_map =
@@ -292,7 +298,7 @@ defmodule Oli.Delivery.Gating do
         end
       end)
 
-    Enum.reduce(gating_conditions, [], fn gc, blocks ->
+    Enum.reduce(gating_conditions, {context, []}, fn gc, {context, blocks} ->
       # Consider only the user-wide conditions
       if is_nil(gc.user_id) do
         # But allow a user-specific condition to override
@@ -302,15 +308,15 @@ defmodule Oli.Delivery.Gating do
             user_specific -> user_specific
           end
 
-        if condition_open(condition) do
-          blocks
-        else
-          [condition | blocks]
+        case evaluate_condition(condition, context) do
+          {true, context} -> {context, blocks}
+          {false, context} -> {context, [condition | blocks]}
         end
       else
-        blocks
+        {context, blocks}
       end
     end)
+    |> then(fn {_, blocks} -> blocks end)
   end
 
   @doc """

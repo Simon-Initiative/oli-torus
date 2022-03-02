@@ -10,7 +10,9 @@ defmodule Oli.Delivery.Gating.GatingCondition do
     field :type, Ecto.Enum,
       values: [
         :schedule,
-        :always_open
+        :always_open,
+        :started,
+        :finished
       ]
 
     # data used by the condition evaluator, e.g. start or end datetime, a list of
