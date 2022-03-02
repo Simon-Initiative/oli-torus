@@ -278,11 +278,6 @@ defmodule Oli.SectionsTest do
       refute Sections.get_section_by_slug(section.slug)
     end
 
-    test "archive_section/1 marks the section as archived", %{section: section} do
-      assert {:ok, %Section{}} = Sections.archive_section(section)
-      assert Sections.get_section!(section.id).status == :archived
-    end
-
     test "change_section/1 returns a section changeset", %{section: section} do
       assert %Ecto.Changeset{} = Sections.change_section(section)
     end

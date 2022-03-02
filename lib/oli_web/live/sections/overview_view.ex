@@ -191,7 +191,7 @@ defmodule OliWeb.Sections.OverviewView do
 
     {action_function, action} =
       if socket.assigns.section_has_student_enrollments do
-        {&Sections.archive_section/1, "archived"}
+        {&Sections.update_section(&1, %{status: :archived}), "archived"}
       else
         {&Sections.delete_section/1, "deleted"}
       end

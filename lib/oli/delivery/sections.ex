@@ -291,8 +291,7 @@ defmodule Oli.Delivery.Sections do
     query =
       from(
         e in Enrollment,
-        join: s in Section,
-        on: e.section_id == s.id,
+        join: s in assoc(e, :section),
         join: ecr in "enrollments_context_roles",
         on: ecr.enrollment_id == e.id,
         where:
@@ -642,18 +641,6 @@ defmodule Oli.Delivery.Sections do
   """
   def soft_delete_section(%Section{} = section) do
     update_section(section, %{status: :deleted})
-  end
-
-  @doc """
-  Archives a section by marking the record as archived.
-  ## Examples
-      iex> archive_section(section)
-      {:ok, %Section{}}
-      iex> archive_section(section)
-      {:error, %Ecto.Changeset{}}
-  """
-  def archive_section(%Section{} = section) do
-    update_section(section, %{status: :archived})
   end
 
   @doc """
