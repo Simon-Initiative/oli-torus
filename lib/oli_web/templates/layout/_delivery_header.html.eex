@@ -39,3 +39,12 @@
     <% end %>
   </div>
 </nav>
+
+<%= if (Map.has_key?(@conn.assigns, :delivery_breadcrumb) and @delivery_breadcrumb)
+  and (Map.has_key?(@conn.assigns, :breadcrumbs) and length(@breadcrumbs) > 0) do %>
+  <div class="container">
+    <nav class="breadcrumb-bar d-flex align-items-center px-3 mt-3 mb-1">
+      <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+    </nav>
+  </div>
+<% end %>

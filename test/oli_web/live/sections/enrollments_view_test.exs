@@ -1,6 +1,7 @@
 defmodule OliWeb.Sections.EnrollmentsViewTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
   import Phoenix.{ConnTest, LiveViewTest}
 
   alias Oli.Seeder
@@ -73,6 +74,27 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
     test "mount enrollments for admin", %{conn: conn, section: section} do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
+
+      assert html =~ "Admin"
+
+      assert html =~ "Enrollments"
+    end
+  end
+
+  describe "breadcrumbs" do
+    test "mount enrollments for instructor", %{conn: conn} do
+      section = insert(:section, %{type: :enrollable})
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil, section_slug: section.slug)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      {:ok, _view, html} =
+        live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
+
+      refute html =~ "Admin"
 
       assert html =~ "Enrollments"
     end

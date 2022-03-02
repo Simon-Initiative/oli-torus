@@ -61,6 +61,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
          assign(socket,
            context: context,
            changeset: Sections.change_section(section),
+           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,

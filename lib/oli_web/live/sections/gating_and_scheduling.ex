@@ -18,18 +18,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
   @limit 25
 
-  def set_breadcrumbs(section, parent_gate) do
-    case section do
-      %Section{type: :blueprint} ->
-        [
-          Breadcrumb.new(%{
-            full_title: "Products"
-          })
-        ]
-
-      _ ->
-        OliWeb.Sections.SectionsView.set_breadcrumbs()
-    end
+  def set_breadcrumbs(section, parent_gate, user_type) do
+    OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
     |> breadcrumb(section)
     |> breadcrumb_exceptions(section, parent_gate)
   end
@@ -106,13 +96,12 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           {Gating.get_gating_condition!(int_id), "Student Exceptions"}
       end
 
-    case Mount.for(section_slug, session) do
-      {type, _author, section} when type in [:user, :author, :admin] ->
-        {:ok, assign_defaults(socket, section, session, parent_gate, title)}
-    end
+    {user_type, _user, section} = Mount.for(section_slug, session)
+
+    {:ok, assign_defaults(socket, section, session, parent_gate, title, user_type)}
   end
 
-  def assign_defaults(socket, section, session, parent_gate, title) do
+  def assign_defaults(socket, section, session, parent_gate, title, user_type) do
     context = SessionContext.init(session)
 
     rows =
@@ -136,7 +125,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       title: title,
       context: context,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, parent_gate),
+      delivery_breadcrumb: true,
+      breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,
       total_count: total_count,
       parent_gate: parent_gate,

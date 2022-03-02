@@ -74,6 +74,7 @@ defmodule OliWeb.Grades.GradebookView do
 
         {:ok,
          assign(socket,
+           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,

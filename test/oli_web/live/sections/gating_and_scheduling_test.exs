@@ -34,6 +34,8 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
 
+      assert html =~ "Admin"
+
       assert html =~ "Gating and Scheduling"
     end
   end
@@ -44,6 +46,8 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
     test "mount listing for instructor", %{conn: conn, section_1: section} do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
+
+      refute html =~ "Admin"
 
       assert html =~ "Gating and Scheduling"
     end

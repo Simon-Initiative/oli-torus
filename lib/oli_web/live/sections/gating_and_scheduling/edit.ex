@@ -23,19 +23,19 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
 
     context = SessionContext.init(session)
 
-    case Mount.for(section_slug, session) do
-      {type, _author, section} when type in [:user, :author, :admin] ->
-        {:ok,
-         GatingConditionStore.init(
-           socket,
-           __MODULE__,
-           section,
-           context,
-           title,
-           parent_gate_id,
-           id
-         )}
-    end
+    {user_type, _user, section} = Mount.for(section_slug, session)
+
+    {:ok,
+     GatingConditionStore.init(
+       socket,
+       __MODULE__,
+       section,
+       context,
+       title,
+       parent_gate_id,
+       user_type,
+       id
+     )}
   end
 
   def render(assigns) do
