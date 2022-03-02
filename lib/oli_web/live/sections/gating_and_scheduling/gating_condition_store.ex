@@ -323,15 +323,21 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     # for a source-specific gate type (started or finished).  We simply remove the
     # source selection here
     gating_condition =
-      case gating_condition.data.resource_id do
-        ^resource_id ->
-          data = Map.put(gating_condition.data, :resource_id, nil)
-
-          Map.put(gating_condition, :data, data)
-          |> Map.delete(:source_title)
-
-        _ ->
+      case Map.get(gating_condition, :data) do
+        nil ->
           gating_condition
+
+        data ->
+          case Map.get(data, :resource_id) do
+            ^resource_id ->
+              data = Map.put(gating_condition.data, :resource_id, nil)
+
+              Map.put(gating_condition, :data, data)
+              |> Map.delete(:source_title)
+
+            _ ->
+              gating_condition
+          end
       end
 
     {:noreply,
