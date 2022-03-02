@@ -104,6 +104,51 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_details_column(
+        %{context: context} = assigns,
+        %GatingCondition{
+          type: :started
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be started
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{context: context} = assigns,
+        %GatingCondition{
+          type: :finished,
+          data: %GatingConditionData{
+            minimum_percentage: nil
+          }
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be completed
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{context: context} = assigns,
+        %GatingCondition{
+          type: :finished
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be completed with a minimum score
+    </div>
+    """
+  end
+
+  def render_details_column(
         %{context: _context} = assigns,
         %GatingCondition{
           type: :always_open

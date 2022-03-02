@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Started do
   @behaviour Oli.Delivery.Gating.ConditionTypes.ConditionType
 
   def type do
-    :schedule
+    :started
   end
 
   def evaluate(
