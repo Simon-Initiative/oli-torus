@@ -254,7 +254,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active
       )
 
     case Repo.one(query) do
@@ -273,8 +273,31 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: s.slug == ^section_slug and s.status != :deleted,
+        where: s.slug == ^section_slug and s.status == :active,
         preload: [:user, :context_roles],
+        select: e
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Returns a listing of all student enrollments for a given section.
+
+  """
+  def list_student_enrollments(section_slug) do
+    learner_role_id = ContextRoles.get_role(:context_learner).id
+
+    query =
+      from(
+        e in Enrollment,
+        join: s in Section,
+        on: e.section_id == s.id,
+        join: ecr in "enrollments_context_roles",
+        on: ecr.enrollment_id == e.id,
+        where:
+          s.slug == ^section_slug and s.status == :active and
+            ecr.context_role_id == ^learner_role_id,
         select: e
       )
 
@@ -287,7 +310,7 @@ defmodule Oli.Delivery.Sections do
         e in Enrollment,
         join: s in Section,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
+        where: e.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
         select: e
       )
 
@@ -309,7 +332,7 @@ defmodule Oli.Delivery.Sections do
         s in Section,
         join: e in Enrollment,
         on: e.section_id == s.id,
-        where: e.user_id == ^user_id and s.open_and_free == true and s.status != :deleted,
+        where: e.user_id == ^user_id and s.open_and_free == true and s.status == :active,
         preload: [:base_project],
         select: s
       )
@@ -361,7 +384,7 @@ defmodule Oli.Delivery.Sections do
     Repo.all(
       from(
         s in Section,
-        where: s.open_and_free == true and s.status != :deleted,
+        where: s.open_and_free == true and s.status == :active,
         select: s
       )
     )
@@ -458,7 +481,7 @@ defmodule Oli.Delivery.Sections do
         join: r in Registration,
         on: d.registration_id == r.id,
         where:
-          s.context_id == ^context_id and s.status != :deleted and r.issuer == ^issuer and
+          s.context_id == ^context_id and s.status == :active and r.issuer == ^issuer and
             r.client_id == ^client_id,
         order_by: [asc: :id],
         limit: 1,
@@ -519,7 +542,7 @@ defmodule Oli.Delivery.Sections do
     from(s in Section,
       join: spp in SectionsProjectsPublications,
       on: s.id == spp.section_id,
-      where: spp.publication_id == ^publication.id and s.status != :deleted
+      where: spp.publication_id == ^publication.id and s.status == :active
     )
     |> Repo.all()
   end
@@ -535,7 +558,7 @@ defmodule Oli.Delivery.Sections do
       ** (Ecto.NoResultsError)
   """
   def get_sections_by_base_project(project) do
-    from(s in Section, where: s.base_project_id == ^project.id and s.status != :deleted)
+    from(s in Section, where: s.base_project_id == ^project.id and s.status == :active)
     |> Repo.all()
   end
 
@@ -619,6 +642,30 @@ defmodule Oli.Delivery.Sections do
   """
   def soft_delete_section(%Section{} = section) do
     update_section(section, %{status: :deleted})
+  end
+
+  @doc """
+  Archives a section by marking the record as archived.
+  ## Examples
+      iex> archive_section(section)
+      {:ok, %Section{}}
+      iex> archive_section(section)
+      {:error, %Ecto.Changeset{}}
+  """
+  def archive_section(%Section{} = section) do
+    update_section(section, %{status: :archived})
+  end
+
+  @doc """
+  Deletes a section.
+  ## Examples
+      iex> delete_section(section)
+      {:ok, %Section{}}
+      iex> delete_section(section)
+      {:error, %Ecto.Changeset{}}
+  """
+  def delete_section(%Section{} = section) do
+    Repo.delete(section)
   end
 
   @doc """

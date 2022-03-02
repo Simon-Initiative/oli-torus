@@ -361,7 +361,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         entity_type: entity_type,
         entity_id: id,
         delete_enabled: true,
-        delete: "delete-gating-condition"
+        delete: "delete-gating-condition",
+        modal_action: "Delete"
       }
     }
 

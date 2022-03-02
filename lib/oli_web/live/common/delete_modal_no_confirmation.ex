@@ -7,6 +7,7 @@ defmodule OliWeb.Common.DeleteModalNoConfirmation do
   prop entity_id, :string, required: true
   prop delete_enabled, :boolean, required: true
   prop delete, :event, required: true
+  prop modal_action, :string, required: true
 
   def render(assigns) do
     ~F"""
@@ -24,7 +25,7 @@ defmodule OliWeb.Common.DeleteModalNoConfirmation do
               <div class="mb-3">{@description}</div>
               <div class="d-flex">
                 <button class="btn btn-outline-danger mt-2 flex-fill" type="submit" :on-click={@delete} disabled={!@delete_enabled} phx-value-id={@entity_id}>
-                  Delete this {@entity_type}
+                  {@modal_action} this {@entity_type}
                 </button>
               </div>
             </div>
