@@ -3,8 +3,12 @@
 ## Unreleased
 
 ### Bug Fixes
+
+- Fix inability to search in projects and users view
+
 ### Enhancements
 
+- Allow for student-specific gating exceptions
 
 ## 0.18.4 (2022-02-24)
 
@@ -36,6 +40,7 @@
 **Environment Configs**
 
 The following environment configs are now available:
+
 ```
 SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legacy activities
 ```

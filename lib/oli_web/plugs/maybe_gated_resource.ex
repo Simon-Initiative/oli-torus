@@ -15,12 +15,11 @@ defmodule Oli.Plugs.MaybeGatedResource do
          revision <- DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
       case revision do
         %Revision{resource_id: resource_id} ->
-          %{section: section} = conn.assigns
+          %{section: section, current_user: user} = conn.assigns
 
-          if Gating.resource_open(section, resource_id) do
-            conn
-          else
-            gated_resource_unavailable(conn, section, revision)
+          case Gating.blocked_by(section, user, resource_id) do
+            [] -> conn
+            blocking_gates -> gated_resource_unavailable(conn, section, revision, blocking_gates)
           end
 
         _ ->
@@ -34,12 +33,11 @@ defmodule Oli.Plugs.MaybeGatedResource do
     end
   end
 
-  defp gated_resource_unavailable(conn, section, revision) do
+  defp gated_resource_unavailable(conn, section, revision, blocking_gates) do
     {:ok, {previous, next}} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
-    details =
-      Gating.details(section, revision.resource_id, format_datetime: format_datetime_fn(conn))
+    details = Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
 
     conn
     |> put_view(OliWeb.DeliveryView)
