@@ -231,5 +231,60 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :index))
       assert %Section{status: :deleted} = Sections.get_section!(section.id)
     end
+
+    test "deletes a section when it has no students associated data", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert render(view) =~
+               "Delete Section"
+
+      view
+      |> element("button[phx-click=\"show_delete_modal\"]")
+      |> render_click()
+
+      assert view
+             |> element("#delete_section_modal")
+             |> render() =~
+               "This action cannot be undone. Are you sure you want to delete this section?"
+
+      view
+      |> element("button[phx-click=\"delete_section\"]")
+      |> render_click()
+
+      assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index))
+      refute Sections.get_section_by_slug(section.slug)
+    end
+
+    test "archives a section when it has students associated data", %{conn: conn} do
+      section = insert(:section, %{type: :enrollable})
+      user = insert(:user)
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert render(view) =~
+               "Delete Section"
+
+      view
+      |> element("button[phx-click=\"show_delete_modal\"]")
+      |> render_click()
+
+      assert view
+             |> element("#delete_section_modal")
+             |> render() =~ """
+               This section has student data and will be archived rather than deleted.
+               Are you sure you want to archive it? You will no longer have access to the data.
+             """
+
+      view
+      |> element("button[phx-click=\"delete_section\"]")
+      |> render_click()
+
+      assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index))
+      assert %Section{status: :archived} = Sections.get_section!(section.id)
+    end
   end
 end
