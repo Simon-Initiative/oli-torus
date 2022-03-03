@@ -1,13 +1,8 @@
 <%= for node <- @nodes do %>
-  <% props = %{
-    preview_mode: @preview_mode,
+  <% props = Map.merge(assigns, %{
     node: node,
-    conn: @conn,
-    section_slug: @section_slug,
     nodes: node.children,
-    active_page: @active_page
-  } %>
-
+  }) %>
   <%= cond do %>
     <% container?(node.revision) -> %>
       <%= render "_link_container.html", props %>

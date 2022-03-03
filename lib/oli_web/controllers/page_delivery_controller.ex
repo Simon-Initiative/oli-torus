@@ -23,6 +23,8 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Publishing.DeliveryResolver, as: Resolver
+  alias Oli.Delivery.Hierarchy
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -41,14 +43,15 @@ defmodule OliWeb.PageDeliveryController do
             render(conn, "error.html")
 
           section ->
-            hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+            hierarchy = Resolver.full_hierarchy(section.slug)
 
             render(conn, "index.html",
               title: section.title,
               description: section.description,
               section_slug: section_slug,
               hierarchy: hierarchy,
-              preview_mode: true
+              preview_mode: true,
+              page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1)
             )
         end
       else
@@ -72,14 +75,15 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "error.html")
 
         section ->
-          hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+          hierarchy = Resolver.full_hierarchy(section.slug)
 
           render(conn, "index.html",
             title: section.title,
             description: section.description,
             section_slug: section_slug,
             hierarchy: hierarchy,
-            preview_mode: false
+            preview_mode: false,
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1)
           )
       end
     else
@@ -122,7 +126,7 @@ defmodule OliWeb.PageDeliveryController do
 
     if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
       if is_admin? or Sections.has_instructor_role?(user, section_slug) do
-        revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
+        revision = Resolver.from_revision_slug(section_slug, revision_slug)
         render_preview_mode(conn, section_slug, revision)
       else
         # Any attempt by a student to enter preview mode is simply ignored and redirect back to
@@ -181,7 +185,7 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
     activity_map =
-      Oli.Publishing.DeliveryResolver.from_resource_id(section_slug, activity_ids)
+      Resolver.from_resource_id(section_slug, activity_ids)
       |> Enum.map(fn rev ->
         type = Map.get(type_by_id, rev.activity_type_id)
 
@@ -226,7 +230,16 @@ defmodule OliWeb.PageDeliveryController do
         title: revision.title,
         html: html,
         objectives: [],
-        section: section
+        section: section,
+        revision: revision,
+        hierarchy_node:
+          if ResourceType.is_container(revision) do
+            Resolver.full_hierarchy(section_slug)
+            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
+          else
+            nil
+          end,
+        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1)
       }
     )
   end
@@ -351,8 +364,6 @@ defmodule OliWeb.PageDeliveryController do
 
   # This case handles :in_progress and :revised progress states
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
-    is_container = ResourceType.get_type_by_id(context.page.resource_type_id) == "container"
-
     section = conn.assigns.section
 
     render_context = %Context{
@@ -375,23 +386,12 @@ defmodule OliWeb.PageDeliveryController do
 
     all_activities = Activities.list_activity_registrations()
 
-    hierarchy_node =
-      if is_container do
-        section.slug
-        |> Oli.Publishing.DeliveryResolver.full_hierarchy()
-        |> Oli.Delivery.Hierarchy.find_in_hierarchy(fn node ->
-          node.resource_id == context.page.resource_id
-        end)
-      else
-        nil
-      end
-
     {:ok, {previous, next}} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(
       conn,
-      if is_container do
+      if ResourceType.is_container(context.page) do
         "container.html"
       else
         "page.html"
@@ -417,7 +417,14 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
-        hierarchy_node: hierarchy_node
+        hierarchy_node:
+          if ResourceType.is_container(context.page) do
+            Resolver.full_hierarchy(section_slug)
+            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == context.page.resource_id))
+          else
+            nil
+          end,
+        page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1)
       }
     )
   end

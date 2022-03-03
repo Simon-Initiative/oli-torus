@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
+  alias Oli.Resources.ResourceType
 
   @doc """
   From a constructed hierarchy root node, or a collection of hierarchy nodes, return
@@ -25,7 +26,7 @@ defmodule Oli.Delivery.Hierarchy do
   def flatten_pages(%HierarchyNode{} = node), do: flatten_pages(node, []) |> Enum.reverse()
 
   defp flatten_pages(%HierarchyNode{} = node, all) do
-    if node.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") do
+    if ResourceType.is_page(node.revision) do
       [node | all]
     else
       Enum.reduce(node.children, all, &flatten_pages(&1, &2))
@@ -263,11 +264,6 @@ defmodule Oli.Delivery.Hierarchy do
   def build_navigation_link_map(%HierarchyNode{} = root) do
     {map, _} =
       flatten(root)
-      |> Enum.filter(fn node ->
-        Enum.find(["page", "container"], fn type ->
-          Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) == type
-        end)
-      end)
       |> Enum.reduce({%{}, nil}, fn node, {map, previous} ->
         this_id = Integer.to_string(node.revision.resource_id)
 
@@ -328,7 +324,7 @@ defmodule Oli.Delivery.Hierarchy do
     Enum.reduce(children, flattened_nodes, fn node, acc ->
       node = %{node | ancestors: current_ancestors}
 
-      case Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) do
+      case ResourceType.get_type_by_id(node.revision.resource_type_id) do
         "container" -> flatten_helper(node, [node | acc], current_ancestors ++ [node])
         _ -> [node | acc]
       end

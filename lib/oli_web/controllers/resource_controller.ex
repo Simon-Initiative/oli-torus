@@ -89,19 +89,6 @@ defmodule OliWeb.ResourceController do
             Oli.Publishing.AuthoringResolver
           )
 
-        is_container = ResourceType.get_type_by_id(revision.resource_type_id) == "container"
-
-        hierarchy_node =
-          if is_container do
-            project_slug
-            |> Oli.Publishing.AuthoringResolver.full_hierarchy()
-            |> Oli.Delivery.Hierarchy.find_in_hierarchy(fn node ->
-              node.resource_id == revision.resource_id
-            end)
-          else
-            nil
-          end
-
         case PageEditor.create_context(project_slug, revision_slug, author) do
           {:ok, context} ->
             render(conn, "page_preview.html",
@@ -120,9 +107,14 @@ defmodule OliWeb.ResourceController do
               context: context,
               scripts: Activities.get_activity_scripts(),
               preview_mode: true,
-              is_container: is_container,
-              hierarchy_node: hierarchy_node,
-              project_slug: project_slug
+              hierarchy_node:
+                if ResourceType.is_container(revision) do
+                  AuthoringResolver.full_hierarchy(project_slug)
+                  |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
+                else
+                  nil
+                end,
+              page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )
 
           {:error, :not_found} ->

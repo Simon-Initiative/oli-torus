@@ -9,6 +9,7 @@
 ### Enhancements
 
 - Allow for student-specific gating exceptions
+- Display containers as pages with a table of contents
 
 ## 0.18.4 (2022-02-24)
 

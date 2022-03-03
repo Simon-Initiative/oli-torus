@@ -8,12 +8,10 @@
       There are no items
     </span>
   <% else %>
-    <%= render "_outline.html",
-      preview_mode: assigns[:preview_mode] or false,
+    <%= render "_outline.html", Map.merge(assigns, %{
+      preview_mode: assigns[:preview_mode] || false,
       nodes: @hierarchy_node.children,
-      conn: @conn,
-      section_slug: @section_slug,
-      active_page: nil
-    %>
+      active_page: nil,
+    }) %>
   <% end %>
 </div>

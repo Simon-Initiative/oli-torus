@@ -206,7 +206,7 @@ $activity-purpose-learnbydoing-color: lighten($green, 10%);
 
 // Auth providers buttons
 
-$google-button-background-color: #4285F4;
+$google-button-background-color: #4285f4;
 $google-button-font-color: $white;
 
 $github-button-background-color: $black;
@@ -249,4 +249,9 @@ html.delivery,
       }
     }
   }
+}
+
+.course-outline a,
+.course-outline a:hover {
+  color: white;
 }

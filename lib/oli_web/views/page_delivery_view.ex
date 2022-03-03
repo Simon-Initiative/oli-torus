@@ -162,4 +162,8 @@ defmodule OliWeb.PageDeliveryView do
         end
     end
   end
+
+  def base_resource_link_class(), do: "page-link list-group-item list-group-item-action"
+  def resource_link_class(_active = true), do: base_resource_link_class() <> " active"
+  def resource_link_class(_active = false), do: base_resource_link_class()
 end
