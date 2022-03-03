@@ -155,19 +155,17 @@ defmodule OliWeb.Sections.OverviewView do
     section_has_student_enrollments =
       Sections.list_student_enrollments(socket.assigns.section.slug) != []
 
-    message =
+    {message, action} =
       if section_has_student_enrollments do
-        """
-          This section has student data and will be archived rather than deleted.
-          Are you sure you want to archive it? You will no longer have access to the data.
-        """
+        {"""
+           This section has student data and will be archived rather than deleted.
+           Are you sure you want to archive it? You will no longer have access to the data.
+         """, "Archive"}
       else
-        """
-          This action cannot be undone. Are you sure you want to delete this section?
-        """
+        {"""
+           This action cannot be undone. Are you sure you want to delete this section?
+         """, "Delete"}
       end
-
-    action = if section_has_student_enrollments, do: "Archive", else: "Delete"
 
     modal = %{
       component: DeleteModalNoConfirmation,
