@@ -244,9 +244,7 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
   Returns the tree lines.
   """
   def lines(%{children: children} = node) do
-    lines_to_children = lines_to_children(node)
-
-    aditional_lines =
+    additional_lines =
       cond do
         [node] == children ->
           [child | _] = children
@@ -261,7 +259,7 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
       end
 
     children_lines = Enum.flat_map(children, &lines/1)
-    lines_to_children ++ aditional_lines ++ children_lines
+    additional_lines ++ children_lines
   end
 
   defp line_from_parent(node, child) do

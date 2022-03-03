@@ -16,14 +16,13 @@ export const GraphNavigation = {
     }
   },
   mounted() {
-    this.el.addEventListener('mousemove', (e: any) => {
+    const mousemove = (e: any) => {
       if (moving) {
         if (lastX != null) {
           const diffX = lastX - e.clientX;
           const diffY = lastY - e.clientY;
           currentX -= diffX;
           currentY -= diffY;
-
           (document as any)
             .getElementById('panner')
             .setAttribute('transform', 'translate(' + currentX + ',' + currentY + ') scale(1.0)');
@@ -31,16 +30,24 @@ export const GraphNavigation = {
         lastX = e.clientX;
         lastY = e.clientY;
       }
-    });
-    this.el.addEventListener('mousedown', (e: any) => {
-      this.el.style = 'cursor: grabbing;';
-      moving = true;
-    });
-    this.el.addEventListener('mouseup', (e: any) => {
+    };
+
+    const mouseup = () => {
       this.el.style = 'cursor: grab;';
       moving = false;
       lastX = null;
       lastY = null;
+
+      this.el.removeEventListener('mousemove', mousemove);
+      window.removeEventListener('mouseup', mouseup);
+    };
+
+    this.el.addEventListener('mousedown', () => {
+      this.el.style = 'cursor: grabbing;';
+      moving = true;
+
+      this.el.addEventListener('mousemove', mousemove);
+      window.addEventListener('mouseup', mouseup);
     });
   },
 };

@@ -3,15 +3,11 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
+  alias Oli.Utils.SchemaResolver
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
   @media_key "_media-manifest"
-
-  @page_schema "priv/schemas/v0-1-0/page.schema.json"
-               |> File.read!()
-               |> Jason.decode!()
-               |> ExJsonSchema.Schema.resolve()
 
   @doc """
   Ingest a course digest archive that is sitting on the file system
@@ -348,7 +344,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     with content <- Map.get(page, "content"),
-         :ok <- validate_json(content, @page_schema, page["id"]),
+         :ok <- validate_json(page, SchemaResolver.schema("resource.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
       graded = Map.get(page, "isGraded", false)
@@ -382,13 +378,13 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp validate_json(content, schema, element_id) do
-    case ExJsonSchema.Validator.validate(schema, content) do
+  defp validate_json(json, schema) do
+    case ExJsonSchema.Validator.validate(schema, json) do
       :ok ->
         :ok
 
       {:error, errors} ->
-        {:error, {:invalid_json, element_id, schema, errors, content}}
+        {:error, {:invalid_json, schema, errors, json}}
     end
   end
 
@@ -662,8 +658,8 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  def prettify_error({:error, {:invalid_json, element_id, schema, _errors, _content}}) do
-    "Invalid JSON found in '#{element_id}' according to schema #{schema.schema["$id"]}"
+  def prettify_error({:error, {:invalid_json, schema, _errors, json}}) do
+    "Invalid JSON found in '#{json["id"]}' according to schema #{schema.schema["$id"]}"
   end
 
   def prettify_error({:error, error}) do

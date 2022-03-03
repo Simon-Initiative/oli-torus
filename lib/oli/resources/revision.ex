@@ -4,6 +4,22 @@ defmodule Oli.Resources.Revision do
 
   alias Oli.Utils.Slug
 
+  @derive {Jason.Encoder,
+           only: [
+             :content,
+             :objectives,
+             :tags,
+             :slug,
+             :deleted,
+             :author_id,
+             :previous_revision_id,
+             :resource_type_id,
+             :graded,
+             :max_attempts,
+             :time_limit,
+             :scoring_strategy_id,
+             :activity_type_id
+           ]}
   schema "revisions" do
     #
     # NOTE: any field additions made here should be made also
