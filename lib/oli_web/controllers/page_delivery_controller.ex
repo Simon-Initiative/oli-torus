@@ -232,13 +232,7 @@ defmodule OliWeb.PageDeliveryController do
         objectives: [],
         section: section,
         revision: revision,
-        hierarchy_node:
-          if ResourceType.is_container(revision) do
-            Resolver.full_hierarchy(section_slug)
-            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
-          else
-            nil
-          end,
+        hierarchy_node: get_hierarchy_node(revision, section_slug),
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1)
       }
     )
@@ -417,13 +411,7 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
-        hierarchy_node:
-          if ResourceType.is_container(context.page) do
-            Resolver.full_hierarchy(section_slug)
-            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == context.page.resource_id))
-          else
-            nil
-          end,
+        hierarchy_node: get_hierarchy_node(context.page, section_slug),
         page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1)
       }
     )
@@ -580,5 +568,14 @@ defmodule OliWeb.PageDeliveryController do
       nil -> false
       author -> Oli.Accounts.is_admin?(author)
     end
+  end
+
+  def get_hierarchy_node(revision, section_slug) do
+    if ResourceType.is_container(revision) do
+            Resolver.full_hierarchy(section_slug)
+            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
+          else
+            nil
+          end
   end
 end
