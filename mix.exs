@@ -68,8 +68,8 @@ defmodule Oli.MixProject do
   defp deps do
     [
       {:appsignal_phoenix, "~> 2.0.0"},
-      {:bamboo, "~> 1.6"},
-      {:bamboo_ses, "~> 0.1.0"},
+      {:bamboo, "~> 2.2"},
+      {:bamboo_ses, "~> 0.3.0"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
@@ -79,8 +79,8 @@ defmodule Oli.MixProject do
       {:ecto_sql, "~> 3.7.0"},
       {:eflame, "~> 1.0"},
       {:ecto_psql_extras, "~> 0.2"},
-      {:ex_aws, "~> 2.1.6"},
-      {:ex_aws_s3, "~> 2.0"},
+      {:ex_aws, "~> 2.2"},
+      {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
       {:ex_machina, "~> 2.7.0", only: :test},
