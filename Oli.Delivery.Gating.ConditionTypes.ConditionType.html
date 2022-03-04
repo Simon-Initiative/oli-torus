@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Gating.ConditionTypes.ConditionType — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-02156d1cee.js"></script>
+    <script src="dist/sidebar_items-36fe4676ba.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -127,14 +127,13 @@ strategies, such as formatting helpers or data providers.</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#c:open?/1">open?(t)</a>
+    <a href="#c:evaluate/2">evaluate(t, t)</a>
 
   </div>
 
-    <div class="summary-synopsis"><p>Returns true if the condition evaluation determines that the resource can be accessed.
-This function call is inteded to be as efficient as possible for the common case when
-a resource is accessible. Use the <code class="inline">details</code> callback to get more details as to
-why a resource is inaccessible.</p></div>
+    <div class="summary-synopsis"><p>Returns a two element tuple. The first element is a boolean indicating whether this resource
+can be accessed strictly based on this gating condition.  The second element is the gating condition
+evaluation context, which may or may not have been mutated during this evaluation.</p></div>
 
 </div>
 <div class="summary-row">
@@ -170,7 +169,7 @@ Callbacks
     </a>
     <h1 class="signature">details(t, arg2)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L25" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L26" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -193,14 +192,14 @@ Takes the GatingCondition and any additional opts that may be utilized by certai
 strategies, such as formatting helpers or data providers.</p>
   </section>
 </section>
-<section class="detail" id="c:open?/1">
+<section class="detail" id="c:evaluate/2">
 
   <div class="detail-header">
-    <a href="#c:open?/1" class="detail-link" title="Link to this callback">
+    <a href="#c:evaluate/2" class="detail-link" title="Link to this callback">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this callback</span>
     </a>
-    <h1 class="signature">open?(t)</h1>
+    <h1 class="signature">evaluate(t, t)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L18" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -215,14 +214,16 @@ strategies, such as formatting helpers or data providers.</p>
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>open?(Oli.Delivery.Gating.GatingCondition.t()) :: Boolean.t()</pre>
+          <pre>evaluate(
+  Oli.Delivery.Gating.GatingCondition.t(),
+  <a href="Oli.Delivery.Gating.ConditionTypes.ConditionContext.html#t:t/0">Oli.Delivery.Gating.ConditionTypes.ConditionContext.t</a>()
+) :: {Boolean.t(), <a href="Oli.Delivery.Gating.ConditionTypes.ConditionContext.html#t:t/0">Oli.Delivery.Gating.ConditionTypes.ConditionContext.t</a>()}</pre>
 
       </div>
 
-<p>Returns true if the condition evaluation determines that the resource can be accessed.
-This function call is inteded to be as efficient as possible for the common case when
-a resource is accessible. Use the <code class="inline">details</code> callback to get more details as to
-why a resource is inaccessible.</p>
+<p>Returns a two element tuple. The first element is a boolean indicating whether this resource
+can be accessed strictly based on this gating condition.  The second element is the gating condition
+evaluation context, which may or may not have been mutated during this evaluation.</p>
   </section>
 </section>
 <section class="detail" id="c:type/0">
@@ -234,7 +235,7 @@ why a resource is inaccessible.</p>
     </a>
     <h1 class="signature">type()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L10" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating/condition_types/condition_type.ex#L11" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

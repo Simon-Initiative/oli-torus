@@ -10,7 +10,7 @@
     <title>API Reference — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-02156d1cee.js"></script>
+    <script src="dist/sidebar_items-36fe4676ba.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -1389,11 +1389,28 @@ resource_attempts - Collection of resource attempt records</p></div>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="Oli.Delivery.Gating.ConditionTypes.ConditionContext.html">Oli.Delivery.Gating.ConditionTypes.ConditionContext</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="Oli.Delivery.Gating.ConditionTypes.ConditionType.html">Oli.Delivery.Gating.ConditionTypes.ConditionType</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Behavior a gating condition type must implement</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Delivery.Gating.ConditionTypes.Finished.html">Oli.Delivery.Gating.ConditionTypes.Finished</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Finished strategy provides a condition that requires a source resource to have at least
+one completed attempt present, which optionally acheived a minimum score (as a percentage).</p></div>
 
 </div>
 <div class="summary-row">
@@ -1404,6 +1421,16 @@ resource_attempts - Collection of resource attempt records</p></div>
 
     <div class="summary-synopsis"><p>Schedule strategy provides a temporal based gating condition. A schedule condition
 can define a start and/or end datetime for a resource to be available.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="Oli.Delivery.Gating.ConditionTypes.Started.html">Oli.Delivery.Gating.ConditionTypes.Started</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Started strategy provides a condition that requires a source resource to have at least
+one attempt present.</p></div>
 
 </div>
 <div class="summary-row">

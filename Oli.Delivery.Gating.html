@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Gating — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-02156d1cee.js"></script>
+    <script src="dist/sidebar_items-36fe4676ba.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -125,7 +125,7 @@ Oli.Delivery.Gating <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#blocks_access/1">blocks_access(gating_conditions)</a>
+    <a href="#blocks_access/2">blocks_access(gating_conditions, context)</a>
 
   </div>
 
@@ -261,7 +261,7 @@ Functions
     </a>
     <h1 class="signature">blocked_by(section, user, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L251" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L252" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -274,16 +274,16 @@ Functions
 <p>Returns true if all gating conditions pass for a resource and it's ancestors</p>
   </section>
 </section>
-<section class="detail" id="blocks_access/1">
+<section class="detail" id="blocks_access/2">
 
   <div class="detail-header">
-    <a href="#blocks_access/1" class="detail-link" title="Link to this function">
+    <a href="#blocks_access/2" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">blocks_access(gating_conditions)</h1>
+    <h1 class="signature">blocks_access(gating_conditions, context)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L283" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L289" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -308,7 +308,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">browse_gating_conditions(section, paging, sorting, parent_gate_id, text_search \\ nil)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L18" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L19" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -332,7 +332,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">change_gating_condition(gating_condition, attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L217" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L218" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -346,8 +346,8 @@ the resource.  This takes into account user-specific overrides.</p>
   <a href="#change_gating_condition/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_gating_condition</span><span class="p" data-group-id="3315240598-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="3315240598-1">)</span><span class="w">
-</span><span class="p" data-group-id="3315240598-2">%</span><span class="nc" data-group-id="3315240598-2">Ecto.Changeset</span><span class="p" data-group-id="3315240598-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3315240598-3">%</span><span class="nc" data-group-id="3315240598-3">GatingCondition</span><span class="p" data-group-id="3315240598-3">{</span><span class="p" data-group-id="3315240598-3">}</span><span class="p" data-group-id="3315240598-2">}</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">change_gating_condition</span><span class="p" data-group-id="3506004868-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="3506004868-1">)</span><span class="w">
+</span><span class="p" data-group-id="3506004868-2">%</span><span class="nc" data-group-id="3506004868-2">Ecto.Changeset</span><span class="p" data-group-id="3506004868-2">{</span><span class="ss">data</span><span class="p">:</span><span class="w"> </span><span class="p" data-group-id="3506004868-3">%</span><span class="nc" data-group-id="3506004868-3">GatingCondition</span><span class="p" data-group-id="3506004868-3">{</span><span class="p" data-group-id="3506004868-3">}</span><span class="p" data-group-id="3506004868-2">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="count_exceptions/1">
@@ -359,7 +359,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">count_exceptions(gate_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L87" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L88" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -383,7 +383,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">create_gating_condition(attrs \\ %{})</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L154" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L155" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -397,11 +397,11 @@ the resource.  This takes into account user-specific overrides.</p>
   <a href="#create_gating_condition/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="7498107871-1">(</span><span class="p" data-group-id="7498107871-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="7498107871-2">}</span><span class="p" data-group-id="7498107871-1">)</span><span class="w">
-</span><span class="p" data-group-id="7498107871-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7498107871-4">%</span><span class="nc" data-group-id="7498107871-4">GatingCondition</span><span class="p" data-group-id="7498107871-4">{</span><span class="p" data-group-id="7498107871-4">}</span><span class="p" data-group-id="7498107871-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="2498222889-1">(</span><span class="p" data-group-id="2498222889-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">value</span><span class="p" data-group-id="2498222889-2">}</span><span class="p" data-group-id="2498222889-1">)</span><span class="w">
+</span><span class="p" data-group-id="2498222889-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2498222889-4">%</span><span class="nc" data-group-id="2498222889-4">GatingCondition</span><span class="p" data-group-id="2498222889-4">{</span><span class="p" data-group-id="2498222889-4">}</span><span class="p" data-group-id="2498222889-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="7498107871-5">(</span><span class="p" data-group-id="7498107871-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="7498107871-6">}</span><span class="p" data-group-id="7498107871-5">)</span><span class="w">
-</span><span class="p" data-group-id="7498107871-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7498107871-8">%</span><span class="nc" data-group-id="7498107871-8">Ecto.Changeset</span><span class="p" data-group-id="7498107871-8">{</span><span class="p" data-group-id="7498107871-8">}</span><span class="p" data-group-id="7498107871-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">create_gating_condition</span><span class="p" data-group-id="2498222889-5">(</span><span class="p" data-group-id="2498222889-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="2498222889-6">}</span><span class="p" data-group-id="2498222889-5">)</span><span class="w">
+</span><span class="p" data-group-id="2498222889-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2498222889-8">%</span><span class="nc" data-group-id="2498222889-8">Ecto.Changeset</span><span class="p" data-group-id="2498222889-8">{</span><span class="p" data-group-id="2498222889-8">}</span><span class="p" data-group-id="2498222889-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="delete_gating_condition/1">
@@ -413,7 +413,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">delete_gating_condition(gating_condition)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L193" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L194" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -427,14 +427,14 @@ the resource.  This takes into account user-specific overrides.</p>
   <a href="#delete_gating_condition/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="2894423429-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="2894423429-1">)</span><span class="w">
-</span><span class="p" data-group-id="2894423429-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2894423429-3">%</span><span class="nc" data-group-id="2894423429-3">GatingCondition</span><span class="p" data-group-id="2894423429-3">{</span><span class="p" data-group-id="2894423429-3">}</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="2894423429-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="7375846956-1">(</span><span class="n">gating_condition</span><span class="p" data-group-id="7375846956-1">)</span><span class="w">
+</span><span class="p" data-group-id="7375846956-2">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7375846956-3">%</span><span class="nc" data-group-id="7375846956-3">GatingCondition</span><span class="p" data-group-id="7375846956-3">{</span><span class="p" data-group-id="7375846956-3">}</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p" data-group-id="7375846956-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="2894423429-4">(</span><span class="n">gating_condition_with_exceptions</span><span class="p" data-group-id="2894423429-4">)</span><span class="w">
-</span><span class="p" data-group-id="2894423429-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2894423429-6">%</span><span class="nc" data-group-id="2894423429-6">GatingCondition</span><span class="p" data-group-id="2894423429-6">{</span><span class="p" data-group-id="2894423429-6">}</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p" data-group-id="2894423429-5">}</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="7375846956-4">(</span><span class="n">gating_condition_with_exceptions</span><span class="p" data-group-id="7375846956-4">)</span><span class="w">
+</span><span class="p" data-group-id="7375846956-5">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7375846956-6">%</span><span class="nc" data-group-id="7375846956-6">GatingCondition</span><span class="p" data-group-id="7375846956-6">{</span><span class="p" data-group-id="7375846956-6">}</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p" data-group-id="7375846956-5">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="2894423429-7">(</span><span class="n">gating_condition</span><span class="p" data-group-id="2894423429-7">)</span><span class="w">
-</span><span class="p" data-group-id="2894423429-8">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2894423429-9">%</span><span class="nc" data-group-id="2894423429-9">Ecto.Changeset</span><span class="p" data-group-id="2894423429-9">{</span><span class="p" data-group-id="2894423429-9">}</span><span class="p" data-group-id="2894423429-8">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">delete_gating_condition</span><span class="p" data-group-id="7375846956-7">(</span><span class="n">gating_condition</span><span class="p" data-group-id="7375846956-7">)</span><span class="w">
+</span><span class="p" data-group-id="7375846956-8">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7375846956-9">%</span><span class="nc" data-group-id="7375846956-9">Ecto.Changeset</span><span class="p" data-group-id="7375846956-9">{</span><span class="p" data-group-id="7375846956-9">}</span><span class="p" data-group-id="7375846956-8">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="details/2">
@@ -446,7 +446,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">details(blocking_gates, list)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L319" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L325" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -468,7 +468,7 @@ the resource.  This takes into account user-specific overrides.</p>
     </a>
     <h1 class="signature">generate_resource_gating_index(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L238" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L239" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -492,7 +492,7 @@ have gating conditions associated with them</p>
     </a>
     <h1 class="signature">get_gating_condition!(id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L140" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L141" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -506,10 +506,10 @@ have gating conditions associated with them</p>
   <a href="#get_gating_condition!/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="9065185148-1">(</span><span class="mi">123</span><span class="p" data-group-id="9065185148-1">)</span><span class="w">
-</span><span class="p" data-group-id="9065185148-2">%</span><span class="nc" data-group-id="9065185148-2">GatingCondition</span><span class="p" data-group-id="9065185148-2">{</span><span class="p" data-group-id="9065185148-2">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="5244342060-1">(</span><span class="mi">123</span><span class="p" data-group-id="5244342060-1">)</span><span class="w">
+</span><span class="p" data-group-id="5244342060-2">%</span><span class="nc" data-group-id="5244342060-2">GatingCondition</span><span class="p" data-group-id="5244342060-2">{</span><span class="p" data-group-id="5244342060-2">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="9065185148-3">(</span><span class="mi">456</span><span class="p" data-group-id="9065185148-3">)</span><span class="w">
+</span><span class="gp unselectable">iex&gt; </span><span class="n">get_gating_condition!</span><span class="p" data-group-id="5244342060-3">(</span><span class="mi">456</span><span class="p" data-group-id="5244342060-3">)</span><span class="w">
 </span><span class="gt">** (Ecto.NoResultsError)</span></code></pre>
   </section>
 </section>
@@ -522,7 +522,7 @@ have gating conditions associated with them</p>
     </a>
     <h1 class="signature">list_gating_conditions(section_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L100" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L101" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -536,8 +536,8 @@ have gating conditions associated with them</p>
   <a href="#list_gating_conditions/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="9769534683-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="9769534683-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="9769534683-2">]</span><span class="p" data-group-id="9769534683-1">)</span><span class="w">
-</span><span class="p" data-group-id="9769534683-3">[</span><span class="p" data-group-id="9769534683-4">%</span><span class="nc" data-group-id="9769534683-4">GatingCondition</span><span class="p" data-group-id="9769534683-4">{</span><span class="p" data-group-id="9769534683-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="9769534683-3">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="1673115235-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1673115235-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="1673115235-2">]</span><span class="p" data-group-id="1673115235-1">)</span><span class="w">
+</span><span class="p" data-group-id="1673115235-3">[</span><span class="p" data-group-id="1673115235-4">%</span><span class="nc" data-group-id="1673115235-4">GatingCondition</span><span class="p" data-group-id="1673115235-4">{</span><span class="p" data-group-id="1673115235-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="1673115235-3">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="list_gating_conditions/3">
@@ -549,7 +549,7 @@ have gating conditions associated with them</p>
     </a>
     <h1 class="signature">list_gating_conditions(section_id, user_id, resource_ids)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L116" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L117" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -563,8 +563,8 @@ have gating conditions associated with them</p>
   <a href="#list_gating_conditions/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="5992967716-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="mi">34</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="5992967716-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="5992967716-2">]</span><span class="p" data-group-id="5992967716-1">)</span><span class="w">
-</span><span class="p" data-group-id="5992967716-3">[</span><span class="p" data-group-id="5992967716-4">%</span><span class="nc" data-group-id="5992967716-4">GatingCondition</span><span class="p" data-group-id="5992967716-4">{</span><span class="p" data-group-id="5992967716-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="5992967716-3">]</span></code></pre>
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">list_gating_conditions</span><span class="p" data-group-id="2543206760-1">(</span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="mi">34</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="2543206760-2">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p" data-group-id="2543206760-2">]</span><span class="p" data-group-id="2543206760-1">)</span><span class="w">
+</span><span class="p" data-group-id="2543206760-3">[</span><span class="p" data-group-id="2543206760-4">%</span><span class="nc" data-group-id="2543206760-4">GatingCondition</span><span class="p" data-group-id="2543206760-4">{</span><span class="p" data-group-id="2543206760-4">}</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p" data-group-id="2543206760-3">]</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_gating_condition/2">
@@ -576,7 +576,7 @@ have gating conditions associated with them</p>
     </a>
     <h1 class="signature">update_gating_condition(gating_condition, attrs)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L172" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L173" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -590,11 +590,11 @@ have gating conditions associated with them</p>
   <a href="#update_gating_condition/2-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="6177999713-1">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6177999713-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="6177999713-2">}</span><span class="p" data-group-id="6177999713-1">)</span><span class="w">
-</span><span class="p" data-group-id="6177999713-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6177999713-4">%</span><span class="nc" data-group-id="6177999713-4">GatingCondition</span><span class="p" data-group-id="6177999713-4">{</span><span class="p" data-group-id="6177999713-4">}</span><span class="p" data-group-id="6177999713-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="1748821721-1">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1748821721-2">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">new_value</span><span class="p" data-group-id="1748821721-2">}</span><span class="p" data-group-id="1748821721-1">)</span><span class="w">
+</span><span class="p" data-group-id="1748821721-3">{</span><span class="ss">:ok</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1748821721-4">%</span><span class="nc" data-group-id="1748821721-4">GatingCondition</span><span class="p" data-group-id="1748821721-4">{</span><span class="p" data-group-id="1748821721-4">}</span><span class="p" data-group-id="1748821721-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="6177999713-5">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6177999713-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="6177999713-6">}</span><span class="p" data-group-id="6177999713-5">)</span><span class="w">
-</span><span class="p" data-group-id="6177999713-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="6177999713-8">%</span><span class="nc" data-group-id="6177999713-8">Ecto.Changeset</span><span class="p" data-group-id="6177999713-8">{</span><span class="p" data-group-id="6177999713-8">}</span><span class="p" data-group-id="6177999713-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">update_gating_condition</span><span class="p" data-group-id="1748821721-5">(</span><span class="n">gating_condition</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1748821721-6">%{</span><span class="ss">field</span><span class="p">:</span><span class="w"> </span><span class="n">bad_value</span><span class="p" data-group-id="1748821721-6">}</span><span class="p" data-group-id="1748821721-5">)</span><span class="w">
+</span><span class="p" data-group-id="1748821721-7">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="1748821721-8">%</span><span class="nc" data-group-id="1748821721-8">Ecto.Changeset</span><span class="p" data-group-id="1748821721-8">{</span><span class="p" data-group-id="1748821721-8">}</span><span class="p" data-group-id="1748821721-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="update_resource_gating_index/1">
@@ -606,7 +606,7 @@ have gating conditions associated with them</p>
     </a>
     <h1 class="signature">update_resource_gating_index(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L224" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/gating.ex#L225" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
