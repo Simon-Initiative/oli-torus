@@ -10,7 +10,7 @@
     <title>OliWeb.Pow.Mailer — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-36fe4676ba.js"></script>
+    <script src="dist/sidebar_items-ee8a898cfc.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -126,7 +126,21 @@ OliWeb.Pow.Mailer <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#deliver_later!/2">deliver_later!(email, opts \\ [])</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#deliver_now/2">deliver_now(email, opts \\ [])</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#deliver_now!/2">deliver_now!(email, opts \\ [])</a>
 
   </div>
 
@@ -199,6 +213,30 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="deliver_later!/2">
+
+    <span id="deliver_later!/1"></span>
+
+  <div class="detail-header">
+    <a href="#deliver_later!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">deliver_later!(email, opts \\ [])</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/mailer.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="deliver_now/2">
 
     <span id="deliver_now/1"></span>
@@ -223,8 +261,42 @@ Functions
       <h2>Specs</h2>
       <div class="specs">
 
-          <pre>deliver_now(<a href="https://hexdocs.pm/bamboo/1.6.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>(), <a href="https://hexdocs.pm/elixir/Enum.html#t:t/0">Enum.t</a>()) ::
-  <a href="https://hexdocs.pm/bamboo/1.6.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>() | {<a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>(), <a href="https://hexdocs.pm/bamboo/1.6.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>()}</pre>
+          <pre>deliver_now(<a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>(), <a href="https://hexdocs.pm/elixir/Enum.html#t:t/0">Enum.t</a>()) ::
+  {:ok, <a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>()}
+  | {:ok, <a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}
+  | {:error, <a href="https://hexdocs.pm/elixir/Exception.html#t:t/0">Exception.t</a>() | <a href="https://hexdocs.pm/elixir/String.html#t:t/0">String.t</a>()}</pre>
+
+      </div>
+
+
+  </section>
+</section>
+<section class="detail" id="deliver_now!/2">
+
+    <span id="deliver_now!/1"></span>
+
+  <div class="detail-header">
+    <a href="#deliver_now!/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">deliver_now!(email, opts \\ [])</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/pow/mailer.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+      <h2>Specs</h2>
+      <div class="specs">
+
+          <pre>deliver_now!(<a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>(), <a href="https://hexdocs.pm/elixir/Enum.html#t:t/0">Enum.t</a>()) ::
+  <a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>() | {<a href="https://hexdocs.pm/bamboo/2.2.0/Bamboo.Email.html#t:t/0">Bamboo.Email.t</a>(), <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()}</pre>
 
       </div>
 

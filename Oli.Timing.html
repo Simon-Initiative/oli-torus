@@ -10,7 +10,7 @@
     <title>Oli.Timing — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-36fe4676ba.js"></script>
+    <script src="dist/sidebar_items-ee8a898cfc.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -178,7 +178,7 @@ Designed to be used in conjunction with <code class="inline">Oli.Timing.run</cod
   <a href="#emit/3-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="3197192027-1">(</span><span class="k" data-group-id="3197192027-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="3197192027-2">end</span><span class="p" data-group-id="3197192027-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="3197192027-3">(</span><span class="p" data-group-id="3197192027-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="3197192027-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="3197192027-3">)</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="0823188275-1">(</span><span class="k" data-group-id="0823188275-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;4&quot;</span><span class="w"> </span><span class="k" data-group-id="0823188275-2">end</span><span class="p" data-group-id="0823188275-1">)</span><span class="w"> </span><span class="o">|&gt;</span><span class="w"> </span><span class="n">emit</span><span class="p" data-group-id="0823188275-3">(</span><span class="p" data-group-id="0823188275-4">[</span><span class="ss">:oli</span><span class="p">,</span><span class="w"> </span><span class="ss">:four</span><span class="p">,</span><span class="w"> </span><span class="ss">:calc</span><span class="p" data-group-id="0823188275-4">]</span><span class="p">,</span><span class="w"> </span><span class="ss">:duration</span><span class="p" data-group-id="0823188275-3">)</span><span class="w">
 </span><span class="s">&quot;4&quot;</span></code></pre>
   </section>
 </section>
@@ -208,11 +208,11 @@ result of the function.</p><h2 id="run/1-examples" class="section-heading">
   <a href="#run/1-examples" class="hover-link"><span class="icon-link" aria-hidden="true"></span></a>
   Examples
 </h2>
-<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="0598630660-1">(</span><span class="k" data-group-id="0598630660-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="0598630660-2">end</span><span class="p" data-group-id="0598630660-1">)</span><span class="w">
-</span><span class="p" data-group-id="0598630660-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="0598630660-3">}</span><span class="w">
+<pre><code class="makeup elixir"><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="7244348542-1">(</span><span class="k" data-group-id="7244348542-2">fn</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="k" data-group-id="7244348542-2">end</span><span class="p" data-group-id="7244348542-1">)</span><span class="w">
+</span><span class="p" data-group-id="7244348542-3">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p" data-group-id="7244348542-3">}</span><span class="w">
 
-</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="0598630660-4">(</span><span class="k" data-group-id="0598630660-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="0598630660-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0598630660-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="0598630660-6">]</span><span class="p" data-group-id="0598630660-4">)</span><span class="w">
-</span><span class="p" data-group-id="0598630660-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="0598630660-7">}</span></code></pre>
+</span><span class="gp unselectable">iex&gt; </span><span class="n">run</span><span class="p" data-group-id="7244348542-4">(</span><span class="k" data-group-id="7244348542-5">fn</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">-&gt;</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">&lt;&gt;</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="k" data-group-id="7244348542-5">end</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="7244348542-6">[</span><span class="s">&quot;Bob&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot; Ross&quot;</span><span class="p" data-group-id="7244348542-6">]</span><span class="p" data-group-id="7244348542-4">)</span><span class="w">
+</span><span class="p" data-group-id="7244348542-7">{</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Bob Ross&quot;</span><span class="p" data-group-id="7244348542-7">}</span></code></pre>
   </section>
 </section>
 <section class="detail" id="run/2">
