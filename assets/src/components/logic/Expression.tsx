@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Bank from 'data/content/bank';
 import { Select } from 'components/common/Selection';
-import { Objectives } from 'components/resource/Objectives';
+import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { Fact } from 'data/content/bank';
 import { Tags } from 'components/resource/Tags';
 import { ActivityTypeSelection } from './ActivityTypeSelection';
@@ -108,7 +108,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
   const buildValueEditor = () => {
     if (props.expression.fact === Fact.objectives) {
       return (
-        <Objectives
+        <ObjectivesSelection
           onRegisterNewObjective={props.onRegisterNewObjective}
           selected={props.expression.value as number[]}
           onEdit={(value) => {

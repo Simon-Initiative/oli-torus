@@ -95,6 +95,7 @@ defmodule OliWeb.ResourceController do
                 Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
+                  revision,
                   activity_revisions,
                   AuthoringResolver,
                   project_slug

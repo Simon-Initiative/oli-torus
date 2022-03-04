@@ -1,5 +1,5 @@
 import { ActivityModelSchema, Undoable } from 'components/activities/types';
-import { PartObjectives } from 'components/activity/PartObjectives';
+import { ActivityLOs } from 'components/resource/objectives/ActivityLOs';
 import { selectImage } from 'components/editing/elements/image/imageActions';
 import { Tags } from 'components/resource/Tags';
 import { ActivityEditContext, ObjectiveMap } from 'data/content/activity';
@@ -169,7 +169,7 @@ export class InlineActivityEditor extends React.Component<
           >
             <div />
           </TitleBar>
-          <PartObjectives
+          <ActivityLOs
             partIds={partIds}
             editMode={this.props.editMode}
             projectSlug={webComponentProps.projectslug}
