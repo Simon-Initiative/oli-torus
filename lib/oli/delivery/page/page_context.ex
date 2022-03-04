@@ -150,8 +150,10 @@ defmodule Oli.Delivery.Page.PageContext do
     []
   end
 
-  defp rollup_objectives(_, latest_attempts, resolver, section_slug) do
-    Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
-    |> ObjectivesRollup.rollup_objectives(resolver, section_slug)
+  defp rollup_objectives(page_rev, latest_attempts, resolver, section_slug) do
+    activity_revisions =
+      Enum.map(latest_attempts, fn {_, {%{revision: revision}, _}} -> revision end)
+
+    ObjectivesRollup.rollup_objectives(page_rev, activity_revisions, resolver, section_slug)
   end
 end
