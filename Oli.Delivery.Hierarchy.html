@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Hierarchy — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-ee8a898cfc.js"></script>
+    <script src="dist/sidebar_items-66ef6772d6.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -318,7 +318,7 @@ Functions
   published_resources_by_resource_id_by_pub
 )</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L203" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L204" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -340,7 +340,7 @@ Functions
     </a>
     <h1 class="signature">build_navigation_link_map(root)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L263" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L270" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -352,31 +352,35 @@ Functions
 
 <p>Given a course section hierarchy, this function builds a &quot;navigation link map&quot; for a course section that is
 used during delivery to efficiently render the &quot;Previous&quot; and &quot;Next&quot; page links.</p><p>This function produces a map of resource ids (as string keys) to inner maps containing previous and next
-resource ids references (again as strings) as well as the page title and slug. An example navigation link map is:</p><pre><code class="makeup elixir"><span class="p" data-group-id="8087163498-1">%{</span><span class="w">
-  </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8087163498-2">%{</span><span class="w">
+resource ids references (again as strings) as well as the page title and slug. An example navigation link map is:</p><pre><code class="makeup elixir"><span class="p" data-group-id="9962538804-1">%{</span><span class="w">
+  </span><span class="s">&quot;1&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-2">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Introduction to Biology&quot;</span><span class="p">,</span><span class="w">
-    </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;intro_bio&quot;</span><span class="w">
-  </span><span class="p" data-group-id="8087163498-2">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8087163498-3">%{</span><span class="w">
+    </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;intro_bio&quot;</span><span class="p">,</span><span class="w">
+    </span><span class="s">&quot;children&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-3">[</span><span class="s">&quot;4&quot;</span><span class="p" data-group-id="9962538804-3">]</span><span class="w">
+  </span><span class="p" data-group-id="9962538804-2">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;2&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-4">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;1&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;3&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Photosynthesis&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;photosyn_2&quot;</span><span class="p">,</span><span class="w">
-  </span><span class="p" data-group-id="8087163498-3">}</span><span class="p">,</span><span class="w">
-  </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="8087163498-4">%{</span><span class="w">
+    </span><span class="s">&quot;children&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-5">[</span><span class="p" data-group-id="9962538804-5">]</span><span class="w">
+  </span><span class="p" data-group-id="9962538804-4">}</span><span class="p">,</span><span class="w">
+  </span><span class="s">&quot;3&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-6">%{</span><span class="w">
     </span><span class="s">&quot;prev&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;2&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;next&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="no">nil</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;title&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;Final Exam&quot;</span><span class="p">,</span><span class="w">
     </span><span class="s">&quot;slug&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="s">&quot;final_exam&quot;</span><span class="w">
-  </span><span class="p" data-group-id="8087163498-4">}</span><span class="w">
-</span><span class="p" data-group-id="8087163498-1">}</span></code></pre><p>The above construct is designed to allow a lightweight, constant time determination
+    </span><span class="s">&quot;children&quot;</span><span class="w"> </span><span class="o">=</span><span class="o">&gt;</span><span class="w"> </span><span class="p" data-group-id="9962538804-7">[</span><span class="p" data-group-id="9962538804-7">]</span><span class="w">
+  </span><span class="p" data-group-id="9962538804-6">}</span><span class="w">
+</span><span class="p" data-group-id="9962538804-1">}</span></code></pre><p>The above construct is designed to allow a lightweight, constant time determination
 (and then rendering) of Previous and Next links.  Given a resource id of the current
 page, at most three map lookups are required to gather all the information required to
 render links.  It is expected that this map is already in memory, retrieved from the
 section record itself, which overall then greatly improves the performance of
-determining prev and next links.</p>
+determining prev and next links.</p><p>This structure also supports container (and specifically, children) rendering via
+the &quot;children&quot; attribute.</p>
   </section>
 </section>
 <section class="detail" id="create_hierarchy/2">
@@ -388,7 +392,7 @@ determining prev and next links.</p>
     </a>
     <h1 class="signature">create_hierarchy(revision, published_resources_by_resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L48" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L49" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -410,7 +414,7 @@ determining prev and next links.</p>
     </a>
     <h1 class="signature">find_and_remove_node(hierarchy, uuid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L179" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L180" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -432,7 +436,7 @@ determining prev and next links.</p>
     </a>
     <h1 class="signature">find_and_update_node(hierarchy, node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L167" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L168" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -454,7 +458,7 @@ determining prev and next links.</p>
     </a>
     <h1 class="signature">find_in_hierarchy(node, uuid_to_find)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L119" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L120" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -476,7 +480,7 @@ determining prev and next links.</p>
     </a>
     <h1 class="signature">flatten(root)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L320" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L331" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -515,7 +519,7 @@ Page C</p>
     </a>
     <h1 class="signature">flatten_hierarchy(node)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L39" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L40" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -538,7 +542,7 @@ in the hierarchy. Containers appear before their contents</p>
     </a>
     <h1 class="signature">flatten_pages(nodes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L21" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L22" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -561,7 +565,7 @@ an ordered flat list of the nodes of only the pages in the hierarchy.</p>
     </a>
     <h1 class="signature">gated_ancestry_map(root, gated_resource_id_map)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L361" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L372" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -607,7 +611,7 @@ The following ancestry map will be returned:
     </a>
     <h1 class="signature">inspect(hierarchy, opts \\ [])</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L399" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L410" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -630,7 +634,7 @@ to drop in the HierarchyNodes using the drop_keys option.</p>
     </a>
     <h1 class="signature">move_node(hierarchy, node, destination_uuid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L194" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L195" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -652,7 +656,7 @@ to drop in the HierarchyNodes using the drop_keys option.</p>
     </a>
     <h1 class="signature">purge_duplicate_resources(hierarchy)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L92" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L93" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -676,7 +680,7 @@ any subsequent duplicates will be removed from the hierarchy</p>
     </a>
     <h1 class="signature">purge_duplicate_resources(node, processed_nodes)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L98" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -698,7 +702,7 @@ any subsequent duplicates will be removed from the hierarchy</p>
     </a>
     <h1 class="signature">reorder_children(children, node, source_index, index)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L147" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/hierarchy.ex#L148" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>

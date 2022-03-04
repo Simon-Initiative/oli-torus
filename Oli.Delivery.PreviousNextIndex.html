@@ -10,7 +10,7 @@
     <title>Oli.Delivery.PreviousNextIndex — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-ee8a898cfc.js"></script>
+    <script src="dist/sidebar_items-66ef6772d6.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -126,8 +126,8 @@ with the newly rebuilt index.</p></div>
 
   </div>
 
-    <div class="summary-synopsis"><p>For a given section slug and a resource id of a page within the section hiearchy, returns the
-link descriptors for the previous and next pages.  This function will rebuild the previous_next_index
+    <div class="summary-synopsis"><p>For a given section slug and a resource id of a page or container within the section hiearchy, returns the
+link descriptors for the previous, next and current resources.  This function will rebuild the previous_next_index
 if it is nil.  This allows a just-in-time update for actions that invalidate this structure.</p></div>
 
 </div>
@@ -155,7 +155,7 @@ Functions
     </a>
     <h1 class="signature">rebuild(section)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/previous_next_index.ex#L70" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/previous_next_index.ex#L76" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -178,7 +178,7 @@ with the newly rebuilt index.</p>
     </a>
     <h1 class="signature">retrieve(section, resource_id)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/previous_next_index.ex#L27" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/previous_next_index.ex#L32" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -188,15 +188,20 @@ with the newly rebuilt index.</p>
 
   <section class="docstring">
 
-<p>For a given section slug and a resource id of a page within the section hiearchy, returns the
-link descriptors for the previous and next pages.  This function will rebuild the previous_next_index
-if it is nil.  This allows a just-in-time update for actions that invalidate this structure.</p><p>Returns a tuple of the form:
-{:ok, {previous, next}} where previous and next are both link descriptors.  A link descriptor
+<p>For a given section slug and a resource id of a page or container within the section hiearchy, returns the
+link descriptors for the previous, next and current resources.  This function will rebuild the previous_next_index
+if it is nil.  This allows a just-in-time update for actions that invalidate this structure.</p><p>Returns a nested tuple of the form:
+{:ok, {previous, next, current}, previous_next_index} where previous, next, current are all link descriptors.  A link descriptor
 is of the form:</p><p>%{
+  &quot;id&quot; =&gt; &quot;3&quot;,
+  &quot;type&quot; =&gt; &quot;page&quot;,
+  &quot;index&quot; =&gt; &quot;1&quot;,
+  &quot;level&quot; =&gt; &quot;2&quot;,
   &quot;prev&quot; =&gt; &quot;2&quot;,
   &quot;next&quot; =&gt; &quot;4&quot;,
   &quot;slug =&gt; &quot;the_slug&quot;,
-  &quot;title&quot; =&gt; &quot;The title&quot;
+  &quot;title&quot; =&gt; &quot;The title&quot;,
+  &quot;children&quot; =&gt; []
 }</p><p>Returns {:error, reason} if the index cannot be rebuilt.</p>
   </section>
 </section>
