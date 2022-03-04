@@ -1,7 +1,8 @@
 
 <h5 class="text-primary border-primary mb-2">
   <%= link to: @container_link_url.(@node.revision.slug),
-    class: resource_link_class(@active_page == @node.revision.slug) do %>
+    class: resource_link_class(@active_page == @node.revision.slug),
+    target: "_blank" do %>
     <span class="container-title my-2">
       <%= container_title(@node) %>
     </span>

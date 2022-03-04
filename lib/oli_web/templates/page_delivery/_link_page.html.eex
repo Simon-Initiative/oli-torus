@@ -1,5 +1,6 @@
 <%= link to: @page_link_url.(@node.revision.slug),
-  class: resource_link_class(@active_page == @node.revision.slug) do %>
+  class: resource_link_class(@active_page == @node.revision.slug),
+  target: "_blank" do %>
   <span class="page-title">
     <i class="far fa-file mr-2"></i> <%= @node.revision.title %>
   </span>

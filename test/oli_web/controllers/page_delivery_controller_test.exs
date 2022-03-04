@@ -15,7 +15,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
     test "handles student access by an enrolled student", %{
       conn: conn,
       user: user,
-      section: section
+      section: section,
+      revision: revision
     } do
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
@@ -24,6 +25,9 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
+
+      assert html_response(conn, 200) =~
+               "href=\"#{Routes.page_delivery_path(conn, :page, section.slug, revision.slug)}\" target=\"_blank\""
     end
 
     test "handles student page access by an enrolled student", %{
