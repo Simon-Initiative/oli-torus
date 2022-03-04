@@ -147,8 +147,8 @@ defmodule OliWeb.PageDeliveryController do
             scripts: [],
             section: section,
             title: title,
-            children: simulate_children_nodes(section_slug, current, previous_next_index),
-            container: simulate_node(revision, current),
+            children: simulate_children_nodes(current, previous_next_index),
+            container: simulate_node(current),
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
@@ -647,35 +647,44 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  defp simulate_node(revision, %{"level" => level_str, "index" => index_str}) do
+  defp simulate_node(%{
+         "level" => level_str,
+         "index" => index_str,
+         "title" => title,
+         "id" => id_str,
+         "type" => type,
+         "graded" => graded,
+         "slug" => slug
+       }) do
     %Oli.Delivery.Hierarchy.HierarchyNode{
       uuid: UUID.uuid4(),
       numbering: %Oli.Resources.Numbering{
         level: String.to_integer(level_str),
         index: String.to_integer(index_str)
       },
-      revision: revision,
+      revision: %{
+        slug: slug,
+        title: title,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type(type),
+        graded:
+          if graded == "true" do
+            true
+          else
+            false
+          end
+      },
       children: [],
-      resource_id: revision.resource_id
+      resource_id: String.to_integer(id_str)
     }
   end
 
-  defp simulate_children_nodes(section_slug, current, previous_next_index) do
-    child_revisions =
-      Resolver.from_resource_id(
-        section_slug,
-        Enum.map(current["children"], fn s -> String.to_integer(s) end)
-      )
+  defp simulate_children_nodes(current, previous_next_index) do
+    Enum.map(current["children"], fn s ->
+      {:ok, {_, _, child}, _} =
+        Oli.Delivery.PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
 
-    child_link_descs =
-      Enum.map(current["children"], fn s ->
-        {:ok, {_, _, child}, _} =
-          Oli.Delivery.PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
-
-        child
-      end)
-
-    Enum.zip(child_revisions, child_link_descs)
-    |> Enum.map(fn {revision, link_desc} -> simulate_node(revision, link_desc) end)
+      child
+    end)
+    |> Enum.map(fn link_desc -> simulate_node(link_desc) end)
   end
 end

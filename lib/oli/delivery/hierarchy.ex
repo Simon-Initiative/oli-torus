@@ -286,6 +286,7 @@ defmodule Oli.Delivery.Hierarchy do
               _ -> previous
             end,
           "next" => nil,
+          "graded" => "#{node.revision.graded}",
           "children" =>
             Enum.map(node.children, fn hn -> Integer.to_string(hn.revision.resource_id) end)
         }
