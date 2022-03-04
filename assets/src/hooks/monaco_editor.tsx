@@ -1,27 +1,30 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { render } from 'react-dom';
 import * as monaco from 'monaco-editor';
 import ReactMonacoEditor from '@uiw/react-monacoeditor';
 import { Maybe } from 'tsmonad';
-import { getAttribute, maybeGetAttribute, maybePushEvent } from 'utils/surface';
+import { surfaceHook } from 'utils/surface';
 
 export const MonacoEditor = {
   mounted() {
+    surfaceHook(this);
+
     // required
-    const defaultValue = getAttribute(this, 'data-default-value');
-    const language = getAttribute(this, 'data-language');
+    const defaultValue = this.getAttribute('data-default-value');
+    const language = this.getAttribute('data-language');
 
     // optional
-    const defaultWidth = maybeGetAttribute(this, 'data-width');
-    const defaultHeight = maybeGetAttribute(this, 'data-height');
-    const defaultOptions = maybeGetAttribute(this, 'data-default-options');
-    const dataSchemaUri = maybeGetAttribute(this, 'data-schema-uri');
-    const dataSchemas = maybeGetAttribute(this, 'data-schemas');
-    const onMountEvent = maybeGetAttribute(this, 'data-on-mount');
-    const onChangeEvent = maybeGetAttribute(this, 'data-on-change');
-    const setOptionsEvent = maybeGetAttribute(this, 'data-set-options');
-    const setWidthHeightEvent = maybeGetAttribute(this, 'data-set-width-height');
-    const setValueEvent = maybeGetAttribute(this, 'data-set-value');
+    const defaultWidth = this.maybeGetAttribute('data-width');
+    const defaultHeight = this.maybeGetAttribute('data-height');
+    const defaultOptions = this.maybeGetAttribute('data-default-options');
+    const dataSchemaUri = this.maybeGetAttribute('data-schema-uri');
+    const dataSchemas = this.maybeGetAttribute('data-schemas');
+    const onMountEvent = this.maybeGetAttribute('data-on-mount');
+    const onChangeEvent = this.maybeGetAttribute('data-on-change');
+    const setOptionsEvent = this.maybeGetAttribute('data-set-options');
+    const setWidthHeightEvent = this.maybeGetAttribute('data-set-width-height');
+    const setValueEvent = this.maybeGetAttribute('data-set-value');
+    const getValueEvent = this.maybeGetAttribute('data-get-value');
 
     const schemas = Maybe.all({ dataSchemaUri, dataSchemas }).map(
       ({ dataSchemaUri, dataSchemas }) =>
@@ -37,32 +40,33 @@ export const MonacoEditor = {
     const LiveMonacoEditor = () => {
       const [width, setWidth] = useState(defaultWidth.valueOr(undefined));
       const [height, setHeight] = useState(defaultHeight.valueOr(undefined));
-      const [value, setValue] = useState(defaultValue);
       const [options, setOptions] = useState(
         defaultOptions.caseOf({
-          just: (o) => o,
+          just: (o: any) => o,
           nothing: () => ({}),
         }),
       );
 
       // LiveView event handlers
-      setOptionsEvent.lift((setOptionsEvent) =>
-        this.handleEvent(setOptionsEvent, (newOptions: any) => setOptions(newOptions)),
-      );
+      useEffect(() => {
+        this.maybeHandleEvent(setOptionsEvent, (options: any) => setOptions(options));
 
-      setWidthHeightEvent.lift((setWidthHeightEvent) =>
-        this.handleEvent(
+        this.maybeHandleEvent(
           setWidthHeightEvent,
           ({ width, height }: { width?: string; height?: string }) => {
             Maybe.maybe(width).lift((w) => setWidth(w));
             Maybe.maybe(height).lift((h) => setHeight(h));
           },
-        ),
-      );
+        );
 
-      setValueEvent.lift((setValueEvent) =>
-        this.handleEvent(setValueEvent, ({ value }: any) => setValue(value)),
-      );
+        this.maybeHandleEvent(setValueEvent, ({ value }: any) =>
+          this.editor.getModel().setValue(value),
+        );
+
+        this.maybeHandleEvent(getValueEvent, (meta: any) =>
+          this.maybePushEvent(getValueEvent, { value: this.editor.getModel().getValue(), meta }),
+        );
+      }, []);
 
       const editorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
         this.editor = editor;
@@ -76,18 +80,18 @@ export const MonacoEditor = {
           });
         });
 
-        maybePushEvent(this, onMountEvent);
+        this.maybePushEvent(onMountEvent);
       };
 
       const onChange = (value: string) => {
-        maybePushEvent(this, onChangeEvent, value);
+        this.maybePushEvent(onChangeEvent, value);
       };
 
       return (
         <ReactMonacoEditor
           width={width}
           height={height}
-          value={value}
+          value={defaultValue}
           language={language}
           options={options}
           editorDidMount={editorDidMount}

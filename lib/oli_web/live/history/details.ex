@@ -7,8 +7,9 @@ defmodule OliWeb.RevisionHistory.Details do
 
   def render(assigns) do
     ~F"""
-    <div id={"details-#{@revision.id}"} class="revision-details">
+    <div class="revision-details">
       <MonacoEditor
+        id={"details-editor-#{@revision.id}"}
         height="500px"
         language="json"
         validate_schema_uri="http://torus.oli.cmu.edu/schemas/v0-1-0/resource.schema.json"
@@ -17,9 +18,12 @@ defmodule OliWeb.RevisionHistory.Details do
           "readOnly" => true,
           "selectOnLineNumbers" => true,
           "minimap" => %{"enabled" => false},
-          "scrollBeyondLastLine" => false
+          "scrollBeyondLastLine" => false,
+          "tabSize" => 2
         }}
-        on_change="revision_json_change" />
+        set_options="monaco_editor_set_options"
+        set_value="monaco_editor_set_value"
+        get_value="monaco_editor_get_value" />
     </div>
     """
   end

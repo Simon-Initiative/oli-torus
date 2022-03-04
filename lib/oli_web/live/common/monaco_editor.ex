@@ -9,11 +9,12 @@ defmodule OliWeb.Common.MonacoEditor do
   prop height, :string
   prop validate_schema_uri, :string
   prop default_options, :map
-  prop set_options, :event, default: "monaco_editor_set_options"
-  prop set_width_height, :event, default: "monaco_editor_set_width_height"
-  prop set_value, :event, default: "monaco_editor_set_value"
+  prop set_options, :event
+  prop set_width_height, :event
+  prop set_value, :event
   prop on_mount, :event
   prop on_change, :event
+  prop get_value, :event
 
   def render(assigns) do
     ~F"""
@@ -32,7 +33,8 @@ defmodule OliWeb.Common.MonacoEditor do
       data-on-change={encode_attr(@on_change)}
       data-set-options={encode_attr(@set_options)}
       data-set-width-height={encode_attr(@set_width_height)}
-      data-set-value={encode_attr(@set_value)}>
+      data-set-value={encode_attr(@set_value)}
+      data-get-value={encode_attr(@get_value)}>
       <div class="text-center">
         <div class="spinner-border text-secondary" role="status">
           <span class="sr-only">Loading...</span>

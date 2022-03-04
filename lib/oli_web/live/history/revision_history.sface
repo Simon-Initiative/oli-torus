@@ -11,7 +11,7 @@
           Revisions
         </div>
         <div class="card-body">
-          <div class="mb-2">
+          <div class="border rounded mb-2">
             { live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size }
           </div>
           { live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size }
@@ -47,10 +47,10 @@
         <div class="card-body">
           {#if !Enum.empty?(@edit_errors)}
             <div class="text-danger mb-2">Failed to save. JSON is invalid according to schema. Please fix the validation issues below and try again:</div>
-            {#for {msg, el} <- @edit_errors}
+            {#for error <- @edit_errors}
               <div class="alert alert-warning d-flex" role="alert">
-                <div class="flex-grow-1">{msg} {el}</div>
-                <div><a href={@resource_schema.schema["$id"]} target="_blank">Resource Schema <i class="las la-external-link-alt"></i></a></div>
+                <div class="flex-grow-1">{error}</div>
+                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="las la-external-link-alt"></i></a></div>
               </div>
             {/for}
           {/if}

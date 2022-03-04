@@ -5,8 +5,7 @@ defmodule Oli.Utils.SchemaResolver do
     |> File.ls!()
     |> Enum.filter(&String.match?(&1, ~r/\.schema\.json$/))
     |> Enum.map(fn name ->
-      with {:ok, json} <-
-              File.read("#{:code.priv_dir(:oli)}/schemas/#{@current_version}/#{name}"),
+      with {:ok, json} <- File.read("#{:code.priv_dir(:oli)}/schemas/#{@current_version}/#{name}"),
            {:ok, schema} <- Jason.decode(json) do
         %{
           name: name,
@@ -27,6 +26,8 @@ defmodule Oli.Utils.SchemaResolver do
   def schema(name) do
     @schemas
     |> Enum.find(fn s -> s.name == name end)
+    |> Map.get(:schema)
+    |> ExJsonSchema.Schema.resolve()
   end
 
   def resolve(uri) do

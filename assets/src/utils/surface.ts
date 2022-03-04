@@ -1,3 +1,4 @@
+import { Hooks } from 'hooks';
 import { Maybe } from 'tsmonad';
 
 interface SurfaceAttribute {
@@ -5,10 +6,12 @@ interface SurfaceAttribute {
   data: any;
 }
 
-interface SurfaceEvent {
-  name: string;
-  target: string;
-}
+type SurfaceEvent =
+  | string
+  | {
+      name: string;
+      target: string;
+    };
 
 export const getAttribute = (hook: any, name: string) =>
   maybeGetAttribute(hook, name).valueOrThrow(
@@ -23,13 +26,27 @@ export const maybeGetAttribute = (hook: any, name: string) =>
     return attr.type === 'string' ? attr.data : JSON.parse(attr.data);
   });
 
+export const maybeHandleEvent = (
+  hook: any,
+  event: Maybe<SurfaceEvent>,
+  handle_fn: (params: any) => any,
+) => {
+  event.lift((e) => {
+    if (typeof e === 'string') {
+      return hook.handleEvent(e, handle_fn);
+    } else {
+      return hook.handleEvent(e.name, handle_fn);
+    }
+  });
+};
+
 export const maybePushEvent = (
   hook: any,
-  event_str_or_obj: Maybe<string | SurfaceEvent>,
+  event: Maybe<SurfaceEvent>,
   params?: any,
   onReply?: any,
 ) => {
-  event_str_or_obj.lift((e) => {
+  event.lift((e) => {
     if (typeof e === 'string') {
       return hook.pushEvent(e, params, onReply);
     } else if (e.target === 'live_view') {
@@ -38,4 +55,15 @@ export const maybePushEvent = (
       return hook.pushEventTo(e.target, e.name, params, onReply);
     }
   });
+};
+
+export const surfaceHook = (hook: any) => {
+  hook.getAttribute = (name: string) => getAttribute(hook, name);
+  hook.maybeGetAttribute = (name: string) => maybeGetAttribute(hook, name);
+  hook.maybeHandleEvent = (event: Maybe<SurfaceEvent>, handle_fn: (params: any) => any) =>
+    maybeHandleEvent(hook, event, handle_fn);
+  hook.maybePushEvent = (event: Maybe<SurfaceEvent>, params?: any, onReply?: any) =>
+    maybePushEvent(hook, event, params, onReply);
+
+  return hook;
 };

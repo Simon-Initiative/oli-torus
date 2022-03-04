@@ -47,12 +47,13 @@ defmodule OliWeb.RevisionHistory do
     mappings_by_revision =
       Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
-    selected = fetch_selected(hd(revisions).id)
+    selected = fetch_revision(hd(revisions).id)
 
     {:ok,
      socket
      |> assign(
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
+       breadcrumbs: Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
+        [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        page_size: @page_size,
        tree: tree,
@@ -98,7 +99,7 @@ defmodule OliWeb.RevisionHistory do
     )
   end
 
-  defp fetch_selected(revision_id) do
+  defp fetch_revision(revision_id) do
     Repo.get!(Revision, revision_id)
   end
 
@@ -162,6 +163,7 @@ defmodule OliWeb.RevisionHistory do
     Broadcaster.broadcast_revision(revision, project_slug)
 
     socket
+    |> assign(selected: revision)
   end
 
   defp reset_editor(socket, default_value) do
@@ -205,11 +207,11 @@ defmodule OliWeb.RevisionHistory do
             |> Jason.decode!()
           end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
-      revision = fetch_selected(hd(socket.assigns.revisions).id)
+      latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
 
       {:noreply,
         socket
-        |> mimic_edit(revision, hd(uploaded_content))
+        |> mimic_edit(latest_revision, hd(uploaded_content))
         |> assign(upload_errors: [])}
 
     else
@@ -232,7 +234,7 @@ defmodule OliWeb.RevisionHistory do
   @impl Phoenix.LiveView
   def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
-    selected = fetch_selected(id)
+    selected = fetch_revision(id)
     content_json =
       selected
       |> Jason.encode!()
@@ -271,27 +273,6 @@ defmodule OliWeb.RevisionHistory do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("save_edits", _, socket) do
-    %{selected: selected, edited_json: edited_json, resource_schema: resource_schema} = socket.assigns
-
-    case ExJsonSchema.Validator.validate(resource_schema, edited_json) do
-      :ok ->
-        socket =
-          socket
-          |> push_event("monaco_editor_set_options", %{"readOnly" => true})
-          |> assign(edited_json: nil)
-
-        {:noreply,
-          socket
-          |> mimic_edit(selected, edited_json["content"])
-          |> assign(edit_errors: [])}
-
-      {:error, errors} ->
-        {:noreply, assign(socket, edit_errors: errors)}
-    end
-  end
-
-  @impl Phoenix.LiveView
   def handle_event("cancel_edits", _, socket) do
     {:noreply,
      socket
@@ -299,15 +280,27 @@ defmodule OliWeb.RevisionHistory do
      |> assign(edited_json: nil, edit_errors: [])}
   end
 
-  def handle_event("revision_json_change", value, socket) do
-    edited_json = Jason.decode!(value)
+  @impl Phoenix.LiveView
+  def handle_event("save_edits", _, socket) do
+    {:noreply, socket |> push_event("monaco_editor_get_value", %{action: "save"})}
+  end
 
-    case socket.assigns do
-      %{edited_json: nil} ->
-        {:noreply, socket}
+  def handle_event("monaco_editor_get_value", %{"value" => value, "meta" => %{"action" => "save"}}, socket) do
+    %{revisions: revisions, resource_schema: resource_schema} = socket.assigns
 
-      _ ->
-        {:noreply, assign(socket, edited_json: edited_json)}
+    with {:ok, edited} <- Jason.decode(value),
+         :ok <- ExJsonSchema.Validator.validate(resource_schema, edited),
+         latest_revision <- fetch_revision(hd(revisions).id) do
+        {:noreply,
+          socket
+          |> reset_editor(value)
+          |> mimic_edit(latest_revision, edited["content"])}
+    else
+      {:error, %Jason.DecodeError{}} ->
+        {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
+
+      {:error, errors} ->
+        {:noreply, assign(socket, edit_errors: Enum.map(errors, fn {msg, el} -> "#{msg} #{el}" end))}
     end
   end
 
