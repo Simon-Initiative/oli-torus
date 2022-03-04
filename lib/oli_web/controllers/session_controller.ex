@@ -22,5 +22,5 @@ defmodule OliWeb.SessionController do
   end
 
   defp session_data_to_delete(type),
-    do: @shared_session_data_to_delete ++ [String.to_atom("current_#{type}_id")]
+    do: [String.to_atom("current_#{type}_id") | @shared_session_data_to_delete]
 end

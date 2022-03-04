@@ -199,7 +199,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(
                view,
-               "a[href=\"#{Routes.updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)}\"]"
+               "a[href=\"#{Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)}\"]"
              )
 
       assert render(view) =~

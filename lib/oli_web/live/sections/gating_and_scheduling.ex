@@ -96,9 +96,13 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           {Gating.get_gating_condition!(int_id), "Student Exceptions"}
       end
 
-    {user_type, _user, section} = Mount.for(section_slug, session)
+    case Mount.for(section_slug, session) do
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
 
-    {:ok, assign_defaults(socket, section, session, parent_gate, title, user_type)}
+      {user_type, _user, section} ->
+        {:ok, assign_defaults(socket, section, session, parent_gate, title, user_type)}
+    end
   end
 
   def assign_defaults(socket, section, session, parent_gate, title, user_type) do
