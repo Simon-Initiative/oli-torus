@@ -13,6 +13,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
+  alias Oli.Resources.ResourceType
 
   @doc """
   From a constructed hierarchy root node, or a collection of hierarchy nodes, return
@@ -25,7 +26,7 @@ defmodule Oli.Delivery.Hierarchy do
   def flatten_pages(%HierarchyNode{} = node), do: flatten_pages(node, []) |> Enum.reverse()
 
   defp flatten_pages(%HierarchyNode{} = node, all) do
-    if node.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") do
+    if ResourceType.is_page(node.revision) do
       [node | all]
     else
       Enum.reduce(node.children, all, &flatten_pages(&1, &2))
@@ -236,19 +237,22 @@ defmodule Oli.Delivery.Hierarchy do
       "prev" => nil,
       "next" => "2",
       "title" => "Introduction to Biology",
-      "slug" => "intro_bio"
+      "slug" => "intro_bio",
+      "children" => ["4"]
     },
     "2" => %{
       "prev" => "1",
       "next" => "3",
       "title" => "Photosynthesis",
       "slug" => "photosyn_2",
+      "children" => []
     },
     "3" => %{
       "prev" => "2",
       "next" => nil,
       "title" => "Final Exam",
       "slug" => "final_exam"
+      "children" => []
     }
   }
   ```
@@ -259,17 +263,21 @@ defmodule Oli.Delivery.Hierarchy do
   render links.  It is expected that this map is already in memory, retrieved from the
   section record itself, which overall then greatly improves the performance of
   determining prev and next links.
+
+  This structure also supports container (and specifically, children) rendering via
+  the "children" attribute.
   """
   def build_navigation_link_map(%HierarchyNode{} = root) do
     {map, _} =
       flatten(root)
-      |> Enum.filter(fn node ->
-        Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) == "page"
-      end)
       |> Enum.reduce({%{}, nil}, fn node, {map, previous} ->
         this_id = Integer.to_string(node.revision.resource_id)
 
         this_entry = %{
+          "id" => Integer.to_string(node.revision.resource_id),
+          "type" => Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id),
+          "index" => Integer.to_string(node.numbering.index),
+          "level" => Integer.to_string(node.numbering.level),
           "slug" => node.revision.slug,
           "title" => node.revision.title,
           "prev" =>
@@ -277,7 +285,10 @@ defmodule Oli.Delivery.Hierarchy do
               nil -> nil
               _ -> previous
             end,
-          "next" => nil
+          "next" => nil,
+          "graded" => "#{node.revision.graded}",
+          "children" =>
+            Enum.map(node.children, fn hn -> Integer.to_string(hn.revision.resource_id) end)
         }
 
         map =
@@ -326,7 +337,7 @@ defmodule Oli.Delivery.Hierarchy do
     Enum.reduce(children, flattened_nodes, fn node, acc ->
       node = %{node | ancestors: current_ancestors}
 
-      case Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id) do
+      case ResourceType.get_type_by_id(node.revision.resource_type_id) do
         "container" -> flatten_helper(node, [node | acc], current_ancestors ++ [node])
         _ -> [node | acc]
       end

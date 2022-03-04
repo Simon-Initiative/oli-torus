@@ -180,7 +180,7 @@ $workspace-breadcrumb-bg: $gray-800;
 
 // Auth providers buttons
 
-$google-button-background-color: #4285F4;
+$google-button-background-color: #4285f4;
 $google-button-font-color: $white;
 
 $github-button-background-color: $black;
@@ -436,5 +436,10 @@ html.authoring {
       background-color: $body-color;
       color: $body-bg;
     }
+  }
+
+  .course-outline a,
+  .course-outline a:hover {
+    color: white;
   }
 }

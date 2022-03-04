@@ -10,6 +10,7 @@
 ### Enhancements
 
 - Allow for student-specific gating exceptions
+- Display containers as pages with a table of contents
 - Logic-based gating
 - Allow learning objective attachment to pages
 

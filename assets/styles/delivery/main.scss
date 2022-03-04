@@ -46,7 +46,7 @@ body.modal-open {
 }
 
 .torus-logo {
-  font-family: "Open Sans", sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 form .form-label-group .help-block {
@@ -62,15 +62,40 @@ form .form-label-group .help-block {
     font-weight: 500;
   }
 
-  .page-link:first-of-type {
+  .list-group.list-group-root {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .list-group.list-group-root .list-group {
+    margin-bottom: 0;
+  }
+
+  .list-group.list-group-root .list-group-item {
+    border-radius: 0;
+    border-width: 1px 0 0 0;
+  }
+
+  .list-group.list-group-root > .list-group-item:first-child {
+    border-top-width: 0;
     border-top-left-radius: $list-group-border-radius;
     border-top-right-radius: $list-group-border-radius;
   }
 
-  .page-link:last-of-type {
+  .list-group.list-group-root > .list-group > .list-group-item {
+    padding-left: 30px;
+  }
+
+  .list-group.list-group-root > .list-group > .list-group > .list-group-item {
+    padding-left: 45px;
+  }
+
+  .list-group-item:last-of-type {
     border-bottom-left-radius: $list-group-border-radius;
+  }
+
+  .list-group-item:last-child {
     border-bottom-right-radius: $list-group-border-radius;
-    margin-bottom: 20px;
     border-bottom: $list-group-border-width solid $list-group-border-color;
   }
 }
@@ -78,7 +103,7 @@ form .form-label-group .help-block {
 .system-banner {
   margin-bottom: 0.4em !important;
 
-  span{
+  span {
     color: black;
   }
 }

@@ -1,12 +1,11 @@
-
 <%= for script <- @scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
-
 <div class="message d-flex justify-content-between alert alert-info enter-done">
   <div>
     <div>
-      <strong>Preview Mode</strong><br>
+      <strong>Preview Mode</strong>
+      <br>
       <%= if @context.graded do %>
         <p>This is a preview of your graded assessment but it is displayed as an ungraded page to show feedback and hints.</p>
       <% else %>
@@ -15,22 +14,30 @@
     </div>
   </div>
   <div class="form-inline m-2 my-lg-0">
-    <button class="btn btn-action btn-warning" type="button" style="white-space: nowrap;" onclick="window.close()">Exit Preview</button>
+    <button class="btn btn-action btn-warning" type="button" style="white-space: nowrap;" onclick="window.close()">
+      Exit Preview
+    </button>
   </div>
 </div>
 
-<h1 class="title"><%= @context.title %></h1>
-
-<%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
-
-<div id="eventIntercept" class="content">
-  <%= raw(@content_html) %>
-</div>
+<%= if not is_nil(@container) and
+  Oli.Resources.ResourceType.is_container(@container.revision) do %>
+  <%= render OliWeb.PageDeliveryView, "container.html", Map.merge(assigns, %{
+    children: @container.children,
+    active_page: nil
+  }) %>
+<% else %>
+  <h1 class="title">
+    <%= @context.title %>
+  </h1>
+  <%= render OliWeb.PageDeliveryView, "_objectives.html", objectives: @objectives %>
+  <div id="eventIntercept" class="content">
+    <%= raw(@content_html) %>
+  </div>
+  <script>
+    MathJax?.startup?.defaultReady?.();
+    OLI.initPreviewActivityBridge('eventIntercept');
+  </script>
+<% end %>
 
 <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>
-
-
-<script>
-  MathJax && MathJax.startup && MathJax.startup.defaultReady && MathJax.startup.defaultReady();
-  OLI.initPreviewActivityBridge('eventIntercept');
-</script>

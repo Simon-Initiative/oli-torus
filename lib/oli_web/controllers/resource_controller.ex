@@ -10,6 +10,7 @@ defmodule OliWeb.ResourceController do
   alias OliWeb.Common.Breadcrumb
   alias Oli.PartComponents
   alias Oli.Delivery.Hierarchy
+  alias Oli.Resources.ResourceType
 
   plug :fetch_project
   plug :authorize_project
@@ -106,7 +107,16 @@ defmodule OliWeb.ResourceController do
                 ),
               context: context,
               scripts: Activities.get_activity_scripts(),
-              preview_mode: true
+              preview_mode: true,
+              container:
+                if ResourceType.is_container(revision) do
+                  AuthoringResolver.full_hierarchy(project_slug)
+                  |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
+                else
+                  nil
+                end,
+              page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
+              container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )
 
           {:error, :not_found} ->
