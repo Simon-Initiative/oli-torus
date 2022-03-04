@@ -9,6 +9,7 @@
 ### Enhancements
 
 - Allow for student-specific gating exceptions
+- Logic-based gating
 - Allow learning objective attachment to pages
 
 ## 0.18.4 (2022-02-24)
