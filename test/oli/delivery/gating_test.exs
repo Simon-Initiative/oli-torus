@@ -275,7 +275,7 @@ defmodule Oli.Delivery.GatingTest do
       assert Gating.blocked_by(section, user_a, nested_page1.id) == []
 
       # check for a resource that is gated and condition is not satisfied
-      assert Gating.blocked_by(section, user_a, nested_page2.id) != []
+      refute Gating.blocked_by(section, user_a, nested_page2.id) == []
 
       # change unit to have ended yesterday, check that nested resource is now gated properly
       Gating.update_gating_condition(unit_gating_condition, %{
@@ -283,7 +283,7 @@ defmodule Oli.Delivery.GatingTest do
       })
 
       # nested resource should no longer be accessible since unit is gated by a schedule that ended yesterday
-      assert Gating.blocked_by(section, user_a, nested_page1.id) != []
+      refute Gating.blocked_by(section, user_a, nested_page1.id) == []
     end
 
     test "blocked_by/3 allows student exception to override an otherwise active gate", %{

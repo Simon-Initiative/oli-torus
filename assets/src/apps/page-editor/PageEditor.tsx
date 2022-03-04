@@ -6,6 +6,8 @@ import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { TitleBar } from 'components/content/TitleBar';
 import { Banner } from 'components/messages/Banner';
 import { Editors } from 'components/resource/editors/Editors';
+import { Objectives } from 'components/resource/objectives/Objectives';
+import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
@@ -552,6 +554,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
               <PreviewButton />
             </TitleBar>
+            <Objectives>
+              <ObjectivesSelection
+                editMode={this.state.editMode}
+                projectSlug={this.props.projectSlug}
+                objectives={this.state.allObjectives.toArray()}
+                selected={this.state.objectives.toArray()}
+                onEdit={(objectives) => this.update({ objectives: Immutable.List(objectives) })}
+                onRegisterNewObjective={onRegisterNewObjective}
+              />
+            </Objectives>
+
             <div>
               <Editors
                 {...props}
