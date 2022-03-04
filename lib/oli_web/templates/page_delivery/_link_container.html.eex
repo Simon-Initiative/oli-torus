@@ -1,4 +1,4 @@
-<%= link to: @page_link_url.(@node.revision.slug),
+<%= link to: @container_link_url.(@node.revision.slug),
   class: resource_link_class(@active_page == @node.revision.slug) <> " ungraded-page-link" do %>
   <div class="d-flex w-100 justify-content-between">
     <span class="container-title my-2">

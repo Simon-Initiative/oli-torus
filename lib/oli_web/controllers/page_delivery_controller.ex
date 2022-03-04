@@ -18,13 +18,12 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
   alias Oli.Delivery.Sections
-  alias Oli.Resources.ResourceType
   alias Oli.Grading
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing.DeliveryResolver, as: Resolver
-  alias Oli.Delivery.Hierarchy
+  alias Oli.Resources.Revision
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -51,7 +50,9 @@ defmodule OliWeb.PageDeliveryController do
               section_slug: section_slug,
               hierarchy: hierarchy,
               preview_mode: true,
-              page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1)
+              page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+              container_link_url:
+                &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
             )
         end
       else
@@ -83,7 +84,8 @@ defmodule OliWeb.PageDeliveryController do
             section_slug: section_slug,
             hierarchy: hierarchy,
             preview_mode: false,
-            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1)
+            page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+            container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
           )
       end
     else
@@ -91,6 +93,80 @@ defmodule OliWeb.PageDeliveryController do
         %Section{open_and_free: true, requires_enrollment: false} ->
           conn
           |> redirect(to: Routes.delivery_path(conn, :show_enroll, section_slug))
+
+        _ ->
+          render(conn, "not_authorized.html")
+      end
+    end
+  end
+
+  def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+    conn
+    |> assign(:preview_mode, true)
+    |> container(%{"section_slug" => section_slug, "revision_slug" => revision_slug})
+  end
+
+  def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+    user = conn.assigns.current_user
+    section = conn.assigns.section
+
+    if Sections.is_enrolled?(user.id, section_slug) do
+      container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
+      page_type_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+      preview_mode = Map.get(conn.assigns, :preview_mode, false)
+
+      conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
+
+      {page_link_url, container_link_url} =
+        if preview_mode do
+          {&Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+           &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)}
+        else
+          {&Routes.page_delivery_path(conn, :page, section_slug, &1),
+           &Routes.page_delivery_path(conn, :container, section_slug, &1)}
+        end
+
+      case Resolver.from_revision_slug(section_slug, revision_slug) do
+        nil ->
+          render(conn, "error.html")
+
+        # Specifically handle the case that a page was visited with a "container" structured
+        # link.  In this case, we redirect to the actual page route so that we can render it
+        %Revision{resource_type_id: ^page_type_id} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :page, section_slug, revision_slug))
+
+        # Render a container in the most efficient manner: A single resolver call for child
+        # revisions based on retrieval of child data from the PreviousNextIndex cache
+        %Revision{resource_type_id: ^container_type_id, title: title} = revision ->
+          {:ok, {previous, next, current}, previous_next_index} =
+            Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+
+          render(conn, "container.html",
+            scripts: [],
+            section: section,
+            title: title,
+            children: simulate_children_nodes(section_slug, current, previous_next_index),
+            container: simulate_node(revision, current),
+            section_slug: section_slug,
+            previous_page: previous,
+            next_page: next,
+            preview_mode: preview_mode,
+            page_link_url: page_link_url,
+            container_link_url: container_link_url,
+            active_page: nil
+          )
+
+        # Any attempt to render a valid revision that is not container or page gets an error
+        _ ->
+          render(conn, "error.html")
+      end
+    else
+      case section do
+        %Section{open_and_free: true, requires_enrollment: false} ->
+          conn
+          |> redirect(to: Routes.delivery_path(conn, :page, section_slug, revision_slug))
 
         _ ->
           render(conn, "not_authorized.html")
@@ -181,7 +257,7 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
-    {:ok, {previous, next}} =
+    {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
     activity_map =
@@ -232,8 +308,8 @@ defmodule OliWeb.PageDeliveryController do
         objectives: [],
         section: section,
         revision: revision,
-        hierarchy_node: get_hierarchy_node(revision, section_slug),
-        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1)
+        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+        container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
       }
     )
   end
@@ -277,7 +353,8 @@ defmodule OliWeb.PageDeliveryController do
         r1.date_evaluated <= r2.date_evaluated
       end)
 
-    {:ok, {previous, next}} = Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
+    {:ok, {previous, next, _}, _} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
 
     {:ok, summary} =
       Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
@@ -295,7 +372,9 @@ defmodule OliWeb.PageDeliveryController do
       resource_id: page.resource_id,
       slug: context.page.slug,
       max_attempts: page.max_attempts,
-      section: section
+      section: section,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
     })
   end
 
@@ -324,7 +403,7 @@ defmodule OliWeb.PageDeliveryController do
       context.activities
       |> Jason.encode()
 
-    {:ok, {previous, next}} =
+    {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(conn, "advanced_delivery.html", %{
@@ -380,16 +459,12 @@ defmodule OliWeb.PageDeliveryController do
 
     all_activities = Activities.list_activity_registrations()
 
-    {:ok, {previous, next}} =
+    {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(
       conn,
-      if ResourceType.is_container(context.page) do
-        "container.html"
-      else
-        "page.html"
-      end,
+      "page.html",
       %{
         page: context.page,
         review_mode: context.review_mode,
@@ -411,8 +486,8 @@ defmodule OliWeb.PageDeliveryController do
         latest_attempts: context.latest_attempts,
         section: section,
         children: context.page.children,
-        hierarchy_node: get_hierarchy_node(context.page, section_slug),
-        page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1)
+        page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+        container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
       }
     )
   end
@@ -517,7 +592,7 @@ defmodule OliWeb.PageDeliveryController do
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
 
-    {:ok, {previous, next}} =
+    {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
     render(conn, "after_finalized.html",
@@ -530,7 +605,9 @@ defmodule OliWeb.PageDeliveryController do
       title: context.page.title,
       message: message,
       slug: context.page.slug,
-      section: section
+      section: section,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
     )
   end
 
@@ -570,12 +647,35 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def get_hierarchy_node(revision, section_slug) do
-    if ResourceType.is_container(revision) do
-            Resolver.full_hierarchy(section_slug)
-            |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
-          else
-            nil
-          end
+  defp simulate_node(revision, %{"level" => level_str, "index" => index_str}) do
+    %Oli.Delivery.Hierarchy.HierarchyNode{
+      uuid: UUID.uuid4(),
+      numbering: %Oli.Resources.Numbering{
+        level: String.to_integer(level_str),
+        index: String.to_integer(index_str)
+      },
+      revision: revision,
+      children: [],
+      resource_id: revision.resource_id
+    }
+  end
+
+  defp simulate_children_nodes(section_slug, current, previous_next_index) do
+    child_revisions =
+      Resolver.from_resource_id(
+        section_slug,
+        Enum.map(current["children"], fn s -> String.to_integer(s) end)
+      )
+
+    child_link_descs =
+      Enum.map(current["children"], fn s ->
+        {:ok, {_, _, child}, _} =
+          Oli.Delivery.PreviousNextIndex.retrieve(previous_next_index, String.to_integer(s))
+
+        child
+      end)
+
+    Enum.zip(child_revisions, child_link_descs)
+    |> Enum.map(fn {revision, link_desc} -> simulate_node(revision, link_desc) end)
   end
 end

@@ -35,18 +35,21 @@ defmodule Oli.Delivery.PreviousNextIndexTest do
     } do
       assert is_nil(section.previous_next_index)
 
-      {:ok, {_previous, next}} = PreviousNextIndex.retrieve(section, node2.revision.resource_id)
+      {:ok, {_previous, next, _}, _} =
+        PreviousNextIndex.retrieve(section, node2.revision.resource_id)
 
       # verify that the links are set up correctly and that the slugs and titles
       # are present and correct. Containers should render as pages.
       assert next["slug"] == unit_node.revision.slug
 
-      {:ok, {previous, next}} = PreviousNextIndex.retrieve(section, unit_node.revision.resource_id)
+      {:ok, {previous, next, _}, _} =
+        PreviousNextIndex.retrieve(section, unit_node.revision.resource_id)
 
       assert previous["slug"] == node2.revision.slug
       assert next["slug"] == node3.revision.slug
 
-      {:ok, {previous, next}} = PreviousNextIndex.retrieve(section, node3.revision.resource_id)
+      {:ok, {previous, next, _}, _} =
+        PreviousNextIndex.retrieve(section, node3.revision.resource_id)
 
       assert previous["slug"] == unit_node.revision.slug
       assert next["slug"] == node4.revision.slug

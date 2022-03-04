@@ -34,7 +34,7 @@ defmodule Oli.Plugs.MaybeGatedResource do
   end
 
   defp gated_resource_unavailable(conn, section, revision, blocking_gates) do
-    {:ok, {previous, next}} =
+    {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
 
     details = Gating.details(blocking_gates, format_datetime: format_datetime_fn(conn))
@@ -48,7 +48,9 @@ defmodule Oli.Plugs.MaybeGatedResource do
       scripts: [],
       previous_page: previous,
       next_page: next,
-      details: details
+      details: details,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section.slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section.slug, &1)
     )
     |> halt()
   end

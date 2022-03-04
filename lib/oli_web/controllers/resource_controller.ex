@@ -107,14 +107,15 @@ defmodule OliWeb.ResourceController do
               context: context,
               scripts: Activities.get_activity_scripts(),
               preview_mode: true,
-              hierarchy_node:
+              container:
                 if ResourceType.is_container(revision) do
                   AuthoringResolver.full_hierarchy(project_slug)
                   |> Hierarchy.find_in_hierarchy(&(&1.resource_id == revision.resource_id))
                 else
                   nil
                 end,
-              page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
+              page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
+              container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )
 
           {:error, :not_found} ->

@@ -20,10 +20,10 @@
   </div>
 </div>
 
-<%= if not is_nil(@hierarchy_node) and
-  Oli.Resources.ResourceType.is_container(@hierarchy_node.revision) do %>
+<%= if not is_nil(@container) and
+  Oli.Resources.ResourceType.is_container(@container.revision) do %>
   <%= render OliWeb.PageDeliveryView, "container.html", Map.merge(assigns, %{
-    children: @hierarchy_node.children,
+    children: @container.children,
     active_page: nil
   }) %>
 <% else %>

@@ -237,19 +237,22 @@ defmodule Oli.Delivery.Hierarchy do
       "prev" => nil,
       "next" => "2",
       "title" => "Introduction to Biology",
-      "slug" => "intro_bio"
+      "slug" => "intro_bio",
+      "children" => ["4"]
     },
     "2" => %{
       "prev" => "1",
       "next" => "3",
       "title" => "Photosynthesis",
       "slug" => "photosyn_2",
+      "children" => []
     },
     "3" => %{
       "prev" => "2",
       "next" => nil,
       "title" => "Final Exam",
       "slug" => "final_exam"
+      "children" => []
     }
   }
   ```
@@ -260,6 +263,9 @@ defmodule Oli.Delivery.Hierarchy do
   render links.  It is expected that this map is already in memory, retrieved from the
   section record itself, which overall then greatly improves the performance of
   determining prev and next links.
+
+  This structure also supports container (and specifically, children) rendering via
+  the "children" attribute.
   """
   def build_navigation_link_map(%HierarchyNode{} = root) do
     {map, _} =
@@ -268,6 +274,10 @@ defmodule Oli.Delivery.Hierarchy do
         this_id = Integer.to_string(node.revision.resource_id)
 
         this_entry = %{
+          "id" => Integer.to_string(node.revision.resource_id),
+          "type" => Oli.Resources.ResourceType.get_type_by_id(node.revision.resource_type_id),
+          "index" => Integer.to_string(node.numbering.index),
+          "level" => Integer.to_string(node.numbering.level),
           "slug" => node.revision.slug,
           "title" => node.revision.title,
           "prev" =>
@@ -275,7 +285,9 @@ defmodule Oli.Delivery.Hierarchy do
               nil -> nil
               _ -> previous
             end,
-          "next" => nil
+          "next" => nil,
+          "children" =>
+            Enum.map(node.children, fn hn -> Integer.to_string(hn.revision.resource_id) end)
         }
 
         map =

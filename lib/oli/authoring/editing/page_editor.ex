@@ -204,7 +204,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
       # Create the resource editing context that we will supply to the client side editor
       hierarchy = AuthoringResolver.full_hierarchy(project_slug)
 
-      {:ok, {previous, next}} =
+      {:ok, {previous, next, _}, _} =
         Oli.Delivery.Hierarchy.build_navigation_link_map(hierarchy)
         |> Oli.Delivery.PreviousNextIndex.retrieve(revision.resource_id)
 
