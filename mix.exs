@@ -70,6 +70,7 @@ defmodule Oli.MixProject do
       {:appsignal_phoenix, "~> 2.0.0"},
       {:bamboo, "~> 2.2"},
       {:bamboo_ses, "~> 0.3.0"},
+      {:bamboo_phoenix, "~> 1.0"},
       {:base32_crockford, "~> 1.0.0"},
       {:bcrypt_elixir, "~> 2.2"},
       {:credo, "~> 1.6", only: [:dev, :test], runtime: false},
