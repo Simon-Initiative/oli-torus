@@ -337,7 +337,9 @@ defmodule OliWeb.PageDeliveryController do
     # number of attempts after a student has exhausted all attempts
     attempts_remaining = max(page.max_attempts - attempts_taken, 0)
 
-    blocking_gates = conn.assigns.blocking_gates
+    # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
+    # gate that prevents this learning from starting another attempt of this resource
+    blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
     allow_attempt? = (attempts_remaining > 0 or page.max_attempts == 0) and blocking_gates == []
 
     message =
