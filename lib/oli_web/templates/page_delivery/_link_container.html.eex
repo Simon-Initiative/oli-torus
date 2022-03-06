@@ -1,19 +1,20 @@
-<%= link to: @container_link_url.(@node.revision.slug),
-  class: resource_link_class(@active_page == @node.revision.slug) <> " ungraded-page-link" do %>
-  <div class="d-flex w-100 justify-content-between">
+
+<h5 class="text-primary border-primary mb-2">
+  <%= link to: @container_link_url.(@node.revision.slug),
+    class: resource_link_class(@active_page == @node.revision.slug) <> " container-page-link" do %>
     <span class="container-title my-2">
       <%= container_title(@node) %>
     </span>
-  </div>
-<% end %>
+  <% end %>
+</h5>
 
-<div style="padding-left: <%= @node.numbering.level * 20 %>px">
-  <%= if Enum.empty?(@node.children) do %>
-    <span class="text-secondary">There are no items</span>
-  <% else %>
+<%= if Enum.empty?(@node.children) do %>
+  <span class="text-secondary">There are no items</span>
+<% else %>
+  <ol style="list-style: none;">
     <%= render"_outline.html", Map.merge(assigns, %{
       nodes: @node.children,
       active_page: nil,
     }) %>
-  <% end %>
-</div>
+  </ol>
+<% end %>
