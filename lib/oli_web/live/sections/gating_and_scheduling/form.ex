@@ -29,6 +29,15 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
         </select>
       </div>
 
+      <div class="form-group">
+        <label for="gradingPolicySelect">Graded Resource Policy</label>
+        <select class="form-control" id="gradingPolicySelect" phx-hook="SelectListener" phx-value-change="select-grading-policy">
+          {#for policy <- Oli.Delivery.Gating.GatingCondition.graded_resource_policies()}
+            <option value={policy} {...policy_selected(assigns, policy)}>{policy_desc(policy)}</option>
+          {/for}
+        </select>
+      </div>
+
       {render_condition_options(assigns)}
 
       <div class="d-flex mb-5">
@@ -168,6 +177,14 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
 
   def maybe_type_selected(_assigns, :default), do: [selected: true]
   def maybe_type_selected(_assigns, _), do: []
+
+  def policy_selected(%{gating_condition: %{graded_resource_policy: policy}}, p) when policy == p,
+    do: [selected: true]
+
+  def policy_selected(_, _), do: []
+
+  def policy_desc(:allows_nothing), do: "Allow no access at all to graded pages"
+  def policy_desc(:allows_review), do: "Allow the review of previously completed attempts"
 
   def render_condition_options(%{gating_condition: %{type: :schedule, data: data}} = assigns) do
     initial_start_date = Map.get(data, :start_datetime)
