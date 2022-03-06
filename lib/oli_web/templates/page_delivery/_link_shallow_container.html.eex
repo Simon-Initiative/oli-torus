@@ -1,5 +1,5 @@
 <%= link to: @container_link_url.(@node.revision.slug),
-  class: resource_link_class(@active_page == @node.revision.slug) <> " container-page-link" do %>
+  class: resource_link_class(@active_page == @node.revision.slug) do %>
   <span class="container-title my-2">
     <%= container_title(@node) %>
   </span>

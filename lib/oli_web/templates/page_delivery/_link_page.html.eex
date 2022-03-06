@@ -1,5 +1,5 @@
 <%= link to: @page_link_url.(@node.revision.slug),
-  class: resource_link_class(@active_page == @node.revision.slug) <> " ungraded-page-link" do %>
+  class: resource_link_class(@active_page == @node.revision.slug) do %>
   <span class="page-title">
     <i class="far fa-file mr-2"></i> <%= @node.revision.title %>
   </span>
