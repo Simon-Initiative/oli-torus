@@ -15,7 +15,7 @@ export type ObjectivesProps = {
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
-export const Objectives = (props: ObjectivesProps) => {
+export const ObjectivesSelection = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
 
   // Typeahead throws a bunch of warnings if it doesn't contain
@@ -28,7 +28,7 @@ export const Objectives = (props: ObjectivesProps) => {
   const asObjectives = selected.map((s) => map.get(s) as Objective);
 
   return (
-    <div className="flex-grow-1 objectives">
+    <div className="flex-grow-1 objectives-selection">
       <Typeahead
         id={id}
         multiple={true}

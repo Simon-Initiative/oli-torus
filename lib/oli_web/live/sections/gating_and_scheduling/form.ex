@@ -106,13 +106,33 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   defp create_disabled(gating_condition, parent_gate) do
     if is_nil(parent_gate) do
       case gating_condition do
-        %{type: _, resource_id: _, section_id: _, data: _} -> false
-        _ -> true
+        %{type: type, resource_id: _, section_id: _}
+        when type in [:started, :finished] ->
+          case Map.get(gating_condition.data, :resource_id) do
+            nil -> true
+            _ -> false
+          end
+
+        %{type: _, resource_id: _, section_id: _, data: _} ->
+          false
+
+        _ ->
+          true
       end
     else
       case gating_condition do
-        %{type: _, resource_id: _, section_id: _, data: _, user_id: _} -> false
-        _ -> true
+        %{type: type, resource_id: _, section_id: _}
+        when type in [:started, :finished] ->
+          case Map.get(gating_condition.data, :resource_id) do
+            nil -> true
+            _ -> false
+          end
+
+        %{type: _, resource_id: _, section_id: _, data: _, user_id: _} ->
+          false
+
+        _ ->
+          true
       end
     end
   end
@@ -127,6 +147,11 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     do: [value: resource_title]
 
   def maybe_resource_value(_assigns), do: []
+
+  def maybe_source_value(%{gating_condition: %{source_title: resource_title}}),
+    do: [value: resource_title]
+
+  def maybe_source_value(_assigns), do: []
 
   def maybe_user_value(%{gating_condition: %{user_id: nil}}), do: []
 
@@ -164,6 +189,49 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
     """
   end
 
+  def render_condition_options(%{gating_condition: %{type: :started}} = assigns) do
+    ~F"""
+    <div class="form-group">
+      <label for="source">Resource That Must Be Started</label>
+      <div class="input-group mb-3">
+        <input type="text" id="source" readonly class="form-control" placeholder="Select a source resource..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-all-picker" {...maybe_source_value(assigns)}>
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" phx-click="show-all-picker">Select</button>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def render_condition_options(%{gating_condition: %{type: :finished, data: data}} = assigns) do
+    ~F"""
+    <div class="form-group">
+      <label for="source">Resource That Must Be Finished</label>
+      <div class="input-group mb-3">
+        <input type="text" id="source" readonly class="form-control" placeholder="Select a source resource..." aria-label="resource-title" aria-describedby="basic-addon2" phx-click="show-graded-picker" {...maybe_source_value(assigns)}>
+        <div class="input-group-append">
+          <button class="btn btn-outline-primary" type="button" phx-click="show-graded-picker">Select</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" value="" id="min-score" checked={checked_from_min_score(data)} phx-click="toggle_min_score">
+      <label class="form-check-label" for="min-score">
+        Require a minimum score (as a percentage)
+      </label>
+    </div>
+    <div class="mb-4 row mt-2 ml-3">
+      <div class="col-sm-2">
+        <input type="number" class="form-control" id="min-score-value"
+          disabled={!checked_from_min_score(data)}
+          min="0" max="100" value={value_from_min_score(data)} phx-hook="TextInputListener" phx-value-change="change_min_score">
+      </div>
+      <label for="min-score-value" class="col-sm-1 col-form-label">%</label>
+    </div>
+    """
+  end
+
   def render_condition_options(%{gating_condition: %{type: :always_open}} = assigns) do
     ~F"""
     <div class="alert alert-secondary" role="alert">
@@ -173,4 +241,18 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   end
 
   def render_condition_options(_assigns), do: nil
+
+  defp value_from_min_score(%{minimum_percentage: nil}), do: ""
+
+  defp value_from_min_score(%{minimum_percentage: percentage}) do
+    Float.to_string(percentage * 100)
+  end
+
+  defp value_from_min_score(_), do: ""
+
+  defp checked_from_min_score(%{minimum_percentage: nil}), do: false
+
+  defp checked_from_min_score(%{minimum_percentage: _}), do: true
+
+  defp checked_from_min_score(_), do: false
 end

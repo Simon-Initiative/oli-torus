@@ -331,6 +331,38 @@ defmodule OliWeb.DeliveryControllerTest do
                "You are being <a href=\"/sections/join/invalid\">redirected"
     end
 
+    test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
+      section = insert(:section)
+      later = DateTime.add(DateTime.utc_now(), 100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
+      assert {:unavailable, :before_start_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section before its scheduled start date."
+    end
+
+    test "redirects to section unavailable when section has already ended", %{conn: conn} do
+      section = insert(:section)
+      in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
+      assert {:unavailable, :after_end_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section after its scheduled end date."
+    end
+
     test "shows enroll view", %{conn: conn} do
       section = insert(:section)
       section_invite = insert(:section_invite, %{section: section})

@@ -15,25 +15,31 @@ defmodule Oli.Delivery.Gating.ConditionTypes.Schedule do
     :schedule
   end
 
-  def open?(%GatingCondition{
-        data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
-      }) do
+  def evaluate(
+        %GatingCondition{
+          data: %GatingConditionData{start_datetime: start_datetime, end_datetime: end_datetime}
+        },
+        context
+      ) do
     now = DateTime.utc_now()
 
-    case {start_datetime, end_datetime} do
-      {nil, nil} ->
-        true
+    result =
+      case {start_datetime, end_datetime} do
+        {nil, nil} ->
+          true
 
-      {start_datetime, nil} ->
-        DateTime.compare(start_datetime, now) == :lt
+        {start_datetime, nil} ->
+          DateTime.compare(start_datetime, now) == :lt
 
-      {nil, end_datetime} ->
-        DateTime.compare(now, end_datetime) == :lt
-
-      {start_datetime, end_datetime} ->
-        DateTime.compare(start_datetime, now) == :lt and
+        {nil, end_datetime} ->
           DateTime.compare(now, end_datetime) == :lt
-    end
+
+        {start_datetime, end_datetime} ->
+          DateTime.compare(start_datetime, now) == :lt and
+            DateTime.compare(now, end_datetime) == :lt
+      end
+
+    {result, context}
   end
 
   def details(

@@ -51,20 +51,36 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
                 Oli.Accounts.get_user!(gc.user_id)
               end
 
-            gc
-            |> Map.take([:id, :type, :section_id, :resource_id])
-            |> Map.put(
-              :resource_title,
-              resource_title
-            )
-            |> Map.put(
-              :user,
-              user
-            )
-            |> Map.put(
-              :data,
-              Map.from_struct(gc.data)
-            )
+            gc =
+              gc
+              |> Map.take([:id, :type, :section_id, :resource_id])
+              |> Map.put(
+                :resource_title,
+                resource_title
+              )
+              |> Map.put(
+                :user,
+                user
+              )
+              |> Map.put(
+                :data,
+                Map.from_struct(gc.data)
+              )
+
+            case gc.data.resource_id do
+              nil ->
+                gc
+
+              resource_id ->
+                %{title: source_title} =
+                  DeliveryResolver.from_resource_id(section.slug, resource_id)
+
+                gc
+                |> Map.put(
+                  :source_title,
+                  source_title
+                )
+            end
           end)
       end
 
@@ -133,6 +149,94 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       )
 
     {:noreply, socket |> hide_modal()}
+  end
+
+  def handle_event("show-graded-picker", _, socket) do
+    %{section: section} = socket.assigns
+
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    root = hierarchy
+
+    filter_items_fn =
+      case socket.assigns.gating_condition.resource_id do
+        nil ->
+          fn items ->
+            Enum.filter(
+              items,
+              &(&1.uuid != root.uuid and
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("page") and
+                  &1.revision.graded)
+            )
+          end
+
+        resource_id ->
+          fn items ->
+            Enum.filter(
+              items,
+              &(&1.uuid != root.uuid and
+                  &1.revision.resource_id != resource_id and
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("page") and
+                  &1.revision.graded)
+            )
+          end
+      end
+
+    modal_assigns = %{
+      id: "select_resource",
+      hierarchy: hierarchy,
+      active: root,
+      selection: nil,
+      filter_items_fn: filter_items_fn,
+      on_select: "select_source",
+      on_cancel: "cancel_select_resource"
+    }
+
+    {:noreply, assign(socket, modal: %{component: SelectResourceModal, assigns: modal_assigns})}
+  end
+
+  def handle_event("show-all-picker", _, socket) do
+    %{section: section} = socket.assigns
+
+    hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+    root = hierarchy
+
+    filter_items_fn =
+      case socket.assigns.gating_condition.resource_id do
+        nil ->
+          fn items ->
+            Enum.filter(
+              items,
+              &(&1.uuid != root.uuid and
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("page"))
+            )
+          end
+
+        resource_id ->
+          fn items ->
+            Enum.filter(
+              items,
+              &(&1.uuid != root.uuid and
+                  &1.revision.resource_id != resource_id and
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("page"))
+            )
+          end
+      end
+
+    modal_assigns = %{
+      id: "select_resource",
+      hierarchy: hierarchy,
+      active: root,
+      selection: nil,
+      filter_items_fn: filter_items_fn,
+      on_select: "select_source",
+      on_cancel: "cancel_select_resource"
+    }
+
+    {:noreply, assign(socket, modal: %{component: SelectResourceModal, assigns: modal_assigns})}
   end
 
   def handle_event("show-resource-picker", _, socket) do
@@ -215,12 +319,58 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
       Hierarchy.find_in_hierarchy(hierarchy, selection)
 
+    # handle the case that the resource was changed to select the same as a source
+    # for a source-specific gate type (started or finished).  We simply remove the
+    # source selection here
+    gating_condition =
+      case Map.get(gating_condition, :data) do
+        nil ->
+          gating_condition
+
+        data ->
+          case Map.get(data, :resource_id) do
+            ^resource_id ->
+              data = Map.put(gating_condition.data, :resource_id, nil)
+
+              Map.put(gating_condition, :data, data)
+              |> Map.delete(:source_title)
+
+            _ ->
+              gating_condition
+          end
+      end
+
     {:noreply,
      assign(socket,
        gating_condition:
          gating_condition
          |> Map.put(:resource_id, resource_id)
          |> Map.put(:resource_title, title)
+     )
+     |> hide_modal()}
+  end
+
+  def handle_event(
+        "select_source",
+        %{"selection" => selection},
+        socket
+      ) do
+    %{
+      gating_condition: gating_condition,
+      modal: %{assigns: %{hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
+      Hierarchy.find_in_hierarchy(hierarchy, selection)
+
+    data = Map.put(gating_condition.data, :resource_id, resource_id)
+
+    {:noreply,
+     assign(socket,
+       gating_condition:
+         gating_condition
+         |> Map.put(:data, data)
+         |> Map.put(:source_title, title)
      )
      |> hide_modal()}
   end
@@ -237,6 +387,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
        gating_condition:
          gating_condition
          |> Map.put(:type, String.to_existing_atom(value))
+         |> Map.delete(:source_title)
          |> Map.put(:data, %{})
      )}
   end
@@ -395,5 +546,44 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       end
 
     {:noreply, socket |> hide_modal()}
+  end
+
+  def handle_event("toggle_min_score", _, socket) do
+    data =
+      case Map.get(socket.assigns.gating_condition.data, :minimum_percentage) do
+        nil ->
+          Map.put(socket.assigns.gating_condition.data, :minimum_percentage, 0.8)
+
+        _ ->
+          Map.put(socket.assigns.gating_condition.data, :minimum_percentage, nil)
+      end
+
+    gating_condition = Map.put(socket.assigns.gating_condition, :data, data)
+
+    {:noreply, assign(socket, gating_condition: gating_condition)}
+  end
+
+  def handle_event("change_min_score", %{"value" => value}, socket) do
+    value =
+      case Float.parse(value) do
+        {value, _} -> value
+        :error -> 80
+      end
+
+    value =
+      if value < 0 do
+        0
+      else
+        if value > 100 do
+          100
+        else
+          value
+        end
+      end
+
+    data = Map.put(socket.assigns.gating_condition.data, :minimum_percentage, value / 100)
+    gating_condition = Map.put(socket.assigns.gating_condition, :data, data)
+
+    {:noreply, assign(socket, gating_condition: gating_condition)}
   end
 end

@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Gating.ConditionTypes.AlwaysOpen do
     :always_open
   end
 
-  def open?(_), do: true
+  def evaluate(_, context), do: {true, context}
 
   def details(
         _,

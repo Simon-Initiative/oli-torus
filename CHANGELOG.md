@@ -5,10 +5,14 @@
 ### Bug Fixes
 
 - Fix inability to search in projects and users view
+- Properly handle the case that a section invite link leads to an unavailable section
 
 ### Enhancements
 
 - Allow for student-specific gating exceptions
+- Display containers as pages with a table of contents
+- Logic-based gating
+- Allow learning objective attachment to pages
 
 ## 0.18.4 (2022-02-24)
 
