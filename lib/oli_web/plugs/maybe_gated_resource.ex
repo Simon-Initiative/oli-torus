@@ -41,13 +41,14 @@ defmodule Oli.Plugs.MaybeGatedResource do
         # if there is at least one gate that has the `allows_nothing` policy we block access
         # to this graded resource
         if revision.graded do
-          if Enum.any?(blocking_gates, fn gc -> gc.graded_resource_policy == :allows_nothing end) do
+          if Enum.any?(blocking_gates, fn gc -> gc.graded_resource_policy == :allows_nothing end) or
+               !Core.has_any_attempts?(user, section, resource_id) do
             gated_resource_unavailable(conn, section, revision, blocking_gates)
           else
             # These are the gates that apply at a more granular level that "allows_nothing"
             blocking_gates =
               Enum.filter(blocking_gates, fn gc ->
-                gc.graded_resource_policy != :allows_nothing
+                gc.graded_resource_policy == :allows_review
               end)
 
             conn

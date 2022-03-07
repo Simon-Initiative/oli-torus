@@ -165,6 +165,38 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
                "#{revision.title} is scheduled to end"
     end
 
+    test "blocks access to gated graded resource with :allows_review policy and no attempts present",
+         %{
+           conn: conn,
+           revision: revision,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Oli.Resources.update_revision(revision, %{graded: true})
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          graded_resource_policy: :allows_review,
+          section_id: section.id,
+          resource_id: revision.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+      assert html_response(conn, 403) =~
+               "You are trying to access a resource that is gated by the following condition"
+
+      assert html_response(conn, 403) =~
+               "#{revision.title} is scheduled to end"
+    end
+
     test "allows review with :allows_review policy and attempts present",
          %{
            conn: conn,
