@@ -9,11 +9,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   alias Oli.Repo
 
   import Oli.Delivery.Attempts.Core
-
+  alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Snapshots
   alias Oli.Resources.Revision
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Publishing
+
+  alias Oli.Delivery.Attempts.Core.{
+    ResourceAccess,
+    ResourceAttempt
+  }
 
   alias Oli.Delivery.Attempts.PageLifecycle.{
     VisitContext,
@@ -214,6 +220,29 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
     case graded do
       true -> Oli.Delivery.Attempts.PageLifecycle.Graded
       _ -> Oli.Delivery.Attempts.PageLifecycle.Ungraded
+    end
+  end
+
+  @doc """
+  Determines whether a particular user can access the resource attempt represented by
+  its attempt guid.  A user can access a resource attempt if that user is either an
+  instructor enrolled in that section, or the student that originated the attempt.
+  """
+  def can_access_attempt?(resource_attempt_guid, %User{id: user_id} = user, %Section{
+        slug: section_slug,
+        id: section_id
+      }) do
+    case Repo.one(
+           from(attempt in ResourceAttempt,
+             join: access in ResourceAccess,
+             on: access.id == attempt.resource_access_id,
+             where: attempt.attempt_guid == ^resource_attempt_guid,
+             select: access
+           )
+         ) do
+      %ResourceAccess{user_id: ^user_id, section_id: ^section_id} -> true
+      nil -> false
+      _ -> Oli.Delivery.Sections.has_instructor_role?(user, section_slug)
     end
   end
 

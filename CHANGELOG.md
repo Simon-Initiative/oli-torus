@@ -13,6 +13,7 @@
 - Display containers as pages with a table of contents
 - Logic-based gating
 - Allow learning objective attachment to pages
+- Instructor review of completed graded attempts
 
 ## 0.18.4 (2022-02-24)
 
