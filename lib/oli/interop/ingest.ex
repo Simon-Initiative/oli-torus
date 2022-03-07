@@ -344,7 +344,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     with content <- Map.get(page, "content"),
-         :ok <- validate_json(page, SchemaResolver.schema("resource.schema.json")),
+         :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
       graded = Map.get(page, "isGraded", false)
@@ -595,7 +595,7 @@ defmodule Oli.Interop.Ingest do
 
           {Map.put(resource_map, id, decoded), error_map}
 
-        {:error, _} ->
+        _ ->
           {resource_map,
            Map.put(
              error_map,

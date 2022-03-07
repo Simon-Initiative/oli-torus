@@ -6,29 +6,20 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": [
-        "integer",
-        "string"
-      ]
+      "type": ["integer", "string"]
     },
     "type": {
       "const": "group"
     },
     "layout": {
-      "enum": [
-        "deck"
-      ]
+      "enum": ["deck"]
     },
     "children": {
       "type": "array",
       "items": {
-        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource-content.schema.json"
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
       }
     }
   },
-  "required": [
-    "type",
-    "layout",
-    "children"
-  ]
+  "required": ["type", "layout", "children"]
 }

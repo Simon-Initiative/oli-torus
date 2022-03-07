@@ -72,7 +72,7 @@ defmodule OliWeb.RevisionHistory do
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
-       resource_schema: SchemaResolver.schema("resource.schema.json")
+       resource_schema: SchemaResolver.schema("page-content.schema.json")
      )
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
@@ -172,8 +172,8 @@ defmodule OliWeb.RevisionHistory do
       edit_errors: [],
       edited_json: nil
     )
-    |> push_event("monaco_editor_set_options", %{"readOnly" => true})
     |> push_event("monaco_editor_set_value", %{value: default_value})
+    |> push_event("monaco_editor_set_options", %{"readOnly" => true})
   end
 
   def handle_event("show_restore_revision_modal", _, socket) do
@@ -216,7 +216,7 @@ defmodule OliWeb.RevisionHistory do
 
     else
       {:error, errors} ->
-        {:noreply, assign(socket, upload_errors: errors)}
+        {:noreply, assign(socket, upload_errors: flatten_validation_errors(errors))}
     end
   end
 
@@ -236,7 +236,7 @@ defmodule OliWeb.RevisionHistory do
     id = String.to_integer(str)
     selected = fetch_revision(id)
     content_json =
-      selected
+      selected.content
       |> Jason.encode!()
       |> Jason.Formatter.pretty_print()
 
@@ -274,10 +274,16 @@ defmodule OliWeb.RevisionHistory do
 
   @impl Phoenix.LiveView
   def handle_event("cancel_edits", _, socket) do
+    %{selected: selected} = socket.assigns
+
+    content_json =
+      selected.content
+      |> Jason.encode!()
+      |> Jason.Formatter.pretty_print()
+
     {:noreply,
      socket
-     |> push_event("monaco_editor_set_options", %{"readOnly" => true})
-     |> assign(edited_json: nil, edit_errors: [])}
+     |> reset_editor(content_json)}
   end
 
   @impl Phoenix.LiveView
@@ -294,13 +300,13 @@ defmodule OliWeb.RevisionHistory do
         {:noreply,
           socket
           |> reset_editor(value)
-          |> mimic_edit(latest_revision, edited["content"])}
+          |> mimic_edit(latest_revision, edited)}
     else
       {:error, %Jason.DecodeError{}} ->
         {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
 
       {:error, errors} ->
-        {:noreply, assign(socket, edit_errors: Enum.map(errors, fn {msg, el} -> "#{msg} #{el}" end))}
+        {:noreply, assign(socket, edit_errors: flatten_validation_errors(errors))}
     end
   end
 
@@ -354,5 +360,10 @@ defmodule OliWeb.RevisionHistory do
   defp friendly_error(:too_large), do: "Image too large"
   defp friendly_error(:too_many_files), do: "Too many files"
   defp friendly_error(:not_accepted), do: "Unacceptable file type"
+
+  defp flatten_validation_errors(errors) do
+    errors
+    |> Enum.map(fn {msg, el} -> "#{msg} #{el}" end)
+  end
 
 end

@@ -12,16 +12,7 @@
       "type": "string"
     },
     "content": {
-      "type": "object",
-      "properties": {
-        "model": {
-          "type": "array",
-          "items": {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource-content.schema.json"
-          }
-        }
-      },
-      "required": ["model"]
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/page-content.schema.json"
     },
     "isGraded": {
       "type": "boolean"

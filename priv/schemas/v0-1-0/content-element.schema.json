@@ -1,8 +1,8 @@
 {
-  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource-content.schema.json",
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "title": "Content Element",
-  "description": "A workbook page content element",
+  "description": "A resource content element",
   "oneOf": [
     {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/group-content.schema.json"

@@ -35,7 +35,7 @@
               </button>
             {#else }
               <button type="button" class="btn btn-outline-primary btn-sm mr-2" phx-click="edit_json">
-                Edit JSON
+                Edit JSON Content
               </button>
 
               <button type="button" class="btn btn-outline-danger btn-sm" phx-click="show_restore_revision_modal">
@@ -53,12 +53,6 @@
                 <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="las la-external-link-alt"></i></a></div>
               </div>
             {/for}
-          {/if}
-
-          {#if @edited_json}
-            <div class="alert alert-light" role="alert">
-              <b>Notice:</b> Some of the fields below are read-only. Only <code>"content"</code> changes will be saved.
-            </div>
           {/if}
 
           { live_component Details, revision: @selected}

@@ -282,15 +282,4 @@ defmodule OliWeb.RevisionHistory.ReingoldTilford do
       y2: bottom_most_child.y + node.height / 2
     }
   end
-
-  defp lines_to_children(%{children: children} = node) do
-    Enum.map(children, fn n ->
-      %Line{
-        x1: n.x - div(@node_x_separation, 2),
-        x2: n.x,
-        y1: n.y + div(node.height, 2),
-        y2: n.y + div(node.height, 2)
-      }
-    end)
-  end
 end
