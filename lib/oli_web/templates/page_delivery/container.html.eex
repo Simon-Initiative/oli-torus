@@ -2,26 +2,31 @@
   <%= container_title(@container) %>
 </h5>
 
-<div class="course-outline list-group list-group-root well">
-  <%= if Enum.empty?(@children) do %>
-    <span class="text-secondary">
-      There are no items
-    </span>
-  <% else %>
 
-    <%= for child <- @children do %>
-      <% props = Map.merge(assigns, %{
-        node: child,
-      }) %>
-      <%= cond do %>
-        <% container?(child.revision) -> %>
-          <%= render "_link_shallow_container.html", props %>
-        <% child.revision.graded -> %>
-          <%= render "_link_assessment.html", props %>
-        <% true -> %>
-          <%= render "_link_page.html", props %>
-      <% end %>
+<%= if Enum.empty?(@children) do %>
+  <span class="text-secondary">
+    There are no items
+  </span>
+<% else %>
+
+  <ol class="course-outline well" style="list-style: none;">
+
+  <%= for child <- @children do %>
+    <% props = Map.merge(assigns, %{
+      node: child,
+    }) %>
+    <li>
+    <%= cond do %>
+      <% container?(child.revision) -> %>
+        <%= render "_link_shallow_container.html", props %>
+      <% child.revision.graded -> %>
+        <%= render "_link_assessment.html", props %>
+      <% true -> %>
+        <%= render "_link_page.html", props %>
     <% end %>
- <% end %>
+    </li>
+  <% end %>
 
-</div>
+  </ol>
+
+ <% end %>

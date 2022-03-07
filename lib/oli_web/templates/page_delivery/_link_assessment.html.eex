@@ -1,8 +1,6 @@
 <%= link to: @page_link_url.(@node.revision.slug),
-  class: resource_link_class(@active_page == @node.revision.slug) <> " graded-page-link" do %>
-  <div class="d-flex w-100 justify-content-between">
-    <span class="page-title">
-      <i class="far fa-check-circle mr-2"></i> <%= @node.revision.title %>
-    </span>
-  </div>
+  class: resource_link_class(@active_page == @node.revision.slug) do %>
+  <span class="page-title">
+    <i class="far fa-check-circle mr-2"></i> <%= @node.revision.title %>
+  </span>
 <% end %>

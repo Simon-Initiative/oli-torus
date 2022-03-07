@@ -1,4 +1,5 @@
 <%= for node <- @nodes do %>
+  <li>
   <% props = Map.merge(assigns, %{
     node: node,
     nodes: node.children,
@@ -11,4 +12,5 @@
     <% true -> %>
       <%= render "_link_page.html", props %>
   <% end %>
+  </li>
 <% end %>
