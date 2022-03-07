@@ -438,7 +438,9 @@ defmodule OliWeb.PageDeliveryController do
       next_page: next,
       user_id: user.id,
       preview_mode: preview_mode,
-      section: section
+      section: section,
+      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
     })
   end
 
