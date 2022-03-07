@@ -234,6 +234,43 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
       assert html_response(conn, 200) =~ "Attempt 1 of 2"
       assert html_response(conn, 200) =~ "Page one is scheduled to end"
     end
+
+    test "allows student to resume an active attempt with :allows_review policy and active attempt present",
+         %{
+           conn: conn,
+           revision: revision,
+           user: user,
+           section: section
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      Oli.Resources.update_revision(revision, %{
+        graded: true,
+        max_attempts: 2
+      })
+
+      ra = Core.track_access(revision.resource_id, section.id, user.id)
+
+      insert_resource_attempt(ra, revision.id, %{
+        content: %{"model" => []}
+      })
+
+      _gating_condition =
+        gating_condition_fixture(%{
+          graded_resource_policy: :allows_review,
+          section_id: section.id,
+          resource_id: revision.resource_id,
+          data: %{end_datetime: yesterday()}
+        })
+
+      {:ok, section} = Gating.update_resource_gating_index(section)
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+      assert html_response(conn, 200) =~ "<h1 class=\"title\">"
+    end
   end
 
   defp setup_session(%{conn: conn}) do
