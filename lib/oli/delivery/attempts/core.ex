@@ -24,6 +24,10 @@ defmodule Oli.Delivery.Attempts.Core do
     GradeUpdateBrowseOptions
   }
 
+  @doc """
+  For a given user, section, and resource id, determine whether any resource attempts are
+  present.
+  """
   def has_any_attempts?(%User{id: user_id}, %Section{id: section_id}, resource_id) do
     query =
       from access in ResourceAccess,
