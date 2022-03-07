@@ -7,6 +7,7 @@ defmodule OliWeb.PageDeliveryController do
       is_section_instructor_or_admin?: 2
     ]
 
+  import OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
@@ -336,13 +337,23 @@ defmodule OliWeb.PageDeliveryController do
     # number of attempts after a student has exhausted all attempts
     attempts_remaining = max(page.max_attempts - attempts_taken, 0)
 
-    allow_attempt? = attempts_remaining > 0 or page.max_attempts == 0
+    # The Oli.Plugs.MaybeGatedResource plug sets the blocking_gates assign if there is a blocking
+    # gate that prevents this learning from starting another attempt of this resource
+    blocking_gates = Map.get(conn.assigns, :blocking_gates, [])
+    allow_attempt? = (attempts_remaining > 0 or page.max_attempts == 0) and blocking_gates == []
 
     message =
-      if page.max_attempts == 0 do
-        "You can take this assessment an unlimited number of times"
-      else
-        "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
+      cond do
+        blocking_gates != [] ->
+          Oli.Delivery.Gating.details(blocking_gates,
+            format_datetime: format_datetime_fn(conn)
+          )
+
+        page.max_attempts == 0 ->
+          "You can take this assessment an unlimited number of times"
+
+        true ->
+          "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
       end
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
@@ -494,27 +505,47 @@ defmodule OliWeb.PageDeliveryController do
 
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
+    section = conn.assigns.section
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      case PageLifecycle.start(
-             revision_slug,
-             section_slug,
-             user.id,
-             activity_provider
-           ) do
-        {:ok, _} ->
-          redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+      # We must check gating conditions here to account for gates that activated after
+      # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
+      # hitting this endpoint.
+      revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
 
-        {:error, {:active_attempt_present}} ->
-          redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+      case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
+        [] ->
+          case PageLifecycle.start(
+                 revision_slug,
+                 section_slug,
+                 user.id,
+                 activity_provider
+               ) do
+            {:ok, _} ->
+              redirect(conn,
+                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+              )
 
-        {:error, {:no_more_attempts}} ->
-          redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
+            {:error, {:active_attempt_present}} ->
+              redirect(conn,
+                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+              )
+
+            {:error, {:no_more_attempts}} ->
+              redirect(conn,
+                to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug)
+              )
+
+            _ ->
+              render(conn, "error.html")
+          end
 
         _ ->
-          render(conn, "error.html")
+          # In the case where a gate exists we want to redirect to this page display, which will
+          # then pick up the gate and show that feedback to the user
+          redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
       end
     else
       render(conn, "not_authorized.html")
@@ -686,5 +717,11 @@ defmodule OliWeb.PageDeliveryController do
       child
     end)
     |> Enum.map(fn link_desc -> simulate_node(link_desc) end)
+  end
+
+  defp format_datetime_fn(conn) do
+    fn datetime ->
+      date(datetime, conn: conn, precision: :minutes)
+    end
   end
 end
