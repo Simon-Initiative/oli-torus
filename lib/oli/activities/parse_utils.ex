@@ -36,12 +36,49 @@ defmodule Oli.Activities.ParseUtils do
   end
 
   # The model is stored using atoms or strings depending on where it is in the system
-  def has_content?(%{content: %{model: model}}), do: has_content?(model)
-  def has_content?(%{content: %{"model" => model}}), do: has_content?(model)
-  def has_content?(%{"content" => %{"model" => model}}), do: has_content?(model)
+  def has_content?(content_item) do
+    case content_item do
+      %{content: content} ->
+        case content do
+          %{model: model} -> has_content?(model)
+          content_items when is_list(content_items) ->
+            content_items
+            |> Enum.map(&has_content?(&1))
+            |> Enum.any?()
+        end
+
+      %{"content" => content} ->
+        case content do
+          %{"model" => model} -> has_content?(model)
+          content_items when is_list(content_items) ->
+            content_items
+            |> Enum.map(&has_content?(&1))
+            |> Enum.any?()
+        end
+
+      %{"children" => children} ->
+        children
+        |> Enum.map(&has_content?(&1))
+        |> Enum.any?()
+
+      %{"text" => text} -> String.trim(text) != ""
+
+
+
+      # | _], "type" => "p"} | _]
+
+    end
+  end
+
+
+
+  # ), do: has_content?(model)
+  # def has_content?(%{content: %{"model" => model}}), do: has_content?(model)
+  # def has_content?(%{"content" => %{"model" => model}}), do: has_content?(model)
+  # def has_content?(%{})
   # The model has content if it's not a paragraph node with no trimmed text.
-  def has_content?([%{"children" => [%{"text" => text} | _], "type" => "p"} | _]),
-    do: String.trim(text) != ""
+  # def has_content?([%{"children" => [%{"text" => text} | _], "type" => "p"} | _]),
+  #   do: String.trim(text) != ""
 
   def has_content?(_model), do: true
 

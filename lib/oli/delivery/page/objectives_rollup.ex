@@ -13,7 +13,7 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
           get_attached_objective_ids(activity_revisions)
 
         _ ->
-          IO.inspect(page_revision.objectives["attached"])
+          page_revision.objectives["attached"]
       end,
       resolver,
       section_slug
