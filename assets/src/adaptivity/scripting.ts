@@ -68,8 +68,35 @@ export const getExpressionStringForValue = (
         const testEnv = new Environment(env);
         const testResult = evalScript(`let foo = ${val};`, testEnv);
         if (testResult?.result !== null) {
-          //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
-          actuallyAString = expressions?.length ? false : true;
+          //lets evaluat everything if first and last char are {}
+          if (val[0] === '{' && val[val.length - 1] === '}') {
+            const evaluatedValuess = evalScript(expressions[0], env).result;
+            if (evaluatedValuess !== undefined) {
+              val = evaluatedValuess;
+              actuallyAString = false;
+            } else {
+              //expression {stage.foo} + {stage.bar} was failling if we set actuallyAString= true
+              actuallyAString = expressions?.length ? false : true;
+            }
+          }
+        } else {
+          let evaluatedValue = getValue('foo', testEnv);
+          if (evaluatedValue === undefined) {
+            //lets evaluat everything if first and last char are {}
+            if (val[0] === '{' && val[val.length - 1] === '}') {
+              try {
+                evaluatedValue = evalScript(expressions[0], env).result;
+                if (evaluatedValue !== undefined) {
+                  val = evaluatedValue;
+                  actuallyAString = false;
+                } else {
+                  actuallyAString = true;
+                }
+              } catch (ex) {
+                //console.log('asdasd');
+              }
+            }
+          }
         }
       } catch (e) {
         // if we have parsing error then we're guessing it's CSS
@@ -371,8 +398,11 @@ export const extractExpressionFromText = (text: string) => {
 
 // extract all expressions from a string
 export const extractAllExpressionsFromText = (text: string): string[] => {
+  if (text === undefined) {
+    return text;
+  }
   const expressions = [];
-  if (text.toString().indexOf('{') !== -1 && text.toString().indexOf('}') !== -1) {
+  if (text?.toString().indexOf('{') !== -1 && text?.toString().indexOf('}') !== -1) {
     const expr = extractExpressionFromText(text);
     const rest = text.substring(text.indexOf(expr) + expr.length + 1);
     expressions.push(expr);

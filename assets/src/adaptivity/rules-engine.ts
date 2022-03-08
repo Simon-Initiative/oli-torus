@@ -147,7 +147,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
           modifiedValue = evaluatedValue;
         } else if (typeof modifiedValue === 'number') {
           return modifiedValue;
-        } else {
+        } else if (typeof ogValue === 'string') {
           //Need to stringify only if it was converted into object during evaluation process and we expect it to be string
           modifiedValue = JSON.stringify(evaluateValueExpression(ogValue, env));
         }

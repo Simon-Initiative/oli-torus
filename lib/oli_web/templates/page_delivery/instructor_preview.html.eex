@@ -1,11 +1,17 @@
 <h1 class="title"><%= @title %> (Preview)</h1>
 
 <script>
-window.userToken = "<%= assigns[:user_token] %>";
+  window.userToken = "<%= assigns[:user_token] %>";
 </script>
 
-<%= render "_objectives.html", objectives: @objectives %>
-
-<div>
-  <%= raw(@html) %>
-</div>
+<%= if Oli.Resources.ResourceType.is_container(@revision) do %>
+  <%= render OliWeb.PageDeliveryView, "container.html", Map.merge(assigns, %{
+    children: @hierarchy_node.children,
+    active_page: nil
+  }) %>
+<% else %>
+  <%= render "_objectives.html", objectives: @objectives %>
+  <div>
+    <%= raw(@html) %>
+  </div>
+<% end %>

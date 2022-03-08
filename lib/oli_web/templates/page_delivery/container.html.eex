@@ -1,9 +1,32 @@
-<div class="container-title my-2"><%= container_title(@node) %></div>
+<h5 class="text-primary border-bottom border-primary mb-2">
+  <%= container_title(@container) %>
+</h5>
 
-<div class="course-outline-container" style="padding-left: <%= @node.numbering.level * 20 %>px">
-  <%= if Enum.empty?(@node.children) do %>
-    <span class="text-secondary">There are no items</span>
-  <% else %>
-    <%= render "_outline.html", preview_mode: @preview_mode, nodes: @node.children, conn: @conn, section_slug: @section_slug, nodes: @nodes, active_page: nil %>
+
+<%= if Enum.empty?(@children) do %>
+  <span class="text-secondary">
+    There are no items
+  </span>
+<% else %>
+
+  <ol class="course-outline well" style="list-style: none;">
+
+  <%= for child <- @children do %>
+    <% props = Map.merge(assigns, %{
+      node: child,
+    }) %>
+    <li>
+    <%= cond do %>
+      <% container?(child.revision) -> %>
+        <%= render "_link_shallow_container.html", props %>
+      <% child.revision.graded -> %>
+        <%= render "_link_assessment.html", props %>
+      <% true -> %>
+        <%= render "_link_page.html", props %>
+    <% end %>
+    </li>
   <% end %>
-</div>
+
+  </ol>
+
+ <% end %>

@@ -423,10 +423,12 @@ defmodule Oli.Delivery.Sections do
       left_join: r in assoc(d, :registration),
       left_join: i in assoc(d, :institution),
       left_join: default_brand in assoc(i, :default_brand),
+      left_join: blueprint in assoc(s, :blueprint),
       where: s.slug == ^slug,
       preload: [
         brand: b,
-        lti_1p3_deployment: {d, institution: {i, default_brand: default_brand}}
+        lti_1p3_deployment: {d, institution: {i, default_brand: default_brand}},
+        blueprint: blueprint
       ]
     )
     |> Repo.one()
@@ -754,11 +756,10 @@ defmodule Oli.Delivery.Sections do
   def get_project_by_section_resource(section_id, resource_id) do
     Repo.one(
       from s in SectionResource,
-      join: p in Project,
-      on: s.project_id == p.id,
-      where:
-        s.section_id == ^section_id and s.resource_id == ^resource_id,
-      select: p
+        join: p in Project,
+        on: s.project_id == p.id,
+        where: s.section_id == ^section_id and s.resource_id == ^resource_id,
+        select: p
     )
   end
 

@@ -6,19 +6,24 @@ defmodule Oli.Delivery.PreviousNextIndex do
   alias Oli.Repo
 
   @doc """
-  For a given section slug and a resource id of a page within the section hiearchy, returns the
-  link descriptors for the previous and next pages.  This function will rebuild the previous_next_index
+  For a given section slug and a resource id of a page or container within the section hiearchy, returns the
+  link descriptors for the previous, next and current resources.  This function will rebuild the previous_next_index
   if it is nil.  This allows a just-in-time update for actions that invalidate this structure.
 
-  Returns a tuple of the form:
-  {:ok, {previous, next}} where previous and next are both link descriptors.  A link descriptor
+  Returns a nested tuple of the form:
+  {:ok, {previous, next, current}, previous_next_index} where previous, next, current are all link descriptors.  A link descriptor
   is of the form:
 
   %{
+    "id" => "3",
+    "type" => "page",
+    "index" => "1",
+    "level" => "2",
     "prev" => "2",
     "next" => "4",
     "slug => "the_slug",
-    "title" => "The title"
+    "title" => "The title",
+    "children" => []
   }
 
   Returns {:error, reason} if the index cannot be rebuilt.
@@ -38,16 +43,17 @@ defmodule Oli.Delivery.PreviousNextIndex do
   def retrieve(previous_next_index, resource_id) when is_map(previous_next_index) do
     case Map.get(previous_next_index, Integer.to_string(resource_id)) do
       nil ->
-        {:ok, {nil, nil}}
+        {:ok, {nil, nil, nil}, previous_next_index}
 
-      %{"prev" => nil, "next" => next} ->
-        {:ok, {nil, Map.get(previous_next_index, next)}}
+      %{"prev" => nil, "next" => next} = current ->
+        {:ok, {nil, Map.get(previous_next_index, next), current}, previous_next_index}
 
-      %{"prev" => prev, "next" => nil} ->
-        {:ok, {Map.get(previous_next_index, prev), nil}}
+      %{"prev" => prev, "next" => nil} = current ->
+        {:ok, {Map.get(previous_next_index, prev), nil, current}, previous_next_index}
 
-      %{"prev" => prev, "next" => next} ->
-        {:ok, {Map.get(previous_next_index, prev), Map.get(previous_next_index, next)}}
+      %{"prev" => prev, "next" => next} = current ->
+        {:ok, {Map.get(previous_next_index, prev), Map.get(previous_next_index, next), current},
+         previous_next_index}
     end
   end
 
