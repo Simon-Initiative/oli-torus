@@ -12,12 +12,12 @@
   <h5 class="text-primary border-bottom border-primary mb-2">
     Course Overview
   </h5>
-  <div id="index-container" class="course-outline list-group list-group-root well">
+  <ol id="index-container" class="course-outline well" style="list-style: none;">
     <%= render "_outline.html", Map.merge(assigns, %{
       nodes: @hierarchy.children,
       active_page: nil,
     }) %>
-  </div>
+  </ol>
 </div>
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
   <!--
