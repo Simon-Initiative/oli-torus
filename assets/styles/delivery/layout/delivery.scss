@@ -9,6 +9,13 @@ body {
 
 .configure-section {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .card-img {
+    width: 4em;
+  }
 
   .btn-card {
     cursor: pointer;
@@ -16,7 +23,8 @@ body {
     user-select: none;
   }
 
-  .btn-card:hover {
+  .btn-card:hover,
+  .card:hover {
     border: 1px solid #007bff;
     text-decoration: none;
     color: inherit;
