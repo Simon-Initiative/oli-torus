@@ -396,31 +396,34 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    title =
-      case Map.get(activity, "title") do
-        nil -> Map.get(activity, "subType")
-        "" -> Map.get(activity, "subType")
-        title -> title
-      end
+    with :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
 
-    scope =
-      case Map.get(activity, "scope", "embedded") do
-        str when str in ~w(embedded banked) -> String.to_existing_atom(str)
-        _ -> :embedded
-      end
+      title =
+        case Map.get(activity, "title") do
+          nil -> Map.get(activity, "subType")
+          "" -> Map.get(activity, "subType")
+          title -> title
+        end
 
-    %{
-      scope: scope,
-      tags: transform_tags(activity, tag_map),
-      title: title,
-      content: Map.get(activity, "content"),
-      author_id: as_author.id,
-      objectives: process_activity_objectives(activity, objective_map),
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
-      activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
-    }
-    |> create_resource(project)
+      scope =
+        case Map.get(activity, "scope", "embedded") do
+          str when str in ~w(embedded banked) -> String.to_existing_atom(str)
+          _ -> :embedded
+        end
+
+      %{
+        scope: scope,
+        tags: transform_tags(activity, tag_map),
+        title: title,
+        content: Map.get(activity, "content"),
+        author_id: as_author.id,
+        objectives: process_activity_objectives(activity, objective_map),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
+      }
+      |> create_resource(project)
+    end
   end
 
   defp process_activity_objectives(activity, objective_map) do

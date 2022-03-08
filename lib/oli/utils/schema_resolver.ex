@@ -1,4 +1,6 @@
 defmodule Oli.Utils.SchemaResolver do
+  require Logger
+
   @current_version "v0-1-0"
 
   @schemas "priv/schemas/#{@current_version}"
@@ -12,6 +14,12 @@ defmodule Oli.Utils.SchemaResolver do
           uri: schema["$id"],
           schema: schema
         }
+
+      else
+        error ->
+          Logger.error("Failed to resolve schema #{name}")
+
+          throw error
       end
     end)
 
@@ -39,6 +47,12 @@ defmodule Oli.Utils.SchemaResolver do
              File.read("#{:code.priv_dir(:oli)}/schemas/#{@current_version}/#{schema_basename}"),
            {:ok, decoded} <- Jason.decode(json) do
         decoded
+
+      else
+        error ->
+          Logger.error("Failed to resolve schema #{uri}")
+
+          throw error
       end
     else
       HTTPoison.get!(uri).body |> Poison.decode!()
