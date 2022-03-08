@@ -36,51 +36,52 @@ defmodule Oli.Activities.ParseUtils do
   end
 
   # The model is stored using atoms or strings depending on where it is in the system
-  def has_content?(content_item) do
-    case content_item do
+  def has_content?(xs) do
+    case xs do
+      # a list under the "content" or "children" key.
+      # if any child has content, the parent has content
+      xs when is_list(xs) ->
+        Enum.any?(for x <- xs, do: has_content?(x))
+
       %{content: content} ->
         case content do
-          %{model: model} -> has_content?(model)
-          content_items when is_list(content_items) ->
-            content_items
-            |> Enum.map(&has_content?(&1))
-            |> Enum.any?()
+          # :model -> former impl when selection was persisted
+          # along with the model
+          %{model: model} ->
+            has_content?(model)
+
+          # should be a list otherwise
+          xs ->
+            has_content?(xs)
         end
 
       %{"content" => content} ->
         case content do
-          %{"model" => model} -> has_content?(model)
-          content_items when is_list(content_items) ->
-            content_items
-            |> Enum.map(&has_content?(&1))
-            |> Enum.any?()
+          # "model" -> former impl when selection was persisted
+          # along with the model
+          %{"model" => model} ->
+            has_content?(model)
+
+          # should be a list otherwise
+          xs ->
+            has_content?(xs)
         end
 
-      %{"children" => children} ->
-        children
-        |> Enum.map(&has_content?(&1))
-        |> Enum.any?()
+      %{"children" => xs} ->
+        has_content?(xs)
 
-      %{"text" => text} -> String.trim(text) != ""
+      # Slate leaf node -> check for content directly
+      %{"text" => text} ->
+        String.trim(text) != ""
 
+      %{"type" => "p", "children" => xs} ->
+        has_content?(xs)
 
-
-      # | _], "type" => "p"} | _]
-
+      # unexpected structure -- assume there's content
+      _ ->
+        true
     end
   end
-
-
-
-  # ), do: has_content?(model)
-  # def has_content?(%{content: %{"model" => model}}), do: has_content?(model)
-  # def has_content?(%{"content" => %{"model" => model}}), do: has_content?(model)
-  # def has_content?(%{})
-  # The model has content if it's not a paragraph node with no trimmed text.
-  # def has_content?([%{"children" => [%{"text" => text} | _], "type" => "p"} | _]),
-  #   do: String.trim(text) != ""
-
-  def has_content?(_model), do: true
 
   def default_content_item(text) when is_binary(text) do
     %{
@@ -88,7 +89,6 @@ defmodule Oli.Activities.ParseUtils do
         "model" => [
           %{"children" => [%{"text" => text}], "id" => uuid(), "type" => "p"}
         ],
-        "selection" => nil
       },
       id: uuid()
     }

@@ -58,7 +58,6 @@ defmodule Oli.Activities.State.ActivityState do
   end
 
   def create_preview_state(transformed_model) do
-    IO.inspect(transformed_model, label: "Transformed model")
     %Oli.Activities.State.ActivityState{
       attemptGuid: UUID.uuid4(),
       attemptNumber: 1,
@@ -68,7 +67,6 @@ defmodule Oli.Activities.State.ActivityState do
       hasMoreAttempts: true,
       parts:
         Enum.map(transformed_model["authoring"]["parts"], fn p ->
-          IO.inspect(Oli.Activities.ParseUtils.remove_empty(p["hints"] ), label: "Hints in activity state")
           %Oli.Activities.State.PartState{
             attemptGuid: p["id"],
             attemptNumber: 1,
@@ -81,9 +79,9 @@ defmodule Oli.Activities.State.ActivityState do
             # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
             # hint ordering. Empty hints are filtered out here.
             hasMoreHints:
-              IO.inspect(p["hints"]
+              p["hints"]
               |> Oli.Activities.ParseUtils.remove_empty()
-              |> length > 0, label: "has more Hints in activity state?"),
+              |> length > 0,
             hasMoreAttempts: true,
             partId: p["id"]
           }
