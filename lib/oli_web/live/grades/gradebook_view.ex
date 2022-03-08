@@ -29,7 +29,8 @@ defmodule OliWeb.Grades.GradebookView do
   data options, :any
 
   def set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 

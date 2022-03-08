@@ -19,7 +19,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   @limit 25
 
   def set_breadcrumbs(section, parent_gate, user_type) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
+    user_type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
     |> breadcrumb_exceptions(section, parent_gate)
   end

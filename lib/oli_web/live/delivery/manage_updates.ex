@@ -13,7 +13,8 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias OliWeb.Sections.Mount
 
   def set_breadcrumbs(section, type) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
