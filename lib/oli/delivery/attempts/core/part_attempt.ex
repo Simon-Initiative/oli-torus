@@ -5,7 +5,12 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
   schema "part_attempts" do
     field(:attempt_guid, :string)
     field(:attempt_number, :integer)
+    field(:grading_approach, Ecto.Enum, values: [:automatic, :manual], default: :automatic)
+
+    field(:lifecycle_state, Ecto.Enum, values: [:active, :submitted, :evaluated], default: :active)
+
     field(:date_evaluated, :utc_datetime)
+    field(:date_submitted, :utc_datetime)
     field(:score, :float)
     field(:out_of, :float)
     field(:response, :map)
@@ -24,7 +29,10 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
     |> cast(attrs, [
       :attempt_guid,
       :attempt_number,
+      :grading_approach,
+      :lifecycle_state,
       :date_evaluated,
+      :date_submitted,
       :score,
       :out_of,
       :response,

@@ -371,7 +371,7 @@ defmodule Oli.Delivery.Attempts.Core do
         # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
-            not is_nil(part_attempt.date_evaluated),
+            part_attempt.lifecycle_state == :evaluated,
         select: %{part_attempt: part_attempt, user: user}
       )
     )
@@ -387,7 +387,7 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   def has_any_active_attempts?(resource_attempts) do
-    Enum.any?(resource_attempts, fn r -> r.date_evaluated == nil end)
+    Enum.any?(resource_attempts, fn r -> r.lifecycle_state == :active end)
   end
 
   @doc """

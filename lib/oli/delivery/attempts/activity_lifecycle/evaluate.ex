@@ -266,19 +266,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs) do
     Repo.transaction(fn ->
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
+      part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-      roll_up = fn result ->
-        rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
-        result
-      end
-
-      no_roll_up = fn result -> result end
-
-      {roll_up_fn, part_inputs} =
-        case filter_already_submitted(part_inputs, part_attempts) do
-          {true, part_inputs} -> {roll_up, part_inputs}
-          {false, part_inputs} -> {no_roll_up, part_inputs}
-        end
+      roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
            |> persist_evaluations(part_inputs, roll_up_fn) do
@@ -417,7 +407,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           no_roll_up = fn result -> result end
 
           {roll_up_fn, client_evaluations} =
-            case filter_already_submitted(client_evaluations, part_attempts) do
+            case filter_already_evaluated(client_evaluations, part_attempts) do
               {true, client_evaluations} -> {roll_up, client_evaluations}
               {false, client_evaluations} -> {no_roll_up, client_evaluations}
             end
@@ -481,15 +471,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                             feedback: feedback
                           }
                         } ->
-      {:ok,
-        %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
-          type: "FeedbackActionResult",
-          attempt_guid: attempt_guid,
-          feedback: feedback,
-          score: score,
-          out_of: out_of
-        }}
-    end)
+           {:ok,
+            %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
+              type: "FeedbackActionResult",
+              attempt_guid: attempt_guid,
+              feedback: feedback,
+              score: score,
+              out_of: out_of
+            }}
+         end)
          |> (fn evaluations -> {:ok, evaluations} end).()
          |> persist_evaluations(part_inputs, roll_up_fn, replace) do
       {:ok, results} ->
@@ -520,10 +510,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         _ -> {normalize_to_one(score, out_of), 1.0}
       end
 
+    now = DateTime.utc_now()
+
     update_activity_attempt(activity_attempt, %{
       score: score,
       out_of: out_of,
-      date_evaluated: DateTime.utc_now()
+      lifecycle_state: :evaluated,
+      date_evaluated: now,
+      date_submitted: now
     })
   end
 
@@ -584,33 +578,49 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  # Filters out part_inputs whose attempts are already submitted.  This step
-  # simply lowers the burden on an activity client for having to manage this - as
-  # they now can instead just choose to always submit all parts.  Also
-  # returns a boolean indicated whether this filtered collection of submissions
-  # will complete the activity attempt.
-  defp filter_already_submitted(part_inputs, part_attempts) do
-    # filter the part_inputs that have already been evaluated
-    already_evaluated =
-      Enum.filter(part_attempts, fn p -> p.date_evaluated != nil end)
-      |> Enum.map(fn e -> e.attempt_guid end)
-      |> MapSet.new()
+  def rollup_submitted(activity_attempt_guid) do
+    get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+    |> update_activity_attempt(%{
+      lifecycle_state: :submitted,
+      date_submitted: DateTime.utc_now()
+    })
+  end
 
-    part_inputs =
-      Enum.filter(part_inputs, fn %{attempt_guid: attempt_guid} ->
-        !MapSet.member?(already_evaluated, attempt_guid)
-      end)
+  defp determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts) do
+    evaluated_fn = fn result ->
+      rollup_part_attempt_evaluations(activity_attempt_guid, :normalize)
+      result
+    end
 
-    # Check to see if this would complete the activity submidssion
+    submitted_fn = fn result ->
+      rollup_submitted(activity_attempt_guid)
+      result
+    end
+
+    no_op_fn = fn result -> result end
+
+    part_attempts_map =
+      Enum.reduce(part_attempts, %{}, fn pa, m -> Map.put(m, pa.attempt_guid, pa) end)
+
+    # Determine the new lifecycle state of the parent activity attempt, after this
+    # collection of part input are processed
     yet_to_be_evaluated =
-      Enum.filter(part_attempts, fn p -> p.date_evaluated == nil end)
+      Enum.filter(part_attempts, fn p -> p.lifecycle_state != :evaluated end)
+      |> Enum.map(fn e -> e.attempt_guid end)
+      |> MapSet.new()
+  end
+
+  # Filters out part_inputs whose attempts have already been evaluated.  This step
+  # simply lowers the burden on an activity client for having to manage this - as
+  # they now can instead just choose to always submit for evaluation all parts.
+  defp filter_already_evaluated(part_inputs, part_attempts) do
+    already_evaluated =
+      Enum.filter(part_attempts, fn p -> p.lifecycle_state == :evaluated end)
       |> Enum.map(fn e -> e.attempt_guid end)
       |> MapSet.new()
 
-    to_be_evaluated =
-      Enum.map(part_inputs, fn e -> e.attempt_guid end)
-      |> MapSet.new()
-
-    {MapSet.equal?(yet_to_be_evaluated, to_be_evaluated), part_inputs}
+    Enum.filter(part_inputs, fn %{attempt_guid: attempt_guid} ->
+      !MapSet.member?(already_evaluated, attempt_guid)
+    end)
   end
 end

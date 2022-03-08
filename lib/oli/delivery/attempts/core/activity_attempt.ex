@@ -5,7 +5,11 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
   schema "activity_attempts" do
     field(:attempt_guid, :string)
     field(:attempt_number, :integer)
+
+    field(:lifecycle_state, Ecto.Enum, values: [:active, :submitted, :evaluated], default: :active)
+
     field(:date_evaluated, :utc_datetime)
+    field(:date_submitted, :utc_datetime)
     field(:scoreable, :boolean, default: true)
     field(:score, :float)
     field(:out_of, :float)
@@ -29,7 +33,9 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :score,
       :out_of,
       :custom_scores,
+      :lifecycle_state,
       :date_evaluated,
+      :date_submitted,
       :scoreable,
       :transformed_model,
       :resource_attempt_id,
