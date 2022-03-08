@@ -32,12 +32,6 @@ defmodule OliWeb.RevisionHistory.Graph do
         end
     end
 
-    initial_x = case List.last(assigns.nodes) do
-      nil -> 0
-      last ->
-        500 - last.x
-    end
-
     ~L"""
       <svg id="graph"
         style="cursor: grab;"
@@ -48,7 +42,7 @@ defmodule OliWeb.RevisionHistory.Graph do
             <polygon points="0 0, 10 3.5, 0 7" />
           </marker>
         </defs>
-        <g id="panner" transform="translate(<%= initial_x %>,60) scale(1.0)">
+        <g id="panner" transform="translate(0,60) scale(1.0)">
           <g id="all_nodes" phx-update="append">
             <%= for node <- @nodes do %>
               <rect x="<%= node.x %>" y="<%= node.y %>" rx="8" ry="8" width="<%= node.width %>" height="<%= node.height %>"

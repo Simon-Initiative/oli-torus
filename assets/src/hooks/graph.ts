@@ -18,10 +18,20 @@ export const GraphNavigation = {
     }
   },
   mounted() {
+    // get current position as set in live view
     [, currentX, currentY] = this.el
       .querySelector('g')
       .getAttribute('transform')
       .match(/^translate\(([^,]+),([^)]+)\)/);
+
+    // reposition last element to center
+    currentX = Number(
+      this.el.parentElement.offsetWidth / 2 -
+        this.el.querySelector('g rect:last-of-type').getAttribute('x'),
+    );
+    this.el
+      .querySelector('g#panner')
+      .setAttribute('transform', 'translate(' + currentX + ',' + currentY + ') scale(1.0)');
 
     const mousemove = (e: any) => {
       if (moving) {
@@ -30,8 +40,8 @@ export const GraphNavigation = {
           const diffY = lastY - e.clientY;
           currentX -= diffX;
           currentY -= diffY;
-          (document as any)
-            .getElementById('panner')
+          this.el
+            .querySelector('g#panner')
             .setAttribute('transform', 'translate(' + currentX + ',' + currentY + ') scale(1.0)');
         }
         lastX = e.clientX;
