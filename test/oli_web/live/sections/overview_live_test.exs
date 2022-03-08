@@ -92,13 +92,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, html} = live(conn, live_view_overview_route(section.slug))
+      {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
 
-      refute html =~
-               "<nav aria-label=\"breadcrumb"
-
-      assert render(view) =~
-               "Overview"
+      refute html =~ "<nav aria-label=\"breadcrumb"
+      assert html =~ "Overview"
     end
   end
 
@@ -112,13 +109,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, html} = live(conn, live_view_overview_route(section.slug))
+      {:ok, _view, html} = live(conn, live_view_overview_route(section.slug))
 
-      assert html =~
-               "<nav aria-label=\"breadcrumb"
-
-      assert render(view) =~
-               "Overview"
+      assert html =~ "<nav aria-label=\"breadcrumb"
+      assert html =~ "Overview"
     end
   end
 
@@ -136,12 +130,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~
-               "Overview"
-
-      assert render(view) =~
-               "Overview of this course section"
-
+      assert render(view) =~ "Overview"
+      assert render(view) =~ "Overview of this course section"
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
@@ -155,27 +145,17 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~
-               "Instructors"
-
-      assert render(view) =~
-               "Manage the users with instructor level access"
-
-      assert render(view) =~
-               user_enrolled.given_name
-
-      refute render(view) =~
-               user_not_enrolled.given_name
+      assert render(view) =~ "Instructors"
+      assert render(view) =~ "Manage the users with instructor level access"
+      assert render(view) =~ user_enrolled.given_name
+      refute render(view) =~ user_not_enrolled.given_name
     end
 
     test "loads section links correctly", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~
-               "Curriculum"
-
-      assert render(view) =~
-               "Manage the content delivered to students"
+      assert render(view) =~ "Curriculum"
+      assert render(view) =~ "Manage the content delivered to students"
 
       assert has_element?(
                view,
@@ -202,11 +182,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "a[href=\"#{Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, section.slug)}\"]"
              )
 
-      assert render(view) =~
-               "Manage"
-
-      assert render(view) =~
-               "Manage all aspects of course delivery"
+      assert render(view) =~ "Manage"
+      assert render(view) =~ "Manage all aspects of course delivery"
 
       assert has_element?(
                view,
@@ -218,11 +195,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section.slug)}\"]"
              )
 
-      assert render(view) =~
-               "Grading"
-
-      assert render(view) =~
-               "View and manage student grades and progress"
+      assert render(view) =~ "Grading"
+      assert render(view) =~ "View and manage student grades and progress"
 
       assert has_element?(
                view,
@@ -243,11 +217,8 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     test "unlink section from lms", %{conn: conn, section: section} do
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
-      assert render(view) =~
-               "LMS Admin"
-
-      assert render(view) =~
-               "Administrator LMS Connection"
+      assert render(view) =~ "LMS Admin"
+      assert render(view) =~ "Administrator LMS Connection"
 
       view
       |> element("button[phx-click=\"unlink\"]")

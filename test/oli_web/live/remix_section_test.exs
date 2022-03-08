@@ -134,8 +134,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      view
-      |> render_hook("reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
       view
       |> element("#save")
@@ -159,11 +158,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, _view, html} = live(conn)
 
-      refute html =~
-               "Admin"
-
-      assert html =~
-               "Customize Content"
+      refute html =~ "Admin"
+      assert html =~ "Customize Content"
     end
 
     test "as admin", %{
@@ -180,11 +176,8 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, _view, html} = live(conn)
 
-      assert html =~
-               "Admin"
-
-      assert html =~
-               "Customize Content"
+      assert html =~ "Admin"
+      assert html =~ "Customize Content"
     end
   end
 

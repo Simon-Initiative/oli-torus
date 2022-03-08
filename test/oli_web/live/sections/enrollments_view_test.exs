@@ -76,7 +76,6 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
 
       assert html =~ "Admin"
-
       assert html =~ "Enrollments"
     end
   end
@@ -95,7 +94,6 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
 
       refute html =~ "Admin"
-
       assert html =~ "Enrollments"
     end
   end
