@@ -1,4 +1,5 @@
-import React, { PropsWithChildren } from 'react';
+import React, { PropsWithChildren, useMemo, useEffect, useState, useCallback } from 'react';
+import { throttle } from 'lodash';
 import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
@@ -9,39 +10,11 @@ import { createButtonCommandDesc } from 'components/editing/elements/commands/co
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { config } from 'ace-builds';
-import AceEditor from 'react-ace';
-import 'ace-builds/src-noconflict/theme-github';
-import 'ace-builds/src-noconflict/mode-assembly_x86';
-import 'ace-builds/src-noconflict/mode-c_cpp';
-import 'ace-builds/src-noconflict/mode-csharp';
-import 'ace-builds/src-noconflict/mode-elixir';
-import 'ace-builds/src-noconflict/mode-golang';
-import 'ace-builds/src-noconflict/mode-haskell';
-import 'ace-builds/src-noconflict/mode-html';
-import 'ace-builds/src-noconflict/mode-java';
-import 'ace-builds/src-noconflict/mode-javascript';
-import 'ace-builds/src-noconflict/mode-kotlin';
-import 'ace-builds/src-noconflict/mode-lisp';
-import 'ace-builds/src-noconflict/mode-ocaml';
-import 'ace-builds/src-noconflict/mode-perl';
-import 'ace-builds/src-noconflict/mode-php';
-import 'ace-builds/src-noconflict/mode-python';
-import 'ace-builds/src-noconflict/mode-r';
-import 'ace-builds/src-noconflict/mode-ruby';
-import 'ace-builds/src-noconflict/mode-sql';
-import 'ace-builds/src-noconflict/mode-text';
-import 'ace-builds/src-noconflict/mode-typescript';
-import 'ace-builds/src-noconflict/mode-xml';
-import { classNames } from 'utils/classNames';
 import { ReactEditor, useSelected, useSlate } from 'slate-react';
 import { Editor } from 'slate';
-
-config.set('basePath', 'https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-noconflict/');
-config.setModuleUrl(
-  'ace/mode/javascript_worker',
-  'https://cdn.jsdelivr.net/npm/ace-builds@1.4.13/src-noconflict/worker-javascript.js',
-);
+import * as monaco from 'monaco-editor';
+import ReactMonacoEditor from '@uiw/react-monacoeditor';
+import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
 
 const getInitialModel = (model: ContentModel.Code) => {
   const editor = useSlate();
@@ -53,13 +26,45 @@ const getInitialModel = (model: ContentModel.Code) => {
   return code;
 };
 
+let editor: monaco.editor.IStandaloneCodeEditor;
+let editorContainer: HTMLElement;
+
 type CodeProps = EditorProps<ContentModel.Code>;
 export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
   const isSelected = useSelected();
-  const [value, setValue] = React.useState(getInitialModel(props.model));
+  const [value] = useState(getInitialModel(props.model));
+
   const onEdit = onEditModel(props.model);
-  const reactAce = React.useRef<AceEditor | null>(null);
-  const aceEditor = reactAce.current?.editor;
+
+  const updateSize = () => {
+    const contentHeight = Math.min(1000, editor.getContentHeight());
+    editorContainer.style.height = `${contentHeight}px`;
+    editor.layout({ width: editorContainer.offsetWidth, height: contentHeight });
+  };
+
+  const editorDidMount = (e: monaco.editor.IStandaloneCodeEditor) => {
+    editor = e;
+    editor.onDidContentSizeChange(updateSize);
+  };
+
+  useEffect(() => {
+    // listen for browser theme changes and update code editor accordingly
+    const listener = addDarkModeListener((theme: string) => {
+      if (theme === 'light') {
+        editor.updateOptions({ theme: 'vs-light' });
+      } else {
+        editor.updateOptions({ theme: 'vs-dark' });
+      }
+    });
+
+    const handleResize = throttle(updateSize, 200);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      removeDarkModeListener(listener);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   return (
     <div {...props.attributes} contentEditable={false}>
@@ -78,7 +83,7 @@ export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
                   execute: (_ctx, _editor) => {},
                 })}
               >
-                {CodeLanguages.all().map(({ prettyName, aceMode }, i) => (
+                {CodeLanguages.all().map(({ prettyName }, i) => (
                   <DescriptiveButton
                     key={i}
                     description={createButtonCommandDesc({
@@ -86,7 +91,6 @@ export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
                       description: prettyName,
                       active: () => prettyName === props.model.language,
                       execute: () => {
-                        aceEditor?.session.setMode(aceMode);
                         onEdit({ language: prettyName });
                       },
                     })}
@@ -97,28 +101,30 @@ export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
           </Toolbar>
         }
       >
-        <AceEditor
-          className={classNames(['code-editor', isSelected && 'active'])}
-          ref={reactAce}
-          mode={CodeLanguages.byPrettyName(props.model.language).aceMode}
-          style={{ width: '100%' }}
-          theme="github"
-          onChange={(code) => {
-            onEdit({ code });
-            setValue(code);
-          }}
-          value={value}
-          highlightActiveLine
-          tabSize={2}
-          wrapEnabled
-          setOptions={{
-            fontSize: 16,
-            showGutter: false,
-            minLines: 2,
-            maxLines: Infinity,
-          }}
-          placeholder={'fibs = 0 : 1 : zipWith (+) fibs (tail fibs)'}
-        />
+        {useMemo(
+          () => (
+            <div
+              ref={(d) => {
+                editorContainer = d as HTMLElement;
+              }}
+            >
+              <ReactMonacoEditor
+                value={value}
+                language={CodeLanguages.byPrettyName(props.model.language).aceMode}
+                options={{
+                  tabSize: 2,
+                  scrollBeyondLastLine: false,
+                  minimap: { enabled: false },
+                  theme: isDarkMode() ? 'vs-dark' : 'vs-light',
+                }}
+                onChange={(code) => onEdit({ code })}
+                editorDidMount={editorDidMount}
+              />
+            </div>
+          ),
+          [],
+        )}
+
         {props.children}
         <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
       </HoverContainer>
