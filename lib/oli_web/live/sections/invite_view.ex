@@ -92,21 +92,31 @@ defmodule OliWeb.Sections.InviteView do
   end
 
   def handle_event("new", %{"option" => option}, socket) do
+    socket = clear_flash(socket)
+
     socket =
-      case SectionInvites.create_section_invite(%{
-             section_id: socket.assigns.section.id,
-             date_expires:
-               SectionInvites.expire_after(
-                 socket.assigns.section,
-                 now(),
-                 String.to_existing_atom(option)
-               )
-           }) do
-        {:ok, invite} ->
+      with true <- socket.assigns.section.registration_open,
+           {:ok, invite} <-
+             SectionInvites.create_section_invite(%{
+               section_id: socket.assigns.section.id,
+               date_expires:
+                 SectionInvites.expire_after(
+                   socket.assigns.section,
+                   now(),
+                   String.to_existing_atom(option)
+                 )
+             }) do
+        put_flash(
+          socket,
+          :info,
+          "Invitation created: #{Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, invite.slug)}"
+        )
+      else
+        false ->
           put_flash(
             socket,
-            :info,
-            "Invitation created: #{Routes.delivery_url(OliWeb.Endpoint, :enroll_independent, invite.slug)}"
+            :error,
+            "Could not create invitation because the registration for the section is not open"
           )
 
         _ ->

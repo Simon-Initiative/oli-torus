@@ -157,6 +157,20 @@ defmodule Oli.Factory do
     }
   end
 
+  def section_with_dates_factory() do
+    now = DateTime.utc_now()
+    start_date = DateTime.add(now, 3600)
+    end_date = DateTime.add(now, 7200)
+
+    struct!(
+      section_factory(),
+      %{
+        start_date: start_date,
+        end_date: end_date
+      }
+    )
+  end
+
   def brand_factory() do
     %Brand{
       name: "Some brand",
