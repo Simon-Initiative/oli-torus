@@ -5,6 +5,7 @@ defmodule Oli.Repo.Migrations.AttemptStates do
     alter table(:part_attempts) do
       add :lifecycle_state, :string, default: "active", null: false
       add :date_submitted, :utc_datetime
+      add :grading_approach, :string, default: "automatic", null: false
     end
 
     alter table(:activity_attempts) do
