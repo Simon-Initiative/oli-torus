@@ -72,7 +72,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (currentActivityTree) {
       currentActivityTree.forEach((activity) => {
         if (activity?.content?.custom?.customCssClass) {
-          className += activity?.content?.custom?.customCssClass;
+          className += ' ' + activity?.content?.custom?.customCssClass;
         }
       });
     }
