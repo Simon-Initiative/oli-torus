@@ -120,7 +120,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
 
         <Editable
           style={props.style}
-          className={classNames(['slate-editor', 'overflow-auto', props.className])}
+          className={classNames('slate-editor', props.className)}
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}

@@ -28,7 +28,7 @@ const Menu: React.FC<MenuProps> = ({ children }) => {
 
   return (
     <AuthoringButtonConnected
-      className={classNames(['settings__open-button', editMode ? '' : 'disabled'])}
+      className={classNames('settings__open-button', editMode ? '' : 'disabled')}
       action={() => setIsPopoverOpen((isOpen) => !isOpen)}
     >
       <Popover

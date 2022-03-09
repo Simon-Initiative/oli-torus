@@ -36,7 +36,7 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
           </Popover>
         }
       >
-        <div className={classNames(['add-resource-content', editMode ? '' : 'disabled'])}>
+        <div className={classNames('add-resource-content', editMode ? '' : 'disabled')}>
           {editMode && (
             <>
               <div className="insert-button-container">

@@ -19,7 +19,7 @@ export const AuthoringButton: React.FC<Props> = (props: Props) => {
     <button
       aria-label={props.ariaLabel || ''}
       style={props.style}
-      className={classNames(['btn', props.className])}
+      className={classNames('btn', props.className)}
       disabled={props.disabled || !props.editMode}
       type="button"
       onClick={(e) => props.action(e)}

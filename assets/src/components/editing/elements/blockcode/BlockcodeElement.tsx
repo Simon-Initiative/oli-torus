@@ -1,20 +1,16 @@
-import React, { PropsWithChildren, useMemo, useEffect, useState, useCallback } from 'react';
+import React, { PropsWithChildren, useState, useEffect, useRef } from 'react';
 import { throttle } from 'lodash';
 import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
-import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
-import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
-import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { ReactEditor, useSelected, useSlate } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 import { Editor } from 'slate';
 import * as monaco from 'monaco-editor';
-import ReactMonacoEditor from '@uiw/react-monacoeditor';
+import MonacoEditor, { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
+import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
 
 const getInitialModel = (model: ContentModel.Code) => {
   const editor = useSlate();
@@ -26,38 +22,41 @@ const getInitialModel = (model: ContentModel.Code) => {
   return code;
 };
 
-let editor: monaco.editor.IStandaloneCodeEditor;
-let editorContainer: HTMLElement;
-
-type CodeProps = EditorProps<ContentModel.Code>;
-export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
-  const isSelected = useSelected();
+type CodeEditorProps = EditorProps<ContentModel.Code>;
+export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
+  const editorContainer = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<RefEditorInstance>(null);
   const [value] = useState(getInitialModel(props.model));
 
   const onEdit = onEditModel(props.model);
 
-  const updateSize = () => {
-    const contentHeight = Math.min(1000, editor.getContentHeight());
-    editorContainer.style.height = `${contentHeight}px`;
-    editor.layout({ width: editorContainer.offsetWidth, height: contentHeight });
+  const updateSize = (editor?: monaco.editor.IStandaloneCodeEditor) => {
+    if (editor && editorContainer.current) {
+      const contentHeight = Math.min(1000, editor.getContentHeight());
+      editorContainer.current.style.height = `${contentHeight}px`;
+      editor.layout({
+        width: editorContainer.current.offsetWidth,
+        height: contentHeight,
+      });
+    }
   };
 
   const editorDidMount = (e: monaco.editor.IStandaloneCodeEditor) => {
-    editor = e;
-    editor.onDidContentSizeChange(updateSize);
+    e.onDidContentSizeChange(() => updateSize(e));
+    updateSize(e);
   };
 
   useEffect(() => {
     // listen for browser theme changes and update code editor accordingly
     const listener = addDarkModeListener((theme: string) => {
       if (theme === 'light') {
-        editor.updateOptions({ theme: 'vs-light' });
+        editorRef.current?.editor?.updateOptions({ theme: 'vs-light' });
       } else {
-        editor.updateOptions({ theme: 'vs-dark' });
+        editorRef.current?.editor?.updateOptions({ theme: 'vs-dark' });
       }
     });
 
-    const handleResize = throttle(updateSize, 200);
+    const handleResize = throttle(() => updateSize(editorRef.current?.editor), 200);
     window.addEventListener('resize', handleResize);
 
     return () => {
@@ -68,66 +67,48 @@ export const CodeEditor = (props: PropsWithChildren<CodeProps>) => {
 
   return (
     <div {...props.attributes} contentEditable={false}>
-      <HoverContainer
-        isOpen={isSelected}
-        align="start"
-        position="top"
-        content={
-          <Toolbar context={props.commandContext}>
-            <Toolbar.Group>
-              <DropdownButton
-                description={createButtonCommandDesc({
-                  icon: '',
-                  description: props.model.language,
-                  active: (_editor) => false,
-                  execute: (_ctx, _editor) => {},
-                })}
-              >
-                {CodeLanguages.all().map(({ prettyName }, i) => (
-                  <DescriptiveButton
-                    key={i}
-                    description={createButtonCommandDesc({
-                      icon: '',
-                      description: prettyName,
-                      active: () => prettyName === props.model.language,
-                      execute: () => {
-                        onEdit({ language: prettyName });
-                      },
-                    })}
-                  />
-                ))}
-              </DropdownButton>
-            </Toolbar.Group>
-          </Toolbar>
-        }
+      <DropdownSelect
+        className="my-2"
+        text={props.model.language}
+        bsBtnClass="btn-outline-secondary btn-sm"
       >
-        {useMemo(
-          () => (
-            <div
-              ref={(d) => {
-                editorContainer = d as HTMLElement;
-              }}
-            >
-              <ReactMonacoEditor
-                value={value}
-                language={CodeLanguages.byPrettyName(props.model.language).aceMode}
-                options={{
-                  tabSize: 2,
-                  scrollBeyondLastLine: false,
-                  minimap: { enabled: false },
-                  theme: isDarkMode() ? 'vs-dark' : 'vs-light',
-                }}
-                onChange={(code) => onEdit({ code })}
-                editorDidMount={editorDidMount}
-              />
-            </div>
-          ),
-          [],
-        )}
+        {CodeLanguages.all().map(({ prettyName }, i) => (
+          <DropdownItem
+            key={i}
+            onClick={() => {
+              onEdit({ language: prettyName });
 
-        {props.children}
-        <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
-      </HoverContainer>
+              const model = editorRef.current?.editor?.getModel();
+              if (model) {
+                monaco.editor.setModelLanguage(model, prettyName);
+              }
+            }}
+            className={prettyName === props.model.language ? 'active' : ''}
+          >
+            {prettyName}
+          </DropdownItem>
+        ))}
+      </DropdownSelect>
+      <div ref={editorContainer} className="border">
+        <MonacoEditor
+          ref={editorRef}
+          value={value}
+          language={CodeLanguages.byPrettyName(props.model.language).monacoMode}
+          options={{
+            tabSize: 2,
+            scrollBeyondLastLine: false,
+            minimap: { enabled: false },
+            theme: isDarkMode() ? 'vs-dark' : 'vs-light',
+          }}
+          onChange={(code) => {
+            onEdit({ code });
+          }}
+          editorDidMount={editorDidMount}
+        />
+      </div>
+
+      {props.children}
+      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
     </div>
   );
 };
