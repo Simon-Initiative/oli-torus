@@ -1,6 +1,8 @@
 defmodule Oli.SectionsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
@@ -280,6 +282,15 @@ defmodule Oli.SectionsTest do
 
     test "change_section/1 returns a section changeset", %{section: section} do
       assert %Ecto.Changeset{} = Sections.change_section(section)
+    end
+
+    test "has_student_data?/1 returns false when section has no snapshots", %{section: section} do
+      refute Sections.has_student_data?(section.slug)
+    end
+
+    test "has_student_data?/1 returns true when section has snapshots" do
+      section = insert(:snapshot).section
+      assert Sections.has_student_data?(section.slug)
     end
   end
 

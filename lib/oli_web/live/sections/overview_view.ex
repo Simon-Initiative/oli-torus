@@ -16,7 +16,7 @@ defmodule OliWeb.Sections.OverviewView do
   data section, :any, default: nil
   data instructors, :list, default: []
   data updates_count, :integer
-  data section_has_student_enrollments, :boolean
+  data section_has_student_data, :boolean
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
@@ -152,11 +152,10 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   def handle_event("show_delete_modal", _params, socket) do
-    section_has_student_enrollments =
-      Sections.list_student_enrollments(socket.assigns.section.slug) != []
+    section_has_student_data = Sections.has_student_data?(socket.assigns.section.slug)
 
     {message, action} =
-      if section_has_student_enrollments do
+      if section_has_student_data do
         {"""
            This section has student data and will be archived rather than deleted.
            Are you sure you want to archive it? You will no longer have access to the data.
@@ -180,33 +179,41 @@ defmodule OliWeb.Sections.OverviewView do
       }
     }
 
-    {:noreply,
-     assign(socket, modal: modal, section_has_student_enrollments: section_has_student_enrollments)}
+    {:noreply, assign(socket, modal: modal, section_has_student_data: section_has_student_data)}
   end
 
   def handle_event("delete_section", _, socket) do
     socket = clear_flash(socket)
 
-    {action_function, action} =
-      if socket.assigns.section_has_student_enrollments do
-        {&Sections.update_section(&1, %{status: :archived}), "archived"}
-      else
-        {&Sections.delete_section/1, "deleted"}
-      end
-
     socket =
-      case action_function.(socket.assigns.section) do
-        {:ok, _section} ->
-          socket
-          |> put_flash(:info, "Section successfully #{action}.")
-          |> redirect(to: Routes.delivery_path(socket.endpoint, :open_and_free_index))
+      if socket.assigns.section_has_student_data ==
+           Sections.has_student_data?(socket.assigns.section.slug) do
+        {action_function, action} =
+          if socket.assigns.section_has_student_data do
+            {&Sections.update_section(&1, %{status: :archived}), "archived"}
+          else
+            {&Sections.delete_section/1, "deleted"}
+          end
 
-        {:error, %Ecto.Changeset{}} ->
-          put_flash(
-            socket,
-            :error,
-            "Section couldn't be #{action}."
-          )
+        case action_function.(socket.assigns.section) do
+          {:ok, _section} ->
+            socket
+            |> put_flash(:info, "Section successfully #{action}.")
+            |> redirect(to: Routes.delivery_path(socket.endpoint, :open_and_free_index))
+
+          {:error, %Ecto.Changeset{}} ->
+            put_flash(
+              socket,
+              :error,
+              "Section couldn't be #{action}."
+            )
+        end
+      else
+        put_flash(
+          socket,
+          :error,
+          "Section had student activity recently. It can now only be archived, please try again."
+        )
       end
 
     {:noreply, socket |> hide_modal()}

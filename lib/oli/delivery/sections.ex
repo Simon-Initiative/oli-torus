@@ -20,6 +20,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Resources.ResourceType
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
@@ -282,25 +283,18 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Returns a listing of all student enrollments for a given section.
-
+  Returns true if there is student data associated to the given section.
   """
-  def list_student_enrollments(section_slug) do
-    learner_role_id = ContextRoles.get_role(:context_learner).id
-
+  def has_student_data?(section_slug) do
     query =
       from(
-        e in Enrollment,
-        join: s in assoc(e, :section),
-        join: ecr in "enrollments_context_roles",
-        on: ecr.enrollment_id == e.id,
-        where:
-          s.slug == ^section_slug and s.status == :active and
-            ecr.context_role_id == ^learner_role_id,
-        select: e
+        snapshot in Snapshot,
+        join: s in assoc(snapshot, :section),
+        where: s.slug == ^section_slug and s.status == :active,
+        select: snapshot
       )
 
-    Repo.all(query)
+    Repo.aggregate(query, :count, :id) > 0
   end
 
   def get_enrollment(section_slug, user_id) do
