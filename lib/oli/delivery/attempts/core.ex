@@ -24,6 +24,23 @@ defmodule Oli.Delivery.Attempts.Core do
     GradeUpdateBrowseOptions
   }
 
+  @doc """
+  For a given user, section, and resource id, determine whether any resource attempts are
+  present.
+  """
+  def has_any_attempts?(%User{id: user_id}, %Section{id: section_id}, resource_id) do
+    query =
+      from access in ResourceAccess,
+        join: attempt in ResourceAttempt,
+        on: access.id == attempt.resource_access_id,
+        select: count(attempt.id),
+        where:
+          access.user_id == ^user_id and access.section_id == ^section_id and
+            access.resource_id == ^resource_id
+
+    Repo.one(query) > 0
+  end
+
   def browse_lms_grade_updates(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -416,11 +433,15 @@ defmodule Oli.Delivery.Attempts.Core do
       from(aa in ActivityAttempt,
         left_join: aa2 in ActivityAttempt,
         on:
-        aa2.resource_id == ^resource_id and aa.resource_attempt_id == aa2.resource_attempt_id and aa.id < aa2.id,
-        where: aa.resource_id == ^resource_id and aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
+          aa2.resource_id == ^resource_id and aa.resource_attempt_id == aa2.resource_attempt_id and
+            aa.id < aa2.id,
+        where:
+          aa.resource_id == ^resource_id and aa.resource_attempt_id == ^resource_attempt_id and
+            is_nil(aa2),
         select: aa
       )
-    ) |> Repo.preload(revision: [:activity_type])
+    )
+    |> Repo.preload(revision: [:activity_type])
   end
 
   @doc """

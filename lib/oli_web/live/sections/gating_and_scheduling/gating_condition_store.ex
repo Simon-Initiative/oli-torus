@@ -53,7 +53,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
 
             gc =
               gc
-              |> Map.take([:id, :type, :section_id, :resource_id])
+              |> Map.take([:id, :type, :section_id, :resource_id, :graded_resource_policy])
               |> Map.put(
                 :resource_title,
                 resource_title
@@ -373,6 +373,21 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
          |> Map.put(:source_title, title)
      )
      |> hide_modal()}
+  end
+
+  def handle_event(
+        "select-grading-policy",
+        %{"value" => value},
+        socket
+      ) do
+    %{gating_condition: gating_condition} = socket.assigns
+
+    {:noreply,
+     assign(socket,
+       gating_condition:
+         gating_condition
+         |> Map.put(:graded_resource_policy, String.to_existing_atom(value))
+     )}
   end
 
   def handle_event(

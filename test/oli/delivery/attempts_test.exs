@@ -78,6 +78,8 @@ defmodule Oli.Delivery.AttemptsTest do
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
+      refute Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
+
       {:ok, resource_attempt} =
         Hierarchy.create(%VisitContext{
           latest_resource_attempt: nil,
@@ -88,6 +90,8 @@ defmodule Oli.Delivery.AttemptsTest do
           blacklisted_activity_ids: [],
           publication_id: pub.id
         })
+
+      assert Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
 
       # verify that creating the attempt tree returns both activity attempts
       {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =

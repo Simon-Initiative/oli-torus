@@ -3,7 +3,6 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
   def rollup_objectives(page_revision, activity_revisions, resolver, section_slug) do
-
     rollup(
       # By default, a page's learning objectives are the rolled up objectives
       # from each of the page's activities. However, an author can override
