@@ -13,6 +13,7 @@
 - Display containers as pages with a table of contents
 - Logic-based gating
 - Allow learning objective attachment to pages
+- Hide subsequent purpose types for activities when the same purpose type is used in a series
 
 ## 0.18.4 (2022-02-24)
 
