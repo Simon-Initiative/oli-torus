@@ -21,11 +21,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
     context = SessionContext.init(session)
 
     case Mount.for(section_slug, session) do
-      {:admin, _author, section} ->
-        {:ok,
-         GatingConditionStore.init(socket, __MODULE__, section, context, title, parent_gate_id)}
-
-      {:user, _current_user, section} ->
+      {type, _author, section} when type in [:user, :author, :admin] ->
         {:ok,
          GatingConditionStore.init(socket, __MODULE__, section, context, title, parent_gate_id)}
     end
