@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:slug, :string)
     field(:open_and_free, :boolean, default: false)
     field(:requires_enrollment, :boolean, default: false)
-    field(:status, Ecto.Enum, values: [:active, :deleted], default: :active)
+    field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)
 

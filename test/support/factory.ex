@@ -4,7 +4,9 @@ defmodule Oli.Factory do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
   alias Oli.Branding.Brand
+  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Gating.GatingCondition
+  alias Oli.Delivery.Snapshots.Snapshot
 
   alias Oli.Delivery.Sections.{
     Enrollment,
@@ -317,6 +319,71 @@ defmodule Oli.Factory do
       section: insert(:section),
       slug: sequence("exampleinvite"),
       date_expires: date_expires
+    }
+  end
+
+  def snapshot_factory() do
+    revision = insert(:revision)
+
+    %Snapshot{
+      resource: revision.resource,
+      activity: revision.resource,
+      user: insert(:user),
+      section: insert(:section),
+      #
+      part_attempt: insert(:part_attempt),
+      revision: revision,
+      part_id: sequence("part_id"),
+      score: Enum.random(0..100),
+      out_of: 100,
+      correct: true,
+      hints: 0,
+      attempt_number: 1,
+      part_attempt_number: 1,
+      resource_attempt_number: 1,
+      activity_type_id: 1
+    }
+  end
+
+  def part_attempt_factory() do
+    %PartAttempt{
+      attempt_guid: sequence("guid"),
+      attempt_number: sequence("") |> Integer.parse() |> elem(0),
+      part_id: sequence("part_id"),
+      activity_attempt: insert(:activity_attempt)
+    }
+  end
+
+  def activity_attempt_factory() do
+    revision = insert(:revision)
+
+    %ActivityAttempt{
+      attempt_guid: sequence("guid"),
+      attempt_number: sequence("") |> Integer.parse() |> elem(0),
+      resource: revision.resource,
+      revision: revision,
+      resource_attempt: insert(:resource_attempt)
+    }
+  end
+
+  def resource_attempt_factory() do
+    revision = insert(:revision)
+
+    %ResourceAttempt{
+      attempt_guid: sequence("guid"),
+      attempt_number: sequence("") |> Integer.parse() |> elem(0),
+      resource_access: insert(:resource_access),
+      revision: revision,
+      content: %{}
+    }
+  end
+
+  def resource_access_factory() do
+    %ResourceAccess{
+      access_count: sequence("") |> Integer.parse() |> elem(0),
+      user: insert(:user),
+      section: insert(:section),
+      resource: insert(:resource)
     }
   end
 end
