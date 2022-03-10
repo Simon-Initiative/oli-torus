@@ -73,7 +73,9 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   end
 
   def sort_title_column(sort_order, sort_spec),
-    do: {& &1.project, ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+    do:
+      {fn item -> if is_product?(item), do: item, else: item.project end,
+       ColumnSpec.default_sort_fn(sort_order, sort_spec)}
 
   def render_action_column(assigns, item, _) do
     id =
