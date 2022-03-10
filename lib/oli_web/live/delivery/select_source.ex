@@ -3,6 +3,8 @@ defmodule OliWeb.Delivery.SelectSource do
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Institutions
+  alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.Router.Helpers, as: Routes
@@ -67,8 +69,8 @@ defmodule OliWeb.Delivery.SelectSource do
   end
 
   def mount(_params, session, socket) do
-    # SelectSource used in two routes.
-    # live_action is :independent_learner or :admin
+    # SelectSource used in three routes.
+    # live_action is :independent_learner, :admin or :from_lms
     route = socket.assigns.live_action
 
     sources =
@@ -142,6 +144,22 @@ defmodule OliWeb.Delivery.SelectSource do
       session["current_user_id"]
       |> Accounts.get_user!(preload: [:author]),
       nil
+    )
+  end
+
+  defp retrieve_all_sources(:from_lms, session) do
+    lti_params = LtiParams.get_lti_params(session["lti_params_id"])
+    issuer = lti_params["iss"]
+    client_id = lti_params["aud"]
+    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
+
+    {institution, _registration, _deployment} =
+      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+
+    Publishing.retrieve_visible_sources(
+      session["current_user_id"]
+      |> Accounts.get_user!(preload: [:author]),
+      institution
     )
   end
 end

@@ -82,23 +82,6 @@ defmodule OliWeb.DeliveryController do
     |> render("research_consent.html")
   end
 
-  def select_project(conn, params) do
-    user = conn.assigns.current_user
-    lti_params = conn.assigns.lti_params
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-
-    {institution, _registration, _deployment} =
-      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
-
-    render(conn, "select_project.html",
-      author: user.author,
-      sources: Publishing.retrieve_visible_sources(user, institution),
-      remix: Map.get(params, "remix", "false")
-    )
-  end
-
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
   end
