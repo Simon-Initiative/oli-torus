@@ -40,6 +40,8 @@
     @extend .table;
     border-collapse: collapse;
     table-layout: fixed;
+    word-wrap: break-word;
+    overflow: hidden;
 
     th {
       background-color: rgba($blue, 15%);

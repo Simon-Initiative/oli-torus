@@ -25,7 +25,7 @@ defmodule OliWeb.Sections.OpenFreeSettings do
 
   def render(assigns) do
     ~F"""
-    <Group label="LMS-Lite" description="Settings related to LMS-Lite delivery">
+    <Group label="Direct Delivery" description="Direct Delivery section settings">
       <Field name={:registration_open} class="form-check">
         <Checkbox class="form-check-input" value={get_field(@changeset, :registration_open)}/>
         <Label class="form-check-label"/>

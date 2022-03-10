@@ -6,11 +6,11 @@
     <%= case assigns[:error] do %>
       <% nil -> %>
 
-      <% {:error, {:invalid_json, element_id, schema, errors, content}} = error -> %>
+      <% {:error, {:invalid_json, schema, errors, json}} = error -> %>
         <div class="alert alert-danger" role="alert">
           <p><%= prettify_error(error) %></p>
 
-          <%= render "_json_schema_error_viewer", element_id: element_id, schema: schema, errors: errors, content: content %>
+          <%= render "_json_schema_error_viewer", schema: schema, errors: errors, json: json %>
         </div>
 
       <% error -> %>

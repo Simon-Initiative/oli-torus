@@ -259,13 +259,12 @@ defmodule Oli.Interop.IngestTest do
       assert {:error,
               {
                 :invalid_json,
-                "35",
                 _schema,
                 [
                   {"Expected exactly one of the schemata to match, but none of them did.",
                    "#/model/3"}
                 ],
-                _content
+                _json
               }} =
                simulate_unzipping()
                |> Enum.map(fn item ->

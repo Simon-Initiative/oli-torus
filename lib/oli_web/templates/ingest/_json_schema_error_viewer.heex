@@ -10,7 +10,7 @@ require(["vs/editor/editor.main"], () => {
 
   // Configures two JSON schemas, with references.
   let schema_uri = '<%= @schema.schema["$id"] %>';
-  let jsonCode = `<%= @content |> Jason.encode!() |> Jason.Formatter.pretty_print() |> raw() %>`;
+  let jsonCode = `<%= @json |> Jason.encode!() |> Jason.Formatter.pretty_print() |> raw() %>`;
   let modelUri = monaco.Uri.parse(`a://b/${schema_uri}.json`); // a made up unique URI for our model
   let model = monaco.editor.createModel(jsonCode, 'json', modelUri);
 
