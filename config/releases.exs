@@ -211,6 +211,12 @@ config :oli, :footer,
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")
 
+config :oli, :auth_providers,
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
+  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
+  github_client_id: System.get_env("GITHUB_CLIENT_ID", ""),
+  github_client_secret: System.get_env("GITHUB_CLIENT_SECRET", "")
+
 # ## Using releases (Elixir v1.9+)
 #
 # If you are doing OTP releases, you need to instruct Phoenix
