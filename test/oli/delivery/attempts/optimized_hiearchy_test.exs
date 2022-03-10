@@ -137,6 +137,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.OptimizedHierarchyTest do
           publication_id: pub.id
         })
 
+      assert resource_attempt.lifecycle_state == :active
+
       # verify that creating the attempt tree returns both activity attempts
       {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
         AttemptState.fetch_attempt_state(resource_attempt, p1.revision)
@@ -166,6 +168,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.OptimizedHierarchyTest do
       {act_attempt5, part_map5} = Map.get(attempts, a5.resource.id)
       {act_attempt6, part_map6} = Map.get(attempts, a6.resource.id)
 
+      assert act_attempt1.lifecycle_state == :active
+
       # This is perhaps the most important aspect of this test, as it guarantees that the logic
       # within the optimized create_attempt_hierarchy stored procedure correctly identifies
       # all activity references (even nested ones) and correctly categorizes the activity ref
@@ -192,6 +196,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.OptimizedHierarchyTest do
       assert pa4.activity_attempt_id == act_attempt4.id
       assert pa5.activity_attempt_id == act_attempt5.id
       assert pa6.activity_attempt_id == act_attempt6.id
+
+      assert pa1.lifecycle_state == :active
 
       assert %{attempt_number: 1, part_id: "1", hints: []} = pa1
 
