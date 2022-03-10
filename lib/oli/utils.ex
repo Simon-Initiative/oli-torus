@@ -288,4 +288,5 @@ defmodule Oli.Utils do
       "<a href=\"#{absolute_url}\" target=\"_blank\">#{url}</a>"
     end)
   end
+
 end

@@ -6,6 +6,9 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const globImporter = require('node-sass-glob-importer');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+
+const MONACO_DIR = path.resolve(__dirname, './node_modules/monaco-editor');
 
 // Determines the entry points for the webpack by looking at activity
 // implementations in src/components/activities folder
@@ -93,9 +96,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-      2 * foundActivities.length +
-      2 * foundParts.length +
-      foundThemes.length
+    2 * foundActivities.length +
+    2 * foundParts.length +
+    foundThemes.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -131,7 +134,7 @@ module.exports = (env, options) => ({
     libraryTarget: 'umd',
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss'],
+    extensions: ['.ts', '.tsx', '.js', '.jsx', '.scss', '.css', '.ttf'],
     // Add webpack aliases for top level imports
     alias: {
       components: path.resolve(__dirname, 'src/components'),
@@ -171,7 +174,18 @@ module.exports = (env, options) => ({
         ],
       },
       {
+        test: /\.css$/,
+        include: MONACO_DIR,
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.ttf$/,
+        include: MONACO_DIR,
+        use: ['file-loader']
+      },
+      {
         test: /\.[s]?css$/,
+        exclude: MONACO_DIR,
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -202,5 +216,6 @@ module.exports = (env, options) => ({
   plugins: [
     new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
     new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
+    new MonacoWebpackPlugin(),
   ],
 });

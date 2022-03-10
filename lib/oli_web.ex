@@ -67,6 +67,8 @@ defmodule OliWeb do
       use Surface.LiveView,
         layout: {OliWeb.LayoutView, "live.html"}
 
+      import Oli.Utils.Surface
+
       unquote(view_helpers())
     end
   end
@@ -74,6 +76,8 @@ defmodule OliWeb do
   def surface_component do
     quote do
       use Surface.LiveComponent
+
+      import Oli.Utils.Surface
 
       unquote(view_helpers())
     end
@@ -133,6 +137,8 @@ defmodule OliWeb do
 
       import Oli.Utils
       import Oli.Branding
+      import Oli.Utils.SchemaResolver, only: [schemas: 0]
+
 
       alias OliWeb.Router.Helpers, as: Routes
     end
