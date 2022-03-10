@@ -57,6 +57,21 @@
   color: white;
   border-radius: 4px;
 
+  // Only display purpose type decorations for the first elem of that type
+  // in a series.
+  // HTML looks like:
+  // <h4 class="{purpose-type}" />
+  // <activity class="activity-container" />
+  // <h4 class="{purpose-type}" />
+  // <activity class="activity-container" />
+  // So, we use the sibling selector to hide duplicate purpose types
+  // that occur after an activity element.
+  &.checkpoint + .activity-container + .checkpoint,
+  &.didigetthis + .activity-container + .didigetthis,
+  &.learnbydoing + .activity-container + .learnbydoing {
+    display: none;
+  }
+
   &.checkpoint {
     background-color: $activity-purpose-checkpoint-color;
 
