@@ -5,9 +5,6 @@ defmodule OliWeb.ProgressLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.Notifications
-  alias Oli.Notifications.SystemMessage
-
   defp live_view_student_resource_route(section_slug, user_id, resource_id) do
     Routes.live_path(
       OliWeb.Endpoint,
