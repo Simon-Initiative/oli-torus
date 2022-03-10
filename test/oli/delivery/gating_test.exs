@@ -16,6 +16,40 @@ defmodule Oli.Delivery.GatingTest do
     @update_attrs %{type: :schedule, data: %{}}
     @invalid_attrs %{type: nil, data: nil}
 
+    test "duplicate_gates/2 duplicates top-level gates",
+         %{
+           page1: page1,
+           section_1: section,
+           section_2: section2,
+           user_a: user_a
+         } do
+      gate = gating_condition_fixture(%{section_id: section.id, resource_id: page1.id})
+
+      gating_condition_fixture(%{
+        section_id: section.id,
+        resource_id: page1.id,
+        parent_id: gate.id,
+        user_id: user_a.id
+      })
+
+      gcs = Gating.list_gating_conditions(section.id)
+      assert Enum.count(gcs) == 2
+
+      assert Gating.list_gating_conditions(section2.id) == []
+
+      Gating.duplicate_gates(section, section2)
+
+      gcs = Gating.list_gating_conditions(section2.id)
+      assert Enum.count(gcs) == 1
+      dupe = Enum.at(gcs, 0)
+      assert dupe.resource_id == gate.resource_id
+      assert dupe.type == gate.type
+      assert dupe.graded_resource_policy == gate.graded_resource_policy
+      assert dupe.data == gate.data
+      assert is_nil(dupe.parent_id)
+      assert is_nil(dupe.user_id)
+    end
+
     test "list_gating_conditions/1 returns all gating_conditions for a given section",
          %{
            container: %{resource: container_resource},

@@ -32,6 +32,12 @@ defmodule OliWeb.Products.Details.Content do
           to={Routes.product_remix_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @product.slug)}
         />
       </p>
+      <p>
+        <Link
+          label={"Gating and scheduling"}
+          to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @product.slug)}
+        />
+      </p>
     </div>
 
     """

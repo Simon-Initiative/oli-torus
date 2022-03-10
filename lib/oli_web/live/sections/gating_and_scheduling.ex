@@ -11,6 +11,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Delivery.Gating
+  alias Oli.Delivery.Sections.Section
   alias OliWeb.Delivery.Sections.GatingAndScheduling.TableModel
   alias Oli.Delivery.Gating.GatingCondition
   alias OliWeb.Common.SessionContext
@@ -18,18 +19,40 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   @limit 25
 
   def set_breadcrumbs(section, parent_gate) do
-    OliWeb.Sections.SectionsView.set_breadcrumbs()
+    case section do
+      %Section{type: :blueprint} ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Products"
+          })
+        ]
+
+      _ ->
+        OliWeb.Sections.SectionsView.set_breadcrumbs()
+    end
     |> breadcrumb(section)
     |> breadcrumb_exceptions(section, parent_gate)
   end
 
   def breadcrumb(previous, section) do
+    intermediate =
+      case section do
+        %Section{type: :blueprint} ->
+          Breadcrumb.new(%{
+            full_title: section.title,
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
+          })
+
+        _ ->
+          Breadcrumb.new(%{
+            full_title: section.title,
+            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
+          })
+      end
+
     previous ++
       [
-        Breadcrumb.new(%{
-          full_title: section.title,
-          link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
-        }),
+        intermediate,
         Breadcrumb.new(%{
           full_title: "Gating and Scheduling",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
@@ -84,10 +107,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       end
 
     case Mount.for(section_slug, session) do
-      {:admin, _author, section} ->
-        {:ok, assign_defaults(socket, section, session, parent_gate, title)}
-
-      {:user, _current_user, section} ->
+      {type, _author, section} when type in [:user, :author, :admin] ->
         {:ok, assign_defaults(socket, section, session, parent_gate, title)}
     end
   end
