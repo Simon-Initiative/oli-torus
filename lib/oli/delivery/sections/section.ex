@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Sections.Section do
     # specific projects and publications to a section for resource resolution
     has_many(:section_project_publications, SectionsProjectsPublications, on_replace: :delete)
 
-    # Section Invites are used for "LMS-Lite" sections (open and free and require enrollment)
+    # Section Invites are used for "Direct Delivery" sections (open and free and require enrollment)
     # An instructor can create a "section invite" link with a hash that allows direct student
     # enrollment.
     has_many(:section_invites, SectionInvite, on_delete: :delete_all)

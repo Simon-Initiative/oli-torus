@@ -132,7 +132,7 @@ defmodule OliWeb.Sections.OverviewView do
 
   defp type_to_string(section) do
     case section.open_and_free do
-      true -> "LMS-Lite"
+      true -> "Direct Delivery"
       _ -> "LTI"
     end
   end

@@ -108,7 +108,9 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert response(conn, 404)
     end
 
-    test "loads section data correctly", %{conn: conn, section: section} do
+    test "loads section data correctly", %{conn: conn} do
+      section = insert(:section, open_and_free: true)
+
       {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
 
       assert render(view) =~
@@ -119,7 +121,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
 
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
-      assert has_element?(view, "input[value=\"LTI\"]")
+      assert has_element?(view, "input[value=\"Direct Delivery\"]")
     end
 
     test "loads section instructors correctly", %{conn: conn, section: section} do
