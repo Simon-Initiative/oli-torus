@@ -357,6 +357,7 @@ Oli.Utils.Purposes.html
 Oli.Utils.Recaptcha.html
 Oli.Utils.SchemaResolver.html
 Oli.Utils.Slug.html
+Oli.Utils.Surface.html
 Oli.Utils.Time.html
 Oli.Utils.html
 Oli.VendorProperties.html
@@ -459,6 +460,7 @@ OliWeb.Common.LtiSession.html
 OliWeb.Common.MaterialIcon.html
 OliWeb.Common.MinimalModal.html
 OliWeb.Common.Modal.html
+OliWeb.Common.MonacoEditor.html
 OliWeb.Common.PagedTable.html
 OliWeb.Common.Paging.html
 OliWeb.Common.PagingParams.html
@@ -700,8 +702,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-14b371e9f1.js
-dist/sidebar_items-756012d8e8.js
+dist/search_items-9d64ba7c4c.js
+dist/sidebar_items-dba9a69fee.js
 index.html
 license.html
 readme.html
