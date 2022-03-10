@@ -17,7 +17,26 @@
     "children": {
       "type": "array",
       "items": {
-        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
+        "oneOf": [
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
+          }
+        ]
       }
     }
   },
