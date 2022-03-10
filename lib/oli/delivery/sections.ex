@@ -290,7 +290,7 @@ defmodule Oli.Delivery.Sections do
       from(
         snapshot in Snapshot,
         join: s in assoc(snapshot, :section),
-        where: s.slug == ^section_slug and s.status == :active,
+        where: s.slug == ^section_slug,
         select: snapshot
       )
 
