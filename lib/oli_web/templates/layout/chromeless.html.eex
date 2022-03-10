@@ -7,6 +7,10 @@
     <%= csrf_meta_tag() %>
     <%= get_title(assigns) %>
 
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= favicons("apple-touch-icon.png", assigns[:section]) %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png", assigns[:section]) %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
+
     <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
 
