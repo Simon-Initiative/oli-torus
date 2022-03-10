@@ -66,4 +66,6 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAccess do
       }) do
     !is_nil(last_grade_update_id) and last_grade_update_id != last_successful_grade_update_id
   end
+
+  def last_grade_update_failed?(_), do: false
 end
