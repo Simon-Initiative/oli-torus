@@ -1,0 +1,112 @@
+{ render_modal(assigns) }
+
+<div class="container">
+  <h2>Revision History</h2>
+  <h4>Resource ID: {@resource_id}</h4>
+
+  <div class="row" style="margin-bottom: 30px;">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          Revisions
+        </div>
+        <div class="card-body">
+          <div class="border rounded mb-2">
+            { live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size }
+          </div>
+          { live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: @page_size }
+          { live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: @page_size }
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="row" style="margin-bottom: 30px;">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          Selected Revision Details
+          <div style="float: right;">
+            {#if @edited_json}
+              <button type="button" class="btn btn-primary btn-sm mr-2" phx-click="save_edits">
+                <i class="las la-save"></i> Save as New Revision
+              </button>
+              <button type="button" class="btn btn-outline-primary btn-sm" phx-click="cancel_edits">
+                Cancel
+              </button>
+            {#else }
+              <button type="button" class="btn btn-outline-primary btn-sm mr-2" phx-click="edit_json">
+                Edit JSON Content
+              </button>
+
+              <button type="button" class="btn btn-outline-danger btn-sm" phx-click="show_restore_revision_modal">
+                Restore
+              </button>
+            {/if}
+          </div>
+        </div>
+        <div class="card-body">
+          {#if !Enum.empty?(@edit_errors)}
+            <div class="text-danger mb-2">Failed to save. JSON is invalid according to schema. Please fix the validation issues below and try again:</div>
+            {#for error <- @edit_errors}
+              <div class="alert alert-warning d-flex" role="alert">
+                <div class="flex-grow-1">{error}</div>
+                <div><a href={@resource_schema.schema["$id"]} target="_blank">JSON Schema <i class="las la-external-link-alt"></i></a></div>
+              </div>
+            {/for}
+          {/if}
+
+          { live_component Details, revision: @selected}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form id="json-upload" phx-change="validate" phx-submit="save">
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            Upload JSON
+            <div style="float: right;">
+              {#if @uploads.json.entries |> Enum.count() > 0}
+                <button type="submit" class="btn btn-outline-danger btn-sm" phx-disable-with="Uploading">
+                  Set Content
+                </button>
+              {#else}
+                <div class="btn btn-outline-danger btn-sm disabled">
+                  Set Content
+                </div>
+              {/if}
+            </div>
+          </div>
+          <div class="card-body">
+
+            <p>Select a <code>.json</code> file to upload and set as the content of this resource.</p>
+
+              <div class="flex my-3" phx-drop-target={@uploads.json.ref}>
+                { live_file_input @uploads.json }
+              </div>
+
+              {#for entry <- @uploads.json.entries }
+                {#for err <- upload_errors(@uploads.json, entry) }
+                  <p class="alert alert-danger">{friendly_error(err)}</p>
+                {#else}
+                  {#if entry.progress}
+                    <p>
+                      <progress value={entry.progress} max="100">{ entry.progress }% </progress>
+                    </p>
+                  {/if}
+                {/for}
+              {/for}
+
+              {#for {msg, el} <- @upload_errors}
+                <div class="alert alert-danger" role="alert">
+                  JSON validation failed: {msg} {el}
+                </div>
+              {/for}
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
