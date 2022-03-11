@@ -1160,6 +1160,18 @@ defmodule OliWeb.CommunityLiveTest do
                user.name
     end
 
+    test "lists community members with no name", %{conn: conn, community: community} do
+      user = insert(:user, name: nil)
+      insert(:community_member_account, %{user: user, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:nth-child(2)")
+             |> render() =~
+               user.email
+    end
+
     test "removes community member", %{conn: conn, community: community} do
       user = insert(:user)
       insert(:community_member_account, %{user: user, community: community})
