@@ -803,8 +803,6 @@ defmodule OliWeb.Router do
     live("/select_project", Delivery.SelectSource, :from_lms, as: :select_source)
 
     post("/research_consent", DeliveryController, :research_consent)
-
-    post("/", DeliveryController, :create_section)
   end
 
   ### Admin Dashboard / Telemetry
