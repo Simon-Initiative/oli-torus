@@ -478,8 +478,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       vars.forEach((changedVar) => {
         const existing = mutableState.find((ms) => ms.id === changedVar.id);
         if (!existing) {
-          if (changedVar.type === 2 && typeof changedVar.value === 'number') {
-            changedVar.type = 1;
+          if (
+            changedVar.type === CapiVariableTypes.STRING &&
+            typeof changedVar.value === 'number'
+          ) {
+            changedVar.type = CapiVariableTypes.NUMBER;
           }
           mutableState.push(changedVar);
           hasDiff = true;
