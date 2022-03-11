@@ -482,13 +482,26 @@ describe('Scripting Interface', () => {
 
     it('should deal with JSON values', () => {
       const jsonVal = '{"content":{"ops":[1, 2, 3]}}';
-      const escapedVal = '{\\"content\\":{\\"ops\\":[1, 2, 3]}}';
+      const escapedVal = '{\\"content\\":{\\"ops\\":[1,2,3]}}';
       const variable = {
         type: 2,
         value: jsonVal,
       };
       const script = getExpressionStringForValue(variable);
       expect(script).toBe(`"${escapedVal}"`);
+    });
+
+    it('should be able to evaluate values nested within JSON', () => {
+      const env = new Environment();
+      evalScript(`let {app.spr-app-adaptivity.ASUELA.Q3.L4.Name} = "Herman";`, env);
+      const jsonVal = `{"content":{"ops":[{"insert":"Dear {app.spr-app-adaptivity.ASUELA.Q3.L4.Name}"}]},"dropdowns":{},"textInputs":{}}`;
+      const resultVal = `{\\"content\\":{\\"ops\\":[{\\"insert\\":\\"Dear Herman\\"}]},\\"dropdowns\\":{},\\"textInputs\\":{}}`;
+      const variable = {
+        type: 2,
+        value: jsonVal,
+      };
+      const script = getExpressionStringForValue(variable, env);
+      expect(script).toBe(`"${resultVal}"`);
     });
 
     it('should deal with CSS that looks like expressions', () => {
