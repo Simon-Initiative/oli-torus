@@ -1054,7 +1054,16 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         mFormatted[baseKey] = updatedVar;
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
       }
-      if (!Object.keys(initStateBindToFacts).includes(key)) {
+      console.log({ lenght: Object.keys(initStateBindToFacts) });
+
+      if (
+        Object.keys(initStateBindToFacts).length < 0 ||
+        !Object.keys(initStateBindToFacts).includes(key)
+      ) {
+        console.log('%c INIT STATE APPLIED', 'background: darkgreen; color: #fff;', {
+          arrInitStateVars,
+        });
+
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       }
     });
