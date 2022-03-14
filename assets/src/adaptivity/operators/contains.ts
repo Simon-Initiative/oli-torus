@@ -17,7 +17,7 @@ const handleContainsOperator = (
       if (Array.isArray(value)) {
         return value.some((item: any) => {
           let test = item;
-          if (typeof item === 'string') {
+          if (isString(item)) {
             test = test.trim();
           }
           return factValue.trim().includes(test);
@@ -33,7 +33,7 @@ const handleContainsOperator = (
     value = parseArray(value);
     return value.some((item: any) => {
       let test = item;
-      if (typeof item === 'string') {
+      if (isString(item)) {
         test = test.trim();
       }
       return factValue.trim().includes(test);
