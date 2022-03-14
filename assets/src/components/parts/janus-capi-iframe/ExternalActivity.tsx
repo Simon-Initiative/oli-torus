@@ -1054,8 +1054,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         mFormatted[baseKey] = updatedVar;
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
       }
-      console.log({ lenght: Object.keys(initStateBindToFacts) });
-
       if (
         Object.keys(initStateBindToFacts).length < 0 ||
         !Object.keys(initStateBindToFacts).includes(key)
