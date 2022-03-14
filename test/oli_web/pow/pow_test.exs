@@ -17,7 +17,7 @@ defmodule OliWeb.Common.PowTest do
   }
 
   describe "pow author" do
-    setup [:setup_section]
+    setup [:setup_section, :configure_auth_providers]
 
     test "handles new session", %{conn: conn, author: author} do
       conn =
@@ -61,7 +61,7 @@ defmodule OliWeb.Common.PowTest do
   end
 
   describe "pow user" do
-    setup [:setup_section]
+    setup [:setup_section, :configure_auth_providers]
 
     test "handles new session", %{conn: conn, user: user} do
       conn =
@@ -101,11 +101,14 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Google"
       assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
   describe "pow learner signup" do
-    setup [:configure_age_verification]
+    setup [:configure_age_verification, :configure_auth_providers]
 
     test "returns error when age verification is not checked", %{conn: conn} do
       expect_recaptcha_http_post()
@@ -162,10 +165,15 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Google"
       assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
   describe "pow author signup" do
+    setup [:configure_auth_providers]
+
     test "shows auth providers sign in buttons", %{conn: conn} do
       conn =
         conn
@@ -181,8 +189,33 @@ defmodule OliWeb.Common.PowTest do
     end
   end
 
+  describe "login with auth providers disabled" do
+    setup [:setup_section]
+
+    test "does not show auth providers sign in buttons when env vars are disabled", %{conn: conn} do
+      conn =
+        conn
+        |> get(Routes.authoring_pow_session_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      refute response =~ "Sign in with Google"
+      refute response =~ "Sign in with Github"
+    end
+  end
+
   defp configure_age_verification(_) do
     Config.Reader.read!("test/config/age_verification_config.exs")
+    |> Application.put_all_env()
+
+    on_exit(fn ->
+      Config.Reader.read!("test/config/config.exs")
+      |> Application.put_all_env()
+    end)
+  end
+
+  defp configure_auth_providers(_) do
+    Config.Reader.read!("test/config/auth_providers_config.exs")
     |> Application.put_all_env()
 
     on_exit(fn ->
