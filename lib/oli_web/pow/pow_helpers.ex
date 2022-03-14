@@ -212,10 +212,10 @@ defmodule OliWeb.Pow.PowHelpers do
     client_id = Application.fetch_env!(:oli, :auth_providers)[:"#{provider}_client_id"]
     client_secret = Application.fetch_env!(:oli, :auth_providers)[:"#{provider}_client_secret"]
 
-    if client_id != "" and client_secret != "" do
-      Keyword.put(providers_list, provider, provider_config(provider, client_id, client_secret))
-    else
+    if blank?(client_id) or blank?(client_secret) do
       providers_list
+    else
+      Keyword.put(providers_list, provider, provider_config(provider, client_id, client_secret))
     end
   end
 
@@ -242,4 +242,8 @@ defmodule OliWeb.Pow.PowHelpers do
       session_params: ["type"]
     ]
   end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 end
