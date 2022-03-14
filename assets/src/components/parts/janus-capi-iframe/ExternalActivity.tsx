@@ -1060,10 +1060,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         Object.keys(initStateBindToFacts).length < 0 ||
         !Object.keys(initStateBindToFacts).includes(key)
       ) {
-        console.log('%c INIT STATE APPLIED', 'background: darkgreen; color: #fff;', {
-          arrInitStateVars,
-        });
-
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       }
     });
