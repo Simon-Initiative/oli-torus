@@ -28,17 +28,33 @@ defmodule OliWeb.Delivery.SelectSource do
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
 
   def breadcrumbs(:admin) do
-    OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb()
+    OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(:admin)
   end
 
-  def breadcrumbs(_), do: []
+  def breadcrumbs(:from_lms) do
+    breadcrumb([
+      Breadcrumb.new(%{
+        full_title: "Create Course Section",
+        link: Routes.delivery_path(OliWeb.Endpoint, :index)
+      })
+    ], :from_lms, "Quick Start")
+  end
 
-  def breadcrumb(previous) do
+  def breadcrumbs(:independent_learner) do
+    breadcrumb([
+      Breadcrumb.new(%{
+        full_title: "My Courses",
+        link: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+      })
+    ], :independent_learner)
+  end
+
+  def breadcrumb(previous, type, title \\ "Select Source") do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Select Source",
-          link: Routes.select_source_path(OliWeb.Endpoint, :admin)
+          full_title: title,
+          link: Routes.select_source_path(OliWeb.Endpoint, type)
         })
       ]
   end
@@ -94,6 +110,7 @@ defmodule OliWeb.Delivery.SelectSource do
     {:ok,
      assign(socket,
        breadcrumbs: breadcrumbs(route),
+       delivery_breadcrumb: true,
        total_count: length(sources),
        table_model: table_model,
        sources: sources,
