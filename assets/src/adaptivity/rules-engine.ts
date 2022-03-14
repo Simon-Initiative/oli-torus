@@ -69,7 +69,9 @@ const evaluateValueExpression = (value: string, env: Environment) => {
   if (typeof value !== 'string') {
     return value;
   }
-  return getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
+  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
+  const { result } = evalScript(expr, env);
+  return result;
 };
 
 const processRules = (rules: JanusRuleProperties[], env: Environment) => {
