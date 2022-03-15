@@ -6,6 +6,7 @@ import {
   parseBoolean,
   valueOr,
   zip,
+  removeEmpty,
 } from 'utils/common';
 
 describe('common valueOr', () => {
@@ -118,6 +119,48 @@ describe('common parseArray', () => {
       [3, 4],
     ];
     expect(parseArray(str)).toEqual(expected);
+  });
+});
+
+describe('common removeEmpty', () => {
+  it('removes items with no content', () => {
+    const hasContent1 = {
+      content: {
+        model: [{ type: 'p', children: [{ text: 'hey' }] }],
+      },
+    };
+    const hasContent2 = {
+      content: [{ type: 'img', children: [{ text: '' }] }],
+    };
+
+    const noContent: any[] = [
+      {
+        content: {
+          model: [{ type: 'p', children: [{ text: '' }] }],
+        },
+      },
+      {
+        content: {
+          model: [{ type: 'p', children: [{ text: '' }, { text: ' ' }, { text: '\n' }] }],
+        },
+      },
+      {
+        content: {
+          model: [{ text: '' }],
+        },
+      },
+      {
+        content: [{ text: '' }, { text: '   ' }, { text: '\n' }],
+      },
+      {
+        content: [{ type: 'p', children: [{ type: 'p', children: [{ text: '   ' }] }] }],
+      },
+    ];
+
+    const removed = removeEmpty([hasContent1, hasContent2, ...noContent]);
+
+    expect(removed[0]).toBe(hasContent1);
+    expect(removed[1]).toBe(hasContent2);
   });
 });
 

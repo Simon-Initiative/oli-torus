@@ -6,6 +6,7 @@
 
 - Fix inability to search in projects and users view
 - Properly handle the case that a section invite link leads to an unavailable section
+- Fix empty hints showing up in delivery mode
 - Fix table styling when words overflow bounds
 
 ### Enhancements
