@@ -16,7 +16,11 @@ const handleContainsOperator = (
       // use case: factValue = 'abc' and value = ['abc',' abc']
       if (Array.isArray(value)) {
         return value.some((item: any) => {
-          return factValue.trim().includes(item.trim());
+          let test = item;
+          if (isString(item)) {
+            test = test.trim();
+          }
+          return factValue.trim().includes(test);
         });
       }
       return false;
@@ -27,7 +31,13 @@ const handleContainsOperator = (
       return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
     }
     value = parseArray(value);
-    return value.some((item: any) => factValue.includes(item.trim()));
+    return value.some((item: any) => {
+      let test = item;
+      if (isString(item)) {
+        test = test.trim();
+      }
+      return factValue.trim().includes(test);
+    });
   }
 
   if (Array.isArray(factValue) && Array.isArray(value)) {
