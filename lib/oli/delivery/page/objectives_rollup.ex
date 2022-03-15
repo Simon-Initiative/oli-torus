@@ -2,21 +2,22 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
   # for a map of activity ids to latest attempt tuples (where the first tuple item is the activity attempt)
   # return the parent objective revisions of all attached objectives
   # if an attached objective is a parent, include that in the return list
-  def rollup_objectives(page_revision, activity_revisions, resolver, section_slug) do
-    rollup(
-      # By default, a page's learning objectives are the rolled up objectives
-      # from each of the page's activities. However, an author can override
-      # this by attaching objectives directly to the page.
-      case page_revision.objectives["attached"] do
-        [] ->
-          get_attached_objective_ids(activity_revisions)
+  def rollup_objectives(page_revision, _, resolver, section_slug) do
+    case page_revision.objectives["attached"] do
 
-        _ ->
-          page_revision.objectives["attached"]
-      end,
-      resolver,
-      section_slug
-    )
+      # If there are no objectives attached to this page
+      [] ->
+        []
+
+      # If there is one or more objectives attached, roll up the titles
+      list when is_list(list) ->
+        list
+
+      # All other shapes of data (maps, nil, etc) we ignore
+      _ -> []
+
+    end
+    |> rollup(resolver, section_slug)
   end
 
   defp rollup(attached_objective_ids, resolver, section_slug) do
@@ -48,13 +49,4 @@ defmodule Oli.Delivery.Page.ObjectivesRollup do
     |> Enum.sort()
   end
 
-  defp get_attached_objective_ids(activity_revisions) do
-    Enum.reduce(activity_revisions, MapSet.new(), fn %{objectives: objectives}, all ->
-      Enum.map(objectives, fn {_, ids} -> ids end)
-      |> List.flatten()
-      |> MapSet.new()
-      |> MapSet.union(all)
-    end)
-    |> MapSet.to_list()
-  end
 end
