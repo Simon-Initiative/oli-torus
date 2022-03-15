@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.PageLifecycle — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-2d3b1d01d0.js"></script>
+    <script src="dist/sidebar_items-d90147cd23.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -117,6 +117,17 @@ transitions and to access their state.</p>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#can_access_attempt?/3">can_access_attempt?(resource_attempt_guid, user, section)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Determines whether a particular user can access the resource attempt represented by
+its attempt guid.  A user can access a resource attempt if that user is either an
+instructor enrolled in that section, or the student that originated the attempt.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#finalize/2">finalize(section_slug, resource_attempt_guid)</a>
 
   </div>
@@ -167,6 +178,30 @@ in the specified section and for a specific user.</p></div>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="can_access_attempt?/3">
+
+  <div class="detail-header">
+    <a href="#can_access_attempt?/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">can_access_attempt?(resource_attempt_guid, user, section)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L231" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Determines whether a particular user can access the resource attempt represented by
+its attempt guid.  A user can access a resource attempt if that user is either an
+instructor enrolled in that section, or the student that originated the attempt.</p>
+  </section>
+</section>
 <section class="detail" id="finalize/2">
 
   <div class="detail-header">
@@ -176,7 +211,7 @@ Functions
     </a>
     <h1 class="signature">finalize(section_slug, resource_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L177" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L183" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -198,7 +233,7 @@ Functions
     </a>
     <h1 class="signature">review(resource_attempt_guid)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L145" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L151" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -220,7 +255,7 @@ Functions
     </a>
     <h1 class="signature">start(revision_slug, section_slug, user_id, activity_provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L47" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -247,7 +282,7 @@ in the specified section and for a specific user.</p><p>On success returns:
     </a>
     <h1 class="signature">visit(page_revision, section_slug, user_id, activity_provider)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L97" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle.ex#L103" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
