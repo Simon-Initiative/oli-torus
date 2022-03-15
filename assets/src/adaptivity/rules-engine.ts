@@ -70,7 +70,17 @@ const evaluateValueExpression = (value: string, env: Environment) => {
     return value;
   }
   const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
-  const { result } = evalScript(expr, env);
+  let { result } = evalScript(expr, env);
+  if (result === value) {
+    try {
+      const evaluatedValue = evalScript(value, env);
+      if (evaluatedValue.result !== undefined) {
+        result = evaluatedValue.result;
+      }
+    } catch (ex) {
+      return result;
+    }
+  }
   return result;
 };
 

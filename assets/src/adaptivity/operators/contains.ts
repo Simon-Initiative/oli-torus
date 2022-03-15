@@ -18,9 +18,11 @@ const handleContainsOperator = (
         return value.some((item: any) => {
           let test = item;
           if (isString(item)) {
-            test = test.trim();
+            test = test.trim().length ? test.trim() : test;
           }
-          return factValue.trim().includes(test);
+          return factValue.trim().length
+            ? factValue.trim().includes(test)
+            : factValue.includes(test);
         });
       }
       return false;
@@ -34,9 +36,9 @@ const handleContainsOperator = (
     return value.some((item: any) => {
       let test = item;
       if (isString(item)) {
-        test = test.trim();
+        test = test.trim().length ? test.trim() : test;
       }
-      return factValue.trim().includes(test);
+      return factValue.trim().length ? factValue.trim().includes(test) : factValue.includes(test);
     });
   }
 
