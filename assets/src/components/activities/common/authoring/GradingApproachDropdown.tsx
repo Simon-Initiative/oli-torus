@@ -29,7 +29,7 @@ export const GradingApproachDropdown = <K extends string>({
       <span>Grading Approach:</span>
       <select
         style={{ width: 250 }}
-        disabled={!editMode && false} // Remove ' && false` to enable for testing
+        disabled={!editMode || true} // Remove ' || true` to enable for testing
         className="form-control ml-1"
         value={selected}
         onChange={handleChange}
