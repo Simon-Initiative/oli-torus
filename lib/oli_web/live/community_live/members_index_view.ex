@@ -23,10 +23,7 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
   @table_push_patch_path &__MODULE__.live_path/2
 
   def filter_rows(socket, query, _filter) do
-    Enum.filter(socket.assigns.members, fn m ->
-      String.contains?(String.downcase(m.name), String.downcase(query)) or
-        String.contains?(String.downcase(m.email), String.downcase(query))
-    end)
+    Enum.filter(socket.assigns.members, &member_filter(&1.name, &1.email, query))
   end
 
   def live_path(socket, params) do
@@ -119,5 +116,13 @@ defmodule OliWeb.CommunityLive.MembersIndexView do
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Community member couldn't be removed.")}
     end
+  end
+
+  defp member_filter(nil, email, query),
+    do: String.contains?(String.downcase(email), String.downcase(query))
+
+  defp member_filter(name, email, query) do
+    String.contains?(String.downcase(name), String.downcase(query)) or
+      String.contains?(String.downcase(email), String.downcase(query))
   end
 end

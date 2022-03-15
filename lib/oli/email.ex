@@ -11,11 +11,11 @@ defmodule Oli.Email do
     |> html_text_body()
   end
 
-  @spec help_desk_email(String.t(), String.t(), String.t(), String.t(), atom(), map()) ::
+  @spec help_desk_email(String.t(), String.t(), String.t(), atom(), map()) ::
           Bamboo.Email.t()
-  def help_desk_email(name, from_email, help_desk_email, subject, view, assigns) do
+  def help_desk_email(from_email, help_desk_email, subject, view, assigns) do
     base_email()
-    |> put_header("Reply-To", name <> " <" <> from_email <> ">")
+    |> put_header("Reply-To", from_email)
     |> put_layout({OliWeb.LayoutView, :help_email})
     |> to(help_desk_email)
     |> subject(subject)

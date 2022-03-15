@@ -155,6 +155,10 @@
             }
         }
 
+        .more-link {
+            color: #2c66c4;
+        }
+
     </style>
     <!-- CSS Reset : END -->
 

@@ -1,0 +1,24 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-content.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Activity Content",
+  "description": "Activity content",
+  "type": "object",
+  "properties": {
+    "authoring": {
+      "type": "object",
+      "properties": {
+        "parts": {
+          "type": "array"
+        },
+        "previewText": {
+          "type": "string"
+        },
+        "transformations": {
+          "type": "array"
+        }
+      }
+    }
+  },
+  "required": ["authoring"]
+}

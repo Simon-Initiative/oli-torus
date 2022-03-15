@@ -7,13 +7,16 @@
     <%= csrf_meta_tag() %>
     <%= get_title(assigns) %>
 
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= favicons("apple-touch-icon.png", assigns[:section]) %>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<%= favicons("favicon-16x16.png", assigns[:section]) %>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
+
     <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-fQybjgWLrvvRgtW6bFlB7jaZrFsaBXjsOMm/tB9LTS58ONXgqbR9W8oWht/amnpF" crossorigin="anonymous"></script>
 
     <%# Use this top <link when all 'fa fa-' are converted to 'fa fa-' regex: FIND=la([^l]*)la- REPLACE=fa$1fa- %>
     <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
@@ -23,9 +26,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
       rel="stylesheet">
 
-    <!-- Code Syntax Highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/atom-one-light.min.css" integrity="sha512-11xYl5MU0/AMaYnuBOXDDQdZnl5WGtLVidxqa0XUAXYf6cGnJShNpgtbmB/0MW6ypeev+9Bwj7I/J8wexX8ePw==" crossorigin="anonymous" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/atom-one-dark.min.css" integrity="sha512-Jlyabam8ztU2kOGN19fSzv1Go9nt9A43UA6vhmL1MPsQMeoPZd+p7pbmegAtyl8kulna0Cqwb7Pgj4adGTLCXA==" crossorigin="anonymous" media="screen and (prefers-color-scheme: dark)"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/highlight.min.js"></script>
 
     <%= if @preview_mode == true do %>
     <!-- Preview Mode Styles -->
@@ -37,8 +39,6 @@
     <link rel="stylesheet" href="/css/janus_input_number_delivery.css"/>
     <link rel="stylesheet" href="/css/janus_slider_delivery.css"/>
     <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css"/>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script>

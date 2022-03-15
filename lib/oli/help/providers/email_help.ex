@@ -9,7 +9,6 @@ defmodule Oli.Help.Providers.EmailHelp do
 
     email =
       Oli.Email.help_desk_email(
-        contents.full_name,
         contents.email,
         help_desk_email,
         HelpContent.get_subject(contents.subject),
