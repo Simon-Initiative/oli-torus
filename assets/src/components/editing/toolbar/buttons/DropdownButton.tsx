@@ -36,11 +36,11 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       content={<div className="editorToolbar__dropdownGroup">{props.children}</div>}
     >
       <button
-        className={classNames([
+        className={classNames(
           'editorToolbar__button',
           'editorToolbar__button--dropdown',
           props.description.active?.(editor) && 'active',
-        ])}
+        )}
         onClick={onClick}
       >
         <ButtonContent {...props} />

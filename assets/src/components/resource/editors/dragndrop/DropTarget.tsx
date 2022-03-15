@@ -25,7 +25,7 @@ export const DropTarget = ({ id, index, isLast, onDrop }: DropTargetProps) => {
   return (
     <div
       key={id + '-drop'}
-      className={classNames(['drop-target ', hovered ? 'hovered' : '', isLast ? 'is-last' : ''])}
+      className={classNames('drop-target ', hovered ? 'hovered' : '', isLast ? 'is-last' : '')}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
