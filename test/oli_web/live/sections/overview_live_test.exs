@@ -276,7 +276,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
              |> element("#delete_section_modal")
              |> render() =~ """
                This section has student data and will be archived rather than deleted.
-               Are you sure you want to archive it? You will no longer have access to the data.
+               Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.
              """
 
       view
