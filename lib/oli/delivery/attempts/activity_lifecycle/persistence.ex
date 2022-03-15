@@ -5,7 +5,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   alias Oli.Delivery.Evaluation.Actions.{
     FeedbackActionResult,
     NavigationActionResult,
-    StateUpdateActionResult
+    StateUpdateActionResult,
+    SubmissionActionResult
   }
 
   alias Oli.Delivery.Attempts.Core.PartAttempt
@@ -108,6 +109,45 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
       {1, _} ->
         {:cont, {:ok, replace, results ++ [feedback_action]}}
+
+      _ ->
+        {:halt, {:error, :error}}
+    end
+  end
+
+  defp persist_single_evaluation(
+         {%{attempt_guid: attempt_guid, input: input},
+          {:ok, %SubmissionActionResult{} = submission_action}},
+         {:ok, replace, results}
+       ) do
+    now = DateTime.utc_now()
+
+    query =
+      from(p in PartAttempt,
+        where: p.attempt_guid == ^attempt_guid
+      )
+
+    query =
+      if replace === false do
+        where(query, [p], is_nil(p.date_evaluated))
+      else
+        query
+      end
+
+    case Repo.update_all(
+           query,
+           set: [
+             response: input,
+             lifecycle_state: :submitted,
+             date_evaluated: nil,
+             date_submitted: now
+           ]
+         ) do
+      nil ->
+        {:halt, {:error, :error}}
+
+      {1, _} ->
+        {:cont, {:ok, replace, results ++ [submission_action]}}
 
       _ ->
         {:halt, {:error, :error}}

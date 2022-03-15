@@ -9,16 +9,6 @@ defmodule Oli.Delivery.Evaluation.Standard do
         %Part{} = part
       ) do
     case Oli.Delivery.Evaluation.Evaluator.evaluate(part, evaluation_context) do
-      {:ok, {feedback, %Result{score: score, out_of: out_of}}} ->
-        {:ok,
-         %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
-           type: "FeedbackActionResult",
-           attempt_guid: attempt_guid,
-           feedback: feedback,
-           score: score,
-           out_of: out_of
-         }}
-
       {:error, e} ->
         {:error,
          %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
@@ -29,6 +19,9 @@ defmodule Oli.Delivery.Evaluation.Standard do
            out_of: 0,
            error: e
          }}
+
+      other ->
+        other
     end
   end
 end

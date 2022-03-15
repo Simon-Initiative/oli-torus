@@ -302,6 +302,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           resource_attempt_number: 1,
           activity_attempt_number: 1,
           part_attempt_number: 1,
+          part_attempt_guid: part_id,
           input: input.input
         }
 
@@ -309,7 +310,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       end)
       |> Enum.map(fn e ->
         case e do
-          {:ok, {feedback, result}} -> %{feedback: feedback, result: result}
+          {:ok, result} -> result
           {:error, _} -> %{error: "error in evaluation"}
         end
       end)
@@ -554,6 +555,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           resource_attempt_number: resource_attempt.attempt_number,
           activity_attempt_number: attempt_number,
           part_attempt_number: attempt.attempt_number,
+          part_attempt_guid: attempt.attempt_guid,
           input: input.input
         }
 

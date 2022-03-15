@@ -199,7 +199,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     now = DateTime.utc_now()
 
     update_resource_attempt(resource_attempt, %{
-      sdate_submitted: now,
+      date_submitted: now,
       lifecycle_state: :submitted
     })
   end
