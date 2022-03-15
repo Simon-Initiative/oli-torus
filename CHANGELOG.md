@@ -14,6 +14,7 @@
 - Display containers as pages with a table of contents
 - Logic-based gating
 - Allow learning objective attachment to pages
+- Instructor review of completed graded attempts
 - Allow gates to be defined in products
 - Hide subsequent purpose types for activities when the same purpose type is used in a series
 
