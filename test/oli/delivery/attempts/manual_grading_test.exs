@@ -37,11 +37,11 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     |> Seeder.create_part_attempt(
       %{
         attempt_number: 1,
-        grading_approach: :manual,
+        grading_approach: :automatic,
         date_submitted: DateTime.utc_now(),
         lifecycle_state: :evaluated
       },
-      %Part{id: "1", responses: [], hints: [], grading_approach: :manual},
+      %Part{id: "1", responses: [], hints: [], grading_approach: :automatic},
       activity_attempt_tag
     )
   end
