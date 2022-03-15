@@ -33,7 +33,7 @@ function hasContent(item: any): boolean {
     if (Array.isArray(item)) return item.some(hasContent);
     if (item.text) return item.text?.trim();
 
-    return [item?.children, item?.content, item?.content?.model]
+    return ([item?.children, item?.content, item?.content?.model] as any)
       .flatMap(hasContent)
       .some((x: any) => !!x);
   } catch (e) {
