@@ -1,7 +1,6 @@
 defmodule Oli.Delivery.Evaluation.Standard do
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model.Part
-  alias Oli.Delivery.Evaluation.Result
 
   def perform(
         attempt_guid,
@@ -17,6 +16,7 @@ defmodule Oli.Delivery.Evaluation.Standard do
            feedback: %{},
            score: 0,
            out_of: 0,
+           part_id: part.id,
            error: e
          }}
 

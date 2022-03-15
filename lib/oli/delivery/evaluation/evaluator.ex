@@ -1,5 +1,5 @@
 defmodule Oli.Delivery.Evaluation.Evaluator do
-  alias Oli.Delivery.Evaluation.{EvaluationContext, Result}
+  alias Oli.Delivery.Evaluation.{EvaluationContext}
   alias Oli.Delivery.Evaluation.Actions.{SubmissionActionResult, FeedbackActionResult}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
@@ -9,10 +9,15 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   Evaluates a student input for a given activity part.  In a successful
   evaluation, returns the feedback and a scoring result.
   """
-  def evaluate(%Part{grading_approach: "manual"}, %EvaluationContext{
+  def evaluate(%Part{grading_approach: "manual", id: part_id}, %EvaluationContext{
         part_attempt_guid: attempt_guid
       }) do
-    {:ok, %SubmissionActionResult{type: "SubmissionActionResult", attempt_guid: attempt_guid}}
+    {:ok,
+     %SubmissionActionResult{
+       type: "SubmissionActionResult",
+       attempt_guid: attempt_guid,
+       part_id: part_id
+     }}
   end
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
@@ -25,7 +30,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            out_of: out_of,
            feedback: feedback,
            attempt_guid: context.part_attempt_guid,
-           error: nil
+           error: nil,
+           part_id: part.id
          }}
 
       # No matching response found - mark incorrect
@@ -47,7 +53,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            out_of: adjusted_out_of,
            feedback: ParseUtils.default_content_item("Incorrect"),
            attempt_guid: context.part_attempt_guid,
-           error: nil
+           error: nil,
+           part_id: part.id
          }}
 
       _ ->
