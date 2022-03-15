@@ -9,7 +9,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   Evaluates a student input for a given activity part.  In a successful
   evaluation, returns the feedback and a scoring result.
   """
-  def evaluate(%Part{grading_approach: "manual", id: part_id}, %EvaluationContext{
+  def evaluate(%Part{grading_approach: :manual, id: part_id}, %EvaluationContext{
         part_attempt_guid: attempt_guid
       }) do
     {:ok,

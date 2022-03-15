@@ -127,7 +127,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           activity_title: activity_revision.title,
           page_title: resource_revision.title,
           graded: resource_revision.graded,
-          user: user.email
+          user: user
         }
       )
 

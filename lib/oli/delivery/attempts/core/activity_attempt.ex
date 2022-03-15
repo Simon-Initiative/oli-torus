@@ -25,6 +25,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field :activity_title, :string, virtual: true
     field :page_title, :string, virtual: true
     field :graded, :boolean, virtual: true
+    field :user, :any, virtual: true
     field :total_count, :integer, virtual: true
 
     timestamps(type: :utc_datetime)

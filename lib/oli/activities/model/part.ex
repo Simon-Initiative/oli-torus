@@ -8,7 +8,10 @@ defmodule Oli.Activities.Model.Part do
     hints = Map.get(part, "hints", [])
     parts = Map.get(part, "parts", [])
     responses = Map.get(part, "responses", [])
-    grading_approach = Map.get(part, "gradingApproach", "automatic")
+
+    grading_approach =
+      Map.get(part, "gradingApproach", "automatic")
+      |> String.to_existing_atom()
 
     with {:ok, responses} <- Oli.Activities.Model.Response.parse(responses),
          {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
