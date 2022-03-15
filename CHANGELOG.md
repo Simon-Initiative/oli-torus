@@ -6,6 +6,7 @@
 
 - Fix inability to search in projects and users view
 - Properly handle the case that a section invite link leads to an unavailable section
+- Fix table styling when words overflow bounds
 
 ### Enhancements
 
@@ -14,6 +15,8 @@
 - Logic-based gating
 - Allow learning objective attachment to pages
 - Instructor review of completed graded attempts
+- Allow gates to be defined in products
+- Hide subsequent purpose types for activities when the same purpose type is used in a series
 
 ## 0.18.4 (2022-02-24)
 

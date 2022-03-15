@@ -19,8 +19,7 @@ defmodule OliWeb.RevisionHistory.Graph do
   end
 
   def render(assigns) do
-    node_class = fn n ->
-      "node " <>
+    active_current_class = fn n ->
         if n.value.project_id == assigns.project.id do
           " current"
         else
@@ -36,22 +35,36 @@ defmodule OliWeb.RevisionHistory.Graph do
     ~L"""
       <svg id="graph"
         style="cursor: grab;"
-        height="400" width="100%" phx-hook="GraphNavigation" class="revision-tree">
-        <g id="panner">
+        height="150" width="100%" phx-hook="GraphNavigation" class="revision-tree rounded">
+        <defs>
+          <marker id="arrowhead" class="arrowhead" markerWidth="10" markerHeight="7"
+          refX="0" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" />
+          </marker>
+        </defs>
+        <g id="panner" transform="translate(0,60) scale(1.0)">
           <g id="all_nodes" phx-update="append">
             <%= for node <- @nodes do %>
-              <rect x="<%= node.x %>" y="<%= node.y %>" rx="8" ry="8" width="<%= node.width %>" height="<%= node.height %>"
-                class="<%= node_class.(node) %>" phx-click="select" phx-value-rev="<%= node.value.revision.id %>" phx-page-loading />
-              <text class="tree-node-text" text-anchor="middle" x="<%= node.x + div(node.width, 2) %>" y="<%= node.y + div(node.height, 2) %>" dominant-baseline="central">
+              <rect id="<%= rect_id(node.label) %>" x="<%= node.x %>" y="<%= node.y %>" rx="8" ry="8" width="<%= node.width %>" height="<%= node.height %>"
+                class="node <%= active_current_class.(node) %>" phx-click="select" phx-value-rev="<%= node.value.revision.id %>" phx-page-loading />
+              <text id="<%= node.label %>" class="tree-node-text <%= active_current_class.(node) %>" text-anchor="middle" x="<%= node.x + div(node.width, 2) %>" y="<%= node.y + div(node.height, 2) %>" dominant-baseline="central">
                 <%= node.label %>
               </text>
             <% end %>
-            <%= for line <- @lines do %>
-              <line x1="<%= line.x1 %>" y1="<%= line.y1 %>" x2="<%= line.x2 %>" y2="<%= line.y2 %>" class="line" />
+            <%= for {line, index} <- Enum.with_index(@lines) do %>
+              <line id="<%= line_id(index) %>" x1="<%= line.x1 %>" y1="<%= line.y1 %>" x2="<%= line.x2 %>" y2="<%= line.y2 %>" class="line" marker-end="url(#arrowhead)"/>
             <% end %>
           </g>
         </g>
       </svg>
     """
+  end
+
+  defp rect_id(label) do
+    "#{label}_rect"
+  end
+
+  defp line_id(index) do
+    "#{index}_line"
   end
 end

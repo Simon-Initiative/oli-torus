@@ -322,7 +322,7 @@ defmodule Oli.Grading do
             rev.graded == true and
             rev.resource_type_id == ^resource_type_id and
             s.slug == ^section_slug and
-            s.status != :deleted,
+            s.status == :active,
         order_by: [rev.inserted_at, rev.id],
         distinct: true,
         select: rev

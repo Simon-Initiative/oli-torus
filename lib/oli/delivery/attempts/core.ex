@@ -24,6 +24,23 @@ defmodule Oli.Delivery.Attempts.Core do
     GradeUpdateBrowseOptions
   }
 
+  @doc """
+  For a given user, section, and resource id, determine whether any resource attempts are
+  present.
+  """
+  def has_any_attempts?(%User{id: user_id}, %Section{id: section_id}, resource_id) do
+    query =
+      from access in ResourceAccess,
+        join: attempt in ResourceAttempt,
+        on: access.id == attempt.resource_access_id,
+        select: count(attempt.id),
+        where:
+          access.user_id == ^user_id and access.section_id == ^section_id and
+            access.resource_id == ^resource_id
+
+    Repo.one(query) > 0
+  end
+
   def browse_lms_grade_updates(
         %Paging{limit: limit, offset: offset},
         %Sorting{field: field, direction: direction},
@@ -217,7 +234,7 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.publication_id == spp.publication_id,
         join: r in Revision,
         on: pr.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status != :deleted and r.graded == true,
+        where: s.slug == ^section_slug and s.status == :active and r.graded == true,
         select: a
       )
     )
@@ -235,7 +252,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: pr.revision_id == r.id,
         where:
-          a.user_id in ^student_ids and s.slug == ^section_slug and s.status != :deleted and
+          a.user_id in ^student_ids and s.slug == ^section_slug and s.status == :active and
             r.graded == true,
         select: a
       )
@@ -272,7 +289,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: pr.revision_id == r.id,
         where:
-          s.slug == ^section_slug and s.status != :deleted and r.graded == true and
+          s.slug == ^section_slug and s.status == :active and r.graded == true and
             a.resource_id == ^resource_id,
         select: a,
         distinct: a
@@ -296,7 +313,7 @@ defmodule Oli.Delivery.Attempts.Core do
         on: pr.publication_id == spp.publication_id,
         join: r in Revision,
         on: pr.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status != :deleted and a.user_id == ^user_id,
+        where: s.slug == ^section_slug and s.status == :active and a.user_id == ^user_id,
         distinct: a.id,
         select: a
       )
@@ -309,7 +326,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: s in Section,
         on: a.section_id == s.id,
         where:
-          a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+          a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
             a.resource_id == ^resource_id,
         select: a
       )
@@ -323,7 +340,7 @@ defmodule Oli.Delivery.Attempts.Core do
         on: a.id == ra.resource_access_id,
         join: s in Section,
         on: a.section_id == s.id,
-        where: a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted,
+        where: a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active,
         group_by: a.id,
         select: a,
         select_merge: %{
@@ -444,7 +461,7 @@ defmodule Oli.Delivery.Attempts.Core do
       |> join(:left, [ra1, _, _, _], r in Revision, on: ra1.revision_id == r.id)
       |> where(
         [ra1, a, s, ra2, _],
-        a.user_id == ^user_id and s.slug == ^section_slug and s.status != :deleted and
+        a.user_id == ^user_id and s.slug == ^section_slug and s.status == :active and
           a.resource_id == ^resource_id and
           is_nil(ra2)
       )

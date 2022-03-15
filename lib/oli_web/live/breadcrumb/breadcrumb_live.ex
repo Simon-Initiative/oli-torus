@@ -16,6 +16,14 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
     """
   end
 
+  defp render_breadcrumb(%{breadcrumb: %{link: nil}} = assigns) do
+    ~L"""
+    <li class="breadcrumb-item">
+      <%= get_title(@breadcrumb, @show_short) %>
+    </li>
+    """
+  end
+
   defp render_breadcrumb(%{is_last: false} = assigns) do
     ~L"""
     <li class="breadcrumb-item">

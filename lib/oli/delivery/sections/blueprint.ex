@@ -184,6 +184,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
              Sections.update_section(blueprint, %{
                root_section_resource_id: duplicated_root_resource.id
              }) do
+        Oli.Delivery.Gating.duplicate_gates(section, blueprint)
+
         blueprint
       else
         {:error, e} -> Repo.rollback(e)

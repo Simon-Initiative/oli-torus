@@ -25,7 +25,7 @@ defmodule OliWeb.Delivery.SelectSource do
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
 
   # Breadcrumbs are an authoring-only requirement.
-  # SelectSource is used in delivery section creation (for LMS-lite functionality),
+  # SelectSource is used in delivery section creation (for Direct Delivery functionality),
   # so no breadcrumbs are needed in that context.
   def breadcrumbs(:admin) do
     OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb()
