@@ -26,6 +26,26 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
     )
   end
 
+  def add_evaluated_activity(map, resource_attempt_tag, activity_tag, activity_attempt_tag) do
+    map
+    |> Seeder.create_activity_attempt(
+      %{attempt_number: 1, transformed_model: %{some: :thing}, lifecycle_state: :evaluated},
+      activity_tag,
+      resource_attempt_tag,
+      activity_attempt_tag
+    )
+    |> Seeder.create_part_attempt(
+      %{
+        attempt_number: 1,
+        grading_approach: :manual,
+        date_submitted: DateTime.utc_now(),
+        lifecycle_state: :evaluated
+      },
+      %Part{id: "1", responses: [], hints: [], grading_approach: :manual},
+      activity_attempt_tag
+    )
+  end
+
   describe "browsing manual graded attempts" do
     setup do
       Seeder.base_project_with_resource2()
@@ -36,6 +56,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       |> Seeder.add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
       |> Seeder.add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
       |> Seeder.add_activity(%{title: "title 4"}, :publication, :project, :author, :activity_d)
+      |> Seeder.add_activity(%{title: "title 5"}, :publication, :project, :author, :activity_e)
       |> Seeder.add_page(%{graded: true}, :graded_page)
       |> Seeder.create_section_resources()
       |> Seeder.create_resource_attempt(
@@ -60,6 +81,8 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       |> add_submitted_activity(:attempt2, :activity_b, :attempt_2b)
       |> add_submitted_activity(:attempt2, :activity_c, :attempt_2c)
       |> add_submitted_activity(:attempt2, :activity_d, :attempt_2d)
+      |> add_evaluated_activity(:attempt1, :activity_e, :attempt_1e)
+      |> add_evaluated_activity(:attempt2, :activity_e, :attempt_2e)
     end
 
     test "basic browsing", %{
