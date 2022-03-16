@@ -12,6 +12,7 @@ import {
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
+  isSubmitted,
   activityDeliverySlice,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -36,13 +37,14 @@ type InputProps = {
   onChange: (input: any) => void;
   inputType: InputType;
   isEvaluated: boolean;
+  isSubmitted: boolean;
 };
 
 const Input = (props: InputProps) => {
   const shared = {
     onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
     value: valueOr(props.input, ''),
-    disabled: props.isEvaluated,
+    disabled: props.isEvaluated || props.isSubmitted,
   };
 
   switch (props.inputType) {
@@ -114,6 +116,7 @@ export const ShortAnswerComponent: React.FC = () => {
           // Select the first element.
           input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}
           isEvaluated={isEvaluated(uiState)}
+          isSubmitted={isSubmitted(uiState)}
           onChange={onInputChange}
         />
 

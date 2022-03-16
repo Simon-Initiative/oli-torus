@@ -5,7 +5,11 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
   schema "resource_attempts" do
     field(:attempt_guid, :string)
     field(:attempt_number, :integer)
+
+    field(:lifecycle_state, Ecto.Enum, values: [:active, :submitted, :evaluated], default: :active)
+
     field(:date_evaluated, :utc_datetime)
+    field(:date_submitted, :utc_datetime)
     field(:score, :float)
     field(:out_of, :float)
     field(:state, :map, default: %{})
@@ -27,10 +31,12 @@ defmodule Oli.Delivery.Attempts.Core.ResourceAttempt do
       :attempt_number,
       :score,
       :out_of,
-      :state,
+      :lifecycle_state,
       :content,
       :errors,
+      :state,
       :date_evaluated,
+      :date_submitted,
       :resource_access_id,
       :revision_id
     ])

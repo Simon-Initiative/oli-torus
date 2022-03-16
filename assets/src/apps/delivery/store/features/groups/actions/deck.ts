@@ -483,6 +483,7 @@ export const loadActivities = createAsyncThunk(
         activityId: activityModel.resourceId,
         attemptNumber: result.attemptNumber || 1,
         dateEvaluated: result.dateEvaluated || null,
+        dateSubmitted: result.dateSubmitted || null,
         score: result.score || null,
         outOf: result.outOf || null,
         parts: partAttempts,

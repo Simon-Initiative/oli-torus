@@ -12,7 +12,7 @@ export const GradedPointsConnected: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   return (
     <GradedPoints
-      shouldShow={graded && mode === 'review'}
+      shouldShow={uiState.attemptState.score !== null && graded && mode === 'review'}
       icon={isCorrect(uiState.attemptState) ? <Checkmark /> : <Cross />}
       attemptState={uiState.attemptState}
     />

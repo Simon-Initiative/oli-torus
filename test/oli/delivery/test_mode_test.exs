@@ -3,6 +3,8 @@ defmodule Oli.Delivery.TestModeTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core.StudentInput
+  alias Oli.Delivery.Evaluation.Actions.FeedbackActionResult
+  alias Oli.Delivery.Evaluation.Actions.SubmissionActionResult
 
   describe "test mode evaluation and transformation" do
     setup do
@@ -45,6 +47,7 @@ defmodule Oli.Delivery.TestModeTest do
               },
               %{
                 "id" => "2",
+                "gradingApproach" => "manual",
                 "responses" => [
                   %{
                     "rule" => "input like {a}",
@@ -82,7 +85,7 @@ defmodule Oli.Delivery.TestModeTest do
         %{part_id: "1", input: %StudentInput{input: "a"}}
       ]
 
-      assert {:ok, [%{part_id: "1", result: _, feedback: _}]} =
+      assert {:ok, [%FeedbackActionResult{part_id: "1", score: _, out_of: _, feedback: _}]} =
                Evaluate.evaluate_from_preview(content, part_inputs)
 
       part_inputs = [
@@ -91,8 +94,10 @@ defmodule Oli.Delivery.TestModeTest do
       ]
 
       assert {:ok,
-              [%{part_id: "1", result: _, feedback: _}, %{part_id: "2", result: _, feedback: _}]} =
-               Evaluate.evaluate_from_preview(content, part_inputs)
+              [
+                %FeedbackActionResult{part_id: "1", score: _, out_of: _, feedback: _},
+                %SubmissionActionResult{part_id: "2"}
+              ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
 
     test "performing a transformation", %{content: content} do
@@ -100,7 +105,7 @@ defmodule Oli.Delivery.TestModeTest do
                ActivityLifecycle.perform_test_transformation(content)
     end
 
-    test "performing evaluations where one should result in an error", %{content: content} do
+    test "performing evaluations where one is a non-matching input", %{content: content} do
       part_inputs = [
         %{part_id: "1", input: %StudentInput{input: "not present"}},
         %{part_id: "2", input: %StudentInput{input: "b"}}
@@ -110,8 +115,8 @@ defmodule Oli.Delivery.TestModeTest do
               [
                 # Finding no matching response marks the answer as incorrect
                 # with out_of being the highest of any response considered
-                %{part_id: "1", result: %{score: 0, out_of: 10}, feedback: _},
-                %{part_id: "2", result: _, feedback: _}
+                %FeedbackActionResult{part_id: "1", score: 0, out_of: 10, feedback: _},
+                %SubmissionActionResult{part_id: "2"}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
   end

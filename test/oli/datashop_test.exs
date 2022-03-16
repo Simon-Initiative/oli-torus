@@ -492,20 +492,25 @@ defmodule Oli.DatashopTest do
         # Multiple choice activity
         # User 1. Two attempts (Incorrect + hint, correct + hint)
         |> Seeder.create_resource_attempt(
-          %{attempt_number: 1},
+          %{attempt_number: 1, lifecycle_state: :evaluated},
           :user1,
           :page1,
           :revision1,
           :p1_user1_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: mc_transformed_model},
+          %{
+            attempt_number: 1,
+            transformed_model: mc_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :mc1,
           :p1_user1_attempt1,
           :mc_user1_attempt1
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
@@ -530,13 +535,18 @@ defmodule Oli.DatashopTest do
           :mc_user1_part_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 2, transformed_model: mc_transformed_model},
+          %{
+            attempt_number: 2,
+            transformed_model: mc_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :mc1,
           :p1_user1_attempt1,
           :mc_user1_attempt2
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
@@ -562,6 +572,7 @@ defmodule Oli.DatashopTest do
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :active,
             date_evaluated: nil,
             attempt_number: 3,
             score: nil,
@@ -594,13 +605,18 @@ defmodule Oli.DatashopTest do
           :p1_user2_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: mc_transformed_model},
+          %{
+            attempt_number: 1,
+            transformed_model: mc_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :mc1,
           :p1_user2_attempt1,
           :mc_user2_attempt1
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
@@ -628,20 +644,25 @@ defmodule Oli.DatashopTest do
         # Short answer activity
         # User 1. Two attempts (Incorrect + hint, correct + hint)
         |> Seeder.create_resource_attempt(
-          %{attempt_number: 1},
+          %{attempt_number: 1, lifecycle_state: :evaluated},
           :user1,
           :page2,
           :revision2,
           :p2_user1_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: sa_transformed_model},
+          %{
+            attempt_number: 1,
+            transformed_model: sa_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :sa1,
           :p2_user1_attempt1,
           :sa_user1_attempt1
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
@@ -666,13 +687,18 @@ defmodule Oli.DatashopTest do
           :sa_user1_part_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 2, transformed_model: sa_transformed_model},
+          %{
+            attempt_number: 2,
+            transformed_model: sa_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :sa1,
           :p2_user1_attempt1,
           :sa_user1_attempt2
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
@@ -698,20 +724,25 @@ defmodule Oli.DatashopTest do
         )
         # User2. One attempt (correct + hint)
         |> Seeder.create_resource_attempt(
-          %{attempt_number: 1},
+          %{attempt_number: 1, lifecycle_state: :evaluated},
           :user2,
           :page2,
           :revision2,
           :p2_user2_attempt1
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: sa_transformed_model},
+          %{
+            attempt_number: 1,
+            transformed_model: sa_transformed_model,
+            lifecycle_state: :evaluated
+          },
           :sa1,
           :p2_user2_attempt1,
           :sa_user2_attempt1
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
@@ -844,20 +875,21 @@ defmodule Oli.DatashopTest do
         map
         |> Map.put(:publication, pub2)
         |> Seeder.create_resource_attempt(
-          %{attempt_number: 1},
+          %{attempt_number: 1, lifecycle_state: :evaluated},
           :user1,
           :page1,
           :revision1,
           :p1_user1_attempt_x
         )
         |> Seeder.create_activity_attempt(
-          %{attempt_number: 1, transformed_model: %{}},
+          %{attempt_number: 1, transformed_model: %{}, lifecycle_state: :evaluated},
           :mc1,
           :p1_user1_attempt1,
           :mc_user1_attempt_x
         )
         |> Seeder.create_part_attempt(
           %{
+            lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,

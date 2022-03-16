@@ -11,14 +11,9 @@ defmodule OliWeb.Progress.PageAttemptSummary do
               optional(any) => any
             }
         ) :: Phoenix.LiveView.Rendered.t()
-  def render(assigns) do
-    case assigns.attempt.date_evaluated do
-      nil -> render_in_progress(assigns)
-      _ -> render_evaluated(assigns)
-    end
-  end
+  def render(assigns), do: do_render(assigns)
 
-  def render_in_progress(assigns) do
+  def do_render(%{attempt: %{lifecycle_state: :active}} = assigns) do
     ~F"""
     <li class="list-group-item list-group-action flex-column align-items-start">
       <div class="d-flex w-100 justify-content-between">
@@ -31,7 +26,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
     """
   end
 
-  def render_evaluated(assigns) do
+  def do_render(%{attempt: %{lifecycle_state: :evaluated}} = assigns) do
     ~F"""
     <li class="list-group-item list-group-action flex-column align-items-start">
       <a href={Routes.instructor_review_path(OliWeb.Endpoint, :review_attempt, @section.slug, @attempt.attempt_guid)}>
@@ -42,6 +37,19 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <p class="mb-1 text-muted">Submitted: {date(@attempt.date_evaluated)} ({date(@attempt.date_evaluated, precision: :relative)})</p>
         <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, @attempt.date_evaluated)}.</small>
       </a>
+    </li>
+    """
+  end
+
+  def do_render(%{attempt: %{lifecycle_state: :submitted}} = assigns) do
+    ~F"""
+    <li class="list-group-item list-group-action flex-column align-items-start">
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
+        <span>Submitted</span>
+      </div>
+      <p class="mb-1 text-muted">Submitted: {date(@attempt.date_submitted)} ({date(@attempt.date_submitted, precision: :relative)})</p>
+      <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, @attempt.date_submitted)}.</small>
     </li>
     """
   end
