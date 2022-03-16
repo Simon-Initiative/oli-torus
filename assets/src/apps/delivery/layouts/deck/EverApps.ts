@@ -5,6 +5,7 @@ export const everAppActivityState: ActivityState = {
   attemptGuid: 'preview_2946819616',
   attemptNumber: 1,
   dateEvaluated: null,
+  dateSubmitted: null,
   score: null,
   outOf: null,
   parts: [
@@ -12,6 +13,7 @@ export const everAppActivityState: ActivityState = {
       attemptGuid: 'sampleIframeGuid',
       attemptNumber: 1,
       dateEvaluated: null,
+      dateSubmitted: null,
       score: null,
       outOf: null,
       response: null,
