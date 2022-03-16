@@ -146,6 +146,8 @@ defmodule Oli.Activities do
               id: a.id,
               authoring_element: a.authoring_element,
               delivery_element: a.delivery_element,
+              authoring_script: a.authoring_script,
+              delivery_script: a.delivery_script,
               slug: a.slug,
               title: a.title,
               global: a.globally_available,

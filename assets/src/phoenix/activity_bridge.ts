@@ -1,16 +1,7 @@
 import * as Persistence from 'data/persistence/activity';
-import {
-  PartResponse,
-  ActivityModelSchema,
-  FeedbackAction,
-  ClientEvaluation,
-  Part,
-  ActivityState,
-  PartState,
-} from 'components/activities/types';
+import { PartResponse, FeedbackAction, ClientEvaluation } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
-import guid from 'utils/guid';
 import { defaultActivityState } from 'data/activities/utils';
 
 type Continuation = (success: any, error: any) => void;
