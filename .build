@@ -124,6 +124,8 @@ Oli.Delivery.Attempts.Core.ResourceAccess.html
 Oli.Delivery.Attempts.Core.ResourceAttempt.html
 Oli.Delivery.Attempts.Core.StudentInput.html
 Oli.Delivery.Attempts.Core.html
+Oli.Delivery.Attempts.ManualGrading.BrowseOptions.html
+Oli.Delivery.Attempts.ManualGrading.html
 Oli.Delivery.Attempts.PageLifecycle.AttemptState.html
 Oli.Delivery.Attempts.PageLifecycle.Broadcaster.html
 Oli.Delivery.Attempts.PageLifecycle.Common.html
@@ -149,6 +151,7 @@ Oli.Delivery.DeliveryPolicy.html
 Oli.Delivery.Evaluation.Actions.FeedbackActionResult.html
 Oli.Delivery.Evaluation.Actions.NavigationActionResult.html
 Oli.Delivery.Evaluation.Actions.StateUpdateActionResult.html
+Oli.Delivery.Evaluation.Actions.SubmissionActionResult.html
 Oli.Delivery.Evaluation.Adaptive.html
 Oli.Delivery.Evaluation.EvaluationContext.html
 Oli.Delivery.Evaluation.Evaluator.html
@@ -702,8 +705,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-35e7762ebc.js
-dist/sidebar_items-d90147cd23.js
+dist/search_items-197125ae28.js
+dist/sidebar_items-42b432b53b.js
 index.html
 license.html
 readme.html

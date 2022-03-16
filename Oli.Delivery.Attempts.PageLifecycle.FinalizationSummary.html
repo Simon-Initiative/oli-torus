@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-d90147cd23.js"></script>
+    <script src="dist/sidebar_items-42b432b53b.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -97,8 +97,9 @@ Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary <small class="app-vsn">(
 
 
         <section id="moduledoc">
-<p>A context for finalizing a page.</p><p>section_slug - Slug identifier for the course section
-resource_attempt - The resource attempt to finalize</p>
+<p>A summary of the result of page finalization.</p><p>resource_access - Slug identifier for the course section
+part_attempt_guids - The resource attempt to finalize
+lifecycle_state - The new lifecycle state for the page, after finalization. Can</p><pre><code class="makeup elixir"><span class="w">              </span><span class="n">only</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">either</span><span class="w"> </span><span class="err">`</span><span class="ss">:evaluated</span><span class="err">`</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="err">`</span><span class="ss">:submitted</span><span class="err">`</span></code></pre>
         </section>
 
 
@@ -146,7 +147,7 @@ Types
     </a>
     <h1 class="signature">t()</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/finalization_summary.ex#L19" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/page_lifecycle/finalization_summary.ex#L23" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -160,6 +161,7 @@ Types
       <div class="specs">
 
           <pre>t() :: %Oli.Delivery.Attempts.PageLifecycle.FinalizationSummary{
+  lifecycle_state: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">atom</a>(),
   part_attempt_guids: <a href="https://hexdocs.pm/elixir/typespecs.html#built-in-types">list</a>(),
   resource_access: <a href="https://hexdocs.pm/elixir/typespecs.html#basic-types">any</a>()
 }</pre>
