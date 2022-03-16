@@ -21,7 +21,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_mailer_module: OliWeb,
       pow_assent: [
         user_identities_context: OliWeb.Pow.UserIdentities,
-        providers: providers_config_list()
+        providers: providers_config_list(:user)
       ]
     ]
   end
@@ -43,7 +43,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_mailer_module: OliWeb,
       pow_assent: [
         user_identities_context: OliWeb.Pow.AuthorIdentities,
-        providers: providers_config_list()
+        providers: providers_config_list(:author)
       ]
     ]
   end
@@ -202,15 +202,22 @@ defmodule OliWeb.Pow.PowHelpers do
     |> String.downcase()
   end
 
-  defp providers_config_list() do
+  defp providers_config_list(user_type) do
     []
-    |> maybe_add_provider(:github)
-    |> maybe_add_provider(:google)
+    |> maybe_add_provider(:github, user_type)
+    |> maybe_add_provider(:google, user_type)
   end
 
-  defp maybe_add_provider(providers_list, provider) do
-    client_id = Application.fetch_env!(:oli, :auth_providers)[:"#{provider}_client_id"]
-    client_secret = Application.fetch_env!(:oli, :auth_providers)[:"#{provider}_client_secret"]
+  defp maybe_add_provider(providers_list, provider, user_type) do
+    prefix =
+      if provider == :github do
+        "#{user_type}_#{provider}"
+      else
+        provider
+      end
+
+    client_id = Application.fetch_env!(:oli, :auth_providers)[:"#{prefix}_client_id"]
+    client_secret = Application.fetch_env!(:oli, :auth_providers)[:"#{prefix}_client_secret"]
 
     if blank?(client_id) or blank?(client_secret) do
       providers_list
