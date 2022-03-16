@@ -1,0 +1,89 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-activity.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Adaptive Activity",
+  "description": "An adaptive activity",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "Activity"
+    },
+    "subType": {
+      "const": "oli_adaptive"
+    },
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "authoring": {
+          "type": "object",
+          "properties": {
+            "parts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "rules": {
+              "type": "array",
+              "items": {}
+            }
+          }
+        },
+        "partsLayout": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "janus-audio",
+                  "janus-capi-iframe",
+                  "janus-image-carousel",
+                  "janus-dropdown",
+                  "janus-fill-blanks",
+                  "janus-image",
+                  "janus-input-number",
+                  "janus-input-text",
+                  "janus-mcq",
+                  "janus-multi-line-text",
+                  "janus-navigation-button",
+                  "janus-popup",
+                  "janus-slider",
+                  "janus-text-flow",
+                  "janus-video"
+                ]
+              },
+              "custom": {}
+            }
+          }
+        },
+        "custom": {}
+      },
+      "required": [
+        "authoring",
+        "partsLayout"
+      ]
+    }
+  },
+  "required": [
+    "type",
+    "subType",
+    "id",
+    "title",
+    "content"
+  ]
+}

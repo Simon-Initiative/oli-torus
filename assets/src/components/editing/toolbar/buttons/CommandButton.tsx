@@ -15,7 +15,7 @@ export const CommandButton = (props: Props) => {
 
   return (
     <button
-      className={classNames(['editorToolbar__button', active?.(editor) && 'active'])}
+      className={classNames('editorToolbar__button', active?.(editor) && 'active')}
       onClick={(_e) => {
         command.execute(context, editor);
         closeSubmenus();

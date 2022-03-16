@@ -164,9 +164,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
             Enum.filter(
               items,
               &(&1.uuid != root.uuid and
-                  &1.revision.resource_type_id ==
+                  (&1.revision.resource_type_id ==
                     Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded)
+                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
             )
           end
 
@@ -176,9 +176,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
               items,
               &(&1.uuid != root.uuid and
                   &1.revision.resource_id != resource_id and
-                  &1.revision.resource_type_id ==
+                  (&1.revision.resource_type_id ==
                     Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded)
+                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
             )
           end
       end
@@ -208,9 +208,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           fn items ->
             Enum.filter(
               items,
-              &(&1.uuid != root.uuid and
-                  &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page"))
+              &(&1.uuid != root.uuid)
             )
           end
 
@@ -219,9 +217,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
             Enum.filter(
               items,
               &(&1.uuid != root.uuid and
-                  &1.revision.resource_id != resource_id and
-                  &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page"))
+                  &1.revision.resource_id != resource_id)
             )
           end
       end
@@ -360,19 +356,34 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       modal: %{assigns: %{hierarchy: hierarchy}}
     } = socket.assigns
 
-    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
+    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title, resource_type_id: resource_type_id}} =
       Hierarchy.find_in_hierarchy(hierarchy, selection)
 
-    data = Map.put(gating_condition.data, :resource_id, resource_id)
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
-    {:noreply,
-     assign(socket,
-       gating_condition:
-         gating_condition
-         |> Map.put(:data, data)
-         |> Map.put(:source_title, title)
-     )
-     |> hide_modal()}
+    case {resource_type_id, gating_condition.type} do
+      {^container_type_id, type} when type in [:finished, :started] ->
+        {:noreply, put_flash(
+          socket,
+          :error,
+          "Only pages can be selected for this type of gating condition"
+        ) |> hide_modal()}
+      _ ->
+
+        data = Map.put(gating_condition.data, :resource_id, resource_id)
+
+        {:noreply,
+
+         assign(socket,
+           gating_condition:
+             gating_condition
+             |> Map.put(:data, data)
+             |> Map.put(:source_title, title)
+         )
+         |> put_flash(:error, nil)
+         |> hide_modal()}
+    end
+
   end
 
   def handle_event(
@@ -527,7 +538,8 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         entity_type: entity_type,
         entity_id: id,
         delete_enabled: true,
-        delete: "delete-gating-condition"
+        delete: "delete-gating-condition",
+        modal_action: "Delete"
       }
     }
 

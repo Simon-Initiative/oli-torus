@@ -51,12 +51,12 @@ export const ContentBlock = (props: ContentBlockProps) => {
 
   return (
     <div
-      className={classNames([
+      className={classNames(
         'content-block',
         'resource-content-frame',
         'card',
         `purpose-${props.contentItem.purpose}`,
-      ])}
+      )}
       draggable={props.editMode}
       onDragStart={(e) => props.onDragStart(e, id)}
       onDragEnd={props.onDragEnd}

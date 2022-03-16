@@ -33,4 +33,142 @@ defmodule Oli.Activities.ParseUtilsTest do
                {:ok, 3}
              ])
   end
+
+  test "has_content?/1 correctly detects when there's content" do
+    has_content1 = %{
+      content: %{
+        model: [
+          %{"children" => [%{"text" => "content"}], "type" => "p"}
+        ]
+      }
+    }
+
+    has_content2 = %{
+      content: %{
+        model: [
+          %{
+            "children" => [
+              %{"text" => ""},
+              %{"type" => "a", "children" => [%{"text" => "content"}]},
+              %{"text" => ""}
+            ],
+            "type" => "p"
+          }
+        ]
+      }
+    }
+
+    has_content3 = %{
+      "content" => %{
+        "model" => [
+          %{
+            "children" => [
+              %{"text" => ""},
+              %{"type" => "a", "children" => [%{"text" => "content"}]},
+              %{"text" => ""}
+            ],
+            "type" => "p"
+          }
+        ]
+      }
+    }
+
+    has_content4 = %{
+      content: [
+        %{"children" => [%{"text" => "content"}], "type" => "p"}
+      ]
+    }
+
+    has_content5 = %{
+      content: [
+        %{"children" => [%{"text" => "content"}], "type" => "p"}
+      ]
+    }
+
+    has_content6 = %{
+      "content" => [
+        %{
+          "children" => [
+            %{"text" => ""},
+            %{"type" => "a", "children" => [%{"text" => "content"}]},
+            %{"text" => ""}
+          ],
+          "type" => "p"
+        }
+      ]
+    }
+
+    has_content7 = %{
+      "content" => [
+        %{
+          "type" => "img"
+        }
+      ]
+    }
+
+    [
+      has_content1,
+      has_content2,
+      has_content3,
+      has_content4,
+      has_content5,
+      has_content6,
+      has_content7
+    ]
+    |> Enum.map(&ParseUtils.has_content?(&1))
+    |> Enum.all?()
+    |> assert
+
+    no_content1 = %{
+      content: %{
+        model: [
+          %{"children" => [%{"text" => ""}], "type" => "p"}
+        ]
+      }
+    }
+
+    no_content2 = %{
+      "content" => %{
+        "model" => [
+          %{"children" => [%{"text" => ""}], "type" => "p"}
+        ]
+      }
+    }
+
+    no_content3 = %{
+      content: [
+        %{"children" => [%{"text" => ""}], "type" => "p"}
+      ]
+    }
+
+    no_content4 = %{
+      "content" => [
+        %{"children" => [%{"text" => ""}], "type" => "p"}
+      ]
+    }
+
+    no_content5 = %{
+      "content" => [
+        %{
+          "children" => [
+            %{"text" => ""},
+            %{"text" => "  "},
+            %{"text" => "    \n"}
+          ],
+          "type" => "p"
+        }
+      ]
+    }
+
+    [
+      no_content1,
+      no_content2,
+      no_content3,
+      no_content4,
+      no_content5
+    ]
+    |> Enum.map(&ParseUtils.has_content?(&1))
+    |> Enum.any?()
+    |> refute
+  end
 end

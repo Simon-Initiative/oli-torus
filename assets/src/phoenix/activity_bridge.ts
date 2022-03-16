@@ -202,9 +202,8 @@ export const initPreviewActivityBridge = (elementId: string) => {
 
     Persistence.evaluate(props.model, partInputs).then((result: Persistence.Evaluated) => {
       if (result.result === 'success') {
-        submissionTransform('evaluations', result).then(
-          (actions: (FeedbackAction | SubmissionAction)[]) =>
-            continuation({ type: 'success', actions }, undefined),
+        submissionTransform('evaluations', result).then((actions) =>
+          continuation({ type: 'success', actions: actions.actions }, undefined),
         );
       }
     });

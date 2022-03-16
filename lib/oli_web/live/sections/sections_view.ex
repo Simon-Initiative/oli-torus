@@ -123,7 +123,7 @@ defmodule OliWeb.Sections.SectionsView do
     ~F"""
     <div>
 
-      <Check class="mr-4" checked={@options.show_deleted} click="show_deleted">Show deleted sections</Check>
+      <Check class="mr-4" checked={@options.show_deleted} click="show_deleted">Show deleted/archived sections</Check>
       <Check checked={@options.active_only} click="active_only">Show only active sections</Check>
 
       <div class="mb-3"/>

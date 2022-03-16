@@ -1,7 +1,5 @@
-export const classNames = (names: string | (string | null | undefined | false)[]) => {
-  if (typeof names === 'string') {
-    return names.trim();
-  }
+export type ClassName = string | null | undefined | false;
 
+export const classNames = (...names: ClassName[]) => {
   return names.filter((n) => n).join(' ');
 };

@@ -1,0 +1,41 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Activity",
+  "description": "An activity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "Activity"
+    },
+    "subType": {
+      "type": "string"
+    },
+    "content": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-content.schema.json"
+    },
+    "objectives": {},
+    "originalFile": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    },
+    "unresolvedReferences": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "type",
+    "subType",
+    "content",
+    "title"
+  ]
+}

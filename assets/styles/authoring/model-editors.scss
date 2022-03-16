@@ -13,6 +13,8 @@
     table {
       position: relative;
       margin-bottom: 0;
+      word-wrap: break-word;
+      overflow: hidden;
 
       .table-dropdown {
         position: absolute;
