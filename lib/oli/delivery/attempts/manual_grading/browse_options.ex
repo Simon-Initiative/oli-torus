@@ -11,10 +11,10 @@ defmodule Oli.Delivery.Attempts.ManualGrading.BrowseOptions do
   ]
 
   defstruct [
-    :user_id,
-    :activity_id,
-    :graded,
-    :text_search
+    :user_id,       # Filter attempts for a specific user id
+    :activity_id,   # Filter attempts for a specific activity resource id
+    :graded,        # Filter attempts for graded, ungraded attempts (nil shows all)
+    :text_search    # Text search across user, page, and activity information
   ]
 
   @type t() :: %__MODULE__{

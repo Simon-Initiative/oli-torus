@@ -2,7 +2,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   import Ecto.Query, warn: false
 
   @moduledoc """
-  Modeule for manual activity grading.
+  Manual activity grading.
   """
 
   alias Oli.Repo
@@ -17,6 +17,9 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     ActivityAttempt
   }
 
+  @doc """
+  Browsing-based query support for activity attempts that require manual grading.
+  """
   def browse_submitted_attempts(
         %Section{id: section_id},
         %Paging{limit: limit, offset: offset},
