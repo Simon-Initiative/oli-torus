@@ -933,10 +933,15 @@ defmodule Oli.Delivery.Sections do
       hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
 
       # ensure hierarchy numberings are all up to date
-      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+      {hierarchy, numberings} = Numbering.renumber_hierarchy(hierarchy)
+
+      Hierarchy.inspect(hierarchy)
+      IO.inspect(numberings)
 
       # generate a new set of section resources based on the hierarchy
       {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
+
+      IO.inspect(section_resources)
 
       # upsert all hierarchical section resources. some of these records will have
       # just been created, but that's okay we will just update them again
@@ -949,6 +954,8 @@ defmodule Oli.Delivery.Sections do
           SectionResource.to_map(section_resource)
           | inserted_at: {:placeholder, :timestamp},
             updated_at: {:placeholder, :timestamp}
+            # numbering_index: section_resource.numbering.index,
+            # numbering_level: section_resource.numbering.level
         }
       end)
       |> then(

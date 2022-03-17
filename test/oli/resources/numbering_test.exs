@@ -6,6 +6,8 @@ defmodule Oli.Resources.NumberingTest do
   alias Oli.Delivery.Sections
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   describe "container numbering" do
     setup do
@@ -107,6 +109,27 @@ defmodule Oli.Resources.NumberingTest do
       path_titles = Enum.map(path_nodes, fn n -> n.revision.title end)
 
       assert path_titles == ["Root Container", "Unit 1", "Module 2", "Section 1", "Page 2"]
+    end
+
+    test "renumber_hierarchy/1", %{project: project, institution: institution} do
+      # Publish the current state of our test project
+      {:ok, pub1} = Publishing.publish_project(project, "some changes")
+
+      {:ok, section} =
+        Sections.create_section(%{
+          title: "1",
+          timezone: "1",
+          registration_open: true,
+          context_id: UUID.uuid4(),
+          institution_id: institution.id,
+          base_project_id: project.id
+        })
+        |> then(fn {:ok, section} -> section end)
+        |> Sections.create_section_resources(pub1)
+
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
+
+      Hierarchy.inspect hierarchy
     end
   end
 end
