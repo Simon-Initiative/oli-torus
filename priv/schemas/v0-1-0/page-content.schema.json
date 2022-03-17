@@ -1,0 +1,32 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/page-content.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Element",
+  "description": "Workbook page content",
+  "type": "object",
+  "properties": {
+    "model": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
+          },
+          {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
+          }
+        ]
+      }
+    }
+  },
+  "required": ["model"]
+}

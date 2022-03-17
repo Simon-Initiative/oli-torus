@@ -10,10 +10,13 @@ export const templatizeText = (
 ): string => {
   let innerEnv = env;
   let vars = extractAllExpressionsFromText(text);
+  const totalVariablesLength = vars?.length;
   // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
   vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
   /* console.log('templatizeText call: ', { text, vars, state, env }); */
-  if (!vars) {
+  //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
+  const isCSSString = totalVariablesLength !== vars.length;
+  if (!vars || isCSSString) {
     return text;
   }
   /* innerEnv = evalScript(janus_std, innerEnv).env; */

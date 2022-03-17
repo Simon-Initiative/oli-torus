@@ -26,26 +26,16 @@ export function clone(o: any) {
 export function removeEmpty(items: any[]) {
   return items.filter(hasContent);
 }
-// Forgive me for I have sinned
-function hasContent(item: any) {
+function hasContent(item: any): boolean {
   try {
-    if (item.content) {
-      const content = item.content;
-      if (content.model) {
-        const model = content.model;
-        if (model && model.length === 1) {
-          const children = model[0].children;
-          const type = model[0].type;
-          if (type === 'p' && children && children.length === 1) {
-            const text = children[0].text;
-            if (!text || !text.trim || !text.trim()) {
-              return false;
-            }
-          }
-        }
-      }
-    }
-    return true;
+    if (!item) return false;
+    if (typeof item?.type === 'string' && item.type !== 'p') return true;
+    if (Array.isArray(item)) return item.some(hasContent);
+    if (item.text) return item.text?.trim();
+
+    return ([item?.children, item?.content, item?.content?.model] as any)
+      .flatMap(hasContent)
+      .some((x: any) => !!x);
   } catch (e) {
     return true;
   }

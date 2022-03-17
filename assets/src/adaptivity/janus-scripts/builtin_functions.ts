@@ -51,8 +51,8 @@ export const janus_std = `
             }
         }
     };
-    if ({session.userId} != undefined) {
-        let session.seed = {sesson.userId} * 1234567;
+    if (session.userId != undefined) {
+        let session.seed = string(session.userId) + string(1234567);
     } else {
         let session.seed = string(session.userName) + string(1234567);
     }

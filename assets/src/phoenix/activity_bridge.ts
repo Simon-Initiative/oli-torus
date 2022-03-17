@@ -1,21 +1,23 @@
 import * as Persistence from 'data/persistence/activity';
 import {
   PartResponse,
-  ActivityModelSchema,
   FeedbackAction,
+  SubmissionAction,
   ClientEvaluation,
-  Part,
-  ActivityState,
-  PartState,
 } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
-import guid from 'utils/guid';
 import { defaultActivityState } from 'data/activities/utils';
 
 type Continuation = (success: any, error: any) => void;
 
-function makeRequest(url: string, method: string, body: any, continuation: any) {
+function makeRequest(
+  url: string,
+  method: string,
+  body: any,
+  continuation: any,
+  transform = nothingTransform,
+) {
   const params = {
     method,
     headers: { 'Content-Type': 'application/json' },
@@ -24,9 +26,36 @@ function makeRequest(url: string, method: string, body: any, continuation: any) 
   window
     .fetch(url, params)
     .then((response) => response.json())
+    .then((result) => transform(result))
     .then((result) => continuation(result))
     .catch((error) => continuation(undefined, error));
 }
+
+const nothingTransform = (result: any) => Promise.resolve(result);
+const submissionTransform = (key: string, result: any) => {
+  return Promise.resolve({
+    actions: result[key].map((e: any) => {
+      if (e.type === 'FeedbackActionResult') {
+        return {
+          type: 'FeedbackAction',
+          attempt_guid: e.attempt_guid,
+          out_of: e.out_of,
+          score: e.score,
+          feedback: e.feedback,
+          part_id: e.part_id,
+          error: e.error,
+        };
+      }
+
+      return {
+        type: 'SubmissionAction',
+        attempt_guid: e.part_id,
+        part_id: e.part_id,
+        error: e.error,
+      };
+    }),
+  });
+};
 
 export const initActivityBridge = (elementId: string) => {
   const div = document.getElementById(elementId) as any;
@@ -56,6 +85,7 @@ export const initActivityBridge = (elementId: string) => {
         'PUT',
         { partInputs: e.detail.payload },
         e.detail.continuation,
+        submissionTransform.bind(this, 'actions'),
       );
     },
     false,
@@ -171,24 +201,11 @@ export const initPreviewActivityBridge = (elementId: string) => {
     const partInputs: PartResponse[] = e.detail.payload;
 
     Persistence.evaluate(props.model, partInputs).then((result: Persistence.Evaluated) => {
-      const actions: (FeedbackAction | { part_id: string; error: string })[] =
-        result.evaluations.map((e) => {
-          if ('error' in e) {
-            return {
-              part_id: e.part_id,
-              error: e.error,
-            };
-          }
-          return {
-            type: 'FeedbackAction',
-            attempt_guid: e.part_id,
-            out_of: e.result?.out_of,
-            score: e.result?.score,
-            feedback: e.feedback,
-          };
-        });
-
-      continuation({ type: 'success', actions }, undefined);
+      if (result.result === 'success') {
+        submissionTransform('evaluations', result).then((actions) =>
+          continuation({ type: 'success', actions: actions.actions }, undefined),
+        );
+      }
     });
   }
 
@@ -216,7 +233,6 @@ export const initPreviewActivityBridge = (elementId: string) => {
 
       const props = e.detail.props;
       const continuation: Continuation = e.detail.continuation;
-      const partId = e.detail.partAttemptGuid;
 
       Persistence.transform(props.model).then((result: Persistence.Transformed) => {
         const model = result.transformed === null ? props.model : result.transformed;
@@ -252,7 +268,6 @@ export const initPreviewActivityBridge = (elementId: string) => {
 
       const props = e.detail.props;
       const continuation: Continuation = e.detail.continuation;
-      const partInputs: PartResponse[] = e.detail.payload;
       const partId = e.detail.partAttemptGuid;
       const model = props.model;
       const hints = removeEmpty(getPart(model, partId).hints);

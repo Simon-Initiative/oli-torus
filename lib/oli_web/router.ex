@@ -745,6 +745,13 @@ defmodule OliWeb.Router do
       "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
       Sections.GatingAndScheduling
     )
+
+    get(
+      "/:section_slug/review/:attempt_guid",
+      PageDeliveryController,
+      :review_attempt,
+      as: :instructor_review
+    )
   end
 
   ### Sections - Enrollment
