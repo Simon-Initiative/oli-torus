@@ -107,14 +107,18 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert response(conn, 404)
     end
 
-    test "loads section data correctly", %{conn: conn, section: section} do
+    test "loads section data correctly", %{conn: conn} do
+      section = insert(:section, open_and_free: true)
+
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      assert render(view) =~
-               "Settings"
+      html = render(view)
 
-      assert render(view) =~
-               "Manage the course section settings"
+      assert html =~ "Settings"
+      assert html =~ "Manage the course section settings"
+
+      assert html =~ "Direct Delivery"
+      assert html =~ "Direct Delivery section settings"
 
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"#{section.description}\"]")

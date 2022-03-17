@@ -306,21 +306,6 @@
       "id": 3870234529153
     },
     {
-      "type": "code",
-      "language": "python",
-      "children": [
-        {
-          "type": "code_line",
-          "children": [
-            {
-              "text": "import fresh-pots"
-            }
-          ]
-        }
-      ],
-      "id": 4076322353894
-    },
-    {
       "type": "p",
       "children": [
         {

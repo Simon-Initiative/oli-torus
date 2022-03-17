@@ -152,6 +152,97 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     processInitStateVariable(currentStateSnapshot, simLife.domain);
   }, []);
 
+  const processMutateStateVariable = (currentStateSnapshot: any, domain = 'stage') => {
+    const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
+    if (sVisible !== undefined) {
+      setFrameVisible(parseBool(sVisible));
+    }
+
+    const sX = currentStateSnapshot[`${domain}.${id}.IFRAME_frameX`];
+    if (sX !== undefined) {
+      setFrameX(sX);
+    }
+
+    const sY = currentStateSnapshot[`${domain}.${id}.IFRAME_frameY`];
+    if (sY !== undefined) {
+      setFrameY(sY);
+    }
+
+    const sZ = currentStateSnapshot[`${domain}.${id}.IFRAME_frameZ`];
+    if (sZ !== undefined) {
+      setFrameZ(sZ);
+    }
+
+    const sWidth = currentStateSnapshot[`${domain}.${id}.IFRAME_frameWidth`];
+    if (sWidth !== undefined) {
+      setFrameWidth(sWidth);
+    }
+
+    const sHeight = currentStateSnapshot[`${domain}.${id}.IFRAME_frameHeight`];
+    if (sHeight !== undefined) {
+      setFrameHeight(sHeight);
+    }
+
+    const sCssClass = currentStateSnapshot[`${domain}.${id}.IFRAME_frameCssClass`];
+    if (sCssClass !== undefined) {
+      setFrameCssClass(sCssClass);
+    }
+
+    const sSrc = currentStateSnapshot[`${domain}.${id}.IFRAME_frameSrc`];
+    if (sSrc !== undefined) {
+      setFrameSrc(sSrc);
+    }
+
+    // INIT STATE also needs to take in all the sim values
+    const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
+      (collect: Record<string, any>, key) => {
+        const value = currentStateSnapshot[key];
+        const typeOfValue = typeof value;
+        if (value === '[]') {
+          collect[key] = '';
+        } else if (typeOfValue === 'object') {
+          collect[key] = JSON.stringify(value);
+        } else {
+          collect[key] = value;
+        }
+
+        return collect;
+      },
+      {},
+    );
+
+    if (!simLife.ready) {
+      return;
+    }
+
+    writeCapiLog('MUTATE STATE APPLIED', 3, { interestedSnapshot });
+    const arrMutateStateVars = Object.keys(interestedSnapshot);
+    arrMutateStateVars.forEach((key: any) => {
+      const formatted: Record<string, unknown> = {};
+      const baseKey = key.replace(`stage.${id}.`, '').replace(`app.${id}.`, '');
+      const value = interestedSnapshot[key];
+      const cVar = new CapiVariable({
+        key: baseKey,
+        value,
+        shouldConvertNumbers: false,
+      });
+      const typeOfValue = typeof value;
+      if (cVar.type === CapiVariableTypes.ARRAY) {
+        const isMultidimensional = cVar.value.filter(Array.isArray).length;
+        if (isMultidimensional && typeOfValue === 'string') {
+          const val: any[] = [];
+          //it's stage what we are doing here but CAPI expect a Multidimensional array [[0.5,1],[0.521]] as ['[0.5','1]','[0.5,'1]'], so we need to convert it to this format.
+          cVar.value.forEach((v: any) => {
+            val.push(...JSON.stringify(v).split(','));
+          });
+          cVar.value = val;
+        }
+      }
+      formatted[baseKey] = cVar;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+    });
+  };
+
   const processInitStateVariable = (currentStateSnapshot: any, domain = 'stage') => {
     const sVisible = currentStateSnapshot[`${domain}.${id}.IFRAME_frameVisible`];
     if (sVisible !== undefined) {
@@ -427,8 +518,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               );
               if (Object.keys(changedVariables).length > 0) {
                 setScreenContext(NotificationType.STATE_CHANGED);
-                processInitStateVariable(currentMutateStateSnapshot, simLife.domain);
-                setSimIsInitStatePassedOnce(false);
+                processMutateStateVariable(currentMutateStateSnapshot, simLife.domain);
               }
             }
             break;
@@ -478,6 +568,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       vars.forEach((changedVar) => {
         const existing = mutableState.find((ms) => ms.id === changedVar.id);
         if (!existing) {
+          if (
+            changedVar.type === CapiVariableTypes.STRING &&
+            typeof changedVar.value === 'number'
+          ) {
+            changedVar.type = CapiVariableTypes.NUMBER;
+          }
           mutableState.push(changedVar);
           hasDiff = true;
           return;
@@ -958,7 +1054,12 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         mFormatted[baseKey] = updatedVar;
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, mFormatted);
       }
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+      if (
+        Object.keys(initStateBindToFacts).length < 0 ||
+        !Object.keys(initStateBindToFacts).includes(key)
+      ) {
+        sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
+      }
     });
     if (!simLife.init) {
       sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});

@@ -39,7 +39,7 @@ const MultiPartSelection = (props: Props & { id: string; index: number }) => {
   );
 
   return (
-    <div className={classNames(['d-flex', 'flex-row', 'align-items-baseline', isLast && 'mb-1'])}>
+    <div className={classNames('d-flex', 'flex-row', 'align-items-baseline', isLast && 'mb-1')}>
       <PartLabel />
       <ObjectivesSelection
         {...props}

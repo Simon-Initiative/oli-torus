@@ -107,8 +107,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   # to the database, instead of passing the raw payload of each record to create.
   defp query_driven_part_attempt_creation(resource_attempt_id) do
     query = """
-      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number)
-      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1
+      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
+      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
+      'automatic'
+       ELSE
+       pm.grading_approach
+       END)
       FROM activity_attempts as a
       LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
       WHERE a.resource_attempt_id = $1;
@@ -144,6 +148,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       resource_id: resource_id,
       transformed_model: transformed_model,
       scoreable: scoreable,
+      lifecycle_state: :active,
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

@@ -1,4 +1,5 @@
-/* eslint-disable react/prop-types */
+import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
+import { defaultGlobalEnv, evalScript } from 'adaptivity/scripting';
 import useWindowSize from 'components/hooks/useWindowSize';
 import React, { useEffect } from 'react';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -58,6 +59,13 @@ const Delivery: React.FC<DeliveryProps> = ({
   }, []);
 
   const setInitialPageState = () => {
+    // the standard lib relies on first the userId and userName session variables being set
+    const userScript = `let session.userId = ${userId};let session.userName = "${
+      userName || 'guest'
+    }";`;
+    evalScript(userScript, defaultGlobalEnv);
+    evalScript(janus_std, defaultGlobalEnv);
+
     dispatch(
       loadInitialPageState({
         userId,

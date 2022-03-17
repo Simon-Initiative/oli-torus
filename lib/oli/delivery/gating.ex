@@ -90,6 +90,23 @@ defmodule Oli.Delivery.Gating do
   end
 
   @doc """
+  Duplicates all top-level gates in a source section into a destination section.  Does
+  not duplicate student specific exceptions.  Does not validate that resources in the gate
+  exist within the destination section.
+  """
+  def duplicate_gates(%Section{} = source, %Section{} = destination) do
+    Repo.transaction(fn _ ->
+      list_gating_conditions(source.id)
+      |> Enum.filter(fn gc -> is_nil(gc.parent_id) end)
+      |> Enum.each(fn gc ->
+        Map.take(gc, [:type, :graded_resource_policy, :resource_id])
+        |> Map.merge(%{parent_id: nil, section_id: destination.id, data: Map.from_struct(gc.data)})
+        |> create_gating_condition()
+      end)
+    end)
+  end
+
+  @doc """
   Returns the list of gating_conditions for a section
 
   ## Examples

@@ -13,6 +13,7 @@ const partState: PartState = {
   attemptGuid: 'guid',
   attemptNumber: 1,
   dateEvaluated: null,
+  dateSubmitted: null,
   score: null,
   outOf: 1,
   response: null,
@@ -27,6 +28,7 @@ export const attemptState: ActivityState = {
   attemptGuid: 'guid',
   attemptNumber: 1,
   dateEvaluated: null,
+  dateSubmitted: null,
   score: null,
   outOf: 1,
   parts: [partState],
@@ -37,6 +39,7 @@ export const attemptState: ActivityState = {
 const feedbackAction: Action = {
   type: 'FeedbackAction',
   attempt_guid: '1',
+  part_id: '1',
   out_of: 1,
   score: 1,
   feedback: makeFeedback('correct feedback'),

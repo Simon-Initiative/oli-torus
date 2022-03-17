@@ -6,6 +6,7 @@ import { Hint } from 'components/activities/types';
 
 interface Props {
   isEvaluated: boolean;
+  isSubmitted: boolean;
   hints: Hint[];
   hasMoreHints: boolean;
   context: WriterContext;
@@ -15,6 +16,7 @@ interface Props {
 
 export const HintsDelivery: React.FC<Props> = ({
   isEvaluated,
+  isSubmitted,
   hints,
   hasMoreHints,
   context,
@@ -48,7 +50,7 @@ export const HintsDelivery: React.FC<Props> = ({
           <button
             aria-label="request hint"
             onClick={onClick}
-            disabled={isEvaluated || !hasMoreHints}
+            disabled={isEvaluated || isSubmitted || !hasMoreHints}
             className="btn btn-sm btn-link"
             style={{ padding: 0 }}
           >

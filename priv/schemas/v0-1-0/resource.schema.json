@@ -1,0 +1,14 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/resource.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Resource",
+  "description": "A top-level resource",
+  "oneOf": [
+    {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/page.schema.json"
+    },
+    {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/adaptive-activity.schema.json"
+    }
+  ]
+}

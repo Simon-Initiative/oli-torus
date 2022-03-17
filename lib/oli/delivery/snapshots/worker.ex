@@ -48,7 +48,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
         on: ra.revision_id == r1.id,
         join: r2 in Revision,
         on: aa.revision_id == r2.id,
-        where: pa.attempt_guid in ^part_attempt_guids,
+        where: pa.attempt_guid in ^part_attempt_guids and pa.lifecycle_state == :evaluated,
         select: {pa, aa, ra, a, r1, r2}
       )
       |> Repo.all()

@@ -57,6 +57,15 @@ const screenSchema: JSONSchema7 = {
         borderWidth: { type: 'string', title: 'Border Width' },
       },
     },
+    ButtonLabels: {
+      type: 'object',
+      title: 'Button Labels',
+      properties: {
+        mainBtnLabel: { title: 'Main Button Label', type: 'string' },
+        applyBtnLabel: { title: 'Solution Button Label', type: 'string' },
+        applyBtnFlag: { title: 'Show Solution Button', type: 'boolean', default: false },
+      },
+    },
   },
 };
 
@@ -96,6 +105,13 @@ const screenUiSchema = {
     },
     borderStyle: { classNames: 'col-6' },
     borderWidth: { classNames: 'col-6' },
+  },
+  ButtonLabels: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Button Labels',
+    mainBtnLabel: { classNames: 'col-6' },
+    applyBtnLabel: { classNames: 'col-6' },
+    applyBtnFlag: {},
   },
 };
 
@@ -182,6 +198,11 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
           height: currentScreenData.custom.height,
         },
         palette: convertPalette(currentScreenData.custom.palette),
+        ButtonLabels: {
+          mainBtnLabel: currentScreenData.custom.mainBtnLabel,
+          applyBtnLabel: currentScreenData.custom.applyBtnLabel,
+          applyBtnFlag: currentScreenData.custom.applyBtnFlag,
+        },
       };
       setCurrentPropertyData(data);
       setCurrentPropertySchema(screenSchema);
@@ -266,6 +287,9 @@ const ScreenAuthor: React.FC<ScreenAuthorProps> = ({ screen, onChange }) => {
         newScreenData.custom.width = newWidth;
         newScreenData.custom.height = newHeight;
         newScreenData.custom.palette = properties.palette;
+        newScreenData.custom.mainBtnLabel = properties.ButtonLabels.mainBtnLabel;
+        newScreenData.custom.applyBtnLabel = properties.ButtonLabels.applyBtnLabel;
+        newScreenData.custom.applyBtnFlag = properties.ButtonLabels.applyBtnFlag;
         setScreenBackgroundColor(properties.palette.backgroundColor);
       } else {
         // modifying part properties
