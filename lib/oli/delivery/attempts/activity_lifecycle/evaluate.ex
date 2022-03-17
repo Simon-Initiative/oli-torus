@@ -569,6 +569,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               resource_attempt_number: resource_attempt.attempt_number,
               activity_attempt_number: attempt_number,
               part_attempt_number: attempt.attempt_number,
+              part_attempt_guid: attempt.attempt_guid,
               input: input.input
             }
 
