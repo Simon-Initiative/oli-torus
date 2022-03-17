@@ -19,31 +19,32 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   @limit 25
 
   def set_breadcrumbs(section, parent_gate, user_type) do
+    first = case section do
+      %Section{type: :blueprint} ->
+        [
+          Breadcrumb.new(%{
+            full_title: "Products"
+          })
+        ]
+
+      _ -> []
+    end
+
     user_type
-    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
+    |> intermediate_breadcrumb(first, section)
     |> breadcrumb(section)
     |> breadcrumb_exceptions(section, parent_gate)
   end
 
+  def intermediate_breadcrumb(_user_type, previous, %Section{type: :blueprint} = section),
+    do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
+
+  def intermediate_breadcrumb(user_type, previous, section),
+    do: previous ++  OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
+
   def breadcrumb(previous, section) do
-    intermediate =
-      case section do
-        %Section{type: :blueprint} ->
-          Breadcrumb.new(%{
-            full_title: section.title,
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
-          })
-
-        _ ->
-          Breadcrumb.new(%{
-            full_title: section.title,
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
-          })
-      end
-
     previous ++
       [
-        intermediate,
         Breadcrumb.new(%{
           full_title: "Gating and Scheduling",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)

@@ -23,7 +23,7 @@ defmodule OliWeb.Sections.OverviewView do
     |> breadcrumb(section)
   end
 
-  def set_breadcrumbs(:user, section) do
+  def set_breadcrumbs(_, section) do
     breadcrumb([], section)
   end
 

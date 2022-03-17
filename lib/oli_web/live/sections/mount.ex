@@ -42,6 +42,8 @@ defmodule OliWeb.Sections.Mount do
     end
   end
 
+  defp ensure_author_of(_, nil), do: {:error, :unauthorized}
+
   defp ensure_author_of(section, author_id) do
     author = Oli.Accounts.get_author!(author_id)
 
@@ -50,6 +52,8 @@ defmodule OliWeb.Sections.Mount do
       _ -> {:error, :unauthorized}
     end
   end
+
+  defp ensure_admin(_, nil), do: {:error, :unauthorized}
 
   defp ensure_admin(section, author_id) do
     author = Oli.Accounts.get_author!(author_id)
