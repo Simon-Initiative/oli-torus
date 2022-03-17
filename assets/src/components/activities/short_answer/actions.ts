@@ -1,5 +1,6 @@
 import { Responses } from 'data/activities/model/responses';
 import { getPartById } from 'data/activities/model/utils';
+import { GradingApproach } from '../types';
 import { InputType, ShortAnswerModelSchema } from './schema';
 
 export const ShortAnswerActions = {
@@ -14,6 +15,11 @@ export const ShortAnswerActions = {
       }
 
       model.inputType = inputType;
+    };
+  },
+  setGradingApproach(gradingApproach: GradingApproach, partId: string) {
+    return (model: ShortAnswerModelSchema) => {
+      getPartById(model, partId).gradingApproach = gradingApproach;
     };
   },
 };

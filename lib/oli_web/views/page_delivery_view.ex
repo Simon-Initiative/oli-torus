@@ -7,6 +7,8 @@ defmodule OliWeb.PageDeliveryView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
 
+  def show_score(nil, nil), do: ""
+
   def show_score(score, out_of) do
     cond do
       out_of <= 0.0 ->

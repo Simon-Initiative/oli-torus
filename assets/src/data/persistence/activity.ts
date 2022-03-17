@@ -1,8 +1,8 @@
 import { ProjectSlug, ActivityTypeSlug, ResourceId } from 'data/types';
 import {
   ActivityModelSchema,
-  Feedback,
   FeedbackAction,
+  SubmissionAction,
   PartResponse,
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
@@ -46,10 +46,7 @@ export type Transformed = {
 
 export type Evaluated = {
   result: 'success';
-  evaluations: (
-    | { feedback: Feedback; part_id: string; result: { out_of: number; score: number } }
-    | { error: string; part_id: string }
-  )[];
+  evaluations: (FeedbackAction | SubmissionAction)[];
 };
 
 export type Retrieved = {
