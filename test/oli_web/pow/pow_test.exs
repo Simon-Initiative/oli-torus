@@ -101,6 +101,9 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Google"
       assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
@@ -162,6 +165,9 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Google"
       assert response =~ "div class=\"google-auth-container\""
+
+      assert response =~ "Sign in with Github"
+      assert response =~ "div class=\"github-auth-container\""
     end
   end
 
@@ -178,6 +184,23 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Github"
       assert response =~ "div class=\"github-auth-container\""
+    end
+  end
+
+  describe "login with auth providers disabled" do
+    setup [:setup_section, :reset_auth_providers_env_on_exit]
+
+    test "does not show auth providers sign in buttons when env vars are disabled", %{conn: conn} do
+      Application.put_env(:oli, :auth_providers, [])
+
+      conn =
+        conn
+        |> get(Routes.authoring_pow_session_path(conn, :new))
+
+      response = html_response(conn, 200)
+
+      refute response =~ "Sign in with Google"
+      refute response =~ "Sign in with Github"
     end
   end
 
@@ -209,5 +232,10 @@ defmodule OliWeb.Common.PowTest do
       })
 
     %{author: author, user: user, section: section, project: project, publication: publication}
+  end
+
+  defp reset_auth_providers_env_on_exit(_) do
+    auth_providers = Application.fetch_env!(:oli, :auth_providers)
+    on_exit(fn -> Application.put_env(:oli, :auth_providers, auth_providers) end)
   end
 end

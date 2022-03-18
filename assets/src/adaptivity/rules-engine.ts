@@ -74,7 +74,8 @@ const evaluateValueExpression = (value: string, env: Environment) => {
   if (result === value) {
     try {
       const evaluatedValue = evalScript(value, env);
-      if (evaluatedValue.result !== undefined) {
+      const canEval = evaluatedValue?.result !== undefined && !evaluatedValue.result.message;
+      if (canEval) {
         result = evaluatedValue.result;
       }
     } catch (ex) {

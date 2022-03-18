@@ -61,10 +61,10 @@ config :oli, OliWeb.Endpoint,
     port: String.to_integer(System.get_env("PORT", "443"))
   ],
   https: [
-    port: 443,
+    port: String.to_integer(System.get_env("HTTPS_PORT", "443")),
     otp_app: :oli,
-    keyfile: "priv/ssl/localhost.key",
-    certfile: "priv/ssl/localhost.crt"
+    keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
+    certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
   force_ssl: force_ssl,
   debug_errors: true,

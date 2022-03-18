@@ -57,4 +57,10 @@ defmodule OliWeb.ViewHelpers do
         ""
     end
   end
+
+  def delivery_breadcrumbs?(%{assigns: assigns} = _conn),
+    do:
+      Map.has_key?(assigns, :delivery_breadcrumb) and
+        Map.get(assigns, :delivery_breadcrumb, false) and
+        (Map.has_key?(assigns, :breadcrumbs) and length(Map.get(assigns, :breadcrumbs, [])) > 0)
 end
