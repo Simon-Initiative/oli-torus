@@ -123,6 +123,7 @@ defmodule Oli.Delivery.HierarchyTest do
       assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) != nil
 
       hierarchy = Hierarchy.find_and_remove_node(hierarchy, nested_page_one_node.uuid)
+        |> Hierarchy.finalize()
 
       assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) == nil
     end
@@ -131,9 +132,10 @@ defmodule Oli.Delivery.HierarchyTest do
       node = Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid)
 
       hierarchy = Hierarchy.move_node(hierarchy, node, hierarchy.uuid)
+        |> Hierarchy.finalize()
 
       assert Hierarchy.find_in_hierarchy(hierarchy, nested_page_one_node.uuid) != nil
-      assert node in hierarchy.children
+      assert Enum.find(hierarchy.children, fn c -> c.uuid == node.uuid end) != nil
     end
 
     test "add_materials_to_hierarchy/4", %{
@@ -163,6 +165,7 @@ defmodule Oli.Delivery.HierarchyTest do
           selection,
           published_resources_by_resource_id_by_pub
         )
+        |> Hierarchy.finalize()
 
       assert hierarchy.children |> Enum.count() == 3
       assert hierarchy.children |> Enum.at(2) |> Map.get(:children) |> Enum.count() == 4
@@ -193,6 +196,7 @@ defmodule Oli.Delivery.HierarchyTest do
       }
 
       hierarchy = Hierarchy.find_and_update_node(hierarchy, unit_node_with_duplicate_page_one)
+        |> Hierarchy.finalize()
 
       assert hierarchy.children
              |> Enum.at(2)
@@ -212,6 +216,7 @@ defmodule Oli.Delivery.HierarchyTest do
              |> Map.get(:resource_id) == nested_page1.id
 
       hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+        |> Hierarchy.finalize()
 
       assert hierarchy.children
              |> Enum.at(2)
