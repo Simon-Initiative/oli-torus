@@ -902,7 +902,8 @@ defmodule OliWeb.Router do
       :admin
     ])
 
-    live("/:project_id/history/:slug", RevisionHistory)
+    live("/:project_id/history/slug/:slug", RevisionHistory)
+    live("/:project_id/history/resource_id/:resource_id", RevisionHistory, as: :history_by_resource_id)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope
