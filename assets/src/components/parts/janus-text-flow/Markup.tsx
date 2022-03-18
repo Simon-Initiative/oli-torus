@@ -1,4 +1,4 @@
-import { templatizeText } from 'apps/delivery/components/TextParser';
+import { templatizeText } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 import React, { Fragment, useEffect, useRef } from 'react';
 import guid from 'utils/guid';
