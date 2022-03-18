@@ -33,13 +33,16 @@ defmodule OliWeb.Sections.Mount do
             ensure_instructor(section, user_id)
 
           {user_id, author_id} ->
-            case ensure_instructor(section, user_id) do
-              {:error, _} -> ensure_admin(section, author_id)
+            # prioritize system admin over instructor
+            case ensure_admin(section, author_id) do
+              {:error, _} -> ensure_instructor(section, user_id)
               e -> e
             end
         end
     end
   end
+
+  defp ensure_author_of(_, nil), do: {:error, :unauthorized}
 
   defp ensure_author_of(section, author_id) do
     author = Oli.Accounts.get_author!(author_id)
@@ -49,6 +52,8 @@ defmodule OliWeb.Sections.Mount do
       _ -> {:error, :unauthorized}
     end
   end
+
+  defp ensure_admin(_, nil), do: {:error, :unauthorized}
 
   defp ensure_admin(section, author_id) do
     author = Oli.Accounts.get_author!(author_id)

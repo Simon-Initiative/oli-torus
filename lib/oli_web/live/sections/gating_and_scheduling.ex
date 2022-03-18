@@ -18,8 +18,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
 
   @limit 25
 
-  def set_breadcrumbs(section, parent_gate) do
-    case section do
+  def set_breadcrumbs(section, parent_gate, user_type) do
+    first = case section do
       %Section{type: :blueprint} ->
         [
           Breadcrumb.new(%{
@@ -27,32 +27,24 @@ defmodule OliWeb.Sections.GatingAndScheduling do
           })
         ]
 
-      _ ->
-        OliWeb.Sections.SectionsView.set_breadcrumbs()
+      _ -> []
     end
+
+    user_type
+    |> intermediate_breadcrumb(first, section)
     |> breadcrumb(section)
     |> breadcrumb_exceptions(section, parent_gate)
   end
 
+  def intermediate_breadcrumb(_user_type, previous, %Section{type: :blueprint} = section),
+    do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
+
+  def intermediate_breadcrumb(user_type, previous, section),
+    do: previous ++  OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
+
   def breadcrumb(previous, section) do
-    intermediate =
-      case section do
-        %Section{type: :blueprint} ->
-          Breadcrumb.new(%{
-            full_title: section.title,
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.slug)
-          })
-
-        _ ->
-          Breadcrumb.new(%{
-            full_title: section.title,
-            link: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)
-          })
-      end
-
     previous ++
       [
-        intermediate,
         Breadcrumb.new(%{
           full_title: "Gating and Scheduling",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
@@ -107,12 +99,15 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       end
 
     case Mount.for(section_slug, session) do
-      {type, _author, section} when type in [:user, :author, :admin] ->
-        {:ok, assign_defaults(socket, section, session, parent_gate, title)}
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {user_type, _user, section} ->
+        {:ok, assign_defaults(socket, section, session, parent_gate, title, user_type)}
     end
   end
 
-  def assign_defaults(socket, section, session, parent_gate, title) do
+  def assign_defaults(socket, section, session, parent_gate, title, user_type) do
     context = SessionContext.init(session)
 
     rows =
@@ -136,7 +131,8 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       title: title,
       context: context,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, parent_gate),
+      delivery_breadcrumb: true,
+      breadcrumbs: set_breadcrumbs(section, parent_gate, user_type),
       table_model: table_model,
       total_count: total_count,
       parent_gate: parent_gate,

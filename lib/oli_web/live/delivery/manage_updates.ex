@@ -9,7 +9,24 @@ defmodule OliWeb.Delivery.ManageUpdates do
   alias Oli.Delivery.Updates.Worker
   alias OliWeb.Delivery.Updates.ApplyUpdateModal
   alias Oli.Delivery.Updates.Subscriber
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Sections.Mount
+
+  def set_breadcrumbs(section, type) do
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
+    |> breadcrumb(section)
+  end
+
+  def breadcrumb(previous, section) do
+    previous ++
+      [
+        Breadcrumb.new(%{
+          full_title: "Manage Updates",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+        })
+      ]
+  end
 
   def mount(
         params,
@@ -26,19 +43,20 @@ defmodule OliWeb.Delivery.ManageUpdates do
       {:error, e} ->
         Mount.handle_error(socket, {:error, e})
 
-      {_, _, %Oli.Delivery.Sections.Section{type: :blueprint} = section} ->
+      {user_type, _, %Oli.Delivery.Sections.Section{type: :blueprint} = section} ->
         init_state(
           socket,
           section,
-          Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
+          Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug),
+          user_type
         )
 
-      {_, _, section} ->
-        init_state(socket, section, Map.get(session, "redirect_after_apply"))
+      {user_type, _, section} ->
+        init_state(socket, section, Map.get(session, "redirect_after_apply"), user_type)
     end
   end
 
-  def init_state(socket, section, redirect_after_apply) do
+  def init_state(socket, section, redirect_after_apply, user_type) do
     updates = Sections.check_for_available_publication_updates(section)
     updates_in_progress = Sections.check_for_updates_in_progress(section)
 
@@ -51,7 +69,9 @@ defmodule OliWeb.Delivery.ManageUpdates do
        updates: updates,
        modal: nil,
        updates_in_progress: updates_in_progress,
-       redirect_after_apply: redirect_after_apply
+       redirect_after_apply: redirect_after_apply,
+       delivery_breadcrumb: true,
+       breadcrumbs: set_breadcrumbs(section, user_type)
      )}
   end
 

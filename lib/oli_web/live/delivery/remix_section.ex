@@ -29,7 +29,8 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Sections.Mount
 
   def set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
@@ -37,7 +38,7 @@ defmodule OliWeb.Delivery.RemixSection do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Cusomize Content",
+          full_title: "Customize Content",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
@@ -188,6 +189,7 @@ defmodule OliWeb.Delivery.RemixSection do
        selected: nil,
        has_unsaved_changes: false,
        modal: nil,
+       delivery_breadcrumb: true,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
        available_publications: available_publications
