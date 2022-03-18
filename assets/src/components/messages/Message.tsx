@@ -36,7 +36,7 @@ export class Message extends React.PureComponent<MessageProps, {}> {
     return (
       <button
         key={action.label}
-        className={classNames(['btn btn-action', action.btnClass])}
+        className={classNames('btn btn-action', action.btnClass)}
         style={{ whiteSpace: 'nowrap' }}
         disabled={!action.enabled}
         onClick={() => this.props.executeAction(message, action)}

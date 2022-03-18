@@ -1,9 +1,14 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/authoring.js") %>"></script>
 
-<%= for script <- @scripts do %>
-  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<!-- ACTIVITIES -->
+<%= for %{slug: slug, authoring_script: script} <- @activity_types do %>
+  <%= if slug == "oli_adaptive" do %>
+    <!-- <%= slug %> -->
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+  <% end %>
 <% end %>
 
+<!-- PARTS -->
 <%= for script <- @part_scripts do %>
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>

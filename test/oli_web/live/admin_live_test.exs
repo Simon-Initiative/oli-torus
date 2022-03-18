@@ -101,11 +101,8 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~
                "All administrative actions taken in the system are logged for auditing purposes."
 
-      assert render(view) =~
-               "Account Management"
-
-      assert render(view) =~
-               "Access and manage all users and authors"
+      assert render(view) =~ "Account Management"
+      assert render(view) =~ "Access and manage all users and authors"
 
       assert has_element?(
                view,
@@ -136,11 +133,8 @@ defmodule OliWeb.AdminLiveTest do
     test "loads content management links correctly", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_route)
 
-      assert render(view) =~
-               "Content Management"
-
-      assert render(view) =~
-               "Access and manage created content"
+      assert render(view) =~ "Content Management"
+      assert render(view) =~ "Access and manage created content"
 
       assert has_element?(
                view,
@@ -176,11 +170,8 @@ defmodule OliWeb.AdminLiveTest do
     test "loads system management links correctly", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_route)
 
-      assert render(view) =~
-               "System Management"
-
-      assert render(view) =~
-               "Manage and support system level functionality"
+      assert render(view) =~ "System Management"
+      assert render(view) =~ "Manage and support system level functionality"
 
       assert has_element?(
                view,
@@ -249,8 +240,7 @@ defmodule OliWeb.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
-      view
-      |> render_hook("text_search_change", %{value: "testing"})
+      render_hook(view, "text_search_change", %{value: "testing"})
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -262,14 +252,10 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~
                user_2.given_name
 
-      view
-      |> render_hook("text_search_change", %{value: ""})
+      render_hook(view, "text_search_change", %{value: ""})
 
-      assert render(view) =~
-               user_1.given_name
-
-      assert render(view) =~
-               user_2.given_name
+      assert render(view) =~ user_1.given_name
+      assert render(view) =~ user_2.given_name
     end
 
     test "applies sorting", %{conn: conn} do
@@ -376,7 +362,6 @@ defmodule OliWeb.AdminLiveTest do
       |> render_submit(%{user: new_attributes})
 
       %User{name: new_name} = Accounts.get_user!(id)
-
       assert new_attributes.name == new_name
     end
 
@@ -503,23 +488,15 @@ defmodule OliWeb.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
-      view
-      |> render_hook("text_search_change", %{value: "testing"})
+      render_hook(view, "text_search_change", %{value: "testing"})
 
-      assert render(view) =~
-               author_1.given_name
+      assert render(view) =~ author_1.given_name
+      refute render(view) =~ author_2.given_name
 
-      refute render(view) =~
-               author_2.given_name
+      render_hook(view, "text_search_change", %{value: ""})
 
-      view
-      |> render_hook("text_search_change", %{value: ""})
-
-      assert render(view) =~
-               author_1.given_name
-
-      assert render(view) =~
-               author_2.given_name
+      assert render(view) =~ author_1.given_name
+      assert render(view) =~ author_2.given_name
     end
 
     test "applies sorting", %{conn: conn} do
@@ -550,15 +527,13 @@ defmodule OliWeb.AdminLiveTest do
 
       {:ok, view, _html} = live(conn, @live_view_authors_route)
 
-      assert render(view) =~
-               first_author.given_name
+      assert render(view) =~ first_author.given_name
 
       view
       |> element("#header_paging a[phx-click=\"paged_table_page_change\"]", "2")
       |> render_click()
 
-      refute render(view) =~
-               first_author.given_name
+      refute render(view) =~ first_author.given_name
     end
 
     test "shows confirmation pending message when author account was created but not confirmed yet",

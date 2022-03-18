@@ -551,7 +551,7 @@ defmodule Oli.Delivery.AttemptsTest do
           %{attempt_number: 1},
           %Part{id: "1", responses: [], hints: []},
           :activity_attempt2,
-          :part1_attempt1
+          :part1_attempt2
         )
 
       # simulate client evaluation request

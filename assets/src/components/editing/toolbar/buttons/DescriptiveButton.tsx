@@ -30,11 +30,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
 
   const classes = React.useMemo(
     () =>
-      classNames([
-        'editorToolbar__button',
-        'editorToolbar__button--descriptive',
-        active && 'active',
-      ]),
+      classNames('editorToolbar__button', 'editorToolbar__button--descriptive', active && 'active'),
     [active],
   );
 

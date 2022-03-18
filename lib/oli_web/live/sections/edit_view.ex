@@ -43,6 +43,7 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
+           delivery_breadcrumb: true,
            brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,

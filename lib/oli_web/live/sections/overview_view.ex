@@ -23,7 +23,7 @@ defmodule OliWeb.Sections.OverviewView do
     |> breadcrumb(section)
   end
 
-  def set_breadcrumbs(:user, section) do
+  def set_breadcrumbs(_, section) do
     breadcrumb([], section)
   end
 
@@ -92,7 +92,7 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>
-            <a disabled={@updates_count == 0} href={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug)}>
+            <a disabled={@updates_count == 0} href={Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section.slug)}>
               Manage Updates
               {#if @updates_count > 0}
                 <span class="badge badge-primary">{@updates_count} available</span>
@@ -158,7 +158,7 @@ defmodule OliWeb.Sections.OverviewView do
       if section_has_student_data do
         {"""
            This section has student data and will be archived rather than deleted.
-           Are you sure you want to archive it? You will no longer have access to the data.
+           Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.
          """, "Archive"}
       else
         {"""

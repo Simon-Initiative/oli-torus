@@ -9,7 +9,7 @@ export type CloseButtonProps = {
 
 export const CloseButton = (props: CloseButtonProps) => (
   <button
-    className={classNames(['CloseButton close', props.className])}
+    className={classNames('CloseButton close', props.className)}
     disabled={!props.editMode}
     type="button"
     aria-label="Close"

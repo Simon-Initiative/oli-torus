@@ -7,6 +7,7 @@ import {
 import {
   ActivityState,
   FeedbackAction,
+  SubmissionAction,
   Hint,
   PartId,
   PartResponse,
@@ -14,6 +15,7 @@ import {
   Success,
 } from 'components/activities/types';
 import { studentInputToString } from 'data/activities/utils';
+import { WritableDraft } from 'immer/dist/internal';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
@@ -36,39 +38,88 @@ export interface ActivityDeliveryState {
     }
   >;
 }
+
+// From the results of a potentially multi-part submission, calculate the overall
+// score and out of for the activity.  If at least one action is not a FeedbackAction,
+// the activity is not fully evaluated, thus the score and out of must be null
+function calculateNewScore(action: PayloadAction<EvaluationResponse>) {
+  if (!action.payload.actions.every((action) => action.type === 'FeedbackAction')) {
+    return { score: null, out_of: null };
+  }
+
+  return action.payload.actions.reduce(
+    (acc, action: FeedbackAction | SubmissionAction) => {
+      if (action.type === 'FeedbackAction') {
+        return {
+          score: acc.score + action.score,
+          out_of: acc.out_of + action.out_of,
+        };
+      }
+      return acc;
+    },
+    {
+      score: 0,
+      out_of: 0,
+    },
+  );
+}
+
+function updatePartsStates(
+  state: WritableDraft<ActivityDeliveryState>,
+  action: PayloadAction<EvaluationResponse>,
+) {
+  return state.attemptState.parts.map((part) => {
+    const feedbackAction = action.payload.actions.find(
+      (action: FeedbackAction | SubmissionAction) =>
+        action.type === 'FeedbackAction' && action.attempt_guid === part.attemptGuid,
+    ) as FeedbackAction | undefined;
+    if (!feedbackAction) return part;
+    return Object.assign(part, {
+      score: feedbackAction.score,
+      outOf: feedbackAction.out_of,
+      feedback: feedbackAction.feedback,
+      error: feedbackAction.error,
+    } as Partial<PartState>);
+  });
+}
+
+// The attempt date evaluated must be set to now if and only if a
+// non null score has been calculated
+function determineDateEvaluated(score: number | null) {
+  if (score === null) {
+    return null;
+  }
+  return new Date();
+}
+
+// The attempt submission need must be set to now if either the attempt
+// has been submitted+evaluated (i.e. a non-null score has been calculated) or
+// at least one part evaluation resulted in a SubmissionAction
+function determineDateSubmitted(score: number | null, action: PayloadAction<EvaluationResponse>) {
+  if (
+    score !== null ||
+    action.payload.actions.some((action) => action.type === 'SubmissionAction')
+  ) {
+    return new Date();
+  }
+  return null;
+}
+
 export const activityDeliverySlice = createSlice({
   name: 'ActivityDelivery',
   initialState: {} as ActivityDeliveryState,
   reducers: {
     activitySubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
-        const { score, out_of } = action.payload.actions.reduce(
-          (acc, action: FeedbackAction) => ({
-            score: acc.score + action.score,
-            out_of: acc.out_of + action.out_of,
-          }),
-          {
-            score: 0,
-            out_of: 0,
-          },
-        );
+        const { score, out_of } = calculateNewScore(action);
 
         state.attemptState = {
           ...state.attemptState,
           score,
+          dateEvaluated: determineDateEvaluated(score),
+          dateSubmitted: determineDateSubmitted(score, action),
           outOf: out_of,
-          parts: state.attemptState.parts.map((part) => {
-            const feedbackAction = action.payload.actions.find(
-              (action: FeedbackAction) => action.attempt_guid === part.attemptGuid,
-            ) as FeedbackAction | undefined;
-            if (!feedbackAction) return part;
-            return Object.assign(part, {
-              score: feedbackAction.score,
-              outOf: feedbackAction.out_of,
-              feedback: feedbackAction.feedback,
-              error: feedbackAction.error,
-            } as Partial<PartState>);
-          }),
+          parts: updatePartsStates(state, action),
         };
       }
     },
@@ -159,6 +210,10 @@ export const requestHint =
 export const selectAttemptState = (state: ActivityDeliveryState) => state.attemptState;
 export const isEvaluated = (state: ActivityDeliveryState) =>
   selectAttemptState(state).score !== null;
+
+export const isSubmitted = (state: ActivityDeliveryState) =>
+  selectAttemptState(state).dateEvaluated === null &&
+  selectAttemptState(state).dateSubmitted !== null;
 
 export const resetAction =
   (

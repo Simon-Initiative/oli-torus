@@ -22,6 +22,7 @@ import {
   evalAssignScript,
   evalScript,
   extractAllExpressionsFromText,
+  getExpressionStringForValue,
   getValue,
   looksLikeJson,
 } from './scripting';
@@ -68,25 +69,18 @@ const evaluateValueExpression = (value: string, env: Environment) => {
   if (typeof value !== 'string') {
     return value;
   }
-  let result = value;
-  const looksLikeJSON = looksLikeJson(value);
-  // only if there is {} in it should it be processed, otherwise it's just a string
-  if (value.indexOf('{') === -1 || looksLikeJSON) {
-    const evaluatedVal = evalScript(value, env).result;
-    result = evaluatedVal === undefined ? value : evaluatedVal;
-    return result;
-  }
-  // it might be that it's still just a string, if it's a JSON value (TODO, is this really something that would be authored?)
-  // handle {{{q:1498672976730:866|stage.unknownabosrbance.Current Display Value}-{q:1522195641637:1014|stage.slide13_y_intercept.value}}/{q:1498673825305:874|stage.slide13_slope.value}}
-  value = value.replace(/{{{/g, '(({').replace(/{{/g, '({').replace(/}}/g, '})');
-  try {
-    result = evalScript(value, env).result;
-  } catch (e) {
-    // TODO: this currently is good for when math is encountered
-    // should create a "looksLikeMath" check above?? the math that is the problem
-    // *might* always have a ^ in it... not sure...
-    // otherwise any time it fails above for any reason, the value will be treated as a normal string
-    console.warn(`[evaluateValueExpression] Error evaluating ${value} `, e);
+  const expr = getExpressionStringForValue({ type: CapiVariableTypes.STRING, value }, env);
+  let { result } = evalScript(expr, env);
+  if (result === value) {
+    try {
+      const evaluatedValue = evalScript(value, env);
+      const canEval = evaluatedValue?.result !== undefined && !evaluatedValue.result.message;
+      if (canEval) {
+        result = evaluatedValue.result;
+      }
+    } catch (ex) {
+      return result;
+    }
   }
   return result;
 };

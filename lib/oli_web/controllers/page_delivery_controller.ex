@@ -2,11 +2,6 @@ defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
   require Logger
 
-  import OliWeb.ViewHelpers,
-    only: [
-      is_section_instructor_or_admin?: 2
-    ]
-
   import OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
@@ -172,20 +167,6 @@ defmodule OliWeb.PageDeliveryController do
         _ ->
           render(conn, "not_authorized.html")
       end
-    end
-  end
-
-  def updates(conn, %{"section_slug" => section_slug}) do
-    current_user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-
-    if Oli.Accounts.is_admin?(current_author) or
-         is_section_instructor_or_admin?(section_slug, current_user) do
-      section = Sections.get_section_by(slug: section_slug)
-
-      render(conn, "updates.html", section: section, title: "Manage Updates")
-    else
-      render(conn, "not_authorized.html")
     end
   end
 
@@ -448,12 +429,19 @@ defmodule OliWeb.PageDeliveryController do
     render(conn, "error.html")
   end
 
-  # This case handles :in_progress and :revised progress states
+  # This case handles :in_progress and :revised progress states, in addition to
+  # handling review mode
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
     section = conn.assigns.section
 
     render_context = %Context{
-      user: user,
+      # Allow admin authors to review student work
+      user:
+        if is_nil(user) do
+          conn.assigns.current_author
+        else
+          user
+        end,
       section_slug: section_slug,
       mode:
         if context.review_mode do
@@ -559,8 +547,12 @@ defmodule OliWeb.PageDeliveryController do
         "attempt_guid" => attempt_guid
       }) do
     user = conn.assigns.current_user
+    author = conn.assigns.current_author
 
-    if Sections.is_enrolled?(user.id, section_slug) do
+    section = conn.assigns.section
+
+    if Oli.Accounts.is_admin?(author) or
+         PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       PageContext.create_for_review(section_slug, attempt_guid, user)
       |> render_page(conn, section_slug, user, false)
     else

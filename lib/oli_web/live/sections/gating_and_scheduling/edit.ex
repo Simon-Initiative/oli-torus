@@ -13,18 +13,21 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
         %{"section_slug" => section_slug} = session,
         socket
       ) do
-    id = String.to_integer(gating_condition_id)
-
-    {parent_gate_id, title} =
-      case Gating.get_gating_condition!(id) do
-        %{parent_id: nil} -> {nil, "Edit Gating Condition"}
-        %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
-      end
-
-    context = SessionContext.init(session)
-
     case Mount.for(section_slug, session) do
-      {type, _author, section} when type in [:user, :author, :admin] ->
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {user_type, _user, section} ->
+        id = String.to_integer(gating_condition_id)
+
+        {parent_gate_id, title} =
+          case Gating.get_gating_condition!(id) do
+            %{parent_id: nil} -> {nil, "Edit Gating Condition"}
+            %{parent_id: parent_id} -> {parent_id, "Edit Student Exception"}
+          end
+
+        context = SessionContext.init(session)
+
         {:ok,
          GatingConditionStore.init(
            socket,
@@ -33,6 +36,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
            context,
            title,
            parent_gate_id,
+           user_type,
            id
          )}
     end
