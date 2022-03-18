@@ -2,7 +2,7 @@ defmodule OliWeb.ManualGrading.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   use Surface.LiveComponent
 
-  def new(attempts) do
+  def new(attempts, activity_types_map) do
     SortableTableModel.new(
       rows: attempts,
       column_specs: [
@@ -37,7 +37,10 @@ defmodule OliWeb.ManualGrading.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:index]
+      id_field: [:id],
+      data: %{
+        activity_types_map: activity_types_map
+      }
     )
   end
 
@@ -53,8 +56,8 @@ defmodule OliWeb.ManualGrading.TableModel do
     end
   end
 
-  def render_activity_type(_, row, _) do
-
+  def render_activity_type(_, row, %{activity_types_map: activity_types_map}) do
+    Map.get(activity_types_map, row.activity_type_id).title
   end
 
   def render(assigns) do

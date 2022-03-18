@@ -115,6 +115,7 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}>Score Manually Graded Activities</a></li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
           {#if !@section.open_and_free}

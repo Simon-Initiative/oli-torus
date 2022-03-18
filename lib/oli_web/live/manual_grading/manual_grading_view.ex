@@ -3,24 +3,25 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
+  alias Oli.Delivery.Attempts.ManualGrading
+  alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Sections
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
-  alias OliWeb.Grades.GradebookTableModel
+  alias OliWeb.ManualGrading.TableModel
 
   @limit 10
-  @default_options %EnrollmentBrowseOptions{
-    is_student: true,
-    is_instructor: false,
+  @default_options %BrowseOptions{
+    user_id: nil,
+    activity_id: nil,
+    graded: nil,
     text_search: nil
   }
 
   data breadcrumbs, :any
-  data title, :string, default: "Instructor Manual Scoring"
+  data title, :string, default: "Manual Scoring"
   data section, :any, default: nil
   data tabel_model, :struct
   data total_count, :integer, default: 0
@@ -37,7 +38,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Gradebook",
+          full_title: "Manual Scoring",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
@@ -49,28 +50,19 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        enrollments =
-          Sections.browse_enrollments(
+        attempts =
+          ManualGrading.browse_submitted_attempts(
             section,
             %Paging{offset: 0, limit: @limit},
             %Sorting{direction: :asc, field: :name},
             @default_options
           )
 
-        total_count = determine_total(enrollments)
+        total_count = determine_total(attempts)
 
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-        graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
-
-        resource_accesses = fetch_resource_accesses(enrollments, section)
-
-        {:ok, table_model} =
-          GradebookTableModel.new(enrollments, graded_pages, resource_accesses, section)
+        {:ok, table_model} = Oli.Activities.list_activity_registrations()
+        |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+        |> then(fn map -> TableModel.new(attempts, map) end)
 
         {:ok,
          assign(socket,
@@ -78,7 +70,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           graded_pages: graded_pages,
            options: @default_options
          )}
     end
@@ -91,16 +82,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     end
   end
 
-  defp fetch_resource_accesses(enrollments, section) do
-    # retrieve all graded resource accesses, but only for this slice of students
-    student_ids = Enum.map(enrollments, fn user -> user.id end)
-
-    Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
-      section.slug,
-      student_ids
-    )
-  end
-
   def handle_params(params, _, socket) do
     table_model =
       SortableTableModel.update_from_params(
@@ -110,33 +91,23 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
     offset = get_int_param(params, "offset", 0)
 
-    options = %EnrollmentBrowseOptions{
+    options = %BrowseOptions{
       text_search: get_param(params, "text_search", ""),
-      is_student: true,
-      is_instructor: false
+      user_id: get_int_param(params, "user_id", nil),
+      activity_id: get_int_param(params, "activity_id", nil),
+      graded: get_int_param(params, "graded", nil)
     }
 
-    enrollments =
-      Sections.browse_enrollments(
+    attempts =
+      ManualGrading.browse_submitted_attempts(
         socket.assigns.section,
         %Paging{offset: offset, limit: @limit},
-        # We cannot support sorting by columns other than the user name, so ignore any
-        # attempt to do that
-        %Sorting{direction: table_model.sort_order, field: :name},
+        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
         options
       )
 
-    resource_accesses = fetch_resource_accesses(enrollments, socket.assigns.section)
-
-    {:ok, table_model} =
-      GradebookTableModel.new(
-        enrollments,
-        socket.assigns.graded_pages,
-        resource_accesses,
-        socket.assigns.section
-      )
-
-    total_count = determine_total(enrollments)
+    table_model = Map.put(table_model, :rows, attempts)
+    total_count = determine_total(attempts)
 
     {:noreply,
      assign(
@@ -166,6 +137,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     """
   end
 
+  @spec patch_with(Phoenix.LiveView.Socket.t(), map) :: {:noreply, Phoenix.LiveView.Socket.t()}
   def patch_with(socket, changes) do
     {:noreply,
      push_patch(socket,
@@ -179,7 +151,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
                sort_by: socket.assigns.table_model.sort_by_spec.name,
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
-               text_search: socket.assigns.options.text_search
+               text_search: socket.assigns.options.text_search,
+               user_id: socket.assigns.options.user_id,
+               activity_id: socket.assigns.options.activity_id,
+               graded: socket.assigns.options.graded
              },
              changes
            )
