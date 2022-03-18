@@ -11,6 +11,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   alias OliWeb.ManualGrading.TableModel
+  alias OliWeb.ManualGrading.Filters
 
   @limit 10
   @default_options %BrowseOptions{
@@ -27,6 +28,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
+  data attempt, :struct, default: nil
   data options, :any
 
   def set_breadcrumbs(type, section) do
@@ -54,7 +56,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
           ManualGrading.browse_submitted_attempts(
             section,
             %Paging{offset: 0, limit: @limit},
-            %Sorting{direction: :asc, field: :name},
+            %Sorting{direction: :desc, field: :date_submitted},
             @default_options
           )
 
@@ -63,6 +65,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         {:ok, table_model} = Oli.Activities.list_activity_registrations()
         |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
         |> then(fn map -> TableModel.new(attempts, map) end)
+
+        table_model = Map.put(table_model, :sort_order, :desc)
+        |> Map.put(:sort_by_spec, TableModel.date_submitted_spec())
 
         {:ok,
          assign(socket,
@@ -90,33 +95,52 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       )
 
     offset = get_int_param(params, "offset", 0)
+    selected = get_param(params, "selected", nil)
+
+    table_model =  Map.put(table_model, :selected, selected)
 
     options = %BrowseOptions{
       text_search: get_param(params, "text_search", ""),
       user_id: get_int_param(params, "user_id", nil),
       activity_id: get_int_param(params, "activity_id", nil),
-      graded: get_int_param(params, "graded", nil)
+      graded: get_boolean_param(params, "graded", nil)
     }
 
-    attempts =
-      ManualGrading.browse_submitted_attempts(
-        socket.assigns.section,
-        %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        options
-      )
+    if only_selection_changed(socket.assigns, table_model, options, offset) do
+      table_model = Map.put(socket.assigns.table_model, :selected, selected)
 
-    table_model = Map.put(table_model, :rows, attempts)
-    total_count = determine_total(attempts)
+      {:noreply,
+       assign(
+         socket,
+         table_model: table_model,
+         attempt: get_selected_attempt(table_model)
+       )}
+    else
 
-    {:noreply,
-     assign(
-       socket,
-       offset: offset,
-       table_model: table_model,
-       total_count: total_count,
-       options: options
-     )}
+      attempts =
+        ManualGrading.browse_submitted_attempts(
+          socket.assigns.section,
+          %Paging{offset: offset, limit: @limit},
+          %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
+          options
+        )
+
+      table_model = Map.put(table_model, :rows, attempts)
+      |> Map.put(:selected, socket.assigns.table_model.selected)
+
+      total_count = determine_total(attempts)
+
+      {:noreply,
+      assign(
+        socket,
+        offset: offset,
+        table_model: table_model,
+        total_count: total_count,
+        options: options,
+        attempt: get_selected_attempt(table_model)
+      )}
+    end
+
   end
 
   def render(assigns) do
@@ -124,10 +148,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     <div>
 
       <TextSearch id="text-search"/>
+      <Filters options={@options}/>
 
       <div class="mb-3"/>
 
       <PagedTable
+        allow_selection={true}
         filter={@options.text_search}
         table_model={@table_model}
         total_count={@total_count}
@@ -154,7 +180,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
                text_search: socket.assigns.options.text_search,
                user_id: socket.assigns.options.user_id,
                activity_id: socket.assigns.options.activity_id,
-               graded: socket.assigns.options.graded
+               graded: socket.assigns.options.graded,
+               selected: socket.assigns.table_model.selected
              },
              changes
            )
@@ -163,9 +190,27 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
      )}
   end
 
+  defp get_selected_attempt(%{selected: nil}), do: nil
+
+  defp get_selected_attempt(table_model) do
+    Enum.find(table_model.rows, fn r -> r.id == String.to_integer(table_model.selected) end)
+  end
+
+  defp only_selection_changed(assigns, model_after, options_after, offset_after) do
+    assigns.table_model.selected != model_after.selected and
+    assigns.table_model.sort_by_spec == model_after.sort_by_spec and
+    assigns.table_model.sort_order == model_after.sort_order and
+    assigns.options.text_search == options_after.text_search and
+    assigns.options.user_id == options_after.user_id and
+    assigns.options.activity_id == options_after.activity_id and
+    assigns.options.graded == options_after.graded and
+    assigns.offset == offset_after
+  end
+
   def handle_event(event, params, socket) do
     {event, params, socket, &__MODULE__.patch_with/2}
     |> delegate_to([
+      &Filters.handle_delegated/4,
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])

@@ -19,11 +19,7 @@ defmodule OliWeb.ManualGrading.TableModel do
           name: :page_title,
           label: "Page"
         },
-        %ColumnSpec{
-          name: :details,
-          label: "Date Submitted",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3
-        },
+        date_submitted_spec(),
         %ColumnSpec{
           name: :activity_type_id,
           label: "Activity Type",
@@ -44,6 +40,14 @@ defmodule OliWeb.ManualGrading.TableModel do
     )
   end
 
+  def date_submitted_spec() do
+    %ColumnSpec{
+      name: :date_submitted,
+      label: "Date Submitted",
+      render_fn: &OliWeb.Common.Table.Common.render_date/3
+    }
+  end
+
   def render_student(_, row, _) do
     OliWeb.Common.Utils.name(row.user)
   end
@@ -56,7 +60,7 @@ defmodule OliWeb.ManualGrading.TableModel do
     end
   end
 
-  def render_activity_type(_, row, %{activity_types_map: activity_types_map}) do
+  def render_activity_type(%{activity_types_map: activity_types_map}, row, _) do
     Map.get(activity_types_map, row.activity_type_id).title
   end
 
