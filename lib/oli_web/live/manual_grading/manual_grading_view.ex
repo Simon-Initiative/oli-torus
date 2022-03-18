@@ -147,8 +147,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     ~F"""
     <div>
 
-      <TextSearch id="text-search"/>
-      <Filters options={@options}/>
+      <div class="d-flex justify-content-between">
+        <TextSearch id="text-search"/>
+        <Filters options={@options}/>
+      </div>
 
       <div class="mb-3"/>
 
