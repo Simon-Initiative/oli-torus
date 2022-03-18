@@ -7,6 +7,27 @@ body {
   padding-bottom: 40px;
 }
 
+.select-sources {
+  .custom-select {
+    width: 13em;
+  }
+
+  .card-title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .fade-text {
+    height: 4em;
+    -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent);
+  }
+
+  .small-date {
+    font-size: 0.7em;
+  }
+}
+
 .configure-section {
   text-align: center;
   display: flex;
@@ -16,8 +37,12 @@ body {
   .card-img {
     width: 4em;
   }
+}
 
-  .btn-card {
+.configure-section,
+.select-sources {
+  .btn-card,
+  .card {
     cursor: pointer;
     color: inherit;
     user-select: none;

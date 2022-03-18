@@ -17,7 +17,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   data title, :string, default: "Select Source for New Section"
   data sources, :list, default: []
-  data tabel_model, :struct
+  data table_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
@@ -37,7 +37,7 @@ defmodule OliWeb.Delivery.SelectSource do
         full_title: "Create Course Section",
         link: Routes.delivery_path(OliWeb.Endpoint, :index)
       })
-    ], :from_lms, "Quick Start")
+    ], :from_lms, "Start")
   end
 
   def breadcrumbs(:independent_learner) do
@@ -115,23 +115,33 @@ defmodule OliWeb.Delivery.SelectSource do
        table_model: table_model,
        sources: sources,
        user: user,
-       lti_params: lti_params
+       lti_params: lti_params,
+       is_instructor: is_instructor?(route)
      )}
   end
 
   def render(assigns) do
     ~F"""
-    <div>
-      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-      <div class="mb-3"/>
+    <div class="d-flex flex-column mt-4">
+      {#if @is_instructor}
+        <h3>Select Curriculum</h3>
+        <p class="mt-1 text-muted">Select a curriculum source to create your course section.</p>
+      {/if}
+
+      <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+      <div class="mb-4"/>
+
       <Listing
         filter={@applied_query}
         table_model={@table_model}
         total_count={@total_count}
         offset={@offset}
         limit={@limit}
+        selected="selected"
         sort="sort"
-        page_change="page_change"/>
+        page_change="page_change"
+        show_bottom_paging={false}
+        cards_view={@is_instructor}/>
     </div>
     """
   end
@@ -184,4 +194,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp retrieve_all_sources(:from_lms, %{user: user, lti_params: lti_params}),
     do: Delivery.retrieve_visible_sources(user, lti_params)
+
+  defp is_instructor?(:admin), do: false
+  defp is_instructor?(_), do: true
 end

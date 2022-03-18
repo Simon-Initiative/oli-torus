@@ -3,10 +3,6 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   alias OliWeb.Router.Helpers, as: Routes
   use Surface.LiveComponent
 
-  defp is_product?(item) do
-    Map.has_key?(item, :type) and Map.get(item, :type) == :blueprint
-  end
-
   def new(products) do
     SortableTableModel.new(
       rows: products,
@@ -29,13 +25,15 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         },
         %ColumnSpec{
           name: :requires_payment,
-          label: "Requires Payment",
-          render_fn: &__MODULE__.render_payment_column/3
+          label: "Payment",
+          render_fn: &__MODULE__.render_payment_column/3,
+          sort_fn: &__MODULE__.sort_payment_column/2
         },
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &SortableTableModel.render_inserted_at_column/3,
+          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
         }
       ],
       event_suffix: "",
@@ -43,21 +41,35 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
     )
   end
 
+  def is_product?(item),
+    do: Map.has_key?(item, :type) and Map.get(item, :type) == :blueprint
+
   def render_payment_column(_, item, _) do
-    case is_product?(item) do
-      true ->
-        if item.requires_payment do
+    if is_product?(item) and item.requires_payment do
+      case Money.to_string(item.amount) do
+        {:ok, m} -> m
+        _ -> "Yes"
+      end
+    else
+      "None"
+    end
+  end
+
+  def sort_payment_column(sort_order, sort_spec) do
+    {fn item ->
+      amount =
+        if is_product?(item) and item.requires_payment do
           case Money.to_string(item.amount) do
             {:ok, m} -> m
-            _ -> "Yes"
+            _ -> 0
           end
         else
-          "None"
+          0
         end
 
-      _ ->
-        "None"
-    end
+      %{requires_payment: amount}
+    end,
+     ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_title_column(assigns, item, _) do
@@ -74,7 +86,9 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
 
   def sort_title_column(sort_order, sort_spec),
     do:
-      {fn item -> if is_product?(item), do: item, else: item.project end,
+      {fn item -> if is_product?(item),
+        do: Map.put(item, :title, String.downcase(item.title)),
+        else: Map.put(item.project, :title, String.downcase(item.project.title)) end,
        ColumnSpec.default_sort_fn(sort_order, sort_spec)}
 
   def render_action_column(assigns, item, _) do
