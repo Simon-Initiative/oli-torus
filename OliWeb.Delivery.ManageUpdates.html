@@ -10,7 +10,7 @@
     <title>OliWeb.Delivery.ManageUpdates — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-42b432b53b.js"></script>
+    <script src="dist/sidebar_items-bac9cf75b1.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -112,6 +112,13 @@ OliWeb.Delivery.ManageUpdates <small class="app-vsn">(OLI Torus v0.18.4)</small>
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#breadcrumb/2">breadcrumb(previous, section)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#handle_event/3">handle_event(binary, arg2, socket)</a>
 
   </div>
@@ -137,7 +144,7 @@ OliWeb.Delivery.ManageUpdates <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#init_state/3">init_state(socket, section, redirect_after_apply)</a>
+    <a href="#init_state/4">init_state(socket, section, redirect_after_apply, user_type)</a>
 
   </div>
 
@@ -167,6 +174,13 @@ OliWeb.Delivery.ManageUpdates <small class="app-vsn">(OLI Torus v0.18.4)</small>
   </div>
 
 </div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#set_breadcrumbs/2">set_breadcrumbs(section, type)</a>
+
+  </div>
+
+</div>
 
   </div>
 
@@ -182,6 +196,28 @@ OliWeb.Delivery.ManageUpdates <small class="app-vsn">(OLI Torus v0.18.4)</small>
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="breadcrumb/2">
+
+  <div class="detail-header">
+    <a href="#breadcrumb/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">breadcrumb(previous, section)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L21" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="handle_event/3">
 
   <div class="detail-header">
@@ -213,7 +249,7 @@ Functions
     </a>
     <h1 class="signature">handle_info(arg, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L143" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L163" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -265,16 +301,16 @@ Functions
 
   </section>
 </section>
-<section class="detail" id="init_state/3">
+<section class="detail" id="init_state/4">
 
   <div class="detail-header">
-    <a href="#init_state/3" class="detail-link" title="Link to this function">
+    <a href="#init_state/4" class="detail-link" title="Link to this function">
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">init_state(socket, section, redirect_after_apply)</h1>
+    <h1 class="signature">init_state(socket, section, redirect_after_apply, user_type)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L41" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L59" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -296,7 +332,7 @@ Functions
     </a>
     <h1 class="signature">mount(params, session, socket)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L14" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L31" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -318,7 +354,7 @@ Functions
     </a>
     <h1 class="signature">render(assigns)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L58" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L78" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -341,6 +377,28 @@ Functions
     <h1 class="signature">render_modal(assigns)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L3" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="set_breadcrumbs/2">
+
+  <div class="detail-header">
+    <a href="#set_breadcrumbs/2" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">set_breadcrumbs(section, type)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/live/delivery/manage_updates.ex#L15" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
