@@ -10,8 +10,11 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
+  alias Oli.Delivery.Attempts.Core
   alias OliWeb.ManualGrading.TableModel
+  alias OliWeb.ManualGrading.RenderedActivity
   alias OliWeb.ManualGrading.Filters
+  alias OliWeb.ManualGrading.Tabs
 
   @limit 10
   @default_options %BrowseOptions{
@@ -29,6 +32,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data attempt, :struct, default: nil
+  data activity_types_map, :map, default: %{}
+  data review_rendered, :any, default: nil
+  data preview_rendered, :any, default: nil
+  data active_tab, :atom, default: :review
   data options, :any
 
   def set_breadcrumbs(type, section) do
@@ -62,9 +69,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
         total_count = determine_total(attempts)
 
-        {:ok, table_model} = Oli.Activities.list_activity_registrations()
-        |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
-        |> then(fn map -> TableModel.new(attempts, map) end)
+        activities = Oli.Activities.list_activity_registrations()
+        additional_scripts = Enum.map(activities, fn a -> a.authoring_script end)
+
+        activity_types_map = Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
+
+        {:ok, table_model} = TableModel.new(attempts, activity_types_map)
 
         table_model = Map.put(table_model, :sort_order, :desc)
         |> Map.put(:sort_by_spec, TableModel.date_submitted_spec())
@@ -75,7 +85,9 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           options: @default_options
+           additional_scripts: additional_scripts,
+           options: @default_options,
+           activity_types_map: activity_types_map
          )}
     end
   end
@@ -112,9 +124,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
       {:noreply,
        assign(
          socket,
-         table_model: table_model,
-         attempt: get_selected_attempt(table_model)
-       )}
+         table_model: table_model
+       )
+      |> assign(build_state_for_selection(table_model, socket.assigns))
+      }
     else
 
       attempts =
@@ -136,9 +149,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         offset: offset,
         table_model: table_model,
         total_count: total_count,
-        options: options,
-        attempt: get_selected_attempt(table_model)
-      )}
+        options: options)
+      |> assign(build_state_for_selection(table_model, socket.assigns))}
     end
 
   end
@@ -146,6 +158,10 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   def render(assigns) do
     ~F"""
     <div>
+
+      {#for script <- @additional_scripts}
+        <script type="text/javascript" src={Routes.static_path(OliWeb.Endpoint, "/js/" <> script)}></script>
+      {/for}
 
       <div class="d-flex justify-content-between">
         <TextSearch id="text-search"/>
@@ -161,6 +177,25 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         total_count={@total_count}
         offset={@offset}
         limit={@limit}/>
+
+      <div class="mb-5"/>
+
+      {#if !is_nil(@attempt)}
+
+        <div style="padding: 20px; border: 2px inset rgba(28,110,164,0.17); border-radius: 22px;">
+
+          <Tabs active={@active_tab} changed="change_tab"/>
+
+          {#if @active_tab == :review}
+            <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@review_rendered}/>
+          {#else}
+            <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@preview_rendered}/>
+          {/if}
+
+        </div>
+
+      {/if}
+
     </div>
     """
   end
@@ -192,10 +227,26 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
      )}
   end
 
-  defp get_selected_attempt(%{selected: nil}), do: nil
+  defp build_state_for_selection(%{selected: nil}, _), do: [attempt: nil, part_attempts: nil, review_rendered: nil, preview_rendered: nil]
 
-  defp get_selected_attempt(table_model) do
-    Enum.find(table_model.rows, fn r -> r.id == String.to_integer(table_model.selected) end)
+  defp build_state_for_selection(table_model, assigns) do
+
+    activity_attempt = Enum.find(table_model.rows, fn r -> r.id == String.to_integer(table_model.selected) end)
+
+    if is_nil(assigns.attempt) or (assigns.attempt.id != activity_attempt.id) do
+      part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+      rendering_context = OliWeb.ManualGrading.Rendering.create_rendering_context(
+        activity_attempt, part_attempts, assigns.activity_types_map, assigns.section)
+
+      review_rendered = OliWeb.ManualGrading.Rendering.render(rendering_context, :review)
+      preview_rendered = OliWeb.ManualGrading.Rendering.render(rendering_context, :instructor_preview)
+
+      [attempt: activity_attempt, part_attempts: part_attempts, review_rendered: review_rendered, preview_rendered: preview_rendered]
+
+    else
+      []
+    end
   end
 
   defp only_selection_changed(assigns, model_after, options_after, offset_after) do
@@ -207,6 +258,12 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
     assigns.options.activity_id == options_after.activity_id and
     assigns.options.graded == options_after.graded and
     assigns.offset == offset_after
+  end
+
+  def handle_event("change_tab", %{"tab" => value}, socket) do
+    {:noreply, assign(socket,
+      active_tab: String.to_existing_atom(value)
+    )}
   end
 
   def handle_event(event, params, socket) do

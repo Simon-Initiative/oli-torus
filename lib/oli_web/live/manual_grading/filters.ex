@@ -7,9 +7,9 @@ defmodule OliWeb.ManualGrading.Filters do
   def render(assigns) do
     ~F"""
     <div style="display: inline;">
-      <FilterButton tooltip="Only show attempts from this same user" label="User" key={:user_id} active={is_active(assigns, :user_id)} clicked={"filters_changed"}/>
-      <FilterButton tooltip="Only show attempts for this same activity" label="Activity" key={:activity_id} active={is_active(assigns, :activity_id)} clicked={"filters_changed"}/>
-      <FilterButton tooltip="Only show attempts of this same purpose" label="Purpose" key={:graded} active={is_active(assigns, :graded)} clicked={"filters_changed"}/>
+      <FilterButton id="user_filter" tooltip="Only show attempts from this same user" label="User" key={:user_id} active={is_active(assigns, :user_id)} clicked={"filters_changed"}/>
+      <FilterButton id="activity_filter" tooltip="Only show attempts for this same activity" label="Activity" key={:activity_id} active={is_active(assigns, :activity_id)} clicked={"filters_changed"}/>
+      <FilterButton id="purpose_filter" tooltip="Only show attempts of this same purpose" label="Purpose" key={:graded} active={is_active(assigns, :graded)} clicked={"filters_changed"}/>
     </div>
     """
   end

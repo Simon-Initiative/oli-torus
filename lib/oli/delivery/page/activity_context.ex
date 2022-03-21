@@ -18,7 +18,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
   resolved revisions.
   """
   @spec create_context_map(boolean(), %{}) :: %{}
-  def create_context_map(graded, latest_attempts) do
+  def create_context_map(graded, latest_attempts, opts \\ []) do
     # get a view of all current registered activity types
     registrations = Activities.list_activity_registrations()
     reg_map = Enum.reduce(registrations, %{}, fn r, m -> Map.put(m, r.id, r) end)
@@ -37,7 +37,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
        %ActivitySummary{
          id: id,
          attempt_guid: state.attemptGuid,
-         model: prepare_model(model),
+         model: prepare_model(model, opts),
          state: prepare_state(state),
          delivery_element: type.delivery_element,
          authoring_element: type.authoring_element,
