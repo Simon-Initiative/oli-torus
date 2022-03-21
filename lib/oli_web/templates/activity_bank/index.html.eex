@@ -7,7 +7,7 @@
 <div id="editor" class="container"/>
 
 <script>
-
-  const params = <%= raw(Jason.encode!(@context)) %>;
+  const encodedParams = "<%= json_escape(@context) %>";
+  const params = JSON.parse(decodeURIComponent(encodedParams));
   window.oliMountApplication(document.getElementById('editor'), params);
 </script>
