@@ -63,6 +63,8 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
         ? problem.item.rule.id
         : problem.type === DiagnosticTypes.INVALID_VALUE
         ? problem.item.rule.id
+        : problem.type === DiagnosticTypes.INVALID_EXPRESSION_VALUE
+        ? problem.item.rule.id
         : 'initState';
 
     const activity = result.meta.arg.activity;

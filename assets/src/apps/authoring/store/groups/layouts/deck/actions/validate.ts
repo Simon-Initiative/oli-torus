@@ -14,6 +14,7 @@ import { selectState as selectPageState } from '../../../../page/slice';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
+import { extractExpressionFromText } from 'adaptivity/scripting';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -77,6 +78,55 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
       return !!targetId;
     default:
       return false;
+  }
+};
+
+const checkExpressionsWithWrongBrackets = (expressions: string) => {
+  let str = expressions;
+  const result = str.match(/{([^{^}]+)}/g) || [];
+  if (!result?.length) {
+    return str;
+  }
+  const obj: Record<string, string> = {};
+  for (let i = 0; i < result.length; i++) {
+    obj['obj' + i] = result[i];
+    str = str.replace(result[i], 'obj' + i);
+  }
+  const singleVaribleExpressionCheck = extractExpressionFromText(str);
+  let isSingleVariable = false;
+  if (`{${singleVaribleExpressionCheck}}` === str) {
+    str = str.substring(1, str.length - 1);
+    isSingleVariable = true;
+  }
+  str = str.replace(new RegExp('{', 'g'), '(');
+  str = str.replace(new RegExp('}', 'g'), ')');
+
+  for (let i = 0; i < result.length; i++) {
+    obj['obj' + i] = result[i];
+    str = str.replace('obj' + i, obj['obj' + i]);
+  }
+
+  if (isSingleVariable) {
+    str = `{${str}}`;
+  }
+  return str;
+};
+
+const validateValueExpression = (condition: any, rule: any, owner: any) => {
+  try {
+    if (typeof condition.value === 'string') {
+      const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
+      if (evaluatedExp !== condition.value) {
+        return {
+          condition,
+          rule,
+          owner,
+          suggestedFix: evaluatedExp,
+        };
+      }
+    }
+  } catch (ex) {
+    console.log({ ex });
   }
 };
 
@@ -204,6 +254,22 @@ export const validators = [
         const brokenConditionValues: any[] = [];
         forEachCondition(conditions, (condition: any) => {
           brokenConditionValues.push(validateValue(condition, rule, owner));
+        });
+
+        return [...broken, ...brokenConditionValues];
+      }, []);
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_EXPRESSION_VALUE,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
+
+        const brokenConditionValues: any[] = [];
+        forEachCondition(conditions, (condition: any) => {
+          brokenConditionValues.push(validateValueExpression(condition, rule, owner));
         });
 
         return [...broken, ...brokenConditionValues];

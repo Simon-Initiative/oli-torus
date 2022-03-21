@@ -35,6 +35,13 @@ export const ValueUndefined: React.FC<Message> = ({ problem }: Message) => (
   </span>
 );
 
+export const InvalidExpressionValue: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    The &quot;
+    <strong>{problem?.item?.rule?.name}</strong>&quot; rule has invalid expression.
+  </span>
+);
+
 export const InvalidMutateTarget: React.FC<Message> = ({ problem }: Message) => (
   <span>
     The &quot;
@@ -61,7 +68,6 @@ export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) 
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
-
   let action;
   switch (type) {
     case DiagnosticTypes.DUPLICATE:
@@ -84,6 +90,9 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
       break;
     case DiagnosticTypes.INVALID_VALUE:
       action = <ValueUndefined {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_EXPRESSION_VALUE:
+      action = <InvalidExpressionValue {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

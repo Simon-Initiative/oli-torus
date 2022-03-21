@@ -120,6 +120,7 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath,
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };
