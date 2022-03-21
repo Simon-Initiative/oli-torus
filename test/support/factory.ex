@@ -19,6 +19,7 @@ defmodule Oli.Factory do
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
+  alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
@@ -145,7 +146,7 @@ defmodule Oli.Factory do
 
   def section_factory() do
     %Section{
-      title: "Section",
+      title: sequence("Section"),
       timezone: "America/New_York",
       registration_open: true,
       context_id: UUID.uuid4(),
@@ -194,6 +195,26 @@ defmodule Oli.Factory do
     }
   end
 
+  def lti_deployment_factory() do
+    %Deployment{
+      deployment_id: sequence("deployment_id"),
+      registration: insert(:lti_registration),
+      institution: insert(:institution)
+    }
+  end
+
+  def lti_registration_factory() do
+    %Registration{
+      auth_login_url: "some auth_login_url",
+      auth_server: "some auth_server",
+      auth_token_url: "some auth_token_url",
+      client_id: sequence("some client_id"),
+      issuer: "some issuer",
+      key_set_url: "some key_set_url",
+      tool_jwk_id: nil
+    }
+  end
+
   def community_member_account_factory() do
     %CommunityAccount{
       community: insert(:community),
@@ -230,7 +251,8 @@ defmodule Oli.Factory do
     %SectionResource{
       project: insert(:project),
       section: insert(:section),
-      resource_id: insert(:resource).id
+      resource_id: insert(:resource).id,
+      slug: sequence("some_slug")
     }
   end
 
