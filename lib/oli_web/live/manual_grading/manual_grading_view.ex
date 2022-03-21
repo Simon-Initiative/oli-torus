@@ -185,7 +185,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         <div style="padding: 20px; border: 2px inset rgba(28,110,164,0.17); border-radius: 22px;">
 
           <Tabs active={@active_tab} changed="change_tab"/>
-
           {#if @active_tab == :review}
             <RenderedActivity id={@attempt.attempt_guid} rendered_activity={@review_rendered}/>
           {#else}
