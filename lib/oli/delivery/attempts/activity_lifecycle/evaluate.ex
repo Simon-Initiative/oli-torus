@@ -1,13 +1,12 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Repo
-  alias Oli.Delivery.Evaluation.{Result, EvaluationContext, Standard, Adaptive}
+  alias Oli.Delivery.Evaluation.{Result, EvaluationContext, Standard}
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation, StudentInput}
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Attempts.Scoring
 
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
-  alias Oli.Activities.Model.Part
 
   alias Oli.Activities.Model
   import Oli.Delivery.Attempts.Core
@@ -540,38 +539,38 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     {:ok, %Model{parts: parts}} = Model.parse(activity_model)
 
-    # We need to tie the attempt_guid from the part_inputs to the attempt_guid
-    # from the %PartAttempt, and then the part id from the %PartAttempt to the
-    # part id in the parsed model.
-    part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
-    attempt_map = Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
-
     evaluations =
-      Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
-        attempt = Map.get(attempt_map, attempt_guid)
-        part = Map.get(part_map, attempt.part_id)
 
-        context = %EvaluationContext{
-          resource_attempt_number: resource_attempt.attempt_number,
-          activity_attempt_number: attempt_number,
-          part_attempt_number: attempt.attempt_number,
-          part_attempt_guid: attempt.attempt_guid,
-          input: input.input
-        }
+      case Model.parse(activity_model) do
+        {:ok, %Model{rules: []}} ->
+          # We need to tie the attempt_guid from the part_inputs to the attempt_guid
+          # from the %PartAttempt, and then the part id from the %PartAttempt to the
+          # part id in the parsed model.
+          part_map = Enum.reduce(parts, %{}, fn p, m -> Map.put(m, p.id, p) end)
 
-        impl = get_eval_impl(part)
-        impl.perform(attempt_guid, context, part)
-      end)
+          attempt_map =
+            Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
+
+          Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
+            attempt = Map.get(attempt_map, attempt_guid)
+            part = Map.get(part_map, attempt.part_id)
+
+            context = %EvaluationContext{
+              resource_attempt_number: resource_attempt.attempt_number,
+              activity_attempt_number: attempt_number,
+              part_attempt_number: attempt.attempt_number,
+              part_attempt_guid: attempt.attempt_guid,
+              input: input.input
+            }
+
+            Standard.perform(attempt_guid, context, part)
+          end)
+
+        _ ->
+          []
+      end
 
     {:ok, evaluations}
-  end
-
-  defp get_eval_impl(%Part{} = part) do
-    case Map.get(part, :outcomes) do
-      nil -> Standard
-      [] -> Standard
-      _ -> Adaptive
-    end
   end
 
   def rollup_submitted(activity_attempt_guid) do

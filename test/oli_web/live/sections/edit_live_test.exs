@@ -91,10 +91,11 @@ defmodule OliWeb.Sections.EditLiveTest do
       section = insert(:section, %{type: :enrollable})
       Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
 
-      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+      {:ok, _view, html} = live(conn, live_view_edit_route(section.slug))
 
-      assert render(view) =~
-               "Settings"
+      refute html =~ "Admin"
+      assert html =~ "Edit Section Details"
+      assert html =~ "Settings"
     end
   end
 
@@ -110,16 +111,14 @@ defmodule OliWeb.Sections.EditLiveTest do
     test "loads section data correctly", %{conn: conn} do
       section = insert(:section, open_and_free: true)
 
-      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+      {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
 
-      html = render(view)
-
+      assert html =~ "Admin"
+      assert html =~ "Edit Section Details"
       assert html =~ "Settings"
       assert html =~ "Manage the course section settings"
-
       assert html =~ "Direct Delivery"
       assert html =~ "Direct Delivery section settings"
-
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"#{section.description}\"]")
 
@@ -135,8 +134,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
       {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
 
-      assert render(view) =~
-               "Settings"
+      assert render(view) =~ "Settings"
 
       assert view
              |> element("option[selected=\"selected\"][value=\"#{section.brand_id}\"]")

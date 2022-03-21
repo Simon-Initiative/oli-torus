@@ -2,11 +2,6 @@ defmodule OliWeb.PageDeliveryController do
   use OliWeb, :controller
   require Logger
 
-  import OliWeb.ViewHelpers,
-    only: [
-      is_section_instructor_or_admin?: 2
-    ]
-
   import OliWeb.Common.FormatDateTime
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
@@ -172,20 +167,6 @@ defmodule OliWeb.PageDeliveryController do
         _ ->
           render(conn, "not_authorized.html")
       end
-    end
-  end
-
-  def updates(conn, %{"section_slug" => section_slug}) do
-    current_user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-
-    if Oli.Accounts.is_admin?(current_author) or
-         is_section_instructor_or_admin?(section_slug, current_user) do
-      section = Sections.get_section_by(slug: section_slug)
-
-      render(conn, "updates.html", section: section, title: "Manage Updates")
-    else
-      render(conn, "not_authorized.html")
     end
   end
 

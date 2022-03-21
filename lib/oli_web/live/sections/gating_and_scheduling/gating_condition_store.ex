@@ -17,7 +17,16 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     """
   end
 
-  def init(socket, module, section, context, title, parent_gate_id, gating_condition_id \\ nil) do
+  def init(
+        socket,
+        module,
+        section,
+        context,
+        title,
+        parent_gate_id,
+        user_type,
+        gating_condition_id \\ nil
+      ) do
     parent_gate =
       case parent_gate_id do
         nil -> nil
@@ -91,14 +100,15 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate),
+      delivery_breadcrumb: true,
+      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate, user_type),
       gating_condition: gating_condition,
       modal: nil
     )
   end
 
-  defp set_breadcrumbs(section, module, title, parent_gate) do
-    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate)
+  defp set_breadcrumbs(section, module, title, parent_gate, user_type) do
+    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate, user_type)
     |> breadcrumb(section, module, title)
   end
 

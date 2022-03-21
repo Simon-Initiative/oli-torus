@@ -21,16 +21,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_mailer_module: OliWeb,
       pow_assent: [
         user_identities_context: OliWeb.Pow.UserIdentities,
-        providers: [
-          google: [
-            client_id: System.get_env("GOOGLE_CLIENT_ID"),
-            client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
-            strategy: Assent.Strategy.Google,
-            authorization_params: [
-              scope: "email profile"
-            ]
-          ]
-        ]
+        providers: providers_config_list(:user)
       ]
     ]
   end
@@ -52,26 +43,7 @@ defmodule OliWeb.Pow.PowHelpers do
       web_mailer_module: OliWeb,
       pow_assent: [
         user_identities_context: OliWeb.Pow.AuthorIdentities,
-        providers: [
-          google: [
-            client_id: System.get_env("GOOGLE_CLIENT_ID"),
-            client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
-            strategy: Assent.Strategy.Google,
-            authorization_params: [
-              scope: "email profile"
-            ],
-            session_params: ["type"]
-          ],
-          github: [
-            client_id: System.get_env("GITHUB_CLIENT_ID"),
-            client_secret: System.get_env("GITHUB_CLIENT_SECRET"),
-            strategy: Assent.Strategy.Github,
-            authorization_params: [
-              scope: "read:user user:email"
-            ],
-            session_params: ["type"]
-          ]
-        ]
+        providers: providers_config_list(:author)
       ]
     ]
   end
@@ -229,4 +201,56 @@ defmodule OliWeb.Pow.PowHelpers do
     |> Naming.humanize()
     |> String.downcase()
   end
+
+  defp providers_config_list(user_type) do
+    []
+    |> maybe_add_provider(:github, user_type)
+    |> maybe_add_provider(:google, user_type)
+  end
+
+  defp maybe_add_provider(providers_list, provider, user_type) do
+    prefix =
+      if provider == :github do
+        "#{user_type}_#{provider}"
+      else
+        provider
+      end
+
+    client_id = Application.fetch_env!(:oli, :auth_providers)[:"#{prefix}_client_id"]
+    client_secret = Application.fetch_env!(:oli, :auth_providers)[:"#{prefix}_client_secret"]
+
+    if blank?(client_id) or blank?(client_secret) do
+      providers_list
+    else
+      Keyword.put(providers_list, provider, provider_config(provider, client_id, client_secret))
+    end
+  end
+
+  defp provider_config(:google, client_id, client_secret) do
+    [
+      client_id: client_id,
+      client_secret: client_secret,
+      strategy: Assent.Strategy.Google,
+      authorization_params: [
+        scope: "email profile"
+      ],
+      session_params: ["type"]
+    ]
+  end
+
+  defp provider_config(:github, client_id, client_secret) do
+    [
+      client_id: client_id,
+      client_secret: client_secret,
+      strategy: Assent.Strategy.Github,
+      authorization_params: [
+        scope: "read:user user:email"
+      ],
+      session_params: ["type"]
+    ]
+  end
+
+  defp blank?(nil), do: true
+  defp blank?(""), do: true
+  defp blank?(_), do: false
 end

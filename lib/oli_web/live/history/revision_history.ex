@@ -20,20 +20,33 @@ defmodule OliWeb.RevisionHistory do
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.History.RestoreRevisionModal
   alias Oli.Utils.SchemaResolver
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView
 
   @page_size 15
 
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
-    [{resource_id}] =
-      Repo.all(
-        from rev in Revision,
-          distinct: rev.resource_id,
-          where: rev.slug == ^slug,
-          select: {rev.resource_id}
-      )
+    case AuthoringResolver.from_revision_slug(project_slug, slug) do
+      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      revision ->
+        do_mount(revision, project_slug, socket)
+    end
 
+  end
+
+  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, _, socket) do
+    case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
+      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      revision ->
+        do_mount(revision, project_slug, socket)
+    end
+  end
+
+  defp do_mount(revision, project_slug, socket) do
     project = Course.get_project_by_slug(project_slug)
+    resource_id = revision.resource_id
+    slug = revision.slug
 
     Subscriber.subscribe_to_new_revisions(resource_id)
     Subscriber.subscribe_to_new_publications(project_slug)

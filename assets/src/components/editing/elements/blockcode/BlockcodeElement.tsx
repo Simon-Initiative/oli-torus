@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useState, useEffect, useRef } from 'react';
+import React, { PropsWithChildren, useState, useEffect, useRef, Suspense } from 'react';
 import { throttle } from 'lodash';
 import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
@@ -8,9 +8,11 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor } from 'slate';
 import * as monaco from 'monaco-editor';
-import MonacoEditor, { RefEditorInstance } from '@uiw/react-monacoeditor';
+import { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
 import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
+
+const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 
 const getInitialModel = (model: ContentModel.Code) => {
   const editor = useSlate();
@@ -90,21 +92,23 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
         ))}
       </DropdownSelect>
       <div ref={editorContainer} className="border">
-        <MonacoEditor
-          ref={editorRef}
-          value={value}
-          language={CodeLanguages.byPrettyName(props.model.language).monacoMode}
-          options={{
-            tabSize: 2,
-            scrollBeyondLastLine: false,
-            minimap: { enabled: false },
-            theme: isDarkMode() ? 'vs-dark' : 'vs-light',
-          }}
-          onChange={(code) => {
-            onEdit({ code });
-          }}
-          editorDidMount={editorDidMount}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+          <MonacoEditor
+            ref={editorRef}
+            value={value}
+            language={CodeLanguages.byPrettyName(props.model.language).monacoMode}
+            options={{
+              tabSize: 2,
+              scrollBeyondLastLine: false,
+              minimap: { enabled: false },
+              theme: isDarkMode() ? 'vs-dark' : 'vs-light',
+            }}
+            onChange={(code) => {
+              onEdit({ code });
+            }}
+            editorDidMount={editorDidMount}
+          />
+        </Suspense>
       </div>
 
       {props.children}

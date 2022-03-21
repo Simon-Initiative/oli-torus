@@ -20,7 +20,8 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
 
   @spec set_breadcrumbs(:admin | :user, atom | %{:slug => any, optional(any) => any}) :: [...]
   def set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 

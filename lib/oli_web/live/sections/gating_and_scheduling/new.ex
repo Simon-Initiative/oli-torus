@@ -12,18 +12,29 @@ defmodule OliWeb.Sections.GatingAndScheduling.New do
         %{"section_slug" => section_slug} = session,
         socket
       ) do
-    {parent_gate_id, title} =
-      case Map.get(params, "parent_gate_id") do
-        nil -> {nil, "Create Gating Condition"}
-        id -> {id, "Create Student Exception"}
-      end
-
-    context = SessionContext.init(session)
-
     case Mount.for(section_slug, session) do
-      {type, _author, section} when type in [:user, :author, :admin] ->
+      {:error, e} ->
+        Mount.handle_error(socket, {:error, e})
+
+      {user_type, _user, section} ->
+        {parent_gate_id, title} =
+          case Map.get(params, "parent_gate_id") do
+            nil -> {nil, "Create Gating Condition"}
+            id -> {id, "Create Student Exception"}
+          end
+
+        context = SessionContext.init(session)
+
         {:ok,
-         GatingConditionStore.init(socket, __MODULE__, section, context, title, parent_gate_id)}
+         GatingConditionStore.init(
+           socket,
+           __MODULE__,
+           section,
+           context,
+           title,
+           parent_gate_id,
+           user_type
+         )}
     end
   end
 

@@ -725,7 +725,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    get("/:section_slug/updates", PageDeliveryController, :updates)
+    live("/:section_slug/updates", Delivery.ManageUpdates, as: :section_updates)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
@@ -902,7 +902,8 @@ defmodule OliWeb.Router do
       :admin
     ])
 
-    live("/:project_id/history/:slug", RevisionHistory)
+    live("/:project_id/history/slug/:slug", RevisionHistory)
+    live("/:project_id/history/resource_id/:resource_id", RevisionHistory, as: :history_by_resource_id)
   end
 
   # Support for cognito JWT auth currently used by Infiniscope
