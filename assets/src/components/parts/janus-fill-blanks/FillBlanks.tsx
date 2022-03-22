@@ -425,7 +425,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       saveElements();
       setContentList(buildContentList());
     }
-    console.log('loop 3?');
   }, [elementValues, saveElements]);
 
   const getStateSelections = (snapshot: any) => {
@@ -499,7 +498,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
                       minimumResultsForSearch: 10,
                       selectOnClose: false,
                     }}
-                    onChange={(e: any) => handleInput(e.currentTarget)}
+                    onSelect={(e: any) => handleInput(e.currentTarget)}
                     disabled={!enabled}
                   />
                 </span>
