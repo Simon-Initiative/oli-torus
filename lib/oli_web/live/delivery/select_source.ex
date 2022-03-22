@@ -81,7 +81,7 @@ defmodule OliWeb.Delivery.SelectSource do
   def mount(_params, session, socket) do
     # SelectSource used in three routes.
     # live_action is :independent_learner, :admin or :lms_instructor
-    route = socket.assigns.live_action
+    live_action = socket.assigns.live_action
 
     lti_params =
       case session["lti_params_id"] do
@@ -99,28 +99,28 @@ defmodule OliWeb.Delivery.SelectSource do
       end
 
     sources =
-      retrieve_all_sources(route, %{user: user, lti_params: lti_params})
+      retrieve_all_sources(live_action, %{user: user, lti_params: lti_params})
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
     {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources)
 
     {:ok,
      assign(socket,
-       breadcrumbs: breadcrumbs(route),
+       breadcrumbs: breadcrumbs(live_action),
        delivery_breadcrumb: true,
        total_count: length(sources),
        table_model: table_model,
        sources: sources,
        user: user,
        lti_params: lti_params,
-       is_instructor: is_instructor?(route)
+       live_action: live_action
      )}
   end
 
   def render(assigns) do
     ~F"""
     <div class="d-flex flex-column mt-4">
-      {#if @is_instructor}
+      {#if is_instructor?(@live_action)}
         <h3>Select Curriculum</h3>
         <p class="mt-1 text-muted">Select a curriculum source to create your course section.</p>
       {/if}
@@ -138,7 +138,21 @@ defmodule OliWeb.Delivery.SelectSource do
         sort="sort"
         page_change="page_change"
         show_bottom_paging={false}
-        cards_view={@is_instructor}/>
+        cards_view={is_instructor?(@live_action)}/>
+
+      {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
+        <div class="row mb-5">
+          <div class="col-8 mx-auto">
+            <div class="card">
+              <div class="card-body text-center">
+                <h5 class="card-title">Have a Course Authoring Account?</h5>
+                <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+                <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
     </div>
     """
   end
@@ -194,4 +208,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp is_instructor?(:admin), do: false
   defp is_instructor?(_), do: true
+
+  defp is_lms_instructor?(:lms_instructor), do: true
+  defp is_lms_instructor?(_), do: false
 end
