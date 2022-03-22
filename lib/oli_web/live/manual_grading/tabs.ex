@@ -6,7 +6,7 @@ defmodule OliWeb.ManualGrading.Tabs do
 
   def render(assigns) do
     ~F"""
-    <ul class="nav nav-pills">
+    <ul class="nav nav-tabs">
       <li class="nav-item">
         <a class={active(assigns, :review)} :on-click={@changed} phx-value-tab={:review}>Student Submission</a>
       </li>

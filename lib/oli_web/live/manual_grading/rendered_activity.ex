@@ -11,8 +11,7 @@ defmodule OliWeb.ManualGrading.RenderedActivity do
 
   def render(assigns) do
     ~F"""
-    <hr class="mb-3 mt-3"/>
-    <div id={@id} phx-update="none">{raw(@rendered_activity)}</div>
+    <div class="mt-5" id={@id} phx-update="none">{raw(@rendered_activity)}</div>
     """
   end
 

@@ -10,11 +10,13 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Resources.Revision
-
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt
+    ActivityAttempt,
+    PartAttempt
   }
 
   @doc """
@@ -123,7 +125,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
       |> offset(^offset)
       |> select([aa, _, _, _, _, _], aa)
       |> select_merge(
-        [aa, _resource_attempt, _resource_access, user, activity_revision, resource_revision],
+        [aa, resource_attempt, resource_access, user, activity_revision, resource_revision],
         %{
           total_count: fragment("count(*) OVER()"),
           activity_type_id: activity_revision.activity_type_id,
@@ -131,7 +133,9 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
           page_title: resource_revision.title,
           graded: resource_revision.graded,
           user: user,
-          revision: activity_revision
+          revision: activity_revision,
+          resource_attempt_guid: resource_attempt.attempt_guid,
+          resource_access_id: resource_access.id
         }
       )
 
@@ -178,4 +182,58 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
 
     Repo.all(query)
   end
+
+  def evaluate(%Section{slug: section_slug}, activity_attempt, score_feedbacks_map) do
+
+    graded = activity_attempt.graded
+    resource_attempt_guid = activity_attempt.resource_attempt_guid
+
+    Oli.Repo.transaction(fn _ ->
+
+      with {:ok, {all_part_attempts, finalized_part_attempts}} <- finalize_part_attempts(activity_attempt, score_feedbacks_map),
+        {:ok, activity_attempt} <- Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid, :normalize),
+        {:ok, _} <- to_attempt_guid(finalized_part_attempts) |> Oli.Delivery.Snapshots.queue_or_create_snapshot(section_slug),
+        {:ok, _} <- maybe_finalize_resource_attempt(graded, resource_attempt_guid) do
+      else
+        e -> Repo.rollback(e)
+      end
+
+    end)
+  end
+
+  defp finalize_part_attempts(activity_attempt, score_feedbacks_map) do
+    part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+
+
+    Enum.filter(part_attempts, fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :submitted end)
+    |> Enum.reduce_while({part_attempts, []}, fn pa, {:ok, {all, updated}} ->
+      case Map.get(score_feedbacks_map, pa.attempt_guid) do
+        %{score: score, out_of: out_of, feedback: feedback} ->
+          case Core.update_part_attempt(pa, %{score: score, out_of: out_of, feedback: %{content: wrap_in_paragraphs(feedback)}}) do
+            {:ok, updated_part_attempt} -> {:cont, {:ok, {all, [updated_part_attempt | updated]}}}
+            e -> {:halt, e}
+          end
+        _ -> {:halt, {:error, "scoring feedback not found for attempt #{pa.attempt_guid}"}}
+      end
+    end)
+
+  end
+
+  defp maybe_finalize_resource_attempt(false, resource_attempt_guid), do: {:ok, resource_attempt_guid}
+
+  defp maybe_finalize_resource_attempt(true, resource_attempt_guid) do
+    Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(resource_attempt_guid)
+  end
+
+  defp to_attempt_guid(part_attempts) do
+    Enum.map(part_attempts, fn pa -> pa.attempt_guid end)
+  end
+
+  defp wrap_in_paragraphs(text) do
+    String.split(text, "\n")
+    |> Enum.map(fn text ->
+      %{type: "p", children: [%{text: text}]}
+    end)
+  end
+
 end

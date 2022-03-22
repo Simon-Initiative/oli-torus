@@ -21,6 +21,8 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     belongs_to(:resource_attempt, Oli.Delivery.Attempts.Core.ResourceAttempt)
     has_many(:part_attempts, Oli.Delivery.Attempts.Core.PartAttempt)
 
+    field :resource_access_id, :integer, virtual: true
+    field :resource_attempt_guid, :string, virtual: true
     field :activity_type_id, :integer, virtual: true
     field :activity_title, :string, virtual: true
     field :page_title, :string, virtual: true
