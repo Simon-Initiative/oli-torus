@@ -1,7 +1,8 @@
 defmodule OliWeb.Delivery.SelectSource.TableModel do
+  use Surface.LiveComponent
+
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  use Surface.LiveComponent
 
   def new(products) do
     SortableTableModel.new(
@@ -69,53 +70,41 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
 
       %{requires_payment: amount}
     end,
-     ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
   end
 
   def render_title_column(assigns, item, _) do
-    case is_product?(item) do
-      true ->
-        route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)
-        SortableTableModel.render_link_column(assigns, item.title, route_path)
-
-      _ ->
-        route_path = Routes.project_path(OliWeb.Endpoint, :overview, item.project.slug)
-        SortableTableModel.render_link_column(assigns, item.project.title, route_path)
+    if is_product?(item) do
+      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, item.slug)
+      SortableTableModel.render_link_column(assigns, item.title, route_path)
+    else
+      route_path = Routes.project_path(OliWeb.Endpoint, :overview, item.project.slug)
+      SortableTableModel.render_link_column(assigns, item.project.title, route_path)
     end
   end
 
-  def sort_title_column(sort_order, sort_spec),
-    do:
-      {fn item -> if is_product?(item),
-        do: Map.put(item, :title, String.downcase(item.title)),
-        else: Map.put(item.project, :title, String.downcase(item.project.title)) end,
-       ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+  def sort_title_column(sort_order, sort_spec) do
+    {fn item -> if is_product?(item),
+      do: Map.put(item, :title, String.downcase(item.title)),
+      else: Map.put(item.project, :title, String.downcase(item.project.title))
+    end,
+    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+  end
 
   def render_action_column(assigns, item, _) do
-    id =
-      case is_product?(item) do
-        true ->
-          "product:#{item.id}"
-
-        _ ->
-          "publication:#{item.id}"
-      end
+    id = if is_product?(item), do: "product:#{item.id}", else: "publication:#{item.id}"
 
     ~F"""
-    <button class="btn btn-primary" phx-click="selected" phx-value-id={id}>Select</button>
+      <button class="btn btn-primary" phx-click="selected" phx-value-id={id}>Select</button>
     """
   end
 
-  def render_type_column(_, item, _) do
-    case is_product?(item) do
-      true -> "Product"
-      _ -> "Course Project"
-    end
-  end
+  def render_type_column(_, item, _),
+    do: if is_product?(item), do: "Product", else: "Course Project"
 
   def render(assigns) do
     ~F"""
-    <div>nothing</div>
+      <div>nothing</div>
     """
   end
 end

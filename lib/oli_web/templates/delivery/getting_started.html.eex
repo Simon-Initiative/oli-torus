@@ -6,7 +6,7 @@
     <div class="card-body">
       <img class="card-img m-2" src="/images/icons/icon-copy.svg" alt="Standard Quick Start icon">
       <p class="card-text body-color">Click Start to select a base curriculum for your course. After you complete section setup, you can customize or add to the contents of your course.</p>
-      <a href="<%= Routes.select_source_path(OliWeb.Endpoint, :from_lms) %>" class="btn btn-outline-primary">Start</a>
+      <a href="<%= Routes.select_source_path(OliWeb.Endpoint, :lms_instructor) %>" class="btn btn-outline-primary">Start</a>
     </div>
   </div>
 </div>

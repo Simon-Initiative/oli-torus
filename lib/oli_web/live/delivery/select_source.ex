@@ -12,9 +12,7 @@ defmodule OliWeb.Delivery.SelectSource do
 
   import Oli.Utils
 
-  data breadcrumbs, :any,
-    default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
-
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
   data title, :string, default: "Select Source for New Section"
   data sources, :list, default: []
   data table_model, :struct
@@ -31,13 +29,13 @@ defmodule OliWeb.Delivery.SelectSource do
     OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(:admin)
   end
 
-  def breadcrumbs(:from_lms) do
+  def breadcrumbs(:lms_instructor) do
     breadcrumb([
       Breadcrumb.new(%{
         full_title: "Create Course Section",
         link: Routes.delivery_path(OliWeb.Endpoint, :index)
       })
-    ], :from_lms, "Start")
+    ], :lms_instructor, "Start")
   end
 
   def breadcrumbs(:independent_learner) do
@@ -82,13 +80,12 @@ defmodule OliWeb.Delivery.SelectSource do
 
   def mount(_params, session, socket) do
     # SelectSource used in three routes.
-    # live_action is :independent_learner, :admin or :from_lms
+    # live_action is :independent_learner, :admin or :lms_instructor
     route = socket.assigns.live_action
 
     lti_params =
       case session["lti_params_id"] do
-        nil ->
-          nil
+        nil -> nil
 
         lti_params_id ->
           %{params: lti_params} = LtiParams.get_lti_params(lti_params_id)
@@ -149,7 +146,7 @@ defmodule OliWeb.Delivery.SelectSource do
   def handle_event("selected", %{"id" => source}, socket),
     do: handle_select(socket.assigns.live_action, source, socket)
 
-  defp handle_select(:from_lms, source, socket) do
+  defp handle_select(:lms_instructor, source, socket) do
     case Delivery.create_section(
            source,
            socket.assigns.user,
@@ -192,7 +189,7 @@ defmodule OliWeb.Delivery.SelectSource do
   defp retrieve_all_sources(:independent_learner, %{user: user}),
     do: Publishing.retrieve_visible_sources(user, nil)
 
-  defp retrieve_all_sources(:from_lms, %{user: user, lti_params: lti_params}),
+  defp retrieve_all_sources(:lms_instructor, %{user: user, lti_params: lti_params}),
     do: Delivery.retrieve_visible_sources(user, lti_params)
 
   defp is_instructor?(:admin), do: false

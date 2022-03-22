@@ -12,12 +12,11 @@ defmodule Oli.Delivery do
   @roles_claims "https://purl.imsglobal.org/spec/lti/claim/roles"
 
   def retrieve_visible_sources(user, lti_params) do
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
-    deployment_id = lti_params[@deployment_claims]
-
     {institution, _registration, _deployment} =
-      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
+      Institutions.get_institution_registration_deployment(
+        lti_params["iss"],
+        lti_params["aud"],
+        lti_params[@deployment_claims])
 
     Publishing.retrieve_visible_sources(user, institution)
   end
@@ -26,15 +25,11 @@ defmodule Oli.Delivery do
     # guard against creating a new section if one already exists
     case Sections.get_section_from_lti_params(lti_params) do
       nil ->
-        issuer = lti_params["iss"]
-        client_id = lti_params["aud"]
-        deployment_id = lti_params[@deployment_claims]
-
         {institution, _registration, deployment} =
           Institutions.get_institution_registration_deployment(
-            issuer,
-            client_id,
-            deployment_id
+            lti_params["iss"],
+            lti_params["aud"],
+            lti_params[@deployment_claims]
           )
 
         # create section, section resources and enroll instructor
@@ -46,7 +41,6 @@ defmodule Oli.Delivery do
             "product:" <> product_id ->
               {&create_from_product/5, String.to_integer(product_id)}
           end
-
         create_fn.(id, user, institution, lti_params, deployment)
 
       section ->
@@ -83,7 +77,6 @@ defmodule Oli.Delivery do
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
-
       enroll(user.id, section.id, lti_params)
 
       section
@@ -108,9 +101,7 @@ defmodule Oli.Delivery do
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
-
       {:ok, %Section{}} = Sections.create_section_resources(section, publication)
-
       enroll(user.id, section.id, lti_params)
 
       section

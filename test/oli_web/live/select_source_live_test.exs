@@ -13,7 +13,7 @@ defmodule OliWeb.SelectSourceTest do
 
   @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
   @live_view_independent_learner_route Routes.select_source_path(OliWeb.Endpoint, :independent_learner)
-  @live_view_from_lms_route Routes.select_source_path(OliWeb.Endpoint, :from_lms)
+  @live_view_lms_instructor_route Routes.select_source_path(OliWeb.Endpoint, :lms_instructor)
 
   describe "user cannot access when is not logged in" do
     test "redirects to new session when accessing the admin view", %{conn: conn} do
@@ -31,7 +31,7 @@ defmodule OliWeb.SelectSourceTest do
     test "redirects to new session when accessing the lms instructor view", %{conn: conn} do
       {:error,
        {:redirect, %{to: "/session/new?request_path=%2Fcourse%2Fselect_project"}}} =
-        live(conn, @live_view_from_lms_route)
+        live(conn, @live_view_lms_instructor_route)
     end
   end
 
@@ -256,7 +256,7 @@ defmodule OliWeb.SelectSourceTest do
     setup [:lms_instructor_conn]
 
     test "loads correctly when there are no sections", %{conn: conn} do
-      {:ok, view, _html} = live(conn, @live_view_from_lms_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       assert has_element?(view, "p", "None exist")
     end
@@ -265,7 +265,7 @@ defmodule OliWeb.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_from_lms_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       refute has_element?(view, "button[phx-click=\"selected\"]")
       assert has_element?(view, "img[alt=\"course image\"]")
@@ -278,7 +278,7 @@ defmodule OliWeb.SelectSourceTest do
       s1 = insert(:section, %{base_project: project, title: "Testing"})
       s2 = insert(:section, %{base_project: project})
 
-      {:ok, view, _html} = live(conn, @live_view_from_lms_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       view
       |> element("input[phx-blur=\"change_search\"]")
@@ -304,7 +304,7 @@ defmodule OliWeb.SelectSourceTest do
       insert(:section, %{base_project: project, title: "Testing A"})
       insert(:section, %{base_project: project, title: "Testing B"})
 
-      {:ok, view, _html} = live(conn, @live_view_from_lms_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       view
       |> element("form[phx-change=\"sort\"")
@@ -353,7 +353,7 @@ defmodule OliWeb.SelectSourceTest do
         root_section_resource_id: section_resource.id
       })
 
-      {:ok, view, _html} = live(conn, @live_view_from_lms_route)
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
 
       view
       |> element("a[phx-value-id=\"product:#{section.id}\"]")
@@ -374,13 +374,12 @@ defmodule OliWeb.SelectSourceTest do
     {:ok, instructor} =
       Accounts.update_user_platform_roles(
         insert(:user, %{can_create_sections: true, independent_learner: true}),
-        [
-          Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)
-        ]
+        [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
       )
 
     conn =
-      Plug.Test.init_test_session(conn, lti_session: nil)
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn}
@@ -391,10 +390,7 @@ defmodule OliWeb.SelectSourceTest do
     tool_jwk = jwk_fixture()
     registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
     deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
-
     instructor = insert(:user)
-
-    conn = Plug.Test.init_test_session(conn, lti_session: nil)
 
     lti_param_ids = %{
       instructor:
@@ -419,6 +415,7 @@ defmodule OliWeb.SelectSourceTest do
 
     conn =
       conn
+      |> Plug.Test.init_test_session(lti_session: nil)
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
       |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
 

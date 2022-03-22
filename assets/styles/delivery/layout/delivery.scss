@@ -20,7 +20,7 @@ body {
 
   .fade-text {
     height: 4em;
-    -webkit-mask-image: linear-gradient(180deg, #000 10%, transparent);
+    overflow: hidden;
   }
 
   .small-date {

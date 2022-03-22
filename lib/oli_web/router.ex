@@ -800,7 +800,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
     get("/", DeliveryController, :index)
-    live("/select_project", Delivery.SelectSource, :from_lms, as: :select_source)
+    live("/select_project", Delivery.SelectSource, :lms_instructor, as: :select_source)
 
     post("/research_consent", DeliveryController, :research_consent)
   end
