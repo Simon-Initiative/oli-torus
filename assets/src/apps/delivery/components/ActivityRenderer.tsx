@@ -1,5 +1,5 @@
-/* eslint-disable react/prop-types */
-import { defaultGlobalEnv, getValue } from 'adaptivity/scripting';
+import { CapiVariableTypes } from 'adaptivity/capi';
+import { defaultGlobalEnv, getValue, templatizeText } from 'adaptivity/scripting';
 import {
   EvaluationResponse,
   PartActivityResponse,
@@ -16,11 +16,13 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
+import * as Extrinsic from 'data/persistence/extrinsic';
 import { Environment } from 'janus-script';
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
+import { handleValueExpression } from '../layouts/deck/DeckLayoutFooter';
 import { selectCurrentActivityId } from '../store/features/activities/slice';
 import {
   CheckResults,
@@ -31,13 +33,9 @@ import {
   selectLastMutateChanges,
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
-import * as Extrinsic from 'data/persistence/extrinsic';
+import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
-import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { templatizeText } from './TextParser';
-import { CapiVariableTypes } from 'adaptivity/capi';
-import { handleValueExpression } from '../layouts/deck/DeckLayoutFooter';
 
 interface ActivityRendererProps {
   activity: ActivityModelSchema;

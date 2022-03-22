@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import { templatizeText } from 'apps/delivery/components/TextParser';
+import { templatizeText } from 'adaptivity/scripting';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
