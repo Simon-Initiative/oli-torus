@@ -15,8 +15,6 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   part attempt.  That would enable a user to visit this view, enter feedback and scores for a student (but not
   apply them) and then navigate away, return to the view and still see that work.
 
-
-
   """
 
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}

@@ -15,9 +15,19 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   alias Oli.Delivery.Attempts.Core.{
     ResourceAccess,
     ResourceAttempt,
-    ActivityAttempt,
-    PartAttempt
+    ActivityAttempt
   }
+
+  def count_submitted_attempts(%Section{} = section) do
+    case browse_submitted_attempts(
+      section,
+      %Paging{limit: 1, offset: 0},
+      %Sorting{field: :date_submitted, direction: :asc},
+      %BrowseOptions{user_id: nil, activity_id: nil, text_search: nil, page_id: nil, graded: nil}) do
+      [] -> 0
+      [item] -> item.total_count
+    end
+  end
 
   @doc """
   Browsing-based query support for activity attempts that require manual grading.
