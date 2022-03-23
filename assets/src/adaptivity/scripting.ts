@@ -25,7 +25,7 @@ export const evaluateJsonObject = (jsonObj: any, env: Environment = defaultGloba
     return jsonObj.map((item) => evaluateJsonObject(item, env));
   }
 
-  if (typeof jsonObj === 'object') {
+  if (typeof jsonObj === 'object' && !!jsonObj) {
     const newObj: any = {};
     for (const key of Object.keys(jsonObj)) {
       newObj[key] = evaluateJsonObject(jsonObj[key], env);
