@@ -28,5 +28,5 @@ export const Hooks = {
   SystemMessage,
   MonacoEditor,
   TooltipInit,
-  BeforeUnloadListener
+  BeforeUnloadListener,
 };
