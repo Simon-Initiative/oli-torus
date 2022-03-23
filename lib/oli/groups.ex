@@ -5,6 +5,7 @@ defmodule Oli.Groups do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
@@ -136,24 +137,31 @@ defmodule Oli.Groups do
 
   """
   def find_or_create_community_user_account(user_id, community_id) do
-    Repo.transaction(fn _ ->
-      case Repo.one(
-             from(account in CommunityAccount,
-               where:
-                 account.user_id == ^user_id and
-                   account.community_id == ^community_id
-             )
-           ) do
-        nil ->
-          {:ok, account} =
-            create_community_account(%{user_id: user_id, community_id: community_id})
+    get_community_account = fn _, _ ->
+      {:ok, get_community_account_by!(%{user_id: user_id, community_id: community_id})}
+    end
 
-          account
+    create_community_account_unless_exists = fn
+      _repo, %{community_account: nil} ->
+        create_community_account(%{user_id: user_id, community_id: community_id})
 
-        account ->
-          account
-      end
-    end)
+      _repo, %{community_account: community_account} ->
+        {:ok, community_account}
+    end
+
+    res =
+      Multi.new()
+      |> Multi.run(:community_account, get_community_account)
+      |> Multi.run(:new_community_account, create_community_account_unless_exists)
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{new_community_account: community_account}} ->
+        {:ok, community_account}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
