@@ -11,6 +11,7 @@ import { CopyListener } from './copy_listener';
 import { SystemMessage } from './system_message';
 import { MonacoEditor } from './monaco_editor';
 import { TooltipInit } from './tooltip';
+import { BeforeUnloadListener } from './before_unload';
 
 export const Hooks = {
   GraphNavigation,
@@ -27,4 +28,5 @@ export const Hooks = {
   SystemMessage,
   MonacoEditor,
   TooltipInit,
+  BeforeUnloadListener
 };

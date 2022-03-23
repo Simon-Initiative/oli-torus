@@ -1,21 +1,32 @@
 defmodule OliWeb.ManualGrading.FilterButton do
-  use Surface.LiveComponent
+  use Surface.Component
 
   prop clicked, :event, required: true
   prop label, :string, required: true
   prop active, :boolean, required: true
   prop tooltip, :string, required: true
+  prop selection, :boolean, required: true
   prop key, :any, required: true
 
   def render(%{active: true} = assigns) do
-    ~F"""
-    <button id={@id} phx-hook="TooltipInit" data-toggle="tooltip" data-placement="bottom" title={@tooltip} type="button" class="btn btn-info" :on-click={@clicked} phx-value-key={@key} phx-value-active={"false"}>{@label}</button>
-    """
+    do_render(assigns, "btn btn-info", "false")
   end
 
   def render(assigns) do
+    do_render(assigns, "btn btn-outline-secondary", "true")
+  end
+
+  def do_render(assigns, classes, active) do
     ~F"""
-    <button  id={@id} phx-hook="TooltipInit" data-toggle="tooltip" data-placement="bottom" title={@tooltip} type="button" class="btn btn-outline-secondary" :on-click={@clicked} phx-value-key={@key} phx-value-active={"true"}>{@label}</button>
+      <button
+        disabled={!@selection}
+        type="button"
+        data-toggle="tooltip"
+        title={@tooltip}
+        class={classes}
+        :on-click={@clicked} phx-value-key={@key} phx-value-active={active}>
+        {@label}
+      </button>
     """
   end
 end

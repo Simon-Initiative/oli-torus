@@ -1,5 +1,12 @@
 export const TooltipInit = {
   mounted() {
-    ($(this.el) as any).tooltip();
+    console.log('tooltip init')
+    const id = this.el.getAttribute('id');
+    ($('#' + id) as any).tooltip();
+  },
+  updated() {
+    console.log('tooltip init')
+    const id = this.el.getAttribute('id');
+    ($('#' + id) as any).tooltip();
   }
 };

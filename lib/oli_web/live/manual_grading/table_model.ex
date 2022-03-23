@@ -16,15 +16,22 @@ defmodule OliWeb.ManualGrading.TableModel do
           label: "Activity"
         },
         %ColumnSpec{
+          name: :attempt_number,
+          label: "Attempt"
+        },
+        %ColumnSpec{
           name: :page_title,
           label: "Page"
+        },
+        %ColumnSpec{
+          name: :resource_attempt_number,
+          label: "Attempt"
         },
         date_submitted_spec(),
         %ColumnSpec{
           name: :activity_type_id,
           label: "Activity Type",
           render_fn: &__MODULE__.render_activity_type/3
-
         },
         %ColumnSpec{
           name: :graded,

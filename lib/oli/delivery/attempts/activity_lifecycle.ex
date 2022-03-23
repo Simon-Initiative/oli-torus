@@ -150,6 +150,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                             attempt_guid: UUID.uuid4(),
                             attempt_number: 1,
                             part_id: p.part_id,
+                            grading_approach: p.grading_approach,
                             response: response,
                             activity_attempt_id: new_activity_attempt.id
                           }) do
