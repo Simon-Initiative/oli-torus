@@ -5,6 +5,8 @@ defmodule Oli.AccountsTest do
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias Oli.Groups
+  alias Oli.Groups.CommunityAccount
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -196,6 +198,38 @@ defmodule Oli.AccountsTest do
 
       assert %Author{community_admin_count: 2} =
                Accounts.get_author_with_community_admin_count(community_account.author_id)
+    end
+
+    test "setup_sso_user/2 returns the created user and associates it to the given community" do
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+      {:ok, user} = Accounts.setup_sso_user(fields, community.id)
+
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+    end
+
+    test "setup_sso_user/2 returns an error and rollbacks the insertions when data is invalid" do
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+
+      assert {:error,
+              %Ecto.Changeset{
+                errors: [
+                  community_id:
+                    {"does not exist",
+                     [
+                       constraint: :foreign,
+                       constraint_name: "communities_accounts_community_id_fkey"
+                     ]}
+                ]
+              }} = Accounts.setup_sso_user(fields, 0)
+
+      refute Accounts.get_user_by(%{sub: "sub", email: "email"})
     end
   end
 
