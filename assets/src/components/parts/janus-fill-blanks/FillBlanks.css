@@ -92,7 +92,7 @@
   width: auto !important;
   height: auto;
   min-height: 26px;
-  padding: 2rem 0 0 0;
+  /* padding: 2rem 0 0 0; */
   max-width: calc(100vw - 34px) !important;
   vertical-align: top;
   display: initial !important;
