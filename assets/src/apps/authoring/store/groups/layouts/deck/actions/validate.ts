@@ -86,17 +86,26 @@ const checkExpressionsWithWrongBrackets = (value: string) => {
   const lstEvaluatedExpression: Record<string, string> = {};
   allexpression.forEach((expression) => {
     const actualExpression = expression;
-    const result = expression.match(/{([^{^}]+)}/g) || [];
-    const obj: Record<string, string> = {};
-    for (let i = 0; i < result?.length; i++) {
-      obj['obj' + i] = result[i];
-      expression = expression.replace(result[i], 'obj' + i);
-    }
-    expression = expression.replace(new RegExp('{', 'g'), '(');
-    expression = expression.replace(new RegExp('}', 'g'), ')');
-    for (let i = 0; i < result?.length; i++) {
-      obj['obj' + i] = result[i];
-      expression = expression.replace('obj' + i, obj['obj' + i]);
+    let result = expression.match(/{([^{^}]+)}/g) || [];
+    result = result.filter(
+      (expression) =>
+        !expression.includes(';') &&
+        !expression.includes(',') &&
+        expression.includes('.') &&
+        !expression.includes(' '),
+    );
+    if (result?.length) {
+      const obj: Record<string, string> = {};
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace(result[i], 'obj' + i);
+      }
+      expression = expression.replace(new RegExp('{', 'g'), '(');
+      expression = expression.replace(new RegExp('}', 'g'), ')');
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace('obj' + i, obj['obj' + i]);
+      }
     }
     lstEvaluatedExpression[actualExpression] = expression;
   });
