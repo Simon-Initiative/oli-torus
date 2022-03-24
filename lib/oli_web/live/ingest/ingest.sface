@@ -3,39 +3,54 @@
   <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
   <hr class="my-4">
 
-    <%= case assigns[:error] do %>
-      <% nil -> %>
+    {#case assigns[:error]}
+      {#match nil}
 
-      <% {:error, {:invalid_json, schema, errors, json}} = error -> %>
+      {#match {:error, {:invalid_json, schema, errors, json}} = error }
         <div class="alert alert-danger" role="alert">
-          <p><%= prettify_error(error) %></p>
+          <p>{ Ingest.prettify_error(error) }</p>
 
-          <%= render "_json_schema_error_viewer", schema: schema, errors: errors, json: json %>
+          <MonacoEditor
+            id="schema_errors"
+            language="json"
+            height={500}
+            default_value={json |> Jason.encode!() |> Jason.Formatter.pretty_print()}
+            validate_schema_uri={schema.schema["$id"]} />
+
+          <p class="m-2">The following issues were found:</p>
+
+          <ul class="list-group">
+            {#for {err, path} <- errors}
+              <li class="list-group-item"><i class="las la-times-circle mr-2"></i>{err} {path}</li>
+            {/for}
+          </ul>
+
         </div>
 
-      <% error -> %>
+      {#match error }
         <div class="alert alert-danger" role="alert">
-          <%= prettify_error(error) %>
+          { Ingest.prettify_error(error) }
         </div>
-    <% end %>
+    {/case}
 
-    <%= form_for @conn, "ingest", [as: :upload, multipart: true], fn f -> %>
-
+    <form id="json-upload" phx-change="validate" phx-submit="save">
       <div class="form-group">
         <label>Step 1. Select a Course Archive</label>
-        <%= file_input f, :digest, class: "form-control" %>
+        <div class="flex my-3" phx-drop-target={@uploads.digest.ref}>
+          { live_file_input @uploads.digest }
+        </div>
       </div>
 
       <div class="form-group">
         <label>Step 2. Upload Course Archive for Ingestion</label>
-        <div><%= submit "Ingest", class: "btn btn-primary" %></div>
+        <div><button class="btn btn-primary">Ingest</button></div>
       </div>
 
       <div class="form-group">
         <label>Step 3. Upon successful ingestion, you will then be redirected
         to the Overview page of the new course project.</label>
       </div>
-    <% end %>
+    </form>
 
     <hr class="my-4">
 

@@ -857,8 +857,7 @@ defmodule OliWeb.Router do
     live("/system_messages", SystemMessageLive.IndexView)
 
     # Course Ingestion
-    get("/ingest", IngestController, :index)
-    post("/ingest", IngestController, :upload)
+    live("/ingest", Admin.Ingest)
 
     # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)
