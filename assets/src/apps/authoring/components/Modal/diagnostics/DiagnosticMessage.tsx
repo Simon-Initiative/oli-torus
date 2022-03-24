@@ -82,8 +82,6 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
   let action;
-  console.log({ props });
-
   switch (type) {
     case DiagnosticTypes.DUPLICATE:
       action = <DupeMessage {...props} />;

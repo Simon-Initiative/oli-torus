@@ -80,7 +80,10 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
       return false;
   }
 };
-
+function setCharAt(str: string, index: number, chr: string) {
+  if (index > str.length - 1) return str;
+  return str.substring(0, index) + chr + str.substring(index + 1);
+}
 const checkExpressionsWithWrongBrackets = (expressions: string) => {
   let str = expressions;
   const result = str.match(/{([^{^}]+)}/g) || [];
@@ -94,9 +97,16 @@ const checkExpressionsWithWrongBrackets = (expressions: string) => {
   }
   const singleVaribleExpressionCheck = extractExpressionFromText(str);
   let isSingleVariable = false;
+  let containsTextOtherThanExpression = false;
+  const firstOpeningCurrly = expressions.indexOf('{');
+  const LastClosingCurrly = expressions.lastIndexOf('}');
   if (`{${singleVaribleExpressionCheck}}` === str) {
     str = str.substring(1, str.length - 1);
     isSingleVariable = true;
+  } else {
+    containsTextOtherThanExpression = str.replace(`${singleVaribleExpressionCheck}`, '')?.length
+      ? true
+      : false;
   }
   str = str.replace(new RegExp('{', 'g'), '(');
   str = str.replace(new RegExp('}', 'g'), ')');
@@ -108,6 +118,9 @@ const checkExpressionsWithWrongBrackets = (expressions: string) => {
 
   if (isSingleVariable) {
     str = `{${str}}`;
+  } else if (containsTextOtherThanExpression && result.length === 1) {
+    str = setCharAt(str, firstOpeningCurrly, '{');
+    str = setCharAt(str, LastClosingCurrly, '}');
   }
   return str;
 };

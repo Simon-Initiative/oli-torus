@@ -68,10 +68,12 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
         : 'initState';
 
     const activity = result.meta.arg.activity;
-    const rule = activity.authoring.rules.find((rule: AdaptiveRule) => rule.id === ruleId);
+    if (activity) {
+      const rule = activity.authoring.rules.find((rule: AdaptiveRule) => rule.id === ruleId);
 
-    // TODO: something if it fails
-    dispatch(setCurrentRule({ currentRule: rule }));
+      // TODO: something if it fails
+      dispatch(setCurrentRule({ currentRule: rule }));
+    }
     onApplyFix();
   };
 

@@ -16,14 +16,14 @@ export const updateId = (problem: any, fixed: string) => {
 };
 
 export const updateParts = (problem: any, fixed: string) => {
-  console.log({ problem });
-
   const activityId = problem.owner.resourceId;
   const partId = problem.item.part.id;
-  const changes = { id: problem.item.suggestedFix };
-  console.log({ activityId, partId, changes });
-
-  //return updatePart({ activityId, partId, changes });
+  const changes = {
+    item: problem.item.item,
+    suggestedFix: problem.item.suggestedFix,
+    type: problem.item.type,
+  };
+  return updatePart({ activityId, partId, changes });
 };
 
 export const updateRule = (rule: any, problem: any, activities: any) => {

@@ -17,7 +17,7 @@ export const updatePart = createAsyncThunk(
   async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, payload.activityId);
-
+    console.log({ payload });
     const undo: any[] = [];
     const redo: any[] = [];
 
@@ -77,6 +77,32 @@ export const updatePart = createAsyncThunk(
           undo.unshift(bulkSaveActivity({ activities: orig, undoable: false }));
           redo.unshift(bulkSaveActivity({ activities: activitiesToUpdate, undoable: false }));
         }
+      }
+    } else if (payload.changes.suggestedFix) {
+      if (payload.changes.type === 'janus-capi-iframe') {
+        const configChanges = {
+          custom: {
+            configData: [
+              {
+                key: payload.changes.item.key,
+                type: payload.changes.item.type,
+                value: payload.changes.suggestedFix,
+              },
+            ],
+          },
+        };
+        merge(partDef, configChanges);
+      } else if (payload.changes.type === 'janus-mcq') {
+        const configChanges = {
+          custom: {
+            mcqItems: [
+              {
+                nodes: [payload.changes.suggestedFix],
+              },
+            ],
+          },
+        };
+        merge(partDef, configChanges);
       }
     }
 
