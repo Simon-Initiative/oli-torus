@@ -27,8 +27,7 @@ interface SelectOption {
 
 const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   const id: string = props.id;
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : []);
+  const [model, setModel] = useState<any>(props.model);
   const [localSnapshot, setLocalSnapshot] = useState<any>({});
   const [stateChanged, setStateChanged] = useState<boolean>(false);
   const [mutateState, setMutateState] = useState<any>({});
@@ -46,44 +45,33 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
   const [attempted, setAttempted] = useState<boolean>(false);
   const [contentList, setContentList] = useState<any[]>([]);
-  const [elementValues, setElementValues] = useState<any[]>([]);
-  const [newElement, setNewElement] = useState<SelectOption>();
+  const [elementValues, setElementValues] = useState<SelectOption[]>([]);
 
-  useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
+  const getElementValueByKey = useCallback(
+    (key: string) => {
+      // get value from `elementValues` based on key
+      if (!key || typeof key === 'undefined' || !elementValues?.length) {
+        return '';
       }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
-    initialize(pModel);
-  }, [props]);
+      const val = elementValues?.find((obj) => obj.key === key);
+      return val && val?.value ? val.value.toString() : '';
+    },
+    [elementValues],
+  );
+
   const prevElementValues = usePrevious<any[]>(elementValues);
 
-  const [enabled, setEnabled] = useState<boolean>(model?.enabled ? parseBool(model.enabled) : true);
+  const [enabled, setEnabled] = useState<boolean>(
+    model?.enabled !== undefined ? parseBool(model.enabled) : true,
+  );
   const [correct, setCorrect] = useState<boolean>(
-    model?.correct ? parseBool(model.correct) : false,
+    model?.correct !== undefined ? parseBool(model.correct) : false,
   );
   const [showCorrect, setShowCorrect] = useState<boolean>(
-    model?.showCorrect ? parseBool(model.showCorrect) : false,
+    model?.showCorrect !== undefined ? parseBool(model.showCorrect) : false,
   );
   const [showHints, setShowHints] = useState<boolean>(
-    model?.showHints ? parseBool(model.showHints) : false,
+    model?.showHints !== undefined ? parseBool(model.showHints) : false,
   );
   const [customCss, setCustomCss] = useState<string>(model?.customCss ? model.customCss : '');
   const [customCssClass, setCustomCssClass] = useState<string>(
@@ -91,15 +79,11 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   );
   const [ready, setReady] = useState<boolean>(false);
   const wrapperStyles: CSSProperties = {
-    /* position: 'absolute',
-    top: y,
-    left: x,
-    width,
-    zIndex: z, */
     height,
     borderRadius: '5px',
     fontFamily: 'revert',
   };
+
   useEffect(() => {
     const styleChanges: any = {};
     if (width !== undefined) {
@@ -110,31 +94,33 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     }
     props.onResize({ id: `${id}`, settings: styleChanges });
   }, [width, height]);
+
   const initialize = useCallback(async (pModel) => {
     const partResponses: any[] = pModel?.elements?.map((el: any) => {
-      const val: string = getElementValueByKey(el.key);
       const index: number = pModel?.elements?.findIndex((o: any) => o.key === el.key);
 
       return [
         {
           key: `Input ${index + 1}.Value`,
           type: CapiVariableTypes.STRING,
-          value: val || '',
+          value: '',
         },
         {
           key: `Input ${index + 1}.Correct`,
           type: CapiVariableTypes.BOOLEAN,
-          value: isCorrect(val, el.correct, el.alternateCorrect),
+          value: false,
         },
         { key: `showCorrect`, type: CapiVariableTypes.BOOLEAN, value: pModel.showCorrect },
         { key: `showHints`, type: CapiVariableTypes.BOOLEAN, value: pModel.showHints },
       ];
     });
     const elementPartResponses = [].concat(...partResponses);
+
     const initResult = await props.onInit({
       id,
       responses: [...elementPartResponses],
     });
+
     //customCss comes from model and it was assigning blank value to customCss variable on line #85. Once model is updated
     //need to assign the update values to the variable
     if (pModel?.customCss) {
@@ -151,14 +137,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const sShowCorrect = currentStateSnapshot[`stage.${id}.showCorrect`];
     if (sShowCorrect) {
       setShowCorrect(parseBool(sShowCorrect));
-      pModel.elements.forEach((el: Record<string, any>) => {
-        setTimeout(() => {
-          setNewElement({
-            key: el.key,
-            value: el.correct,
-          });
-        });
+      const newElementValues = pModel.elements.map((el: any) => {
+        return { key: el.key, value: el.correct };
       });
+      maybeUpdateElementValues(newElementValues);
     }
 
     const sShowHints = currentStateSnapshot[`stage.${id}.showHints`];
@@ -188,6 +170,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
   }, []);
 
   useEffect(() => {
+    initialize(model);
+  }, [model]);
+
+  useEffect(() => {
     if (!ready) {
       return;
     }
@@ -198,7 +184,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length) {
       getStateSelections(localSnapshot);
-      setContentList(buildContentList);
+      setContentList(buildContentList());
     }
   }, [elements, localSnapshot]);
 
@@ -206,31 +192,27 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     //if (elements?.length && state?.length) {
     if (elements?.length && stateChanged) {
       getStateSelections(mutateState);
-      setContentList(buildContentList);
+      setContentList(buildContentList());
       setStateChanged(false);
     }
   }, [elements, stateChanged, mutateState]);
 
-  useEffect(() => {
-    // write to state when elementValues changes
-    if (
-      prevElementValues &&
-      ((prevElementValues.length < 1 && elementValues.length > 0) ||
-        // if previous element values contain values and the values don't match currently selected values
-        (prevElementValues.length > 0 &&
-          !elementValues.every((val) => prevElementValues.includes(val))))
-    ) {
-      saveElements();
-      setContentList(buildContentList);
-    }
-  }, [elementValues]);
-
-  useEffect(() => {
-    // update `elementValues` when `newElement` is updated
-    if (newElement) {
-      setElementValues([newElement, ...elementValues.filter((obj) => newElement.key !== obj?.key)]);
-    }
-  }, [newElement]);
+  const maybeUpdateElementValues = (newElementValues: SelectOption[]) => {
+    setElementValues((prevState: any) => {
+      const changed = prevState.some((el: any) => {
+        const newEl = newElementValues.find((newEl: any) => newEl.key === el.key);
+        return newEl && newEl.value !== el.value;
+      });
+      if (changed) {
+        const updated = prevState.map((el: any) => {
+          const newEl = newElementValues.find((newEl: any) => newEl.key === el.key);
+          return newEl ? { ...newEl } : el;
+        });
+        return updated;
+      }
+      return prevState;
+    });
+  };
 
   useEffect(() => {
     if (!props.notify) {
@@ -263,14 +245,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
             const sShowCorrect = changes[`stage.${id}.showCorrect`];
             if (sShowCorrect) {
               setShowCorrect(parseBool(sShowCorrect));
-              model.elements.forEach((el: Record<string, any>) => {
-                setTimeout(() => {
-                  setNewElement({
-                    key: el.key,
-                    value: el.correct,
-                  });
-                });
+              const newElementValues = model.elements.map((el: any) => {
+                return { key: el.key, value: el.correct };
               });
+              maybeUpdateElementValues(newElementValues);
             }
             const showHints = changes[`stage.${id}.showHints`];
             if (showHints) {
@@ -299,14 +277,10 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
               const sShowCorrect = changes[`stage.${id}.showCorrect`];
               if (sShowCorrect) {
                 setShowCorrect(parseBool(sShowCorrect));
-                model.elements.forEach((el: Record<string, any>) => {
-                  setTimeout(() => {
-                    setNewElement({
-                      key: el.key,
-                      value: el.correct,
-                    });
-                  });
+                const newElementValues = model.elements.map((el: any) => {
+                  return { key: el.key, value: el.correct };
                 });
+                maybeUpdateElementValues(newElementValues);
               }
               const showHints = changes[`stage.${id}.showHints`];
               if (showHints) {
@@ -343,17 +317,9 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     if (prevElementValues && prevElementValues.length > 0) {
       setAttempted(true);
     }
-    setNewElement({
-      key: e?.name,
-      value: e?.value,
-    });
-  };
-
-  const getElementValueByKey = (key: string) => {
-    // get value from `elementValues` based on key
-    if (!key || typeof key === 'undefined' || !elementValues?.length) return;
-    const val = elementValues?.find((obj) => obj.key === key);
-    return typeof val !== 'undefined' && val?.value ? val.value.toString() : '';
+    const inputOption: SelectOption = { key: e.name, value: e.value };
+    console.log('input trigger!', { id, inputOption });
+    maybeUpdateElementValues([inputOption]);
   };
 
   // returns boolean
@@ -368,7 +334,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     return correctArray.includes(submission);
   };
 
-  const saveElements = () => {
+  const saveElements = useCallback(() => {
     if (!elements?.length) return;
 
     const allCorrect = elements.every(
@@ -445,7 +411,21 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     } catch (err) {
       console.log(err);
     }
-  };
+  }, [getElementValueByKey]);
+
+  useEffect(() => {
+    // write to state when elementValues changes
+    if (
+      prevElementValues &&
+      ((prevElementValues.length < 1 && elementValues.length > 0) ||
+        // if previous element values contain values and the values don't match currently selected values
+        (prevElementValues.length > 0 &&
+          !elementValues.every((val) => prevElementValues.includes(val))))
+    ) {
+      saveElements();
+      setContentList(buildContentList());
+    }
+  }, [elementValues, saveElements]);
 
   const getStateSelections = (snapshot: any) => {
     if (!Object.keys(snapshot)?.length || !elements?.length) return;
@@ -454,21 +434,23 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     const interested = Object.keys(snapshot).filter(
       (stateVar) => stateVar.indexOf(`stage.${id}.`) === 0,
     );
-    const stateValues = interested.map((stateVar) => {
-      const sKey = stateVar;
-      if (sKey?.startsWith(`stage.${id}.Input `) && sKey?.endsWith('.Value')) {
-        const segments = sKey.split('.');
-        const finalsKey = segments.slice(-2).join('.');
-        // extract index from stateVar key
-        const index: number = parseInt(finalsKey.replace(/[^0-9\\.]/g, ''), 10);
-        // get key from `elements` based on 'Input [index].Value'
-        const el: any = elements[index - 1];
-        const val: string = snapshot[stateVar]?.toString();
-        if (el?.key) return { key: el.key, value: val };
-      } else {
-        return false;
-      }
-    });
+    const stateValues: any[] = interested
+      .map((stateVar) => {
+        const sKey = stateVar;
+        if (sKey?.startsWith(`stage.${id}.Input `) && sKey?.endsWith('.Value')) {
+          const segments = sKey.split('.');
+          const finalsKey = segments.slice(-2).join('.');
+          // extract index from stateVar key
+          const index: number = parseInt(finalsKey.replace(/[^0-9\\.]/g, ''), 10);
+          // get key from `elements` based on 'Input [index].Value'
+          const el: any = elements[index - 1];
+          const val: string = snapshot[stateVar]?.toString();
+          if (el?.key) return { key: el.key, value: val };
+        } else {
+          return false;
+        }
+      })
+      .filter((v) => !!v);
     // set new elementValues array
     setElementValues([
       ...stateValues,
@@ -476,91 +458,94 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     ]);
   };
 
-  const buildContentList = content?.map(
-    (contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
-      if (!elements?.length) return;
+  const buildContentList = useCallback(
+    () =>
+      content?.map((contentItem: { [x: string]: any; insert: any; dropdown: any }) => {
+        if (!elements?.length) return;
 
-      const insertList: any[] = [];
-      let insertEl: any;
+        const insertList: any[] = [];
+        let insertEl: any;
 
-      if (contentItem.insert) {
-        // contentItem.insert is always a string
-        insertList.push(<span dangerouslySetInnerHTML={{ __html: contentItem.insert }} />);
-      } else if (contentItem.dropdown) {
-        // get correlating dropdown from `elements`
-        insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
-        if (insertEl) {
-          // build list of options for react-select
-          const elVal: string = getElementValueByKey(insertEl.key);
-          const optionsList = insertEl.options.map(
-            ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
-          );
-          const answerStatus: string =
-            (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-            (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
-              ? 'correct'
-              : 'incorrect';
+        if (contentItem.insert) {
+          // contentItem.insert is always a string
+          insertList.push(<span dangerouslySetInnerHTML={{ __html: contentItem.insert }} />);
+        } else if (contentItem.dropdown) {
+          // get correlating dropdown from `elements`
+          insertEl = elements.find((elItem: { key: any }) => elItem.key === contentItem.dropdown);
+          if (insertEl) {
+            // build list of options for react-select
+            const elVal: string = getElementValueByKey(insertEl.key);
+            const optionsList = insertEl.options.map(
+              ({ value: text, key: id }: { value: any; key: any }) => ({ id, text }),
+            );
+            const answerStatus: string =
+              (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+              (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                ? 'correct'
+                : 'incorrect';
 
-          insertList.push(
-            <span className="dropdown-blot" tabIndex={-1}>
-              <span className="dropdown-container" tabIndex={-1}>
-                <Select2
-                  className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
-                  name={insertEl.key}
-                  data={optionsList}
-                  value={elVal}
-                  aria-label="Make a selection"
-                  options={{
-                    dropdownParent: fibContainer.current,
-                    minimumResultsForSearch: 10,
-                    selectOnClose: false,
-                  }}
-                  onChange={(e: any) => handleInput(e.currentTarget)}
-                  disabled={!enabled}
-                />
-              </span>
-            </span>,
-          );
+            insertList.push(
+              <span className="dropdown-blot" tabIndex={-1}>
+                <span className="dropdown-container" tabIndex={-1}>
+                  <Select2
+                    className={`dropdown ${showCorrect || showHints ? answerStatus : ''}`}
+                    name={insertEl.key}
+                    data={optionsList}
+                    value={elVal}
+                    aria-label="Make a selection"
+                    options={{
+                      dropdownParent: fibContainer.current,
+                      minimumResultsForSearch: 10,
+                      selectOnClose: false,
+                    }}
+                    onSelect={(e: any) => handleInput(e.currentTarget)}
+                    disabled={!enabled}
+                  />
+                </span>
+              </span>,
+            );
+          }
+        } else if (contentItem['text-input']) {
+          // get correlating inputText from `elements`
+          insertEl = elements.find((elItem: { key: any }) => {
+            return elItem.key === contentItem['text-input'];
+          });
+          if (insertEl) {
+            const elVal: string = getElementValueByKey(insertEl.key);
+            const answerStatus: string =
+              (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
+              (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
+                ? 'correct'
+                : 'incorrect';
+
+            insertList.push(
+              <span className="text-input-blot">
+                <span
+                  className={`text-input-container ${showCorrect || showHints ? answerStatus : ''}`}
+                  tabIndex={-1}
+                >
+                  <input
+                    name={insertEl.key}
+                    className={`text-input ${!enabled ? 'disabled' : ''} ${
+                      showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
+                        ? 'correct'
+                        : ''
+                    }`}
+                    type="text"
+                    value={elVal}
+                    onChange={(e) => handleInput(e.currentTarget)}
+                    disabled={!enabled}
+                  />
+                </span>
+              </span>,
+            );
+          }
         }
-      } else if (contentItem['text-input']) {
-        // get correlating inputText from `elements`
-        insertEl = elements.find((elItem: { key: any }) => {
-          return elItem.key === contentItem['text-input'];
-        });
-        if (insertEl) {
-          const elVal: string = getElementValueByKey(insertEl.key);
-          const answerStatus: string =
-            (showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)) ||
-            (showHints && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect))
-              ? 'correct'
-              : 'incorrect';
-
-          insertList.push(
-            <span className="text-input-blot">
-              <span
-                className={`text-input-container ${showCorrect || showHints ? answerStatus : ''}`}
-                tabIndex={-1}
-              >
-                <input
-                  name={insertEl.key}
-                  className={`text-input ${!enabled ? 'disabled' : ''} ${
-                    showCorrect && isCorrect(elVal, insertEl.correct, insertEl.alternateCorrect)
-                      ? 'correct'
-                      : ''
-                  }`}
-                  type="text"
-                  value={elVal}
-                  onChange={(e) => handleInput(e.currentTarget)}
-                  disabled={!enabled}
-                />
-              </span>
-            </span>,
-          );
-        }
-      }
-      return insertList;
-    },
+        return insertList;
+      }),
+    [getElementValueByKey],
   );
+
   return (
     <div
       data-janus-type={tagName}

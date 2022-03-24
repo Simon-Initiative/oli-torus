@@ -9,9 +9,7 @@ defmodule Oli.SectionsTest do
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy
-  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   describe "enrollments" do
     @valid_attrs %{
@@ -838,18 +836,21 @@ defmodule Oli.SectionsTest do
       container_node = Enum.at(hierarchy.children, 2)
       node = Enum.at(container_node.children, source_index)
 
-      children =
+      updated =
         Hierarchy.reorder_children(
-          container_node.children,
+          container_node,
           node,
           source_index,
           destination_index
         )
 
-      updated = %HierarchyNode{container_node | children: children}
       hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
+        |> Hierarchy.finalize()
 
-      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+      project_publications = Sections.get_pinned_project_publications(section.id)
+      Sections.rebuild_section_curriculum(section, hierarchy, project_publications)
+
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       # verify the pages in the new hierarchy are reordered
       updated_container_node = Enum.at(hierarchy.children, 2)

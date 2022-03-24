@@ -20,5 +20,6 @@ defmodule Oli.Delivery.Hierarchy.HierarchyNode do
             project_id: nil,
             revision: nil,
             section_resource: nil,
-            ancestors: []
+            ancestors: [],
+            finalized: true
 end

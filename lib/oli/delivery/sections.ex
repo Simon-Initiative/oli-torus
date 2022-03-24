@@ -920,109 +920,113 @@ defmodule Oli.Delivery.Sections do
         %HierarchyNode{} = hierarchy,
         project_publications
       ) do
-    Repo.transaction(fn ->
-      previous_section_resource_ids =
+    if Hierarchy.finalized?(hierarchy) do
+      Repo.transaction(fn ->
+        previous_section_resource_ids =
+          from(sr in SectionResource,
+            where: sr.section_id == ^section_id,
+            select: sr.id
+          )
+          |> Repo.all()
+
+        # ensure there are no duplicate resources so as to not violate the
+        # section_resource [section_id, resource_id] database constraint
+        hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+          |> Hierarchy.finalize()
+
+        # generate a new set of section resources based on the hierarchy
+        {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
+
+        # upsert all hierarchical section resources. some of these records will have
+        # just been created, but that's okay we will just update them again
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
+        placeholders = %{timestamp: now}
+
+        section_resources
+        |> Enum.map(fn section_resource ->
+          %{
+            SectionResource.to_map(section_resource)
+            | inserted_at: {:placeholder, :timestamp},
+              updated_at: {:placeholder, :timestamp}
+              # numbering_index: section_resource.numbering.index,
+              # numbering_level: section_resource.numbering.level
+          }
+        end)
+        |> then(
+          &Repo.insert_all(SectionResource, &1,
+            placeholders: placeholders,
+            on_conflict: {:replace_all_except, [:inserted_at]},
+            conflict_target: [:section_id, :resource_id]
+          )
+        )
+
+        # cleanup any deleted or non-hierarchical section resources
+        processed_section_resources_by_id =
+          section_resources
+          |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
+
+        section_resource_ids_to_delete =
+          previous_section_resource_ids
+          |> Enum.filter(fn sr_id -> !Map.has_key?(processed_section_resources_by_id, sr_id) end)
+
         from(sr in SectionResource,
-          where: sr.section_id == ^section_id,
-          select: sr.id
+          where: sr.id in ^section_resource_ids_to_delete
         )
-        |> Repo.all()
+        |> Repo.delete_all()
 
-      # ensure there are no duplicate resources so as to not violate the
-      # section_resource [section_id, resource_id] database constraint
-      hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
-
-      # ensure hierarchy numberings are all up to date
-      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
-
-      # generate a new set of section resources based on the hierarchy
-      {section_resources, _} = collapse_section_hierarchy(hierarchy, section_id)
-
-      # upsert all hierarchical section resources. some of these records will have
-      # just been created, but that's okay we will just update them again
-      now = DateTime.utc_now() |> DateTime.truncate(:second)
-      placeholders = %{timestamp: now}
-
-      section_resources
-      |> Enum.map(fn section_resource ->
-        %{
-          SectionResource.to_map(section_resource)
-          | inserted_at: {:placeholder, :timestamp},
+        # upsert section project publications ensure section project publication mappings are up to date
+        project_publications
+        |> Enum.map(fn {project_id, pub} ->
+          %{
+            section_id: section_id,
+            project_id: project_id,
+            publication_id: pub.id,
+            inserted_at: {:placeholder, :timestamp},
             updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionResource, &1,
-          placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at]},
-          conflict_target: [:section_id, :resource_id]
-        )
-      )
-
-      # cleanup any deleted or non-hierarchical section resources
-      processed_section_resources_by_id =
-        section_resources
-        |> Enum.reduce(%{}, fn sr, acc -> Map.put_new(acc, sr.id, sr) end)
-
-      section_resource_ids_to_delete =
-        previous_section_resource_ids
-        |> Enum.filter(fn sr_id -> !Map.has_key?(processed_section_resources_by_id, sr_id) end)
-
-      from(sr in SectionResource,
-        where: sr.id in ^section_resource_ids_to_delete
-      )
-      |> Repo.delete_all()
-
-      # upsert section project publications ensure section project publication mappings are up to date
-      project_publications
-      |> Enum.map(fn {project_id, pub} ->
-        %{
-          section_id: section_id,
-          project_id: project_id,
-          publication_id: pub.id,
-          inserted_at: {:placeholder, :timestamp},
-          updated_at: {:placeholder, :timestamp}
-        }
-      end)
-      |> then(
-        &Repo.insert_all(SectionsProjectsPublications, &1,
-          placeholders: placeholders,
-          on_conflict: {:replace_all_except, [:inserted_at]},
-          conflict_target: [:section_id, :project_id]
-        )
-      )
-
-      # cleanup any unused project publication mappings
-      section_project_ids =
-        section_resources
-        |> Enum.reduce(%{}, fn sr, acc ->
-          Map.put_new(acc, sr.project_id, true)
+          }
         end)
-        |> Enum.map(fn {project_id, _} -> project_id end)
+        |> then(
+          &Repo.insert_all(SectionsProjectsPublications, &1,
+            placeholders: placeholders,
+            on_conflict: {:replace_all_except, [:inserted_at]},
+            conflict_target: [:section_id, :project_id]
+          )
+        )
 
-      from(spp in SectionsProjectsPublications,
-        where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
-      )
-      |> Repo.delete_all()
+        # cleanup any unused project publication mappings
+        section_project_ids =
+          section_resources
+          |> Enum.reduce(%{}, fn sr, acc ->
+            Map.put_new(acc, sr.project_id, true)
+          end)
+          |> Enum.map(fn {project_id, _} -> project_id end)
 
-      # finally, create all non-hierarchical section resources for all projects used in the section
-      publication_ids =
-        section_project_ids
-        |> Enum.map(fn project_id ->
-          project_publications[project_id]
-          |> then(fn %{id: publication_id} -> publication_id end)
-        end)
+        from(spp in SectionsProjectsPublications,
+          where: spp.section_id == ^section_id and spp.project_id not in ^section_project_ids
+        )
+        |> Repo.delete_all()
 
-      processed_resource_ids =
-        processed_section_resources_by_id
-        |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
+        # finally, create all non-hierarchical section resources for all projects used in the section
+        publication_ids =
+          section_project_ids
+          |> Enum.map(fn project_id ->
+            project_publications[project_id]
+            |> then(fn %{id: publication_id} -> publication_id end)
+          end)
 
-      create_nonstructural_section_resources(section_id, publication_ids,
-        skip_resource_ids: processed_resource_ids
-      )
+        processed_resource_ids =
+          processed_section_resources_by_id
+          |> Enum.map(fn {_id, %{resource_id: resource_id}} -> resource_id end)
 
-      section_resources
-    end)
+        create_nonstructural_section_resources(section_id, publication_ids,
+          skip_resource_ids: processed_resource_ids
+        )
+
+        section_resources
+      end)
+    else
+      throw "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
+    end
   end
 
   @doc """
@@ -1091,6 +1095,8 @@ defmodule Oli.Delivery.Sections do
                   )
                 end
               )
+
+            updated_hierarchy = Hierarchy.finalize(updated_hierarchy)
 
             # rebuild the section curriculum based on the updated hierarchy
             project_publications = get_pinned_project_publications(section_id)
@@ -1289,6 +1295,7 @@ defmodule Oli.Delivery.Sections do
   # updated collapsed list of section resources
   defp collapse_section_hierarchy(
          %HierarchyNode{
+           finalized: true,
            numbering: numbering,
            children: children,
            resource_id: resource_id,
@@ -1330,7 +1337,13 @@ defmodule Oli.Delivery.Sections do
           )
 
         %SectionResource{} ->
-          %SectionResource{section_resource | children: Enum.reverse(children_sr_ids)}
+          # section resource record already exists, so we reuse it and update the fields which may have changed
+          %SectionResource{
+            section_resource
+            | children: Enum.reverse(children_sr_ids),
+              numbering_index: numbering.index,
+              numbering_level: numbering.level
+          }
       end
 
     {[section_resource | section_resources], section_resource}
