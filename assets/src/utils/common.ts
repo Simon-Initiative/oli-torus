@@ -43,8 +43,7 @@ function hasContent(item: any): boolean {
 
 export const isString = (val: unknown): boolean => typeof val === 'string';
 
-export const isNumber = (val: string | number): boolean =>
-  typeof val === 'number' && !Number.isNaN(val);
+export const isNumber = (val: unknown): boolean => typeof val === 'number' && !Number.isNaN(val);
 
 export const parseBoolean = (input: string | boolean | number): boolean =>
   input !== undefined &&
@@ -56,6 +55,9 @@ export const parseBoolean = (input: string | boolean | number): boolean =>
 
 export const isStringArray = (s: unknown): boolean =>
   typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';
+
+export const looksLikeAnArray = (val: unknown): boolean =>
+  Array.isArray(val) || isStringArray(val) || (isString(val) && (val as string).includes(','));
 
 // this function is needed because of getting some values like
 // [some, thing, silly] vs ["some", "thing", "silly"]
@@ -109,10 +111,12 @@ export const parseArray = (val: unknown): unknown[] => {
 
   if (!val) {
     return [];
-  } else if (typeof val === 'string') {
+  } else if (isString(val)) {
     //if the val = 'abc' or val = '3,1,8' then it does not go in any of the above conditions and was throwing error. Since this fn will be used in contains operator as well, we need to return something
     // because there could be a rules saying val.contains('abc'). it's not an array but it is valid condition
-    return val.split(',').map((item: string) => parseNumString(item));
+    return (val as string).split(',').map((item: string) => parseNumString(item));
+  } else if (isNumber(val)) {
+    return [val];
   }
   // if we hit this, it was something WAY off
   const err = new Error('not a valid array');
