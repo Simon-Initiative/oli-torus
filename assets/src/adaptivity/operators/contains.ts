@@ -1,109 +1,51 @@
-import { isString, parseArray } from 'utils/common';
+import { isString, looksLikeAnArray, parseArray } from 'utils/common';
 
-const handleContainsOperator = (
-  inputValue: any,
-  conditionValue: any,
-  isDoesNotContainsOperator: boolean,
-  isContainsAnyOperator = false,
-) => {
+export const containsOperator = (inputValue: any, conditionValue: any) => {
   if (!conditionValue || !inputValue) {
     return false;
   }
 
-  console.log('handleContainsOperator', {
-    inputValue,
-    conditionValue,
-    isDoesNotContainsOperator,
-    isContainsAnyOperator,
-  });
-
-  if (isString(inputValue)) {
-    if (!isString(conditionValue)) {
-      // use case: inputValue = 'abc' and conditionValue = ['abc',' abc']
-      if (Array.isArray(conditionValue)) {
-        return conditionValue.some((item: any) => {
-          let test = item;
-          if (isString(item)) {
-            test = test.trim().length ? test.trim() : test;
-          }
-          return inputValue.trim().length
-            ? inputValue.trim().includes(test)
-            : inputValue.includes(test);
-        });
-      }
-      return false;
+  if (looksLikeAnArray(conditionValue)) {
+    const conditionArray = parseArray(conditionValue);
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      // if the input is an array, the condition array should contain every one of the input array values
+      return inputArray.every((item) => conditionArray.includes(item));
+    } else {
+      return conditionArray.includes(inputValue);
     }
-
-    // use case: inputValue = 'abc' and conditionValue = 'abc' or conditionValue = 'abc,def'
-    if (!conditionValue.includes(`[`) && !conditionValue.includes(']')) {
-      const doesContain = conditionValue
-        .toLocaleLowerCase()
-        .includes(inputValue.toLocaleLowerCase());
-      return doesContain;
-    }
-
-    // use case: inputValue = 'abc' and conditionValue = '[abc,def]'
-    conditionValue = parseArray(conditionValue);
-    return conditionValue.some((item: any) => {
-      let test = item;
-      if (isString(item)) {
-        test = test.trim().length ? test.trim() : test;
-      }
-      return inputValue.trim().length
-        ? inputValue.trim().includes(test)
-        : inputValue.includes(test);
-    });
   }
 
-  if (Array.isArray(inputValue) && Array.isArray(conditionValue)) {
-    const updatedFacts = parseArray(inputValue);
-    const modifiedValue = parseArray(conditionValue);
-    if (isDoesNotContainsOperator) {
-      return (
-        modifiedValue
-          // check if conditionValue is found in inputValue array
-          .every((item) => updatedFacts.includes(item))
-      );
-    } else {
-      let hitCount = 0; // counts the number of values found
-
-      modifiedValue.forEach((item) => {
-        if (updatedFacts.includes(item)) {
-          hitCount++;
-        }
-      });
-      if (isContainsAnyOperator && hitCount > 0) {
-        return true;
-      } else if (hitCount === modifiedValue.length) {
-        return true;
-      } else {
-        return false;
-      }
+  if (isString(conditionValue)) {
+    if (isString(inputValue)) {
+      return conditionValue.toLocaleLowerCase().includes(inputValue.toLocaleLowerCase());
     }
-  } else if (Array.isArray(inputValue) && conditionValue) {
-    // We are parseArrayString for the cases where inputValue contains strings but the values contain strings
-    const updatedFacts = parseArray(inputValue);
-    const updatedValue = parseArray(conditionValue);
-    return updatedValue.some((item: any) => updatedFacts.includes(item));
   }
 
   return false;
 };
 
-export const containsOperator = (inputValue: any, conditionValue: any) => {
-  return handleContainsOperator(inputValue, conditionValue, false);
+export const notContainsOperator = (inputValue: any, conditionValue: any) =>
+  !containsOperator(inputValue, conditionValue);
+
+export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
+  if (!conditionValue || !inputValue) {
+    return false;
+  }
+
+  // the condition should always be an array, if it's a single value, it should be wrapped in an array
+  const conditionArray = parseArray(conditionValue);
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // if the input is an array, the condition array should contain at least one of the input array values
+    return inputArray.some((item) => conditionArray.includes(item));
+  } else {
+    return conditionArray.includes(inputValue);
+  }
 };
 
-export const notContainsOperator = (inputValue: any, conditionValue: any) =>
-  !handleContainsOperator(inputValue, conditionValue, true);
-
-export const containsAnyOfOperator = (inputValue: any, conditionValue: any) =>
-  // inputValue contains any items in conditionValue
-  handleContainsOperator(inputValue, conditionValue, false, true);
-
 export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =>
-  // inputValue does not contain items in conditionValue
-  !handleContainsOperator(inputValue, conditionValue, false, true);
+  !containsAnyOfOperator(inputValue, conditionValue);
 
 export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
   // inputValue contains ONLY items in conditionValue
