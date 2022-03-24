@@ -10,7 +10,7 @@
     <title>Oli.Delivery.Attempts.ManualGrading — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-5b52dc0eea.js"></script>
+    <script src="dist/sidebar_items-f97de1939d.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -116,11 +116,27 @@ Oli.Delivery.Attempts.ManualGrading <small class="app-vsn">(OLI Torus v0.18.4)</
     </h2>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#apply_manual_scoring/3">apply_manual_scoring(section, activity_attempt, score_feedbacks_map)</a>
+
+  </div>
+
+    <div class="summary-synopsis"><p>Applies a collection of manual scores and feedbacks to the part attempts of a given activity attempt.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#browse_submitted_attempts/4">browse_submitted_attempts(section, paging, sorting, options)</a>
 
   </div>
 
     <div class="summary-synopsis"><p>Browsing-based query support for activity attempts that require manual grading.</p></div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#count_submitted_attempts/1">count_submitted_attempts(section)</a>
+
+  </div>
 
 </div>
 
@@ -138,6 +154,32 @@ Oli.Delivery.Attempts.ManualGrading <small class="app-vsn">(OLI Torus v0.18.4)</
 Functions
           </h1>
           <div class="functions-list">
+<section class="detail" id="apply_manual_scoring/3">
+
+  <div class="detail-header">
+    <a href="#apply_manual_scoring/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">apply_manual_scoring(section, activity_attempt, score_feedbacks_map)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/manual_grading.ex#L234" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+<p>Applies a collection of manual scores and feedbacks to the part attempts of a given activity attempt.</p><p>The activity attempt is assumed to be fully populated with virtual attributes delivered from the
+<code class="inline">browse_submitted_attempts</code> query from this module.</p><p>The <code class="inline">score_feedbacks_map</code> is a map of part attempt guids to <code class="inline">ScoreFeedback</code> structs that contain the
+instructor score, feedback, and the out_of value.</p><p>If this activity is the last activity remaining in a graded page, this will finalize that graded page attempt,
+recalculate a resource access level score, and trigger LMS grade passback (if this is an LMS section and that
+section has gradepassback enabled)</p>
+  </section>
+</section>
 <section class="detail" id="browse_submitted_attempts/4">
 
   <div class="detail-header">
@@ -147,7 +189,7 @@ Functions
     </a>
     <h1 class="signature">browse_submitted_attempts(section, paging, sorting, options)</h1>
 
-      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/manual_grading.ex#L23" class="view-source" rel="help" title="View Source">
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/manual_grading.ex#L35" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
        <span class="sr-only">View Source</span>
      </a>
@@ -158,6 +200,28 @@ Functions
   <section class="docstring">
 
 <p>Browsing-based query support for activity attempts that require manual grading.</p>
+  </section>
+</section>
+<section class="detail" id="count_submitted_attempts/1">
+
+  <div class="detail-header">
+    <a href="#count_submitted_attempts/1" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">count_submitted_attempts(section)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli/delivery/attempts/manual_grading.ex#L21" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
   </section>
 </section>
 
