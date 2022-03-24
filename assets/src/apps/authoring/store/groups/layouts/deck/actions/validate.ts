@@ -14,7 +14,7 @@ import { selectState as selectPageState } from '../../../../page/slice';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
-import { extractExpressionFromText } from 'adaptivity/scripting';
+import { extractAllExpressionsFromText, extractExpressionFromText } from 'adaptivity/scripting';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -80,49 +80,30 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
       return false;
   }
 };
-function setCharAt(str: string, index: number, chr: string) {
-  if (index > str.length - 1) return str;
-  return str.substring(0, index) + chr + str.substring(index + 1);
-}
-const checkExpressionsWithWrongBrackets = (expressions: string) => {
-  let str = expressions;
-  const result = str.match(/{([^{^}]+)}/g) || [];
-  if (!result?.length) {
-    return str;
-  }
-  const obj: Record<string, string> = {};
-  for (let i = 0; i < result.length; i++) {
-    obj['obj' + i] = result[i];
-    str = str.replace(result[i], 'obj' + i);
-  }
-  const singleVaribleExpressionCheck = extractExpressionFromText(str);
-  let isSingleVariable = false;
-  let containsTextOtherThanExpression = false;
-  const firstOpeningCurrly = expressions.indexOf('{');
-  const LastClosingCurrly = expressions.lastIndexOf('}');
-  if (`{${singleVaribleExpressionCheck}}` === str) {
-    str = str.substring(1, str.length - 1);
-    isSingleVariable = true;
-  } else {
-    containsTextOtherThanExpression = str.replace(`${singleVaribleExpressionCheck}`, '')?.length
-      ? true
-      : false;
-  }
-  str = str.replace(new RegExp('{', 'g'), '(');
-  str = str.replace(new RegExp('}', 'g'), ')');
-
-  for (let i = 0; i < result.length; i++) {
-    obj['obj' + i] = result[i];
-    str = str.replace('obj' + i, obj['obj' + i]);
-  }
-
-  if (isSingleVariable) {
-    str = `{${str}}`;
-  } else if (containsTextOtherThanExpression && result.length === 1) {
-    str = setCharAt(str, firstOpeningCurrly, '{');
-    str = setCharAt(str, LastClosingCurrly, '}');
-  }
-  return str;
+const checkExpressionsWithWrongBrackets = (value: string) => {
+  let originalValue = value;
+  const allexpression = extractAllExpressionsFromText(originalValue);
+  const lstEvaluatedExpression: Record<string, string> = {};
+  allexpression.forEach((expression) => {
+    const actualExpression = expression;
+    const result = expression.match(/{([^{^}]+)}/g) || [];
+    const obj: Record<string, string> = {};
+    for (let i = 0; i < result?.length; i++) {
+      obj['obj' + i] = result[i];
+      expression = expression.replace(result[i], 'obj' + i);
+    }
+    expression = expression.replace(new RegExp('{', 'g'), '(');
+    expression = expression.replace(new RegExp('}', 'g'), ')');
+    for (let i = 0; i < result?.length; i++) {
+      obj['obj' + i] = result[i];
+      expression = expression.replace('obj' + i, obj['obj' + i]);
+    }
+    lstEvaluatedExpression[actualExpression] = expression;
+  });
+  Object.keys(lstEvaluatedExpression).forEach((key) => {
+    originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
+  });
+  return originalValue;
 };
 
 const validateValueExpression = (condition: any, rule: any, owner: any) => {
