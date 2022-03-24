@@ -137,22 +137,12 @@ defmodule Oli.Groups do
 
   """
   def find_or_create_community_user_account(user_id, community_id) do
-    get_community_account = fn _, _ ->
-      {:ok, get_community_account_by!(%{user_id: user_id, community_id: community_id})}
-    end
-
-    create_community_account_unless_exists = fn
-      _repo, %{community_account: nil} ->
-        create_community_account(%{user_id: user_id, community_id: community_id})
-
-      _repo, %{community_account: community_account} ->
-        {:ok, community_account}
-    end
+    clauses = %{user_id: user_id, community_id: community_id}
 
     res =
       Multi.new()
-      |> Multi.run(:community_account, get_community_account)
-      |> Multi.run(:new_community_account, create_community_account_unless_exists)
+      |> Multi.run(:community_account, fn _, _ -> {:ok, get_community_account_by!(clauses)} end)
+      |> Multi.run(:new_community_account, &maybe_create_community_account(&1, &2, clauses))
       |> Repo.transaction()
 
     case res do
@@ -163,6 +153,12 @@ defmodule Oli.Groups do
         {:error, changeset}
     end
   end
+
+  defp maybe_create_community_account(_repo, %{community_account: nil}, clauses),
+    do: create_community_account(clauses)
+
+  defp maybe_create_community_account(_repo, %{community_account: community_account}, _clauses),
+    do: {:ok, community_account}
 
   @doc """
   Creates a community account.

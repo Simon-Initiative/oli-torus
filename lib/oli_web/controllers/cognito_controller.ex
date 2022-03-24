@@ -1,7 +1,7 @@
 defmodule OliWeb.CognitoController do
   use OliWeb, :controller
 
-  require Logger
+  import OliWeb.ViewHelpers, only: [redirect_with_error: 3]
 
   alias Oli.{Repo, Sections, Accounts}
   alias Oli.Authoring.Course
@@ -25,12 +25,12 @@ defmodule OliWeb.CognitoController do
         |> redirect(to: Routes.delivery_path(conn, :open_and_free_index))
 
       {:error, %Ecto.Changeset{}} ->
-        redirect_with_error(conn, params, "Invalid parameters")
+        redirect_with_error(conn, get_error_url(params), "Invalid parameters")
     end
   end
 
   def index(conn, params) do
-    redirect_with_error(conn, params, "Missing parameters")
+    redirect_with_error(conn, get_error_url(params), "Missing parameters")
   end
 
   def launch(
@@ -49,27 +49,19 @@ defmodule OliWeb.CognitoController do
       |> redirect(to: redirect_path(conn, user, anchor))
     else
       nil ->
-        redirect_with_error(conn, params, "Invalid product or project")
+        redirect_with_error(conn, get_error_url(params), "Invalid product or project")
 
       {:error, %Ecto.Changeset{}} ->
-        redirect_with_error(conn, params, "Invalid parameters")
+        redirect_with_error(conn, get_error_url(params), "Invalid parameters")
     end
   end
 
   def launch(conn, params) do
-    redirect_with_error(conn, params, "Missing parameters")
+    redirect_with_error(conn, get_error_url(params), "Missing parameters")
   end
 
   defp get_error_url(%{"error_url" => error_url}), do: error_url
   defp get_error_url(_params), do: "/unauthorized"
-
-  defp redirect_with_error(conn, params, error) do
-    error_url = get_error_url(params)
-
-    conn
-    |> redirect(external: "#{error_url}?error=#{error}")
-    |> halt()
-  end
 
   defp fetch_product_or_project(%{"project_slug" => slug}) do
     Course.get_project_by_slug(slug)
@@ -79,7 +71,7 @@ defmodule OliWeb.CognitoController do
     Sections.get_section_by(slug: slug)
   end
 
-  def redirect_path(conn, user, anchor) do
+  defp redirect_path(conn, user, anchor) do
     case Repo.preload(user, :enrollments).enrollments do
       [] ->
         create_section_url(conn, anchor)

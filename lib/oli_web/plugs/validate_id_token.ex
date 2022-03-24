@@ -1,5 +1,6 @@
 defmodule Oli.Plugs.ValidateIdToken do
   import Oli.{HTTP, Utils}
+  import OliWeb.ViewHelpers, only: [redirect_with_error: 3]
 
   alias Oli.Institutions
   alias Oli.Institutions.SsoJwk
@@ -15,13 +16,13 @@ defmodule Oli.Plugs.ValidateIdToken do
       Plug.Conn.assign(conn, :claims, jwt_fields)
     else
       nil ->
-        redirect_with_error(conn, conn.params, "Missing id token")
+        redirect_with_error(conn, get_error_url(conn.params), "Missing id token")
 
       {false, _, _} ->
-        redirect_with_error(conn, conn.params, "Unable to verify credentials")
+        redirect_with_error(conn, get_error_url(conn.params), "Unable to verify credentials")
 
       {:error, error} ->
-        redirect_with_error(conn, conn.params, snake_case_to_friendly(error))
+        redirect_with_error(conn, get_error_url(conn.params), snake_case_to_friendly(error))
     end
   end
 
@@ -75,12 +76,4 @@ defmodule Oli.Plugs.ValidateIdToken do
 
   defp get_error_url(%{"error_url" => error_url}), do: error_url
   defp get_error_url(_params), do: "/unauthorized"
-
-  defp redirect_with_error(conn, params, error) do
-    error_url = get_error_url(params)
-
-    conn
-    |> Phoenix.Controller.redirect(external: "#{error_url}?error=#{error}")
-    |> Plug.Conn.halt()
-  end
 end
