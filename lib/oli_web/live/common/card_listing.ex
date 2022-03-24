@@ -9,6 +9,7 @@ defmodule OliWeb.Common.CardListing do
   prop model, :struct, required: true
   prop sort, :event, required: true
   prop selected, :event, required: true
+  prop context, :any
 
   def render(assigns) do
     ~F"""
@@ -33,7 +34,7 @@ defmodule OliWeb.Common.CardListing do
       <div class="card-deck pb-5">
         {#for item <- @model.rows}
           <a :on-click={@selected} phx-value-id={action_id(item)}>
-            <div class="card mb-4" style="width: 15em; height: 23em;">
+            <div class="card mb-4">
               <img src={Routes.static_path(OliWeb.Endpoint, "/images/course_default.jpg")} class="card-img-top" alt="course image">
               <div class="card-body">
                 <h5 class="card-title text-primary">{render_title_column(item)}</h5>

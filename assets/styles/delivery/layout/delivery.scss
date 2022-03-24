@@ -24,7 +24,7 @@ body {
   }
 
   .small-date {
-    font-size: 0.7em;
+    font-size: 0.8em;
   }
 }
 
@@ -46,6 +46,8 @@ body {
     cursor: pointer;
     color: inherit;
     user-select: none;
+    width: 15em;
+    height: 23em;
   }
 
   .btn-card:hover,

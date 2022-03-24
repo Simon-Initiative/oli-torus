@@ -14,6 +14,7 @@ defmodule OliWeb.Common.Listing do
   prop additional_table_class, :string, default: "table-sm"
   prop cards_view, :boolean, default: false
   prop selected, :event
+  prop context, :any
 
   def render(assigns) do
     ~F"""
@@ -24,9 +25,9 @@ defmodule OliWeb.Common.Listing do
       {#if @total_count > 0}
         <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
         {#if @cards_view}
-          <CardListing model={@table_model} selected={@selected} sort={@sort}/>
+          <CardListing model={@table_model} selected={@selected} sort={@sort} context={@context}/>
         {#else}
-          <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class}/>
+          <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class} context={@context}/>
         {/if}
         {#if @show_bottom_paging}
           <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>

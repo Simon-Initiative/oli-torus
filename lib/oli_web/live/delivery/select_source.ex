@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.SelectSource do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
 
   import Oli.Utils
@@ -79,6 +79,8 @@ defmodule OliWeb.Delivery.SelectSource do
     do: Routes.select_source_path(socket, socket.assigns.live_action, params)
 
   def mount(_params, session, socket) do
+    context = SessionContext.init(session)
+
     # SelectSource used in three routes.
     # live_action is :independent_learner, :admin or :lms_instructor
     live_action = socket.assigns.live_action
@@ -105,16 +107,17 @@ defmodule OliWeb.Delivery.SelectSource do
     {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources)
 
     {:ok,
-     assign(socket,
-       breadcrumbs: breadcrumbs(live_action),
-       delivery_breadcrumb: true,
-       total_count: length(sources),
-       table_model: table_model,
-       sources: sources,
-       user: user,
-       lti_params: lti_params,
-       live_action: live_action
-     )}
+      assign(socket,
+        context: context,
+        breadcrumbs: breadcrumbs(live_action),
+        delivery_breadcrumb: true,
+        total_count: length(sources),
+        table_model: table_model,
+        sources: sources,
+        user: user,
+        lti_params: lti_params,
+        live_action: live_action
+    )}
   end
 
   def render(assigns) do
@@ -138,7 +141,8 @@ defmodule OliWeb.Delivery.SelectSource do
         sort="sort"
         page_change="page_change"
         show_bottom_paging={false}
-        cards_view={is_instructor?(@live_action)}/>
+        cards_view={is_instructor?(@live_action)}
+        context={@context}/>
 
       {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
         <div class="row mb-5">

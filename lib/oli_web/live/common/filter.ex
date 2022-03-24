@@ -8,7 +8,7 @@ defmodule OliWeb.Common.Filter do
 
   def render(assigns) do
     ~F"""
-      <div class="input-group" style="max-width: 600px;">
+      <div class="input-group search-input">
         <input type="text" class="form-control" placeholder="Search..." :on-change={@change} :on-blur={@change} value={@query}>
         <div class="input-group-append">
           <button class="btn btn-outline-secondary" :on-click={@apply} phx-type="button">Search</button>
