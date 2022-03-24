@@ -141,7 +141,102 @@ const validateValue = (condition: any, rule: any, owner: any) => {
     : null;
 };
 
+const getOptionTextFromNode = (child: any): any => {
+  let evaluatedExppression = '';
+
+  if (child.key && typeof child.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
+    if (evaluatedExp !== child.value) {
+      evaluatedExppression = evaluatedExp;
+    }
+  } else {
+    let optionText = '';
+    if (child.tag === 'text') {
+      optionText = child.text;
+      const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
+      if (evaluatedExp !== optionText) {
+        evaluatedExppression = evaluatedExp;
+      }
+    } else if (child?.children?.length) {
+      child.children.forEach((child: any) => {
+        evaluatedExppression = getOptionTextFromNode(child);
+      });
+    } else if (Array.isArray(child)) {
+      child.forEach((child) => {
+        child.children.forEach((child: any) => {
+          evaluatedExppression = getOptionTextFromNode(child);
+        });
+      });
+    }
+  }
+  return evaluatedExppression;
+};
 export const validators = [
+  {
+    type: DiagnosticTypes.INVALID_EXPRESSION,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      const parts = activity.content.partsLayout;
+      const brokenExpressions: any[] = [];
+      parts.forEach((part: any) => {
+        const Klass = customElements.get(part.type);
+        if (Klass) {
+          const instance = new Klass() as any;
+          if (instance.getCapabilities) {
+            const capabilities = instance.getCapabilities();
+            if (capabilities.canUseExpression) {
+              if (instance.expressionSchema) {
+                const expressionSchema = instance.expressionSchema;
+                if (expressionSchema) {
+                  Object.keys(expressionSchema).forEach((key) => {
+                    if (key === 'nodes') {
+                      const evaluatedValue = getOptionTextFromNode(part.custom.nodes);
+                      if (evaluatedValue) {
+                        brokenExpressions.push({
+                          type: part.type,
+                          part,
+                          owner,
+                          item: part,
+                          suggestedFix: evaluatedValue,
+                        });
+                      }
+                    } else if (key === 'mcqItems') {
+                      part.custom.mcqItems.forEach((element: any) => {
+                        const evaluatedValue = getOptionTextFromNode(element.nodes[0]);
+                        if (evaluatedValue) {
+                          brokenExpressions.push({
+                            type: part.type,
+                            part,
+                            item: element,
+                            owner,
+                            suggestedFix: evaluatedValue,
+                          });
+                        }
+                      });
+                    } else if (key === 'configData') {
+                      part.custom.configData.forEach((element: any) => {
+                        const evaluatedValue = getOptionTextFromNode(element);
+                        if (evaluatedValue) {
+                          brokenExpressions.push({
+                            type: part.type,
+                            part,
+                            item: element,
+                            owner,
+                            suggestedFix: evaluatedValue,
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      });
+      return [...brokenExpressions];
+    },
+  },
   {
     type: DiagnosticTypes.DUPLICATE,
     validate: (activity: any) =>

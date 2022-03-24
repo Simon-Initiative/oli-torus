@@ -25,7 +25,12 @@ export const schema: JSONSchema7Object = {
 
 export const getCapabilities = () => ({
   configure: true,
+  canUseExpression: true,
 });
+
+export const expressionSchema = {
+  configData: CapiVariableTypes.ARRAY,
+};
 
 export const adaptivitySchema = ({
   currentModel,

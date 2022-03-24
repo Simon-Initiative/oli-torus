@@ -42,6 +42,19 @@ export const InvalidExpressionValue: React.FC<Message> = ({ problem }: Message) 
   </span>
 );
 
+export const InvalidPartExpressionValue: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    The &quot;
+    <strong>{problem?.item?.part?.id}</strong>&quot; component has invalid expression in &nbsp;
+    {problem?.item?.part?.custom?.configData && (
+      <span>
+        configData - &quot;<strong>{problem?.item?.item.key}</strong>&quot; variable
+      </span>
+    )}
+    {problem?.item?.part?.custom?.mcqItems && <span> MCQ Options</span>}
+  </span>
+);
+
 export const InvalidMutateTarget: React.FC<Message> = ({ problem }: Message) => (
   <span>
     The &quot;
@@ -69,6 +82,8 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
   let action;
+  console.log({ props });
+
   switch (type) {
     case DiagnosticTypes.DUPLICATE:
       action = <DupeMessage {...props} />;
@@ -93,6 +108,9 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
       break;
     case DiagnosticTypes.INVALID_EXPRESSION_VALUE:
       action = <InvalidExpressionValue {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_EXPRESSION:
+      action = <InvalidPartExpressionValue {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

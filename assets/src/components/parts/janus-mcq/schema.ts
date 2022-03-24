@@ -78,10 +78,15 @@ export const adaptivitySchema = {
   selectedChoicesText: CapiVariableTypes.ARRAY,
 };
 
+export const expressionSchema = {
+  mcqItems: CapiVariableTypes.ARRAY,
+};
+
 export const uiSchema = {};
 
 export const getCapabilities = () => ({
   configure: true,
+  canUseExpression: true,
 });
 
 export const createSchema = (): Partial<McqModel> => {

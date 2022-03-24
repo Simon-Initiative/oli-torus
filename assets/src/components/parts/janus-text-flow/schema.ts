@@ -163,9 +163,15 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
 
   return result;
 };
+
+export const expressionSchema = {
+  nodes: CapiVariableTypes.ARRAY,
+};
+
 export const adaptivitySchema = {
   visible: CapiVariableTypes.BOOLEAN,
 };
 export const getCapabilities = () => ({
   configure: true,
+  canUseExpression: true,
 });

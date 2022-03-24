@@ -15,6 +15,17 @@ export const updateId = (problem: any, fixed: string) => {
   return updatePart({ activityId, partId, changes });
 };
 
+export const updateParts = (problem: any, fixed: string) => {
+  console.log({ problem });
+
+  const activityId = problem.owner.resourceId;
+  const partId = problem.item.part.id;
+  const changes = { id: problem.item.suggestedFix };
+  console.log({ activityId, partId, changes });
+
+  //return updatePart({ activityId, partId, changes });
+};
+
 export const updateRule = (rule: any, problem: any, activities: any) => {
   const { owner } = problem;
   const activity = activities.find((a: any) => a.id === owner.resourceId);
@@ -121,6 +132,7 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION]: updateParts,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };
