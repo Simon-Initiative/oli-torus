@@ -16,6 +16,34 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.ResourceType
 
   @doc """
+  This method should be called after any hierarchy-changing operation
+  in this module is used to ensure that numberings remain up to date. Because a lot of the operations
+  in this module are chainable, it is up to the caller to ensure numberings are up-to-date
+  by running this function after all hierarchy mutating operations are complete.
+  """
+  def finalize(hierarchy) do
+    hierarchy
+    |> Numbering.renumber_hierarchy()
+    |> then(fn {updated_hierarchy, _numberings} -> updated_hierarchy end)
+    |> mark_finalized()
+  end
+
+  defp mark_unfinalized(%HierarchyNode{} = node) do
+    %HierarchyNode{node | finalized: false}
+  end
+
+  defp mark_finalized(%HierarchyNode{} = node) do
+    %HierarchyNode{node | finalized: true, children: Enum.map(node.children, &mark_finalized/1)}
+  end
+
+  @doc """
+  Returns true if a node and all it's descendent's are finalized
+  """
+  def finalized?(%HierarchyNode{} = node) do
+    node.finalized and Enum.all?(node.children, &finalized?/1)
+  end
+
+  @doc """
   From a constructed hierarchy root node, or a collection of hierarchy nodes, return
   an ordered flat list of the nodes of only the pages in the hierarchy.
   """
@@ -46,6 +74,10 @@ defmodule Oli.Delivery.Hierarchy do
     Enum.reduce(node.children, all, &flatten_hierarchy(&1, &2))
   end
 
+  @doc """
+  Constructs an in-memory hierarchy from a given root revision using the provided
+  published_resources_by_resource_id map
+  """
   def create_hierarchy(revision, published_resources_by_resource_id) do
     numbering_tracker = Numbering.init_numbering_tracker()
     level = 0
@@ -93,9 +125,10 @@ defmodule Oli.Delivery.Hierarchy do
   def purge_duplicate_resources(%HierarchyNode{} = hierarchy) do
     purge_duplicate_resources(hierarchy, %{})
     |> then(fn {hierarchy, _} -> hierarchy end)
+    |> mark_unfinalized()
   end
 
-  def purge_duplicate_resources(
+  defp purge_duplicate_resources(
         %HierarchyNode{resource_id: resource_id, children: children} = node,
         processed_nodes
       ) do
@@ -117,6 +150,9 @@ defmodule Oli.Delivery.Hierarchy do
     {%HierarchyNode{node | children: children}, processed_nodes}
   end
 
+  @doc """
+  Finds a node in the hierarchy with the given uuid or function `fn node -> true`
+  """
   def find_in_hierarchy(
         %HierarchyNode{uuid: uuid, children: children} = node,
         uuid_to_find
@@ -146,26 +182,35 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   def reorder_children(
-        children,
-        node,
+        container_node,
+        source_node,
         source_index,
-        index
+        destination_index
       ) do
     insert_index =
-      if source_index < index do
-        index - 1
+      if source_index < destination_index do
+        destination_index - 1
       else
-        index
+        destination_index
       end
 
     children =
-      Enum.filter(children, fn %HierarchyNode{revision: r} -> r.id !== node.revision.id end)
-      |> List.insert_at(insert_index, node)
+      Enum.filter(container_node.children, fn %HierarchyNode{revision: r} -> r.id !== source_node.revision.id end)
+      |> List.insert_at(insert_index, source_node)
 
-    children
+    %HierarchyNode{container_node | children: children}
+    |> mark_unfinalized()
   end
 
+  @doc """
+  Finds a node with the same uuid in the given hierarchy and updates it with the given node
+  """
   def find_and_update_node(hierarchy, node) do
+    find_and_update_node_r(hierarchy, node)
+    |> mark_unfinalized()
+  end
+
+  defp find_and_update_node_r(hierarchy, node) do
     if hierarchy.uuid == node.uuid do
       node
     else
@@ -177,7 +222,15 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  @doc """
+  Removes a node specified by it's hierarchy uuid from the given hierarchy
+  """
   def find_and_remove_node(hierarchy, uuid) do
+    find_and_remove_node_r(hierarchy, uuid)
+    |> mark_unfinalized()
+  end
+
+  defp find_and_remove_node_r(hierarchy, uuid) do
     if uuid in Enum.map(hierarchy.children, & &1.uuid) do
       %HierarchyNode{
         hierarchy
@@ -192,15 +245,30 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  @doc """
+  Moves a node to a given container given by destination uuid
+  """
   def move_node(hierarchy, node, destination_uuid) do
+    # remove the node from it's previous container
     hierarchy = find_and_remove_node(hierarchy, node.uuid)
-    destination = find_in_hierarchy(hierarchy, destination_uuid)
 
+    # add the node to it's destination container
+    destination = find_in_hierarchy(hierarchy, destination_uuid)
     updated_container = %HierarchyNode{destination | children: [node | destination.children]}
 
     find_and_update_node(hierarchy, updated_container)
+    |> mark_unfinalized()
   end
 
+  @doc """
+  Adds the selected materials to a given hierarchy.
+
+  Selection here is a list of tuples representing {publication_id, resource_id}. The resources
+  are added to the hierarchy at the active container by appending to the active container's children.
+
+  published_resources_by_resource_id_by_pub is a required supplementary data structure map containing
+  resource_id keys to their published resources.
+  """
   def add_materials_to_hierarchy(
         hierarchy,
         active,
@@ -220,8 +288,7 @@ defmodule Oli.Delivery.Hierarchy do
       end)
 
     find_and_update_node(hierarchy, %HierarchyNode{active | children: active.children ++ nodes})
-    |> Numbering.renumber_hierarchy()
-    |> then(fn {updated_hierarchy, _numberings} -> updated_hierarchy end)
+    |> mark_unfinalized()
   end
 
   @doc """
@@ -421,5 +488,7 @@ defmodule Oli.Delivery.Hierarchy do
   defp drop_r(%HierarchyNode{children: children} = node, drop_keys) do
     %HierarchyNode{node | children: Enum.map(children, &drop_r(&1, drop_keys))}
     |> Map.drop([:__struct__ | drop_keys])
+    |> Map.put_new(:inspect_revision_title, node.revision.title)
+    |> Map.put_new(:inspect_revision_slug, node.revision.slug)
   end
 end

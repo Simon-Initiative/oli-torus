@@ -15,8 +15,29 @@ export const looksLikeJson = (str: string) => {
   return str === emptyJsonObj || (startsLikeJson && endsLikeJson);
 };
 
+// recursively walk through every property and sub property evaluating all strings
+export const evaluateJsonObject = (jsonObj: any, env: Environment = defaultGlobalEnv): any => {
+  if (typeof jsonObj === 'string') {
+    return templatizeText(jsonObj, {}, env);
+  }
+
+  if (Array.isArray(jsonObj)) {
+    return jsonObj.map((item) => evaluateJsonObject(item, env));
+  }
+
+  if (typeof jsonObj === 'object' && !!jsonObj) {
+    const newObj: any = {};
+    for (const key of Object.keys(jsonObj)) {
+      newObj[key] = evaluateJsonObject(jsonObj[key], env);
+    }
+    return newObj;
+  }
+
+  return jsonObj;
+};
+
 export const getExpressionStringForValue = (
-  v: { type: CapiVariableTypes; value: any },
+  v: { type: CapiVariableTypes; value: any; key?: string },
   env: Environment = defaultGlobalEnv,
 ): string => {
   let val: any = v.value;
@@ -38,7 +59,18 @@ export const getExpressionStringForValue = (
     // note this will break if number keys are used {1:2} !!
 
     const looksLikeJSON = looksLikeJson(val);
+
     const hasCurlies = val.includes('{') && val.includes('}');
+
+    // need to support nested values within JSON
+    if (looksLikeJSON) {
+      try {
+        const valObj = evaluateJsonObject(JSON.parse(val), env);
+        val = JSON.stringify(valObj);
+      } catch (e) {
+        // failed for any reason, ignore
+      }
+    }
 
     const hasBackslash = val.includes('\\');
     isValueVar =
@@ -409,6 +441,104 @@ export const extractAllExpressionsFromText = (text: string): string[] => {
     expressions.push(...extractAllExpressionsFromText(rest));
   }
   return expressions;
+};
+
+export const templatizeText = (
+  text: string,
+  locals: any,
+  env?: Environment,
+  isFromTrapStates = false,
+): string => {
+  let innerEnv = env; // TODO: this should be a child scope
+  let vars = extractAllExpressionsFromText(text);
+  const totalVariablesLength = vars?.length;
+  // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
+  vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
+  /* console.log('templatizeText call: ', { text, vars, locals, env }); */
+  //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
+  const isCSSString = totalVariablesLength !== vars.length;
+  if (!vars || isCSSString) {
+    return text;
+  }
+  /* innerEnv = evalScript(janus_std, innerEnv).env; */
+  try {
+    const stateAssignScript = getAssignScript(locals, innerEnv);
+    evalScript(stateAssignScript, innerEnv);
+  } catch (e) {
+    console.warn('[templatizeText] error injecting locals into env', { e, locals, innerEnv });
+  }
+  /*  console.log('templatizeText', { text, locals, vars }); */
+  let templatizedText = text;
+
+  // check for locals items that were included in the string
+  const vals = vars.map((v) => {
+    let stateValue = locals[v];
+    if (!stateValue || typeof stateValue === 'object') {
+      try {
+        if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
+          // if the expression is just a variable, then if it has a colon
+          // it is most likely targetting another screen, and needs to be wrapped
+          // for evaluation; same with if it has a space in it TODO: detect that;
+          // also note this will break hash expression support but no one uses that
+          // currently (TODO #2)
+          v = `{${v}}`;
+        }
+        try {
+          const result = evalScript(v, innerEnv);
+          innerEnv = result.env;
+          if (result?.result && !result?.result?.message) {
+            stateValue = result.result;
+          }
+        } catch (ex) {
+          if (v[0] === '{' && v[v.length - 1] === '}') {
+            //lets evaluat everything if first and last char are {}
+            const functionExpression = v.substring(1, v.length - 1);
+            const result = evalScript(functionExpression, innerEnv);
+            if (result?.result !== undefined && !result?.result?.message) {
+              stateValue = result.result;
+            }
+          }
+        }
+      } catch (e) {
+        // ignore?
+        console.warn('error evaluating text', { v, e });
+      }
+    }
+    if (stateValue === undefined) {
+      if (isFromTrapStates) {
+        return text;
+      } else {
+        if (vars.length === 1 && `{${vars[0]}}` === templatizedText) {
+          const evaluatedValue = evalScript(vars[0], env).result;
+          if (evaluatedValue !== undefined) {
+            return evaluatedValue;
+          } else {
+            return '';
+          }
+        } else {
+          return '';
+        }
+      }
+    }
+    let strValue = stateValue;
+    /* console.log({ strValue, typeOD: typeof stateValue }); */
+
+    if (Array.isArray(stateValue)) {
+      strValue = stateValue.map((v) => `"${v}"`).join(', ');
+    } else if (typeof stateValue === 'object') {
+      strValue = JSON.stringify(stateValue);
+    } else if (typeof stateValue === 'number') {
+      strValue = parseFloat(parseFloat(strValue).toString());
+    }
+    return strValue;
+  });
+
+  vars.forEach((v, index) => {
+    templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
+  });
+
+  // support nested {} like {{variables.foo} * 3}
+  return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 
 // for use by client side scripting evalution
