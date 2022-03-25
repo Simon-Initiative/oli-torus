@@ -5,6 +5,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
   alias Oli.Activities.Model.{Part}
+  alias Oli.Delivery.Attempts.Core
 
   def add_submitted_activity(map, resource_attempt_tag, activity_tag, activity_attempt_tag) do
     map
@@ -44,6 +45,110 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       %Part{id: "1", responses: [], hints: [], grading_approach: :automatic},
       activity_attempt_tag
     )
+  end
+
+
+  describe "applying scores and feedback" do
+    setup do
+      map = Seeder.base_project_with_resource2()
+      Oli.Resources.update_revision(map.revision2, %{graded: true})
+
+      map
+      |> Seeder.create_section()
+      |> Seeder.add_user(%{}, :user1)
+      |> Seeder.add_user(%{}, :user2)
+      |> Seeder.add_activity(%{title: "title 1"}, :publication, :project, :author, :activity_a)
+      |> Seeder.add_activity(%{title: "title 2"}, :publication, :project, :author, :activity_b)
+      |> Seeder.add_activity(%{title: "title 3"}, :publication, :project, :author, :activity_c)
+      |> Seeder.create_section_resources()
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :active},
+        :user1,
+        :page1,
+        :revision1,
+        :attempt1
+      )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user1,
+        :page2,
+        :revision2,
+        :attempt2
+      )
+      |> Seeder.create_resource_attempt(
+        %{attempt_number: 1, lifecycle_state: :submitted},
+        :user2,
+        :page2,
+        :revision2,
+        :attempt3
+      )
+      |> add_submitted_activity(:attempt1, :activity_a, :attempt_1a)
+      |> add_submitted_activity(:attempt2, :activity_b, :attempt_2b)
+      |> add_submitted_activity(:attempt3, :activity_b, :attempt_3b)
+      |> add_submitted_activity(:attempt3, :activity_c, :attempt_3c)
+    end
+
+    test "basic application of scores", %{
+      section: section,
+      attempt_1a: attempt_1a,
+      attempt_2b: attempt_2b,
+      attempt_3b: attempt_3b,
+      attempt_3c: attempt_3c,
+      publication: publication
+    } do
+
+      Seeder.ensure_published(publication.id)
+
+      results =
+        ManualGrading.browse_submitted_attempts(
+          section,
+          %Paging{limit: 4, offset: 0},
+          %Sorting{field: :date_submitted, direction: :desc},
+          %BrowseOptions{
+            user_id: nil,
+            activity_id: nil,
+            page_id: nil,
+            graded: nil,
+            text_search: nil
+          }
+        )
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_1a.id end)
+      ManualGrading.apply_manual_scoring(section, attempt, create_score_feedbacks(attempt))
+
+      ra = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert ra.lifecycle_state == :active
+      aa = Core.get_activity_attempt_by(attempt_guid: attempt.attempt_guid)
+      assert aa.lifecycle_state == :evaluated
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_2b.id end)
+      ManualGrading.apply_manual_scoring(section, attempt, create_score_feedbacks(attempt))
+
+      ra = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert ra.lifecycle_state == :evaluated
+      aa = Core.get_activity_attempt_by(attempt_guid: attempt.attempt_guid)
+      assert aa.lifecycle_state == :evaluated
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_3b.id end)
+      ManualGrading.apply_manual_scoring(section, attempt, create_score_feedbacks(attempt))
+
+      ra = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert ra.lifecycle_state == :submitted
+
+      attempt = Enum.find(results, fn a -> a.id == attempt_3c.id end)
+      ManualGrading.apply_manual_scoring(section, attempt, create_score_feedbacks(attempt))
+
+      ra = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
+      assert ra.lifecycle_state == :evaluated
+
+    end
+  end
+
+  def create_score_feedbacks(activity_attempt) do
+    Oli.Delivery.Attempts.Core.get_latest_part_attempts(activity_attempt.attempt_guid)
+    |> Enum.reduce(%{}, fn pa, m ->
+      Map.put(m, pa.attempt_guid, %{score: 1, out_of: 1, feedback: "test"})
+    end)
   end
 
   describe "browsing manual graded attempts" do
@@ -98,6 +203,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: nil,
             activity_id: nil,
+            page_id: nil,
             graded: nil,
             text_search: nil
           }
@@ -115,6 +221,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: user1.id,
             activity_id: nil,
+            page_id: nil,
             graded: nil,
             text_search: nil
           }
@@ -132,6 +239,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: nil,
             activity_id: activity_a.resource.id,
+            page_id: nil,
             graded: nil,
             text_search: nil
           }
@@ -149,6 +257,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: nil,
             activity_id: nil,
+            page_id: nil,
             graded: true,
             text_search: nil
           }
@@ -165,6 +274,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: nil,
             activity_id: nil,
+            page_id: nil,
             graded: false,
             text_search: nil
           }
@@ -182,6 +292,7 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
           %BrowseOptions{
             user_id: nil,
             activity_id: nil,
+            page_id: nil,
             graded: nil,
             text_search: "title 2"
           }

@@ -160,7 +160,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
   end
 
-  defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+  def roll_up_activities_to_resource_attempt(resource_attempt_guid) do
     # It is necessary to refetch the resource attempt so that we have the latest view
     # of the activity attempts, given that they have just undergone evaluation.
     resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
@@ -196,12 +196,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   defp apply_submission(resource_attempt) do
-    now = DateTime.utc_now()
+    case resource_attempt.lifecycle_state do
+      :active ->
+        now = DateTime.utc_now()
+        update_resource_attempt(resource_attempt, %{
+          date_submitted: now,
+          lifecycle_state: :submitted
+        })
+      _ ->
+        {:ok, resource_attempt}
+    end
 
-    update_resource_attempt(resource_attempt, %{
-      date_submitted: now,
-      lifecycle_state: :submitted
-    })
   end
 
   defp is_evaluated?(resource_attempt) do

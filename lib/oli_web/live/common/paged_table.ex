@@ -8,8 +8,10 @@ defmodule OliWeb.Common.PagedTable do
   prop limit, :integer, required: true
   prop offset, :integer, required: true
   prop table_model, :struct, required: true
+  prop allow_selection, :boolean, required: false, default: false
   prop sort, :event, default: "paged_table_sort"
   prop page_change, :event, default: "paged_table_page_change"
+  prop selection_change, :event, default: "paged_table_selection_change"
 
   def render(assigns) do
     ~F"""
@@ -19,10 +21,10 @@ defmodule OliWeb.Common.PagedTable do
       {/if}
       {#if @total_count > 0 and @total_count < @limit}
         <div>Showing all results ({@total_count} total)</div>
-        <Table model={@table_model} sort={@sort}/>
+        {render_table(assigns)}
       {#elseif @total_count > 0}
         <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-        <Table model={@table_model} sort={@sort}/>
+        {render_table(assigns)}
         <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
       {#else}
         <p>None exist</p>
@@ -31,12 +33,29 @@ defmodule OliWeb.Common.PagedTable do
     """
   end
 
+  def render_table(assigns) do
+    if assigns.allow_selection do
+      ~F"""
+      <Table model={@table_model} sort={@sort} select={@selection_change}/>
+      """
+    else
+      ~F"""
+      <Table model={@table_model} sort={@sort}/>
+      """
+    end
+  end
+
+  @spec handle_delegated(<<_::64, _::_*8>>, map, any, (any, any -> any), any) :: any
   def handle_delegated(event, params, socket, patch_fn, model_key \\ :table_model) do
     delegate_handle_event(event, params, socket, patch_fn, model_key)
   end
 
   def delegate_handle_event("paged_table_page_change", %{"offset" => offset}, socket, patch_fn, _) do
     patch_fn.(socket, %{offset: offset})
+  end
+
+  def delegate_handle_event("paged_table_selection_change", %{"id" => selected}, socket, patch_fn, _) do
+    patch_fn.(socket, %{selected: selected})
   end
 
   # handle change of selection

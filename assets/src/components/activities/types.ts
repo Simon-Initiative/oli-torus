@@ -5,6 +5,7 @@ import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
 import { Model } from 'data/content/model/elements/factories';
+import { NIL } from 'uuid';
 
 export type PostUndoable = (undoable: Undoable) => void;
 
@@ -238,6 +239,7 @@ export interface Part extends Identifiable {
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
+  outOf?: null | number;
 }
 
 export const makePart = (
@@ -249,6 +251,7 @@ export const makePart = (
 ): Part => ({
   id: id ? id : guid(),
   gradingApproach: GradingApproach.automatic,
+  outOf: null,
   scoringStrategy: ScoringStrategy.average,
   responses,
   hints,
