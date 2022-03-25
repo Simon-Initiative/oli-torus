@@ -123,9 +123,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
             actualValue = ogValue;
           }
         } else if (ogValue.lastIndexOf(',') !== -1) {
-          const tolerance = ogValue.split(',');
-          actualValue = tolerance[0];
-          toleranceValue = tolerance.length == 2 ? tolerance[1] : 0;
+          toleranceValue = ogValue.substring(ogValue.lastIndexOf(',') + 1);
+          actualValue = ogValue.substring(0, ogValue.lastIndexOf(','));
         } else {
           actualValue = ogValue;
         }
