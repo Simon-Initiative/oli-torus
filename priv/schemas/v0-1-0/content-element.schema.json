@@ -71,6 +71,9 @@
           "$ref": "#/$defs/hyperlink"
         },
         {
+          "$ref": "#/$defs/activity-link"
+        },
+        {
           "$ref": "#/$defs/popup"
         },
         {
@@ -692,6 +695,31 @@
       "required": [
         "type",
         "href",
+        "children"
+      ]
+    },
+    "activity-link": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "a"
+        },
+        "idref": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "idref",
         "children"
       ]
     },
