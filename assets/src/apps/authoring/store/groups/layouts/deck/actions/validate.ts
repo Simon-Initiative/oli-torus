@@ -88,11 +88,7 @@ const checkExpressionsWithWrongBrackets = (value: string) => {
     const actualExpression = expression;
     let result = expression.match(/{([^{^}]+)}/g) || [];
     result = result.filter(
-      (expression) =>
-        !expression.includes(';') &&
-        !expression.includes(',') &&
-        expression.includes('.') &&
-        !expression.includes(' '),
+      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
     );
     if (result?.length) {
       const obj: Record<string, string> = {};
