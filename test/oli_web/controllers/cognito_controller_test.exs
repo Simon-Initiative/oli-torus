@@ -42,6 +42,34 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
     end
 
+    test "creates new user and redirects user to my courses", %{
+      conn: conn,
+      community: community
+    } do
+      email = "new_user@email.com"
+      {id_token, jwk, issuer} = generate_token(email)
+      jwks_url = issuer <> "/.well-known/jwks.json"
+
+      expect(Oli.Test.MockHTTP, :get, 2, mock_jwks_endpoint(jwks_url, jwk, :ok))
+
+      params = valid_index_params(community.id, id_token)
+
+      refute Accounts.get_user_by(email: email)
+
+      assert conn
+             |> get(Routes.cognito_path(conn, :index, params))
+             |> html_response(302) =~
+               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+
+      {:ok, claims} = Joken.peek_claims(id_token)
+      user = Accounts.get_user_by(email: email)
+
+      assert user.sub == claims["sub"]
+      assert user.preferred_username == claims["cognito:username"]
+      assert user.name == claims["name"]
+      assert user.can_create_sections == true
+    end
+
     test "redirects to provided error_url with missing params", %{
       conn: conn,
       community: community
@@ -425,6 +453,7 @@ defmodule OliWeb.CognitoControllerTest do
         "email_verified" => true,
         "iss" => "issuer",
         "cognito:username" => "user999",
+        "name" => "tester user",
         "origin_jti" => UUID.uuid4(),
         "aud" => UUID.uuid4(),
         "event_id" => UUID.uuid4(),
