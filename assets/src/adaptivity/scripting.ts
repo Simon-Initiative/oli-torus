@@ -449,6 +449,7 @@ export const templatizeText = (
   env?: Environment,
   isFromTrapStates = false,
 ): string => {
+
   let innerEnv = env; // TODO: this should be a child scope
   let vars = extractAllExpressionsFromText(text);
   const totalVariablesLength = vars?.length;
@@ -485,8 +486,10 @@ export const templatizeText = (
         }
         try {
           const result = evalScript(v, innerEnv);
+          // it is very possible here that result.result is undefined simply because the variable has not been defined
+          // in the scripting env, so really we should just return undefined or an empty string here in that case.
           innerEnv = result.env;
-          if (result?.result && !result?.result?.message) {
+          if (!result?.result?.message) {
             stateValue = result.result;
           }
         } catch (ex) {
@@ -509,7 +512,16 @@ export const templatizeText = (
         return text;
       } else {
         if (vars.length === 1 && `{${vars[0]}}` === templatizedText) {
-          const evaluatedValue = evalScript(vars[0], env).result;
+          let finalVar = vars[0];
+          if (finalVar.indexOf(':') !== -1 || finalVar.indexOf('.') !== -1) {
+            // if the expression is just a variable, then if it has a colon
+            // it is most likely targetting another screen, and needs to be wrapped
+            // for evaluation; same with if it has a space in it TODO: detect that;
+            // also note this will break hash expression support but no one uses that
+            // currently (TODO #2)
+            finalVar = `{${finalVar}}`;
+          }
+          const evaluatedValue = evalScript(finalVar, env).result;
           if (evaluatedValue !== undefined) {
             return evaluatedValue;
           } else {
