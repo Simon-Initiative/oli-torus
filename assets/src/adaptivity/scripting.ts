@@ -449,7 +449,6 @@ export const templatizeText = (
   env?: Environment,
   isFromTrapStates = false,
 ): string => {
-
   let innerEnv = env; // TODO: this should be a child scope
   let vars = extractAllExpressionsFromText(text);
   const totalVariablesLength = vars?.length;
