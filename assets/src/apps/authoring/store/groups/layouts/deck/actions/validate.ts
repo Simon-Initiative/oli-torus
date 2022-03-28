@@ -216,10 +216,21 @@ export const validators = [
                       part.custom.configData.forEach((element: any) => {
                         const evaluatedValue = getOptionTextFromNode(element);
                         if (evaluatedValue) {
+                          const configChanges = {
+                            custom: {
+                              configData: [
+                                {
+                                  key: element.key,
+                                  type: element.type,
+                                  value: evaluatedValue,
+                                },
+                              ],
+                            },
+                          };
                           brokenExpressions.push({
                             type: part.type,
                             part,
-                            item: element,
+                            changes: configChanges,
                             owner,
                             suggestedFix: evaluatedValue,
                           });

@@ -79,20 +79,18 @@ export const updatePart = createAsyncThunk(
         }
       }
     } else if (payload.changes.suggestedFix) {
-      if (payload.changes.type === 'janus-capi-iframe') {
+      if (payload.changes.type === 'janus-mcq') {
         const configChanges = {
           custom: {
-            configData: [
+            mcqItems: [
               {
-                key: payload.changes.item.key,
-                type: payload.changes.item.type,
-                value: payload.changes.suggestedFix,
+                nodes: [payload.changes.suggestedFix],
               },
             ],
           },
         };
         merge(partDef, configChanges);
-      } else if (payload.changes.type === 'janus-mcq') {
+      } else if (payload.changes.type === 'janus-textflow') {
         const configChanges = {
           custom: {
             mcqItems: [
