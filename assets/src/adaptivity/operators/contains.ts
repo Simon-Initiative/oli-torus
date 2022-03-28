@@ -5,6 +5,8 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
     return false;
   }
 
+  /* console.log('containsOperator', { inputValue, conditionValue }); */
+
   if (looksLikeAnArray(conditionValue)) {
     const conditionArray = parseArray(conditionValue);
     if (looksLikeAnArray(inputValue)) {
@@ -18,7 +20,11 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
 
   if (isString(conditionValue)) {
     if (isString(inputValue)) {
-      return conditionValue.toLocaleLowerCase().includes(inputValue.toLocaleLowerCase());
+      return inputValue.toLocaleLowerCase().includes(conditionValue.toLocaleLowerCase());
+    }
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      return inputArray.includes(conditionValue);
     }
   }
 
