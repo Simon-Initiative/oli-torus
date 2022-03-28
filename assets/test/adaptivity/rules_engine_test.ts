@@ -281,15 +281,21 @@ describe('Operators', () => {
     });
 
     it('should match string contains as partial', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('cde', conditionValue)).toEqual(true);
+      const inputValue = 'abc';
+      expect(containsOperator(inputValue, 'ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'cd')).toEqual(true);
     });
 
-    it('should match string contains as case insensitive', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('Abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('Cde', conditionValue)).toEqual(true);
+    it('should match string contains as case INSENSITIVE', () => {
+      const inputValue = 'abcd';
+      expect(containsOperator(inputValue, 'Ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'Ac')).toEqual(true);
+    });
+
+    it('should test for spaces and other characters', () => {
+      expect(containsOperator('I have spaces', ' ')).toEqual(true);
+      expect(containsOperator('1+1/2', '+')).toEqual(true);
+      expect(notContainsOperator('=A3+2', '=')).toEqual(false);
     });
 
     it('should find single elements contained in arrays', () => {
@@ -320,6 +326,11 @@ describe('Operators', () => {
       expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
       expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
       expect(containsExactlyOperator('abc', 'abcd')).toEqual(false);
+    });
+
+    it('should be case SENSITIVE', () => {
+      expect(containsExactlyOperator('abc', 'Abc')).toEqual(false);
+      expect(containsExactlyOperator('Abc', 'A')).toEqual(true);
     });
   });
 

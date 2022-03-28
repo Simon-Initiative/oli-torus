@@ -70,24 +70,37 @@ export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
   return updatedFacts.every((fact: any) => updatedValues.includes(fact));
 };
 
+// case sensitive version of containsOperator
 export const containsExactlyOperator = (inputValue: any, conditionValue: any) => {
   // inputValue is exactly equal to conditionValue
   if (!conditionValue || !inputValue) {
     return false;
   }
 
-  // We are parseNumString for the cases where inputValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArray(inputValue);
-  const updatedValues = parseArray(conditionValue);
+  /* console.log('containsExactlyOperator', { inputValue, conditionValue }); */
 
-  if (Array.isArray(inputValue) && Array.isArray(conditionValue)) {
-    return (
-      updatedFacts.every((fact) => updatedValues.includes(fact)) &&
-      updatedFacts.length == updatedValues.length
-    );
-  } else {
-    return inputValue === conditionValue;
+  if (looksLikeAnArray(conditionValue)) {
+    const conditionArray = parseArray(conditionValue);
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      // if the input is an array, the condition array should contain every one of the input array values
+      return inputArray.every((item) => conditionArray.includes(item));
+    } else {
+      return conditionArray.includes(inputValue);
+    }
   }
+
+  if (isString(conditionValue)) {
+    if (isString(inputValue)) {
+      return inputValue.includes(conditionValue);
+    }
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      return inputArray.includes(conditionValue);
+    }
+  }
+
+  return false;
 };
 
 export const notContainsExactlyOperator = (inputValue: any, conditionValue: any) =>
