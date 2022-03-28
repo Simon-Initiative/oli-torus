@@ -123,9 +123,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
             actualValue = ogValue;
           }
         } else if (ogValue.lastIndexOf(',') !== -1) {
-          const tolerance = ogValue.split(',');
-          actualValue = tolerance[0];
-          toleranceValue = tolerance.length == 2 ? tolerance[1] : 0;
+          toleranceValue = ogValue.substring(ogValue.lastIndexOf(',') + 1);
+          actualValue = ogValue.substring(0, ogValue.lastIndexOf(','));
         } else {
           actualValue = ogValue;
         }
@@ -304,9 +303,19 @@ export const getReferencedKeysInConditions = (conditions: any) => {
     ) {
       // value could have more than one reference inside it
       const exprs = extractAllExpressionsFromText(condition.value);
+      const expressions = condition.value.match(/{([^{^}]+)}/g);
       exprs.forEach((expr: string) => {
         if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
           references.add(expr);
+        }
+      });
+      expressions.forEach((expr: string) => {
+        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+          //we should remove the {}
+          const actualExp = expr.substring(1, expr.length - 1);
+          if (!references.has(actualExp)) {
+            references.add(expr.substring(1, expr.length - 1));
+          }
         }
       });
     }
