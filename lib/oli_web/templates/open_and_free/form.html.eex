@@ -97,6 +97,26 @@
     </script>
   </div>
 
+  <div class="form-row d-flex flex-row px-1 my-4">
+    <div class="flex-grow-1 mr-2">
+      Omit student email verification
+    </div>
+
+    <div class="custom-control custom-switch" style="width: 88px;">
+      <%= checkbox f, :confirm_students_on_creation, class: "custom-control-input" <> error_class(f, :confirm_students_on_creation, "is-invalid"), autofocus: focusHelper(f, :confirm_students_on_creation) %>
+      <%= label f, :confirm_students_on_creation, class: "custom-control-label" do %>
+        <%= if @changeset.data.confirm_students_on_creation do "Yes" else "No" end %>
+      <% end %>
+      <%= error_tag f, :confirm_students_on_creation %>
+    </div>
+
+    <script>
+      $('#section_confirm_students_on_creation').change(function() {
+        $('label[for="section_confirm_students_on_creation"]').text(this.checked ? 'Yes' : 'No');
+      });
+    </script>
+  </div>
+
   <div>
     <%= submit value_or(assigns[:submit_text], "Save"), class: "submit btn btn-md btn-primary btn-block" %>
     <%= if assigns[:cancel], do:

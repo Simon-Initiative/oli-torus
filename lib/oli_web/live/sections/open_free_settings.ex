@@ -36,6 +36,11 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <Label class="form-check-label"/>
       </Field>
 
+      <Field name={:confirm_students_on_creation} class="mt-2 form-check">
+        <Checkbox class="form-check-input" value={get_field(@changeset, :confirm_students_on_creation)}/>
+        <Label class="form-check-label">Omit student email verification</Label>
+      </Field>
+
       <Field name={:timezone} class="mt-2">
         <Label/>
         <Select class="form-control" form="section" field="timezone" options={Predefined.timezones()} selected={get_field(@changeset, :timezone)}/>

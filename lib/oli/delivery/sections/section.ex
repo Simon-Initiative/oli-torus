@@ -82,6 +82,9 @@ defmodule Oli.Delivery.Sections.Section do
     # An instructor can create a "section invite" link with a hash that allows direct student
     # enrollment.
     has_many(:section_invites, SectionInvite, on_delete: :delete_all)
+    # Boolean to indicate the student will be confirmed at creation moment and will not
+    # receive a confirmation email.
+    field(:confirm_students_on_creation, :boolean, default: false)
 
     field(:enrollments_count, :integer, virtual: true)
     field(:total_count, :integer, virtual: true)
@@ -128,7 +131,8 @@ defmodule Oli.Delivery.Sections.Section do
       :delivery_policy_id,
       :blueprint_id,
       :root_section_resource_id,
-      :requires_enrollment
+      :requires_enrollment,
+      :confirm_students_on_creation
     ])
     |> validate_required([
       :type,
