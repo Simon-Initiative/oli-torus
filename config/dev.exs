@@ -41,7 +41,7 @@ config :oli, :stripe_provider,
 
 force_ssl =
   case System.get_env("FORCE_SSL", "false") do
-    "true" -> [rewrite_on: [:x_forwarded_proto]]
+    "true" -> [rewrite_on: [:x_forwarded_proto], hsts: true]
     _ -> false
   end
 
