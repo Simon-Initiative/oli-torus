@@ -7,6 +7,7 @@ defmodule OliWeb.Admin.Ingest do
   alias OliWeb.Common.Breadcrumb
   alias Oli.Interop.Ingest
   alias OliWeb.Common.MonacoEditor
+  alias OliWeb.Admin.Ingest.FAQ
 
   prop author, :any
 
@@ -54,7 +55,7 @@ defmodule OliWeb.Admin.Ingest do
   end
 
   @impl Phoenix.LiveView
-  def handle_event("save", _params, socket) do
+  def handle_event("ingest", _params, socket) do
     %{author: author} = socket.assigns
 
     with path_upload <-

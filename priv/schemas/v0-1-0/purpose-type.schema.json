@@ -1,0 +1,20 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Purpose Type",
+  "description": "Content purpose type",
+  "enum": [
+    "none",
+    "checkpoint",
+    "didigetthis",
+    "lab",
+    "learnbydoing",
+    "learnmore",
+    "manystudentswonder",
+    "myresponse",
+    "quiz",
+    "simulation",
+    "walkthrough",
+    "example"
+  ]
+}
