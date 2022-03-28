@@ -3,12 +3,23 @@ defmodule Oli.Delivery.PaywallTest do
 
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.AccessSummary
 
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing
   import Ecto.Query, warn: false
 
-  describe "can_access" do
+  def last_week() do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    DateTime.add(datetime, -(60 * 60 * 24 * 7), :second)
+  end
+
+  def hours_ago(hours) do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    DateTime.add(datetime, -(60 * 60 * hours), :second)
+  end
+
+  describe "summarize_access" do
     setup do
       map = Seeder.base_project_with_resource2()
 
@@ -62,17 +73,17 @@ defmodule Oli.Delivery.PaywallTest do
       }
     end
 
-    test "can_access/2 fails then succeeds after user pays", %{
+    test "summarize_access/2 fails then succeeds after user pays", %{
       section: section,
       user1: user,
       codes1: codes
     } do
-      refute Paywall.can_access?(user, section)
+      refute Paywall.summarize_access(user, section).available
       assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      assert Paywall.summarize_access(user, section).available
     end
 
-    test "can_access/2 succeeds during grace period", %{
+    test "summarize_access/2 succeeds during grace period", %{
       section: section,
       user1: user,
       codes1: codes
@@ -83,15 +94,19 @@ defmodule Oli.Delivery.PaywallTest do
           grace_period_days: 6
         })
 
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
       assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :paid
     end
 
-    test "can_access/2 fails after grace period expires", %{
+    test "summarize_access/2 fails after grace period expires", %{
       section: section,
-      user1: user,
-      codes1: codes
+      user1: user
     } do
       {:ok, section} =
         Sections.update_section(section, %{
@@ -99,46 +114,71 @@ defmodule Oli.Delivery.PaywallTest do
           grace_period_days: 2
         })
 
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          start_date: last_week()
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      refute summary.available
+      assert summary.reason == :not_paid
     end
 
-    test "can_access/2 suceeds during grace period, strategy relative to student enrollment",
+    test "summarize_access/2 calculates grace period remaining correctly", %{
+      section: section,
+      user1: user
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          has_grace_period: true,
+          grace_period_days: 1,
+          start_date: hours_ago(1)
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+      days = summary.grace_period_remaining |> AccessSummary.as_days()
+      assert days > 0 and days < 1
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          has_grace_period: true,
+          grace_period_days: 2,
+          start_date: hours_ago(1)
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+      days = summary.grace_period_remaining |> AccessSummary.as_days()
+      assert days > 1.0 and days < 2.0
+
+    end
+
+    test "summarize_access/2 suceeds during grace period, strategy relative to student enrollment",
          %{
            section: section,
-           user1: user,
-           codes1: codes
+           user1: user
          } do
       {:ok, section} =
         Sections.update_section(section, %{
           has_grace_period: true,
           grace_period_days: 2,
-          grace_period_strategy: :relative_to_student
+          grace_period_strategy: :relative_to_student,
+          start_date: last_week()
         })
 
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
     end
 
-    test "can_access/2 fails after grace period expires, strategy relative to student enrollment",
-         %{
-           section: section,
-           user1: user,
-           codes1: codes
-         } do
-      {:ok, section} =
-        Sections.update_section(section, %{
-          has_grace_period: true,
-          grace_period_days: 2,
-          grace_period_strategy: :relative_to_student
-        })
-
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
-    end
   end
 
   describe "redeeming codes" do
