@@ -299,6 +299,7 @@ Oli.Plugs.RequireLtiParams.html
 Oli.Plugs.RequireSection.html
 Oli.Plugs.SetCurrentUser.html
 Oli.Plugs.SetDefaultPow.html
+Oli.Plugs.ValidateIdToken.html
 Oli.Predefined.html
 Oli.Publishing.AuthoringResolver.html
 Oli.Publishing.ChangeTracker.html
@@ -716,8 +717,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-7379e99082.js
-dist/sidebar_items-eccbcf3fde.js
+dist/search_items-b540b74bec.js
+dist/sidebar_items-6fb8846027.js
 index.html
 license.html
 readme.html
