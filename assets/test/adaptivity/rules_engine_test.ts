@@ -281,29 +281,46 @@ describe('Operators', () => {
     });
 
     it('should match string contains as partial', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('cde', conditionValue)).toEqual(true);
+      const inputValue = 'abc';
+      expect(containsOperator(inputValue, 'ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'cd')).toEqual(true);
     });
 
-    it('should match string contains as case insensitive', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('Abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('Cde', conditionValue)).toEqual(true);
+    it('should match string contains as case INSENSITIVE', () => {
+      const inputValue = 'abcd';
+      expect(containsOperator(inputValue, 'Ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'Ac')).toEqual(true);
     });
 
-    it('should find single elements contained in arrays', () => {
-      expect(containsOperator('a', '[a,b,c]')).toEqual(true);
-      expect(containsOperator(9, '[1,2,9]')).toEqual(true);
-      expect(containsOperator('a', [1, 2, 3])).toEqual(false);
+    it('should test for spaces and other characters', () => {
+      expect(containsOperator('I have spaces', ' ')).toEqual(true);
+      expect(containsOperator('1+1/2', '+')).toEqual(true);
+      expect(notContainsOperator('=A3+2', '=')).toEqual(false);
     });
 
-    it('should find array subsets within arrays', () => {
-      expect(containsOperator('[8,6]', [9, 8, 7])).toEqual(false);
-      expect(containsOperator('9,8', [9, 8, 7])).toEqual(true);
-      expect(containsOperator('[7,9]', [9, 8, 7])).toEqual(true);
-      expect(containsOperator([1, 2], [1, 2, 3])).toEqual(true);
-      expect(containsOperator([4, 1], [1, 2, 3, 4])).toEqual(true);
+    it('should match when there are arrays of strings case INSENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsOperator(['a', 'b', 'c'], 'A')).toEqual(true);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'b'])).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsOperator('1,2,3', [1, 4])).toEqual(false);
     });
   });
 
@@ -316,10 +333,36 @@ describe('Operators', () => {
       expect(notContainsExactlyOperator(null, null)).toEqual(true);
     });
 
-    it('should match the content of arrays and strings for exactly', () => {
-      expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abcd')).toEqual(false);
+    it('should match when there are arrays of strings case SENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'A')).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'c'])).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['A', 'b'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsExactlyOperator('ABC', ['AB', 'C'])).toEqual(true);
+      expect(containsExactlyOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsExactlyOperator('1,2,3', [1, 4])).toEqual(false);
+    });
+
+    it('should be case SENSITIVE', () => {
+      expect(containsExactlyOperator('abc', 'Abc')).toEqual(false);
+      expect(containsExactlyOperator('Abc', 'A')).toEqual(true);
     });
   });
 
