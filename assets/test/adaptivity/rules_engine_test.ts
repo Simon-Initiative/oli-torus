@@ -298,10 +298,11 @@ describe('Operators', () => {
       expect(notContainsOperator('=A3+2', '=')).toEqual(false);
     });
 
-    it('should match when there are arrays of strings', () => {
+    it('should match when there are arrays of strings case INSENSITIVE', () => {
       // does inputValue contain the conditionValue? where inputValue is an array of values
       expect(containsOperator(['a', 'b', 'c'], 'a')).toEqual(true);
       expect(containsOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsOperator(['a', 'b', 'c'], 'A')).toEqual(true);
       // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
       expect(containsOperator(['a', 'b', 'c'], ['a', 'b'])).toEqual(true);
       expect(containsOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
@@ -332,10 +333,31 @@ describe('Operators', () => {
       expect(notContainsExactlyOperator(null, null)).toEqual(true);
     });
 
-    it('should match the content of arrays and strings for exactly', () => {
-      expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abcd')).toEqual(false);
+    it('should match when there are arrays of strings case SENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'A')).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'c'])).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['A', 'b'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsExactlyOperator('ABC', ['AB', 'C'])).toEqual(true);
+      expect(containsExactlyOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsExactlyOperator('1,2,3', [1, 4])).toEqual(false);
     });
 
     it('should be case SENSITIVE', () => {

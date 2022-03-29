@@ -19,7 +19,7 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
       // does 'abc' contain ['a', 'b']? (contains both, case insensitive)
       return conditionArray.every((item) => {
         if (isString(item)) {
-          return inputValue.toLowerCase().includes((item as string).toLowerCase());
+          return inputValue.toLocaleLowerCase().includes((item as string).toLocaleLowerCase());
         } else {
           return inputValue.includes(item);
         }
@@ -95,6 +95,7 @@ export const containsExactlyOperator = (inputValue: any, conditionValue: any) =>
     return false;
   }
 
+  // always read as: Does the INPUT contain the CONDITION?
   /* console.log('containsExactlyOperator', { inputValue, conditionValue }); */
 
   if (looksLikeAnArray(conditionValue)) {
@@ -102,20 +103,29 @@ export const containsExactlyOperator = (inputValue: any, conditionValue: any) =>
     if (looksLikeAnArray(inputValue)) {
       const inputArray = parseArray(inputValue);
       // if the input is an array, the condition array should contain every one of the input array values
-      return inputArray.every((item) => conditionArray.includes(item));
+      // does [1, 2, 3] contain [1, 3]?
+      return conditionArray.every((item) => inputArray.includes(item));
     } else {
-      return conditionArray.includes(inputValue);
+      // does 'abc' contain ['a', 'b']? (contains both, case sensitive)
+      return conditionArray.every((item) => {
+        return inputValue.includes(item);
+      });
     }
   }
 
-  if (isString(conditionValue)) {
-    if (isString(inputValue)) {
-      return inputValue.includes(conditionValue);
-    }
-    if (looksLikeAnArray(inputValue)) {
-      const inputArray = parseArray(inputValue);
-      return inputArray.includes(conditionValue);
-    }
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // does ['a', 'b'] contain 'A'? (contains, case insensitive)
+    return inputArray.some((item) => {
+      if (isString(item)) {
+        return (item as string).includes(conditionValue);
+      }
+      return item === conditionValue;
+    });
+  }
+
+  if (isString(inputValue)) {
+    return inputValue.includes(conditionValue);
   }
 
   return false;
