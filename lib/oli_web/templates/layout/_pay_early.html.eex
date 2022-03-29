@@ -1,0 +1,6 @@
+<%= if show_pay_early(Map.get(@conn.assigns, :paywall_summary)) do %>
+<div class="system-banner alert alert-warning" role="alert">
+  <%= pay_early_message(@conn.assigns.paywall_summary) %>
+  <a class="ml-3" href="<%= Routes.payment_path(@conn, :make_payment, @section.slug) %>">Pay Now</a>
+</div>
+<% end %>

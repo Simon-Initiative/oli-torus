@@ -1,6 +1,7 @@
 defmodule OliWeb.PaymentController do
   use OliWeb, :controller
   require Logger
+  alias Oli.Delivery.Paywall.AccessSummary
 
   @doc """
   Render the page to show a student that they do not have access because
@@ -58,10 +59,18 @@ defmodule OliWeb.PaymentController do
     if user.guest do
       render(conn, "require_account.html", section_slug: section_slug)
     else
-      if Oli.Delivery.Paywall.can_access?(user, section) do
-        conn
-        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
-      else
+
+      # Check the paywall access summary, as this route isn't protected by the
+      # plug that inserts the access summary into the assigns.  We allow users
+      # view the "make a payment" page only if they are within the grace period
+      # or if the course material is now unavailable because they haven't paid
+      allow_payment = case Oli.Delivery.Paywall.summarize_access(user, section) do
+        %AccessSummary{available: false, reason: :not_paid} -> true
+        %AccessSummary{available: true, reason: :within_grace_period} -> true
+        _ -> false
+      end
+
+      if allow_payment do
         case determine_cost(section) do
           {:ok, amount} ->
             get_provider_module()
@@ -71,6 +80,9 @@ defmodule OliWeb.PaymentController do
             conn
             |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
         end
+      else
+        conn
+        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
       end
     end
 
