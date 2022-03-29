@@ -194,8 +194,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
-    now = DateTime.utc_now()
-
     params =
       Map.merge(
         %{
