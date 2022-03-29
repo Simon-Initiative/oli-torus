@@ -38,9 +38,10 @@ defmodule OliWeb.RevisionHistory.Details do
               <td style="width:200px;"><strong>Objectives</strong></td>
               <td>
                 {#case Map.get(@revision.objectives, "attached")}
+                  {#match nil}
+                      <em>None</em>
                   {#match []}
-                    <em>None</em>
-
+                      <em>None</em>
                   {#match objectives}
                     <ul>
                       {#for objective <- objectives}

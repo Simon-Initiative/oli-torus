@@ -35,7 +35,6 @@ defmodule OliWeb.SystemMessageLiveTest do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       refute has_element?(view, "#system_message_active")
-
       assert render(view) =~ "Create"
     end
 

@@ -15,12 +15,7 @@
       ]
     },
     "purpose": {
-      "enum": [
-        "none",
-        "checkpoint",
-        "didigetthis",
-        "learnbydoing"
-      ]
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     }
   },
   "required": [

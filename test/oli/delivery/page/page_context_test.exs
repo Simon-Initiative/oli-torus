@@ -43,7 +43,7 @@ defmodule Oli.Delivery.Page.PageContextTest do
             %{"type" => "activity-reference", "activity_id" => Map.get(map, :a2).resource.id}
           ]
         },
-        objectives: %{"attached" => []}
+        objectives: %{"attached" => [o]}
       }
 
       Seeder.ensure_published(map.publication.id)

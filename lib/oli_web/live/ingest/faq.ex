@@ -1,44 +1,8 @@
-<div class="container">
-  <h3 class="display-6">Course Ingestion</h3>
-  <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
-  <hr class="my-4">
+defmodule OliWeb.Admin.Ingest.FAQ do
+  use Surface.Component
 
-    <%= case assigns[:error] do %>
-      <% nil -> %>
-
-      <% {:error, {:invalid_json, schema, errors, json}} = error -> %>
-        <div class="alert alert-danger" role="alert">
-          <p><%= prettify_error(error) %></p>
-
-          <%= render "_json_schema_error_viewer", schema: schema, errors: errors, json: json %>
-        </div>
-
-      <% error -> %>
-        <div class="alert alert-danger" role="alert">
-          <%= prettify_error(error) %>
-        </div>
-    <% end %>
-
-    <%= form_for @conn, "ingest", [as: :upload, multipart: true], fn f -> %>
-
-      <div class="form-group">
-        <label>Step 1. Select a Course Archive</label>
-        <%= file_input f, :digest, class: "form-control" %>
-      </div>
-
-      <div class="form-group">
-        <label>Step 2. Upload Course Archive for Ingestion</label>
-        <div><%= submit "Ingest", class: "btn btn-primary" %></div>
-      </div>
-
-      <div class="form-group">
-        <label>Step 3. Upon successful ingestion, you will then be redirected
-        to the Overview page of the new course project.</label>
-      </div>
-    <% end %>
-
-    <hr class="my-4">
-
+  def render(assigns) do
+    ~F"""
     <h3 class="display-5">FAQ</h3>
 
     <div class="accordion" id="accordionExample">
@@ -102,4 +66,6 @@
         </div>
       </div>
     </div>
-</div>
+    """
+  end
+end

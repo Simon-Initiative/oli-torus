@@ -90,6 +90,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
           publication_id: pub.id
         })
 
+      assert resource_attempt.lifecycle_state == :active
+
       # verify that creating the attempt tree returns both activity attempts
       {:ok, %AttemptState{resource_attempt: resource_attempt, attempt_hierarchy: attempts}} =
         AttemptState.fetch_attempt_state(resource_attempt, p1.revision)
@@ -107,6 +109,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       {act_attempt1, part_map1} = Map.get(attempts, a1.resource.id)
       {act_attempt2, part_map2} = Map.get(attempts, a2.resource.id)
 
+      assert act_attempt1.lifecycle_state == :active
+      assert act_attempt2.lifecycle_state == :active
+
       pa1 = Map.get(part_map1, "1")
       pa2 = Map.get(part_map2, "some_key")
       pa3 = Map.get(part_map2, "some_other_key")
@@ -114,6 +119,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
       assert pa1.activity_attempt_id == act_attempt1.id
       assert pa2.activity_attempt_id == act_attempt2.id
       assert pa3.activity_attempt_id == act_attempt2.id
+
+      assert pa1.lifecycle_state == :active
+      assert pa2.lifecycle_state == :active
+      assert pa3.lifecycle_state == :active
 
       assert %{attempt_number: 1, part_id: "1", hints: []} = pa1
 

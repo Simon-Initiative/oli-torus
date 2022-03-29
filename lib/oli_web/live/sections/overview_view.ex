@@ -16,6 +16,7 @@ defmodule OliWeb.Sections.OverviewView do
   data section, :any, default: nil
   data instructors, :list, default: []
   data updates_count, :integer
+  data submission_count, :integer
   data section_has_student_data, :boolean
 
   def set_breadcrumbs(:admin, section) do
@@ -23,7 +24,7 @@ defmodule OliWeb.Sections.OverviewView do
     |> breadcrumb(section)
   end
 
-  def set_breadcrumbs(:user, section) do
+  def set_breadcrumbs(_, section) do
     breadcrumb([], section)
   end
 
@@ -54,7 +55,8 @@ defmodule OliWeb.Sections.OverviewView do
            instructors: fetch_instructors(section),
            user: user,
            section: section,
-           updates_count: updates_count
+           updates_count: updates_count,
+           submission_count: Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section)
          )}
     end
   end
@@ -92,7 +94,7 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>
-            <a disabled={@updates_count == 0} href={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug)}>
+            <a disabled={@updates_count == 0} href={Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section.slug)}>
               Manage Updates
               {#if @updates_count > 0}
                 <span class="badge badge-primary">{@updates_count} available</span>
@@ -115,6 +117,13 @@ defmodule OliWeb.Sections.OverviewView do
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}>
+            Score Manually Graded Activities
+            {#if @submission_count > 0}
+                <span class="badge badge-primary">{@submission_count}</span>
+              {/if}
+            </a>
+          </li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
           {#if !@section.open_and_free}
@@ -158,7 +167,7 @@ defmodule OliWeb.Sections.OverviewView do
       if section_has_student_data do
         {"""
            This section has student data and will be archived rather than deleted.
-           Are you sure you want to archive it? You will no longer have access to the data.
+           Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.
          """, "Archive"}
       else
         {"""

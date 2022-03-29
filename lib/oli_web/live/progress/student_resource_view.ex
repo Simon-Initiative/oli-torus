@@ -155,7 +155,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory resource_attempts={@resource_access.resource_attempts}/>
+        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts}/>
       </Group>
     </Groups>
     """

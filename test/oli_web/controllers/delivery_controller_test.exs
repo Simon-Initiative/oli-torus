@@ -32,10 +32,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.student_instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
+      assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
     test "handles student with section", %{conn: conn, lti_param_ids: lti_param_ids} do
@@ -57,26 +54,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
-    end
-
-    test "handles instructor with no section", %{
-      conn: conn,
-      lti_param_ids: lti_param_ids,
-      user: user
-    } do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
-
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
-        |> get(Routes.delivery_path(conn, :index))
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
+      assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
     test "handles instructor with section", %{

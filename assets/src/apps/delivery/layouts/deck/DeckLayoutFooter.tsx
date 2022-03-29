@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import { templatizeText } from 'apps/delivery/components/TextParser';
+import { templatizeText } from 'adaptivity/scripting';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -206,6 +205,8 @@ const DeckLayoutFooter: React.FC = () => {
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
+  const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
+  const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -539,6 +540,8 @@ const DeckLayoutFooter: React.FC = () => {
     if (currentFeedbacks && currentFeedbacks.length) {
       const lastFeedback = currentFeedbacks[currentFeedbacks.length - 1];
       text = lastFeedback.custom?.mainBtnLabel || 'Next';
+      setSolutionButtonText(lastFeedback.custom?.applyBtnLabel || 'Show Solution');
+      setDisplaySolutionButton(lastFeedback.custom?.applyBtnFlag);
     }
     setNextButtonText(text);
   };
@@ -594,6 +597,11 @@ const DeckLayoutFooter: React.FC = () => {
           isFeedbackIconDisplayed={displayFeedbackIcon}
           showCheckBtn={currentActivity?.custom?.showCheckBtn}
         />
+        {displaySolutionButton && (
+          <button className="showSolnBtn showSolution">
+            <div className="ellipsis">{solutionButtonText}</div>
+          </button>
+        )}
         {!isLegacyTheme && (
           <FeedbackContainer
             minimized={!displayFeedback}

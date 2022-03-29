@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
+import { templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
 import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
@@ -25,7 +26,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { setInitStateFacts, setLessonEnd } from '../../adaptivity/slice';
+import { setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -35,11 +36,10 @@ import {
   selectSectionSlug,
   setScore,
 } from '../../page/slice';
+import { GroupsSlice } from '../name';
 import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
-import { GroupsSlice } from '../name';
-import { templatizeText } from 'apps/delivery/components/TextParser';
 
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
@@ -483,6 +483,7 @@ export const loadActivities = createAsyncThunk(
         activityId: activityModel.resourceId,
         attemptNumber: result.attemptNumber || 1,
         dateEvaluated: result.dateEvaluated || null,
+        dateSubmitted: result.dateSubmitted || null,
         score: result.score || null,
         outOf: result.outOf || null,
         parts: partAttempts,

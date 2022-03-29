@@ -17,7 +17,16 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
     """
   end
 
-  def init(socket, module, section, context, title, parent_gate_id, gating_condition_id \\ nil) do
+  def init(
+        socket,
+        module,
+        section,
+        context,
+        title,
+        parent_gate_id,
+        user_type,
+        gating_condition_id \\ nil
+      ) do
     parent_gate =
       case parent_gate_id do
         nil -> nil
@@ -91,14 +100,15 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       count_exceptions: count_exceptions(parent_gate_id, gating_condition_id),
       title: title,
       section: section,
-      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate),
+      delivery_breadcrumb: true,
+      breadcrumbs: set_breadcrumbs(section, module, title, parent_gate, user_type),
       gating_condition: gating_condition,
       modal: nil
     )
   end
 
-  defp set_breadcrumbs(section, module, title, parent_gate) do
-    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate)
+  defp set_breadcrumbs(section, module, title, parent_gate, user_type) do
+    OliWeb.Sections.GatingAndScheduling.set_breadcrumbs(section, parent_gate, user_type)
     |> breadcrumb(section, module, title)
   end
 
@@ -164,9 +174,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
             Enum.filter(
               items,
               &(&1.uuid != root.uuid and
-                  &1.revision.resource_type_id ==
+                  (&1.revision.resource_type_id ==
                     Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded)
+                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
             )
           end
 
@@ -176,9 +186,9 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
               items,
               &(&1.uuid != root.uuid and
                   &1.revision.resource_id != resource_id and
-                  &1.revision.resource_type_id ==
+                  (&1.revision.resource_type_id ==
                     Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded)
+                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
             )
           end
       end
@@ -208,9 +218,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           fn items ->
             Enum.filter(
               items,
-              &(&1.uuid != root.uuid and
-                  &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page"))
+              &(&1.uuid != root.uuid)
             )
           end
 
@@ -219,9 +227,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
             Enum.filter(
               items,
               &(&1.uuid != root.uuid and
-                  &1.revision.resource_id != resource_id and
-                  &1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page"))
+                  &1.revision.resource_id != resource_id)
             )
           end
       end
@@ -360,19 +366,34 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       modal: %{assigns: %{hierarchy: hierarchy}}
     } = socket.assigns
 
-    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title}} =
+    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title, resource_type_id: resource_type_id}} =
       Hierarchy.find_in_hierarchy(hierarchy, selection)
 
-    data = Map.put(gating_condition.data, :resource_id, resource_id)
+    container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
-    {:noreply,
-     assign(socket,
-       gating_condition:
-         gating_condition
-         |> Map.put(:data, data)
-         |> Map.put(:source_title, title)
-     )
-     |> hide_modal()}
+    case {resource_type_id, gating_condition.type} do
+      {^container_type_id, type} when type in [:finished, :started] ->
+        {:noreply, put_flash(
+          socket,
+          :error,
+          "Only pages can be selected for this type of gating condition"
+        ) |> hide_modal()}
+      _ ->
+
+        data = Map.put(gating_condition.data, :resource_id, resource_id)
+
+        {:noreply,
+
+         assign(socket,
+           gating_condition:
+             gating_condition
+             |> Map.put(:data, data)
+             |> Map.put(:source_title, title)
+         )
+         |> put_flash(:error, nil)
+         |> hide_modal()}
+    end
+
   end
 
   def handle_event(

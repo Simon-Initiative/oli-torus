@@ -1,5 +1,6 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
+import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
@@ -11,7 +12,13 @@ import { StemDelivery } from 'components/activities/common/stem/delivery/StemDel
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
-import { makeResponse, Manifest, Response, RichText } from 'components/activities/types';
+import {
+  GradingApproach,
+  makeResponse,
+  Manifest,
+  Response,
+  RichText,
+} from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { getCorrectResponse } from 'data/activities/model/responses';
 import { containsRule, eqRule } from 'data/activities/model/rules';
@@ -52,6 +59,17 @@ const ShortAnswer = () => {
         <TabbedNavigation.Tab label="Answer Key">
           <div className="d-flex flex-column mb-2">
             <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+            <GradingApproachDropdown
+              editMode={editMode}
+              selected={
+                model.authoring.parts[0].gradingApproach === undefined
+                  ? GradingApproach.automatic
+                  : model.authoring.parts[0].gradingApproach
+              }
+              onChange={(gradingApproach) =>
+                dispatch(ShortAnswerActions.setGradingApproach(gradingApproach, DEFAULT_PART_ID))
+              }
+            />
             <InputEntry
               key={getCorrectResponse(model, DEFAULT_PART_ID).id}
               inputType={model.inputType}

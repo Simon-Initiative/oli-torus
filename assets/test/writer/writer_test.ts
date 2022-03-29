@@ -97,16 +97,6 @@ describe('parser', () => {
         );
       }),
     ).toBeTruthy();
-
-    expect(
-      screen.getByText((content, element) => {
-        return (
-          element?.tagName.toLowerCase() === 'pre' &&
-          element?.firstChild?.nodeName.toLowerCase() === 'code' &&
-          !!element?.firstChild.textContent?.includes('import fresh-pots')
-        );
-      }),
-    ).toBeTruthy();
   });
 
   it('renders internal link with context', () => {
