@@ -7,7 +7,7 @@ defmodule OliWeb.Delivery.SelectSource do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, CardsViewFilter, Filter, Listing, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
 
   import Oli.Utils
@@ -124,12 +124,13 @@ defmodule OliWeb.Delivery.SelectSource do
     ~F"""
     <div class="d-flex flex-column mt-4">
       {#if is_instructor?(@live_action)}
-        <h3>Select Curriculum</h3>
-        <p class="mt-1 text-muted">Select a curriculum source to create your course section.</p>
+        <CardsViewFilter table_model={@table_model}>
+          <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+        </CardsViewFilter>
+      {#else}
+        <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+        <div class="mb-4"/>
       {/if}
-
-      <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-      <div class="mb-4"/>
 
       <Listing
         filter={@applied_query}

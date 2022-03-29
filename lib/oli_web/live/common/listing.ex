@@ -25,7 +25,7 @@ defmodule OliWeb.Common.Listing do
       {#if @total_count > 0}
         <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
         {#if @cards_view}
-          <CardListing model={@table_model} selected={@selected} sort={@sort} context={@context}/>
+          <CardListing model={@table_model} selected={@selected} context={@context}/>
         {#else}
           <Table model={@table_model} sort={@sort} additional_table_class={@additional_table_class} context={@context}/>
         {/if}

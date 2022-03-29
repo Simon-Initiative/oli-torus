@@ -52,7 +52,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         _ -> "Yes"
       end
     else
-      "None"
+      "Free"
     end
   end
 
