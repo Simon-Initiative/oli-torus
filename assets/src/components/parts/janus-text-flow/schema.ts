@@ -7,6 +7,7 @@ import { parseNumString } from 'utils/common';
 import {
   ColorPalette,
   CreationContext,
+  Expression,
   JanusAbsolutePositioned,
   JanusCustomCss,
 } from '../types/parts';
@@ -165,8 +166,8 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
   return result;
 };
 
-export const getFormattedExpression = (part: any, owner: any): any[] => {
-  const brokenExpressions: any[] = [];
+export const getFormattedExpression = (part: any, owner: any): Expression[] => {
+  const brokenExpressions: Expression[] = [];
   const evaluatedValue = validateExpressionInText(part.custom.nodes);
   if (evaluatedValue) {
     brokenExpressions.push({

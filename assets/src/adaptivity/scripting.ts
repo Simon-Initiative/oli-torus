@@ -456,6 +456,7 @@ export const templatizeText = (
   vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
   /* console.log('templatizeText call: ', { text, vars, locals, env }); */
   //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
+
   const isCSSString = totalVariablesLength !== vars.length;
   if (!vars || isCSSString) {
     return text;
@@ -573,12 +574,9 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
 };
 
 export const validateExpressionInText = (child: any): any => {
-  let evaluatedExppression = '';
-
   if (child.key && typeof child.value === 'string') {
     const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
     if (evaluatedExp !== child.value) {
-      evaluatedExppression = evaluatedExp;
       child.value = evaluatedExp;
     }
   } else {
@@ -587,22 +585,20 @@ export const validateExpressionInText = (child: any): any => {
       optionText = child.text;
       const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
       if (evaluatedExp !== optionText) {
-        evaluatedExppression = evaluatedExp;
         child.text = evaluatedExp;
       }
     } else if (child?.children?.length) {
       child.children.forEach((child: any) => {
-        evaluatedExppression = validateExpressionInText(child);
+        validateExpressionInText(child);
       });
     } else if (Array.isArray(child)) {
       child.forEach((child) => {
         child.children.forEach((child: any) => {
-          evaluatedExppression = validateExpressionInText(child);
+          validateExpressionInText(child);
         });
       });
     }
   }
-  return evaluatedExppression;
 };
 
 // for use by client side scripting evalution
