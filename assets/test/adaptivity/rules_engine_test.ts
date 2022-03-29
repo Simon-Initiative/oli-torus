@@ -298,18 +298,28 @@ describe('Operators', () => {
       expect(notContainsOperator('=A3+2', '=')).toEqual(false);
     });
 
-    it('should find single elements contained in arrays', () => {
-      expect(containsOperator('a', '[a,b,c]')).toEqual(true);
-      expect(containsOperator(9, '[1,2,9]')).toEqual(true);
-      expect(containsOperator('a', [1, 2, 3])).toEqual(false);
+    it('should match when there are arrays of strings', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'b'])).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsOperator('abc', ['a', 'd'])).toEqual(false);
     });
 
-    it('should find array subsets within arrays', () => {
-      expect(containsOperator('[8,6]', [9, 8, 7])).toEqual(false);
-      expect(containsOperator('9,8', [9, 8, 7])).toEqual(true);
-      expect(containsOperator('[7,9]', [9, 8, 7])).toEqual(true);
-      expect(containsOperator([1, 2], [1, 2, 3])).toEqual(true);
-      expect(containsOperator([4, 1], [1, 2, 3, 4])).toEqual(true);
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsOperator('1,2,3', [1, 4])).toEqual(false);
     });
   });
 
