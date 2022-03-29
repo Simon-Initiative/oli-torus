@@ -574,10 +574,12 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
 };
 
 export const validateExpressionInText = (child: any): any => {
+  let evaluatedExppression = '';
   if (child.key && typeof child.value === 'string') {
     const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
     if (evaluatedExp !== child.value) {
       child.value = evaluatedExp;
+      evaluatedExppression = evaluatedExp;
     }
   } else {
     let optionText = '';
@@ -585,20 +587,22 @@ export const validateExpressionInText = (child: any): any => {
       optionText = child.text;
       const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
       if (evaluatedExp !== optionText) {
+        evaluatedExppression = evaluatedExp;
         child.text = evaluatedExp;
       }
     } else if (child?.children?.length) {
       child.children.forEach((child: any) => {
-        validateExpressionInText(child);
+        evaluatedExppression = validateExpressionInText(child);
       });
     } else if (Array.isArray(child)) {
       child.forEach((child) => {
         child.children.forEach((child: any) => {
-          validateExpressionInText(child);
+          evaluatedExppression = validateExpressionInText(child);
         });
       });
     }
   }
+  return evaluatedExppression;
 };
 
 // for use by client side scripting evalution

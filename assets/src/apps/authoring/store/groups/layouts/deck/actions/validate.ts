@@ -141,36 +141,6 @@ const validateValue = (condition: any, rule: any, owner: any) => {
     : null;
 };
 
-const getOptionTextFromNode = (child: any): any => {
-  let evaluatedExppression = '';
-
-  if (child.key && typeof child.value === 'string') {
-    const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
-    if (evaluatedExp !== child.value) {
-      evaluatedExppression = evaluatedExp;
-    }
-  } else {
-    let optionText = '';
-    if (child.tag === 'text') {
-      optionText = child.text;
-      const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
-      if (evaluatedExp !== optionText) {
-        evaluatedExppression = evaluatedExp;
-      }
-    } else if (child?.children?.length) {
-      child.children.forEach((child: any) => {
-        evaluatedExppression = getOptionTextFromNode(child);
-      });
-    } else if (Array.isArray(child)) {
-      child.forEach((child) => {
-        child.children.forEach((child: any) => {
-          evaluatedExppression = getOptionTextFromNode(child);
-        });
-      });
-    }
-  }
-  return evaluatedExppression;
-};
 export const validators = [
   {
     type: DiagnosticTypes.INVALID_EXPRESSION,
