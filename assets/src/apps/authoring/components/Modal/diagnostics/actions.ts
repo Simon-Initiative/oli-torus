@@ -1,6 +1,9 @@
 import { clone } from 'utils/common';
 
-import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import {
+  updatePart,
+  updatePartWithCorrectExpression,
+} from 'apps/authoring/store/parts/actions/updatePart';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
 import { DiagnosticTypes } from './DiagnosticTypes';
 import cloneDeep from 'lodash/cloneDeep';
@@ -15,15 +18,15 @@ export const updateId = (problem: any, fixed: string) => {
   return updatePart({ activityId, partId, changes });
 };
 
-export const updateParts = (problem: any, fixed: string) => {
+export const updatePartsWithCorrectExpression = (problem: any, fixed: string) => {
   const activityId = problem.owner.resourceId;
   const partId = problem.item.part.id;
   const changes = {
     item: problem.item.item,
-    suggestedFix: problem.item.suggestedFix,
-    type: problem.item.type,
+    part: problem.item.part,
+    formattedExpression: problem.item.formattedExpression,
   };
-  return updatePart({ activityId, partId, changes });
+  return updatePartWithCorrectExpression({ activityId, partId, changes });
 };
 
 export const updateRule = (rule: any, problem: any, activities: any) => {
@@ -132,7 +135,7 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
-  [DiagnosticTypes.INVALID_EXPRESSION]: updateParts,
+  [DiagnosticTypes.INVALID_EXPRESSION]: updatePartsWithCorrectExpression,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };

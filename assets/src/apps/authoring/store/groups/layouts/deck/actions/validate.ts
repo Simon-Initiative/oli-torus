@@ -15,6 +15,7 @@ import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
 import { extractAllExpressionsFromText, extractExpressionFromText } from 'adaptivity/scripting';
+import { clone } from 'utils/common';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -185,10 +186,11 @@ export const validators = [
             const capabilities = instance.getCapabilities();
             if (capabilities.canUseExpression) {
               try {
-                if (instance.expressionSchema) {
-                  const expressionSchema = instance.getEvaluateExpression(part, owner);
-                  if (expressionSchema?.length) {
-                    brokenExpressions.push(...expressionSchema);
+                if (instance.getFormattedExpression) {
+                  const partClone: any = clone(part);
+                  const formattedExpression = instance.getFormattedExpression(partClone, owner);
+                  if (formattedExpression?.length) {
+                    brokenExpressions.push(...formattedExpression);
                   }
                 }
               } catch (rx) {

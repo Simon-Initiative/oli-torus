@@ -174,6 +174,7 @@ export const getFormattedExpression = (part: any, owner: any): any[] => {
       part,
       suggestedFix: evaluatedValue,
       owner,
+      formattedExpression: true,
     });
   }
   return brokenExpressions;

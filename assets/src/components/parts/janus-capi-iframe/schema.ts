@@ -51,6 +51,7 @@ export const getFormattedExpression = (part: any, owner: any): any[] => {
         part,
         changes: configChanges,
         suggestedFix: evaluatedValue,
+        formattedExpression: true,
       });
     }
   });

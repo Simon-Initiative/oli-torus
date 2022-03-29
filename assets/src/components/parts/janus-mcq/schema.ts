@@ -88,6 +88,7 @@ export const getFormattedExpression = (part: any, owner: any): any[] => {
         part,
         owner,
         suggestedFix: evaluatedValue,
+        formattedExpression: true,
       });
     }
   });

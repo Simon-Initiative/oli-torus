@@ -579,6 +579,7 @@ export const validateExpressionInText = (child: any): any => {
     const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
     if (evaluatedExp !== child.value) {
       evaluatedExppression = evaluatedExp;
+      child.value = evaluatedExp;
     }
   } else {
     let optionText = '';
@@ -587,6 +588,7 @@ export const validateExpressionInText = (child: any): any => {
       const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
       if (evaluatedExp !== optionText) {
         evaluatedExppression = evaluatedExp;
+        child.text = evaluatedExp;
       }
     } else if (child?.children?.length) {
       child.children.forEach((child: any) => {
