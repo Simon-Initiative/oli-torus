@@ -13,7 +13,7 @@ Torus employs a publication model that is designed to support:
 
 The primary components and their relationships are as follows:
 
-[[../images/pub-er.png]]
+![publication model](assets/pub-er.png "Publication Model")
 
 A `Resource` in a course project can be a page (graded or ungraded),
 container (e.g. Unit, Module), an activity, or learning objective. A course

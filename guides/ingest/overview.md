@@ -13,7 +13,7 @@ archives from the legacy OLI XML course format.
 
 https://github.com/Simon-Initiative/course-digest
 
-[[/images/ingest.png]]
+[[assets/ingest.png]]
 
 ## Course Digest Format
 

@@ -43,18 +43,17 @@ defmodule Oli.MixProject do
   defp docs do
     [
       main: "introduction",
+      assets: "doc_assets",
       logo: "assets/static/images/torus-icon.png",
       extra_section: "GUIDES",
       extras: extras(),
-      groups_for_extras: groups_for_extras()
+      groups_for_extras: groups_for_extras(),
+      filter_modules: "ThisModuleDoesNotExist"
     ]
   end
 
   defp extras do
     [
-      "README.md",
-      "LICENSE.md",
-      "CHANGELOG.md",
       "guides/starting/end-user.md",
       "guides/starting/developer.md",
       "guides/starting/self-hosted.md",
@@ -92,6 +91,7 @@ defmodule Oli.MixProject do
       "Content ingestion": ~r/guides\/ingest\/.?/
     ]
   end
+
 
   # Configuration for the OTP application.
   #

@@ -17,7 +17,7 @@
 - `[PERF]`: Changes that target a performance improvement
 - `[ENHANCEMENT]`: Small improvements to existing features
 
-[[/images/message.png]]
+![changes](assets/message.png "Message")
 
 ## Release
 

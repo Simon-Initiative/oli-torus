@@ -11,7 +11,7 @@ itself with obtaining and releasing locks.
 
 The following sequence diagram overviews the locking implementation.
 
-[[../images/locking.png]]
+![locking](assets/locking.png "Locking Implementation")
 
 The important takeaways from the above diagram are:
 

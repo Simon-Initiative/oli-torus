@@ -46,7 +46,7 @@ the persistence layer.
 
 A diagram of this architecture at a conceptual level is as follows:
 
-[[/images/conceptual.png]]
+![conceptual architecture](assets/conceptual.png "Conceptual Architecture")
 
 Torus is designed to take advantage of Phoenix clustering support and Distributed Erlang to meet scalability and performance
 requirements. The various "Applications" that comprise Torus can be replicated across and run on any number of Erlang nodes that
