@@ -490,6 +490,14 @@ defmodule OliWeb.Router do
     get("/", Api.TagController, :index)
   end
 
+  # Tags Service
+  scope "/api/v1/bib/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.BibController, :new)
+    get("/", Api.BibController, :index)
+  end
+
   scope "/api/v1/products", OliWeb do
     pipe_through([:api])
 
