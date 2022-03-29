@@ -541,6 +541,68 @@ export const templatizeText = (
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 
+export const checkExpressionsWithWrongBrackets = (value: string) => {
+  let originalValue = value;
+  const allexpression = extractAllExpressionsFromText(originalValue);
+  const lstEvaluatedExpression: Record<string, string> = {};
+  allexpression.forEach((expression) => {
+    const actualExpression = expression;
+    let result = expression.match(/{([^{^}]+)}/g) || [];
+    result = result.filter(
+      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
+    );
+    if (result?.length) {
+      const obj: Record<string, string> = {};
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace(result[i], 'obj' + i);
+      }
+      expression = expression.replace(new RegExp('{', 'g'), '(');
+      expression = expression.replace(new RegExp('}', 'g'), ')');
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace('obj' + i, obj['obj' + i]);
+      }
+    }
+    lstEvaluatedExpression[actualExpression] = expression;
+  });
+  Object.keys(lstEvaluatedExpression).forEach((key) => {
+    originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
+  });
+  return originalValue;
+};
+
+export const validateExpressionInText = (child: any): any => {
+  let evaluatedExppression = '';
+
+  if (child.key && typeof child.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
+    if (evaluatedExp !== child.value) {
+      evaluatedExppression = evaluatedExp;
+    }
+  } else {
+    let optionText = '';
+    if (child.tag === 'text') {
+      optionText = child.text;
+      const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
+      if (evaluatedExp !== optionText) {
+        evaluatedExppression = evaluatedExp;
+      }
+    } else if (child?.children?.length) {
+      child.children.forEach((child: any) => {
+        evaluatedExppression = validateExpressionInText(child);
+      });
+    } else if (Array.isArray(child)) {
+      child.forEach((child) => {
+        child.children.forEach((child: any) => {
+          evaluatedExppression = validateExpressionInText(child);
+        });
+      });
+    }
+  }
+  return evaluatedExppression;
+};
+
 // for use by client side scripting evalution
 export const defaultGlobalEnv = new Environment();
 // note: CANNOT have this window reference in the shared nodejs code

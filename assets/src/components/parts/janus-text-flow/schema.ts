@@ -1,4 +1,5 @@
 import { CapiVariableTypes } from 'adaptivity/capi';
+import { validateExpressionInText } from 'adaptivity/scripting';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
@@ -164,8 +165,18 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
   return result;
 };
 
-export const expressionSchema = {
-  nodes: CapiVariableTypes.ARRAY,
+export const getFormattedExpression = (part: any, owner: any): any[] => {
+  const brokenExpressions: any[] = [];
+  const evaluatedValue = validateExpressionInText(part.custom.nodes);
+  if (evaluatedValue) {
+    brokenExpressions.push({
+      item: part,
+      part,
+      suggestedFix: evaluatedValue,
+      owner,
+    });
+  }
+  return brokenExpressions;
 };
 
 export const adaptivitySchema = {

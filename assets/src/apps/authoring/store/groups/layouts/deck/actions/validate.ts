@@ -184,66 +184,21 @@ export const validators = [
           if (instance.getCapabilities) {
             const capabilities = instance.getCapabilities();
             if (capabilities.canUseExpression) {
-              if (instance.expressionSchema) {
-                const expressionSchema = instance.expressionSchema;
-                if (expressionSchema) {
-                  Object.keys(expressionSchema).forEach((key) => {
-                    if (key === 'nodes') {
-                      const evaluatedValue = getOptionTextFromNode(part.custom.nodes);
-                      if (evaluatedValue) {
-                        brokenExpressions.push({
-                          type: part.type,
-                          part,
-                          owner,
-                          item: part,
-                          suggestedFix: evaluatedValue,
-                        });
-                      }
-                    } else if (key === 'mcqItems') {
-                      part.custom.mcqItems.forEach((element: any) => {
-                        const evaluatedValue = getOptionTextFromNode(element.nodes[0]);
-                        if (evaluatedValue) {
-                          brokenExpressions.push({
-                            type: part.type,
-                            part,
-                            item: element,
-                            owner,
-                            suggestedFix: evaluatedValue,
-                          });
-                        }
-                      });
-                    } else if (key === 'configData') {
-                      part.custom.configData.forEach((element: any) => {
-                        const evaluatedValue = getOptionTextFromNode(element);
-                        if (evaluatedValue) {
-                          const configChanges = {
-                            custom: {
-                              configData: [
-                                {
-                                  key: element.key,
-                                  type: element.type,
-                                  value: evaluatedValue,
-                                },
-                              ],
-                            },
-                          };
-                          brokenExpressions.push({
-                            type: part.type,
-                            part,
-                            changes: configChanges,
-                            owner,
-                            suggestedFix: evaluatedValue,
-                          });
-                        }
-                      });
-                    }
-                  });
+              try {
+                if (instance.expressionSchema) {
+                  const expressionSchema = instance.getEvaluateExpression(part, owner);
+                  if (expressionSchema?.length) {
+                    brokenExpressions.push(...expressionSchema);
+                  }
                 }
+              } catch (rx) {
+                console.log({ rx });
               }
             }
           }
         }
       });
+
       return [...brokenExpressions];
     },
   },

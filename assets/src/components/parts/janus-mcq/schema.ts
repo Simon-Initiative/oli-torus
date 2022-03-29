@@ -1,6 +1,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { validateExpressionInText } from 'adaptivity/scripting';
 
 export interface McqItem {
   scoreValue: number;
@@ -78,8 +79,19 @@ export const adaptivitySchema = {
   selectedChoicesText: CapiVariableTypes.ARRAY,
 };
 
-export const expressionSchema = {
-  mcqItems: CapiVariableTypes.ARRAY,
+export const getFormattedExpression = (part: any, owner: any): any[] => {
+  const brokenExpressions: any[] = [];
+  part.custom.mcqItems.forEach((element: any) => {
+    const evaluatedValue = validateExpressionInText(element.nodes[0]);
+    if (evaluatedValue) {
+      brokenExpressions.push({
+        part,
+        owner,
+        suggestedFix: evaluatedValue,
+      });
+    }
+  });
+  return brokenExpressions;
 };
 
 export const uiSchema = {};

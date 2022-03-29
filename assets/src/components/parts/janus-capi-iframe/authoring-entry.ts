@@ -13,7 +13,7 @@ import {
   getCapabilities,
   schema,
   uiSchema,
-  expressionSchema,
+  getFormattedExpression,
 } from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
@@ -38,6 +38,6 @@ register(CapiIframeAuthor, manifest.authoring.element, observedAttributes, {
     createSchema,
     getCapabilities,
     getAdaptivitySchema: adaptivitySchema,
-    expressionSchema,
+    getFormattedExpression,
   },
 });

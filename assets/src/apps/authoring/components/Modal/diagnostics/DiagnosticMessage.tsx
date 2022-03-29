@@ -48,7 +48,7 @@ export const InvalidPartExpressionValue: React.FC<Message> = ({ problem }: Messa
     <strong>{problem?.item?.part?.id}</strong>&quot; component has invalid expression in &nbsp;
     {problem?.item?.part?.custom?.configData && (
       <span>
-        configData - &quot;<strong>{problem?.item?.item.key}</strong>&quot; variable
+        configData - &quot;<strong>{problem?.item?.key}</strong>&quot; variable
       </span>
     )}
     {problem?.item?.part?.custom?.mcqItems && <span> MCQ Options</span>}
