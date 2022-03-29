@@ -9,6 +9,8 @@ defmodule OliWeb.DeliveryController do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Repo
+  alias Lti_1p3.Tool.Services.AGS
+  alias Lti_1p3.Tool.Services.NRPS
 
   import Oli.Utils
 
@@ -370,7 +372,11 @@ defmodule OliWeb.DeliveryController do
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
           blueprint_id: blueprint.id,
-          amount: amount
+          amount: amount,
+          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+          line_items_service_url: AGS.get_line_items_url(lti_params),
+          nrps_enabled: NRPS.nrps_enabled?(lti_params),
+          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
 
       # Enroll this user with their proper roles (instructor)
@@ -394,7 +400,11 @@ defmodule OliWeb.DeliveryController do
           context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
           institution_id: institution.id,
           base_project_id: publication.project_id,
-          lti_1p3_deployment_id: deployment.id
+          lti_1p3_deployment_id: deployment.id,
+          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
+          line_items_service_url: AGS.get_line_items_url(lti_params),
+          nrps_enabled: NRPS.nrps_enabled?(lti_params),
+          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
 
       {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
