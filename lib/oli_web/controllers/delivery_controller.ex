@@ -370,7 +370,9 @@ defmodule OliWeb.DeliveryController do
           institution_id: institution.id,
           lti_1p3_deployment_id: deployment.id,
           blueprint_id: blueprint.id,
-          amount: amount
+          amount: amount,
+          start_date: nil,
+          end_date: nil
         })
 
       # Enroll this user with their proper roles (instructor)
