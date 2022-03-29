@@ -16,6 +16,7 @@ import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
 import { extractAllExpressionsFromText, extractExpressionFromText } from 'adaptivity/scripting';
 import { clone } from 'utils/common';
+import { JanusConditionProperties } from 'adaptivity/capi';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -112,7 +113,7 @@ const checkExpressionsWithWrongBrackets = (value: string) => {
   return originalValue;
 };
 
-const validateValueExpression = (condition: any, rule: any, owner: any) => {
+const validateValueExpression = (condition: JanusConditionProperties, rule: any, owner: any) => {
   try {
     if (typeof condition.value === 'string') {
       const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
@@ -130,7 +131,7 @@ const validateValueExpression = (condition: any, rule: any, owner: any) => {
   }
 };
 
-const validateValue = (condition: any, rule: any, owner: any) => {
+const validateValue = (condition: JanusConditionProperties, rule: any, owner: any) => {
   return has(condition, 'value') && (condition.value === null || condition.value === undefined)
     ? {
         condition,
@@ -261,7 +262,7 @@ export const validators = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: any) => {
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
           if (!validateTarget(condition.fact, activity, parts)) {
             brokenConditionValues.push({
               condition,
@@ -284,7 +285,7 @@ export const validators = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: any) => {
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
           brokenConditionValues.push(validateValue(condition, rule, owner));
         });
 
@@ -300,7 +301,7 @@ export const validators = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: any) => {
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
           brokenConditionValues.push(validateValueExpression(condition, rule, owner));
         });
 
