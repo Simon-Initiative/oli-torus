@@ -34,7 +34,7 @@ import {
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
+import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -85,6 +85,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = useSelector(selectUserId);
+  const currentLessonId = useSelector(selectPageSlug);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key, value } = payload;
@@ -461,6 +462,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const finalInitSnapshot = handleInitStateVars(initState, snapshot);
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
+      currentLessonId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
