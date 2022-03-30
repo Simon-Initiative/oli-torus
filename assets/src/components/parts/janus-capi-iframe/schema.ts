@@ -1,7 +1,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
 import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
-import { validateExpressionInText } from 'adaptivity/scripting';
+import { formatExpression } from 'adaptivity/scripting';
 
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
@@ -32,7 +32,7 @@ export const getCapabilities = () => ({
 export const getFormattedExpression = (part: any, owner: any): Expression[] => {
   const brokenExpressions: Expression[] = [];
   part.custom.configData.forEach((element: any) => {
-    const evaluatedValue = validateExpressionInText(element);
+    const evaluatedValue = formatExpression(element);
     if (evaluatedValue && evaluatedValue?.length) {
       brokenExpressions.push({
         key: element.key,
@@ -40,6 +40,7 @@ export const getFormattedExpression = (part: any, owner: any): Expression[] => {
         part,
         suggestedFix: evaluatedValue,
         formattedExpression: true,
+        message: ` configData - "${element.key}" variable`,
       });
     }
   });

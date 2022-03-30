@@ -14,7 +14,11 @@ import { selectState as selectPageState } from '../../../../page/slice';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
-import { extractAllExpressionsFromText, extractExpressionFromText } from 'adaptivity/scripting';
+import {
+  checkExpressionsWithWrongBrackets,
+  extractAllExpressionsFromText,
+  extractExpressionFromText,
+} from 'adaptivity/scripting';
 import { clone } from 'utils/common';
 import { JanusConditionProperties } from 'adaptivity/capi';
 
@@ -82,52 +86,17 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
       return false;
   }
 };
-const checkExpressionsWithWrongBrackets = (value: string) => {
-  let originalValue = value;
-  const allexpression = extractAllExpressionsFromText(originalValue);
-  const lstEvaluatedExpression: Record<string, string> = {};
-  allexpression.forEach((expression) => {
-    const actualExpression = expression;
-    let result = expression.match(/{([^{^}]+)}/g) || [];
-    result = result.filter(
-      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
-    );
-    if (result?.length) {
-      const obj: Record<string, string> = {};
-      for (let i = 0; i < result?.length; i++) {
-        obj['obj' + i] = result[i];
-        expression = expression.replace(result[i], 'obj' + i);
-      }
-      expression = expression.replace(new RegExp('{', 'g'), '(');
-      expression = expression.replace(new RegExp('}', 'g'), ')');
-      for (let i = 0; i < result?.length; i++) {
-        obj['obj' + i] = result[i];
-        expression = expression.replace('obj' + i, obj['obj' + i]);
-      }
-    }
-    lstEvaluatedExpression[actualExpression] = expression;
-  });
-  Object.keys(lstEvaluatedExpression).forEach((key) => {
-    originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
-  });
-  return originalValue;
-};
-
 const validateValueExpression = (condition: JanusConditionProperties, rule: any, owner: any) => {
-  try {
-    if (typeof condition.value === 'string') {
-      const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
-      if (evaluatedExp !== condition.value) {
-        return {
-          condition,
-          rule,
-          owner,
-          suggestedFix: evaluatedExp,
-        };
-      }
+  if (typeof condition.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
+    if (evaluatedExp !== condition.value) {
+      return {
+        condition,
+        rule,
+        owner,
+        suggestedFix: evaluatedExp,
+      };
     }
-  } catch (ex) {
-    console.log({ ex });
   }
 };
 
@@ -156,16 +125,12 @@ export const validators = [
           if (instance.getCapabilities) {
             const capabilities = instance.getCapabilities();
             if (capabilities.canUseExpression) {
-              try {
-                if (instance.getFormattedExpression) {
-                  const partClone: any = clone(part);
-                  const formattedExpression = instance.getFormattedExpression(partClone, owner);
-                  if (formattedExpression?.length) {
-                    brokenExpressions.push(...formattedExpression);
-                  }
+              if (instance.getFormattedExpression) {
+                const partClone: any = clone(part);
+                const formattedExpression = instance.getFormattedExpression(partClone, owner);
+                if (formattedExpression?.length) {
+                  brokenExpressions.push(...formattedExpression);
                 }
-              } catch (rx) {
-                console.log({ rx });
               }
             }
           }

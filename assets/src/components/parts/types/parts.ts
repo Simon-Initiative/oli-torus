@@ -102,4 +102,5 @@ export interface Expression {
   owner: any[]; // TODO
   formattedExpression: boolean;
   key?: string;
+  message?: string;
 }

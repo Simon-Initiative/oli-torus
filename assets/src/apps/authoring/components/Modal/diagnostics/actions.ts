@@ -25,6 +25,7 @@ export const updatePartsWithCorrectExpression = (problem: any, fixed: string) =>
     item: problem.item.item,
     part: problem.item.part,
     formattedExpression: problem.item.formattedExpression,
+    message: problem.item.message,
   };
   return updatePartWithCorrectExpression({ activityId, partId, changes });
 };

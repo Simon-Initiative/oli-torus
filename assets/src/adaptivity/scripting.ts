@@ -558,8 +558,8 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
         obj['obj' + i] = result[i];
         expression = expression.replace(result[i], 'obj' + i);
       }
-      expression = expression.replace(new RegExp('{', 'g'), '(');
-      expression = expression.replace(new RegExp('}', 'g'), ')');
+      expression = expression.replace(/{/g, '(');
+      expression = expression.replace(/}/g, ')');
       for (let i = 0; i < result?.length; i++) {
         obj['obj' + i] = result[i];
         expression = expression.replace('obj' + i, obj['obj' + i]);
@@ -573,36 +573,38 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
   return originalValue;
 };
 
-export const validateExpressionInText = (child: any): any => {
-  let evaluatedExppression = '';
+export const formatExpression = (child: any): string => {
+  let updatedExpression = '';
+  //this section is to check the expression in CAPI-configData variables
   if (child.key && typeof child.value === 'string') {
     const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
     if (evaluatedExp !== child.value) {
       child.value = evaluatedExp;
-      evaluatedExppression = evaluatedExp;
+      updatedExpression = evaluatedExp;
     }
   } else {
+    //this section is to check the expression in text flow which can be in text flow component / MCQ options etc
     let optionText = '';
     if (child.tag === 'text') {
       optionText = child.text;
       const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
       if (evaluatedExp !== optionText) {
-        evaluatedExppression = evaluatedExp;
+        updatedExpression = evaluatedExp;
         child.text = evaluatedExp;
       }
     } else if (child?.children?.length) {
       child.children.forEach((child: any) => {
-        evaluatedExppression = validateExpressionInText(child);
+        updatedExpression = formatExpression(child);
       });
     } else if (Array.isArray(child)) {
       child.forEach((child) => {
         child.children.forEach((child: any) => {
-          evaluatedExppression = validateExpressionInText(child);
+          updatedExpression = formatExpression(child);
         });
       });
     }
   }
-  return evaluatedExppression;
+  return updatedExpression;
 };
 
 // for use by client side scripting evalution

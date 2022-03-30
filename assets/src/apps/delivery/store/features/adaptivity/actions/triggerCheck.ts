@@ -278,7 +278,6 @@ export const triggerCheck = createAsyncThunk(
       });
     }
     bulkApplyState(updateScoreAndVisit, defaultGlobalEnv);
-    console.log({ updateScoreAndVisit });
 
     // after these final extrinsic state updates, we need to write it again
     // update redux first because we need to get the latest full extrnisic state to write to the server
