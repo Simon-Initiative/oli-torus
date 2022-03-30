@@ -185,6 +185,10 @@ defmodule OliWeb.Router do
       from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
+  pipeline :sso do
+    plug(Oli.Plugs.ValidateIdToken)
+  end
+
   scope "/superactivity", OliWeb do
     pipe_through :superactivity
     get "/*path", LegacySuperactivityController, :file_not_found
@@ -858,8 +862,7 @@ defmodule OliWeb.Router do
     live("/system_messages", SystemMessageLive.IndexView)
 
     # Course Ingestion
-    get("/ingest", IngestController, :index)
-    post("/ingest", IngestController, :upload)
+    live("/ingest", Admin.Ingest)
 
     # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)
@@ -904,11 +907,16 @@ defmodule OliWeb.Router do
     ])
 
     live("/:project_id/history/slug/:slug", RevisionHistory)
-    live("/:project_id/history/resource_id/:resource_id", RevisionHistory, as: :history_by_resource_id)
+
+    live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
+      as: :history_by_resource_id
+    )
   end
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
+    pipe_through([:sso])
+
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)

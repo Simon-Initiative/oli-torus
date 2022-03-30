@@ -1,0 +1,62 @@
+<div class="container">
+  <h3 class="display-6">Course Ingestion</h3>
+  <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
+  <hr class="my-4">
+
+    {#case assigns[:error]}
+      {#match nil}
+
+      {#match {:error, {:invalid_json, schema, errors, json}} = error }
+        <div class="alert alert-danger" role="alert">
+          <p>{ Ingest.prettify_error(error) }</p>
+
+          <MonacoEditor
+            id="schema_errors"
+            language="json"
+            height={500}
+            default_value={json |> Jason.encode!() |> Jason.Formatter.pretty_print()}
+            validate_schema_uri={schema.schema["$id"]} />
+
+          <p class="m-2">The following issues were found:</p>
+
+          <ul class="list-group">
+            {#for {err, path} <- errors}
+              <li class="list-group-item"><i class="las la-times-circle mr-2"></i>{err} {path}</li>
+            {/for}
+          </ul>
+
+        </div>
+
+      {#match error }
+        <div class="alert alert-danger" role="alert">
+          { Ingest.prettify_error(error) }
+        </div>
+    {/case}
+
+    <form id="json-upload" phx-change="validate" phx-submit="ingest">
+      <div class="form-group">
+        <label>Step 1. Select a Course Archive</label>
+        <div class="flex my-3" phx-drop-target={@uploads.digest.ref}>
+          { live_file_input @uploads.digest }
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Step 2. Upload Course Archive for Ingestion</label>
+        <div>
+          <button type="submit" class="btn btn-primary" phx-disable-with="Processing...">
+            Ingest
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Step 3. Upon successful ingestion, you will then be redirected
+        to the Overview page of the new course project.</label>
+      </div>
+    </form>
+
+    <hr class="my-4">
+
+    <FAQ />
+</div>

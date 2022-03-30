@@ -268,8 +268,12 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid), do: {:ok, resource_attempt_guid}
 
   defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
-    Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(resource_attempt_guid)
-    |> maybe_initiate_grade_passback(section)
+    case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+      {:ok, %ResourceAttempt{lifecycle_state: :evaluated, resource_access_id: resource_access_id}} ->
+        Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(section.slug, resource_access_id)
+        |> maybe_initiate_grade_passback(section)
+      e -> e
+    end
   end
 
   defp maybe_initiate_grade_passback({:ok, %ResourceAttempt{resource_access_id: resource_access_id}}, %Section{id: section_id, grade_passback_enabled: true}) do

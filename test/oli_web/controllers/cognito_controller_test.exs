@@ -82,7 +82,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :index, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing parameters\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing id token\">redirected</a>.</body></html>"
     end
 
     test "does not create user when the cognito_id_token is malformed", %{
@@ -277,7 +277,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :launch, section.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing parameters\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing id token\">redirected</a>.</body></html>"
     end
 
     test "redirects to unauthorized url with bad product slug", %{
@@ -340,7 +340,7 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :launch, section.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/unauthorized?error=Missing parameters\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/unauthorized?error=Token Malformed\">redirected</a>.</body></html>"
     end
 
     test "does not create user when the cognito_id_token is malformed", %{

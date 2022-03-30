@@ -17,7 +17,24 @@ defmodule OliWeb.LayoutView do
   alias Oli.Accounts
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+  alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Delivery.Sections
+
+
+  def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
+  def show_pay_early(_), do: false
+
+  def pay_early_message(%AccessSummary{reason: :within_grace_period, grace_period_remaining: seconds_remaining}) do
+
+    fractional_days_remaining = AccessSummary.as_days(seconds_remaining)
+
+    cond do
+      fractional_days_remaining < 1.0 -> "Today is the last day of your grace period access for this course"
+      fractional_days_remaining < 2.0 -> "Tomorrow is the last day remaining in your grace period access of this course"
+      true -> "You have #{round(fractional_days_remaining)} more days remaining in your grace period access of this course"
+    end
+  end
+  def pay_early_message(_), do: ""
 
   def container_slug(assigns) do
     if assigns[:container] do

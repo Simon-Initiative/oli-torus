@@ -262,9 +262,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  defp roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
+  def roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
+
     graded_attempts = get_graded_attempts_from_access(access.id)
+    |> Enum.filter(fn ra -> ra.lifecycle_state == :evaluated end)
 
     %{scoring_strategy_id: strategy_id} =
       DeliveryResolver.from_resource_id(section_slug, access.resource_id)

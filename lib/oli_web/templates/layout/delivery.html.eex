@@ -70,7 +70,7 @@
   <body>
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
-
+    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
     <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
     <main role="main" class="container">
