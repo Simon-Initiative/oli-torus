@@ -1,22 +1,12 @@
 
 <div class="configure-section mt-5">
-  <h3>Getting Started</h3>
-  <p class="mt-3">
-    Let's create a new section for your course. Please select one of the options below:
-  </p>
+  <h3>Create Course Section</h3>
 
-  <div class="card-deck mt-5">
-    <a href="<%= Routes.delivery_path(@conn, :select_project) %>" class="card btn-card link-account">
-      <div class="card-body">
-        <h5 class="card-title">Standard Quick Start</h5>
-        <p class="card-text">Create your section from an existing course project's curriculum. The curriculum can be customized later.</p>
-      </div>
-    </a>
-    <a href="<%= Routes.delivery_path(@conn, :select_project, remix: true) %>" class="card btn-card link-account">
-      <div class="card-body">
-        <h5 class="card-title">Custom Remix</h5>
-        <p class="card-text">Mix and match materials from multiple source projects to create a custom curriculum.</p>
-      </div>
-    </a>
+  <div class="card mt-5 w-50 p-2">
+    <div class="card-body">
+      <img class="card-img m-2" src="/images/icons/icon-copy.svg" alt="Standard Quick Start icon">
+      <p class="card-text body-color">Click Start to select a base curriculum for your course. After you complete section setup, you can customize or add to the contents of your course.</p>
+      <a href="<%= Routes.delivery_path(@conn, :select_project) %>" class="btn btn-outline-primary">Start</a>
+    </div>
   </div>
 </div>

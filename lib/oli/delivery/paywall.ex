@@ -12,25 +12,42 @@ defmodule Oli.Delivery.Paywall do
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
+  alias Oli.Delivery.Paywall.AccessSummary
 
   @maximum_batch_size 500
 
   @doc """
-  Determines if a user can access a course section, taking into account paywall settings.
-  """
-  def can_access?(_, %Section{requires_payment: false}), do: true
+  Summarizes a users ability to access a course section, taking into account the paywall configuration
+  for that course section.
 
-  def can_access?(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
+  Returns an `%AccessSummary` struct which details the following:
+  1. Whether or not the user can access the course material
+  2. A reason for why the user can or cannot access
+  3. The number of days remaining (in whole numbers) if the user is accessing the material
+     during a grace period window
+  """
+  def summarize_access(_, %Section{requires_payment: false}), do: AccessSummary.build_no_paywall()
+
+  def summarize_access(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
     if Sections.is_instructor?(user, slug) or Sections.is_admin?(user, slug) do
-      true
+      AccessSummary.instructor()
     else
       enrollment = Sections.get_enrollment(slug, id)
 
-      # A student can access a paywalled section if the following two conditions hold:
-      # 1. They are enrolled in the section
-      # 2. They have either made a payment OR they are within the grace period (if there is one)
-      !is_nil(enrollment) and (has_paid?(enrollment) or within_grace_period?(enrollment, section))
+      case is_nil(enrollment) do
+        true -> AccessSummary.not_enrolled()
+        _ ->
+          case has_paid?(enrollment) do
+            true -> AccessSummary.paid()
+            _ ->
+              case within_grace_period?(enrollment, section) do
+                true -> grace_period_seconds_remaining(enrollment, section) |> AccessSummary.within_grace()
+                _ -> AccessSummary.not_paid()
+              end
+          end
+      end
     end
+
   end
 
   defp has_paid?(%Enrollment{id: id}) do
@@ -64,6 +81,23 @@ defmodule Oli.Delivery.Paywall do
 
       :relative_to_student ->
         Date.compare(Date.utc_today(), Date.add(inserted_at, days)) == :lt
+    end
+  end
+
+  defp grace_period_seconds_remaining(%Enrollment{inserted_at: inserted_at}, %Section{
+    grace_period_days: days,
+    grace_period_strategy: strategy,
+    start_date: start_date
+  }) do
+    case strategy do
+      :relative_to_section ->
+        case start_date do
+          nil -> 0
+          _ -> -DateTime.diff(DateTime.utc_now(), DateTime.add(start_date, days * 24 * 60 * 60))
+        end
+
+      :relative_to_student ->
+        -DateTime.diff(DateTime.utc_now(), DateTime.add(inserted_at, days * 24 * 60 * 60))
     end
   end
 
