@@ -665,6 +665,7 @@ defmodule Oli.Accounts do
       sub: Map.get(fields, "sub"),
       preferred_username: Map.get(fields, "cognito:username"),
       email: Map.get(fields, "email"),
+      name: Map.get(fields, "name"),
       can_create_sections: true
     })
   end
