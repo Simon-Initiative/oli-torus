@@ -48,8 +48,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
+
+  const [questionId, setQuestionId] = useState('');
+  const [lessonId, setLessonId] = useState('');
+
   // these rely on being set every render and the "model" useState value being set
   const { src, title, allowScrolling, configData } = model;
+
+  // console.log('ExternalActivity', props, model);
+
   useEffect(() => {
     const styleChanges: any = {};
     if (frameWidth !== undefined) {
@@ -133,6 +140,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         },
       ],
     });
+    setLessonId(initResult.context.currentLesson);
+    setQuestionId(initResult.context.currentActivity);
 
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
@@ -542,7 +551,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
               processInitStateVariable(currentStateSnapshot, simLife.domain);
-
               setSimIsInitStatePassedOnce(false);
             }
             break;
@@ -632,7 +640,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     simLife.handshake.requestToken = msgRequestToken;
 
     // taken from simcapi.js TODO move somewhere, use from settings
-    simLife.handshake.config = { context: context };
+    simLife.handshake.config = {
+      context: context,
+      lessonId,
+      questionId,
+    };
 
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
