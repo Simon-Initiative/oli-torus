@@ -635,6 +635,35 @@ defmodule Oli.Accounts do
   end
 
   @doc """
+  Finds or creates an author and user logged in via sso, adds the user as a member of the given community
+  and links both user and author.
+
+  ## Examples
+
+      iex> setup_sso_author(fields, community_id)
+      {:ok, %Author{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def setup_sso_author(fields, community_id) do
+    res =
+      Multi.new()
+      |> Multi.run(:user, &create_sso_user(&1, &2, fields))
+      |> Multi.run(:community_account, &create_community_account(&1, &2, community_id))
+      |> Multi.run(:author, &create_sso_author(&1, &2, fields))
+      |> Multi.run(:linked_user, &link_user_with_author(&1, &2))
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{author: author}} ->
+        {:ok, author}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
   Inserts or updates an user logged in via sso, and adds the user as a member of the given community.
 
   ## Examples
@@ -668,6 +697,25 @@ defmodule Oli.Accounts do
       name: Map.get(fields, "name"),
       can_create_sections: true
     })
+  end
+
+  defp create_sso_author(_repo, _changes, fields) do
+    email = Map.get(fields, "email")
+    username = Map.get(fields, "cognito:username")
+
+    case get_author_by_email(email) do
+      nil ->
+        %Author{}
+        |> Author.noauth_changeset(%{name: username, email: email})
+        |> Repo.insert()
+
+      author ->
+        {:ok, author}
+    end
+  end
+
+  defp link_user_with_author(_repo, %{user: user, author: author}) do
+    link_user_author_account(user, author)
   end
 
   defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
