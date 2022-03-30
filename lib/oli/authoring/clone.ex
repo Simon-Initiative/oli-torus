@@ -103,7 +103,8 @@ defmodule Oli.Authoring.Clone do
   project specified by the given project slug.
   """
   def already_has_clone?(project_slug, author) do
-    existing_clones(project_slug, author)
+    project_slug
+    |> existing_clones(author)
     |> Enum.count() > 0
   end
 end
