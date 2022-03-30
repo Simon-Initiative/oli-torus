@@ -17,7 +17,6 @@ export const updatePart = createAsyncThunk(
   async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, payload.activityId);
-
     const undo: any[] = [];
     const redo: any[] = [];
 
@@ -83,6 +82,43 @@ export const updatePart = createAsyncThunk(
     // merge so that a partial of {custom: {x: 1, y: 1}} will not overwrite the entire custom object
     // TODO: payload.changes is Partial<Part>
     merge(partDef, payload.changes);
+
+    await dispatch(saveActivity({ activity: activityClone, undoable: false }));
+
+    undo.unshift(saveActivity({ activity, undoable: false }));
+    redo.unshift(saveActivity({ activity: activityClone, undoable: false }));
+
+    dispatch(
+      createUndoAction({
+        undo,
+        redo,
+      }),
+    );
+  },
+);
+
+export const updatePartWithCorrectExpression = createAsyncThunk(
+  `${PartsSlice}/updatePart`,
+  async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
+    const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
+    const activity = selectActivityById(rootState, payload.activityId);
+    const undo: any[] = [];
+    const redo: any[] = [];
+
+    if (!activity) {
+      throw new Error(`Activity: ${payload.activityId} not found!`);
+    }
+    const activityClone = clone(activity);
+    const partDef = activityClone.content.partsLayout.find(
+      (part: any) => part.id === payload.partId,
+    );
+    if (!partDef) {
+      throw new Error(`Part: ${payload.partId} not found in Activity: ${payload.activityId}`);
+    }
+
+    if (payload.changes.formattedExpression && partDef?.custom && payload.changes?.part?.custom) {
+      partDef.custom = payload.changes.part.custom;
+    }
 
     await dispatch(saveActivity({ activity: activityClone, undoable: false }));
 
