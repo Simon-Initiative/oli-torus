@@ -920,6 +920,26 @@ defmodule OliWeb.Router do
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
+
+    get("/launch_clone/products/:product_slug", CognitoController, :launch_clone,
+      as: :product_clone
+    )
+
+    get("/launch_clone/projects/:project_slug", CognitoController, :launch_clone,
+      as: :project_clone
+    )
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring
+    ])
+
+    get("/prompt/:project_slug", CognitoController, :prompt)
+    get("/clone/:project_slug", CognitoController, :clone)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely
