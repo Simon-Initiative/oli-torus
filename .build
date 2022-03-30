@@ -445,6 +445,7 @@ OliWeb.Breadcrumb.BreadcrumbTrailLive.html
 OliWeb.CacheBodyReader.html
 OliWeb.ChangesetView.html
 OliWeb.CognitoController.html
+OliWeb.CognitoView.html
 OliWeb.CollaboratorController.html
 OliWeb.Common.AuthorInitials.html
 OliWeb.Common.Breadcrumb.html
@@ -718,8 +719,8 @@ dist/html/fonts/icomoon.eot
 dist/html/fonts/icomoon.svg
 dist/html/fonts/icomoon.ttf
 dist/html/fonts/icomoon.woff
-dist/search_items-63e3ece1b3.js
-dist/sidebar_items-303609fc6f.js
+dist/search_items-125e7b5afa.js
+dist/sidebar_items-112edc1c23.js
 index.html
 license.html
 readme.html

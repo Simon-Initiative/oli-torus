@@ -10,7 +10,7 @@
     <title>OliWeb.Router.Helpers — OLI Torus v0.18.4</title>
     <link rel="stylesheet" href="dist/elixir-37545fd2f35b96531434.css" />
 
-    <script src="dist/sidebar_items-303609fc6f.js"></script>
+    <script src="dist/sidebar_items-112edc1c23.js"></script>
 
       <script src="docs_config.js"></script>
 
@@ -732,7 +732,7 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#cognito_path/4">cognito_path(conn_or_endpoint, action, product_slug, params)</a>
+    <a href="#cognito_path/4">cognito_path(conn_or_endpoint, action, project_slug, params)</a>
 
   </div>
 
@@ -753,7 +753,7 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
-    <a href="#cognito_url/4">cognito_url(conn_or_endpoint, action, product_slug, params)</a>
+    <a href="#cognito_url/4">cognito_url(conn_or_endpoint, action, project_slug, params)</a>
 
   </div>
 
@@ -2043,6 +2043,34 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 </div>
 <div class="summary-row">
   <div class="summary-signature">
+    <a href="#product_clone_path/3">product_clone_path(conn_or_endpoint, action, product_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#product_clone_path/4">product_clone_path(conn_or_endpoint, action, product_slug, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#product_clone_url/3">product_clone_url(conn_or_endpoint, action, product_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#product_clone_url/4">product_clone_url(conn_or_endpoint, action, product_slug, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
     <a href="#product_path/2">product_path(conn_or_endpoint, action)</a>
 
   </div>
@@ -2121,6 +2149,34 @@ OliWeb.Router.Helpers <small class="app-vsn">(OLI Torus v0.18.4)</small>
 <div class="summary-row">
   <div class="summary-signature">
     <a href="#project_activity_url/5">project_activity_url(conn_or_endpoint, action, project_id, activity_slug, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#project_clone_path/3">project_clone_path(conn_or_endpoint, action, project_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#project_clone_path/4">project_clone_path(conn_or_endpoint, action, project_slug, params)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#project_clone_url/3">project_clone_url(conn_or_endpoint, action, project_slug)</a>
+
+  </div>
+
+</div>
+<div class="summary-row">
+  <div class="summary-signature">
+    <a href="#project_clone_url/4">project_clone_url(conn_or_endpoint, action, project_slug, params)</a>
 
   </div>
 
@@ -4593,7 +4649,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">cognito_path(conn_or_endpoint, action, product_slug, params)</h1>
+    <h1 class="signature">cognito_path(conn_or_endpoint, action, project_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -4659,7 +4715,7 @@ Functions
       <span class="icon-link" aria-hidden="true"></span>
       <span class="sr-only">Link to this function</span>
     </a>
-    <h1 class="signature">cognito_url(conn_or_endpoint, action, product_slug, params)</h1>
+    <h1 class="signature">cognito_url(conn_or_endpoint, action, project_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
@@ -8700,6 +8756,94 @@ Functions
 
   </section>
 </section>
+<section class="detail" id="product_clone_path/3">
+
+  <div class="detail-header">
+    <a href="#product_clone_path/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">product_clone_path(conn_or_endpoint, action, product_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="product_clone_path/4">
+
+  <div class="detail-header">
+    <a href="#product_clone_path/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">product_clone_path(conn_or_endpoint, action, product_slug, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="product_clone_url/3">
+
+  <div class="detail-header">
+    <a href="#product_clone_url/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">product_clone_url(conn_or_endpoint, action, product_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="product_clone_url/4">
+
+  <div class="detail-header">
+    <a href="#product_clone_url/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">product_clone_url(conn_or_endpoint, action, product_slug, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
 <section class="detail" id="product_path/2">
 
   <div class="detail-header">
@@ -8950,6 +9094,94 @@ Functions
       <span class="sr-only">Link to this function</span>
     </a>
     <h1 class="signature">project_activity_url(conn_or_endpoint, action, project_id, activity_slug, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="project_clone_path/3">
+
+  <div class="detail-header">
+    <a href="#project_clone_path/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">project_clone_path(conn_or_endpoint, action, project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="project_clone_path/4">
+
+  <div class="detail-header">
+    <a href="#project_clone_path/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">project_clone_path(conn_or_endpoint, action, project_slug, params)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="project_clone_url/3">
+
+  <div class="detail-header">
+    <a href="#project_clone_url/3" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">project_clone_url(conn_or_endpoint, action, project_slug)</h1>
+
+      <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
+       <span class="icon-code" aria-hidden="true"></span>
+       <span class="sr-only">View Source</span>
+     </a>
+
+
+  </div>
+
+  <section class="docstring">
+
+
+  </section>
+</section>
+<section class="detail" id="project_clone_url/4">
+
+  <div class="detail-header">
+    <a href="#project_clone_url/4" class="detail-link" title="Link to this function">
+      <span class="icon-link" aria-hidden="true"></span>
+      <span class="sr-only">Link to this function</span>
+    </a>
+    <h1 class="signature">project_clone_url(conn_or_endpoint, action, project_slug, params)</h1>
 
       <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/lib/oli_web/router.ex#L1" class="view-source" rel="help" title="View Source">
        <span class="icon-code" aria-hidden="true"></span>
