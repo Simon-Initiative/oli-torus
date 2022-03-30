@@ -31,7 +31,7 @@ import {
   selectEnableHistory,
   selectPageSlug,
   selectUserName,
-  setScore
+  setScore,
 } from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
