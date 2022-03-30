@@ -544,10 +544,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               simLife.handshake.config = {
                 context: payload.mode,
                 questionId: payload.currentActivityId,
+                lessonId: payload.currentLessonId,
               };
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+
+              setLessonId(payload.currentLessonId);
+              setQuestionId(payload.currentActivityId);
+
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
               processInitStateVariable(currentStateSnapshot, simLife.domain);
