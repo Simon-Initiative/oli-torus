@@ -79,7 +79,7 @@ export const adaptivitySchema = {
   selectedChoicesText: CapiVariableTypes.ARRAY,
 };
 
-export const getFormattedExpression = (part: any, owner: any): Expression[] => {
+export const validateUserConfig = (part: any, owner: any): Expression[] => {
   const brokenExpressions: Expression[] = [];
   part.custom.mcqItems.forEach((element: any) => {
     const evaluatedValue = formatExpression(element.nodes[0]);

@@ -125,9 +125,9 @@ export const validators = [
           if (instance.getCapabilities) {
             const capabilities = instance.getCapabilities();
             if (capabilities.canUseExpression) {
-              if (instance.getFormattedExpression) {
+              if (instance.validateUserConfig) {
                 const partClone: any = clone(part);
-                const formattedExpression = instance.getFormattedExpression(partClone, owner);
+                const formattedExpression = instance.validateUserConfig(partClone, owner);
                 if (formattedExpression?.length) {
                   brokenExpressions.push(...formattedExpression);
                 }

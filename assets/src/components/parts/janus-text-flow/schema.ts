@@ -166,7 +166,7 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
   return result;
 };
 
-export const getFormattedExpression = (part: any, owner: any): Expression[] => {
+export const validateUserConfig = (part: any, owner: any): Expression[] => {
   const brokenExpressions: Expression[] = [];
   const evaluatedValue = formatExpression(part.custom.nodes);
   if (evaluatedValue) {
