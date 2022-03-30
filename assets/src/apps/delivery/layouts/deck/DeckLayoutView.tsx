@@ -72,7 +72,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (currentActivityTree) {
       currentActivityTree.forEach((activity) => {
         if (activity?.content?.custom?.customCssClass) {
-          className += activity?.content?.custom?.customCssClass;
+          className += ' ' + activity?.content?.custom?.customCssClass;
         }
       });
     }
@@ -458,7 +458,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         console.error('could not find attempt state for ', activity);
         return;
       }
-      const activityKey = historyModeNavigation ? `${activity.id}_history` : activity.id;
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+      const activityKey = historyModeNavigation
+        ? `${activity.id}_${currentActivity.id}_history`
+        : activity.id;
 
       return (
         <ActivityRenderer

@@ -612,6 +612,14 @@ $panel-section-title-bar-color: #e8ebed;
     background-color: $panel-section-title-bar-color;
     border-bottom-color: $ui-border-color;
   }
+
+  #search-popover {
+    .popover-body {
+      max-height: 51vh;
+      overflow: scroll;
+    }
+  }
+
   #aa-variable-picker {
     font-size: 13px;
 

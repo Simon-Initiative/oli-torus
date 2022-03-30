@@ -9,10 +9,12 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
       resource_attempt_number: 1,
       activity_attempt_number: 1,
       part_attempt_number: 1,
+      part_attempt_guid: "1",
       input: input
     }
 
     {:ok, tree} = Rule.parse(rule)
+
     case Rule.evaluate(tree, context) do
       {:ok, result} -> result
       {:error, e} -> {:error, e}

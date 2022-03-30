@@ -1,5 +1,5 @@
 defmodule OliWeb.RevisionHistory do
-  use Phoenix.LiveView
+  use Surface.LiveView
   use OliWeb.Common.Modal
 
   import Ecto.Query, warn: false
@@ -19,20 +19,34 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.History.RestoreRevisionModal
+  alias Oli.Utils.SchemaResolver
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Phoenix.LiveView
 
   @page_size 15
 
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
-    [{resource_id}] =
-      Repo.all(
-        from rev in Revision,
-          distinct: rev.resource_id,
-          where: rev.slug == ^slug,
-          select: {rev.resource_id}
-      )
+    case AuthoringResolver.from_revision_slug(project_slug, slug) do
+      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      revision ->
+        do_mount(revision, project_slug, socket)
+    end
 
+  end
+
+  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, _, socket) do
+    case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
+      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      revision ->
+        do_mount(revision, project_slug, socket)
+    end
+  end
+
+  defp do_mount(revision, project_slug, socket) do
     project = Course.get_project_by_slug(project_slug)
+    resource_id = revision.resource_id
+    slug = revision.slug
 
     Subscriber.subscribe_to_new_revisions(resource_id)
     Subscriber.subscribe_to_new_publications(project_slug)
@@ -46,13 +60,15 @@ defmodule OliWeb.RevisionHistory do
     mappings_by_revision =
       Enum.reduce(mappings, %{}, fn mapping, m -> Map.put(m, mapping.revision_id, mapping) end)
 
-    selected = fetch_selected(hd(revisions).id)
+    selected = fetch_revision(hd(revisions).id)
 
     {:ok,
      socket
      |> assign(
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Revision History"})],
+       breadcrumbs: Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
+        [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
+       page_size: @page_size,
        tree: tree,
        root: root,
        resource_id: resource_id,
@@ -65,7 +81,11 @@ defmodule OliWeb.RevisionHistory do
        initial_size: length(revisions),
        uploaded_files: [],
        uploaded_content: nil,
-       modal: nil
+       modal: nil,
+       edit_errors: [],
+       upload_errors: [],
+       edited_json: nil,
+       resource_schema: SchemaResolver.schema("page-content.schema.json")
      )
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
@@ -92,7 +112,7 @@ defmodule OliWeb.RevisionHistory do
     )
   end
 
-  defp fetch_selected(revision_id) do
+  defp fetch_revision(revision_id) do
     Repo.get!(Revision, revision_id)
   end
 
@@ -114,96 +134,6 @@ defmodule OliWeb.RevisionHistory do
       1 -> nil
       _ -> Enum.at(all, 1)
     end
-  end
-
-  @impl Phoenix.LiveView
-  def render(assigns) do
-    size = @page_size
-
-    ~L"""
-    <%= render_modal(assigns) %>
-
-    <h2>Revision History<h2>
-    <h4>Resource ID: <%= @resource_id %></h4>
-
-    <div class="row" style="margin-bottom: 30px;">
-      <div class="col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            Revisions
-
-            <div class="btn-group btn-group-toggle" data-toggle="buttons"  style="float: right;">
-              <label phx-click="table" class="btn btn-sm btn-secondary <%= if @view == "table" do "active" else "" end %>">
-                <input type="radio" name="options" id="option1"
-                  <%= if @view == "table" do "checked" else "" end %>
-                > <span><i class="fas fa-table"></i></span>
-              </label>
-              <label phx-click="graph" class="btn btn-sm btn-secondary <%= if @view == "graph" do "active" else "" end %>">
-                <input type="radio" name="options" id="option2"
-                  <%= if @view == "graph" do "checked" else "" end %>
-                > <span><i class="fas fa-project-diagram"></i></span>
-              </label>
-            </div>
-
-            </span>
-          </div>
-          <div class="card-body">
-            <%= if @view == "graph" do %>
-              <%= live_component Graph, tree: @tree, root: @root, selected: @selected, project: @project, initial_size: @initial_size %>
-            <% else %>
-              <%= live_component Pagination, revisions: @revisions, page_offset: @page_offset, page_size: size %>
-              <%= live_component Table, tree: @tree, publication: @publication, mappings: @mappings, revisions: @revisions, selected: @selected, page_offset: @page_offset, page_size: size %>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="row" style="margin-bottom: 30px;">
-      <div class="col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            Selected Revision Details
-            <div style="float: right;">
-              <button type="button" class="btn btn-outline-danger btn-sm" phx-click="show_restore_revision_modal">
-                Restore
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <%= live_component Details, revision: @selected %>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            Set JSON Content
-          </div>
-          <div class="card-body">
-
-            <p>Select a <code>.json</code> file to upload and set as the content of this resource.<p>
-
-            <div class="alert alert-danger" role="alert">
-              <p class="mb-4"><b>This is a dangerous operation!</b>  If you upload a JSON file that does not correspond to a
-              valid resource representation you likely will break the ability to view or edit this resource.</p>
-
-              <form id="json-upload" phx-change="validate" phx-submit="save" %>
-                <div class="flex" id="dropzone">
-                  <%= live_file_input @uploads.json %>
-                  <button type="submit" class="btn btn-outline-danger" phx-disable-with="Uploading">
-                    Set Content
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
   end
 
   defp mimic_edit(socket, base_revision, content) do
@@ -245,7 +175,18 @@ defmodule OliWeb.RevisionHistory do
 
     Broadcaster.broadcast_revision(revision, project_slug)
 
-    {:noreply, socket}
+    socket
+    |> assign(selected: revision)
+  end
+
+  defp reset_editor(socket, default_value) do
+    socket
+    |> assign(
+      edit_errors: [],
+      edited_json: nil
+    )
+    |> push_event("monaco_editor_set_value", %{value: default_value})
+    |> push_event("monaco_editor_set_options", %{"readOnly" => true})
   end
 
   def handle_event("show_restore_revision_modal", _, socket) do
@@ -271,15 +212,25 @@ defmodule OliWeb.RevisionHistory do
 
   @impl Phoenix.LiveView
   def handle_event("save", _params, socket) do
-    uploaded_content =
-      consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
-        File.read!(path)
-        |> Jason.decode!()
-      end)
+    %{resource_schema: resource_schema} = socket.assigns
 
-    revision = fetch_selected(hd(socket.assigns.revisions).id)
+    with uploaded_content <-
+          consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
+            File.read!(path)
+            |> Jason.decode!()
+          end),
+         :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
+      latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
 
-    mimic_edit(socket, revision, hd(uploaded_content))
+      {:noreply,
+        socket
+        |> mimic_edit(latest_revision, hd(uploaded_content))
+        |> assign(upload_errors: [])}
+
+    else
+      {:error, errors} ->
+        {:noreply, assign(socket, upload_errors: flatten_validation_errors(errors))}
+    end
   end
 
   # creates a new revision by restoring the state of the selected revision
@@ -287,16 +238,25 @@ defmodule OliWeb.RevisionHistory do
   def handle_event("restore", _, socket) do
     %{selected: selected} = socket.assigns
 
-    socket
-    |> hide_modal()
-    |> mimic_edit(selected, selected.content)
+    {:noreply,
+      socket
+      |> hide_modal()
+      |> mimic_edit(selected, selected.content)}
   end
 
   @impl Phoenix.LiveView
   def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
-    selected = fetch_selected(id)
-    {:noreply, assign(socket, :selected, selected)}
+    selected = fetch_revision(id)
+    content_json =
+      selected.content
+      |> Jason.encode!()
+      |> Jason.Formatter.pretty_print()
+
+    {:noreply,
+      socket
+      |> assign(:selected, selected)
+      |> reset_editor(content_json)}
   end
 
   @impl Phoenix.LiveView
@@ -313,6 +273,54 @@ defmodule OliWeb.RevisionHistory do
   def handle_event("page", %{"ordinal" => ordinal}, socket) do
     page_offset = (String.to_integer(ordinal) - 1) * @page_size
     {:noreply, assign(socket, :page_offset, page_offset)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("edit_json", _, socket) do
+    %{selected: selected} = socket.assigns
+
+    {:noreply,
+     socket
+     |> push_event("monaco_editor_set_options", %{"readOnly" => false})
+     |> assign(:edited_json, selected.content)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("cancel_edits", _, socket) do
+    %{selected: selected} = socket.assigns
+
+    content_json =
+      selected.content
+      |> Jason.encode!()
+      |> Jason.Formatter.pretty_print()
+
+    {:noreply,
+     socket
+     |> reset_editor(content_json)}
+  end
+
+  @impl Phoenix.LiveView
+  def handle_event("save_edits", _, socket) do
+    {:noreply, socket |> push_event("monaco_editor_get_value", %{action: "save"})}
+  end
+
+  def handle_event("monaco_editor_get_value", %{"value" => value, "meta" => %{"action" => "save"}}, socket) do
+    %{revisions: revisions, resource_schema: resource_schema} = socket.assigns
+
+    with {:ok, edited} <- Jason.decode(value),
+         :ok <- ExJsonSchema.Validator.validate(resource_schema, edited),
+         latest_revision <- fetch_revision(hd(revisions).id) do
+        {:noreply,
+          socket
+          |> reset_editor(value)
+          |> mimic_edit(latest_revision, edited)}
+    else
+      {:error, %Jason.DecodeError{}} ->
+        {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
+
+      {:error, errors} ->
+        {:noreply, assign(socket, edit_errors: flatten_validation_errors(errors))}
+    end
   end
 
   @impl Phoenix.LiveView
@@ -361,4 +369,14 @@ defmodule OliWeb.RevisionHistory do
        publication: determine_most_recent_published(mappings)
      )}
   end
+
+  defp friendly_error(:too_large), do: "Image too large"
+  defp friendly_error(:too_many_files), do: "Too many files"
+  defp friendly_error(:not_accepted), do: "Unacceptable file type"
+
+  defp flatten_validation_errors(errors) do
+    errors
+    |> Enum.map(fn {msg, el} -> "#{msg} #{el}" end)
+  end
+
 end

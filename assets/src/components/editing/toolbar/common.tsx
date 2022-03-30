@@ -57,7 +57,7 @@ export const DropdownToolbarButton = (props: ToolbarButtonProps) => {
         ref={(r) => ($(r as any) as any).tooltip()}
         data-placement="top"
         title={props.tooltip}
-        className={classNames(['btn', props.style, props.active && 'active'])}
+        className={classNames('btn', props.style, props.active && 'active')}
         onClick={(_e) => {
           setIsPopoverOpen(!isPopoverOpen);
           _e.stopPropagation();

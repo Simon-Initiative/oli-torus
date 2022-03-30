@@ -1,11 +1,16 @@
 <%= for node <- @nodes do %>
-  <%= if container?(node.revision) do %>
-    <%= render "container.html", preview_mode: @preview_mode, node: node, conn: @conn, section_slug: @section_slug, nodes: node.children, active_page: @active_page %>
-  <% else %>
-    <%= if node.revision.graded do %>
-      <%= render "_link_assessment.html", preview_mode: @preview_mode, node: node, conn: @conn, section_slug: @section_slug, active_page: @active_page %>
-    <% else %>
-      <%= render "_link_page.html", preview_mode: @preview_mode, node: node, conn: @conn, section_slug: @section_slug, active_page: @active_page %>
-    <% end %>
+  <li>
+  <% props = Map.merge(assigns, %{
+    node: node,
+    nodes: node.children,
+  }) %>
+  <%= cond do %>
+    <% container?(node.revision) -> %>
+      <%= render "_link_container.html", props %>
+    <% node.revision.graded -> %>
+      <%= render "_link_assessment.html", props %>
+    <% true -> %>
+      <%= render "_link_page.html", props %>
   <% end %>
+  </li>
 <% end %>

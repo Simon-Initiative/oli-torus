@@ -1,14 +1,14 @@
 defmodule OliWeb.Sections.OverviewView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.Modal
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
-  alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Sections
-  alias OliWeb.Sections.{Instructors, UnlinkSection}
-  alias OliWeb.Sections.Mount
+  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
 
   prop user, :any
   data breadcrumbs, :any
@@ -16,13 +16,15 @@ defmodule OliWeb.Sections.OverviewView do
   data section, :any, default: nil
   data instructors, :list, default: []
   data updates_count, :integer
+  data submission_count, :integer
+  data section_has_student_data, :boolean
 
   def set_breadcrumbs(:admin, section) do
     OliWeb.Sections.SectionsView.set_breadcrumbs()
     |> breadcrumb(section)
   end
 
-  def set_breadcrumbs(:user, section) do
+  def set_breadcrumbs(_, section) do
     breadcrumb([], section)
   end
 
@@ -53,7 +55,8 @@ defmodule OliWeb.Sections.OverviewView do
            instructors: fetch_instructors(section),
            user: user,
            section: section,
-           updates_count: updates_count
+           updates_count: updates_count,
+           submission_count: Oli.Delivery.Attempts.ManualGrading.count_submitted_attempts(section)
          )}
     end
   end
@@ -73,6 +76,7 @@ defmodule OliWeb.Sections.OverviewView do
 
   def render(assigns) do
     ~F"""
+    {render_modal(assigns)}
     <Groups>
       <Group label="Overview" description="Overview of this course section">
         <ReadOnly label="Course Section ID" value={@section.slug}/>
@@ -90,7 +94,7 @@ defmodule OliWeb.Sections.OverviewView do
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>
-            <a disabled={@updates_count == 0} href={Routes.page_delivery_path(OliWeb.Endpoint, :updates, @section.slug)}>
+            <a disabled={@updates_count == 0} href={Routes.section_updates_path(OliWeb.Endpoint, OliWeb.Delivery.ManageUpdates, @section.slug)}>
               Manage Updates
               {#if @updates_count > 0}
                 <span class="badge badge-primary">{@updates_count} available</span>
@@ -106,10 +110,20 @@ defmodule OliWeb.Sections.OverviewView do
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, @section.slug)}>Invite Students</a></li>
           {/if}
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, @section.slug)}>Edit Section Details</a></li>
+          <li>
+            <button type="button" class="p-0 btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete Section</button>
+          </li>
         </ul>
       </Group>
       <Group label="Grading" description="View and manage student grades and progress">
         <ul class="link-list">
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, @section.slug)}>
+            Score Manually Graded Activities
+            {#if @submission_count > 0}
+                <span class="badge badge-primary">{@submission_count}</span>
+              {/if}
+            </a>
+          </li>
           <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
           {#if !@section.open_and_free}
@@ -133,7 +147,7 @@ defmodule OliWeb.Sections.OverviewView do
 
   defp type_to_string(section) do
     case section.open_and_free do
-      true -> "LMS-Lite"
+      true -> "Direct Delivery"
       _ -> "LTI"
     end
   end
@@ -144,5 +158,73 @@ defmodule OliWeb.Sections.OverviewView do
     {:ok, _deleted} = Oli.Delivery.Sections.soft_delete_section(section)
 
     {:noreply, push_redirect(socket, to: Routes.delivery_path(socket, :index))}
+  end
+
+  def handle_event("show_delete_modal", _params, socket) do
+    section_has_student_data = Sections.has_student_data?(socket.assigns.section.slug)
+
+    {message, action} =
+      if section_has_student_data do
+        {"""
+           This section has student data and will be archived rather than deleted.
+           Are you sure you want to archive it? You will no longer have access to the data. Archiving this section will make it so students can no longer access it.
+         """, "Archive"}
+      else
+        {"""
+           This action cannot be undone. Are you sure you want to delete this section?
+         """, "Delete"}
+      end
+
+    modal = %{
+      component: DeleteModalNoConfirmation,
+      assigns: %{
+        id: "delete_section_modal",
+        description: message,
+        entity_type: "section",
+        entity_id: socket.assigns.section.id,
+        delete_enabled: true,
+        delete: "delete_section",
+        modal_action: action
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal, section_has_student_data: section_has_student_data)}
+  end
+
+  def handle_event("delete_section", _, socket) do
+    socket = clear_flash(socket)
+
+    socket =
+      if socket.assigns.section_has_student_data ==
+           Sections.has_student_data?(socket.assigns.section.slug) do
+        {action_function, action} =
+          if socket.assigns.section_has_student_data do
+            {&Sections.update_section(&1, %{status: :archived}), "archived"}
+          else
+            {&Sections.delete_section/1, "deleted"}
+          end
+
+        case action_function.(socket.assigns.section) do
+          {:ok, _section} ->
+            socket
+            |> put_flash(:info, "Section successfully #{action}.")
+            |> redirect(to: Routes.delivery_path(socket.endpoint, :open_and_free_index))
+
+          {:error, %Ecto.Changeset{}} ->
+            put_flash(
+              socket,
+              :error,
+              "Section couldn't be #{action}."
+            )
+        end
+      else
+        put_flash(
+          socket,
+          :error,
+          "Section had student activity recently. It can now only be archived, please try again."
+        )
+      end
+
+    {:noreply, socket |> hide_modal()}
   end
 end

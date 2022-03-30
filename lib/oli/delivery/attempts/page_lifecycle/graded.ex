@@ -17,7 +17,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Evaluation.Result
   alias Oli.Delivery.Attempts.PageLifecycle.Common
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
+  alias Oli.Delivery.Attempts.Core.{ResourceAttempt, ResourceAccess}
   import Oli.Delivery.Attempts.Core
 
   @moduledoc """
@@ -103,74 +103,122 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   end
 
   @impl Lifecycle
+
   def finalize(%FinalizationContext{
-        resource_attempt: resource_attempt,
+        resource_attempt: %ResourceAttempt{lifecycle_state: :active} = resource_attempt,
         section_slug: section_slug
       }) do
-    if resource_attempt.date_evaluated == nil do
-      # Collect all of the part attempt guids for all of the activities that
-      # get finalized
-      part_attempt_guids =
-        Enum.map(resource_attempt.activity_attempts, fn a ->
-          # some activities will finalize themselves ahead of a graded page
-          # submission.  so we only submit those that are still yet to be finalized, and
-          # that are scoreable
-          if a.date_evaluated == nil and a.scoreable do
-            Evaluate.evaluate_from_stored_input(a.attempt_guid)
-          else
-            []
-          end
-        end)
-        |> List.flatten()
-        |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
+    # Collect all of the part attempt guids for all of the activities that
+    # get finalized
+    part_attempt_guids = finalize_activities(resource_attempt)
 
-      case roll_up_activities_to_resource_attempt(resource_attempt.attempt_guid) do
-        {:ok, _} ->
-          case roll_up_resource_attempts_to_access(
-                 section_slug,
-                 resource_attempt.resource_access_id
-               ) do
-            {:ok, resource_access} ->
-              {:ok,
-               %FinalizationSummary{
-                 resource_access: resource_access,
-                 part_attempt_guids: part_attempt_guids
-               }}
+    case roll_up_activities_to_resource_attempt(resource_attempt.attempt_guid) do
+      {:ok, %ResourceAttempt{lifecycle_state: :evaluated}} ->
+        case roll_up_resource_attempts_to_access(
+               section_slug,
+               resource_attempt.resource_access_id
+             ) do
+          {:ok, resource_access} ->
+            {:ok,
+             %FinalizationSummary{
+               lifecycle_state: :evaluated,
+               resource_access: resource_access,
+               part_attempt_guids: part_attempt_guids
+             }}
 
-            e ->
-              e
-          end
+          e ->
+            e
+        end
 
-        e ->
-          e
-      end
-    else
-      {:error, {:already_submitted}}
+      {:ok, %ResourceAttempt{lifecycle_state: :submitted, resource_access_id: resource_access_id}} ->
+        {:ok,
+         %FinalizationSummary{
+           lifecycle_state: :submitted,
+           resource_access: Oli.Repo.get(ResourceAccess, resource_access_id),
+           part_attempt_guids: part_attempt_guids
+         }}
+
+      e ->
+        e
     end
   end
 
-  defp roll_up_activities_to_resource_attempt(resource_attempt_guid) do
-    # fetch the resource attempt, with the pinned revision preloaded
+  def finalize(_), do: {:error, {:already_submitted}}
+
+  defp finalize_activities(resource_attempt) do
+    Enum.map(resource_attempt.activity_attempts, fn a ->
+      # some activities will finalize themselves ahead of a graded page
+      # submission.  so we only submit those that are still yet to be finalized, and
+      # that are scoreable
+      if a.lifecycle_state != :evaluated and a.scoreable do
+        Evaluate.evaluate_from_stored_input(a.attempt_guid)
+      else
+        []
+      end
+    end)
+    |> List.flatten()
+    |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
+  end
+
+  def roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+    # It is necessary to refetch the resource attempt so that we have the latest view
+    # of the activity attempts, given that they have just undergone evaluation.
     resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
 
-    if resource_attempt.date_evaluated == nil do
-      # Only considering 'scoreable' attempts, add up, adjust and validate the
-      # 'grade' which consists of a tuple of {score, out_of}
-      {score, out_of} =
-        resource_attempt.activity_attempts
-        |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
-        |> Enum.reduce({0, 0}, &aggregation_reducer/2)
-        |> override_out_of(resource_attempt.revision.content)
-        |> ensure_valid_grade
-
-      update_resource_attempt(resource_attempt, %{
-        score: score,
-        out_of: out_of,
-        date_evaluated: DateTime.utc_now()
-      })
+    if is_evaluated?(resource_attempt) do
+      apply_evaluation(resource_attempt)
     else
-      {:error, {:already_submitted}}
+      if is_submitted?(resource_attempt) do
+        apply_submission(resource_attempt)
+      else
+        {:ok, resource_attempt}
+      end
     end
+  end
+
+  defp apply_evaluation(resource_attempt) do
+    {score, out_of} =
+      resource_attempt.activity_attempts
+      |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
+      |> Enum.reduce({0, 0}, &aggregation_reducer/2)
+      |> override_out_of(resource_attempt.revision.content)
+      |> ensure_valid_grade
+
+    now = DateTime.utc_now()
+
+    update_resource_attempt(resource_attempt, %{
+      score: score,
+      out_of: out_of,
+      date_evaluated: now,
+      date_submitted: now,
+      lifecycle_state: :evaluated
+    })
+  end
+
+  defp apply_submission(resource_attempt) do
+    case resource_attempt.lifecycle_state do
+      :active ->
+        now = DateTime.utc_now()
+        update_resource_attempt(resource_attempt, %{
+          date_submitted: now,
+          lifecycle_state: :submitted
+        })
+      _ ->
+        {:ok, resource_attempt}
+    end
+
+  end
+
+  defp is_evaluated?(resource_attempt) do
+    Enum.all?(resource_attempt.activity_attempts, fn aa ->
+      aa.lifecycle_state == :evaluated or !aa.scoreable
+    end)
+  end
+
+  defp is_submitted?(resource_attempt) do
+    Enum.all?(resource_attempt.activity_attempts, fn aa ->
+      aa.lifecycle_state == :evaluated or aa.lifecycle_state == :submitted or !aa.scoreable
+    end)
   end
 
   defp aggregation_reducer(p, {score, out_of}) do
@@ -214,9 +262,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     ensure_valid_grade({score, out_of})
   end
 
-  defp roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
+  def roll_up_resource_attempts_to_access(section_slug, resource_access_id) do
     access = Oli.Repo.get(ResourceAccess, resource_access_id)
+
     graded_attempts = get_graded_attempts_from_access(access.id)
+    |> Enum.filter(fn ra -> ra.lifecycle_state == :evaluated end)
 
     %{scoring_strategy_id: strategy_id} =
       DeliveryResolver.from_resource_id(section_slug, access.resource_id)

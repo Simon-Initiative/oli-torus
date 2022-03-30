@@ -1,8 +1,20 @@
-<div class="d-flex w-100 justify-content-between">
-  <span class="page-title">
-    <b><i class="fas fa-box mr-2"></i> <%= container_title(@node) %></b>
-  </span>
-  <%= if Map.has_key?(@summary.access_map, @node.revision.resource_id) do %>
-    <small class="text-secondary"><i class="fa fa-check"></i></small>
+
+<h5 class="text-primary border-primary mb-2">
+  <%= link to: @container_link_url.(@node.revision.slug),
+    class: resource_link_class(@active_page == @node.revision.slug) do %>
+    <span class="container-title my-2">
+      <%= container_title(@node) %>
+    </span>
   <% end %>
-</div>
+</h5>
+
+<%= if Enum.empty?(@node.children) do %>
+  <span class="text-secondary">There are no items</span>
+<% else %>
+  <ol style="list-style: none;">
+    <%= render"_outline.html", Map.merge(assigns, %{
+      nodes: @node.children,
+      active_page: nil,
+    }) %>
+  </ol>
+<% end %>

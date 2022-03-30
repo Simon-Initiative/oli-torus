@@ -18,9 +18,7 @@ defmodule OliWeb.Delivery.RemixSection do
   }
 
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy
-  alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -29,7 +27,8 @@ defmodule OliWeb.Delivery.RemixSection do
   alias OliWeb.Sections.Mount
 
   def set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
@@ -37,7 +36,7 @@ defmodule OliWeb.Delivery.RemixSection do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Cusomize Content",
+          full_title: "Customize Content",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
         })
       ]
@@ -188,6 +187,7 @@ defmodule OliWeb.Delivery.RemixSection do
        selected: nil,
        has_unsaved_changes: false,
        modal: nil,
+       delivery_breadcrumb: true,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
        available_publications: available_publications
@@ -282,18 +282,16 @@ defmodule OliWeb.Delivery.RemixSection do
 
     node = Enum.at(active.children, source_index)
 
-    children =
+    updated =
       Hierarchy.reorder_children(
-        active.children,
+        active,
         node,
         source_index,
         destination_index
       )
 
-    updated = %HierarchyNode{active | children: children}
     hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
-
-    {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+      |> Hierarchy.finalize()
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: updated, has_unsaved_changes: true)}
   end
@@ -410,6 +408,7 @@ defmodule OliWeb.Delivery.RemixSection do
         selection,
         published_resources_by_resource_id_by_pub
       )
+      |> Hierarchy.finalize()
 
     # update pinned project publications
     pinned_project_publications =
@@ -528,6 +527,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
     hierarchy = Hierarchy.move_node(hierarchy, node, to_uuid)
+        |> Hierarchy.finalize()
 
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
@@ -562,6 +562,7 @@ defmodule OliWeb.Delivery.RemixSection do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
     hierarchy = Hierarchy.find_and_remove_node(hierarchy, uuid)
+      |> Hierarchy.finalize()
 
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)

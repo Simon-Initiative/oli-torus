@@ -185,6 +185,10 @@ defmodule OliWeb.Router do
       from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
+  pipeline :sso do
+    plug(Oli.Plugs.ValidateIdToken)
+  end
+
   scope "/superactivity", OliWeb do
     pipe_through :superactivity
     get "/*path", LegacySuperactivityController, :file_not_found
@@ -673,6 +677,7 @@ defmodule OliWeb.Router do
     ])
 
     get("/:section_slug/overview", PageDeliveryController, :index)
+    get("/:section_slug/container/:revision_slug", PageDeliveryController, :container)
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
@@ -700,6 +705,7 @@ defmodule OliWeb.Router do
     ])
 
     get("/overview", PageDeliveryController, :index_preview)
+    get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
@@ -720,10 +726,11 @@ defmodule OliWeb.Router do
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
     live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
     live("/:section_slug/grades/gradebook", Grades.GradebookView)
+    live("/:section_slug/scoring", ManualGrading.ManualGradingView)
     live("/:section_slug/progress/:user_id/:resource_id", Progress.StudentResourceView)
     live("/:section_slug/progress/:user_id", Progress.StudentView)
     get("/:section_slug/grades/export", PageDeliveryController, :export_gradebook)
-    get("/:section_slug/updates", PageDeliveryController, :updates)
+    live("/:section_slug/updates", Delivery.ManageUpdates, as: :section_updates)
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
@@ -731,7 +738,25 @@ defmodule OliWeb.Router do
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
     live("/:section_slug/gating_and_scheduling/new", Sections.GatingAndScheduling.New)
-    live("/:section_slug/gating_and_scheduling/:id/edit", Sections.GatingAndScheduling.Edit)
+
+    live(
+      "/:section_slug/gating_and_scheduling/new/:parent_gate_id",
+      Sections.GatingAndScheduling.New
+    )
+
+    live("/:section_slug/gating_and_scheduling/edit/:id", Sections.GatingAndScheduling.Edit)
+
+    live(
+      "/:section_slug/gating_and_scheduling/exceptions/:parent_gate_id",
+      Sections.GatingAndScheduling
+    )
+
+    get(
+      "/:section_slug/review/:attempt_guid",
+      PageDeliveryController,
+      :review_attempt,
+      as: :instructor_review
+    )
   end
 
   ### Sections - Enrollment
@@ -837,8 +862,7 @@ defmodule OliWeb.Router do
     live("/system_messages", SystemMessageLive.IndexView)
 
     # Course Ingestion
-    get("/ingest", IngestController, :index)
-    post("/ingest", IngestController, :upload)
+    live("/ingest", Admin.Ingest)
 
     # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)
@@ -882,14 +906,40 @@ defmodule OliWeb.Router do
       :admin
     ])
 
-    live("/:project_id/history/:slug", RevisionHistory)
+    live("/:project_id/history/slug/:slug", RevisionHistory)
+
+    live("/:project_id/history/resource_id/:resource_id", RevisionHistory,
+      as: :history_by_resource_id
+    )
   end
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
+    pipe_through([:sso])
+
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
+
+    get("/launch_clone/products/:product_slug", CognitoController, :launch_clone,
+      as: :product_clone
+    )
+
+    get("/launch_clone/projects/:project_slug", CognitoController, :launch_clone,
+      as: :project_clone
+    )
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring
+    ])
+
+    get("/prompt/:project_slug", CognitoController, :prompt)
+    get("/clone/:project_slug", CognitoController, :clone)
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

@@ -1,7 +1,6 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   use OliWeb, :surface_component
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.{Link}
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
@@ -14,36 +13,41 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     """
   end
 
-  def new(%SessionContext{} = context, gating_condition_rows, section) do
+  def new(%SessionContext{} = context, gating_condition_rows, section, is_parent_gate?) do
+    resource_column = %ColumnSpec{
+      name: :title,
+      label: "Resource",
+      render_fn: &__MODULE__.render_resource_column/3
+    }
+
+    type_column = %ColumnSpec{
+      name: :type,
+      label: "Type",
+      render_fn: &__MODULE__.render_type_column/3
+    }
+
+    details_column = %ColumnSpec{
+      name: :details,
+      label: "Details",
+      render_fn: &__MODULE__.render_details_column/3
+    }
+
+    user_column = %ColumnSpec{
+      name: :user,
+      label: "User",
+      render_fn: &__MODULE__.render_user_column/3
+    }
+
+    column_specs =
+      if is_parent_gate? do
+        [resource_column, type_column, details_column]
+      else
+        [user_column, type_column, details_column]
+      end
+
     SortableTableModel.new(
       rows: gating_condition_rows,
-      column_specs: [
-        %ColumnSpec{
-          name: :title,
-          label: "Resource",
-          render_fn: &__MODULE__.render_resource_column/3
-        },
-        %ColumnSpec{
-          name: :type,
-          label: "Type",
-          render_fn: &__MODULE__.render_type_column/3
-        },
-        %ColumnSpec{
-          name: :details,
-          label: "Details",
-          render_fn: &__MODULE__.render_details_column/3
-        },
-        # %ColumnSpec{
-        #   name: :user,
-        #   label: "User",
-        #   render_fn: &__MODULE__.render_user_column/3
-        # },
-        %ColumnSpec{
-          name: :actions,
-          label: "Actions",
-          render_fn: &__MODULE__.render_actions_column/3
-        }
-      ],
+      column_specs: column_specs,
       event_suffix: "",
       id_field: [:id],
       data: %{
@@ -54,14 +58,15 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   end
 
   def render_resource_column(
-        assigns,
+        %{section_slug: section_slug} = assigns,
         %GatingCondition{
-          revision: %Revision{title: title}
+          revision: %Revision{title: title},
+          id: id
         },
         _
       ) do
     ~F"""
-    {title}
+    <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{title}</Link>
     """
   end
 
@@ -98,31 +103,78 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
     """
   end
 
-  # def render_user_column(
-  #       assigns,
-  #       %GatingCondition{
-  #         user_id: user_id,
-  #         user: user
-  #       },
-  #       _
-  #     ) do
-  #   ~F"""
-  #     <div :if={user_id}>
-  #       {user.name}
-  #     </div>
-  #   """
-  # end
-
-  def render_actions_column(
-        %{section_slug: section_slug} = assigns,
+  def render_details_column(
+        %{context: _} = assigns,
         %GatingCondition{
-          id: id
+          type: :started
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be started
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{context: _} = assigns,
+        %GatingCondition{
+          type: :finished,
+          data: %GatingConditionData{
+            minimum_percentage: nil
+          }
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be completed
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{context: _} = assigns,
+        %GatingCondition{
+          type: :finished
+        },
+        _
+      ) do
+    ~F"""
+    <div>
+      A resource must be completed with a minimum score
+    </div>
+    """
+  end
+
+  def render_details_column(
+        %{context: _context} = assigns,
+        %GatingCondition{
+          type: :always_open
         },
         _
       ) do
     ~F"""
       <div>
-        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)} class="btn btn-sm btn-primary">Edit</Link>
+        Allows access to this resource
+      </div>
+    """
+  end
+
+  def render_user_column(
+        %{section_slug: section_slug} = assigns,
+        %GatingCondition{
+          user_id: user_id,
+          user: user,
+          id: id
+        },
+        _
+      ) do
+    ~F"""
+      <div :if={user_id}>
+        <Link to={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling.Edit, section_slug, id)}>{user.name}</Link>
+
       </div>
     """
   end

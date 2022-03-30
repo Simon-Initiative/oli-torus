@@ -1,0 +1,757 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Element",
+  "description": "A content model element",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/top-level"
+    },
+    {
+      "$ref": "#/$defs/block"
+    },
+    {
+      "$ref": "#/$defs/inline"
+    }
+  ],
+  "$defs": {
+    "top-level": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text-block"
+        },
+        {
+          "$ref": "#/$defs/list"
+        },
+        {
+          "$ref": "#/$defs/media"
+        },
+        {
+          "$ref": "#/$defs/table"
+        },
+        {
+          "$ref": "#/$defs/math"
+        },
+        {
+          "$ref": "#/$defs/code-v1"
+        },
+        {
+          "$ref": "#/$defs/code-v2"
+        },
+        {
+          "$ref": "#/$defs/blockquote"
+        }
+      ]
+    },
+    "block": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/table-row"
+        },
+        {
+          "$ref": "#/$defs/table-cell"
+        },
+        {
+          "$ref": "#/$defs/list-item"
+        },
+        {
+          "$ref": "#/$defs/math-line"
+        },
+        {
+          "$ref": "#/$defs/code-line"
+        }
+      ]
+    },
+    "inline": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/text"
+        },
+        {
+          "$ref": "#/$defs/hyperlink"
+        },
+        {
+          "$ref": "#/$defs/activity-link"
+        },
+        {
+          "$ref": "#/$defs/popup"
+        },
+        {
+          "$ref": "#/$defs/input-ref"
+        }
+      ]
+    },
+    "text-block": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/paragraph"
+        },
+        {
+          "$ref": "#/$defs/heading"
+        }
+      ]
+    },
+    "paragraph": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "p"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "input-ref": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "input_ref"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/heading-one"
+        },
+        {
+          "$ref": "#/$defs/heading-two"
+        },
+        {
+          "$ref": "#/$defs/heading-three"
+        },
+        {
+          "$ref": "#/$defs/heading-four"
+        },
+        {
+          "$ref": "#/$defs/heading-five"
+        },
+        {
+          "$ref": "#/$defs/heading-six"
+        }
+      ]
+    },
+    "heading-one": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h1"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-two": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h2"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-three": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h3"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-four": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h4"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-five": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h5"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "heading-six": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "h6"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "list": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ordered-list"
+        },
+        {
+          "$ref": "#/$defs/unordered-list"
+        }
+      ]
+    },
+    "ordered-list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ol"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/list-item"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "unordered-list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ul"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/list-item"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "list-item": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "li"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "media": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/image"
+        },
+        {
+          "$ref": "#/$defs/youtube"
+        },
+        {
+          "$ref": "#/$defs/audio"
+        },
+        {
+          "$ref": "#/$defs/webpage"
+        }
+      ]
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "img"
+        },
+        "src": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string"
+        },
+        "width": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "youtube": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "youtube"
+        },
+        "src": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string"
+        },
+        "width": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "audio": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "audio"
+        },
+        "src": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "webpage": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "iframe"
+        },
+        "src": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string"
+        },
+        "width": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "table": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "table"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/table-row"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "table-row": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tr"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/table-cell"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "table-cell": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/table-header"
+        },
+        {
+          "$ref": "#/$defs/table-data"
+        }
+      ]
+    },
+    "table-header": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "th"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "table-data": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "td"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "math": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "math"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/math-line"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "math-line": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "math_line"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "code-v1": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "code"
+        },
+        "language": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/code-line"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "language",
+        "children"
+      ]
+    },
+    "code-line": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "code_line"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "code-v2": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "code"
+        },
+        "code": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "code",
+        "language"
+      ]
+    },
+    "blockquote": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "blockquote"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/paragraph"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "hyperlink": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "a"
+        },
+        "href": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "href",
+        "children"
+      ]
+    },
+    "activity-link": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "a"
+        },
+        "idref": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "idref",
+        "children"
+      ]
+    },
+    "popup": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "popup"
+        },
+        "trigger": {
+          "enum": [
+            "hover",
+            "click",
+            "focus"
+          ]
+        },
+        "content": {
+          "$ref": "#/$defs/rich-text"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      }
+    },
+    "rich-text": {
+      "type": "array",
+      "items": {
+        "$ref": "#"
+      }
+    }
+  }
+}

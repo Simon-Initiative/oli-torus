@@ -1,15 +1,15 @@
 defmodule Oli.SectionsTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Delivery.Sections.SectionResource
   alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing
   alias Oli.Publishing.DeliveryResolver
-  alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy
-  alias Oli.Delivery.Hierarchy.HierarchyNode
 
   describe "enrollments" do
     @valid_attrs %{
@@ -273,8 +273,22 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section!(section.id).status == :deleted
     end
 
+    test "delete_section/1 deletes the section", %{section: section} do
+      assert {:ok, %Section{}} = Sections.delete_section(section)
+      refute Sections.get_section_by_slug(section.slug)
+    end
+
     test "change_section/1 returns a section changeset", %{section: section} do
       assert %Ecto.Changeset{} = Sections.change_section(section)
+    end
+
+    test "has_student_data?/1 returns false when section has no snapshots", %{section: section} do
+      refute Sections.has_student_data?(section.slug)
+    end
+
+    test "has_student_data?/1 returns true when section has snapshots" do
+      section = insert(:snapshot).section
+      assert Sections.has_student_data?(section.slug)
     end
   end
 
@@ -822,18 +836,21 @@ defmodule Oli.SectionsTest do
       container_node = Enum.at(hierarchy.children, 2)
       node = Enum.at(container_node.children, source_index)
 
-      children =
+      updated =
         Hierarchy.reorder_children(
-          container_node.children,
+          container_node,
           node,
           source_index,
           destination_index
         )
 
-      updated = %HierarchyNode{container_node | children: children}
       hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
+        |> Hierarchy.finalize()
 
-      {hierarchy, _numberings} = Numbering.renumber_hierarchy(hierarchy)
+      project_publications = Sections.get_pinned_project_publications(section.id)
+      Sections.rebuild_section_curriculum(section, hierarchy, project_publications)
+
+      hierarchy = DeliveryResolver.full_hierarchy(section.slug)
 
       # verify the pages in the new hierarchy are reordered
       updated_container_node = Enum.at(hierarchy.children, 2)

@@ -57,4 +57,16 @@ defmodule OliWeb.ViewHelpers do
         ""
     end
   end
+
+  def delivery_breadcrumbs?(%{assigns: assigns} = _conn),
+    do:
+      Map.has_key?(assigns, :delivery_breadcrumb) and
+        Map.get(assigns, :delivery_breadcrumb, false) and
+        (Map.has_key?(assigns, :breadcrumbs) and length(Map.get(assigns, :breadcrumbs, [])) > 0)
+
+  def redirect_with_error(conn, error_url, error) do
+    conn
+    |> Phoenix.Controller.redirect(external: "#{error_url}?error=#{error}")
+    |> Plug.Conn.halt()
+  end
 end

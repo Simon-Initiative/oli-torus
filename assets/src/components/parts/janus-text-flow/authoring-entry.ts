@@ -11,6 +11,7 @@ import {
   transformModelToSchema,
   transformSchemaToModel,
   uiSchema,
+  adaptivitySchema,
 } from './schema';
 import TextFlowAuthor from './TextFlowAuthor';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -39,5 +40,6 @@ register(TextFlowAuthor, manifest.authoring.element, observedAttributes, {
     transformSchemaToModel,
     createSchema,
     getCapabilities,
+    getAdaptivitySchema: async () => adaptivitySchema,
   },
 });

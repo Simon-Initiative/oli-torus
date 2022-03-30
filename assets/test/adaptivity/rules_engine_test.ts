@@ -267,48 +267,155 @@ describe('Operators', () => {
     });
   });
 
-  describe('Contains Operators', () => {
+  describe('Contains Operator', () => {
     it('should return false if either value is not provided', () => {
       expect(containsOperator(null, null)).toEqual(false);
-      expect(containsAnyOfOperator(null, null)).toEqual(false);
-      expect(containsOnlyOperator(null, null)).toEqual(false);
-      expect(containsExactlyOperator(null, null)).toEqual(false);
+      expect(containsOperator(null, 'apple')).toEqual(false);
+      expect(containsOperator('apple', null)).toEqual(false);
     });
 
-    it('should return the opposite for the "not" versions', () => {
+    it('should return true for the "not" versions if the value is not provided', () => {
       expect(notContainsOperator(null, null)).toEqual(true);
-      expect(notContainsExactlyOperator(null, null)).toEqual(true);
-      expect(notContainsAnyOfOperator(null, null)).toEqual(true);
-    });
-
-    it('should match the content of arrays and strings for exactly', () => {
-      expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
+      expect(notContainsOperator(null, 'apple')).toEqual(true);
+      expect(notContainsOperator('apple', null)).toEqual(true);
     });
 
     it('should match string contains as partial', () => {
-      expect(containsOperator('abcd', 'abc')).toEqual(true);
-      expect(notContainsOperator('abcd', 'cde')).toEqual(true);
+      const inputValue = 'abc';
+      expect(containsOperator(inputValue, 'ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'cd')).toEqual(true);
     });
 
-    it('should check stringy arrays', () => {
-      expect(containsOperator('[a,b,c]', 'a')).toEqual(true);
-      expect(containsOperator([9, 8, 7], '9,8')).toEqual(true);
+    it('should match string contains as case INSENSITIVE', () => {
+      const inputValue = 'abcd';
+      expect(containsOperator(inputValue, 'Ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'Ac')).toEqual(true);
     });
 
-    it('should check contains only', () => {
-      expect(containsOnlyOperator([8, 3, 1], [1, 3, 8])).toEqual(true);
-      expect(containsOnlyOperator([8, 3, 1], [1, 3])).toEqual(false);
-      expect(containsOnlyOperator([8, 3, 1], '3,1,8')).toEqual(true);
+    it('should test for spaces and other characters', () => {
+      expect(containsOperator('I have spaces', ' ')).toEqual(true);
+      expect(containsOperator('1+1/2', '+')).toEqual(true);
+      expect(notContainsOperator('=A3+2', '=')).toEqual(false);
+    });
+
+    it('should match when there are arrays of strings case INSENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsOperator(['a', 'b', 'c'], 'A')).toEqual(true);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'b'])).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsOperator('1,2,3', [1, 4])).toEqual(false);
     });
   });
 
-  describe('ContainsanyOf Operators', () => {
-    it('should check containsany Of', () => {
-      expect(containsAnyOfOperator('[March,June,September,December]', 'December')).toEqual(true);
-      expect(containsAnyOfOperator('[March,June,September,December]', 'winter')).toEqual(false);
-      expect(containsAnyOfOperator('[March,June,September,December]', '[December]')).toEqual(true);
-      expect(notContainsAnyOfOperator('[March,June,September,December]', '[winter]')).toEqual(true);
+  describe('Contains Exactly Operator', () => {
+    it('should return false if either value is not provided', () => {
+      expect(containsExactlyOperator(null, null)).toEqual(false);
+    });
+
+    it('should return true for the "not" version if the value is not provided', () => {
+      expect(notContainsExactlyOperator(null, null)).toEqual(true);
+    });
+
+    it('should match when there are arrays of strings case SENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'A')).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'c'])).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['A', 'b'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsExactlyOperator('ABC', ['AB', 'C'])).toEqual(true);
+      expect(containsExactlyOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsExactlyOperator('1,2,3', [1, 4])).toEqual(false);
+    });
+
+    it('should be case SENSITIVE', () => {
+      expect(containsExactlyOperator('abc', 'Abc')).toEqual(false);
+      expect(containsExactlyOperator('Abc', 'A')).toEqual(true);
+    });
+  });
+
+  describe('Contains Only Operator', () => {
+    it('should check contains only', () => {
+      const conditionValue = [8, 3, 1];
+      expect(containsOnlyOperator([1, 3, 8], conditionValue)).toEqual(true);
+      expect(containsOnlyOperator([1, 3], conditionValue)).toEqual(false);
+      expect(containsOnlyOperator('3,1,8', conditionValue)).toEqual(true);
+    });
+  });
+
+  describe('Contains Any Operator', () => {
+    it('should handle if the conditionValue is a stringy-array', () => {
+      const conditionValue = '[Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday]';
+      expect(containsAnyOfOperator('Monday', conditionValue)).toEqual(true);
+      expect(containsAnyOfOperator('monday', conditionValue)).toEqual(false);
+      expect(containsAnyOfOperator('[Tuesday]', conditionValue)).toEqual(true);
+      expect(containsAnyOfOperator('[Tuesday,Wednesday]', conditionValue)).toEqual(true);
+      expect(notContainsAnyOfOperator('[Tuesday,Wednesday]', conditionValue)).toEqual(false);
+      expect(notContainsAnyOfOperator('[Tuesday,Wednesday,Sandwich]', conditionValue)).toEqual(
+        false,
+      );
+      expect(notContainsAnyOfOperator('Milk, Bread, Oven Mitts', conditionValue)).toEqual(true);
+      const conditionValue2 = '[1, 3, 5, 7]';
+      expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
+      expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
+      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
+    });
+
+    it('should handle if the conditionValue is an actual array', () => {
+      const conditionValue = [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday',
+      ];
+      const conditionValue2 = [1, 3, 5, 7];
+      expect(containsAnyOfOperator('Monday', conditionValue)).toEqual(true);
+      expect(containsAnyOfOperator('monday', conditionValue)).toEqual(false);
+      expect(containsAnyOfOperator('[Tuesday]', conditionValue)).toEqual(true);
+      expect(containsAnyOfOperator('[Tuesday,Sandwich]', conditionValue)).toEqual(true);
+      expect(notContainsAnyOfOperator('[Tuesday,Wednesday]', conditionValue)).toEqual(false);
+      expect(notContainsAnyOfOperator('[Tuesday,Wednesday,Sandwich]', conditionValue)).toEqual(
+        false,
+      );
+      expect(notContainsAnyOfOperator('Milk, Bread, Oven Mitts', conditionValue)).toEqual(true);
+      expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
+      expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
+      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
     });
   });
 

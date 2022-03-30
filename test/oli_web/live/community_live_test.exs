@@ -206,7 +206,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Community couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "can't be blank")
-
       assert [] = Groups.list_communities()
     end
 
@@ -226,7 +225,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Community couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-
       assert 1 = Groups.list_communities() |> length()
     end
 
@@ -293,7 +291,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Community couldn&#39;t be updated. Please check the errors below."
 
       assert has_element?(view, "span", "can't be blank")
-
       refute Groups.get_community(id).name == ""
     end
 
@@ -336,7 +333,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Community couldn&#39;t be updated. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-
       assert 2 = Groups.list_communities() |> length()
     end
 
@@ -431,7 +427,6 @@ defmodule OliWeb.CommunityLiveTest do
 
       flash = assert_redirected(view, @live_view_index_route)
       assert flash["info"] == "Community successfully deleted."
-
       assert nil == Groups.get_community(id)
     end
 
@@ -923,7 +918,6 @@ defmodule OliWeb.CommunityLiveTest do
                "Association successfully removed."
 
       refute has_element?(view, "##{cv1.id}")
-
       assert has_element?(view, "p", "None exist")
     end
 
@@ -1158,6 +1152,18 @@ defmodule OliWeb.CommunityLiveTest do
              |> element("tr:first-child > td:first-child")
              |> render() =~
                user.name
+    end
+
+    test "lists community members with no name", %{conn: conn, community: community} do
+      user = insert(:user, name: nil)
+      insert(:community_member_account, %{user: user, community: community})
+
+      {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
+
+      assert view
+             |> element("tr:first-child > td:nth-child(2)")
+             |> render() =~
+               user.email
     end
 
     test "removes community member", %{conn: conn, community: community} do

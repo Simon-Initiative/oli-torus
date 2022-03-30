@@ -1,5 +1,6 @@
 defmodule Oli.Delivery.Evaluation.Evaluator do
-  alias Oli.Delivery.Evaluation.{EvaluationContext, Result}
+  alias Oli.Delivery.Evaluation.{EvaluationContext}
+  alias Oli.Delivery.Evaluation.Actions.{SubmissionActionResult, FeedbackActionResult}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Activities.ParseUtils
@@ -8,10 +9,30 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   Evaluates a student input for a given activity part.  In a successful
   evaluation, returns the feedback and a scoring result.
   """
+  def evaluate(%Part{grading_approach: :manual, id: part_id}, %EvaluationContext{
+        part_attempt_guid: attempt_guid
+      }) do
+    {:ok,
+     %SubmissionActionResult{
+       type: "SubmissionActionResult",
+       attempt_guid: attempt_guid,
+       part_id: part_id
+     }}
+  end
+
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
-        {:ok, {feedback, %Result{score: score, out_of: out_of}}}
+        {:ok,
+         %FeedbackActionResult{
+           type: "FeedbackActionResult",
+           score: score,
+           out_of: out_of,
+           feedback: feedback,
+           attempt_guid: context.part_attempt_guid,
+           error: nil,
+           part_id: part.id
+         }}
 
       # No matching response found - mark incorrect
       {_, nil, _, out_of} ->
@@ -26,8 +47,15 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
           end
 
         {:ok,
-         {ParseUtils.default_content_item("Incorrect"),
-          %Result{score: 0, out_of: adjusted_out_of}}}
+         %FeedbackActionResult{
+           type: "FeedbackActionResult",
+           score: 0,
+           out_of: adjusted_out_of,
+           feedback: ParseUtils.default_content_item("Incorrect"),
+           attempt_guid: context.part_attempt_guid,
+           error: nil,
+           part_id: part.id
+         }}
 
       _ ->
         {:error, "Error in evaluation"}

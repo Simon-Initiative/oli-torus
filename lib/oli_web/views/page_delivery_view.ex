@@ -7,6 +7,8 @@ defmodule OliWeb.PageDeliveryView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
 
+  def show_score(nil, nil), do: ""
+
   def show_score(score, out_of) do
     cond do
       out_of <= 0.0 ->
@@ -19,40 +21,18 @@ defmodule OliWeb.PageDeliveryView do
     end
   end
 
+  defp url_from_desc(conn, %{"type" => "container", "slug" => slug}),
+    do: conn.assigns.container_link_url.(slug)
+
+  defp url_from_desc(conn, %{"type" => "page", "slug" => slug}),
+    do: conn.assigns.page_link_url.(slug)
+
   def previous_url(conn) do
-    if Map.get(conn.assigns, :preview_mode, false) do
-      Routes.page_delivery_path(
-        conn,
-        :page_preview,
-        conn.assigns.section_slug,
-        conn.assigns.previous_page["slug"]
-      )
-    else
-      Routes.page_delivery_path(
-        conn,
-        :page,
-        conn.assigns.section_slug,
-        conn.assigns.previous_page["slug"]
-      )
-    end
+    url_from_desc(conn, conn.assigns.previous_page)
   end
 
   def next_url(conn) do
-    if Map.get(conn.assigns, :preview_mode, false) do
-      Routes.page_delivery_path(
-        conn,
-        :page_preview,
-        conn.assigns.section_slug,
-        conn.assigns.next_page["slug"]
-      )
-    else
-      Routes.page_delivery_path(
-        conn,
-        :page,
-        conn.assigns.section_slug,
-        conn.assigns.next_page["slug"]
-      )
-    end
+    url_from_desc(conn, conn.assigns.next_page)
   end
 
   def container?(rev) do
@@ -162,4 +142,8 @@ defmodule OliWeb.PageDeliveryView do
         end
     end
   end
+
+  def base_resource_link_class(), do: ""
+  def resource_link_class(_active = true), do: base_resource_link_class() <> " active"
+  def resource_link_class(_active = false), do: base_resource_link_class()
 end

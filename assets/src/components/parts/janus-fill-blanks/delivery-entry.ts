@@ -14,6 +14,11 @@ const customEvents: any = { ...apiCustomEvents };
 register(FillBlanks, manifest.delivery.element, observedAttributes, {
   customEvents,
   shadow: true,
+  attrs: {
+    model: {
+      json: true,
+    },
+  },
   customApi: {
     getAdaptivitySchema: adaptivitySchema,
   },

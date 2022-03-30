@@ -45,7 +45,6 @@ defmodule OliWeb.ObjectivesLiveTest do
       |> render_click()
 
       refute view |> element("##{objective1.revision.slug}") |> has_element?()
-
       assert view |> element("##{objective2.revision.slug}") |> has_element?()
     end
   end

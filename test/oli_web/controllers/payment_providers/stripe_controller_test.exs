@@ -31,9 +31,12 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
   describe "user cannot direct pay when stripe is not configured" do
     setup [:user_conn, :create_section]
 
-    test "displays not enabled message", %{conn: conn, section: section} do
+    test "displays not enabled message", %{conn: conn, user: user, section: section} do
       Config.Reader.read!("test/config/config.exs")
       |> Application.put_all_env()
+
+      insert(:enrollment, %{user: user, section: section})
+
 
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
@@ -87,6 +90,9 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
     end
 
     test "displays stripe form", %{conn: conn, section: section, user: user} do
+
+      insert(:enrollment, %{user: user, section: section})
+
       {:ok, amount} = Money.to_string(section.amount)
 
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))

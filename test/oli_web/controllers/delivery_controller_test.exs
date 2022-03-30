@@ -32,10 +32,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.student_instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
+      assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
     test "handles student with section", %{conn: conn, lti_param_ids: lti_param_ids} do
@@ -57,26 +54,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
         |> get(Routes.delivery_path(conn, :index))
 
-      assert html_response(conn, 200) =~ "<h3>Getting Started</h3>"
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
-    end
-
-    test "handles instructor with no section", %{
-      conn: conn,
-      lti_param_ids: lti_param_ids,
-      user: user
-    } do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
-
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
-        |> get(Routes.delivery_path(conn, :index))
-
-      assert html_response(conn, 200) =~
-               "Let's create a new section for your course. Please select one of the options below:"
+      assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
     test "handles instructor with section", %{
@@ -329,6 +307,38 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 302) =~
                "You are being <a href=\"/sections/join/invalid\">redirected"
+    end
+
+    test "redirects to section unavailable when section has yet to be started", %{conn: conn} do
+      section = insert(:section)
+      later = DateTime.add(DateTime.utc_now(), 100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{start_date: later})
+      assert {:unavailable, :before_start_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section before its scheduled start date."
+    end
+
+    test "redirects to section unavailable when section has already ended", %{conn: conn} do
+      section = insert(:section)
+      in_the_past = DateTime.add(DateTime.utc_now(), -100_000)
+
+      {:ok, section} = Oli.Delivery.Sections.update_section(section, %{end_date: in_the_past})
+      assert {:unavailable, :after_end_date} == Oli.Delivery.Sections.available?(section)
+
+      section_invite = insert(:section_invite, %{section: section})
+      refute Oli.Delivery.Sections.SectionInvites.link_expired?(section_invite)
+
+      conn = get(conn, Routes.delivery_path(conn, :enroll_independent, section_invite.slug))
+
+      assert html_response(conn, 403) =~
+               "You are attempting to access a section after its scheduled end date."
     end
 
     test "shows enroll view", %{conn: conn} do

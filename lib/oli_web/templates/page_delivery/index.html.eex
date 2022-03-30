@@ -1,28 +1,26 @@
 <div class="content mt-3 mb-5">
   <h1><%= @title %></h1>
   <p class="text-secondary"><%= @description %></p>
-
   <%= if is_section_instructor_or_admin?(@section_slug, @current_user) do %>
-
     <div class="d-flex flex-row my-2">
       <div class="flex-fill"></div>
       <div>
         <%= link "Manage Section", to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section_slug), class: "btn btn-warning btn-sm ml-1" %>
       </div>
     </div>
-
   <% end %>
-
-  <div id="index-container" class="course-outline list-group">
-    <h5 class="text-primary border-bottom border-primary mb-2">Course Overview</h5>
-
-    <%= render "_outline.html", conn: @conn, preview_mode: @preview_mode, section_slug: @section_slug, nodes: @hierarchy.children, active_page: nil %>
-  </div>
-
+  <h5 class="text-primary border-bottom border-primary mb-2">
+    Course Overview
+  </h5>
+  <ol id="index-container" class="course-outline well" style="list-style: none;">
+    <%= render "_outline.html", Map.merge(assigns, %{
+      nodes: @hierarchy.children,
+      active_page: nil,
+    }) %>
+  </ol>
 </div>
-
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
-<!--
+  <!--
 __OVERVIEW_PAGES__<%= encode_pages(@conn, @section_slug, @hierarchy) %>__OVERVIEW_PAGES__
 -->
 <% end %>

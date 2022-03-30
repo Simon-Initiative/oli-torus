@@ -32,7 +32,8 @@ defmodule OliWeb.Sections.EnrollmentsView do
   data options, :any
 
   def set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+    type
+    |> OliWeb.Sections.OverviewView.set_breadcrumbs(section)
     |> breadcrumb(section)
   end
 
@@ -61,6 +62,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
          assign(socket,
            context: context,
            changeset: Sections.change_section(section),
+           delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
            total_count: total_count,

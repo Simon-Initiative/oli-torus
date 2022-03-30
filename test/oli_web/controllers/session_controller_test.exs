@@ -10,6 +10,7 @@ defmodule OliWeb.SessionControllerTest do
       conn = delete(conn, Routes.session_path(conn, :signout, type: :user))
 
       refute conn.assigns.current_user
+      refute conn.private.plug_session["current_user_id"]
       refute conn.private.plug_session["dismissed_messages"]
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
     end
@@ -20,6 +21,7 @@ defmodule OliWeb.SessionControllerTest do
       conn = delete(conn, Routes.authoring_session_path(conn, :signout, type: :author))
 
       refute conn.assigns.current_author
+      refute conn.private.plug_session["current_author_id"]
       refute conn.private.plug_session["dismissed_messages"]
       assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
     end

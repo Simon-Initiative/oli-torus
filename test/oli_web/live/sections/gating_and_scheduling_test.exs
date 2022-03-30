@@ -34,6 +34,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
 
+      assert html =~ "Admin"
       assert html =~ "Gating and Scheduling"
     end
   end
@@ -45,6 +46,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.GatingAndScheduling, section.slug))
 
+      refute html =~ "Admin"
       assert html =~ "Gating and Scheduling"
     end
 
@@ -85,23 +87,16 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       gating_condition: gating_condition,
       revision: revision
     } do
-      {:ok, view, _html} =
+      {:ok, view, html} =
         live(
           conn,
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      assert view
-             |> render() =~
-               "Edit Gating Condition"
-
+      assert html =~ "Edit Gating Condition"
       assert has_element?(view, "input[value=\"#{revision.title}\"]")
-
-      assert view
-             |> render() =~ Date.to_string(gating_condition.data.start_datetime)
-
-      assert view
-             |> render() =~ Date.to_string(gating_condition.data.end_datetime)
+      assert html =~ Date.to_string(gating_condition.data.start_datetime)
+      assert html =~ Date.to_string(gating_condition.data.end_datetime)
     end
 
     test "displays a confirm modal before deleting a gating condition", %{
@@ -168,11 +163,8 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      view
-      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
-
-      view
-      |> render_hook("schedule_end_date_changed", %{value: "2022-01-10T13:48"})
+      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+      render_hook(view, "schedule_end_date_changed", %{value: "2022-01-10T13:48"})
 
       view
       |> element("button[phx-click=\"update_gate\"]")
@@ -195,11 +187,8 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      view
-      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
-
-      view
-      |> render_hook("schedule_end_date_changed", %{value: "2022-01-13T13:48"})
+      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+      render_hook(view, "schedule_end_date_changed", %{value: "2022-01-13T13:48"})
 
       view
       |> element("button[phx-click=\"update_gate\"]")
@@ -249,17 +238,10 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       uuid = Enum.at(element_splitted, prev_uuid_index + 1)
 
-      view
-      |> render_hook("select_resource", %{selection: "#{uuid}"})
-
-      view
-      |> render_hook("select-condition", %{value: "schedule"})
-
-      view
-      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
-
-      view
-      |> render_hook("schedule_end_date_changed", %{value: "2022-01-10T13:48"})
+      render_hook(view, "select_resource", %{selection: "#{uuid}"})
+      render_hook(view, "select-condition", %{value: "schedule"})
+      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+      render_hook(view, "schedule_end_date_changed", %{value: "2022-01-10T13:48"})
 
       view
       |> element("button[phx-click=\"create_gate\"]")
@@ -302,17 +284,10 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       uuid = Enum.at(element_splitted, prev_uuid_index + 1)
 
-      view
-      |> render_hook("select_resource", %{selection: "#{uuid}"})
-
-      view
-      |> render_hook("select-condition", %{value: "schedule"})
-
-      view
-      |> render_hook("schedule_start_date_changed", %{value: "2022-01-12T13:48"})
-
-      view
-      |> render_hook("schedule_end_date_changed", %{value: "2022-01-13T13:48"})
+      render_hook(view, "select_resource", %{selection: "#{uuid}"})
+      render_hook(view, "select-condition", %{value: "schedule"})
+      render_hook(view, "schedule_start_date_changed", %{value: "2022-01-12T13:48"})
+      render_hook(view, "schedule_end_date_changed", %{value: "2022-01-13T13:48"})
 
       view
       |> element("button[phx-click=\"create_gate\"]")

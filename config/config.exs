@@ -205,6 +205,14 @@ config :libcluster,
     ]
   ]
 
+config :oli, :auth_providers,
+  google_client_id: System.get_env("GOOGLE_CLIENT_ID", ""),
+  google_client_secret: System.get_env("GOOGLE_CLIENT_SECRET", ""),
+  author_github_client_id: System.get_env("AUTHOR_GITHUB_CLIENT_ID", ""),
+  author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
+  user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
+  user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

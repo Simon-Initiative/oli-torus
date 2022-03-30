@@ -3,15 +3,11 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Publishing.ChangeTracker
   alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
+  alias Oli.Utils.SchemaResolver
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
   @media_key "_media-manifest"
-
-  @page_schema "priv/schemas/v0-1-0/page.schema.json"
-               |> File.read!()
-               |> Jason.decode!()
-               |> ExJsonSchema.Schema.resolve()
 
   @doc """
   Ingest a course digest archive that is sitting on the file system
@@ -348,7 +344,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
     with content <- Map.get(page, "content"),
-         :ok <- validate_json(content, @page_schema, page["id"]),
+         :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
       graded = Map.get(page, "isGraded", false)
@@ -382,13 +378,13 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp validate_json(content, schema, element_id) do
-    case ExJsonSchema.Validator.validate(schema, content) do
+  defp validate_json(json, schema) do
+    case ExJsonSchema.Validator.validate(schema, json) do
       :ok ->
         :ok
 
       {:error, errors} ->
-        {:error, {:invalid_json, element_id, schema, errors, content}}
+        {:error, {:invalid_json, schema, errors, json}}
     end
   end
 
@@ -400,31 +396,34 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    title =
-      case Map.get(activity, "title") do
-        nil -> Map.get(activity, "subType")
-        "" -> Map.get(activity, "subType")
-        title -> title
-      end
+    with :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
 
-    scope =
-      case Map.get(activity, "scope", "embedded") do
-        str when str in ~w(embedded banked) -> String.to_existing_atom(str)
-        _ -> :embedded
-      end
+      title =
+        case Map.get(activity, "title") do
+          nil -> Map.get(activity, "subType")
+          "" -> Map.get(activity, "subType")
+          title -> title
+        end
 
-    %{
-      scope: scope,
-      tags: transform_tags(activity, tag_map),
-      title: title,
-      content: Map.get(activity, "content"),
-      author_id: as_author.id,
-      objectives: process_activity_objectives(activity, objective_map),
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
-      activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
-    }
-    |> create_resource(project)
+      scope =
+        case Map.get(activity, "scope", "embedded") do
+          str when str in ~w(embedded banked) -> String.to_existing_atom(str)
+          _ -> :embedded
+        end
+
+      %{
+        scope: scope,
+        tags: transform_tags(activity, tag_map),
+        title: title,
+        content: Map.get(activity, "content"),
+        author_id: as_author.id,
+        objectives: process_activity_objectives(activity, objective_map),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
+      }
+      |> create_resource(project)
+    end
   end
 
   defp process_activity_objectives(activity, objective_map) do
@@ -599,7 +598,7 @@ defmodule Oli.Interop.Ingest do
 
           {Map.put(resource_map, id, decoded), error_map}
 
-        {:error, _} ->
+        _ ->
           {resource_map,
            Map.put(
              error_map,
@@ -662,8 +661,8 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  def prettify_error({:error, {:invalid_json, element_id, schema, _errors, _content}}) do
-    "Invalid JSON found in '#{element_id}' according to schema #{schema.schema["$id"]}"
+  def prettify_error({:error, {:invalid_json, schema, _errors, json}}) do
+    "Invalid JSON found in '#{json["id"]}' according to schema #{schema.schema["$id"]}"
   end
 
   def prettify_error({:error, error}) do

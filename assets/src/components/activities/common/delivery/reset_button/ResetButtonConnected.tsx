@@ -1,6 +1,6 @@
 import { ResetButton } from 'components/activities/common/delivery/reset_button/ResetButton';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
-import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
+import { ActivityDeliveryState, isEvaluated, isSubmitted } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
 
@@ -13,7 +13,7 @@ export const ResetButtonConnected: React.FC<Props> = ({ onReset }) => {
 
   return (
     <ResetButton
-      shouldShow={isEvaluated(uiState) && !graded}
+      shouldShow={isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
       disabled={!uiState.attemptState.hasMoreAttempts}
       action={onReset}
     />

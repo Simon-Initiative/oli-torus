@@ -33,6 +33,14 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("secondary"), do: Map.get(@by_type, "secondary")
   def get_id_by_type("tag"), do: Map.get(@by_type, "tag")
 
+  defp is_type(revision, type), do: get_type_by_id(revision.resource_type_id) == type
+  def is_page(revision), do: is_type(revision, "page")
+  def is_container(revision), do: is_type(revision, "container")
+  def is_activity(revision), do: is_type(revision, "activity")
+  def is_objective(revision), do: is_type(revision, "objective")
+  def is_secondary(revision), do: is_type(revision, "secondary")
+  def is_tag(revision), do: is_type(revision, "tag")
+
   schema "resource_types" do
     field :type, :string
 

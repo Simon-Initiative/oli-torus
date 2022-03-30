@@ -5,6 +5,7 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   prop model, :struct, required: true
   prop sort, :event, required: true
+  prop select, :event
   prop additional_table_class, :string, default: "table-sm"
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
@@ -48,14 +49,14 @@ defmodule OliWeb.Common.SortableTable.Table do
 
   defp render_row(assigns, row) do
     row_class =
-      if row == assigns.model.selected do
+      if id_field(row, assigns.model) == assigns.model.selected do
         "table-active"
       else
         ""
       end
 
     ~F"""
-    <tr id={id_field(row, @model)} class={row_class}>
+    <tr id={id_field(row, @model)} class={row_class} :on-click={@select} phx-value-id={id_field(row, @model)}>
     {#for column_spec <- @model.column_specs}
       <td>
       {#if is_nil(column_spec.render_fn)}

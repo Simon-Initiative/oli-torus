@@ -1,0 +1,25 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Block",
+  "description": "A content block with a defined purpose",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "content"
+    },
+    "purpose": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
+      }
+    }
+  },
+  "required": ["id", "type", "purpose", "children"]
+}

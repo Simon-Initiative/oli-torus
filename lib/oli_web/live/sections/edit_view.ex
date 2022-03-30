@@ -1,13 +1,13 @@
 defmodule OliWeb.Sections.EditView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias OliWeb.Common.{Breadcrumb}
+
+  alias Oli.Branding
+  alias Oli.Delivery.Sections
+  alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Sections
-  alias OliWeb.Sections.{MainDetails, OpenFreeSettings, LtiSettings, PaywallSettings}
-  alias Surface.Components.{Form}
-  alias Oli.Branding
-  alias OliWeb.Sections.Mount
+  alias OliWeb.Sections.{LtiSettings, MainDetails, Mount, OpenFreeSettings, PaywallSettings}
+  alias Surface.Components.Form
 
   data breadcrumbs, :any
   data title, :string, default: "Edit Section Details"
@@ -37,14 +37,13 @@ defmodule OliWeb.Sections.EditView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
-        section = Oli.Repo.preload(section, :blueprint)
-
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
         {:ok,
          assign(socket,
+           delivery_breadcrumb: true,
            brands: available_brands,
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
@@ -75,11 +74,7 @@ defmodule OliWeb.Sections.EditView do
   def handle_event("validate", %{"section" => params}, socket) do
     params = convert_dates(params)
 
-    changeset =
-      socket.assigns.section
-      |> Sections.change_section(params)
-
-    {:noreply, assign(socket, changeset: changeset)}
+    {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
@@ -88,7 +83,6 @@ defmodule OliWeb.Sections.EditView do
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
-
         {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
 
       {:error, %Ecto.Changeset{} = changeset} ->

@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-import { templatizeText } from 'apps/delivery/components/TextParser';
+import { templatizeText } from 'adaptivity/scripting';
 import { updateGlobalUserState } from 'data/persistence/extrinsic';
 import React, { CSSProperties, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -66,15 +65,27 @@ export const handleValueExpression = (
         if (item.indexOf('|') > 0) {
           //Need to replace the opening and closing {} else the expression will look something like q.145225454.1|{stage.input.value}
           //it should be like {q.145225454.1|stage.input.value}
-          const modifiedValue = item.replace('{', '').replace('}', '');
-          const partVariable = modifiedValue.split('|')[1];
+          const modifiedValue = item;
+          const modifiedItem = modifiedValue.split('|');
+          const partVariable = modifiedItem[1];
+          const variableSplitter = modifiedValue.indexOf('|');
+          // an expression might be like {round(({q.145225454.1|stage.input.value})/10)*10}, so we just want to replace the {q.145225454.1|stage.input.value}
+          // so getting the sequenceId and parts that will be used later to replace the value
+          const sequenceId = modifiedValue.substring(
+            modifiedItem[0].lastIndexOf('{'),
+            variableSplitter + 1,
+          );
+          const parts = modifiedItem[1].substring(0, modifiedItem[1].indexOf('}') + 1);
           const variables = partVariable.split('.');
           const ownerActivity = currentActivityTree?.find(
             (activity) => !!activity.content.partsLayout.find((p: any) => p.id === variables[1]),
           );
           //ownerActivity is undefined for app.spr.adaptivity.something i.e. Beagle app variables
           if (ownerActivity) {
-            value = value.replace(`${item}`, `{${ownerActivity.id}|${partVariable}}`);
+            value = value.replace(
+              `${sequenceId}|${parts}`,
+              `{${ownerActivity.id}|${partVariable}}`,
+            );
           }
           return;
         }
@@ -194,6 +205,8 @@ const DeckLayoutFooter: React.FC = () => {
   const [displayFeedbackIcon, setDisplayFeedbackIcon] = useState(false);
   const [nextButtonText, setNextButtonText] = useState('Next');
   const [nextCheckButtonText, setNextCheckButtonText] = useState('Next');
+  const [solutionButtonText, setSolutionButtonText] = useState('Show Solution');
+  const [displaySolutionButton, setDisplaySolutionButton] = useState(false);
 
   useEffect(() => {
     if (!lastCheckTimestamp) {
@@ -527,6 +540,8 @@ const DeckLayoutFooter: React.FC = () => {
     if (currentFeedbacks && currentFeedbacks.length) {
       const lastFeedback = currentFeedbacks[currentFeedbacks.length - 1];
       text = lastFeedback.custom?.mainBtnLabel || 'Next';
+      setSolutionButtonText(lastFeedback.custom?.applyBtnLabel || 'Show Solution');
+      setDisplaySolutionButton(lastFeedback.custom?.applyBtnFlag);
     }
     setNextButtonText(text);
   };
@@ -582,6 +597,11 @@ const DeckLayoutFooter: React.FC = () => {
           isFeedbackIconDisplayed={displayFeedbackIcon}
           showCheckBtn={currentActivity?.custom?.showCheckBtn}
         />
+        {displaySolutionButton && (
+          <button className="showSolnBtn showSolution">
+            <div className="ellipsis">{solutionButtonText}</div>
+          </button>
+        )}
         {!isLegacyTheme && (
           <FeedbackContainer
             minimized={!displayFeedback}

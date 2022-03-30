@@ -134,14 +134,50 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      view
-      |> render_hook("reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
 
       view
       |> element("#save")
       |> render_click()
 
       assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
+    end
+  end
+
+  describe "breadcrumbs" do
+    setup [:setup_session]
+
+    test "as instructor", %{
+      conn: conn,
+      map: %{
+        section_1: section_1
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, _view, html} = live(conn)
+
+      refute html =~ "Admin"
+      assert html =~ "Customize Content"
+    end
+
+    test "as admin", %{
+      conn: conn,
+      admin: admin,
+      map: %{
+        section_1: section_1
+      }
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "Admin"
+      assert html =~ "Customize Content"
     end
   end
 

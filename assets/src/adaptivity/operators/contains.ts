@@ -1,95 +1,85 @@
-import { isString, parseArray, parseNumString } from 'utils/common';
+import { isString, looksLikeAnArray, parseArray } from 'utils/common';
 
-const handleContainsOperator = (
-  factValue: any,
-  value: any,
-  isDoesNotContainsOperator: boolean,
-  isContainsAnyOperator = false,
-) => {
-  // factValue contains value, can contain other items
-  if (!value || !factValue) {
+export const containsOperator = (inputValue: any, conditionValue: any) => {
+  if (!conditionValue || !inputValue) {
     return false;
   }
 
-  if (isString(factValue)) {
-    if (!isString(value)) {
-      // use case: factValue = 'abc' and value = ['abc',' abc']
-      if (Array.isArray(value)) {
-        return value.some((item: any) => {
-          return factValue.trim().includes(item.trim());
-        });
-      }
-      return false;
-    }
-    // TODO there are inconsistencies between the what the sim puts out Wan-C wan-C
-    // Need to determine if we should force the sim to update or not to be consistent or be loose like this
-    if (!value.includes(`[`) && !value.includes(']')) {
-      return factValue.toLocaleLowerCase().includes(value.toLocaleLowerCase());
-    }
-    value = parseArray(value);
-    return value.some((item: any) => factValue.includes(item.trim()));
-  }
+  // always read as: Does the INPUT contain the CONDITION?
+  /* console.log('containsOperator', { inputValue, conditionValue }); */
 
-  if (Array.isArray(factValue) && Array.isArray(value)) {
-    // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-    const updatedFacts = parseArray(factValue);
-    const modifiedValue = parseArray(value);
-    if (isDoesNotContainsOperator) {
-      return (
-        modifiedValue
-          // check if value is found in factValue array
-          .every((item) => updatedFacts.includes(item))
-      );
+  if (looksLikeAnArray(conditionValue)) {
+    const conditionArray = parseArray(conditionValue);
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      // if the input is an array, the condition array should contain every one of the input array values
+      // does [1, 2, 3] contain [1, 3]?
+      return conditionArray.every((item) => inputArray.includes(item));
     } else {
-      let hitCount = 0; // counts the number of values found
-
-      modifiedValue.forEach((item) => {
-        if (updatedFacts.includes(item)) {
-          hitCount++;
+      // does 'abc' contain ['a', 'b']? (contains both, case insensitive)
+      return conditionArray.every((item) => {
+        if (isString(item)) {
+          return inputValue.toLocaleLowerCase().includes((item as string).toLocaleLowerCase());
+        } else {
+          return inputValue.includes(item);
         }
       });
-      if (isContainsAnyOperator && hitCount > 0) {
-        return true;
-      } else if (hitCount === modifiedValue.length) {
-        return true;
-      } else {
-        return false;
-      }
     }
-  } else if (Array.isArray(factValue) && value) {
-    // We are parseArrayString for the cases where factValue contains strings but the values contain strings
-    const updatedFacts = parseArray(factValue);
-    const updatedValue = parseArray(value);
-    return updatedValue.some((item: any) => updatedFacts.includes(item));
+  }
+
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // does ['a', 'b'] contain 'A'? (contains, case insensitive)
+    return inputArray.some((item) => {
+      if (isString(item)) {
+        return (item as string).toLocaleLowerCase().includes(conditionValue.toLocaleLowerCase());
+      }
+      return item === conditionValue;
+    });
+  }
+
+  if (isString(inputValue)) {
+    if (isString(conditionValue)) {
+      return inputValue.toLocaleLowerCase().includes(conditionValue.toLocaleLowerCase());
+    } else {
+      return inputValue.includes(conditionValue);
+    }
   }
 
   return false;
 };
 
-export const containsOperator = (factValue: any, value: any) => {
-  return handleContainsOperator(factValue, value, false);
-};
+export const notContainsOperator = (inputValue: any, conditionValue: any) =>
+  !containsOperator(inputValue, conditionValue);
 
-export const notContainsOperator = (factValue: any, value: any) =>
-  !handleContainsOperator(factValue, value, true);
-
-export const containsAnyOfOperator = (factValue: any, value: any) =>
-  // factValue contains any items in value
-  handleContainsOperator(factValue, value, false, true);
-
-export const notContainsAnyOfOperator = (factValue: any, value: any) =>
-  // factValue does not contain items in value
-  !handleContainsOperator(factValue, value, false, true);
-
-export const containsOnlyOperator = (factValue: any, value: any) => {
-  // factValue contains ONLY items in value
-  if (!value || !factValue || (Array.isArray(factValue) && factValue.length < 1)) {
+export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
+  if (!conditionValue || !inputValue) {
     return false;
   }
 
-  // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArray(factValue);
-  const updatedValues = parseArray(value);
+  // the condition should always be an array, if it's a single value, it should be wrapped in an array
+  const conditionArray = parseArray(conditionValue);
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // if the input is an array, the condition array should contain at least one of the input array values
+    return inputArray.some((item) => conditionArray.includes(item));
+  } else {
+    return conditionArray.includes(inputValue);
+  }
+};
+
+export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =>
+  !containsAnyOfOperator(inputValue, conditionValue);
+
+export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
+  // inputValue contains ONLY items in conditionValue
+  if (!conditionValue || !inputValue || (Array.isArray(inputValue) && inputValue.length < 1)) {
+    return false;
+  }
+
+  // We are parseNumString for the cases where inputValue contains numbers but the values contain strings or vice-versa
+  const updatedFacts = parseArray(inputValue);
+  const updatedValues = parseArray(conditionValue);
 
   if (updatedValues.length !== updatedFacts.length) {
     return false;
@@ -98,28 +88,51 @@ export const containsOnlyOperator = (factValue: any, value: any) => {
   return updatedFacts.every((fact: any) => updatedValues.includes(fact));
 };
 
-export const containsExactlyOperator = (factValue: any, value: any) => {
-  // factValue is exactly equal to value
-  if (!value || !factValue) {
+// case sensitive version of containsOperator
+export const containsExactlyOperator = (inputValue: any, conditionValue: any) => {
+  // inputValue is exactly equal to conditionValue
+  if (!conditionValue || !inputValue) {
     return false;
   }
 
-  // We are parseNumString for the cases where factValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArray(factValue);
-  const updatedValues = parseArray(value);
+  // always read as: Does the INPUT contain the CONDITION?
+  /* console.log('containsExactlyOperator', { inputValue, conditionValue }); */
 
-  if (Array.isArray(factValue) && Array.isArray(value)) {
-    return (
-      updatedFacts.every((fact) => updatedValues.includes(fact)) &&
-      updatedFacts.length == updatedValues.length
-    );
-  } else {
-    return factValue === value;
+  if (looksLikeAnArray(conditionValue)) {
+    const conditionArray = parseArray(conditionValue);
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      // if the input is an array, the condition array should contain every one of the input array values
+      // does [1, 2, 3] contain [1, 3]?
+      return conditionArray.every((item) => inputArray.includes(item));
+    } else {
+      // does 'abc' contain ['a', 'b']? (contains both, case sensitive)
+      return conditionArray.every((item) => {
+        return inputValue.includes(item);
+      });
+    }
   }
+
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // does ['a', 'b'] contain 'A'? (contains, case insensitive)
+    return inputArray.some((item) => {
+      if (isString(item)) {
+        return (item as string).includes(conditionValue);
+      }
+      return item === conditionValue;
+    });
+  }
+
+  if (isString(inputValue)) {
+    return inputValue.includes(conditionValue);
+  }
+
+  return false;
 };
 
-export const notContainsExactlyOperator = (factValue: any, value: any) =>
-  !containsExactlyOperator(factValue, value);
+export const notContainsExactlyOperator = (inputValue: any, conditionValue: any) =>
+  !containsExactlyOperator(inputValue, conditionValue);
 
 const operators = {
   contains: containsOperator,
