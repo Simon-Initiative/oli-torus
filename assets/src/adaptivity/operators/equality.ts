@@ -51,7 +51,9 @@ export const isEqual = (factValue: any, value: any): boolean => {
     return value.toString().toLowerCase() === 'true' ? true === factValue : false === factValue;
   }
   if (typeOfValue === 'boolean') {
-    return factValue.toString().toLowerCase() === 'true' ? true === value : false === value;
+    return factValue.toString().toLowerCase() === 'true' || factValue > 0
+      ? true === value
+      : false === value;
   }
   if (typeOfValue === 'string' && (value === 'true' || value === 'false')) {
     return parseBoolean(value) === parseBoolean(factValue);
