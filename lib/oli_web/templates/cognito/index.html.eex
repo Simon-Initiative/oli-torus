@@ -1,0 +1,18 @@
+<div>
+
+  <h3>Access Course Project</h3>
+
+  <p>You have already created one or more copies of this course.</p>
+
+  <p>Would you like to
+    <%= link "create another copy", to: Routes.cognito_path(@conn, :clone, @project_slug) %>
+    or access one of your existing copies?
+  </p>
+
+  <ul>
+    <%= for p <- @projects do %>
+      <li><%= link p.title, to: Routes.project_path(@conn, :overview, p.slug) %></li>
+    <% end %>
+  </ul>
+
+</div>

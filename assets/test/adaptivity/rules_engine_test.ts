@@ -233,6 +233,9 @@ describe('Operators', () => {
       expect(isEqual('a', 'a')).toEqual(true);
       expect(isEqual(9, 9)).toEqual(true);
       expect(isEqual([1, 2], [1, 2])).toEqual(true);
+      expect(isEqual(1, true)).toEqual(true);
+      expect(isEqual(0, false)).toEqual(true);
+      expect(isEqual(1, false)).toEqual(false);
       expect(notEqual(9, 3)).toEqual(true);
       expect(notEqual('a', 'c')).toEqual(true);
       expect(notEqual([3, 2], [1, 2])).toEqual(true);

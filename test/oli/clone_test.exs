@@ -34,6 +34,28 @@ defmodule Oli.CloneTest do
       )
     end
 
+    test "already_has_clone?/2 and existing_clones/2 works", %{
+      project: project,
+      author2: author2,
+      author: author
+    } do
+      assert Clone.already_has_clone?(project.slug, author2)
+      refute Clone.already_has_clone?(project.slug, author)
+
+      # Clone the project again for author2
+      Clone.clone_project(project.slug, author2)
+      assert Clone.already_has_clone?(project.slug, author2)
+      refute Clone.already_has_clone?(project.slug, author)
+
+      assert Clone.existing_clones(project.slug, author2) |> Enum.count() == 2
+
+      # Now clone it for the original author
+      {:ok, %{id: id}} = Clone.clone_project(project.slug, author)
+      assert Clone.already_has_clone?(project.slug, author)
+
+      assert [%{id: ^id}] = Clone.existing_clones(project.slug, author)
+    end
+
     test "clone_project/2 creates a new family", %{family: family, duplicated: duplicated} do
       assert %Family{} = duplicated.family
       assert family.title <> " Copy" == duplicated.family.title
@@ -96,6 +118,14 @@ defmodule Oli.CloneTest do
 
       assert Enum.count([head | tail]) == 3
       assert head.publication_id == cloned_publication.id
+    end
+
+    test "clone_project/2 creates a new project with the author email in the name when optional field is passed in",
+         %{project: project, author2: author2} do
+      {:ok, duplicated} =
+        Clone.clone_project(project.slug, author2, author_in_project_title: true)
+
+      assert project.title <> " <#{author2.email}>" == duplicated.title
     end
 
     test "clone_all_media_items/2 works", %{project: project, duplicated: duplicated} do

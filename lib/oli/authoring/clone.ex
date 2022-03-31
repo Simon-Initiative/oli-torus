@@ -6,8 +6,13 @@ defmodule Oli.Authoring.Clone do
   alias Oli.Authoring.{Collaborators, Locks}
   alias Oli.Repo
   alias Oli.Authoring.Course
+  alias Oli.Authoring.Course.Project
+  alias Oli.Authoring.Authors.AuthorProject
 
-  def clone_project(project_slug, author) do
+  def clone_project(project_slug, author, opts \\ []) do
+    new_project_title_suffix =
+      if opts[:author_in_project_title], do: " <#{author.email}>", else: " Copy"
+
     Repo.transaction(fn ->
       with {:ok, base_project} <-
              Course.get_project_by_slug(project_slug) |> Repo.preload(:family) |> trap_nil(),
@@ -18,7 +23,7 @@ defmodule Oli.Authoring.Clone do
              }),
            {:ok, cloned_project} <-
              Course.create_project(%{
-               title: base_project.title <> " Copy",
+               title: base_project.title <> new_project_title_suffix,
                version: "1.0.0",
                family_id: cloned_family.id,
                project_id: base_project.id
@@ -73,5 +78,33 @@ defmodule Oli.Authoring.Clone do
     """
 
     Repo.query!(query, [cloned_project_id, base_project_id])
+  end
+
+  @doc """
+  Returns the existing clones from a parent project that an author might have.
+  """
+  def existing_clones(project_slug, author) do
+    from(
+      project in Project,
+      join: p in Project,
+      on: project.id == p.project_id,
+      join: ap in AuthorProject,
+      on:
+        p.id ==
+          ap.project_id and ap.author_id == ^author.id,
+      where: project.slug == ^project_slug and p.status == :active,
+      select: p
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns true if the given author already is a collaborator on a project that was cloned from the
+  project specified by the given project slug.
+  """
+  def already_has_clone?(project_slug, author) do
+    project_slug
+    |> existing_clones(author)
+    |> Enum.count() > 0
   end
 end

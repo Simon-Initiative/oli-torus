@@ -14,6 +14,13 @@ import { selectState as selectPageState } from '../../../../page/slice';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
+import {
+  checkExpressionsWithWrongBrackets,
+  extractAllExpressionsFromText,
+  extractExpressionFromText,
+} from 'adaptivity/scripting';
+import { clone } from 'utils/common';
+import { JanusConditionProperties } from 'adaptivity/capi';
 
 export interface DiagnosticProblem {
   owner: unknown;
@@ -79,8 +86,21 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
       return false;
   }
 };
+const validateValueExpression = (condition: JanusConditionProperties, rule: any, owner: any) => {
+  if (typeof condition.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
+    if (evaluatedExp !== condition.value) {
+      return {
+        condition,
+        rule,
+        owner,
+        suggestedFix: evaluatedExp,
+      };
+    }
+  }
+};
 
-const validateValue = (condition: any, rule: any, owner: any) => {
+const validateValue = (condition: JanusConditionProperties, rule: any, owner: any) => {
   return has(condition, 'value') && (condition.value === null || condition.value === undefined)
     ? {
         condition,
@@ -92,6 +112,34 @@ const validateValue = (condition: any, rule: any, owner: any) => {
 };
 
 export const validators = [
+  {
+    type: DiagnosticTypes.INVALID_EXPRESSION,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      const parts = activity.content.partsLayout;
+      const brokenExpressions: any[] = [];
+      parts.forEach((part: any) => {
+        const Klass = customElements.get(part.type);
+        if (Klass) {
+          const instance = new Klass() as any;
+          if (instance.getCapabilities) {
+            const capabilities = instance.getCapabilities();
+            if (capabilities.canUseExpression) {
+              if (instance.validateUserConfig) {
+                const partClone: any = clone(part);
+                const formattedExpression = instance.validateUserConfig(partClone, owner);
+                if (formattedExpression?.length) {
+                  brokenExpressions.push(...formattedExpression);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      return [...brokenExpressions];
+    },
+  },
   {
     type: DiagnosticTypes.DUPLICATE,
     validate: (activity: any) =>
@@ -179,7 +227,7 @@ export const validators = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: any) => {
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
           if (!validateTarget(condition.fact, activity, parts)) {
             brokenConditionValues.push({
               condition,
@@ -202,8 +250,24 @@ export const validators = [
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
-        forEachCondition(conditions, (condition: any) => {
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
           brokenConditionValues.push(validateValue(condition, rule, owner));
+        });
+
+        return [...broken, ...brokenConditionValues];
+      }, []);
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_EXPRESSION_VALUE,
+    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
+
+        const brokenConditionValues: any[] = [];
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
+          brokenConditionValues.push(validateValueExpression(condition, rule, owner));
         });
 
         return [...broken, ...brokenConditionValues];
