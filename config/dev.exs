@@ -39,12 +39,6 @@ config :oli, :stripe_provider,
   public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
   private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
 
-force_ssl =
-  case System.get_env("FORCE_SSL", "false") do
-    "true" -> [rewrite_on: [:x_forwarded_proto], hsts: true]
-    _ -> false
-  end
-
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -66,7 +60,6 @@ config :oli, OliWeb.Endpoint,
     keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
     certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
-  force_ssl: force_ssl,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
