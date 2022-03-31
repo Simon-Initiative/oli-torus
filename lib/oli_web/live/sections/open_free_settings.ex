@@ -36,8 +36,8 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <Label class="form-check-label"/>
       </Field>
 
-      <Field name={:confirm_students_on_creation} class="mt-2 form-check">
-        <Checkbox class="form-check-input" value={get_field(@changeset, :confirm_students_on_creation)}/>
+      <Field name={:skip_email_verification} class="mt-2 form-check">
+        <Checkbox class="form-check-input" value={get_field(@changeset, :skip_email_verification)}/>
         <Label class="form-check-label">Omit student email verification</Label>
       </Field>
 

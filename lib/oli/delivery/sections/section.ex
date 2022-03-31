@@ -84,7 +84,7 @@ defmodule Oli.Delivery.Sections.Section do
     has_many(:section_invites, SectionInvite, on_delete: :delete_all)
     # Boolean to indicate the student will be confirmed at creation moment and will not
     # receive a confirmation email.
-    field(:confirm_students_on_creation, :boolean, default: false)
+    field(:skip_email_verification, :boolean, default: false)
 
     field(:enrollments_count, :integer, virtual: true)
     field(:total_count, :integer, virtual: true)
@@ -132,7 +132,7 @@ defmodule Oli.Delivery.Sections.Section do
       :blueprint_id,
       :root_section_resource_id,
       :requires_enrollment,
-      :confirm_students_on_creation
+      :skip_email_verification
     ])
     |> validate_required([
       :type,

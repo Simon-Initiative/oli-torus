@@ -197,8 +197,8 @@ defmodule OliWeb.Common.PowTest do
                  Accounts.get_user_by(%{email: @user_email})
     end
 
-    test "confirm student and reidrects to enroll when section indicates to omit student email confirmation", %{conn: conn, section: section} do
-      {:ok, section} = Sections.update_section(section, %{confirm_students_on_creation: true})
+    test "confirm student and redirects to enroll when section indicates to omit student email confirmation", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{skip_email_verification: true})
       expect_recaptcha_http_post()
 
       conn =
