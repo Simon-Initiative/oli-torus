@@ -1,8 +1,8 @@
 <div>
 
-  <h3>Access Course Project</h3>
+  <h3>Access Project</h3>
 
-  <p>You have already created one or more copies of this course.</p>
+  <p>You have already created one or more copies of this curriculum.</p>
 
   <p>Would you like to
     <%= link "create another copy", to: Routes.cognito_path(@conn, :clone, @project_slug) %>
