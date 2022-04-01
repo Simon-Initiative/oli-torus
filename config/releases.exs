@@ -240,7 +240,8 @@ config :libcluster,
         Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "ClusterEC2.Strategy.Tags")]),
       config: [
         ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
-        ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", "")
+        ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", ""),
+        app_prefix: System.get_env("LIBCLUSTER_EC2_STRATEGY_APP_PREFIX", "oli")
       ]
     ]
   ]
