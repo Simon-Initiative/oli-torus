@@ -95,7 +95,7 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"https://www.example.com/lesson/34?error=Missing id token\">redirected</a>.</body></html>"
     end
 
-    test "does not create user when the cognito_id_token is malformed", %{
+    test "does not create user when the id_token is malformed", %{
       conn: conn,
       community: community
     } do
@@ -282,7 +282,7 @@ defmodule OliWeb.CognitoControllerTest do
         community.id
         |> valid_params("12")
         |> Map.put("product_slug", section.slug)
-        |> Map.delete("cognito_id_token")
+        |> Map.delete("id_token")
 
       assert conn
              |> get(Routes.cognito_path(conn, :launch, section.slug, params))
@@ -353,7 +353,7 @@ defmodule OliWeb.CognitoControllerTest do
                "<html><body>You are being <a href=\"/unauthorized?error=Token Malformed\">redirected</a>.</body></html>"
     end
 
-    test "does not create user when the cognito_id_token is malformed", %{
+    test "does not create user when the id_token is malformed", %{
       conn: conn,
       community: community,
       section: section
@@ -704,7 +704,7 @@ defmodule OliWeb.CognitoControllerTest do
   defp valid_params(community_id, id_token) do
     %{
       "community_id" => community_id,
-      "cognito_id_token" => id_token,
+      "id_token" => id_token,
       "error_url" => "https://www.example.com/lesson/34"
     }
   end

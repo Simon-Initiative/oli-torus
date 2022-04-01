@@ -37,7 +37,7 @@ defmodule OliWeb.CognitoController do
   def launch(
         conn,
         %{
-          "cognito_id_token" => _jwt,
+          "id_token" => _jwt,
           "error_url" => _error_url,
           "community_id" => community_id
         } = params
@@ -64,7 +64,7 @@ defmodule OliWeb.CognitoController do
   def launch_clone(
         conn,
         %{
-          "cognito_id_token" => _jwt,
+          "id_token" => _jwt,
           "error_url" => _error_url,
           "community_id" => community_id
         } = params
