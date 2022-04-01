@@ -3,6 +3,7 @@ defmodule OliWeb.Common.PowTest do
 
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -168,6 +169,56 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Github"
       assert response =~ "div class=\"github-auth-container\""
+    end
+  end
+
+  describe "confirm students on signup based on section logic" do
+    setup [:setup_section]
+
+    test "do not confirm student when section indicates to not omit student email verification", %{conn: conn, section: section} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                section: section.slug
+              }),
+            "g-recaptcha-response": "any",
+          }
+        )
+
+        assert html_response(conn, 302) =~ "You are being <a href=\"/session/new?section=#{section.slug}\">redirected"
+
+        assert %User{email: @user_email, email_confirmed_at: nil} =
+                 Accounts.get_user_by(%{email: @user_email})
+    end
+
+    test "confirm student and redirects to enroll when section indicates to omit student email confirmation", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{skip_email_verification: true})
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                section: section.slug
+              }),
+            "g-recaptcha-response": "any",
+          }
+        )
+
+        assert html_response(conn, 302) =~ "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected"
+
+        assert %User{email: @user_email} = user =
+                 Accounts.get_user_by(%{email: @user_email})
+        assert user.email_confirmed_at
     end
   end
 
