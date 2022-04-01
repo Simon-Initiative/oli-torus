@@ -52,6 +52,7 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
 export const notContainsOperator = (inputValue: any, conditionValue: any) =>
   !containsOperator(inputValue, conditionValue);
 
+// contains any of means OR
 export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
   if (!conditionValue || !inputValue) {
     return false;
@@ -68,8 +69,23 @@ export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
   }
 };
 
-export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =>
-  !containsAnyOfOperator(inputValue, conditionValue);
+// not contains any of means AND
+export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) => {
+  if (!conditionValue || !inputValue) {
+    return false;
+  }
+
+  // the condition should always be an array, if it's a single value, it should be wrapped in an array
+  const conditionArray = parseArray(conditionValue);
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // if the input is an array, the input should not contain any of the conditionValues
+    return !inputArray.some((item) => conditionArray.includes(item));
+  } else {
+    // if the input is a string it should not contain any of the conditionValues
+    return !conditionArray.some((v) => inputValue.includes(v));
+  }
+};
 
 export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
   // inputValue contains ONLY items in conditionValue
