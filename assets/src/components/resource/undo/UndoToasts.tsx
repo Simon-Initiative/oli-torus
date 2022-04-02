@@ -2,6 +2,8 @@ import * as React from 'react';
 import { Undoables } from '../../../apps/page-editor/types';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
+import './UndoToasts.scss';
+
 export type UndoToastsProps = {
   undoables: Undoables;
   onInvokeUndo: (guid: string) => void;

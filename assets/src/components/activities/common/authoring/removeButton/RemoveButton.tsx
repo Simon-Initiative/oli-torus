@@ -1,6 +1,7 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
 import { AuthoringButton } from 'components/activities/common/authoring/AuthoringButton';
 import React from 'react';
+
 import './RemoveButton.scss';
 
 type Props = {

@@ -6,6 +6,8 @@ import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
 
+import './ObjectivesSelection.scss';
+
 export type ObjectivesProps = {
   objectives: Objective[];
   selected: ResourceId[];

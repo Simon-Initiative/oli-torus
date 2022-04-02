@@ -13,10 +13,12 @@ html.delivery body {
 
 html.delivery,
 .content-block .delivery {
-  @import "delivery/variables";
-  @import "bootstrap";
-  @import "common/**/*.scss";
-  @import "components/**/*.scss";
-  @import "delivery/**/*.scss";
-  @import "display.scss";
+  @import 'delivery/variables';
+  @import 'bootstrap';
+  @import 'common/index.scss';
+
+  // @import "components/**/*.scss";
+
+  @import 'delivery/index.scss';
+  @import 'display.scss';
 }

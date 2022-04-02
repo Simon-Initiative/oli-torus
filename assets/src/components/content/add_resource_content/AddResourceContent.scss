@@ -1,3 +1,6 @@
+@import 'authoring/mixins';
+@import 'authoring/variables';
+
 .add-resource-content {
   @include disable-select;
   position: relative;
@@ -136,7 +139,7 @@
     }
 
     .list-group:not(:last-of-type) {
-      @extend .mb-1;
+      margin-bottom: 1em;
     }
 
     .header {

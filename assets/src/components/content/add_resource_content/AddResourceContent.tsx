@@ -5,6 +5,8 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 
+import './AddResourceContent.scss';
+
 export type AddCallback = (
   content: ResourceContent,
   index: number,

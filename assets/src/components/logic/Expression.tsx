@@ -9,6 +9,8 @@ import { TextInput } from 'components/common/TextInput';
 import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
 
+import './Expression.scss';
+
 export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;
   onChange: (expression: Bank.Expression) => void;

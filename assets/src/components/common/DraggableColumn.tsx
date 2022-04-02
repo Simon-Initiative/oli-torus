@@ -9,6 +9,7 @@ import {
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
 import guid from 'utils/guid';
+
 import './DraggableColumn.scss';
 
 const DragIndicator: React.FC = () => {

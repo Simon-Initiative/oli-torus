@@ -1,3 +1,5 @@
+@import 'delivery/variables';
+
 #create-account-popup {
   position: absolute;
   top: 60px;
@@ -28,7 +30,7 @@
 
   & > #arrow::before {
     visibility: visible;
-    content: "";
+    content: '';
     transform: rotate(45deg);
     border-left: 1px solid $gray-400;
     border-top: 1px solid $gray-400;

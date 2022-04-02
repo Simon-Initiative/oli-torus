@@ -2,6 +2,7 @@ import { Choice, ChoiceId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
+
 import './ChoicesDelivery.scss';
 
 interface Props {

@@ -10,6 +10,8 @@ import React from 'react';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { useCollapsedSelection } from 'data/content/utils';
 
+import './PopupElement.scss';
+
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
   const collapsedSelection = useCollapsedSelection();

@@ -15,8 +15,8 @@
     <meta name="color-scheme" content="light dark">
 
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="delivery-theme-light" rel="stylesheet" href="/css/delivery_torus_light.css" media="(prefers-color-scheme: light)"/>
     <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_torus_dark.css" media="(prefers-color-scheme: dark)"/>
+    <link id="delivery-theme-light" rel="stylesheet" href="/css/delivery_torus_light.css" media="(prefers-color-scheme: light)"/>
 
     <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>

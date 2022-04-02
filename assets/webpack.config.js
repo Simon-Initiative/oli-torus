@@ -1,9 +1,7 @@
 /* eslint-disable */
-const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const globImporter = require('node-sass-glob-importer');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
@@ -96,9 +94,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-    2 * foundActivities.length +
-    2 * foundParts.length +
-    foundThemes.length
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      foundThemes.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -176,16 +174,39 @@ module.exports = (env, options) => ({
       {
         test: /\.css$/,
         include: MONACO_DIR,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.ttf$/,
         include: MONACO_DIR,
-        use: ['file-loader']
+        use: ['file-loader'],
       },
       {
         test: /\.[s]?css$/,
-        exclude: MONACO_DIR,
+        include: path.resolve(__dirname, 'src'),
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [path.join(__dirname, 'styles')],
+                quietDeps: true,
+              },
+              sourceMap: true,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.[s]?css$/,
+        exclude: [MONACO_DIR, path.resolve(__dirname, 'src')],
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -198,8 +219,7 @@ module.exports = (env, options) => ({
             loader: 'sass-loader',
             options: {
               sassOptions: {
-                includePaths: [path.join(__dirname, 'src'), path.join(__dirname, 'styles')],
-                importer: globImporter(),
+                includePaths: [path.join(__dirname, 'styles')],
                 quietDeps: true,
               },
               sourceMap: true,
@@ -214,7 +234,9 @@ module.exports = (env, options) => ({
     ],
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
+    new MiniCssExtractPlugin({
+      filename: '../css/[name].css',
+    }),
     new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
     new MonacoWebpackPlugin(),
   ],

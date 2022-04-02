@@ -1,12 +1,13 @@
 import React from 'react';
 import { Choice, makeContent } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import './ChoicesAuthoring.scss';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { toSimpleText } from 'components/editing/utils';
 import { Descendant } from 'slate';
+
+import './ChoicesAuthoring.scss';
 
 interface Props {
   icon: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
