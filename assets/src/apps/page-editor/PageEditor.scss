@@ -1,5 +1,5 @@
-@import 'authoring/mixins';
-@import 'authoring/variables';
+@use 'theme';
+@import 'common/mixins';
 
 .resource-editor {
   margin: 0 auto;
@@ -13,7 +13,7 @@
     all: unset;
     flex: 1;
     padding: 0 40px;
-    border: 1px solid $gray-200;
+    border: 1px solid theme.$gray-200;
     border-radius: 4px;
   }
 }

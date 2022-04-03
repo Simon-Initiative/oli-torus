@@ -2,8 +2,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { Maybe, maybe } from 'tsmonad';
-import { Editor } from 'components/editing/editor/Editor';
 import { configureStore } from 'state/store';
+import { Editor } from 'components/editing/editor/Editor';
 
 export const registry = {
   Editor,

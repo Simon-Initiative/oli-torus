@@ -1,0 +1,58 @@
+/**
+ * Export SASS variables to CSS variables so that they can be used in components.
+ *
+ * To access a SASS theme variable in a component style sheet in assets/src/**.scss
+ * first define it in this file and then unpack it in component.scss
+ */
+
+& {
+  // Custom variable values only support SassScript inside `#{}`.
+  @each $color, $value in $colors {
+    --#{$color}: #{$value};
+  }
+
+  @each $color, $value in $theme-colors {
+    --#{$color}: #{$value};
+  }
+
+  @each $bp, $value in $grid-breakpoints {
+    --breakpoint-#{$bp}: #{$value};
+  }
+
+  // Use `inspect` for lists so that quoted items keep the quotes.
+  // See https://github.com/sass/sass/issues/2383#issuecomment-336349172
+  --font-family-sans-serif: #{inspect($font-family-sans-serif)};
+  --font-family-monospace: #{inspect($font-family-monospace)};
+
+  --gray-100: #{$gray-100};
+  --gray-200: #{$gray-200};
+  --gray-300: #{$gray-300};
+  --gray-400: #{$gray-400};
+  --gray-500: #{$gray-500};
+  --gray-600: #{$gray-600};
+  --gray-700: #{$gray-700};
+  --gray-800: #{$gray-800};
+  --gray-900: #{$gray-900};
+
+  --selection: #{$selection};
+  --hover: #{$hover};
+  --active: #{$active};
+
+  --body-color: #{$body-color};
+  --body-bg: #{$body-bg};
+
+  --z-overlay-1: #{$z-overlay-1};
+  --z-highest: #{$z-highest};
+
+  --google-button-font-color: #{$google-button-font-color};
+  --google-button-background-color: #{$google-button-background-color};
+
+  --card-cap-bg: #{$card-cap-bg};
+
+  --choice-selected-bg-hover: #{choice-selected-bg-hover};
+  --choice-selected-color: #{choice-selected-bg-hover};
+  --choice-selected-bg: #{choice-selected-bg-hover};
+  --choice-selected-border-color: #{choice-selected-bg-hover};
+
+  --dropdown-menu: #{dropdown-menu};
+}

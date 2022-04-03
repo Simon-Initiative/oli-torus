@@ -1,20 +1,20 @@
-@import "authoring/variables";
+@use 'theme';
 
 .undo-toasts {
   position: fixed;
   top: 60px;
   right: 20px;
-  z-index: $z-highest;
+  z-index: theme.$z-highest;
 }
 
 .undotoast {
-  background-color: $gray-100;
-  color: $body-color;
+  background-color: theme.$gray-100;
+  color: theme.$body-color;
   position: relative;
-  z-index: $z-highest;
+  z-index: theme.$z-highest;
   width: 270px;
   font-size: 1em;
-  border: 1px solid $gray-200;
+  border: 1px solid theme.$gray-200;
   box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 10%);
   border-radius: 0.25rem;
   margin-top: 20px;

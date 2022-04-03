@@ -11,15 +11,15 @@ defmodule OliWeb.ViewHelpers do
 
   def brand_logo(%{brand: %Brand{name: name, logo: logo, logo_dark: logo_dark}} = assigns) do
     ~H"""
-      <img src={logo} height="40" class={["d-dark-none", assigns[:class]]} alt={name}>
-      <img src={value_or(logo_dark, logo)} height="40" class={["d-light-none", assigns[:class]]}  alt={name}>
+      <img src={logo} height="40" class={["logo-dark-none", assigns[:class]]} alt={name}>
+      <img src={value_or(logo_dark, logo)} height="40" class={["logo-light-none", assigns[:class]]}  alt={name}>
     """
   end
 
   def brand_logo(assigns) do
     ~H"""
-      <img src={brand_logo_url(assigns[:section])} height="40" class={["d-dark-none", assigns[:class]]} alt={brand_name(assigns[:section])}>
-      <img src={brand_logo_url_dark( assigns[:section])} height="40" class={["d-light-none", assigns[:class]]}  alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url(assigns[:section])} height="40" class={["logo-dark-none", assigns[:class]]} alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url_dark( assigns[:section])} height="40" class={["logo-light-none", assigns[:class]]}  alt={brand_name(assigns[:section])}>
     """
   end
 

@@ -20,6 +20,8 @@ const populateEntries = () => {
     delivery: ['./src/apps/DeliveryApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
+    dark: ['./src/phoenix/dark.ts'],
+    theme: ['./styles/theme.scss'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -48,22 +50,19 @@ const populateEntries = () => {
 
   const themePaths = [
     ...glob
-      .sync('./styles/themes/authoring/*/light.scss')
+      .sync('./styles/themes/authoring/*.scss')
       .map((p) => ({ prefix: 'authoring_', themePath: p })),
     ...glob
-      .sync('./styles/themes/authoring/*/dark.scss')
+      .sync('./styles/themes/authoring/custom/*.scss')
       .map((p) => ({ prefix: 'authoring_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/*/light.scss')
+      .sync('./styles/themes/delivery/*.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/*/dark.scss')
+      .sync('./styles/themes/delivery/custom/*.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
       .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/delivery/adaptive_themes/*/dark.scss')
       .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
     ...glob
       .sync('./styles/themes/preview/*/light.scss')
@@ -74,11 +73,10 @@ const populateEntries = () => {
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
-    const theme = path.basename(path.dirname(themePath));
-    const colorScheme = path.basename(themePath, '.scss');
+    const theme = path.basename(themePath, '.scss');
 
     return {
-      [prefix + theme + '_' + colorScheme]: themePath,
+      [prefix + theme]: themePath,
     };
   });
 
