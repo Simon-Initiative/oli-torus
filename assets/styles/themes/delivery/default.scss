@@ -58,10 +58,6 @@ html.authoring .content-block .delivery {
   ////////////////////////////////////////////////////////////////////////////////////
 
   /** Custom styles **/
-  .logo-light-none {
-    display: none !important;
-  }
-
   .content {
     pre {
       background: $gray-100;
@@ -292,10 +288,6 @@ html.authoring.dark .content-block .delivery {
 
   /** Custom styles **/
 
-  .logo-dark-none {
-    display: none !important;
-  }
-
   .content {
     pre {
       background: $gray-900;
@@ -328,3 +320,10 @@ html.authoring.dark .content-block .delivery {
     color: white;
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+// IMPORTANT: DO NOT MODIFY IMPORT
+// This import is required and must always be the last declaration
+////////////////////////////////////////////////////////////////////////////////////
+@import 'global.scss';
+////////////////////////////////////////////////////////////////////////////////////
