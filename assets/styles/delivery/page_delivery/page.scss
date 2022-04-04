@@ -39,6 +39,12 @@ h1.title {
   height: 50px;
 }
 
+#page-content {
+  width: 100%;
+  flex: 1;
+  margin-top: 20px;
+}
+
 .content {
   max-width: 770px;
   margin: 0 auto;
@@ -88,6 +94,10 @@ h1.title {
 @include media-breakpoint-down(md) {
   #sidebar {
     display: none;
+  }
+
+  #page-content {
+    margin-left: 0px;
   }
 }
 
