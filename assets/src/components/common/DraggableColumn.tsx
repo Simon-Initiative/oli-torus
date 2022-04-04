@@ -8,12 +8,17 @@ import {
   DropResult,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
+import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 
-import './DraggableColumn.scss';
+import styles from './DraggableColumn.modules.scss';
 
 const DragIndicator: React.FC = () => {
-  return <div className="material-icons draggableColumn__dragIndicator">drag_indicator</div>;
+  return (
+    <div className={classNames(styles.draggableColumnIndicator, 'material-icons')}>
+      drag_indicator
+    </div>
+  );
 };
 interface ItemProps {
   id: string;
@@ -43,7 +48,10 @@ const Item: React.FC<ItemProps> = ({
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={'draggableColumn__card' + (displayOutline ? ' draggableColumn__outlined' : '')}
+          className={classNames(
+            styles.draggableColumnCard,
+            displayOutline ? styles.draggableColumnOutlined : null,
+          )}
           style={getStyle(provided.draggableProps.style, snapshot)}
           aria-label={itemAriaLabel || 'Item ' + index}
           onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
@@ -67,7 +75,7 @@ export const Column: React.FC<ColumnProps> = ({ items, setItems, children, displ
         {(provided) => (
           <div
             {...provided.droppableProps}
-            className="draggableColumn__container"
+            className={styles.draggableColumnContainer}
             ref={provided.innerRef}
           >
             {React.Children.map(children, (c, index) =>

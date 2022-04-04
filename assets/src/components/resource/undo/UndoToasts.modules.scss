@@ -1,13 +1,13 @@
 @use 'authoring/theme' as authoring;
 
-.undo-toasts {
+.undoToasts {
   position: fixed;
   top: 60px;
   right: 20px;
   z-index: authoring.$z-highest;
 }
 
-.undotoast {
+.undoToast {
   background-color: authoring.$gray-100;
   color: authoring.$body-color;
   position: relative;
@@ -20,20 +20,20 @@
   margin-top: 20px;
 }
 
-.undotoast-enter {
+.undoToastEnter {
   opacity: 0;
 }
 
-.undotoast-enter.undotoast-enter-active {
+.undoToastEnterActive {
   opacity: 1;
   transition: opacity 200ms;
 }
 
-.undotoast-leave {
+.undoToastLeave {
   opacity: 1;
 }
 
-.undotoast-leave.undotoast-leave-active {
+.undoToastLeaveActive {
   opacity: 0;
   transition: opacity 100ms;
 }
