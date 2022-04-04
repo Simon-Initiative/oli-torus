@@ -5,7 +5,7 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
 
-import './AddResourceContent.scss';
+import styles from './AddResourceContent.modules.scss';
 
 export type AddCallback = (
   content: ResourceContent,
@@ -33,20 +33,22 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
         placement={isLast ? 'top-start' : 'bottom-start'}
         rootClose={true}
         overlay={
-          <Popover id={id} className="add-resource-popover">
-            <Popover.Content className="add-resource-popover-content">{children}</Popover.Content>
+          <Popover id={id} className={styles.addResourcePopover}>
+            <Popover.Content className={styles.addResourcePopoverContent}>
+              {children}
+            </Popover.Content>
           </Popover>
         }
       >
-        <div className={classNames('add-resource-content', editMode ? '' : 'disabled')}>
+        <div className={classNames(styles.addResourceContent, editMode ? '' : 'disabled')}>
           {editMode && (
             <>
-              <div className="insert-button-container">
-                <div className="insert-button">
+              <div className={styles.insertButtonContainer}>
+                <div className={styles.insertButton}>
                   <i className="fa fa-plus"></i>
                 </div>
               </div>
-              <div className="insert-adornment"></div>
+              <div className={styles.insertAdornment}></div>
             </>
           )}
         </div>
@@ -58,12 +60,14 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
           placement="top"
           rootClose={true}
           overlay={
-            <Popover id="last-content-add-button" className="add-resource-popover">
-              <Popover.Content className="add-resource-popover-content">{children}</Popover.Content>
+            <Popover id="last-content-add-button" className={styles.addResourcePopover}>
+              <Popover.Content className={styles.addResourcePopoverContent}>
+                {children}
+              </Popover.Content>
             </Popover>
           }
         >
-          <div className="insert-label my-4 text-center">
+          <div className={classNames(styles.insertLabel, 'my-4 text-center')}>
             <button disabled={!editMode} className="btn btn-sm btn-light">
               Add Content or Activity
             </button>

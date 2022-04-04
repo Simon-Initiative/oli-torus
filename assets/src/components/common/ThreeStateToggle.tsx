@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from 'react';
 import { classNames, ClassName } from 'utils/classNames';
 
-import style from './ThreeStateToggle.modules.scss';
+import styles from './ThreeStateToggle.modules.scss';
 
 interface ThreeStateToggleProps {
   className?: ClassName;
@@ -11,7 +11,7 @@ export const ThreeStateToggle = ({
   className,
   children,
 }: PropsWithChildren<ThreeStateToggleProps>) => {
-  return <div className={classNames(style.switchToggle, className)}>{children}</div>;
+  return <div className={classNames(styles.switchToggle, className)}>{children}</div>;
 };
 
 interface ToggleOptionProps {
@@ -30,12 +30,12 @@ export const ToggleOption = ({
       <input
         type="radio"
         id={id}
-        className={style.input}
+        className={styles.input}
         name="state"
         onClick={onClick}
         checked={checked}
       />
-      <label htmlFor={id} className={style.label}>
+      <label htmlFor={id} className={styles.label}>
         {children}
       </label>
     </>

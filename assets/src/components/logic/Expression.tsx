@@ -9,7 +9,7 @@ import { TextInput } from 'components/common/TextInput';
 import { LogicProps } from '../../components/logic/common';
 import { CloseButton } from '../../components/misc/CloseButton';
 
-import './Expression.scss';
+import styles from './Expression.modules.scss';
 
 export interface ExpressionProps extends LogicProps {
   expression: Bank.Expression;
@@ -173,14 +173,14 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
   };
 
   const removeButton = props.fixedFact ? null : (
-    <div className="remove">
+    <div className={styles.remove}>
       <CloseButton editMode={props.editMode} onClick={() => props.onRemove()} />
     </div>
   );
 
   return (
-    <div className="expression">
-      <div className="fact">
+    <div className={styles.expression}>
+      <div className={styles.fact}>
         <Select
           editMode={props.editMode && !props.fixedFact}
           value={props.expression.fact.toString()}
@@ -189,7 +189,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           {facts}
         </Select>
       </div>
-      <div className="operator">
+      <div className={styles.operator}>
         <Select
           editMode={props.editMode}
           value={props.expression.operator.toString()}
@@ -198,7 +198,7 @@ export const Expression: React.FC<ExpressionProps> = (props: ExpressionProps) =>
           {operators}
         </Select>
       </div>
-      <div className="value">{buildValueEditor()}</div>
+      <div className={styles.value}>{buildValueEditor()}</div>
       {removeButton}
     </div>
   );

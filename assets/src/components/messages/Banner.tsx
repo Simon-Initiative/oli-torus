@@ -2,8 +2,9 @@ import * as React from 'react';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import { Message as Msg, MessageAction, Severity } from 'data/messages/messages';
 import { Message } from './Message';
+import { classNames } from 'utils/classNames';
 
-import './Banner.scss';
+import styles from './Banner.modules.scss';
 
 export interface BannerProps {
   dismissMessage: (message: Msg) => void;
@@ -34,7 +35,7 @@ export class Banner extends React.PureComponent<BannerProps, {}> {
     const messages = [...errors, ...warnings, ...infos, ...tasks];
 
     return (
-      <div className="banner sticky-top">
+      <div className={classNames(styles.banner, 'sticky-top')}>
         <TransitionGroup>
           {messages.map((m) => (
             <CSSTransition key={m.guid} timeout={{ enter: 200, exit: 200 }}>
