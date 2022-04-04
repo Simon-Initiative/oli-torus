@@ -1,17 +1,15 @@
 @use 'authoring/theme' as authoring;
 
-html.torus.component {
-  .code-editor {
-    margin-bottom: 8px;
-    width: 100%;
-    border: 2px solid black;
+.code-editor {
+  margin-bottom: 8px;
+  width: 100%;
+  border: 2px solid black;
 
-    &.active {
-      border: 2px solid authoring.$primary;
-    }
+  &.active {
+    border: 2px solid authoring.$primary;
+  }
 
-    pre {
-      margin-bottom: 0;
-    }
+  pre {
+    margin-bottom: 0;
   }
 }

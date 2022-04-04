@@ -1,12 +1,10 @@
 @use 'authoring/theme' as authoring;
 
-html.torus.component {
-  .inline-link {
-    color: authoring.$blue;
-    text-decoration: underline;
-  }
+.inline-link {
+  color: authoring.$blue;
+  text-decoration: underline;
+}
 
-  .link-editor {
-    transition: none !important;
-  }
+.link-editor {
+  transition: none !important;
 }

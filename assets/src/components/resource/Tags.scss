@@ -1,38 +1,36 @@
 @use 'authoring/theme' as authoring;
 
-html.torus.component {
-  .tags-selection {
-    padding-top: 5px;
+.tags-selection {
+  padding-top: 5px;
+  padding-bottom: 10px;
+
+  .existing-tags {
+    background-color: authoring.$gray-100;
+    max-height: 500px;
+    margin-left: 15px;
+    padding-top: 10px;
     padding-bottom: 10px;
+    padding-right: 10px;
+    margin-bottom: 30px;
+    overflow-y: scroll;
 
-    .existing-tags {
-      background-color: authoring.$gray-100;
-      max-height: 500px;
-      margin-left: 15px;
-      padding-top: 10px;
-      padding-bottom: 10px;
-      padding-right: 10px;
-      margin-bottom: 30px;
-      overflow-y: scroll;
+    .title {
+      border-radius: 3px;
+      cursor: pointer;
+      padding: 5px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      border: 1px solid authoring.$gray-100;
 
-      .title {
-        border-radius: 3px;
-        cursor: pointer;
-        padding: 5px;
-        margin-top: 4px;
-        white-space: nowrap;
-        overflow-x: hidden;
-        text-overflow: ellipsis;
-        border: 1px solid authoring.$gray-100;
-
-        &:hover {
-          border: 1px solid authoring.$gray-600;
-        }
+      &:hover {
+        border: 1px solid authoring.$gray-600;
       }
+    }
 
-      .selected {
-        background-color: authoring.$gray-300;
-      }
+    .selected {
+      background-color: authoring.$gray-300;
     }
   }
 }

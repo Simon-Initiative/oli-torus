@@ -1,27 +1,25 @@
 @use 'authoring/theme' as authoring;
 @import 'common/mixins';
 
-html.torus.component {
-  .LoadingSpinner {
-    text-align: center;
-    color: authoring.$gray-500;
+.LoadingSpinner {
+  text-align: center;
+  color: authoring.$gray-500;
 
-    & i {
-      margin: '0 5px';
-      animation-duration: '1s';
-      -webkit-animation-duration: '1s';
-    }
+  & i {
+    margin: '0 5px';
+    animation-duration: '1s';
+    -webkit-animation-duration: '1s';
+  }
 
-    &.ls-small {
-      font-size: 0.8em;
-    }
+  &.ls-small {
+    font-size: 0.8em;
+  }
 
-    &.ls-normal {
-      font-size: 1em;
-    }
+  &.ls-normal {
+    font-size: 1em;
+  }
 
-    &.ls-large {
-      font-size: 1.2em;
-    }
+  &.ls-large {
+    font-size: 1.2em;
   }
 }

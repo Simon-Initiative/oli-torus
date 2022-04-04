@@ -1,14 +1,12 @@
-html.torus.component {
-  .activity-bank-selection {
-    padding: 20px;
+.activity-bank-selection {
+  padding: 20px;
 
-    .label {
-      font-size: 1.5em;
-    }
+  .label {
+    font-size: 1.5em;
+  }
 
-    .count-input {
-      margin-left: 10px;
-      flex: 0 0 1;
-    }
+  .count-input {
+    margin-left: 10px;
+    flex: 0 0 1;
   }
 }
