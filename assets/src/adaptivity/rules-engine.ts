@@ -357,7 +357,7 @@ export const getReferencedKeysInMutateConditions = (conditions: any) => {
   const references: Set<string> = new Set();
   conditions.forEach((condition: any) => {
     if (condition.type === 'mutateState') {
-      // the fact *must* be a reference to a key we need
+      // the target *must* be a reference to a key we need
       if (condition.params.target) {
         references.add(condition.params.target);
       }
