@@ -30,6 +30,25 @@ defmodule OliWeb.Projects.VisibilityLive do
     ~L"""
     <div class="row py-5 border-bottom">
       <div class="col-md-4">
+        <h4>Allow Duplication</h4>
+        <div class="text-muted">Control whether other users can create duplicates of your projects for their own development.</div>
+      </div>
+      <div class="col-md-8">
+        <form phx-change="duplication" id="duplication_option">
+          <div class="form-check">
+            <%= label class: "form-check-label" do %>
+              <%= checkbox :duplication, :allow_duplication, id: "dupe_check", class: "form-check-input", checked: @project.allow_duplication %>
+              Allow duplication by non-collaborators
+            <% end %>
+          </div>
+        </form>
+        <div class="alert alert-info mt-5" role="alert">
+          <strong>Note:</strong> Edits made to duplicates created by other users will not affect your course project in any way.
+        </div>
+      </div>
+    </div>
+    <div class="row py-5 border-bottom">
+      <div class="col-md-4">
         <h4>Publishing Visibility</h4>
         <div class="text-muted">Control who can create course sections for this project once it is published.</div>
       </div>
@@ -236,6 +255,11 @@ defmodule OliWeb.Projects.VisibilityLive do
 
   def handle_event("option", %{"visibility" => %{"option" => option}}, socket) do
     {:ok, project} = Course.update_project(socket.assigns.project, %{visibility: option})
+    {:noreply, assign(socket, :project, project)}
+  end
+
+  def handle_event("duplication", %{"duplication" => %{"allow_duplication" => value}}, socket) do
+    {:ok, project} = Course.update_project(socket.assigns.project, %{allow_duplication: value})
     {:noreply, assign(socket, :project, project)}
   end
 

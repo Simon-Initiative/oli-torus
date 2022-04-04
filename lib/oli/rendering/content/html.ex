@@ -67,7 +67,7 @@ defmodule Oli.Rendering.Content.Html do
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
     maybeAlt =
       case attrs do
-        %{"alt" => alt} -> " alt=#{escape_xml!(alt)}"
+        %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
         _ -> ""
       end
 

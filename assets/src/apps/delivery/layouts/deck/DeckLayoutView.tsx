@@ -27,11 +27,15 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectEnableHistory, selectUserName, setScore } from '../../store/features/page/slice';
+import {
+  selectEnableHistory,
+  selectPageSlug,
+  selectUserName,
+  setScore,
+} from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { parseArray, parseNumString } from 'utils/common';
 import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
@@ -50,6 +54,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
+  const currentLesson = useSelector(selectPageSlug);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const isEnd = useSelector(selectLessonEnd);
@@ -281,6 +286,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),
         context: {
+          currentLesson,
           currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
           mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
         },

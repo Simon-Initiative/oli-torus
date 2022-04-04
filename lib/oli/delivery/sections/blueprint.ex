@@ -194,8 +194,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
-    now = DateTime.utc_now()
-
     params =
       Map.merge(
         %{
@@ -204,8 +202,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           base_project_id: section.base_project_id,
           open_and_free: false,
           context_id: UUID.uuid4(),
-          start_date: now,
-          end_date: now,
+          start_date: nil,
+          end_date: nil,
           title: section.title <> " Copy",
           invite_token: nil,
           passcode: nil,

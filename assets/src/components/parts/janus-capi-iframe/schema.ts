@@ -1,6 +1,7 @@
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import { JSONSchema7Object } from 'json-schema';
-import { JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { Expression, JanusAbsolutePositioned, JanusCustomCss } from '../types/parts';
+import { formatExpression } from 'adaptivity/scripting';
 
 export interface CapiIframeModel extends JanusAbsolutePositioned, JanusCustomCss {
   src: string;
@@ -25,7 +26,26 @@ export const schema: JSONSchema7Object = {
 
 export const getCapabilities = () => ({
   configure: true,
+  canUseExpression: true,
 });
+
+export const validateUserConfig = (part: any, owner: any): Expression[] => {
+  const brokenExpressions: Expression[] = [];
+  part.custom.configData.forEach((element: any) => {
+    const evaluatedValue = formatExpression(element);
+    if (evaluatedValue && evaluatedValue?.length) {
+      brokenExpressions.push({
+        key: element.key,
+        owner,
+        part,
+        suggestedFix: evaluatedValue,
+        formattedExpression: true,
+        message: ` configData - "${element.key}" variable`,
+      });
+    }
+  });
+  return [...brokenExpressions];
+};
 
 export const adaptivitySchema = ({
   currentModel,

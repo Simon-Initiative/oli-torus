@@ -7,6 +7,7 @@ import {
   getValue,
   getExpressionStringForValue,
   looksLikeJson,
+  templatizeText,
 } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 
@@ -245,6 +246,31 @@ describe('Scripting Interface', () => {
       expect(result.result).toBe(null);
       expect(valuex).toBe(varValueFormat1);
       expect(valuey).toBe(varValueFormat2);
+    });
+
+    it('should return the CSS as it is', () => {
+      const environment = new Environment();
+      let text =
+        '@font-face{font-family:PTSerif;src:url(https://dev-etx.ws.asu.edu/fonts/PT%20Serif/PT_Serif-Web-Regular.ttf)}.button{white-space:normal;font-family:PTSerif,Georgia,serif;font-size:16px;font-weight:700;text-transform:none;line-height:120%;color:#E7A96B;width:calc(100% - 2px);height:auto!important;background-color:#484848;background-image:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6));border-radius:3px;border:none;-moz-box-shadow:2px 2px rgba(0,0,0,.2);-webkit-box-shadow:2px 2px rgba(0,0,0,.2);box-shadow:2px 2px rgba(0,0,0,.2);padding:10px 20px;cursor:pointer}.button:active,.button:focus,.button:hover{background-color:#5C5C5C!important;background-image:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6))}.button:focus,.button:hover{-moz-box-shadow:2px 2px rgba(0,0,0,.2);-webkit-box-shadow:2px 2px rgba(0,0,0,.2);box-shadow:2px 2px rgba(0,0,0,.2)}.button:active{-moz-box-shadow:inset 0 2px rgba(0,0,0,.4);-webkit-box-shadow:inset 0 2px rgba(0,0,0,.4);box-shadow:inset 0 2px rgba(0,0,0,.4);transform:translateY(1px);color:#E7A96B!important}.button:disabled{background-color:#858585;cursor:default}.button:disabled:active{-moz-box-	shadow:inset 0 0 transparent;-webkit-box-shadow:inset 0 0 transparent;box-shadow:inset 0 0 transparent;color:rgba(255,255,255,.9);transform:translateY(0)}';
+      let result = templatizeText(text, environment);
+      expect(result).toBe(text);
+
+      text = 'stage.foo.value =  {stage.foo.value}; stage.foo1.value =  {stage.foo1.value};';
+      evalScript(
+        'let {stage.foo.value} = 1;let {stage.foo1.value}=80;let {stage.foo2.value}=50',
+        environment,
+      );
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('stage.foo.value =  1; stage.foo1.value =  80;');
+
+      text = 'Lets try with variables {variables.foo}';
+      evalScript('let {variables.foo} = 0.529', environment);
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('Lets try with variables 0.529');
+
+      text = 'Lets try with variables {variables.foo';
+      result = templatizeText(text, environment);
+      expect(result).toBe(text);
     });
 
     it('it should return math expression as it is', () => {

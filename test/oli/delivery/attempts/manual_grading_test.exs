@@ -141,6 +141,11 @@ defmodule Oli.Delivery.Attempts.ManualGradingTest do
       ra = Core.get_resource_attempt_by(attempt_guid: attempt.resource_attempt_guid)
       assert ra.lifecycle_state == :evaluated
 
+      # Verify that manual scoring of the last activity triggers grade roll up to the resource access
+      resource_access = Oli.Repo.get!(Oli.Delivery.Attempts.Core.ResourceAccess, ra.resource_access_id)
+      assert resource_access.out_of == 2.0
+      assert resource_access.score == 2.0
+
     end
   end
 

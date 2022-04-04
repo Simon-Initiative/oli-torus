@@ -320,7 +320,7 @@ export const getReferencedKeysInConditions = (conditions: any) => {
       });
     }
     if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
+      const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
       childRefs.forEach((ref) => references.add(ref));
     }
   });

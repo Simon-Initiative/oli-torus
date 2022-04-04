@@ -8,6 +8,8 @@
 - Properly handle the case that a section invite link leads to an unavailable section
 - Fix empty hints showing up in delivery mode
 - Fix table styling when words overflow bounds
+- Fix popup content editing
+- Fix image alt text rendering
 
 ### Enhancements
 
@@ -18,6 +20,7 @@
 - Instructor review of completed graded attempts
 - Allow gates to be defined in products
 - Hide subsequent purpose types for activities when the same purpose type is used in a series
+- Allow students to pay and apply codes during a grace period
 
 ## 0.18.4 (2022-02-24)
 
