@@ -40,6 +40,7 @@ const MultipleChoice: React.FC = () => {
           <Stem />
 
           <ChoicesAuthoring
+            icon={<Radio.Unchecked />}
             choices={model.choices}
             addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
             setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}

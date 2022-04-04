@@ -18,6 +18,8 @@
   }
 }
 
-.card-body > .content > .slate-editor {
-  border: none;
+.resource-block-editor {
+  .card-body > .content > .slate-editor {
+    border: none;
+  }
 }
