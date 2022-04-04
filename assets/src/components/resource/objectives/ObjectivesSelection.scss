@@ -1,12 +1,15 @@
-.objectives-selection {
-  .learning-objectives-label {
-    margin-top: 10px;
-    margin-bottom: 4px;
-    font-size: 0.8em;
-    text-transform: uppercase;
-  }
+html.authoring,
+html.delivery {
+  .objectives-selection {
+    .learning-objectives-label {
+      margin-top: 10px;
+      margin-bottom: 4px;
+      font-size: 0.8em;
+      text-transform: uppercase;
+    }
 
-  .form-control {
-    height: initial;
+    .form-control {
+      height: initial;
+    }
   }
 }

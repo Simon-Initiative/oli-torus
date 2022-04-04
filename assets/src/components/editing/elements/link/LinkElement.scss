@@ -1,10 +1,13 @@
 @use 'authoring/theme' as authoring;
 
-.inline-link {
-  color: authoring.$blue;
-  text-decoration: underline;
-}
+html.authoring,
+html.delivery {
+  .inline-link {
+    color: authoring.$blue;
+    text-decoration: underline;
+  }
 
-.link-editor {
-  transition: none !important;
+  .link-editor {
+    transition: none !important;
+  }
 }

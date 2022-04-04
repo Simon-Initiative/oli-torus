@@ -1,13 +1,16 @@
 @use 'authoring/theme' as authoring;
 
-.settings-editor-wrapper {
-  padding: 5px;
+html.authoring,
+html.delivery {
+  .settings-editor-wrapper {
+    padding: 5px;
 
-  .settings-editor {
-    width: 400px;
-    padding: 10px;
-    border-radius: 4px;
-    background-color: rgba(authoring.$gray-200, 0.9);
-    backdrop-filter: blur(16px);
+    .settings-editor {
+      width: 400px;
+      padding: 10px;
+      border-radius: 4px;
+      background-color: rgba(authoring.$gray-200, 0.9);
+      backdrop-filter: blur(16px);
+    }
   }
 }

@@ -1,26 +1,29 @@
 @use 'authoring/theme' as authoring;
 
-.objectives-list-container {
-  background-color: authoring.$card-cap-bg;
-  padding: 0 4px;
-}
-
-.objectives-list {
-  padding: 6px 10px;
-  font-size: 14px;
-
-  &.no-objectives {
-    background-color: rgba(authoring.$warning, 0.8);
+html.authoring,
+html.delivery {
+  .objectives-list-container {
+    background-color: authoring.$card-cap-bg;
+    padding: 0 4px;
   }
 
-  &.with-objectives {
-    background-color: rgba(authoring.$info, 0.8);
-  }
+  .objectives-list {
+    padding: 6px 10px;
+    font-size: 14px;
 
-  .objective-token {
-    @include ellipsis;
-    max-width: 100%;
-    vertical-align: middle;
-    cursor: pointer;
+    &.no-objectives {
+      background-color: rgba(authoring.$warning, 0.8);
+    }
+
+    &.with-objectives {
+      background-color: rgba(authoring.$info, 0.8);
+    }
+
+    .objective-token {
+      @include ellipsis;
+      max-width: 100%;
+      vertical-align: middle;
+      cursor: pointer;
+    }
   }
 }
