@@ -6,7 +6,7 @@ type Mode = 'auto' | 'light' | 'dark';
 
 const isChecked = (checked: string, state: string) => checked === state;
 
-const getModeFromLocalStorage = () => {
+export const getModeFromLocalStorage = () => {
   if (!('theme' in localStorage)) {
     return 'auto';
   }
