@@ -10,7 +10,7 @@ defmodule Oli.Plugs.ValidateIdToken do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    with jwt when not is_nil(jwt) <- conn.params["id_token"] || conn.params["cognito_id_token"],
+    with jwt when not is_nil(jwt) <- conn.params["id_token"],
          {:ok, jwk} <- get_jwk(jwt),
          {true, %{fields: jwt_fields}, _} <- JOSE.JWT.verify_strict(jwk, ["RS256"], jwt) do
       Plug.Conn.assign(conn, :claims, jwt_fields)
