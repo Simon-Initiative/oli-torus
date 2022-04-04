@@ -46,7 +46,7 @@ const Item: React.FC<ItemProps> = ({
           className={'draggableColumn__card' + (displayOutline ? ' draggableColumn__outlined' : '')}
           style={getStyle(provided.draggableProps.style, snapshot)}
           aria-label={itemAriaLabel || 'Item ' + index}
-          onKeyDown={(e) => reorderByKey(e, index, items, item, setItems)}
+          onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
         >
           {children(item, index)}
         </div>
