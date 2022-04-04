@@ -97,7 +97,7 @@ export const Editors = (props: EditorsProps) => {
     const isShiftArrowDown = isHotkey('shift+down');
     const isShiftArrowUp = isHotkey('shift+up');
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (isShiftArrowDown(e.nativeEvent)) {
         onMove(contentKey, false);
       } else if (isShiftArrowUp(e.nativeEvent)) {

@@ -39,10 +39,13 @@ h1.title {
   height: 50px;
 }
 
-#content {
-  width: 100%;
-  flex: 1;
-  margin-top: 20px;
+.content {
+  max-width: 770px;
+  margin: 0 auto;
+
+  & > * {
+    margin-bottom: 1.5rem;
+  }
 }
 
 .selection {
@@ -85,10 +88,6 @@ h1.title {
 @include media-breakpoint-down(md) {
   #sidebar {
     display: none;
-  }
-
-  #content {
-    margin-left: 0px;
   }
 }
 
