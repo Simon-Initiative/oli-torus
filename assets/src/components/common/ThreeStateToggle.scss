@@ -1,6 +1,6 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 
-$border-color: theme.$primary;
+$border-color: authoring.$primary;
 
 .switch-toggle {
   display: inline-block;
@@ -30,13 +30,13 @@ $border-color: theme.$primary;
     }
 
     &:hover {
-      background: theme.$hover;
-      color: theme.$white;
+      background: authoring.$hover;
+      color: authoring.$white;
     }
   }
 
   input:checked + label {
-    background: theme.$selection;
-    color: theme.$white;
+    background: authoring.$selection;
+    color: authoring.$white;
   }
 }

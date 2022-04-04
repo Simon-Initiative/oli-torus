@@ -1,4 +1,4 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 @import 'bootstrap';
 
 .draggableColumn {
@@ -7,7 +7,7 @@
   }
 
   &__dragIndicator {
-    color: rgba($color: theme.$body-color, $alpha: 0.6);
+    color: rgba($color: authoring.$body-color, $alpha: 0.6);
     cursor: grab !important;
     width: 24px;
     margin-right: 0.5rem;

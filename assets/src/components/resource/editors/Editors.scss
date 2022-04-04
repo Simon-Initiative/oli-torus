@@ -1,11 +1,11 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 @import 'bootstrap';
 @import 'common/mixins.scss';
 
 .editors {
   .slate-editor {
     padding: 0.5rem;
-    border: 1px solid theme.$gray-400;
+    border: 1px solid authoring.$gray-400;
     border-radius: 0.25em;
   }
 
@@ -16,7 +16,7 @@
 
     .card {
       border: 0;
-      background-color: theme.$gray-100;
+      background-color: authoring.$gray-100;
       @extend .mb-3;
     }
 
@@ -35,7 +35,7 @@
       }
 
       > .card-header {
-        background-color: theme.$card-cap-bg;
+        background-color: authoring.$card-cap-bg;
         cursor: grab;
         border-bottom: 0;
         border-top-left-radius: 8px;
@@ -44,14 +44,14 @@
 
       > .card-body {
         padding: 0;
-        border: 4px solid theme.$card-cap-bg;
+        border: 4px solid authoring.$card-cap-bg;
         border-top: none;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
 
         .activity-preview-info {
-          background-color: theme.$card-cap-bg;
-          color: rgba($color: theme.$body-color, $alpha: 0.8);
+          background-color: authoring.$card-cap-bg;
+          color: rgba($color: authoring.$body-color, $alpha: 0.8);
           text-align: center;
           font-style: italic;
           font-size: 14px;
@@ -67,10 +67,10 @@
 
       .reorder-mode-description {
         display: none;
-        background-color: theme.$card-cap-bg;
+        background-color: authoring.$card-cap-bg;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
-        color: rgba($color: theme.$body-color, $alpha: 0.8);
+        color: rgba($color: authoring.$body-color, $alpha: 0.8);
         font-size: 14px;
         padding: 6px 1.6rem;
         font-style: normal;
@@ -128,9 +128,9 @@
 
       .btn-purpose {
         min-width: 150px;
-        border: 1px solid rgba($color: theme.$body-color, $alpha: 0.1);
-        color: rgba($color: theme.$body-color, $alpha: 0.8);
-        background-color: theme.$body-bg;
+        border: 1px solid rgba($color: authoring.$body-color, $alpha: 0.1);
+        color: rgba($color: authoring.$body-color, $alpha: 0.8);
+        background-color: authoring.$body-bg;
 
         text-align: left;
         &.dropdown-toggle::after {
@@ -139,25 +139,25 @@
         }
 
         &:hover {
-          border-color: rgba($color: theme.$body-color, $alpha: 0.6);
-          background: rgba($color: theme.$body-color, $alpha: 0.05);
+          border-color: rgba($color: authoring.$body-color, $alpha: 0.6);
+          background: rgba($color: authoring.$body-color, $alpha: 0.05);
         }
 
         &:disabled {
-          background-color: theme.$card-cap-bg;
+          background-color: authoring.$card-cap-bg;
 
           &:hover {
-            border-color: rgba($color: theme.$body-color, $alpha: 0.1);
-            background: theme.$card-cap-bg;
+            border-color: rgba($color: authoring.$body-color, $alpha: 0.1);
+            background: authoring.$card-cap-bg;
           }
         }
       }
 
       .btn-delete:not([disabled]) {
-        color: rgba($color: theme.$body-color, $alpha: 0.8);
+        color: rgba($color: authoring.$body-color, $alpha: 0.8);
 
         &:hover {
-          color: theme.$danger;
+          color: authoring.$danger;
         }
       }
     }

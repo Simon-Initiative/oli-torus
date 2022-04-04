@@ -1,7 +1,7 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 
 .inline-link {
-  color: theme.$blue;
+  color: authoring.$blue;
   text-decoration: underline;
 }
 

@@ -1,4 +1,4 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 @import 'bootstrap';
 
 .choices__container {
@@ -33,13 +33,13 @@
   cursor: pointer;
 
   &:hover {
-    background-color: theme.$choice-selected-bg-hover;
+    background-color: authoring.$choice-selected-bg-hover;
   }
 
   &.selected {
-    color: theme.$choice-selected-color;
-    background-color: theme.$choice-selected-bg;
-    border-color: theme.$choice-selected-border-color;
+    color: authoring.$choice-selected-color;
+    background-color: authoring.$choice-selected-bg;
+    border-color: authoring.$choice-selected-border-color;
   }
 }
 
@@ -51,7 +51,7 @@
       background-color: initial;
 
       &.selected {
-        background-color: theme.$choice-selected-bg;
+        background-color: authoring.$choice-selected-bg;
       }
     }
   }

@@ -1,4 +1,4 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 
 .code-editor {
   margin-bottom: 8px;
@@ -6,7 +6,7 @@
   border: 2px solid black;
 
   &.active {
-    border: 2px solid theme.$primary;
+    border: 2px solid authoring.$primary;
   }
 
   pre {

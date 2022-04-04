@@ -1,7 +1,7 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 
 .objectives-list-container {
-  background-color: theme.$card-cap-bg;
+  background-color: authoring.$card-cap-bg;
   padding: 0 4px;
 }
 
@@ -10,11 +10,11 @@
   font-size: 14px;
 
   &.no-objectives {
-    background-color: rgba(theme.$warning, 0.8);
+    background-color: rgba(authoring.$warning, 0.8);
   }
 
   &.with-objectives {
-    background-color: rgba(theme.$info, 0.8);
+    background-color: rgba(authoring.$info, 0.8);
   }
 
   .objective-token {

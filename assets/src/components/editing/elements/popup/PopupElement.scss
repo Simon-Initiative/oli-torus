@@ -1,7 +1,7 @@
-@use 'authoring/theme';
+@use 'authoring/theme' as authoring;
 
 .popup__anchorText {
-  color: theme.$orange;
+  color: authoring.$orange;
   font-style: italic;
   cursor: pointer;
 }
