@@ -1,7 +1,6 @@
 @import 'bootstrap';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .removeButton__button {
     @extend .p-0;
   }

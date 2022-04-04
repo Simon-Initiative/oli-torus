@@ -2,8 +2,7 @@
 @import 'bootstrap';
 @import 'common/mixins.scss';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .editors {
     .slate-editor {
       padding: 0.5rem;

@@ -1,8 +1,7 @@
 @use 'authoring/theme' as authoring;
 @import 'bootstrap';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .choices__container {
     width: 100%;
   }

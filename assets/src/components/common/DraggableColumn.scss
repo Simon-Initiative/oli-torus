@@ -1,8 +1,7 @@
 @use 'authoring/theme' as authoring;
 @import 'bootstrap';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .draggableColumn {
     &__container {
       @extend .mt-3;

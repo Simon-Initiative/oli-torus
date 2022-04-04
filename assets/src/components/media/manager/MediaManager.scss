@@ -1,8 +1,7 @@
 @use 'authoring/theme' as authoring;
 @import 'common/mixins';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .media-manager {
     display: flex;
     flex-direction: column;

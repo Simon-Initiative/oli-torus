@@ -1,7 +1,6 @@
 @import 'bootstrap';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .choicesAuthoring__choicesContainer {
     cursor: default;
     @extend .mt-3;

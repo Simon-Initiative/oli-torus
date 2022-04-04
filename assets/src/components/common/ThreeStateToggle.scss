@@ -2,10 +2,7 @@
 
 $border-color: authoring.$primary;
 
-html.authoring,
-html.delivery,
-html.authoring.dark,
-html.delivery.dark {
+html.torus.component {
   .switch-toggle {
     display: inline-block;
     white-space: nowrap;

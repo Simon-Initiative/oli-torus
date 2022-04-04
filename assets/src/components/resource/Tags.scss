@@ -1,7 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .tags-selection {
     padding-top: 5px;
     padding-bottom: 10px;

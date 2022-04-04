@@ -1,7 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .settings-editor-wrapper {
     padding: 5px;
 

@@ -1,8 +1,7 @@
 @use 'authoring/theme' as authoring;
 @import 'common/mixins';
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .resource-editor {
     margin: 0 auto;
     &.row {

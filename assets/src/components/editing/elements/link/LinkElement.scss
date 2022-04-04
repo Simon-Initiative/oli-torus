@@ -1,7 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .inline-link {
     color: authoring.$blue;
     text-decoration: underline;

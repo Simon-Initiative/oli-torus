@@ -1,7 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-html.authoring,
-html.delivery {
+html.torus.component {
   .objectives-list-container {
     background-color: authoring.$card-cap-bg;
     padding: 0 4px;

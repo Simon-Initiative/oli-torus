@@ -1,7 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-html.authoring,
-html.delivery {
+html.torus.component {
   #create-account-popup {
     position: absolute;
     top: 60px;
