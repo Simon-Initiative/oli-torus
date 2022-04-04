@@ -5,6 +5,10 @@ defmodule OliWeb.ProgressLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
+  alias Lti_1p3.Tool.{ContextRoles, PlatformRoles}
+  alias Oli.Accounts
+  alias Oli.Delivery.Sections
+
   defp live_view_student_resource_route(section_slug, user_id, resource_id) do
     Routes.live_path(
       OliWeb.Endpoint,
@@ -71,28 +75,142 @@ defmodule OliWeb.ProgressLiveTest do
     end
   end
 
+  describe "admin breadcrumbs" do
+    setup [:admin_conn, :create_resource]
+
+    test "manual grading view", %{
+      conn: conn,
+      section: section
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug))
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "Manual Scoring"
+    end
+
+    test "student view", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      {:ok, _view, html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id))
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "Student Progress"
+    end
+
+    test "student resource view", %{
+      conn: conn,
+      section: section,
+      user: user,
+      resource: resource
+    } do
+      {:ok, _view, html} =
+        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id)}\""
+      assert html =~ "View Resource Progress"
+    end
+  end
+
+  describe "instructor breadcrumbs" do
+    setup [:create_resource, :setup_instructor_session]
+
+    test "manual grading view", %{
+      conn: conn,
+      section: section
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.ManualGrading.ManualGradingView, section.slug))
+
+      {:ok, _view, html} = live(conn)
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
+      assert html =~ "Manual Scoring"
+    end
+
+    test "student view", %{
+      conn: conn,
+      section: section,
+      user: user
+    } do
+      {:ok, _view, html} =
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id))
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
+      assert html =~ "Student Progress"
+    end
+
+    test "student resource view", %{
+      conn: conn,
+      section: section,
+      user: user,
+      resource: resource
+    } do
+      {:ok, _view, html} =
+        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+
+      assert html =~ "<nav class=\"breadcrumb-bar"
+      refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id)}\""
+      assert html =~ "View Resource Progress"
+    end
+  end
+
   def create_resource(_context) do
-    project = insert(:project)
-    section = insert(:section)
     user = insert(:user)
+    project = insert(:project, authors: [user.author])
+    section = insert(:section, type: :enrollable)
 
     section_project_publication =
       insert(:section_project_publication, %{section: section, project: project})
 
-    revision = insert(:revision)
+    revision = insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"))
 
-    insert(:section_resource, %{
+    section_resource = insert(:section_resource, %{
       section: section,
       project: project,
       resource_id: revision.resource.id
     })
 
+    Sections.update_section(section, %{root_section_resource_id: section_resource.id})
+
     insert(:published_resource, %{
       resource: revision.resource,
       revision: revision,
-      publication: section_project_publication.publication
+      publication: section_project_publication.publication,
+      author: user.author
     })
 
     {:ok, section: section, resource: revision.resource, user: user}
+  end
+
+  defp setup_instructor_session(%{conn: conn, user: user, section: section}) do
+    {:ok, user} =
+      Accounts.update_user(user, %{can_create_sections: true, independent_learner: true})
+    {:ok, instructor} =
+      Accounts.update_user_platform_roles(user, [PlatformRoles.get_role(:institution_instructor)])
+
+    Sections.enroll(instructor.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
+      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, %{conn: conn, instructor: instructor, section: section}}
   end
 end
