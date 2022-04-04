@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>High-level design — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/high-level.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>High-level design</span>
+</h1>
+
+<p>This page outlines fundamental system design choices</p><h2 id="roles" class="section-heading">
+  <a href="#roles" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">roles</p>
+  </a>
+  Roles
+</h2>
+<p>System roles are divided into two categories. A user can be represented by a single role in each category.</p><h3 id="authoring" class="section-heading">
+  <a href="#authoring" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">authoring</p>
+  </a>
+  Authoring
+</h3>
+<table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Author</strong></td><td style="text-align: center;">Someone who owns and/or contributes to the creation of course content</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who is in charge of administering the entire system. Administrators have complete access to all content and administrative tools.</td></tr></tbody></table><h3 id="delivery" class="section-heading">
+  <a href="#delivery" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">delivery</p>
+  </a>
+  Delivery
+</h3>
+<table><thead><tr><th style="text-align: left;">Role</th><th style="text-align: center;">Description</th></tr></thead><tbody><tr><td style="text-align: left;"><strong>Student</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as a student. Students have the ability to view course content, complete coursework and earn assignment grades.</td></tr><tr><td style="text-align: left;"><strong>Instructor</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an instructor. Instructors can create/edit a course section and modify content for that section.</td></tr><tr><td style="text-align: left;"><strong>Administrator</strong></td><td style="text-align: center;">Someone who has accessed the system from an LMS as an administrator. Administrators have all the same capabilities as instructors as well as the ability change institution-wide settings such as LTI integration or policies.</td></tr></tbody></table><h2 id="system-ontology" class="section-heading">
+  <a href="#system-ontology" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">system-ontology</p>
+  </a>
+  System Ontology
+</h2>
+<h3 id="resource" class="section-heading">
+  <a href="#resource" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">resource</p>
+  </a>
+  Resource
+</h3>
+<p>A resource is an organized collection of content that is versioned and tracks content changes over time. Resources have a globally unique identifier across projects so that even if their content has diverged (different HEAD revision), they have the ability to diff and merge content with the same resource in other projects. Content within the system that is intended to track/diff/merge changes over time and provide rich versioning support is most likely using a resource to do this. Some examples of resource types are Page, Assessment, Activity, Learning Objective, etc...</p><h3 id="resource-revision" class="section-heading">
+  <a href="#resource-revision" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">resource-revision</p>
+  </a>
+  Resource Revision
+</h3>
+<p>A resource revision represents a resource at a specific moment in it's revision history. A revision points to it's parent revision and therefore links to all of it's previous ancestors. The latest revision for a resource is referred to as the HEAD revision and it is referenced by the resource as it's last revision. If a revision's parent is null, then it is the initial revision of a resource. Revisions also track a resource's slug which is described in another section below.</p><pre><code class="makeup elixir" translate="no"><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span><span class="w">    </span><span class="nc">HEAD</span><span class="w">                                </span><span class="nc">INITIAL</span><span class="w">
+</span><span class="o">|</span><span class="w"> </span><span class="nc">Resource</span><span class="w">  </span><span class="o">|</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nc">Revision</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="o">-</span></code></pre><h3 id="project" class="section-heading">
+  <a href="#project" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">project</p>
+  </a>
+  Project
+</h3>
+<p>A project is an organized container of all the resources that comprise a course and it's curriculum. These resources include pages, assessments, learning objectives, and media.</p><h3 id="publication" class="section-heading">
+  <a href="#publication" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">publication</p>
+  </a>
+  Publication
+</h3>
+<p>A publication is a snapshot of a project at some point in time. Publications serve as an update, version or milestone of a project that an author deems ready for production use. Publications are created when a package is published which then become available for instructors to use for creating or updating a course section.</p><h3 id="section" class="section-heading">
+  <a href="#section" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">section</p>
+  </a>
+  Section
+</h3>
+<p>A section is an instance of a course publication that is configured by an instructor and delivered to students. A new section will be created for each LMS context or cohort of students intended to access course content. A section tracks learner progress and reports grades back to the connected LMS.</p><h2 id="resource-slug" class="section-heading">
+  <a href="#resource-slug" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">resource-slug</p>
+  </a>
+  Resource Slug
+</h2>
+<p>When a resource is created, a slug will be generated based on some semantic meaning for the resource (e.g. using the resource title). This slug is actually stored at the revision level because it can change over time as the resource changes. For example, if a resource with title &quot;Introduction to Linear Algebra&quot; is created, then it's slug might be introduction-linear-algebra-55jl2k. As changes are made to the content, but not the title, this slug may remain the same for each new revision that gets created. If at some point the title is changed to &quot;Basic Linear Algebra Concepts&quot;, the slug might change to basic-linear-algebra-conc-w8s25t. This slug is now related to the new semantic meaning of it's resource at that revision. It's important to understand however, that even though there are two different slugs for multiple different revisions, they are really just identifiers for the parent resource and both can be used to find a specific resource.</p><p>To summarize, a slug is a resource identifier that is stored at the revision level. Slugs do not have to change across revisions, but they can. Multiple slugs can point to a single resource.</p>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="introduction.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Introduction
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="publication-model.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Publication Model
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

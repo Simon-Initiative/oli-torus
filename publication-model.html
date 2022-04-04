@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>Publication Model — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/publication-model.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>Publication Model</span>
+</h1>
+
+<h2 id="overview" class="section-heading">
+  <a href="#overview" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">overview</p>
+  </a>
+  Overview
+</h2>
+<p>Torus employs a publication model that is designed to support:</p><ul><li>The ability to allow forward development for an author without interferring with student and instructor visible content</li><li>The ability to track changes across revisions of a project resource</li><li>The ability to migrate changes for resources across different projects</li><li>The ability to allow instructors to preview and opt-in to using newly published content</li></ul><h2 id="data-model" class="section-heading">
+  <a href="#data-model" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">data-model</p>
+  </a>
+  Data Model
+</h2>
+<p>The primary components and their relationships are as follows:</p><p><img src="assets/pub-er.png" alt="publication model" title="Publication Model"/></p><p>A <code class="inline">Resource</code> in a course project can be a page (graded or ungraded),
+container (e.g. Unit, Module), an activity, or learning objective. A course
+project consists of a collection of resources. This relationship is
+a many-to-many relationship to allow multiple course projects to share
+the same resource. That is a key aspect of Torus design to allow families
+of related course projects to exist in which content and changes of a
+shared resource can migrate from course to course within the course project
+family.</p><p>Changes in the content of any particular resource, over time, are modeled as a collection of <code class="inline">Revisions</code>, hence the one-to-many relationship from <code class="inline">Resource</code> to <code class="inline">Revision</code>.</p><p>A course project has a series of <code class="inline">Publications</code>. A publication is
+either <code class="inline">published</code> (meaning it is available and visible to instructors to use)
+or it is <code class="inline">unpublished</code>. Course <code class="inline">Sections</code> that an instructor teaches reference
+exactly one <code class="inline">Publication</code> for the course projects that the section is using.</p><p>Finally, at the heart of the publication model, the <code class="inline">Published Resource</code> exists to tie together a specific revision for every resource in a course for a specific publication.</p><h2 id="example-data" class="section-heading">
+  <a href="#example-data" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">example-data</p>
+  </a>
+  Example Data
+</h2>
+<p>As an example of this publication model, consider the following table of
+<code class="inline">Published Resource</code> records, all from one course project that consists
+of two resources identified by <code class="inline">R1</code> and <code class="inline">R2</code> that have revision records identified by <code class="inline">V1</code> and <code class="inline">V2</code>, respectively. Initially the course has one publication identified by <code class="inline">P1</code> so the published resource records look like:</p><table><thead><tr><th style="text-align: left;">Publication</th><th style="text-align: center;">Resource</th><th style="text-align: center;">Revision</th></tr></thead><tbody><tr><td style="text-align: left;">P1</td><td style="text-align: center;">R1</td><td style="text-align: center;">V1</td></tr><tr><td style="text-align: left;">P1</td><td style="text-align: center;">R2</td><td style="text-align: center;">V2</td></tr></tbody></table><p>The course author makes a change to the <code class="inline">R2</code> resource and publishes that
+change as a second publication <code class="inline">P2</code>. Now the published resource records
+look like:</p><table><thead><tr><th style="text-align: left;">Publication</th><th style="text-align: center;">Resource</th><th style="text-align: center;">Revision</th></tr></thead><tbody><tr><td style="text-align: left;">P1</td><td style="text-align: center;">R1</td><td style="text-align: center;">V1</td></tr><tr><td style="text-align: left;">P1</td><td style="text-align: center;">R2</td><td style="text-align: center;">V2</td></tr><tr><td style="text-align: left;">P2</td><td style="text-align: center;">R1</td><td style="text-align: center;">V1</td></tr><tr><td style="text-align: left;">P2</td><td style="text-align: center;">R2</td><td style="text-align: center;">V3</td></tr></tbody></table><p>In the above, we see how the original publication is preserved - so any
+course sections teaching it will have their content unaffected by the new
+publication. Any course section that opts-in to using the <code class="inline">P2</code> publication
+will see the update to the <code class="inline">R2</code> resource.</p>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="high-level.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+High-level design
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="attempt.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Attempt design
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

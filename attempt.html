@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>Attempt design — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/attempt.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>Attempt design</span>
+</h1>
+
+<p>Torus <em>attempts</em> track student interaction and results for pages, activities and parts of activities.</p><h2 id="attempt-hierarchy" class="section-heading">
+  <a href="#attempt-hierarchy" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">attempt-hierarchy</p>
+  </a>
+  Attempt Hierarchy
+</h2>
+<p>Torus models attempts in a hierarchy that mirrors the hierarchical
+structure of course content. So for every
+page that a student visits in Torus a <em>page attempt</em> record is created.
+For every activity that exists on a visited page, an <em>activity
+attempt</em> record is created (which points back to the parent page attempt
+record). Finally, for every part that an activity defines, a <em>part attempt</em>
+record is created.</p><p>The entire attempt hierarchy is rooted in a <em>resource access</em> record
+that tracks, amongst other things, the rolled up student result (aka grade)
+across all attempts.</p><h2 id="attempt-history" class="section-heading">
+  <a href="#attempt-history" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">attempt-history</p>
+  </a>
+  Attempt History
+</h2>
+<p>The Torus attempt hierarchy supports preservation of
+historical attempts. Consider an example where a student takes a graded
+assessment (i.e. a page) that contains two activities (each with one part) twice. The full
+attempt hierarchy, with history, would look like the following:</p><pre><code class="makeup elixir" translate="no"><span class="nc">Resource</span><span class="w"> </span><span class="nc">Access</span><span class="w">
+</span><span class="o">--</span><span class="nc">Page</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">B</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="nc">Page</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">2</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">B</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span></code></pre><p>As another example, consider an ungraded page that contains one activity
+that a student attempts several times:</p><pre><code class="makeup elixir" translate="no"><span class="nc">Resource</span><span class="w"> </span><span class="nc">Access</span><span class="w">
+</span><span class="o">--</span><span class="nc">Page</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">2</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">3</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="nc">Activity</span><span class="w"> </span><span class="nc">A</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">4</span><span class="w">
+</span><span class="o">--</span><span class="o">--</span><span class="o">--</span><span class="nc">Part</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nc">Attempt</span><span class="w"> </span><span class="mi">1</span></code></pre><h2 id="attempt-states" class="section-heading">
+  <a href="#attempt-states" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">attempt-states</p>
+  </a>
+  Attempt States
+</h2>
+<p>Attempts can exist in multiple states. These states are:</p><ul><li><strong>Non-existent</strong>: The student has yet to access the page, thus no attempt exists.</li><li><strong>Active</strong>: A student attempt is &quot;active&quot; when they are currently interacting
+with this page or activity therefore the attempt is &quot;active&quot;.</li><li><strong>Submitted</strong>: The student submitted a response for an activity that requires manual
+instructor scoring, thus the attempt enters a &quot;submitted&quot; state. The attempt is now
+read-only for the student.</li><li><strong>Evaluated</strong>: The student response has been evaluated (whether automatically or manually) and a score has been recorded into the attempt record. The attempt is now read-only for both the instructor and student.</li></ul>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="publication-model.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Publication Model
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="attempt-handling.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Attempt handling
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

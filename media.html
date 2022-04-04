@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>Media assets — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/ingest/media.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>Media assets</span>
+</h1>
+
+<p>Torus pages and activities can contain multimedia content such as
+images, audio, and video. Currently, video support in Torus is via YouTube.
+Audio support is via the HTML5 <code class="inline">&lt;audio&gt;</code> element, and images are supported via
+HTML <code class="inline">&lt;img&gt;</code> element.</p><h2 id="external-vs-internal-media-asset-storage" class="section-heading">
+  <a href="#external-vs-internal-media-asset-storage" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">external-vs-internal-media-asset-storage</p>
+  </a>
+  External vs Internal Media Asset Storage
+</h2>
+<p>For images and audio sources, Torus supports the use of both &quot;internally&quot; hosted media assets
+and &quot;externally&quot; hosted media assets. This simply means that an author of a course, when inserting
+an image into a page can choose to either upload an image file to Torus to use (thus, &quot;interally hosted&quot;) or to copy and paste
+a URL of a publicly available image to use (thus, &quot;externally hosted&quot;).</p><p>For internally hosted assets, Torus does several things with that media asset to both ensure correct and efficient delivery
+of a course project and to enable a richer authoring experience:</p><ol><li>Deduplication: Upload receiving the uplaod of an asset, Torus calculates an MD5 hash and compares it all other assets of that course to prevent duplicate images from being added into the system.</li><li>Cached, immutable storage: Once the asset is guaranteed to be unique, Torus stores it in AWS S3 storage, where it can be directly accessible via a URL. At this point, the asset is immutable: it cannot be updated or deleted by a Torus end user. This is necessary to allow proper functioning
+of the Torus publication model. See the <code class="inline">Immutability</code> section below for a use case that demonstrates this importance. The S3 buckets are
+fronted by an AWS edge caching solution.</li><li>Project assocation: Meta-data regarding the asset is associated with the course project, primarily to power the &quot;Media Library&quot;
+feature within Torus. An author can then browse their media library within Torus to select the asset for use in other places within
+their course project.</li></ol><p>For externally hosted asset references, Torus does none of the above. It simply allows that external URL to be embedded in the
+content of the page and the activity.</p><h2 id="immutability" class="section-heading">
+  <a href="#immutability" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">immutability</p>
+  </a>
+  Immutability
+</h2>
+<p>Immutability of media assets is paramount to correct delivery of a course project as that course project evolves over time.</p><p>The lack of an immutability guarantee for externally hosted assets can cause &quot;change leakage&quot; problems. Consider the
+following scenario:</p><ol><li>An author embeds a reference to an externally hosted image in a page in their course. Perhaps the author has a blog where they have
+images and other assets present.</li><li>Course sections are created and students begin to access the course material.</li><li>The author then decides to begin editing their course material to prepare for a major revision that they will publish in a few months for the next semester of course sections. The author deems it necessary to update several of the images hosted on their blog to support these course material updates.</li><li>While the Torus course material updates will not be visible to students (since the author hasn't &quot;Published&quot; those changes yet), as soon as the author changes those images, students working through the active course section see the new, updated images.</li></ol><h2 id="asset-considerations-for-course-ingestion" class="section-heading">
+  <a href="#asset-considerations-for-course-ingestion" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">asset-considerations-for-course-ingestion</p>
+  </a>
+  Asset Considerations for Course Ingestion
+</h2>
+<p>Developers creating course digests to ingest into Torus can choose to take advantage of Torus &quot;internally hosted&quot; assets and the media library
+feature.</p><ol><li>Asset URL references within pages and activities must use the Torus AWS URL prefixes, so that at runtime these reference resolve to the correct Torus asset location. The format of the URL is <code class="inline">https://d2xvti2irp4c7t.cloudfront.net/media/${project_slug}/${file_name}</code>, where
+<code class="inline">project_slug</code> is a unique project identifier (not necessarily the actual project slug that will get generated, more so simply a folder name) and <code class="inline">file_name</code> of course is the name of the file corresponding to the asset.</li><li>Every asset in a course project that is intended to be tracked by Torus in the media library must have an entry in the <code class="inline">_media_manifest.json</code> file of the course digest.</li><li>Before or after a course digest has been ingested, the actual media assets themselves need to be &quot;staged&quot; in the Torus AWS S3 instance.</li></ol><p>Once both the digest has been ingested and the assets staged, an author can begin accessing and editing the newly ingested course and be able to view the existing assets in pages. Furthermore, the author is able to browse the library of all asssets via the Media Library capability.</p><h2 id="asset-staging" class="section-heading">
+  <a href="#asset-staging" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">asset-staging</p>
+  </a>
+  Asset Staging
+</h2>
+<p>The OLI Legacy course digest tool (<a href="https://github.com/Simon-Initiative/course-digest">https://github.com/Simon-Initiative/course-digest</a>) contains an asset staging implementation that developers of other digests can reuse. This
+implemenation takes as input a media manifest file and expects all
+the assets referenced within it to also be present in the local filesystem. The implementation simply uploads, serially, the files
+in the manifest into the Torus AWS S3 storage.</p><p>External developers that want to stage assets must work with internal
+Torus engineering to first obtain the <code class="inline">project_slug</code> identifier to use
+in constructing asset URLs, and the S3 credentials to use to drive the
+upload implementation.</p>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="overview.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Course material ingestion
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

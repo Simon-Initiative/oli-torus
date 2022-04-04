@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>GDPR compliance — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/gdpr.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>GDPR compliance</span>
+</h1>
+
+<h2 id="cookie-compliance-requirements" class="section-heading">
+  <a href="#cookie-compliance-requirements" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">cookie-compliance-requirements</p>
+  </a>
+  Cookie compliance requirements
+</h2>
+<ul><li>Receive users’ consent before you use any cookies except strictly necessary cookies.</li><li>Provide accurate and specific information about the data each cookie tracks and its purpose in plain language before consent is received.</li><li>Document and store consent received from users.</li><li>Allow users to access your service even if they refuse to allow the use of certain cookies</li><li>Make it as easy for users to withdraw their consent as it was for them to give their consent in the first place.</li></ul><p>The Cookie Law does not require that records of consent be kept but instead, indicates that you should be able to prove that consent occurred — even if that consent has been withdrawn.</p><p>To comply with the requirements, our approach needed to ensure that an opportunity for the user to provide consent is presented even in cases where a user never logins into our system. That consideration, combined with not having to maintain records of consent, meant that an approach that makes use of long-lived cookies to keep track of consent works fine in our use case. The approach works as follows.</p><ul><li>Each page on our site is instrumented with some cookie consent management scripts</li><li>The scripts run every time any page is loaded on the browser</li><li>The script first checks to see if a cookie with the name “_cky_opt_in” is present and that its value is “true”. This cookie is used to track whether the consent pop-up has been launched in that particular browser before. If not a new one is created with a value “false” and an expiration value of 365 days (Compliant with GDPR).</li><li>A cookie named “_cky_opt_in_dismiss” with a duration of 1hr is also created whenever the cookie above is created. This cookie allows our website to re-prompt the user with the cookie consent pop-up every hour if they simply dismissed the pop-up without providing consent</li><li>If the user agrees to allow cookies, a cookie named “_cky_opt_choices” is created. Its duration is 365 days and the value is the consent preferences agreed to by the user. The value of the cookie “_cky_opt_in” is updated to true.</li><li>Note that after 365 days, our system will prompt the user for a new consent</li><li>The cookie consent pop-up also presents the user with the option to modifly cookie preferences. The preferences dialog simply updates the values store in the “_cky_opt_choices” cookie or creates one if one is not already present.</li><li>Each page on our site has a footer containing a link that will directly launch the preferences dialog any time the user wishes to adjust their cookie preferences.</li></ul>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="page-model.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+Page model
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="misc.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Miscelleanous
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="project" content="OLI Torus v0.18.4">
+
+    <title>Production Deployments — OLI Torus v0.18.4</title>
+    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+
+    <script src="dist/sidebar_items-fc68945ea6.js"></script>
+
+      <script src="docs_config.js"></script>
+
+    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+
+
+  </head>
+  <body data-type="extras">
+    <script>
+
+      try {
+        var settings = JSON.parse(localStorage.getItem('ex_doc:settings') || '{}');
+
+        if (settings.theme === 'dark' ||
+           ((settings.theme === 'system' || settings.theme == null) &&
+             window.matchMedia('(prefers-color-scheme: dark)').matches)
+           ) {
+          document.body.classList.add('dark')
+        }
+      } catch (error) { }
+    </script>
+
+<div class="main">
+
+
+<section class="sidebar">
+  <button class="sidebar-button sidebar-toggle" aria-label="toggle sidebar">
+    <i class="ri-menu-line ri-lg" title="Collapse/expand sidebar"></i>
+  </button>
+
+  <form class="sidebar-search" action="search.html">
+    <button type="submit" class="search-button" aria-label="Submit Search">
+      <i class="ri-search-2-line" aria-hidden="true" title="Submit search"></i>
+    </button>
+    <button type="button" tabindex="-1" class="search-close-button" aria-label="Cancel Search">
+      <i class="ri-close-line ri-lg" aria-hidden="true" title="Cancel search"></i>
+    </button>
+    <label class="search-label">
+      <p class="sr-only">Search</p>
+      <input name="q" type="text" class="search-input" placeholder="Search..." aria-label="Input your search terms" autocomplete="off" />
+    </label>
+  </form>
+
+  <div class="autocomplete">
+    <div class="autocomplete-results">
+    </div>
+  </div>
+
+  <div class="sidebar-header">
+
+      <a href="http://oli.cmu.edu">
+        <img src="assets/logo.png" alt="OLI Torus" class="sidebar-projectImage">
+      </a>
+
+    <div class="sidebar-projectDetails">
+      <a href="http://oli.cmu.edu" class="sidebar-projectName" translate="no">
+OLI Torus
+      </a>
+      <strong class="sidebar-projectVersion" translate="no">
+        v0.18.4
+      </strong>
+    </div>
+    <ul class="sidebar-listNav">
+      <li><a id="extras-list-link" href="#full-list">GUIDES</a></li>
+
+
+    </ul>
+  </div>
+
+  <div class="gradient"></div>
+  <ul id="full-list" class="sidebar-fullList"></ul>
+</section>
+
+<section class="content">
+  <div class="content-outer">
+    <div id="content" class="content-inner">
+
+<h1>
+<button class="settings display-settings">
+  <i class="ri-settings-3-line"></i>
+  <span class="sr-only">Settings</span>
+</button>
+
+
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/process/building.md#L1" title="View Source" class="view-source" rel="help">
+      <i class="ri-code-s-slash-line" aria-hidden="true"></i>
+      <span class="sr-only">View Source</span>
+    </a>
+
+  <span>Production Deployments</span>
+</h1>
+
+<h2 id="using-a-prebuilt-release-recommended" class="section-heading">
+  <a href="#using-a-prebuilt-release-recommended" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">using-a-prebuilt-release-recommended</p>
+  </a>
+  Using a Prebuilt Release (Recommended)
+</h2>
+<p>Torus releases are built automatically with each new commit to master and uploaded to the public S3 bucket <code class="inline">oli-torus-releases</code>. These prebuilt releases are created specifically for Amazon Linux 2, but Torus can also be built for any other platform using the <a href="#Building-a-Release">Building a Release</a> guide below. To download a prebuilt release, start by first identifying the version number and first 7 digits of the release SHA you wish to deploy. These can be found on the <a href="https://github.com/Simon-Initiative/oli-torus/releases">releases page</a> on the left side of each release (recommended), or alternatively for unstable bleeding-edge builds the <a href="https://github.com/Simon-Initiative/oli-torus/commits/master">master commit history</a> can be used in combination with whichever version is set in mix.exs for that particular commit.</p><pre><code class="makeup elixir" translate="no"><span class="nc">RELEASE_VERSION</span><span class="o">=</span><span class="mf">0.18</span><span class="o">.</span><span class="mi">3</span><span class="w">
+</span><span class="nc">RELEASE_SHA</span><span class="o">=</span><span class="n">c9d615b</span><span class="w">
+
+</span><span class="c1"># fetch the release package from the official torus builds S3 bucket</span><span class="w">
+</span><span class="n">curl</span><span class="w"> </span><span class="o">--</span><span class="n">fail</span><span class="w"> </span><span class="o">-</span><span class="nc">L</span><span class="w"> </span><span class="n">https</span><span class="ss">:/</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="n">torus</span><span class="o">-</span><span class="n">releases</span><span class="o">.</span><span class="n">s3</span><span class="o">.</span><span class="n">amazonaws</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="5597916172-1">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="5597916172-1">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="5597916172-2">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="5597916172-2">}</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">o</span><span class="w"> </span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="5597916172-3">{</span><span class="nc">RELEASE_VERSION</span><span class="p" data-group-id="5597916172-3">}</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="5597916172-4">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="5597916172-4">}</span><span class="o">.</span><span class="n">zip</span></code></pre><h2 id="building-a-release" class="section-heading">
+  <a href="#building-a-release" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">building-a-release</p>
+  </a>
+  Building a Release
+</h2>
+<p>Torus recommends using <a href="https://hexdocs.pm/mix/Mix.Tasks.Release.html">elixir releases</a> for production deployments. You will have to have <a href="https://elixir-lang.org/install.html">Elixir installed on your machine</a> to build Torus.</p><p>A release can be created by executing <a href="https://github.com/Simon-Initiative/oli-torus/blob/master/.github/actions/torus-builder/entrypoint.sh">the following script</a> in the oli-torus repository with a current git commit SHA set to <code class="inline">RELEASE_SHA</code>. This will compile a release for the system architecture on which it is executed:</p><pre><code class="makeup elixir" translate="no"><span class="c1"># clone the oli-torus repository</span><span class="w">
+</span><span class="n">cd</span><span class="w"> </span><span class="o">/</span><span class="n">tmp</span><span class="w">
+</span><span class="n">git</span><span class="w"> </span><span class="n">clone</span><span class="w"> </span><span class="n">https</span><span class="ss">:/</span><span class="o">/</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="nc">Simon</span><span class="o">-</span><span class="nc">Initiative</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="n">torus</span><span class="o">.</span><span class="n">git</span><span class="w">
+</span><span class="n">cd</span><span class="w"> </span><span class="n">oli</span><span class="o">-</span><span class="n">torus</span><span class="w">
+
+</span><span class="c1"># setup asset build dependencies</span><span class="w">
+</span><span class="n">npm</span><span class="w"> </span><span class="n">install</span><span class="w"> </span><span class="o">-</span><span class="n">g</span><span class="w"> </span><span class="n">yarn</span><span class="w">
+</span><span class="n">yarn</span><span class="w"> </span><span class="o">--</span><span class="n">cwd</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">assets</span><span class="w">
+
+</span><span class="nc">RELEASE_SHA</span><span class="o">=</span><span class="err">$</span><span class="p" data-group-id="6781066902-1">(</span><span class="n">git</span><span class="w"> </span><span class="n">rev</span><span class="o">-</span><span class="n">parse</span><span class="w"> </span><span class="o">--</span><span class="n">short</span><span class="w"> </span><span class="nc">HEAD</span><span class="p" data-group-id="6781066902-1">)</span><span class="w">
+</span><span class="n">sh</span><span class="w"> </span><span class="o">.</span><span class="n">github</span><span class="o">/</span><span class="n">actions</span><span class="o">/</span><span class="n">torus</span><span class="o">-</span><span class="n">builder</span><span class="o">/</span><span class="n">entrypoint</span><span class="o">.</span><span class="n">sh</span></code></pre><p>You'll find the newly built release under <code class="inline">_build/prod/rel/oli</code>. This can be zipped and deployed however you see fit (e.g. sftp, S3 and curl, etc.).</p><pre><code class="makeup elixir" translate="no"><span class="n">cd</span><span class="w"> </span><span class="c">_build</span><span class="o">/</span><span class="n">prod</span><span class="o">/</span><span class="n">rel</span><span class="o">/</span><span class="n">oli</span><span class="w">
+</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">r</span><span class="w"> </span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="o">.</span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="err">$</span><span class="p" data-group-id="6422239957-1">{</span><span class="nc">RELEASE_SHA</span><span class="p" data-group-id="6422239957-1">}</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">*</span></code></pre><p>The release will contain all the necessary binaries to run Torus including the Erlang RunTime System and the BEAM virtual machine (except for NodeJS, which is expected to be installed on the target and available in the torus user's <code class="inline">PATH</code>). For more information on setting up a production environment, refer to the <a href="https://github.com/Simon-Initiative/oli-torus/wiki/Setting-Up-A-Production-Server">Setting Up a Production Server</a> guide.</p><p>Once a release has been created and deployed to the target machine where you intend to run it, you can
+execute predefined <a href="Setting-Up-a-Production-Server#command-reference">release commands</a> to start/stop/daemonize the app.
+To perform any of these though, you must first source the <code class="inline">oli.env</code> configuration into the current shell to configure the environment.</p><p>Configure Environment (<strong>REQUIRED</strong> before running any eval or iex commands)</p><pre><code class="makeup elixir" translate="no"><span class="n">set</span><span class="w"> </span><span class="o">-</span><span class="n">a</span><span class="p">;</span><span class="w"> </span><span class="n">source</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">.</span><span class="n">env</span></code></pre><p>Stop the server</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">stop</span></code></pre><p>Prepare the release</p><pre><code class="makeup elixir" translate="no"><span class="c1"># remove old deployment, if one exists</span><span class="w">
+</span><span class="n">rm</span><span class="w"> </span><span class="o">-</span><span class="n">rf</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="w">
+
+</span><span class="n">unzip</span><span class="w"> </span><span class="n">oli</span><span class="o">-</span><span class="o">*</span><span class="o">.</span><span class="n">zip</span><span class="w"> </span><span class="o">-</span><span class="n">d</span><span class="w"> </span><span class="n">oli</span><span class="w">
+</span><span class="n">chmod</span><span class="w"> </span><span class="o">-</span><span class="nc">R</span><span class="w"> </span><span class="o">+</span><span class="n">x</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="w">
+
+</span><span class="c1"># cleanup release zip</span><span class="w">
+</span><span class="n">rm</span><span class="w"> </span><span class="o">-</span><span class="n">rf</span><span class="w"> </span><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">-</span><span class="o">*</span><span class="o">.</span><span class="n">zip</span></code></pre><p>Migrate and Seed Database</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">eval</span><span class="w"> </span><span class="s">&quot;Oli.ReleaseTasks.migrate_and_seed&quot;</span></code></pre><p>Restart the server</p><pre><code class="makeup elixir" translate="no"><span class="o">.</span><span class="o">/</span><span class="n">oli</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">oli</span><span class="w"> </span><span class="n">daemon</span></code></pre><h2 id="notes" class="section-heading">
+  <a href="#notes" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">notes</p>
+  </a>
+  NOTES
+</h2>
+<ul><li><p>If you see the following deps build error, you must <a href="https://gist.github.com/fernandoaleman/5459173e24d59b45ae2cfc618e20fe06">install OpenSSL 1.1</a> in order for AppSignal to compile and work properly.</p><pre><code class="makeup elixir" translate="no"><span class="o">==</span><span class="o">&gt;</span><span class="w"> </span><span class="n">appsignal</span><span class="w">
+</span><span class="nc">Downloading</span><span class="w"> </span><span class="n">agent</span><span class="w"> </span><span class="n">release</span><span class="w">
+</span><span class="nc">AppSignal</span><span class="w"> </span><span class="n">installation</span><span class="w"> </span><span class="ss">failed</span><span class="p">:</span><span class="w"> </span><span class="nc">Could</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">download</span><span class="w"> </span><span class="n">archive</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">any</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">our</span><span class="w"> </span><span class="n">mirrors</span><span class="o">.</span><span class="w">
+</span><span class="nc">Please</span><span class="w"> </span><span class="n">make</span><span class="w"> </span><span class="n">sure</span><span class="w"> </span><span class="n">your</span><span class="w"> </span><span class="n">network</span><span class="w"> </span><span class="n">allows</span><span class="w"> </span><span class="n">access</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">any</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">these</span><span class="w"> </span><span class="n">mirrors</span><span class="o">.</span><span class="w">
+</span><span class="nc">Attempted</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">download</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">archive</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="ss">urls</span><span class="p">:</span><span class="w">
+</span><span class="o">-</span><span class="w"> </span><span class="ss">URL</span><span class="p">:</span><span class="w"> </span><span class="n">https</span><span class="ss">:/</span><span class="o">/</span><span class="n">appsignal</span><span class="o">-</span><span class="n">agent</span><span class="o">-</span><span class="n">releases</span><span class="o">.</span><span class="n">global</span><span class="o">.</span><span class="n">ssl</span><span class="o">.</span><span class="n">fastly</span><span class="o">.</span><span class="n">net</span><span class="o">/</span><span class="mi">7376537</span><span class="o">/</span><span class="n">appsignal</span><span class="o">-</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">all</span><span class="o">-</span><span class="n">static</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span><span class="w">
+</span><span class="o">-</span><span class="w"> </span><span class="nc">Error</span><span class="w"> </span><span class="p" data-group-id="0275881634-1">(</span><span class="n">hackney</span><span class="w"> </span><span class="n">response</span><span class="p" data-group-id="0275881634-1">)</span><span class="p">:</span><span class="w">
+</span><span class="p" data-group-id="0275881634-2">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-3">{</span><span class="ss">:options</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-4">{</span><span class="ss">:insufficient_crypto_support</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-5">{</span><span class="ss">:&quot;tlsv1.3&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-6">{</span><span class="ss">:versions</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-7">[</span><span class="ss">:&quot;tlsv1.3&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">:&quot;tlsv1.2&quot;</span><span class="p" data-group-id="0275881634-7">]</span><span class="p" data-group-id="0275881634-6">}</span><span class="p" data-group-id="0275881634-5">}</span><span class="p" data-group-id="0275881634-4">}</span><span class="p" data-group-id="0275881634-3">}</span><span class="p" data-group-id="0275881634-2">}</span><span class="w">
+
+</span><span class="o">-</span><span class="w"> </span><span class="ss">URL</span><span class="p">:</span><span class="w"> </span><span class="n">https</span><span class="ss">:/</span><span class="o">/</span><span class="n">d135dj0rjqvssy</span><span class="o">.</span><span class="n">cloudfront</span><span class="o">.</span><span class="n">net</span><span class="o">/</span><span class="mi">7376537</span><span class="o">/</span><span class="n">appsignal</span><span class="o">-</span><span class="n">x86_64</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">all</span><span class="o">-</span><span class="n">static</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span><span class="w">
+</span><span class="o">-</span><span class="w"> </span><span class="nc">Error</span><span class="w"> </span><span class="p" data-group-id="0275881634-8">(</span><span class="n">hackney</span><span class="w"> </span><span class="n">response</span><span class="p" data-group-id="0275881634-8">)</span><span class="p">:</span><span class="w">
+</span><span class="p" data-group-id="0275881634-9">{</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-10">{</span><span class="ss">:options</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-11">{</span><span class="ss">:insufficient_crypto_support</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-12">{</span><span class="ss">:&quot;tlsv1.3&quot;</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-13">{</span><span class="ss">:versions</span><span class="p">,</span><span class="w"> </span><span class="p" data-group-id="0275881634-14">[</span><span class="ss">:&quot;tlsv1.3&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">:&quot;tlsv1.2&quot;</span><span class="p" data-group-id="0275881634-14">]</span><span class="p" data-group-id="0275881634-13">}</span><span class="p" data-group-id="0275881634-12">}</span><span class="p" data-group-id="0275881634-11">}</span><span class="p" data-group-id="0275881634-10">}</span><span class="p" data-group-id="0275881634-9">}</span></code></pre></li></ul>
+<div class="bottom-actions">
+  <div class="bottom-actions-item">
+
+      <a href="deployment.html" class="bottom-actions-button" rel="prev">
+        <span class="subheader">
+          ← Previous Page
+        </span>
+        <span class="title">
+CI/CD and Deployment Process
+        </span>
+      </a>
+
+  </div>
+  <div class="bottom-actions-item">
+
+      <a href="introduction.html" class="bottom-actions-button" rel="next">
+        <span class="subheader">
+          Next Page →
+        </span>
+        <span class="title">
+Introduction
+        </span>
+      </a>
+
+  </div>
+</div>
+
+      <footer class="footer">
+
+        <p>
+          Built using
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
+          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+</section>
+</div>
+
+
+  </body>
+</html>
