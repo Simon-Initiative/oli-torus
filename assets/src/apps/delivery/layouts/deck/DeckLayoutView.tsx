@@ -29,6 +29,7 @@ import {
 } from '../../store/features/groups/selectors/deck';
 import {
   selectEnableHistory,
+  selectNavigationSequence,
   selectPageSlug,
   selectUserName,
   setScore,
@@ -57,6 +58,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const currentLesson = useSelector(selectPageSlug);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
+  const navigationSequences = useSelector(selectNavigationSequence);
   const isEnd = useSelector(selectLessonEnd);
   const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
   const [pageClasses, setPageClasses] = useState<string[]>([]);
@@ -125,6 +127,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     if (Array.isArray(pageContent?.custom?.variables)) {
+      const firstActivityId = navigationSequences?.length
+        ? navigationSequences[0].custom.sequenceId
+        : '';
       const allNames = pageContent.custom.variables.map((v: any) => v.name);
       // variables can and will ref previous ones
       // they will reference them "globally" so need to track the above
@@ -139,8 +144,10 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-
-          const stmt = `let {variables.${v.name.trim()}} = ${expr};`;
+          const screenSpecificVariable = firstActivityId
+            ? ` let {${firstActivityId}|variables.${v.name.trim()}} = ${expr};`
+            : '';
+          const stmt = `let {variables.${v.name.trim()}} = ${expr}; ${screenSpecificVariable}`;
           return stmt;
         })
         .filter((s: any) => s);
