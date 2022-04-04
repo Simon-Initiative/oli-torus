@@ -14,7 +14,14 @@ const getModeFromLocalStorage = () => {
   return localStorage.theme;
 };
 
-export const ThemeSelector = () => {
+const maybeLabel = (label: string, showLabel: boolean) =>
+  showLabel ? <span className="ml-1">{label}</span> : undefined;
+
+export interface DarkModeSelectorProps {
+  showLabels?: boolean;
+}
+
+export const DarkModeSelector = ({ showLabels = true }: DarkModeSelectorProps) => {
   const [mode, setMode] = useState<Mode>(getModeFromLocalStorage());
 
   const onSelect = (mode: Mode) => () => {
@@ -39,13 +46,16 @@ export const ThemeSelector = () => {
   return (
     <ThreeStateToggle>
       <ToggleOption id="auto" checked={isChecked(mode, 'auto')} onClick={onSelect('auto')}>
-        <i className="las la-adjust"></i> Auto
+        <i className="las la-adjust"></i>
+        {maybeLabel('Auto', showLabels)}
       </ToggleOption>
       <ToggleOption id="light" checked={isChecked(mode, 'light')} onClick={onSelect('light')}>
-        <i className="las la-sun"></i> Light
+        <i className="las la-sun"></i>
+        {maybeLabel('Light', showLabels)}
       </ToggleOption>
       <ToggleOption id="dark" checked={isChecked(mode, 'dark')} onClick={onSelect('dark')}>
-        <i className="las la-moon"></i> Dark
+        <i className="las la-moon"></i>
+        {maybeLabel('Dark', showLabels)}
       </ToggleOption>
     </ThreeStateToggle>
   );

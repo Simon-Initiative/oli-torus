@@ -1,9 +1,9 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { ThemeSelector } from 'components/misc/ThemeSelector';
+import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 
 export const ThemeToggle = {
   mounted() {
-    ReactDOM.render(<ThemeSelector />, this.el);
+    ReactDOM.render(<DarkModeSelector />, this.el);
   },
 };

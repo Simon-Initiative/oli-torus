@@ -3,7 +3,9 @@
 $border-color: authoring.$primary;
 
 html.authoring,
-html.delivery {
+html.delivery,
+html.authoring.dark,
+html.delivery.dark {
   .switch-toggle {
     display: inline-block;
     white-space: nowrap;
@@ -13,6 +15,7 @@ html.delivery {
     }
 
     label {
+      display: inline-block;
       padding: 6px 10px;
       border: 1px solid $border-color;
       border-right: none;
