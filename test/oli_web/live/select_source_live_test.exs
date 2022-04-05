@@ -49,6 +49,8 @@ defmodule OliWeb.SelectSourceTest do
 
       assert has_element?(view, "button[phx-click=\"selected\"]")
       refute has_element?(view, "img[alt=\"course image\"]")
+      refute has_element?(view, "#select_sort")
+      refute has_element?(view, "form[phx-change=\"update_view_type\"")
       assert has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert view
              |> element("tr:first-child > td:first-child + td")
@@ -157,6 +159,8 @@ defmodule OliWeb.SelectSourceTest do
 
       refute has_element?(view, "button[phx-click=\"selected\"]")
       assert has_element?(view, "img[alt=\"course image\"]")
+      assert has_element?(view, "#select_sort")
+      assert has_element?(view, "form[phx-change=\"update_view_type\"")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
     end
@@ -185,6 +189,20 @@ defmodule OliWeb.SelectSourceTest do
 
       assert has_element?(view, "h5", "#{s1.title}")
       assert has_element?(view, "h5", "#{s2.title}")
+    end
+
+    test "applies view change", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, base_project: project)
+
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+
+      view
+      |> element("form[phx-change=\"update_view_type\"")
+      |> render_change(%{"view" => %{"type" => "list"}})
+
+      assert has_element?(view, "button[phx-click=\"selected\"]")
+      refute has_element?(view, "img[alt=\"course image\"]")
     end
 
     test "applies sorting", %{conn: conn} do
@@ -267,6 +285,8 @@ defmodule OliWeb.SelectSourceTest do
 
       refute has_element?(view, "button[phx-click=\"selected\"]")
       assert has_element?(view, "img[alt=\"course image\"]")
+      assert has_element?(view, "#select_sort")
+      assert has_element?(view, "form[phx-change=\"update_view_type\"")
       refute has_element?(view, "a[href=\"#{details_view(section)}\"]")
       assert has_element?(view, "h5", "#{section.title}")
     end
@@ -295,6 +315,20 @@ defmodule OliWeb.SelectSourceTest do
 
       assert has_element?(view, "h5", "#{s1.title}")
       assert has_element?(view, "h5", "#{s2.title}")
+    end
+
+    test "applies view change", %{conn: conn} do
+      %Publication{project: project} = insert(:publication)
+      insert(:section, base_project: project)
+
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+
+      view
+      |> element("form[phx-change=\"update_view_type\"")
+      |> render_change(%{"view" => %{"type" => "list"}})
+
+      assert has_element?(view, "button[phx-click=\"selected\"]")
+      refute has_element?(view, "img[alt=\"course image\"]")
     end
 
     test "applies sorting", %{conn: conn} do

@@ -7,8 +7,10 @@ defmodule OliWeb.Delivery.SelectSource do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Lti.LtiParams
   alias Oli.Publishing
-  alias OliWeb.Common.{Breadcrumb, CardsViewFilter, Filter, Listing, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, Filter, FilterBox, Listing, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Field, RadioButton}
 
   import Oli.Utils
 
@@ -21,6 +23,7 @@ defmodule OliWeb.Delivery.SelectSource do
   data limit, :integer, default: 20
   data query, :string, default: ""
   data applied_query, :string, default: ""
+  data view_type, :atom, default: :card
 
   @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/3
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
@@ -47,7 +50,7 @@ defmodule OliWeb.Delivery.SelectSource do
     ], :independent_learner)
   end
 
-  def breadcrumb(previous, type, title \\ "Select Source") do
+  defp breadcrumb(previous, type, title \\ "Select Source") do
     previous ++
       [
         Breadcrumb.new(%{
@@ -122,45 +125,60 @@ defmodule OliWeb.Delivery.SelectSource do
 
   def render(assigns) do
     ~F"""
-    <div class="d-flex flex-column mt-4">
-      {#if is_instructor?(@live_action)}
-        <CardsViewFilter table_model={@table_model}>
+      <div class="d-flex flex-column mt-4">
+        <FilterBox table_model={@table_model} show_sort={is_cards_view?(@live_action, @view_type)} show_more_opts={is_instructor?(@live_action)}>
           <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-        </CardsViewFilter>
-      {#else}
-        <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
-        <div class="mb-4"/>
-      {/if}
 
-      <Listing
-        filter={@applied_query}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}
-        selected="selected"
-        sort="sort"
-        page_change="page_change"
-        show_bottom_paging={false}
-        cards_view={is_instructor?(@live_action)}
-        context={@context}/>
+          <:extra_opts>
+            <Form for={:view} change="update_view_type">
+              <Field name={:type} class="control w-100 d-flex align-items-center">
+                <div class="btn-group btn-group-toggle">
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
+                    <RadioButton value="card" checked={@view_type == :card} opts={hidden: true}/>
+                    <i class='fa fa-th'></i>
+                  </label>
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
+                    <RadioButton value="list" checked={@view_type == :list} opts={hidden: true}/>
+                    <i class='fa fa-list'></i>
+                  </label>
+                </div>
+              </Field>
+            </Form>
+          </:extra_opts>
+        </FilterBox>
 
-      {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
-        <div class="row mb-5">
-          <div class="col-8 mx-auto">
-            <div class="card">
-              <div class="card-body text-center">
-                <h5 class="card-title">Have a Course Authoring Account?</h5>
-                <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
-                <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+        <Listing
+          filter={@applied_query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          selected="selected"
+          sort="sort"
+          page_change="page_change"
+          show_bottom_paging={false}
+          cards_view={is_cards_view?(@live_action, @view_type)}
+          context={@context}/>
+
+        {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
+          <div class="row mb-5">
+            <div class="col-8 mx-auto">
+              <div class="card">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Have a Course Authoring Account?</h5>
+                  <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+                  <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      {/if}
-    </div>
+        {/if}
+      </div>
     """
   end
+
+  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket),
+    do: {:noreply, assign(socket, :view_type, String.to_atom(view_type))}
 
   def handle_event("selected", %{"id" => source}, socket),
     do: handle_select(socket.assigns.live_action, source, socket)
@@ -213,6 +231,10 @@ defmodule OliWeb.Delivery.SelectSource do
 
   defp is_instructor?(:admin), do: false
   defp is_instructor?(_), do: true
+
+  defp is_cards_view?(:independent_learner, :card), do: true
+  defp is_cards_view?(:lms_instructor, :card), do: true
+  defp is_cards_view?(_, _), do: false
 
   defp is_lms_instructor?(:lms_instructor), do: true
   defp is_lms_instructor?(_), do: false

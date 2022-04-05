@@ -26,7 +26,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         },
         %ColumnSpec{
           name: :requires_payment,
-          label: "Payment",
+          label: "Cost",
           render_fn: &__MODULE__.render_payment_column/3,
           sort_fn: &__MODULE__.sort_payment_column/2
         },

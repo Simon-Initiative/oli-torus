@@ -74,3 +74,10 @@ main.container {
     padding-right: 1em;
   }
 }
+
+@media (max-width: 992px) {
+  .filter-opts {
+    flex-direction: column;
+    gap: 1em;
+  }
+}

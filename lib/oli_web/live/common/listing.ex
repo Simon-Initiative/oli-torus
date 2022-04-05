@@ -18,7 +18,7 @@ defmodule OliWeb.Common.Listing do
 
   def render(assigns) do
     ~F"""
-    <div>
+    <div class="pb-5">
       {#if @filter != ""}
       <strong>Results filtered on &quot;{@filter}&quot;</strong>
       {/if}
