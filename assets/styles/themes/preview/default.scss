@@ -40,6 +40,14 @@ html.preview {
   $body-bg: $white;
   $body-color: $gray-900;
 
+  // Auth providers buttons
+
+  $google-button-background-color: $white;
+  $google-button-font-color: $gray-900;
+
+  $github-button-background-color: $white;
+  $github-button-font-color: $gray-900;
+
   ///////////////////////////////////////////////////////////////////////////////
   // IMPORTANT: DO NOT MODIFY IMPORT
   // This import is required and must always be after the last variable
@@ -246,6 +254,14 @@ html.preview.dark {
   $activity-purpose-checkpoint-color: lighten($blue, 10%);
   $activity-purpose-didigetthis-color: lighten($purple, 10%);
   $activity-purpose-learnbydoing-color: lighten($green, 10%);
+
+  // Auth providers buttons
+
+  $google-button-background-color: #4285f4;
+  $google-button-font-color: $white;
+
+  $github-button-background-color: $black;
+  $github-button-font-color: $white;
 
   ///////////////////////////////////////////////////////////////////////////////
   // IMPORTANT: DO NOT MODIFY IMPORT
