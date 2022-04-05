@@ -205,12 +205,13 @@ defmodule OliWeb.CognitoControllerTest do
       assert Groups.get_community_account_by!(%{user_id: new_user.id, community_id: community.id})
     end
 
-    test "redirects user with enrollments to my courses from product", %{
-      conn: conn,
-      community: community,
-      section: section,
-      email: email
-    } do
+    test "redirects user with enrollments to an intermediate page to prompt if they really want to create another section from product",
+         %{
+           conn: conn,
+           community: community,
+           section: section,
+           email: email
+         } do
       {:ok, user} =
         Accounts.insert_or_update_lms_user(%{
           sub: "user999",
@@ -236,15 +237,16 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.cognito_path(conn, :launch, section.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/cognito/prompt_create/products/#{section.slug}\">redirected</a>.</body></html>"
     end
 
-    test "redirects user with enrollments to my courses from project", %{
-      conn: conn,
-      community: community,
-      section: section,
-      email: email
-    } do
+    test "redirects user with enrollments to an intermediate page to prompt if they really want to create another section from project",
+         %{
+           conn: conn,
+           community: community,
+           section: section,
+           email: email
+         } do
       {:ok, user} =
         Accounts.insert_or_update_lms_user(%{
           sub: "user999",
@@ -265,12 +267,12 @@ defmodule OliWeb.CognitoControllerTest do
       params =
         community.id
         |> valid_params(id_token)
-        |> Map.put("project", section.base_project.slug)
+        |> Map.put("project_slug", section.base_project.slug)
 
       assert conn
              |> get(Routes.cognito_path(conn, :launch, section.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/sections\">redirected</a>.</body></html>"
+               "<html><body>You are being <a href=\"/cognito/prompt_create/projects/#{section.base_project.slug}\">redirected</a>.</body></html>"
     end
 
     test "redirects to provided error_url with missing params", %{
@@ -467,7 +469,8 @@ defmodule OliWeb.CognitoControllerTest do
       assert conn
              |> get(Routes.project_clone_path(conn, :launch_clone, project.slug, params))
              |> html_response(302) =~
-               "<html><body>You are being <a href=\"/cognito/prompt"
+               "<html><body>You are being <a href=\"/cognito/prompt_clone/projects/" <>
+                 project.slug
     end
 
     test "forbids a user with an authoring account to clone a project that does not allow duplication",
@@ -616,10 +619,10 @@ defmodule OliWeb.CognitoControllerTest do
     end
   end
 
-  describe "prompt" do
+  describe "prompt_clone" do
     setup [:admin_conn]
 
-    test "allows user to select between creating a new project copy and selecting an existing one",
+    test "allows author to select between creating a new project copy and selecting an existing one",
          %{
            conn: conn,
            project: project,
@@ -629,13 +632,33 @@ defmodule OliWeb.CognitoControllerTest do
 
       html =
         conn
-        |> get(Routes.cognito_path(conn, :prompt, project.slug))
+        |> get(Routes.prompt_project_clone_path(conn, :prompt_clone, project.slug))
         |> html_response(200)
 
       assert html =~
                "Would you like to\n<a href=\"/cognito/clone/#{project.slug}\">create another copy</a>"
 
       assert html =~ "<a href=\"/authoring/project/#{duplicated.slug}\">#{duplicated.title}</a>"
+    end
+  end
+
+  describe "prompt_create" do
+    setup [:independent_instructor_conn]
+
+    test "allows user to select between creating a new section and seeing my courses",
+         %{
+           conn: conn,
+           project: project
+         } do
+      html =
+        conn
+        |> get(Routes.prompt_project_create_path(conn, :prompt_create, project.slug))
+        |> html_response(200)
+
+      assert html =~
+               "Would you like to\n<a href=\"/sections/independent/new?source_id=project%3A#{project.id}\">create a new section with this lesson</a>"
+
+      assert html =~ "<a href=\"/sections\">go to my existing sections</a>"
     end
   end
 

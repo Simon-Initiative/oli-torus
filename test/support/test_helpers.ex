@@ -243,8 +243,10 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
-  def user_conn(%{conn: conn}) do
-    user = user_fixture()
+  def independent_instructor_conn(context), do: user_conn(context, %{can_create_sections: true})
+
+  def user_conn(%{conn: conn}, attrs \\ %{}) do
+    user = user_fixture(attrs)
     conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn, user: user}
