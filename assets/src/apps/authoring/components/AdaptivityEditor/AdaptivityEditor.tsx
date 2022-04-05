@@ -114,11 +114,14 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       activityClone.authoring.rules = rulesClone;
       // due to the way this works technically if we are *deleting" a condition with an external reference
       // then it will *not* be removed here, but it will be removed the next time the lesson is opened in the editor
+      const actionsToUpdate = rule?.event?.params?.actions;
       const conditionRefs = findReferencedActivitiesInConditions(
         rule.conditions.any || rule.conditions.all,
+        actionsToUpdate,
       );
       const variableRefs = getReferencedKeysInConditions(
         rule.conditions.any || rule.conditions.all,
+        actionsToUpdate,
       );
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];

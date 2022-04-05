@@ -261,7 +261,7 @@ export const defaultWrongRule = {
   },
 };
 
-export const findReferencedActivitiesInConditions = (conditions: any) => {
+export const findReferencedActivitiesInConditions = (conditions: any, actions: any) => {
   const referencedActivities: Set<string> = new Set();
 
   conditions.forEach((condition: any) => {
@@ -280,15 +280,36 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
       });
     }
     if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
+      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all, null);
       childRefs.forEach((ref) => referencedActivities.add(ref));
     }
   });
 
+  actions?.forEach((action: any) => {
+    if (action.type === 'mutateState') {
+      if (action.params.target && action.params.target.indexOf('|stage.') !== -1) {
+        const referencedSequenceId = action.params.target.split('|stage.')[0];
+        referencedActivities.add(referencedSequenceId);
+      }
+      if (
+        typeof action.params.value === 'string' &&
+        action.params.value.indexOf('|stage.') !== -1
+      ) {
+        // value could have more than one reference inside it
+        const exprs = extractAllExpressionsFromText(action.params.value);
+        exprs.forEach((expr: string) => {
+          if (expr.indexOf('|stage.') !== -1) {
+            const referencedSequenceId = expr.split('|stage.')[0];
+            referencedActivities.add(referencedSequenceId);
+          }
+        });
+      }
+    }
+  });
   return Array.from(referencedActivities);
 };
 
-export const getReferencedKeysInConditions = (conditions: any) => {
+export const getReferencedKeysInConditions = (conditions: any, actions: any) => {
   const references: Set<string> = new Set();
 
   conditions.forEach((condition: any) => {
@@ -320,55 +341,25 @@ export const getReferencedKeysInConditions = (conditions: any) => {
       });
     }
     if (condition.any || condition.all) {
-      const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
+      const childRefs = getReferencedKeysInConditions(condition.any || condition.all, null);
       childRefs.forEach((ref) => references.add(ref));
     }
   });
 
-  return Array.from(references);
-};
-
-export const findReferencedActivitiesInMutateConditions = (conditions: any) => {
-  const referencedActivities: Set<string> = new Set();
-
-  conditions.forEach((condition: any) => {
-    if (condition.type === 'mutateState') {
-      if (condition.target && condition.target.indexOf('|stage.') !== -1) {
-        const referencedSequenceId = condition.target.split('|stage.')[0];
-        referencedActivities.add(referencedSequenceId);
-      }
-      if (typeof condition.value === 'string' && condition.value.indexOf('|stage.') !== -1) {
-        // value could have more than one reference inside it
-        const exprs = extractAllExpressionsFromText(condition.value);
-        exprs.forEach((expr: string) => {
-          if (expr.indexOf('|stage.') !== -1) {
-            const referencedSequenceId = expr.split('|stage.')[0];
-            referencedActivities.add(referencedSequenceId);
-          }
-        });
-      }
-    }
-  });
-
-  return Array.from(referencedActivities);
-};
-
-export const getReferencedKeysInMutateConditions = (conditions: any) => {
-  const references: Set<string> = new Set();
-  conditions.forEach((condition: any) => {
-    if (condition.type === 'mutateState') {
+  actions?.forEach((action: any) => {
+    if (action.type === 'mutateState') {
       // the target *must* be a reference to a key we need
-      if (condition.params.target) {
-        references.add(condition.params.target);
+      if (action.params.target) {
+        references.add(action.params.target);
       }
       // the value *might* contain a reference to a key we need
       if (
-        typeof condition.params.value === 'string' &&
-        condition.params.value.search(/app\.|variables\.|stage\.|session\./) !== -1
+        typeof action.params.value === 'string' &&
+        action.params.value.search(/app\.|variables\.|stage\.|session\./) !== -1
       ) {
         // value could have more than one reference inside it
-        const exprs = extractAllExpressionsFromText(condition.params.value);
-        const expressions = condition.params.value.match(/{([^{^}]+)}/g);
+        const exprs = extractAllExpressionsFromText(action.params.value);
+        const expressions = action.params.value.match(/{([^{^}]+)}/g);
         exprs.forEach((expr: string) => {
           if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
             references.add(expr);

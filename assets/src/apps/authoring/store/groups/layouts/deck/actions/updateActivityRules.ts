@@ -2,9 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
   findReferencedActivitiesInConditions,
-  findReferencedActivitiesInMutateConditions,
   getReferencedKeysInConditions,
-  getReferencedKeysInMutateConditions,
 } from 'adaptivity/rules-engine';
 import {
   inferTypeFromComponentType,
@@ -102,7 +100,7 @@ export const updateActivityRules = createAsyncThunk(
             const rootCondition = clone(conditions || { all: [] }); // layers might not have conditions
             const rootConditionIsAll = !!rootCondition.all;
             const conditionsToUpdate = rootCondition[rootConditionIsAll ? 'all' : 'any'];
-            const mutateConditionsToUpdate = event.params.actions;
+            const actionsToUpdate = event.params.actions;
             if (!rootCondition.id) {
               rootCondition.id = `b:${guid()}`;
             }
@@ -111,13 +109,11 @@ export const updateActivityRules = createAsyncThunk(
               .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
-            referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
-            referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
             referencedSequenceIds.push(
-              ...findReferencedActivitiesInMutateConditions(mutateConditionsToUpdate),
+              ...findReferencedActivitiesInConditions(conditionsToUpdate, actionsToUpdate),
             );
             referencedVariableKeys.push(
-              ...getReferencedKeysInMutateConditions(mutateConditionsToUpdate),
+              ...getReferencedKeysInConditions(conditionsToUpdate, actionsToUpdate),
             );
             rule.conditions = rootCondition;
             if (forceProgress) {
