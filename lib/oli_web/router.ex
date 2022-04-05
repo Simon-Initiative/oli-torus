@@ -938,8 +938,29 @@ defmodule OliWeb.Router do
       :authoring
     ])
 
-    get("/prompt/:project_slug", CognitoController, :prompt)
+    get("/prompt_clone/projects/:project_slug", CognitoController, :prompt_clone,
+      as: :prompt_project_clone
+    )
+
     get("/clone/:project_slug", CognitoController, :clone)
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :delivery_protected,
+      :require_independent_instructor,
+      :delivery_layout
+    ])
+
+    get("/prompt_create/projects/:project_slug", CognitoController, :prompt_create,
+      as: :prompt_project_create
+    )
+
+    get("/prompt_create/products/:product_slug", CognitoController, :prompt_create,
+      as: :prompt_product_create
+    )
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely
