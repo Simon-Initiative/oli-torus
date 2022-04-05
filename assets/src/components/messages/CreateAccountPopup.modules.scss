@@ -1,65 +1,67 @@
-#create-account-popup {
+@use 'authoring/theme' as authoring;
+
+:global(#create-account-popup) {
   position: absolute;
   top: 60px;
   right: 30px;
-  z-index: $z-overlay-1;
+  z-index: authoring.$z-overlay-1;
 }
 
-.create-account-popup {
+.createAccountPopup {
   position: relative;
   border-radius: 4px;
-  border: 1px solid $gray-400;
+  border: 1px solid authoring.$gray-400;
   padding: 20px;
   width: 500px;
-  background-color: $body-bg;
-  box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
+  background-color: authoring.$body-bg;
+  box-shadow: 1px 1px 8px 1px rgba($color: authoring.$gray-400, $alpha: 0.33);
 
-  & > #arrow,
-  & > #arrow::before {
+  & > .arrow,
+  & > .arrow::before {
     position: absolute;
     width: 12px;
     height: 12px;
     background: inherit;
   }
 
-  #arrow {
+  .arrow {
     visibility: hidden;
   }
 
-  & > #arrow::before {
+  & > .arrow::before {
     visibility: visible;
-    content: "";
+    content: '';
     transform: rotate(45deg);
-    border-left: 1px solid $gray-400;
-    border-top: 1px solid $gray-400;
+    border-left: 1px solid authoring.$gray-400;
+    border-top: 1px solid authoring.$gray-400;
   }
 
-  & > #arrow {
+  & > .arrow {
     top: -6px;
     right: 16px;
   }
 
   transform-origin: top right;
 
-  &.enter {
+  &:global(.enter) {
     opacity: 0;
     transform: scale(0.9);
   }
-  &.enter-active {
+  &:global(.enter-active) {
     opacity: 1;
     transform: translateX(0);
     transition: opacity 300ms, transform 300ms;
   }
-  &.exit {
+  &:global(.exit) {
     opacity: 1;
   }
-  &.exit-active {
+  &:global(.exit-active) {
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 300ms, transform 300ms;
   }
 
-  .close-btn {
+  :global(.close-btn) {
     padding: 0.5rem 1rem;
     margin: -1rem -1rem -1rem auto;
     height: 3rem;

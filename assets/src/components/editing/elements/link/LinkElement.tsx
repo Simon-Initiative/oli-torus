@@ -10,6 +10,8 @@ import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
 import { useSelected } from 'slate-react';
 
+import './LinkElement.scss';
+
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {
   const selected = useSelected();

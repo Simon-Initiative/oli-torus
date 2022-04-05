@@ -9,8 +9,9 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
-import './InputNumber.scss';
 import { InputNumberModel } from './schema';
+
+import './InputNumber.scss';
 
 const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

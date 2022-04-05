@@ -37,8 +37,9 @@ import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { registerUnload, unregisterUnload } from './listeners';
-import './PageEditor.scss';
 import { empty, PageUndoable, Undoables } from './types';
+
+import './PageEditor.scss';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements

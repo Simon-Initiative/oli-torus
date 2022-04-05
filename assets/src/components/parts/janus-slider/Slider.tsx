@@ -8,6 +8,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import { SliderModel } from './schema';
+
 import './Slider.scss';
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {

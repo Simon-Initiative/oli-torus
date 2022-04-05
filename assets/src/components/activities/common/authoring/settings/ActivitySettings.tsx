@@ -4,6 +4,7 @@ import { classNames } from 'utils/classNames';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+
 import './ActivitySettings.scss';
 
 interface SettingProps {

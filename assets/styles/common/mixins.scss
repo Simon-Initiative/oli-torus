@@ -24,6 +24,10 @@
   text-overflow: ellipsis;
 }
 
+@mixin clearfix {
+  clear: both;
+}
+
 @function toRem($value) {
   $remValue: ($value / 16) + rem;
   @return $remValue;

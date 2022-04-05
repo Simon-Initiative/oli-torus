@@ -10,6 +10,8 @@ import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpi
 import { relativeToNow } from 'utils/date';
 import { uploadFiles } from './upload';
 
+import './MediaManager.scss';
+
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
 const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';

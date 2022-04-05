@@ -1,12 +1,12 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { Maybe, maybe } from 'tsmonad';
-import { Editor } from 'components/editing/editor/Editor';
+import { maybe } from 'tsmonad';
 import { configureStore } from 'state/store';
+import { DarkModeSelector } from 'components/misc/DarkModeSelector';
 
 export const registry = {
-  Editor,
+  DarkModeSelector,
 } as any;
 
 export type ComponentName = keyof typeof registry;
@@ -14,7 +14,7 @@ export type ComponentName = keyof typeof registry;
 const store = configureStore();
 
 // Expose React/Redux APIs to server-side rendered templates
-const component = {
+export const component = {
   mount: (componentName: ComponentName, element: HTMLElement, context: any = {}) => {
     maybe(registry[componentName]).lift((Component) => {
       ReactDOM.render(
@@ -26,13 +26,3 @@ const component = {
     });
   },
 };
-window.component = component;
-
-// Expose other libraries to server-side rendered templates
-window.Maybe = Maybe;
-declare global {
-  interface Window {
-    component: typeof component;
-    Maybe: typeof Maybe;
-  }
-}

@@ -553,7 +553,6 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       className={`fib-container`}
       ref={fibContainer}
     >
-      <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
       <div className="scene">
         <div className="app">

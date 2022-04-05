@@ -1,5 +1,5 @@
-@import 'authoring/mixins';
-@import 'authoring/variables';
+@use 'authoring/theme' as authoring;
+@import 'common/mixins';
 
 .resource-editor {
   margin: 0 auto;
@@ -13,13 +13,13 @@
     all: unset;
     flex: 1;
     padding: 0 40px;
-    border: 1px solid $gray-200;
+    border: 1px solid authoring.$gray-200;
     border-radius: 4px;
   }
 }
 
-.card-body.delivery {
-  .slate-editor {
+.resource-block-editor {
+  .card-body > .content > .slate-editor {
     border: none;
   }
 }

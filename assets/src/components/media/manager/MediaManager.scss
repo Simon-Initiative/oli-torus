@@ -1,5 +1,5 @@
-@import 'authoring/mixins';
-@import 'authoring/variables';
+@use 'authoring/theme' as authoring;
+@import 'common/mixins';
 
 .media-manager {
   display: flex;
@@ -26,7 +26,7 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        z-index: $dropdown-menu;
+        z-index: authoring.$dropdown-menu;
 
         i {
           margin: 5px;
@@ -44,7 +44,7 @@
 
           &:active {
             background-color: initial;
-            color: $selection;
+            color: authoring.$selection;
           }
         }
       }
@@ -53,8 +53,8 @@
     .layout-control {
       button {
         height: 38px;
-        color: $secondary;
-        border: 1px solid $secondary;
+        color: authoring.$secondary;
+        border: 1px solid authoring.$secondary;
         border-right: none;
 
         &:first-child {
@@ -63,20 +63,20 @@
         }
 
         &:last-child {
-          border-right: 1px solid $secondary;
+          border-right: 1px solid authoring.$secondary;
           border-top-right-radius: 4px;
           border-bottom-right-radius: 4px;
         }
 
         &:hover {
-          background-color: $gray-100;
+          background-color: authoring.$gray-100;
         }
 
         &:active,
         &.selected {
-          background-color: $secondary;
-          color: $white;
-          border-color: $secondary;
+          background-color: authoring.$secondary;
+          color: authoring.$white;
+          border-color: authoring.$secondary;
           box-shadow: none;
         }
       }
@@ -87,7 +87,7 @@
     display: flex;
     flex-direction: row;
     height: 400px;
-    border: 1px solid $gray-200;
+    border: 1px solid authoring.$gray-200;
 
     .media-sidebar {
       display: flex;
@@ -95,7 +95,7 @@
       width: 150px;
       height: 100%;
       overflow: auto;
-      border-right: 1px solid $gray-200;
+      border-right: 1px solid authoring.$gray-200;
       list-style: none;
       padding: 0;
       margin: 0;
@@ -104,17 +104,17 @@
         width: 100%;
         padding: 10px;
         text-align: center;
-        color: $body-color;
+        color: authoring.$body-color;
         cursor: pointer;
 
         &.video {
           cursor: default;
-          color: $gray-600;
+          color: authoring.$gray-600;
         }
 
         &.active {
           color: initial;
-          background-color: $gray-300;
+          background-color: authoring.$gray-300;
         }
       }
     }
@@ -129,7 +129,7 @@
         padding: 20px 0;
         text-align: center;
         font-size: 0.8em;
-        color: $gray-500;
+        color: authoring.$gray-500;
 
         i {
           margin: 0 5px;
@@ -141,9 +141,9 @@
       .media-selection-details {
         display: flex;
         flex-direction: column;
-        border-top: 1px solid $gray-200;
+        border-top: 1px solid authoring.$gray-200;
         font-size: 0.9em;
-        color: $body-color;
+        color: authoring.$body-color;
         @include enable-select;
 
         .details-title {
@@ -263,7 +263,7 @@
             cursor: pointer;
 
             &:hover {
-              border: 1px solid $selection;
+              border: 1px solid authoring.$selection;
 
               .selection-check {
                 display: block;
@@ -272,8 +272,8 @@
 
             &:active,
             &.selected {
-              background-color: rgba($selection, 0.3);
-              border: 1px solid $selection;
+              background-color: rgba(authoring.$selection, 0.3);
+              border: 1px solid authoring.$selection;
 
               .selection-check {
                 display: block;
@@ -291,7 +291,7 @@
         .list-header {
           display: flex;
           flex-direction: row;
-          background-color: $gray-100;
+          background-color: authoring.$gray-100;
 
           .sel-col,
           .name-col,
@@ -367,7 +367,7 @@
           }
 
           &:nth-child(odd) {
-            background-color: lighten($gray-100, 5%);
+            background-color: rgba(authoring.$gray-100, 0.8);
           }
 
           .selection-check {
@@ -401,7 +401,7 @@
             }
 
             &:hover {
-              border: 1px solid $selection;
+              border: 1px solid authoring.$selection;
 
               .selection-check {
                 visibility: visible;
@@ -410,8 +410,8 @@
 
             &:active,
             &.selected {
-              background-color: rgba($selection, 0.3);
-              border: 1px solid $selection;
+              background-color: rgba(authoring.$selection, 0.3);
+              border: 1px solid authoring.$selection;
 
               .selection-check {
                 visibility: visible;
@@ -427,7 +427,7 @@
     display: flex;
     flex-direction: row;
     margin-top: 5px;
-    color: $body-color;
+    color: authoring.$body-color;
     height: 24px;
   }
 }

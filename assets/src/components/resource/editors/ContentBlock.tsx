@@ -77,7 +77,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
-      <div className="card-body delivery">
+      <div className="card-body">
         <div
           className="content"
           draggable={props.editMode}

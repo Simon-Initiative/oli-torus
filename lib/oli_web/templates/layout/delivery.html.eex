@@ -11,12 +11,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
     <link rel="manifest" href="/site.webmanifest">
 
-    <!-- This page supports both dark and light color schemes, defaults to light. -->
-    <meta name="color-scheme" content="light dark">
-
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="delivery-theme-light" rel="stylesheet" href="/css/delivery_torus_light.css" media="(prefers-color-scheme: light)"/>
-    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_torus_dark.css" media="(prefers-color-scheme: dark)"/>
+    <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
     <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
@@ -66,6 +62,7 @@
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
   </head>
   <body>
 
