@@ -284,7 +284,7 @@ export const findReferencedActivitiesInConditions = (conditions: any, actions: a
       childRefs.forEach((ref) => referencedActivities.add(ref));
     }
   });
-
+  //now we are starting to look for actions i.e. Mutate State conditions
   actions?.forEach((action: any) => {
     if (action.type === 'mutateState') {
       if (action.params.target && action.params.target.indexOf('|stage.') !== -1) {
@@ -345,7 +345,7 @@ export const getReferencedKeysInConditions = (conditions: any, actions: any) => 
       childRefs.forEach((ref) => references.add(ref));
     }
   });
-
+  //now we are starting to look for actions i.e. Mutate State conditions
   actions?.forEach((action: any) => {
     if (action.type === 'mutateState') {
       // the target *must* be a reference to a key we need
