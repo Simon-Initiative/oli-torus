@@ -131,8 +131,17 @@ export const getExpressionStringForValue = (
           }
         }
       } catch (e) {
-        // if we have parsing error then we're guessing it's CSS
-        actuallyAString = true;
+        //lets evaluat everything if first and last char are {}
+        if (val[0] === '{' && val[val.length - 1] === '}') {
+          const evaluatedValuess = evalScript(expressions[0], env).result;
+          if (evaluatedValuess !== undefined) {
+            val = evaluatedValuess;
+            actuallyAString = false;
+          }
+        } else {
+          // if we have parsing error then we're guessing it's CSS
+          actuallyAString = true;
+        }
       }
     }
     if (!actuallyAString) {
