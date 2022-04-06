@@ -24,10 +24,7 @@ import {
 } from '../../../delivery/store/features/groups/selectors/deck';
 import { selectCurrentGroup } from '../../../delivery/store/features/groups/slice';
 import { saveActivity } from '../../store/activities/actions/saveActivity';
-import {
-  updateSequenceItem,
-  updateSequenceItemFromActivity,
-} from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
+import { updateSequenceItem } from '../../store/groups/layouts/deck/actions/updateSequenceItemFromActivity';
 import { savePage } from '../../store/page/actions/savePage';
 import { selectState as selectPageState, updatePage } from '../../store/page/slice';
 import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/slice';
@@ -434,6 +431,7 @@ const RightMenu: React.FC<any> = () => {
             schema={lessonSchema as JSONSchema7}
             uiSchema={lessonUiSchema}
             value={lessonData}
+            triggerOnChange={['CustomLogic']}
             onChangeHandler={lessonPropertyChangeHandler}
           />
         </div>
