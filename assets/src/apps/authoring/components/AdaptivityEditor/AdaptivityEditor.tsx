@@ -1,5 +1,7 @@
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
@@ -263,12 +265,50 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleActionChange = async (action: any, changes: any) => {
     const updated = { ...action, params: { ...action.params, ...changes } };
     const actionIndex = actions.indexOf(action);
-    /* console.log('action changed', { action, changes, actionIndex }); */
     if (actionIndex !== -1) {
       const cloneActions = [...actions];
       cloneActions[actionIndex] = updated;
       setActions(cloneActions);
       debounceNotifyChanges();
+
+      const activityClone = clone(currentActivity);
+      const actionsRefs = findReferencedActivitiesInActions([updated]);
+
+      const variableRefs = getReferencedKeysInActions([updated]);
+
+      if (!activityClone.authoring.variablesRequiredForEvaluation) {
+        activityClone.authoring.variablesRequiredForEvaluation = [];
+      }
+      activityClone.authoring.variablesRequiredForEvaluation.push(...variableRefs);
+
+      if (actionsRefs.length > 0) {
+        if (!activityClone.authoring.activitiesRequiredForEvaluation) {
+          activityClone.authoring.activitiesRequiredForEvaluation = [];
+        }
+        // need to find the resourceId based on the sequenceId that is referenced
+        const resourceIds = actionsRefs
+          .map((actionRef: any) => {
+            const sequenceItem = findInSequence(sequence, actionRef);
+            if (sequenceItem) {
+              return sequenceItem.resourceId;
+            } else {
+              console.warn(
+                `[handleActionChange] could not find referenced activity ${actionRef} in sequence`,
+                sequence,
+              );
+            }
+          })
+          .filter((id) => id) as number[];
+        const current = activityClone.authoring.activitiesRequiredForEvaluation;
+        activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
+          new Set([...current, ...resourceIds]),
+        );
+        /* console.log('[handleActionChange] adding activities to required for evaluation', {
+          activityClone,
+          action,
+        }); */
+      }
+      dispatch(saveActivity({ activity: activityClone, undoable: true }));
     }
   };
 
