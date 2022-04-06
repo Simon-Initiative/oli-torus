@@ -355,7 +355,7 @@ export const getReferencedKeysInActions = (actions: any) => {
   const references: Set<string> = new Set();
   actions.forEach((action: any) => {
     if (action.type === 'mutateState') {
-      // the fact *must* be a reference to a key we need
+      // the target *must* be a reference to a key we need
       if (action.params.target) {
         references.add(action.params.target);
       }
