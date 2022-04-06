@@ -8,7 +8,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { clone, parseBool, parseBoolean } from '../../../utils/common';
+import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
@@ -585,6 +585,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             typeof changedVar.value === 'number'
           ) {
             changedVar.type = CapiVariableTypes.NUMBER;
+          } else if (
+            changedVar.type === CapiVariableTypes.STRING &&
+            !Number.isNaN(changedVar.value)
+          ) {
+            const parsedValue = parseNumString(changedVar.value);
+            if (typeof parsedValue === 'number') {
+              changedVar.type = CapiVariableTypes.NUMBER;
+              changedVar.value = parsedValue;
+            }
           }
           mutableState.push(changedVar);
           hasDiff = true;
