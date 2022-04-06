@@ -393,9 +393,15 @@ describe('Operators', () => {
       const conditionValue2 = '[1, 3, 5, 7]';
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
-      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
 
       expect(notContainsAnyOfOperator('123A2', ['A2', 'B2'])).toEqual(false);
+      expect(
+        containsAnyOfOperator(
+          'blah blah tree snow something whatever',
+          '[tree,snow,leaves,ground]',
+        ),
+      ).toEqual(true);
     });
 
     it('should handle if the conditionValue is an actual array', () => {
@@ -420,7 +426,7 @@ describe('Operators', () => {
       expect(notContainsAnyOfOperator('Milk, Bread, Oven Mitts', conditionValue)).toEqual(true);
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
-      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
     });
   });
 
