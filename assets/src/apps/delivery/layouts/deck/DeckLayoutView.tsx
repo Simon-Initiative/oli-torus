@@ -146,7 +146,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         .filter((s: any) => s);
       // execute each sequentially in case there are errors (missing functions)
       statements.forEach((statement) => {
-        evalScript(statement, defaultGlobalEnv);
+        try {
+          evalScript(statement, defaultGlobalEnv);
+        } catch (e) {
+          console.error('Error found processing variables: ', e);
+        }
       });
     }
   }, [pageContent]);
