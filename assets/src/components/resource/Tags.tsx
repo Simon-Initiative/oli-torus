@@ -7,6 +7,8 @@ import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/tags';
 import guid from 'utils/guid';
 
+import './Tags.scss';
+
 export type TagsProps = {
   tags: Tag[];
   selected: ResourceId[];

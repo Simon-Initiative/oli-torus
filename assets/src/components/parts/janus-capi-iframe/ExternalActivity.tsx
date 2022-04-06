@@ -970,11 +970,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
-          handleSetData(data);
+          if (context !== contexts.REVIEW) handleSetData(data);
           break;
 
         case JanusCAPIRequestTypes.CHECK_REQUEST:
-          handleCheckRequest(data);
+          if (context !== contexts.REVIEW) handleCheckRequest(data);
           break;
 
         case JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_REQUEST:

@@ -1,0 +1,40 @@
+title Reentrant Locking For Page and Activity Editing
+
+actor User
+
+participantgroup #lightgreen **Torus**
+
+participantgroup #lightgrey Server Side
+participant ResourceController
+participant ActivityController
+participant LockController
+
+end
+
+participantgroup #pink Client Side
+participant ResourceEditor
+participant ActivityEditor
+end
+
+end
+
+participantgroup #lightblue **Activity**
+participant Activity Authoring Impl
+end
+
+
+User->ResourceController:edit page "P1"
+ResourceController->ResourceEditor:render
+ResourceEditor->LockController:acquire lock for "P1"
+LockController->ResourceEditor:acquired
+User->ResourceEditor:clicks "edit activity"
+ResourceEditor->ActivityController:display activity editor
+ActivityController->ActivityEditor:render
+ActivityEditor->LockController:acquire lock for "P1"
+LockController->ActivityEditor:acquired
+ActivityEditor->Activity Authoring Impl:render with\n editing enabled
+
+User->ResourceEditor:Navigates away, ending editing
+ResourceEditor->LockController:release lock "P1"
+
+

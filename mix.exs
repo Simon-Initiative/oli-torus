@@ -27,12 +27,7 @@ defmodule Oli.MixProject do
       name: "OLI Torus",
       source_url: "https://github.com/Simon-Initiative/oli-torus",
       homepage_url: "http://oli.cmu.edu",
-      docs: [
-        # The main page in the docs
-        main: "Oli",
-        logo: "assets/static/images/torus-icon.png",
-        extras: ["README.md", "LICENSE.md"]
-      ],
+      docs: docs(),
       releases: [
         oli: [
           include_executables_for: [:unix],
@@ -43,6 +38,60 @@ defmodule Oli.MixProject do
       default_release: :oli
     ]
   end
+
+
+  defp docs do
+    [
+      main: "introduction",
+      assets: "doc_assets",
+      logo: "assets/static/images/torus-icon.png",
+      extra_section: "GUIDES",
+      extras: extras(),
+      groups_for_extras: groups_for_extras(),
+      filter_modules: "ThisModuleDoesNotExist"
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/starting/end-user.md",
+      "guides/starting/developer.md",
+      "guides/starting/self-hosted.md",
+      "guides/process/client-coding.md",
+      "guides/process/server-coding.md",
+      "guides/process/pr-template.md",
+      "guides/process/changelog-pr.md",
+      "guides/process/deployment.md",
+      "guides/process/building.md",
+      "guides/design/introduction.md",
+      "guides/design/high-level.md",
+      "guides/design/publication-model.md",
+      "guides/design/attempt.md",
+      "guides/design/attempt-handling.md",
+      "guides/design/locking.md",
+      "guides/design/page-model.md",
+      "guides/design/gdpr.md",
+      "guides/design/misc.md",
+      "guides/activities/overview.md",
+      "guides/lti/implementing.md",
+      "guides/lti/config.md",
+      "guides/ingest/overview.md",
+      "guides/ingest/media.md"
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      "Getting started": ~r/guides\/starting\/.?/,
+      "Releases": ~r/guides\/releases\/.?/,
+      "Process": ~r/guides\/process\/.?/,
+      "System design": ~r/guides\/design\/.?/,
+      "Activity SDK": ~r/guides\/activities\/.?/,
+      "LTI 1.3": ~r/guides\/lti\/.?/,
+      "Content ingestion": ~r/guides\/ingest\/.?/
+    ]
+  end
+
 
   # Configuration for the OTP application.
   #
@@ -88,7 +137,7 @@ defmodule Oli.MixProject do
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
       {:excoveralls, "~> 0.14.4", only: :test},
-      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},

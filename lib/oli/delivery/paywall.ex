@@ -76,7 +76,12 @@ defmodule Oli.Delivery.Paywall do
       :relative_to_section ->
         case start_date do
           nil -> false
-          _ -> Date.compare(Date.utc_today(), Date.add(start_date, days)) == :lt
+          _ ->
+            case Date.compare(Date.utc_today(), Date.add(start_date, days)) do
+              :lt -> true
+              :eq -> true
+              _ -> false
+            end
         end
 
       :relative_to_student ->

@@ -6,6 +6,8 @@ import { cursorAtEndOfInput, cursorAtBeginningOfInput } from 'components/editing
 import { ModelElement } from 'data/content/model/elements/types';
 import { getEditMode } from 'components/editing/elements/utils';
 
+import './Settings.scss';
+
 // Reusable components for settings UIs
 
 export const onEnterApply = (e: React.KeyboardEvent, onApply: () => void) => {

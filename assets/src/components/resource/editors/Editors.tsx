@@ -25,6 +25,8 @@ import { Undoable } from 'components/activities/types';
 import { Tag } from 'data/content/tags';
 import { EditorErrorBoundary } from './editor_error_boundary';
 
+import './Editors.scss';
+
 export type EditorsProps = {
   editMode: boolean; // Whether or not we can edit
   content: Immutable.OrderedMap<string, ResourceContent>; // Content of the resource
@@ -95,7 +97,7 @@ export const Editors = (props: EditorsProps) => {
     const isShiftArrowDown = isHotkey('shift+down');
     const isShiftArrowUp = isHotkey('shift+up');
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (isShiftArrowDown(e.nativeEvent)) {
         onMove(contentKey, false);
       } else if (isShiftArrowUp(e.nativeEvent)) {
@@ -140,6 +142,7 @@ export const Editors = (props: EditorsProps) => {
         key={'control-container-' + contentKey}
         id={`re${contentKey}`}
         className={classNames(
+          'editors',
           'resource-block-editor-and-controls',
           contentKey,
           contentKey === activeDragId ? 'is-dragging' : '',

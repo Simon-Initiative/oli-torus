@@ -5,6 +5,9 @@ import { Objective, ResourceId } from 'data/content/objective';
 import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
+import { classNames } from 'utils/classNames';
+
+import styles from './ObjectivesSelection.modules.scss';
 
 export type ObjectivesProps = {
   objectives: Objective[];
@@ -28,7 +31,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const asObjectives = selected.map((s) => map.get(s) as Objective);
 
   return (
-    <div className="flex-grow-1 objectives-selection">
+    <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
         id={id}
         multiple={true}

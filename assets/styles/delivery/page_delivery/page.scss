@@ -39,10 +39,19 @@ h1.title {
   height: 50px;
 }
 
-#content {
+#page-content {
   width: 100%;
   flex: 1;
   margin-top: 20px;
+}
+
+.content {
+  max-width: 770px;
+  margin: 0 auto;
+
+  & > * {
+    margin-bottom: 1.5rem;
+  }
 }
 
 .selection {
@@ -87,7 +96,7 @@ h1.title {
     display: none;
   }
 
-  #content {
+  #page-content {
     margin-left: 0px;
   }
 }
