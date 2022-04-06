@@ -62,7 +62,7 @@ const populateEntries = () => {
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
       .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
+      .map((p) => ({ prefix: 'delivery_adaptive_themes_default_', themePath: p })),
     ...glob
       .sync('./styles/themes/preview/*.scss')
       .map((p) => ({ prefix: 'preview_', themePath: p })),
