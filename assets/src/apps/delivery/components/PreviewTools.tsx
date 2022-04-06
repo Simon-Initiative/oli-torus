@@ -19,11 +19,7 @@ const Title: React.FC<any> = (props: TitleProps) => {
     <div className="pt-header">
       <button onClick={() => togglePanel()}>
         <svg
-          fill={
-            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-              ? '#ffffff'
-              : '#000000'
-          }
+          fill="#000000" // TODO: use setting based on class
           height="24"
           viewBox="0 0 14 14"
           width="24"
@@ -47,11 +43,7 @@ const Title: React.FC<any> = (props: TitleProps) => {
 const ScreensIcon = () => (
   <svg
     className="dock__icon"
-    fill={
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? '#ffffff'
-        : '#000000'
-    }
+    fill="#000000" // TODO: use setting based on class
     height="24"
     viewBox="0 0 18 18"
     width="24"
@@ -64,11 +56,7 @@ const ScreensIcon = () => (
 const AdaptivityIcon = () => (
   <svg
     className="dock__icon"
-    fill={
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? '#ffffff'
-        : '#000000'
-    }
+    fill="#000000" // TODO: use setting based on class
     height="24"
     viewBox="0 0 18 18"
     width="24"
@@ -84,11 +72,7 @@ const AdaptivityIcon = () => (
 const InspectorIcon = () => (
   <svg
     className="dock__icon"
-    fill={
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? '#ffffff'
-        : '#000000'
-    }
+    fill="#000000" // TODO: use setting based on class
     height="24"
     viewBox="0 0 18 18"
     width="24"
