@@ -379,7 +379,6 @@ defmodule OliWeb.Router do
 
     # Editors
     get("/:project_id/resource/:revision_slug", ResourceController, :edit)
-    get("/:project_id/resource/:revision_slug/activity/:activity_slug", ActivityController, :edit)
 
     # Collaborators
     post("/:project_id/collaborators", CollaboratorController, :create)
