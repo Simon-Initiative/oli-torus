@@ -261,7 +261,7 @@ export const defaultWrongRule = {
   },
 };
 
-export const findReferencedActivitiesInConditions = (conditions: any, actions: any) => {
+export const findReferencedActivitiesInConditions = (conditions: any) => {
   const referencedActivities: Set<string> = new Set();
 
   conditions.forEach((condition: any) => {
@@ -280,36 +280,14 @@ export const findReferencedActivitiesInConditions = (conditions: any, actions: a
       });
     }
     if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all, null);
+      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
       childRefs.forEach((ref) => referencedActivities.add(ref));
-    }
-  });
-  //now we are starting to look for actions i.e. Mutate State conditions
-  actions?.forEach((action: any) => {
-    if (action.type === 'mutateState') {
-      if (action.params.target && action.params.target.indexOf('|stage.') !== -1) {
-        const referencedSequenceId = action.params.target.split('|stage.')[0];
-        referencedActivities.add(referencedSequenceId);
-      }
-      if (
-        typeof action.params.value === 'string' &&
-        action.params.value.indexOf('|stage.') !== -1
-      ) {
-        // value could have more than one reference inside it
-        const exprs = extractAllExpressionsFromText(action.params.value);
-        exprs.forEach((expr: string) => {
-          if (expr.indexOf('|stage.') !== -1) {
-            const referencedSequenceId = expr.split('|stage.')[0];
-            referencedActivities.add(referencedSequenceId);
-          }
-        });
-      }
     }
   });
   return Array.from(referencedActivities);
 };
 
-export const getReferencedKeysInConditions = (conditions: any, actions: any) => {
+export const getReferencedKeysInConditions = (conditions: any) => {
   const references: Set<string> = new Set();
 
   conditions.forEach((condition: any) => {
@@ -341,14 +319,43 @@ export const getReferencedKeysInConditions = (conditions: any, actions: any) => 
       });
     }
     if (condition.any || condition.all) {
-      const childRefs = getReferencedKeysInConditions(condition.any || condition.all, null);
+      const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
       childRefs.forEach((ref) => references.add(ref));
     }
   });
-  //now we are starting to look for actions i.e. Mutate State conditions
-  actions?.forEach((action: any) => {
+
+  return Array.from(references);
+};
+
+export const findReferencedActivitiesInActions = (actions: any) => {
+  const referencedActivities: Set<string> = new Set();
+  actions.forEach((Action: any) => {
+    if (Action.type === 'mutateState') {
+      if (Action.target && Action.target.indexOf('|stage.') !== -1) {
+        const referencedSequenceId = Action.target.split('|stage.')[0];
+        referencedActivities.add(referencedSequenceId);
+      }
+      if (typeof Action.value === 'string' && Action.value.indexOf('|stage.') !== -1) {
+        // value could have more than one reference inside it
+        const exprs = extractAllExpressionsFromText(Action.value);
+        exprs.forEach((expr: string) => {
+          if (expr.indexOf('|stage.') !== -1) {
+            const referencedSequenceId = expr.split('|stage.')[0];
+            referencedActivities.add(referencedSequenceId);
+          }
+        });
+      }
+    }
+  });
+
+  return Array.from(referencedActivities);
+};
+
+export const getReferencedKeysInActions = (actions: any) => {
+  const references: Set<string> = new Set();
+  actions.forEach((action: any) => {
     if (action.type === 'mutateState') {
-      // the target *must* be a reference to a key we need
+      // the fact *must* be a reference to a key we need
       if (action.params.target) {
         references.add(action.params.target);
       }

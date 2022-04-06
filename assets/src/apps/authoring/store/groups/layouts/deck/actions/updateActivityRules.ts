@@ -1,7 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import {
@@ -109,12 +111,10 @@ export const updateActivityRules = createAsyncThunk(
               .map((sequenceItem) => selectActivityById(rootState, sequenceItem.resourceId!))
               .filter((activity) => !!activity) as IActivity[];
             await updateNestedConditions(conditionsToUpdate, activityTree);
-            referencedSequenceIds.push(
-              ...findReferencedActivitiesInConditions(conditionsToUpdate, actionsToUpdate),
-            );
-            referencedVariableKeys.push(
-              ...getReferencedKeysInConditions(conditionsToUpdate, actionsToUpdate),
-            );
+            referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
+            referencedSequenceIds.push(...findReferencedActivitiesInActions(actionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInActions(actionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(

@@ -1,5 +1,7 @@
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
@@ -114,19 +116,25 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       activityClone.authoring.rules = rulesClone;
       // due to the way this works technically if we are *deleting" a condition with an external reference
       // then it will *not* be removed here, but it will be removed the next time the lesson is opened in the editor
-      const actionsToUpdate = rule?.event?.params?.actions;
       const conditionRefs = findReferencedActivitiesInConditions(
         rule.conditions.any || rule.conditions.all,
-        actionsToUpdate,
+      );
+      const actionsRefs = findReferencedActivitiesInActions(
+        rule.conditions.any || rule.conditions.all,
       );
       const variableRefs = getReferencedKeysInConditions(
         rule.conditions.any || rule.conditions.all,
-        actionsToUpdate,
+      );
+      const actionVariableRefs = getReferencedKeysInActions(
+        rule.conditions.any || rule.conditions.all,
       );
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
-      activityClone.authoring.variablesRequiredForEvaluation.push(...variableRefs);
+      activityClone.authoring.variablesRequiredForEvaluation.push(
+        ...variableRefs,
+        ...actionVariableRefs,
+      );
       // make unique
       activityClone.authoring.variablesRequiredForEvaluation = [
         ...new Set(activityClone.authoring.variablesRequiredForEvaluation),
@@ -144,6 +152,33 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
             } else {
               console.warn(
                 `[handleRuleChange] could not find referenced activity ${conditionRef} in sequence`,
+                sequence,
+              );
+            }
+          })
+          .filter((id) => id) as number[];
+        const current = activityClone.authoring.activitiesRequiredForEvaluation;
+        activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
+          new Set([...current, ...resourceIds]),
+        );
+        console.log('[handleRuleChange] adding activities to required for evaluation', {
+          activityClone,
+          rule,
+        });
+      }
+      if (actionsRefs.length > 0) {
+        if (!activityClone.authoring.activitiesRequiredForEvaluation) {
+          activityClone.authoring.activitiesRequiredForEvaluation = [];
+        }
+        // need to find the resourceId based on the sequenceId that is referenced
+        const resourceIds = actionsRefs
+          .map((actionRef: any) => {
+            const sequenceItem = findInSequence(sequence, actionRef);
+            if (sequenceItem) {
+              return sequenceItem.resourceId;
+            } else {
+              console.warn(
+                `[handleRuleChange] could not find referenced activity ${actionRef} in sequence`,
                 sequence,
               );
             }
