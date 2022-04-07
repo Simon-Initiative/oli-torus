@@ -29,7 +29,7 @@ const getActivityDescription = (activity: ActivityEditContext) => {
 
 const getContentTitle = (item: StructuredContent) => {
   if (item.purpose === 'none') {
-    return undefined;
+    return 'Paragraph';
   }
 
   return ContentPurposes.find((p) => p.value === item.purpose)?.label;
@@ -160,9 +160,7 @@ const renderItem = (
         return (
           <>
             <Icon iconName="las la-shapes" />
-            <Description title={activity?.friendlyName}>
-              {getActivityDescription(activity)}
-            </Description>
+            <Description title={activity?.title}>{getActivityDescription(activity)}</Description>
           </>
         );
       } else {
