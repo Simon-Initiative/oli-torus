@@ -1,7 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import {
@@ -100,6 +102,7 @@ export const updateActivityRules = createAsyncThunk(
             const rootCondition = clone(conditions || { all: [] }); // layers might not have conditions
             const rootConditionIsAll = !!rootCondition.all;
             const conditionsToUpdate = rootCondition[rootConditionIsAll ? 'all' : 'any'];
+            const actionsToUpdate = event.params.actions;
             if (!rootCondition.id) {
               rootCondition.id = `b:${guid()}`;
             }
@@ -110,6 +113,8 @@ export const updateActivityRules = createAsyncThunk(
             await updateNestedConditions(conditionsToUpdate, activityTree);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
+            referencedSequenceIds.push(...findReferencedActivitiesInActions(actionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInActions(actionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(
