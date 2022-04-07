@@ -65,7 +65,11 @@ export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
     // if the input is an array, the condition array should contain at least one of the input array values
     return inputArray.some((item) => conditionArray.includes(item));
   } else {
-    return conditionArray.includes(inputValue);
+    if (!isNaN(inputValue)) {
+      return conditionArray.includes(parseFloat(inputValue));
+    } else {
+      return conditionArray.some((v) => inputValue.toString().includes(v));
+    }
   }
 };
 
@@ -82,8 +86,11 @@ export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =
     // if the input is an array, the input should not contain any of the conditionValues
     return !inputArray.some((item) => conditionArray.includes(item));
   } else {
-    // if the input is a string it should not contain any of the conditionValues
-    return !conditionArray.some((v) => inputValue.includes(v));
+    if (!isNaN(inputValue)) {
+      return !conditionArray.includes(parseFloat(inputValue));
+    } else {
+      return !conditionArray.some((v) => inputValue.toString().includes(v));
+    }
   }
 };
 
