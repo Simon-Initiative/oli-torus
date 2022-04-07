@@ -38,8 +38,11 @@ const getContentTitle = (item: StructuredContent) => {
 const getViewportHeight = () =>
   Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
 
-const calculateOutlineHeight = () => {
-  return Math.max(getViewportHeight() - 420, 220);
+const calculateOutlineHeight = (scrollOffset: number) => {
+  const topMargin = 420;
+  const scrolledMargin = 200;
+  const scrollCompensation = Math.max(topMargin - scrollOffset, scrolledMargin);
+  return Math.max(getViewportHeight() - scrollCompensation, 220);
 };
 
 const EDITOR_SHOW_OUTLINE_KEY = 'editorShowOutline';
@@ -66,7 +69,8 @@ export const ContentOutline = ({
 }: ContentOutlineProps) => {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [assistive, setAssistive] = useState('');
-  const [height, setHeight] = useState(calculateOutlineHeight());
+  const [scrollPos, setScrollPos] = useState(0);
+  const [height, setHeight] = useState(calculateOutlineHeight(scrollPos));
   const [showOutline, setShowOutlineState] = useState(loadShowOutlineState());
 
   const setShowOutline = (show: boolean) => {
@@ -76,13 +80,20 @@ export const ContentOutline = ({
 
   // adjust the height of the content outline when the window is resized
   useEffect(() => {
-    const handleResize = throttle(() => setHeight(calculateOutlineHeight()), 200);
+    const handleResize = throttle(() => setHeight(calculateOutlineHeight(scrollPos)), 200);
     window.addEventListener('resize', handleResize);
+
+    const handleScroll = throttle(() => {
+      setScrollPos(document.documentElement.scrollTop);
+      setHeight(calculateOutlineHeight(document.documentElement.scrollTop));
+    }, 200);
+    document.addEventListener('scroll', handleScroll);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [scrollPos]);
 
   // register keydown handlers
   const isShiftArrowDown = isHotkey('shift+down');
