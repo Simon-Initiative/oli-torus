@@ -84,7 +84,7 @@ export const ContentOutline = ({
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
 
   const items = [
-    ...content.entrySeq().map(([contentId, item], index) => {
+    ...content.entrySeq().map(([id, contentItem], index) => {
       const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
       const onMove = moveHandler(
         content,
@@ -94,33 +94,39 @@ export const ContentOutline = ({
         setAssistive,
       );
 
-      const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+      const handleKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
         if (isShiftArrowDown(e.nativeEvent)) {
-          onMove(contentId, false);
+          onMove(id, false);
+          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
         } else if (isShiftArrowUp(e.nativeEvent)) {
-          onMove(contentId, true);
+          onMove(id, true);
+          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
         }
       };
 
-      const dragPayload = getDragPayload(item, activityContexts, projectSlug);
-      const onDragStart = dragStartHandler(dragPayload, item, setActiveDragId);
-      const isDragging = contentId === activeDragId;
+      const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
+      const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
+      const isDragging = id === activeDragId;
 
       return (
         <>
-          {isReorderMode && <DropTarget id={contentId} index={index} onDrop={onDrop} />}
+          {isReorderMode && <DropTarget id={id} index={index} onDrop={onDrop} />}
 
           <div
+            id={`content-item-${id}`}
             className={classNames(styles.item, className, isDragging && 'is-dragging')}
             draggable={editMode}
-            onDragStart={(e) => onDragStart(e, contentId)}
+            tabIndex={0}
+            onDragStart={(e) => onDragStart(e, id)}
             onDragEnd={onDragEnd}
-            onKeyDown={handleKeyDown}
-            onFocus={(_e) => onFocus(contentId)}
-            onClick={() => scrollToResourceEditor(contentId)}
+            onKeyDown={handleKeyDown(id)}
+            onFocus={(_e) => onFocus(id)}
+            onClick={() => scrollToResourceEditor(id)}
+            role="button"
+            aria-label={assistive}
           >
             <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-            {renderItem(item, activityContexts)}
+            {renderItem(contentItem, activityContexts)}
           </div>
         </>
       );
