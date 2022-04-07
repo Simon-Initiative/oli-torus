@@ -15,6 +15,11 @@
   background: authoring.$gray-200;
 }
 
+:global(html.dark) .contentOutline {
+  border: 4px solid authoring.$gray-800;
+  background: authoring.$gray-800;
+}
+
 .item {
   display: flex;
   flex-direction: row;

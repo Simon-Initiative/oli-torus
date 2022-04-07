@@ -109,3 +109,9 @@ html.authoring {
     }
   }
 }
+
+html.dark {
+  .editors {
+    border-color: authoring.$gray-800;
+  }
+}
