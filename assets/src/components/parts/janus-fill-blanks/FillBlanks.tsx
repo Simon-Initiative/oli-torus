@@ -314,9 +314,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
-    if (prevElementValues && prevElementValues.length > 0) {
-      setAttempted(true);
-    }
+    setAttempted(true);
     const inputOption: SelectOption = { key: e.name, value: e.value };
     console.log('input trigger!', { id, inputOption });
     maybeUpdateElementValues([inputOption]);
@@ -411,7 +409,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     } catch (err) {
       console.log(err);
     }
-  }, [getElementValueByKey]);
+  }, [getElementValueByKey, attempted]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -553,6 +551,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
       className={`fib-container`}
       ref={fibContainer}
     >
+      <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
       <div className="scene">
         <div className="app">
