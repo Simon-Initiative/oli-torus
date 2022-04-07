@@ -12,30 +12,6 @@
     opacity: 1;
   }
 
-  &.active {
-    opacity: 1;
-
-    .insertButtonContainer {
-      .insertButton {
-        background-color: authoring.$primary;
-        border-color: authoring.$primary;
-
-        i {
-          color: authoring.$white;
-          transform: rotate(45deg);
-        }
-      }
-    }
-
-    .insertAdornment {
-      background-color: authoring.$primary;
-    }
-  }
-
-  &.disabled {
-    cursor: default;
-  }
-
   .insertButtonContainer {
     position: absolute;
     left: -28px;
@@ -52,17 +28,40 @@
       align-items: center;
       border: 2px solid authoring.$gray-500;
       color: authoring.$gray-500;
-      background: authoring.$body-bg;
       opacity: inherit;
       transition: opacity 200ms ease-out, background-color 200ms ease-out;
 
       i {
         vertical-align: text-top;
         color: authoring.$gray-500;
-        transition: transform 200ms ease-in-out;
+        transition: transform 200ms ease-in-out, color 200ms ease-in-out;
       }
     }
   }
+}
+
+.active {
+  opacity: 1;
+
+  .insertButtonContainer {
+    .insertButton {
+      background-color: authoring.$primary;
+      border-color: authoring.$primary;
+
+      i {
+        color: authoring.$white;
+        transform: rotate(45deg);
+      }
+    }
+  }
+
+  .insertAdornment {
+    background-color: authoring.$primary;
+  }
+}
+
+.disabled {
+  cursor: default;
 }
 
 .insertAdornment {
@@ -89,15 +88,6 @@
   color: white;
 }
 
-:global(.active) {
-  .insertButtonContainer {
-    .insertButton {
-      background-color: authoring.$primary;
-      border-color: transparent;
-    }
-  }
-}
-
 .addResourcePopover {
   max-width: 500px;
   overflow-x: auto;
@@ -107,11 +97,6 @@
 
   &:global(.popover) {
     max-width: unset !important;
-  }
-
-  :global(.hovering-toolbar) {
-    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05), 10px 0px 15px rgba(0, 0, 0, 0.05),
-      -10px 0px 15px rgba(0, 0, 0, 0.05), 0px -5px 40px rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -123,7 +108,6 @@
   flex-direction: column;
   background-color: authoring.$body-bg;
   border-radius: 2px;
-  border: 1px solid gray;
 
   :global(.list-group) {
     padding-left: 6px;

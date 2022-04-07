@@ -25,6 +25,7 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   children,
 }) => {
   const [id] = useState(guid());
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
     <>
@@ -39,8 +40,15 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
             </Popover.Content>
           </Popover>
         }
+        onToggle={(show) => setIsPopoverOpen(show)}
       >
-        <div className={classNames(styles.addResourceContent, editMode ? '' : 'disabled')}>
+        <div
+          className={classNames(
+            styles.addResourceContent,
+            !editMode && styles.disabled,
+            isPopoverOpen && styles.active,
+          )}
+        >
           {editMode && (
             <>
               <div className={styles.insertButtonContainer}>
