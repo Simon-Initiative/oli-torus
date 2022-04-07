@@ -9,27 +9,20 @@ import { ResourceContent, ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import * as Immutable from 'immutable';
 import React from 'react';
-import { DropTarget } from './dragndrop/DropTarget';
 
-export type AddResourceOrDropTargetProps = {
-  isReorderMode: boolean;
+export type AddResourceProps = {
   id: string;
   index: number;
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
-  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
   onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
-export const AddResourceOrDropTarget = (props: AddResourceOrDropTargetProps) => {
-  if (props.isReorderMode) {
-    return <DropTarget {...props} isLast={props.id === 'last'} />;
-  }
-
+export const AddResource = (props: AddResourceProps) => {
   return (
     <AddResourceContent {...props} isLast={props.id === 'last'}>
       <AddContent {...props} />
