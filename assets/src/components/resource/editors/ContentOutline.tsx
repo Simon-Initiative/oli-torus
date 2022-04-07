@@ -39,8 +39,11 @@ const getViewportHeight = () =>
   Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
 
 const calculateOutlineHeight = () => {
-  return Math.max(getViewportHeight() - 380, 220);
+  return Math.max(getViewportHeight() - 420, 220);
 };
+
+const EDITOR_SHOW_OUTLINE_KEY = 'editorShowOutline';
+const loadShowOutlineState = () => localStorage.getItem(EDITOR_SHOW_OUTLINE_KEY) === 'true';
 
 interface ContentOutlineProps {
   className?: ClassName;
@@ -64,6 +67,12 @@ export const ContentOutline = ({
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [assistive, setAssistive] = useState('');
   const [height, setHeight] = useState(calculateOutlineHeight());
+  const [showOutline, setShowOutlineState] = useState(loadShowOutlineState());
+
+  const setShowOutline = (show: boolean) => {
+    localStorage.setItem(EDITOR_SHOW_OUTLINE_KEY, show.toString());
+    setShowOutlineState(show);
+  };
 
   // adjust the height of the content outline when the window is resized
   useEffect(() => {
@@ -135,10 +144,31 @@ export const ContentOutline = ({
   ];
 
   return (
-    <div className={styles.contentOutlineContainer}>
-      <div className={classNames(styles.contentOutline, className)} style={{ maxHeight: height }}>
-        {items}
-      </div>
+    <div
+      className={classNames(
+        styles.contentOutlineContainer,
+        showOutline && styles.contentOutlineContainerShow,
+      )}
+    >
+      {showOutline ? (
+        <div className={classNames(styles.contentOutline, className)}>
+          <Header onHideOutline={() => setShowOutline(false)} />
+          <div className={classNames(styles.contentOutlineItems)} style={{ maxHeight: height }}>
+            {items}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.contentOutlineToggleSticky}>
+          <div className={styles.contentOutlineToggle}>
+            <button
+              className={classNames(styles.contentOutlineToggleButton)}
+              onClick={() => setShowOutline(true)}
+            >
+              <i className="fa fa-angle-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -180,6 +210,18 @@ const renderItem = (
       return <>Unknown</>;
   }
 };
+
+interface HeaderProps {
+  onHideOutline: () => void;
+}
+
+const Header = ({ onHideOutline }: HeaderProps) => (
+  <div className={styles.header}>
+    <button className={classNames(styles.headerButton)} onClick={onHideOutline}>
+      <i className="fa fa-angle-left"></i>
+    </button>
+  </div>
+);
 
 interface IconProps {
   iconName: string;
