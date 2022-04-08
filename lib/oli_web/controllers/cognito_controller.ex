@@ -47,7 +47,7 @@ defmodule OliWeb.CognitoController do
       conn
       |> use_pow_config(:user)
       |> Pow.Plug.create(user)
-      |> redirect(to: redirect_path(conn, user, anchor))
+      |> create_or_prompt(user, anchor)
     else
       nil ->
         redirect_with_error(conn, get_error_url(params), "Invalid product or project")
@@ -88,13 +88,6 @@ defmodule OliWeb.CognitoController do
     redirect_with_error(conn, get_error_url(params), "Missing parameters")
   end
 
-  def prompt(conn, %{"project_slug" => project_slug}) do
-    author = conn.assigns.current_author
-    projects = Clone.existing_clones(project_slug, author)
-
-    render(conn, "index.html", projects: projects, project_slug: project_slug)
-  end
-
   def clone(conn, %{"project_slug" => project_slug}) do
     author = conn.assigns.current_author
 
@@ -114,6 +107,23 @@ defmodule OliWeb.CognitoController do
     redirect_with_error(conn, get_error_url(params), "Missing parameters")
   end
 
+  def prompt_clone(conn, %{"project_slug" => project_slug}) do
+    author = conn.assigns.current_author
+    projects = Clone.existing_clones(project_slug, author)
+
+    render(conn, "clone_prompt.html", projects: projects, project_slug: project_slug)
+  end
+
+  def prompt_create(conn, params) do
+    case fetch_product_or_project(params) do
+      nil ->
+        redirect_with_error(conn, get_error_url(%{}), "Invalid product or project")
+
+      anchor ->
+        render(conn, "create_prompt.html", create_section_url: create_section_url(conn, anchor))
+    end
+  end
+
   defp get_error_url(%{"error_url" => error_url}), do: error_url
   defp get_error_url(_params), do: "/unauthorized"
 
@@ -125,16 +135,6 @@ defmodule OliWeb.CognitoController do
     Sections.get_section_by(slug: slug)
   end
 
-  defp redirect_path(conn, user, anchor) do
-    case Repo.preload(user, :enrollments).enrollments do
-      [] ->
-        create_section_url(conn, anchor)
-
-      _ ->
-        Routes.delivery_path(conn, :open_and_free_index)
-    end
-  end
-
   defp create_section_url(conn, %Project{} = project) do
     Routes.independent_sections_path(conn, :new, source_id: "project:#{project.id}")
   end
@@ -143,15 +143,40 @@ defmodule OliWeb.CognitoController do
     Routes.independent_sections_path(conn, :new, source_id: "product:#{product.id}")
   end
 
+  defp prompt_redirect_url(conn, %Project{slug: project_slug}, :create),
+    do: Routes.prompt_project_create_path(conn, :prompt_create, project_slug)
+
+  defp prompt_redirect_url(conn, %Section{slug: section_slug}, :create),
+    do: Routes.prompt_product_create_path(conn, :prompt_create, section_slug)
+
+  defp prompt_redirect_url(conn, %Project{slug: project_slug}, :clone),
+    do: Routes.prompt_project_clone_path(conn, :prompt_clone, project_slug)
+
+  defp prompt_redirect_url(conn, _, _),
+    do: redirect_with_error(conn, get_error_url(%{}), "This is not supported")
+
+  defp create_or_prompt(conn, user, anchor) do
+    path =
+      case Repo.preload(user, :enrollments).enrollments do
+        [] ->
+          create_section_url(conn, anchor)
+
+        _ ->
+          prompt_redirect_url(conn, anchor, :create)
+      end
+
+    redirect(conn, to: path)
+  end
+
   defp clone_or_prompt(conn, _author, %Project{allow_duplication: false}, error_url),
     do: redirect_with_error(conn, error_url, "This project does not allow duplication")
 
   defp clone_or_prompt(conn, _author, %Section{} = _product, error_url),
     do: redirect_with_error(conn, error_url, "This is not supported")
 
-  defp clone_or_prompt(conn, author, %Project{slug: project_slug}, error_url) do
+  defp clone_or_prompt(conn, author, %Project{slug: project_slug} = project, error_url) do
     if Clone.already_has_clone?(project_slug, author) do
-      redirect(conn, to: Routes.cognito_path(conn, :prompt, project_slug))
+      redirect(conn, to: prompt_redirect_url(conn, project, :clone))
     else
       clone_project(conn, project_slug, author, error_url)
     end
