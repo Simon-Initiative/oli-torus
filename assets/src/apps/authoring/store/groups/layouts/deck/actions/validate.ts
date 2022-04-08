@@ -5,16 +5,14 @@ import { forEachCondition } from 'apps/authoring/components/AdaptivityEditor/Con
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
 import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
 import { AppSlice } from 'apps/authoring/store/app/name';
-import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
+import { IActivity, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import {
   findInHierarchy,
   flattenHierarchy,
   getHierarchy,
   getSequenceLineage,
   SequenceEntry,
-  SequenceEntryChild,
   SequenceEntryType,
-  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import has from 'lodash/has';
@@ -24,7 +22,7 @@ import { selectState as selectPageState } from '../../../../page/slice';
 
 export interface DiagnosticProblem {
   owner: SequenceEntry<SequenceEntryType>; // note DiagnosticsWindow *requires* this
-  type: string;
+  type: DiagnosticTypes;
   // getSuggestion: () => any;
   // getSolution: (resolution: unknown) => () => void;
   suggestedFix: string;
@@ -38,8 +36,7 @@ export interface DiagnosticError {
 export interface Validator {
   type: DiagnosticTypes;
   validate: (
-    activity: any,
-    hierarchy?: SequenceHierarchyItem<SequenceEntryChild>[],
+    activity: IActivity,
     sequence?: SequenceEntry<SequenceEntryType>[],
     parts?: any[],
   ) => DiagnosticProblem[];
@@ -125,7 +122,15 @@ const validateValue = (condition: JanusConditionProperties, rule: any, owner: an
 export const validators: Validator[] = [
   {
     type: DiagnosticTypes.INVALID_EXPRESSION,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+    validate: (activity, sequence) => {
+      if (!sequence) {
+        throw new Error('INVALID_EXPRESSION VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error(
+          'INVALID_EXPRESSION VALIDATION: activity.content.partsLayout is undefined!',
+        );
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
       const parts = activity.content.partsLayout;
       const brokenExpressions: any[] = [];
@@ -153,35 +158,44 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.DUPLICATE,
-    validate: (activity, hierarchy, sequence) => {
+    validate: (activity, sequence) => {
       if (!sequence) {
         throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
       }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return activity.content.partsLayout
-        .filter(
-          (ref: any) =>
-            activity.content.partsLayout.filter((ref2: any) => ref2.id === ref.id).length > 1,
-        )
+      const partList = activity.content.partsLayout;
+      return partList
+        .filter((ref: any) => partList.filter((ref2: any) => ref2.id === ref.id).length > 1)
         .map((ref: any) => ({ ...ref, owner }));
     },
   },
   {
     type: DiagnosticTypes.PATTERN,
-    validate: (activity, hierarchy, sequence) => {
+    validate: (activity, sequence) => {
       if (!sequence) {
         throw new Error('PATTERN VALIDATION: sequence is undefined!');
       }
+      if (!activity.content?.partsLayout) {
+        throw new Error('PATTERN VALIDATION: activity.content.partsLayout is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return activity.content.partsLayout
+      const partList = activity.content.partsLayout;
+      return partList
         .filter((ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id))
         .map((ref: any) => ({ ...ref, owner }));
     },
   },
   {
     type: DiagnosticTypes.BROKEN,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+    validate: (activity, sequence) => {
+      if (!sequence) {
+        throw new Error('BROKEN NAVIGATION VALIDATION: sequence is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
+      const hierarchy = getHierarchy(sequence);
       return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
           if (action.type === 'navigation') {
@@ -203,7 +217,13 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.INVALID_TARGET_MUTATE,
-    validate: (activity: any, hierarchy: any, sequence: any[], parts: any[]) => {
+    validate: (activity, sequence, parts) => {
+      if (!sequence) {
+        throw new Error('INVALID_TARGET_MUTATE VALIDATION: sequence is undefined!');
+      }
+      if (!parts) {
+        throw new Error('INVALID_TARGET_MUTATE VALIDATION: parts is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
       return activity.authoring.rules.reduce((brokenColl: [], rule: any) => {
         const brokenActions = rule.event.params.actions.map((action: any) => {
@@ -225,9 +245,16 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.INVALID_TARGET_INIT,
-    validate: (activity: any, hierarchy: any, sequence: any[], parts: any[]) => {
+    validate: (activity, sequence, parts) => {
+      if (!sequence) {
+        throw new Error('INVALID_TARGET_INIT VALIDATION: sequence is undefined!');
+      }
+      if (!parts) {
+        throw new Error('INVALID_TARGET_INIT VALIDATION: parts is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return activity.content.custom.facts.reduce(
+      const initStateFacts = activity.content?.custom?.facts;
+      return initStateFacts.reduce(
         (broken: any[], fact: any) => [
           ...broken,
           validateTarget(fact.target, activity, parts)
@@ -244,7 +271,13 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.INVALID_TARGET_COND,
-    validate: (activity: any, hierarchy: any, sequence: any[], parts: any[]) => {
+    validate: (activity, sequence, parts) => {
+      if (!sequence) {
+        throw new Error('INVALID_TARGET_COND VALIDATION: sequence is undefined!');
+      }
+      if (!parts) {
+        throw new Error('INVALID_TARGET_COND VALIDATION: parts is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
       return activity.authoring.rules.reduce((broken: any[], rule: any) => {
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
@@ -267,7 +300,10 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.INVALID_VALUE,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+    validate: (activity, sequence) => {
+      if (!sequence) {
+        throw new Error('INVALID_VALUE VALIDATION: sequence is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
       return activity.authoring.rules.reduce((broken: any[], rule: any) => {
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
@@ -283,10 +319,14 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.INVALID_EXPRESSION_VALUE,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
+    validate: (activity, sequence) => {
+      if (!sequence) {
+        throw new Error('INVALID_EXPRESSION_VALUE VALIDATION: sequence is undefined!');
+      }
       const owner = sequence.find((s) => s.resourceId === activity.id);
+      const initStateFacts = activity.content?.custom?.facts;
       const brokenFactConditionValues: any[] = [];
-      const brokenFacts = activity.content.custom.facts.reduce((broken: any[], fact: any) => {
+      const brokenFacts = initStateFacts.reduce((broken: any[], fact: any) => {
         const updatedFact = validateValueExpression(fact, fact, owner);
         if (updatedFact) {
           return updatedFact && broken ? [...broken, updatedFact] : [updatedFact];
@@ -337,9 +377,7 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
     const foundProblems = validators.reduce(
       (probs: any, validator: any) => ({
         ...probs,
-        [validator.type]: validator
-          .validate(activity, hierarchy, sequence, parts)
-          .filter((e: any) => !!e),
+        [validator.type]: validator.validate(activity, sequence, parts).filter((e: any) => !!e),
       }),
       {},
     );
