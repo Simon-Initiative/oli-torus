@@ -14,7 +14,7 @@
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
 <div id="delivery_container">
-  <%= ReactPhoenix.ClientSide.react_component("Components.Delivery", @app_params) %>
+  <%= react_component("Components.Delivery", @app_params) %>
 </div>
 
 <script>

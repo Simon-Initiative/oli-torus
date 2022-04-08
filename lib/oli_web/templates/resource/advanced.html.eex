@@ -14,7 +14,7 @@
 <% end %>
 
 <div id="editor" class="container">
-  <%= ReactPhoenix.ClientSide.react_component("Components.Authoring", @app_params) %>
+  <%= react_component("Components.Authoring", @app_params) %>
 </div>
 
 
