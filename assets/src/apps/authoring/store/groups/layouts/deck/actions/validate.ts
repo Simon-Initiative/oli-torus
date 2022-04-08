@@ -274,7 +274,6 @@ export const validators = [
         const updatedFacts = brokenFacts?.filter((fact: any) => fact);
         if (updatedFacts) {
           brokenFactConditionValues.push(...updatedFacts);
-          console.log({ updatedFacts });
         }
       }
       const brokenConditionValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
