@@ -8,7 +8,7 @@
 
 
 <div id="editor" class="container">
-  <%= ReactPhoenix.ClientSide.react_component("Components.PageEditor", @raw_context) %>
+  <%= react_component("Components.PageEditor", @raw_context) %>
 </div>
 
 
