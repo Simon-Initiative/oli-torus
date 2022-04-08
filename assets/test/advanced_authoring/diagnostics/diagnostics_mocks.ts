@@ -105,20 +105,20 @@ export const activityWithDuplicateParts: IActivity = {
   id: 29,
   resourceId: 29,
   tags: [],
-  activitySlug: 'customize_avatar_5we6z',
+  activitySlug: 'dupe_parts_abc',
   authoring: {
     activitiesRequiredForEvaluation: [],
     parts: [
       {
         id: 'part_1',
         inherited: false,
-        owner: 'screen1',
+        owner: 'dupe_parts_abc_sequence',
         type: 'janus-capi-iframe',
       },
       {
         id: 'part_1',
         inherited: false,
-        owner: 'screen1',
+        owner: 'dupe_parts_abc_sequence',
         type: 'janus-capi-iframe',
       },
     ],
@@ -126,44 +126,12 @@ export const activityWithDuplicateParts: IActivity = {
     variablesRequiredForEvaluation: [],
   },
   objectives: {
-    ProgressBar: [],
+    part_1: [],
   },
   content: {
     custom: {
-      applyBtnFlag: false,
-      applyBtnLabel: '',
-      combineFeedback: false,
+      // cut for brevity
       facts: [],
-      lockCanvasSize: false,
-      mainBtnLabel: '',
-      negativeScoreAllowed: false,
-      palette: {
-        backgroundColor: 'rgba(255,255,255,1)',
-        borderColor: 'rgba(255,255,255,1)',
-        borderStyle: 'solid',
-        borderWidth: '0.1px',
-        fillAlpha: 1,
-        fillColor: 0,
-        lineAlpha: 1,
-        lineColor: 0,
-        lineStyle: 0,
-        lineThickness: 0.1,
-        borderRadius: '10px',
-        useHtmlProps: false,
-      },
-      panelHeaderColor: 0,
-      panelTitleColor: 0,
-      showCheckBtn: false,
-      checkButtonLabel: '',
-      trapStateScoreScheme: true,
-      width: 1000,
-      height: 500,
-      maxAttempt: 0,
-      maxScore: 0,
-      customCssClass: '',
-      x: 0,
-      y: 0,
-      z: 0,
     },
     partsLayout: [
       {
@@ -178,5 +146,42 @@ export const activityWithDuplicateParts: IActivity = {
       },
     ],
   },
-  title: 'Customize Avatar',
+  title: 'Duplicate Part Ids',
+};
+
+export const activityWithInvalidPartIds: IActivity = {
+  id: 13,
+  resourceId: 13,
+  tags: [],
+  activitySlug: 'bad_parts_abcd123',
+  authoring: {
+    activitiesRequiredForEvaluation: [],
+    parts: [
+      {
+        id: 'part$$',
+        inherited: false,
+        owner: 'bad_parts_abcd123_sequenceId',
+        type: 'janus-input-text',
+      },
+    ],
+    rules: [],
+    variablesRequiredForEvaluation: [],
+  },
+  objectives: {
+    part$$: [],
+  },
+  content: {
+    custom: {
+      // cut for brevity
+      facts: [],
+    },
+    partsLayout: [
+      {
+        id: 'part$$',
+        type: 'janus-input-text',
+        custom: {},
+      },
+    ],
+  },
+  title: 'Bad Parts',
 };

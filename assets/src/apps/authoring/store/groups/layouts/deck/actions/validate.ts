@@ -23,7 +23,7 @@ import { clone } from 'utils/common';
 import { selectState as selectPageState } from '../../../../page/slice';
 
 export interface DiagnosticProblem {
-  owner: SequenceEntry<SequenceEntryType>;
+  owner: SequenceEntry<SequenceEntryType>; // note DiagnosticsWindow *requires* this
   type: string;
   // getSuggestion: () => any;
   // getSolution: (resolution: unknown) => () => void;
@@ -168,10 +168,15 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.PATTERN,
-    validate: (activity: any) =>
-      activity.content.partsLayout.filter(
-        (ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id),
-      ),
+    validate: (activity, hierarchy, sequence) => {
+      if (!sequence) {
+        throw new Error('PATTERN VALIDATION: sequence is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+      return activity.content.partsLayout
+        .filter((ref: any) => !ref.inherited && !/^[a-zA-Z0-9_\-: ]+$/.test(ref.id))
+        .map((ref: any) => ({ ...ref, owner }));
+    },
   },
   {
     type: DiagnosticTypes.BROKEN,
