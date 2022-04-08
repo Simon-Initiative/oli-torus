@@ -130,12 +130,8 @@
     color: lightgray;
   }
 
-  :global(.type-icon) {
-    font-size: 26px;
-  }
-
   :global(.type-label) {
-    color: black;
+    color: authoring.$body-color;
     font-size: 1.1em;
     font-weight: 600;
   }
@@ -146,6 +142,7 @@
   }
 
   :global(.type-description) {
+    color: authoring.$body-color;
     font-size: 0.9em;
   }
 }

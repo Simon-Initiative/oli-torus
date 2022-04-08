@@ -11,6 +11,7 @@ import {
   ContentPurposes,
 } from 'data/content/resource';
 import { ActivityEditContext } from 'data/content/activity';
+import { ActivityBankSelection } from 'data/content/resource';
 import { getContentDescription } from 'data/content/utils';
 import { DragHandle } from 'components/resource/DragHandle';
 import { focusHandler } from './dragndrop/handlers/focus';
@@ -22,6 +23,7 @@ import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { DropTarget } from './dragndrop/DropTarget';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug } from 'data/types';
+import { getViewportHeight } from 'utils/browser';
 
 const getActivityDescription = (activity: ActivityEditContext) => {
   return activity.model.authoring?.previewText || <i>No content</i>;
@@ -35,14 +37,20 @@ const getContentTitle = (item: StructuredContent) => {
   return ContentPurposes.find((p) => p.value === item.purpose)?.label;
 };
 
-const getViewportHeight = () =>
-  Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+const getActivitySelectionTitle = (_selection: ActivityBankSelection) => {
+  return 'Activity Bank Selection';
+};
+
+const getActivitySelectionDescription = (selection: ActivityBankSelection) => {
+  return `${selection.count} selection${selection.count > 1 ? 's' : ''}`;
+};
 
 const calculateOutlineHeight = (scrollOffset: number) => {
   const topMargin = 420;
   const scrolledMargin = 200;
+  const minHeight = 220;
   const scrollCompensation = Math.max(topMargin - scrollOffset, scrolledMargin);
-  return Math.max(getViewportHeight() - scrollCompensation, 220);
+  return Math.max(getViewportHeight() - scrollCompensation, minHeight);
 };
 
 const EDITOR_SHOW_OUTLINE_KEY = 'editorShowOutline';
@@ -100,57 +108,65 @@ export const ContentOutline = ({
   const isShiftArrowUp = isHotkey('shift+up');
 
   const isReorderMode = activeDragId !== null;
+  const activeDragIndex = content
+    .entrySeq()
+    .findIndex(([id, _contentItem], _index) => id == activeDragId);
   const onDragEnd = dragEndHandler(setActiveDragId);
   const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
 
   const items = [
-    ...content.entrySeq().map(([id, contentItem], index) => {
-      const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
-      const onMove = moveHandler(
-        content,
-        onEditContentList,
-        editorMap,
-        activityContexts,
-        setAssistive,
-      );
+    ...content
+      .entrySeq()
+      .filter(([id, _contentItem], _index) => id !== activeDragId)
+      .map(([id, contentItem], index) => {
+        const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
+        const onMove = moveHandler(
+          content,
+          onEditContentList,
+          editorMap,
+          activityContexts,
+          setAssistive,
+        );
 
-      const handleKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
-        if (isShiftArrowDown(e.nativeEvent)) {
-          onMove(id, false);
-          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
-        } else if (isShiftArrowUp(e.nativeEvent)) {
-          onMove(id, true);
-          setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
-        }
-      };
+        const handleKeyDown = (id: string) => (e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (isShiftArrowDown(e.nativeEvent)) {
+            onMove(id, false);
+            setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
+          } else if (isShiftArrowUp(e.nativeEvent)) {
+            onMove(id, true);
+            setTimeout(() => document.getElementById(`content-item-${id}`)?.focus());
+          }
+        };
 
-      const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
-      const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
-      const isDragging = id === activeDragId;
+        const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
+        const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
 
-      return (
-        <>
-          {isReorderMode && <DropTarget id={id} index={index} onDrop={onDrop} />}
+        // adjust for the fact that the item being dragged is filtered out of the rendered elements
+        const dropIndex = index >= activeDragIndex ? index + 1 : index;
 
-          <div
-            id={`content-item-${id}`}
-            className={classNames(styles.item, className, isDragging && 'is-dragging')}
-            draggable={editMode}
-            tabIndex={0}
-            onDragStart={(e) => onDragStart(e, id)}
-            onDragEnd={onDragEnd}
-            onKeyDown={handleKeyDown(id)}
-            onFocus={(_e) => onFocus(id)}
-            onClick={() => scrollToResourceEditor(id)}
-            role="button"
-            aria-label={assistive}
-          >
-            <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-            {renderItem(contentItem, activityContexts)}
-          </div>
-        </>
-      );
-    }),
+        return (
+          <>
+            {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+            <div
+              id={`content-item-${id}`}
+              className={classNames(styles.item, className)}
+              draggable={editMode}
+              tabIndex={0}
+              onDragStart={(e) => onDragStart(e, id)}
+              onDragEnd={onDragEnd}
+              onKeyDown={handleKeyDown(id)}
+              onFocus={(_e) => onFocus(id)}
+              onClick={() => scrollToResourceEditor(id)}
+              role="button"
+              aria-label={assistive}
+            >
+              <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+              {renderItem(contentItem, activityContexts)}
+            </div>
+          </>
+        );
+      }),
     isReorderMode && <DropTarget id="last" index={content.size || 0} onDrop={onDrop} />,
   ];
 
@@ -164,7 +180,13 @@ export const ContentOutline = ({
       {showOutline ? (
         <div className={classNames(styles.contentOutline, className)}>
           <Header onHideOutline={() => setShowOutline(false)} />
-          <div className={classNames(styles.contentOutlineItems)} style={{ maxHeight: height }}>
+          <div
+            className={classNames(
+              styles.contentOutlineItems,
+              isReorderMode && styles.contentOutlineItemsReorderMode,
+            )}
+            style={{ maxHeight: height }}
+          >
             {items}
           </div>
         </div>
@@ -198,7 +220,14 @@ const renderItem = (
       );
 
     case 'selection':
-      return <>Selection</>;
+      return (
+        <>
+          <Icon iconName="las la-cogs" />
+          <Description title={getActivitySelectionTitle(item)}>
+            {getActivitySelectionDescription(item)}
+          </Description>
+        </>
+      );
 
     case 'activity-reference':
       const activity = activityContexts.get((item as ActivityReference).activitySlug);
@@ -215,7 +244,7 @@ const renderItem = (
       }
 
     case 'group':
-      return <></>;
+      return <>Group</>;
 
     default:
       return <>Unknown</>;

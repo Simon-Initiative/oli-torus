@@ -62,7 +62,7 @@ export const ContentBlock = (props: ContentBlockProps) => {
           <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
         </div>
       </div>
-      <div>{maybeRenderDeliveryPurposeContainer(props)}</div>
+      <div id={props.contentItem.id}>{maybeRenderDeliveryPurposeContainer(props)}</div>
     </div>
   );
 };

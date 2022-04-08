@@ -15,7 +15,7 @@ interface ActivityBlockProps {
   editMode: boolean;
   content: Immutable.List<ResourceContent>;
   purposes: PurposeType[];
-  contentItem: ActivityReference;
+  activity: ActivityReference;
   label: string;
   projectSlug: string;
   resourceSlug: string;
@@ -30,15 +30,13 @@ interface ActivityBlockProps {
 }
 
 const ActivityBlock = (props: ActivityBlockProps) => {
-  const id = `activity-header${props.contentItem.activitySlug}`;
-
   return (
     <div className="activity-block resource-content-frame">
       <div className="d-flex flex-row align-items-center">
         <div className="d-flex align-items-center flex-grow-1"></div>
 
         <Purpose
-          purpose={props.contentItem.purpose}
+          purpose={props.activity.purpose}
           purposes={props.purposes}
           editMode={props.editMode}
           onEdit={props.onEditPurpose}
@@ -46,7 +44,9 @@ const ActivityBlock = (props: ActivityBlockProps) => {
 
         <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
       </div>
-      <div className="p-2">{props.children}</div>
+      <div id={props.activity.id} className="p-2">
+        {props.children}
+      </div>
     </div>
   );
 };
