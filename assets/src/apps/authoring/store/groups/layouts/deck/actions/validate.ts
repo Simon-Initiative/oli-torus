@@ -263,7 +263,20 @@ export const validators = [
     type: DiagnosticTypes.INVALID_EXPRESSION_VALUE,
     validate: (activity: any, hierarchy: any, sequence: any[]) => {
       const owner = sequence.find((s) => s.resourceId === activity.id);
-      return activity.authoring.rules.reduce((broken: any[], rule: any) => {
+      const brokenFactConditionValues: any[] = [];
+      const brokenFacts = activity.content.custom.facts.reduce((broken: any[], fact: any) => {
+        const updatedFact = validateValueExpression(fact, fact, owner);
+        if (updatedFact) {
+          return updatedFact && broken ? [...broken, updatedFact] : [updatedFact];
+        }
+      }, []);
+      if (brokenFacts?.length) {
+        const updatedFacts = brokenFacts?.filter((fact: any) => fact);
+        if (updatedFacts) {
+          brokenFactConditionValues.push(...updatedFacts);
+        }
+      }
+      const brokenConditionValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         const brokenConditionValues: any[] = [];
@@ -273,23 +286,8 @@ export const validators = [
 
         return [...broken, ...brokenConditionValues];
       }, []);
-    },
-  },
-  {
-    type: DiagnosticTypes.INVALID_EXPRESSION_VALUE,
-    validate: (activity: any, hierarchy: any, sequence: any[]) => {
-      const owner = sequence.find((s) => s.resourceId === activity.id);
-      const brokenFactValues: any[] = [];
-      const brokenFacts = activity.content.custom.facts.reduce((broken: any[], fact: any) => {
-        const updatedFact = validateValueExpression(fact, fact, owner);
-        if (updatedFact) {
-          return updatedFact && broken ? [...broken, updatedFact] : [updatedFact];
-        }
-      }, []);
-      if (brokenFacts?.length) {
-        brokenFactValues.push(...brokenFacts?.filter((fact: any) => fact));
-      }
-      return [...new Set(brokenFactValues)];
+
+      return [...brokenConditionValues, ...brokenFactConditionValues];
     },
   },
 ];

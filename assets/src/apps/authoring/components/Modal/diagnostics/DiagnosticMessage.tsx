@@ -37,13 +37,12 @@ export const ValueUndefined: React.FC<Message> = ({ problem }: Message) => (
 
 export const InvalidExpressionValue: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    {problem?.item?.rule?.name && (
+    {problem?.item?.rule?.name ? (
       <span>
         The &quot;
         <strong>{problem?.item?.rule?.name}</strong>&quot; rule has invalid expression.
       </span>
-    )}
-    {problem?.item?.condition?.id && (
+    ) : (
       <span>A rule in the initial state has an invalid expression.</span>
     )}
   </span>
