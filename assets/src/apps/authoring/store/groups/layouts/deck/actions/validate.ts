@@ -12,7 +12,9 @@ import {
   getHierarchy,
   getSequenceLineage,
   SequenceEntry,
+  SequenceEntryChild,
   SequenceEntryType,
+  SequenceHierarchyItem,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import has from 'lodash/has';
@@ -31,6 +33,16 @@ export interface DiagnosticProblem {
 export interface DiagnosticError {
   activity: unknown;
   problems: DiagnosticProblem[];
+}
+
+export interface Validator {
+  type: DiagnosticTypes;
+  validate: (
+    activity: any,
+    hierarchy?: SequenceHierarchyItem<SequenceEntryChild>[],
+    sequence?: SequenceEntry<SequenceEntryType>[],
+    parts?: any[],
+  ) => DiagnosticProblem[];
 }
 
 // generate a suggestion for the id based on the input id that is only alpha numeric or underscores
@@ -110,7 +122,7 @@ const validateValue = (condition: JanusConditionProperties, rule: any, owner: an
     : null;
 };
 
-export const validators = [
+export const validators: Validator[] = [
   {
     type: DiagnosticTypes.INVALID_EXPRESSION,
     validate: (activity: any, hierarchy: any, sequence: any[]) => {
@@ -141,8 +153,11 @@ export const validators = [
   },
   {
     type: DiagnosticTypes.DUPLICATE,
-    validate: (activity: any, hierarchy: any, sequence: any) => {
-      const owner = sequence.find((s: any) => s.resourceId === activity.id);
+    validate: (activity, hierarchy, sequence) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
       return activity.content.partsLayout
         .filter(
           (ref: any) =>
