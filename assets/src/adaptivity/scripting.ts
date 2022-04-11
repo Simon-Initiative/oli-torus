@@ -133,14 +133,27 @@ export const getExpressionStringForValue = (
       } catch (e) {
         //lets evaluat everything if first and last char are {}
         if (val[0] === '{' && val[val.length - 1] === '}') {
-          const evaluatedValuess = evalScript(expressions[0], env).result;
-          if (evaluatedValuess !== undefined) {
-            val = evaluatedValuess;
+          const evaluatedValues = evalScript(expressions[0], env).result;
+          if (evaluatedValues !== undefined) {
+            val = evaluatedValues;
             actuallyAString = false;
           }
         } else {
-          // if we have parsing error then we're guessing it's CSS
-          actuallyAString = true;
+          const containsExpression = val.match(/{([^{^}]+)}/g) || [];
+          if (containsExpression?.length) {
+            try {
+              const modifiedVal = templatizeText(val, {}, env);
+              const updatedValue = evalScript(modifiedVal, env).result;
+              if (updatedValue !== undefined) {
+                val = updatedValue;
+              }
+            } catch (ex) {
+              actuallyAString = true;
+            }
+          } else {
+            // if we have parsing error then we're guessing it's CSS
+            actuallyAString = true;
+          }
         }
       }
     }
