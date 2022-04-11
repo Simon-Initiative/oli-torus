@@ -22,7 +22,7 @@ defmodule Oli.Factory do
   alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.{Publication, PublishedResource, Publisher}
   alias Oli.Resources.{Resource, Revision}
 
   def author_factory() do
@@ -419,6 +419,16 @@ defmodule Oli.Factory do
       sub: sequence("sub"),
       params: %{},
       exp: DateTime.add(DateTime.utc_now(), 3600)
+    }
+  end
+
+  def publisher_factory() do
+    %Publisher{
+      name: sequence("Publisher"),
+      email: "#{sequence("publisher")}@example.edu",
+      address: "Publisher Address",
+      main_contact: "Publisher Contact",
+      website_url: "mypublisher.com"
     }
   end
 end
