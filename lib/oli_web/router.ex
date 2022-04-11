@@ -859,6 +859,11 @@ defmodule OliWeb.Router do
     # System Message Banner
     live("/system_messages", SystemMessageLive.IndexView)
 
+    # Publishers
+    live("/publishers", PublisherLive.IndexView)
+    live("/publishers/new", PublisherLive.NewView)
+    live("/publishers/:publisher_id", PublisherLive.ShowView)
+
     # Course Ingestion
     live("/ingest", Admin.Ingest)
 
