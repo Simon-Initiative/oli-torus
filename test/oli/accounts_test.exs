@@ -266,6 +266,23 @@ defmodule Oli.AccountsTest do
       assert returned_user.email == user.email
       assert returned_user.author_id == returned_author.id
     end
+
+    test "is_lms_user?/1 returns true when the user exists and belongs to an lms" do
+      user = insert(:user)
+      insert(:lti_params, user_id: user.id)
+
+      assert Accounts.is_lms_user?(user.email)
+    end
+
+    test "is_lms_user?/1 returns false when the user does not exist" do
+      refute Accounts.is_lms_user?("invalid_email")
+    end
+
+    test "is_lms_user?/1 returns false when the user exists but is not from an lms" do
+      user = insert(:user)
+
+      refute Accounts.is_lms_user?(user.email)
+    end
   end
 
   describe "communities accounts" do

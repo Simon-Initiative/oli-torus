@@ -7,6 +7,7 @@ defmodule Oli.Factory do
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Snapshots.Snapshot
+  alias Oli.Lti.LtiParams
 
   alias Oli.Delivery.Sections.{
     Enrollment,
@@ -384,6 +385,18 @@ defmodule Oli.Factory do
       user: insert(:user),
       section: insert(:section),
       resource: insert(:resource)
+    }
+  end
+
+  def lti_params_factory() do
+    %LtiParams{
+      issuer: sequence("issuer"),
+      client_id: sequence("client_id"),
+      deployment_id: sequence("deployment_id"),
+      context_id: sequence("context_id"),
+      sub: sequence("sub"),
+      params: %{},
+      exp: DateTime.add(DateTime.utc_now(), 3600)
     }
   end
 end
