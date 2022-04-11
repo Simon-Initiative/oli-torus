@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectPageContent, selectScore } from '../../store/features/page/slice';
+import {
+  selectPageContent,
+  selectPageSlug,
+  selectPreviewMode,
+  selectScore,
+  selectSectionSlug,
+} from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
@@ -32,8 +38,55 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   const [showOptions, setShowOptions] = React.useState(false);
 
+  const isPreviewMode = useSelector(selectPreviewMode);
+
+  const [backButtonUrl, setBackButtonUrl] = useState('');
+  const [backButtonText, setBackButtonText] = useState('Back to Overview');
+
+  const projectSlug = useSelector(selectSectionSlug);
+  const resourceSlug = useSelector(selectPageSlug);
+
+  useEffect(() => {
+    if (isPreviewMode) {
+      // return to authoring
+      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
+      setBackButtonText('Back to Authoring');
+    } else {
+      setBackButtonUrl(window.location.href.split('/page')[0] + '/overview');
+      setBackButtonText('Back to Overview');
+    }
+  }, [isPreviewMode]);
+
   return (
     <div className="headerContainer">
+      <div className="back-button">
+        <style>
+          {`
+          .back-button {
+            display: flex;
+            width: 100px;
+          }
+          .back-button a {
+              display: flex;
+              height: 3em;
+              width: 100px;
+              align-items: center;
+              justify-content: center;
+              background-color: #eee;
+              border-radius: 3px;
+              cursor: pointer;
+              border: 1px solid;
+              position: absolute;
+              top: 4px;
+              left: 4px;
+              text-decoration: none;
+          }
+          `}
+        </style>
+        <a href={backButtonUrl} title={backButtonText}>
+          Back
+        </a>
+      </div>
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
