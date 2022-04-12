@@ -55,8 +55,6 @@ defmodule Oli.SectionsTest do
 
       enrollments = Sections.list_enrollments(section.slug)
 
-      assert length(enrollments) == 3
-
       assert enrollments |> Enum.map(& &1.user_id) |> Enum.sort() ==
                [user1, user2, user3] |> Enum.map(& &1.id) |> Enum.sort()
 
