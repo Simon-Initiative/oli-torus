@@ -13,8 +13,8 @@ defmodule OliWeb.AuthoringView do
 
   def author_role_color(author) do
     if Accounts.is_admin?(author),
-      do: "#2ecc71",
-      else: "#3498db"
+      do: "admin-color",
+      else: "author-color"
   end
 
   def author_account_linked?(%Author{} = author),
@@ -25,8 +25,8 @@ defmodule OliWeb.AuthoringView do
     email
   end
 
-  def author_icon(%{current_autor: current_autor} = assigns) do
-    case current_autor.picture do
+  def author_icon(%{current_author: current_author} = assigns) do
+    case current_author.picture do
       nil ->
         author_icon(%{})
 

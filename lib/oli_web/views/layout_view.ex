@@ -119,9 +119,8 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_link(%{:assigns => assigns} = conn) do
-    render(__MODULE__, "_author_account_dropdown.html", conn: conn, current_author: assigns.current_author)
-  end
+  def account_dropdown(%{assigns: %{current_author: current_author}} = conn),
+    do: render(__MODULE__, "_author_account_dropdown.html", conn: conn, current_author: current_author)
 
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))

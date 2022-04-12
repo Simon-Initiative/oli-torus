@@ -3,7 +3,7 @@
     <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
       <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
         <div class="username"><%= @current_author.name %></div>
-        <div class="role text-right" style="color: <%= author_role_color @current_author %>;"><%= author_role_text @current_author %></div>
+        <div class="role text-right <%= author_role_color @current_author %>"><%= author_role_text @current_author %></div>
       </div>
       <div class="user-icon"><%= author_icon(assigns) %></div>
     </a>

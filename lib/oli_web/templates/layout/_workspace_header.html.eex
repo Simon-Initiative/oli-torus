@@ -2,6 +2,6 @@
   <h3><%= @title %></h3>
   <div class='d-flex flex-nowrap align-items-center'>
     <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
-    <%= account_link @conn %>
+    <%= account_dropdown @conn %>
   </div>
 </div>
