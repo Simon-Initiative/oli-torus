@@ -8,25 +8,19 @@ defmodule Oli.Publishing.PublisherTest do
 
   describe "changeset/2" do
     test "changeset should be valid with correct attributes" do
-      changeset =
-        build(:publisher)
-        |> Publisher.changeset()
+      changeset = Publisher.changeset(build(:publisher))
 
       assert changeset.valid?
     end
 
     test "changeset should be invalid if name is empty" do
-      changeset =
-        build(:publisher, %{name: ""})
-        |> Publisher.changeset()
+      changeset = Publisher.changeset(build(:publisher, %{name: ""}))
 
       refute changeset.valid?
     end
 
     test "changeset should be invalid if email is empty" do
-      changeset =
-        build(:publisher, %{email: ""})
-        |> Publisher.changeset()
+      changeset = Publisher.changeset(build(:publisher, %{email: ""}))
 
       refute changeset.valid?
     end
