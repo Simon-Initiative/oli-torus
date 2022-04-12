@@ -3,11 +3,13 @@
 
 .resource-editor {
   margin: 0 auto;
+
   &.row {
     .col-12 {
       padding: 0;
     }
   }
+
   .preview-content {
     all: initial;
     all: unset;

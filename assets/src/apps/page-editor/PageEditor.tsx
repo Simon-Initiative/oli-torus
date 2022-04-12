@@ -38,8 +38,9 @@ import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { registerUnload, unregisterUnload } from './listeners';
 import { empty, PageUndoable, Undoables } from './types';
+import { ContentOutline } from 'components/resource/editors/ContentOutline';
 
-import './PageEditor.scss';
+import '../ResourceEditor.scss';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
@@ -566,7 +567,15 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
               />
             </Objectives>
 
-            <div>
+            <div className="d-flex flex-row">
+              <ContentOutline
+                editMode={this.state.editMode}
+                content={this.state.content}
+                activityContexts={this.state.activityContexts}
+                editorMap={props.editorMap}
+                projectSlug={projectSlug}
+                onEditContentList={onEdit}
+              />
               <Editors
                 {...props}
                 editMode={this.state.editMode}
@@ -578,7 +587,6 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 activityContexts={this.state.activityContexts}
                 onRemove={(key: string) => this.onRemove(key)}
                 onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}
-                onEditContentList={onEdit}
                 onActivityEdit={this.onActivityEdit}
                 onPostUndoable={this.onPostUndoable}
                 content={this.state.content}

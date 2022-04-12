@@ -87,11 +87,16 @@ export function toSimpleText(node: Node | RichText | Descendant[]): string {
 }
 
 function toSimpleTextHelper(node: Node, text: string): string {
-  if (Text.isText(node)) return text + node.text;
-  return [...node.children].reduce((p, c) => {
-    if (Text.isText(c)) return p + c.text;
-    return toSimpleTextHelper(c, p);
-  }, text);
+  if (Text.isText(node)) {
+    return text + node.text;
+  } else if (Array.isArray(node.children)) {
+    return [...node.children].reduce((p, c) => {
+      if (Text.isText(c)) return p + c.text;
+      return toSimpleTextHelper(c, p);
+    }, text);
+  } else {
+    return '';
+  }
 }
 
 export const isTopLevel = (editor: Editor) => {

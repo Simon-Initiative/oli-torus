@@ -121,7 +121,7 @@ export const createEditor = (
     return (
       <ActivityBlock
         {...editorProps}
-        contentItem={content}
+        activity={content}
         label={activity.friendlyName}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}

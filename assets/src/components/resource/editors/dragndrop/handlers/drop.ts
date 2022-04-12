@@ -3,7 +3,7 @@ import { DragPayload } from '../interfaces';
 import * as Immutable from 'immutable';
 import * as Persistence from 'data/persistence/activity';
 
-const scrollToResourceEditor = (contentId: string) => {
+export const scrollToResourceEditor = (contentId: string) => {
   setTimeout(() => {
     document.querySelector(`#re${contentId}`)?.scrollIntoView({ behavior: 'smooth' });
   });

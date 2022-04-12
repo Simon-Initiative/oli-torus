@@ -66,7 +66,7 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
     }
   }
 
-  return <i>Empty</i>;
+  return <i>No content</i>;
 }
 
 export const positionRect = ({

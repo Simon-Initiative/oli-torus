@@ -124,7 +124,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           readOnly={!props.editMode}
           renderElement={renderElement}
           renderLeaf={renderLeaf}
-          placeholder={props.placeholder ?? 'Enter some content here...'}
+          placeholder={props.placeholder ?? 'Type here or use + to begin...'}
           onKeyDown={onKeyDown}
           onFocus={emptyOnFocus}
           onPaste={(e) => {
