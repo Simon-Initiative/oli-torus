@@ -9,12 +9,7 @@ import { contexts } from '../../../types/applicationContext';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import { FIBModel } from './schema';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const css = require('./FillBlanks.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const quill = require('./Quill.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const select2Styles = require('react-select2-wrapper/css/select2.css');
+
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
