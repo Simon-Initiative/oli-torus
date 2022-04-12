@@ -63,28 +63,40 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
         <style>
           {`
           .back-button {
+            z-index: 1;
             display: flex;
-            width: 100px;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: calc(50% - 14px);
           }
           .back-button a {
-              display: flex;
-              height: 3em;
-              width: 100px;
-              align-items: center;
-              justify-content: center;
-              background-color: #eee;
-              border-radius: 3px;
-              cursor: pointer;
-              border: 1px solid;
-              position: absolute;
-              top: 4px;
-              left: 4px;
-              text-decoration: none;
+            text-decoration: none;
+            justify-content: center;
+            align-items: center;
+            padding: 0 4px;
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 0 0 4px 4px;
+            color: #6c757d;
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            border: 1px solid #6c757d;
+            border-top: none;
+            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+          }
+          .back-button a:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
           }
           `}
         </style>
         <a href={backButtonUrl} title={backButtonText}>
-          Back
+          <span className="fa fa-arrow-left">&nbsp;</span>
         </a>
       </div>
       <header id="delivery-header">
