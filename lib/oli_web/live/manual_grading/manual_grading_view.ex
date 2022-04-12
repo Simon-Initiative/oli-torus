@@ -108,6 +108,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
+           delivery_breadcrumb: true,
            section: section,
            total_count: total_count,
            table_model: table_model,
