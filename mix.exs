@@ -14,6 +14,7 @@ defmodule Oli.MixProject do
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
+        "test.hound": :hound,
         test: :test,
         "test.ecto.reset": :test,
         coveralls: :test,
@@ -38,7 +39,6 @@ defmodule Oli.MixProject do
       default_release: :oli
     ]
   end
-
 
   defp docs do
     [
@@ -83,15 +83,14 @@ defmodule Oli.MixProject do
   defp groups_for_extras do
     [
       "Getting started": ~r/guides\/starting\/.?/,
-      "Releases": ~r/guides\/releases\/.?/,
-      "Process": ~r/guides\/process\/.?/,
+      Releases: ~r/guides\/releases\/.?/,
+      Process: ~r/guides\/process\/.?/,
       "System design": ~r/guides\/design\/.?/,
       "Activity SDK": ~r/guides\/activities\/.?/,
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/
     ]
   end
-
 
   # Configuration for the OTP application.
   #
@@ -104,6 +103,7 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
+  defp elixirc_paths(:hound), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -133,14 +133,15 @@ defmodule Oli.MixProject do
       {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
-      {:ex_machina, "~> 2.7.0", only: :test},
+      {:ex_machina, "~> 2.7.0", only: [:hound, :test]},
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
-      {:excoveralls, "~> 0.14.4", only: :test},
+      {:excoveralls, "~> 0.14.4", only: [:hound, :test]},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
@@ -149,7 +150,7 @@ defmodule Oli.MixProject do
       {:lti_1p3_ecto_provider, "~> 0.3.1"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:mox, "~> 0.5", only: :test},
+      {:mox, "~> 0.5", only: [:test, :hound]},
       {:nimble_parsec, "~> 0.5"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
