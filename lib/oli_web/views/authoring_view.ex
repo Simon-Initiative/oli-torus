@@ -3,7 +3,7 @@ defmodule OliWeb.AuthoringView do
   use Phoenix.Component
 
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User}
+  alias Oli.Accounts.Author
 
   def author_role_text(author) do
     if Accounts.is_admin?(author),
