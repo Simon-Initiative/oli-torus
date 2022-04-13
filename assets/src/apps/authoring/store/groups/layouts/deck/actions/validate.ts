@@ -493,7 +493,6 @@ export const validateVariables = createAsyncThunk<any, any, any>(
     const rootState = getState();
     const currentLesson = selectPageState(rootState as any);
     const errors = validateLessonVariables(currentLesson);
-    console.log({ errors });
     return fulfillWithValue({ errors });
   },
 );
