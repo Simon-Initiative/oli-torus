@@ -1,24 +1,23 @@
 import React from 'react';
 
-import { Purpose as PurposeType } from 'data/content/resource';
+import { PurposeTypes } from 'data/content/resource';
 
 export type PurposeProps = {
   editMode: boolean; // Whether or not we can edit
   purpose: string;
-  purposes: PurposeType[];
   onEdit: (purpose: string) => void;
 };
 
 export const Purpose = (props: PurposeProps) => {
-  const { editMode, purpose, onEdit, purposes } = props;
+  const { editMode, purpose, onEdit } = props;
 
-  const options = purposes.map((p) => (
+  const options = PurposeTypes.map((p) => (
     <button className="dropdown-item" key={p.value} onClick={() => onEdit(p.value)}>
       {p.label}
     </button>
   ));
 
-  const purposeLabel = purposes.find((p) => p.value === purpose)?.label;
+  const purposeLabel = PurposeTypes.find((p) => p.value === purpose)?.label;
 
   return (
     <div className="form-inline">
@@ -34,7 +33,7 @@ export const Purpose = (props: PurposeProps) => {
         >
           {purposeLabel}
         </button>
-        <div className="dropdown-menu" aria-labelledby="purposeTypeButton">
+        <div className="dropdown-menu dropdown-menu-right" aria-labelledby="purposeTypeButton">
           {options}
         </div>
       </div>

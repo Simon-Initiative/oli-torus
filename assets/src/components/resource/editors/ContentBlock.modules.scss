@@ -1,0 +1,94 @@
+@use 'authoring/theme' as authoring;
+
+.contentBlock,
+.groupBlock,
+.activityBlock {
+  position: relative;
+
+  &:hover > .actions {
+    opacity: 100;
+  }
+}
+
+.contentBlock {
+  width: 100%;
+}
+
+.groupBlock {
+  // handle the special case when purpose type is none, apply the
+  // padding styles to slate editor itself. this allows slate to utilize
+  // the entire surrounding padding for cursor events and allow for easier
+  // selection etc..
+  :global(&.purpose-none) {
+    .slate-editor {
+      clear: both;
+      cursor: initial;
+      padding: 1.3em 10px;
+
+      &.structured-content {
+        padding: 1.3em max(calc(50% - 400px), 50px);
+      }
+    }
+  }
+
+  :global(.btn-purpose) {
+    border: 1px solid authoring.$gray-200;
+
+    text-align: left;
+    :global(&.dropdown-toggle)::after {
+      float: right;
+      margin-top: 0.7em;
+    }
+
+    &:hover {
+      border-color: rgba(authoring.$body-color, 0.6);
+      background: rgba(authoring.$body-color, 0.05);
+    }
+
+    &:disabled {
+      background-color: authoring.$card-cap-bg;
+
+      &:hover {
+        border-color: rgba(authoring.$body-color, 0.1);
+        background: authoring.$card-cap-bg;
+      }
+    }
+  }
+
+  :global(.btn-delete):not([disabled]) {
+    color: rgba(authoring.$body-color, 0.8);
+
+    &:hover {
+      color: authoring.$danger;
+    }
+  }
+}
+
+.groupBlockHeader {
+  max-width: 768px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+}
+
+.actions {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  opacity: 0;
+  padding: 4px 6px;
+  background: authoring.$body-bg;
+  z-index: authoring.$z-content-3;
+
+  border: 2px solid authoring.$gray-400;
+  border-right: none;
+
+  transition: opacity 200ms ease-in;
+}
+
+.purposeContainer {
+  padding: 1.3em max(calc(50% - 400px), 50px);
+}
+
+.activityBlock {
+}

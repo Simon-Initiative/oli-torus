@@ -6,7 +6,7 @@ html.authoring {
   .editors {
     border: 2px solid authoring.$gray-200;
     margin-top: 20px;
-    padding: 20px 40px;
+    padding: 20px 0px;
 
     .slate-editor {
       padding: 0.5rem;
@@ -15,6 +15,7 @@ html.authoring {
     }
 
     .activity,
+    .activity-bank-selection,
     .activity-editor {
       max-width: 768px;
       margin: 0px auto;
@@ -25,10 +26,6 @@ html.authoring {
     }
 
     .resource-block-editor-and-controls {
-      .resource-content-frame {
-        width: 100%;
-      }
-
       .content-block {
         .slate-editor {
           border: none;

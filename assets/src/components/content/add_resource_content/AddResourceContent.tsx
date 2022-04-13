@@ -9,7 +9,7 @@ import styles from './AddResourceContent.modules.scss';
 
 export type AddCallback = (
   content: ResourceContent,
-  index: number,
+  index: number | number[],
   a?: ActivityEditContext,
 ) => void;
 
@@ -18,10 +18,12 @@ export type AddCallback = (
 interface AddResourceContentProps {
   editMode: boolean;
   isLast?: boolean;
+  index: number | number[];
 }
 export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   editMode,
   isLast,
+  index,
   children,
 }) => {
   const [id] = useState(guid());

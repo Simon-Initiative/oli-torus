@@ -12,11 +12,11 @@ import React from 'react';
 
 export type AddResourceProps = {
   id: string;
-  index: number;
+  index: number | number[];
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
-  onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
+  onAddItem: (c: ResourceContent, index: number | number[], a?: ActivityEditContext) => void;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (objective: Objective) => void;

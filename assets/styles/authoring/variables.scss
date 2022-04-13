@@ -38,6 +38,7 @@ $z-overlay-2: 1050 !default;
 $z-overlay-3: 1100 !default;
 $z-overlay-4: 1150 !default;
 $z-highest: 10000 !default;
+
 $reposition-target: 999 !default;
 $dropdown-menu: 999 !default;
 
@@ -86,10 +87,18 @@ $dropdown-menu: 999 !default;
 
   --authoring-card-cap-bg: #{$card-cap-bg};
 
-  --authoring-choice-selected-bg-hover: #{choice-selected-bg-hover};
-  --authoring-choice-selected-color: #{choice-selected-bg-hover};
-  --authoring-choice-selected-bg: #{choice-selected-bg-hover};
-  --authoring-choice-selected-border-color: #{choice-selected-bg-hover};
+  --authoring-z-content-1: #{$z-content-1};
+  --authoring-z-content-2: #{$z-content-2};
+  --authoring-z-content-3: #{$z-content-3};
+  --authoring-z-content-4: #{$z-content-4};
+  --authoring-z-content-5: #{$z-content-5};
+  --authoring-z-content-6: #{$z-content-6};
+  --authoring-z-overlay-1: #{$z-content-1};
+  --authoring-z-overlay-2: #{$z-content-2};
+  --authoring-z-overlay-3: #{$z-content-3};
+  --authoring-z-overlay-4: #{$z-content-4};
+  --authoring-z-highest: #{$z-highest};
 
-  --authoring-dropdown-menu: #{dropdown-menu};
+  --authoring-reposition-target: #{$reposition-target};
+  --authoring-dropdown-menu: #{$dropdown-menu};
 }

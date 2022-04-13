@@ -380,14 +380,6 @@ html.authoring.dark {
   }
 
   .resource-block-editor {
-    .resource-content-frame {
-      &.card {
-        .card-body {
-          background-color: $body-bg;
-        }
-      }
-    }
-
     .toolbar {
       .toolbar-buttons {
         background-color: transparentize($color: $gray-700, $amount: 0);

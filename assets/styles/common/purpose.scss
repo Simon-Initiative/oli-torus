@@ -48,14 +48,16 @@
       content: '\f5da';
     }
   }
-}
 
-.activity-purpose {
-  padding: 4px 8px;
-  font-weight: 200;
-  text-transform: uppercase;
-  color: white;
-  border-radius: 4px;
+  &.checkpoint .content-purpose-label,
+  &.didigetthis .content-purpose-label,
+  &.learnbydoing .content-purpose-label {
+    padding: 4px 8px;
+    font-weight: 200;
+    text-transform: uppercase;
+    color: white;
+    border-radius: 4px;
+  }
 
   // Only display purpose type decorations for the first elem of that type
   // in a series.
@@ -72,7 +74,7 @@
     display: none;
   }
 
-  &.checkpoint {
+  &.checkpoint .content-purpose-label {
     background-color: $activity-purpose-checkpoint-color;
 
     &::before {
@@ -83,7 +85,7 @@
     }
   }
 
-  &.didigetthis {
+  &.didigetthis .content-purpose-label {
     background-color: $activity-purpose-didigetthis-color;
 
     &::before {
@@ -94,7 +96,7 @@
     }
   }
 
-  &.learnbydoing {
+  &.learnbydoing .content-purpose-label {
     background-color: $activity-purpose-learnbydoing-color;
 
     &::before {

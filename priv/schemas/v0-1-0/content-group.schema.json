@@ -6,13 +6,22 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": ["integer", "string"]
+      "type": [
+        "integer",
+        "string"
+      ]
     },
     "type": {
       "const": "group"
     },
     "layout": {
-      "enum": ["deck"]
+      "enum": [
+        "vertical",
+        "deck"
+      ]
+    },
+    "purpose": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     },
     "children": {
       "type": "array",
@@ -40,5 +49,9 @@
       }
     }
   },
-  "required": ["type", "layout", "children"]
+  "required": [
+    "type",
+    "layout",
+    "children"
+  ]
 }

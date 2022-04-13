@@ -4,7 +4,7 @@ import React from 'react';
 
 interface Props {
   onAddItem: AddCallback;
-  index: number;
+  index: number | number[];
 }
 export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
   return (

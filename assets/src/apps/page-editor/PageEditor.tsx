@@ -20,6 +20,7 @@ import {
   ResourceContent,
   ResourceContext,
   StructuredContent,
+  getResourceContentName,
 } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { createMessage, Message, Severity } from 'data/messages/messages';
@@ -306,7 +307,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     if (item !== undefined) {
       const undoable: PageUndoable = {
         type: 'PageUndoable',
-        description: 'Removed ' + (item.type === 'content' ? 'Content' : 'Activity'),
+        description: 'Removed ' + getResourceContentName(item),
         index,
         item,
       };

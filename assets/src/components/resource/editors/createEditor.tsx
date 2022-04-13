@@ -2,6 +2,7 @@ import React from 'react';
 import { ActivityReference, ResourceContent, ResourceContext } from 'data/content/resource';
 import { StructuredContentEditor } from 'components/content/StructuredContentEditor';
 import { ContentBlock } from './ContentBlock';
+import { GroupBlock } from './GroupBlock';
 import { ActivityBlock } from './ActivityBlock';
 import * as Immutable from 'immutable';
 import { ActivityEditContext } from 'data/content/activity';
@@ -14,12 +15,14 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { defaultActivityState } from 'data/activities/utils';
 import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
+import { AddResource } from './AddResource';
 
 // content or referenced activities
 export const createEditor = (
   resourceContext: ResourceContext,
-  content: ResourceContent,
+  contentItem: ResourceContent,
   index: number,
+  level: number,
   activities: Immutable.Map<string, ActivityEditContext>,
   editMode: boolean,
   resourceSlug: string,
@@ -37,14 +40,14 @@ export const createEditor = (
   onRegisterNewTag: (o: Tag) => void,
   onAddItem: AddCallback,
 ): JSX.Element => {
-  if (content.type === 'selection') {
+  if (contentItem.type === 'selection') {
     return (
-      <ContentBlock {...editorProps} contentItem={content} index={index}>
+      <ContentBlock {...editorProps} contentItem={contentItem} index={index}>
         <ActivityBankSelection
           editorMap={editorMap}
-          key={content.id}
+          key={contentItem.id}
           editMode={editMode}
-          selection={content}
+          selection={contentItem}
           onChange={onEdit}
           projectSlug={projectSlug}
           allObjectives={Immutable.List<Objective>(allObjectives)}
@@ -56,13 +59,13 @@ export const createEditor = (
     );
   }
 
-  if (content.type === 'content') {
+  if (contentItem.type === 'content') {
     return (
-      <ContentBlock {...editorProps} contentItem={content} index={index}>
+      <ContentBlock {...editorProps} contentItem={contentItem} index={index}>
         <StructuredContentEditor
-          key={content.id}
+          key={contentItem.id}
           editMode={editMode}
-          content={content}
+          content={contentItem}
           onEdit={onEdit}
           projectSlug={projectSlug}
           toolbarInsertDescs={getToolbarForContentType({
@@ -77,7 +80,59 @@ export const createEditor = (
     );
   }
 
-  const activity = activities.get((content as ActivityReference).activitySlug);
+  if (contentItem.type === 'group') {
+    const onEditChild = (child: ResourceContent) => {
+      const updatedContent = {
+        ...contentItem,
+        children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
+      };
+      onEdit(updatedContent);
+    };
+
+    return (
+      <GroupBlock {...editorProps} contentItem={contentItem} index={index}>
+        {contentItem.children.map((c, groupIndex) => (
+          <>
+            <AddResource
+              {...editorProps}
+              onRegisterNewObjective={onRegisterNewObjective}
+              id={c.id}
+              index={[index, groupIndex]}
+              editMode={editMode}
+              editorMap={editorMap}
+              resourceContext={resourceContext}
+              onAddItem={onAddItem}
+            />
+
+            {createEditor(
+              resourceContext,
+              c,
+              groupIndex,
+              level + 1,
+              activities,
+              editMode,
+              resourceSlug,
+              projectSlug,
+              graded,
+              objectivesMap,
+              editorProps,
+              allObjectives,
+              allTags,
+              editorMap,
+              onEditChild,
+              onActivityEdit,
+              onPostUndoable,
+              onRegisterNewObjective,
+              onRegisterNewTag,
+              onAddItem,
+            )}
+          </>
+        ))}
+      </GroupBlock>
+    );
+  }
+
+  const activity = activities.get((contentItem as ActivityReference).activitySlug);
 
   if (activity !== undefined) {
     const previewText = activity.model.authoring?.previewText;
@@ -121,7 +176,7 @@ export const createEditor = (
     return (
       <ActivityBlock
         {...editorProps}
-        activity={content}
+        activity={contentItem}
         label={activity.friendlyName}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { State, Dispatch } from 'state';
-import { Purpose } from 'components/content/Purpose';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { Purpose as PurposeType, ResourceContent, ActivityReference } from 'data/content/resource';
 import * as Immutable from 'immutable';
@@ -9,6 +8,8 @@ import { updatePreferences } from 'state/preferences';
 import { Preferences } from 'data/persistence/preferences';
 import { valueOr } from 'utils/common';
 import { Maybe } from 'tsmonad';
+import styles from './ContentBlock.modules.scss';
+import { classNames } from 'utils/classNames';
 
 interface ActivityBlockProps {
   children?: JSX.Element | JSX.Element[];
@@ -31,17 +32,8 @@ interface ActivityBlockProps {
 
 const ActivityBlock = (props: ActivityBlockProps) => {
   return (
-    <div className="activity-block resource-content-frame">
-      <div className="d-flex flex-row align-items-center">
-        <div className="d-flex align-items-center flex-grow-1"></div>
-
-        <Purpose
-          purpose={props.activity.purpose}
-          purposes={props.purposes}
-          editMode={props.editMode}
-          onEdit={props.onEditPurpose}
-        />
-
+    <div className={classNames(styles.activityBlock, 'activity-block')}>
+      <div className={styles.actions}>
         <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
       </div>
       <div id={props.activity.id} className="p-2">

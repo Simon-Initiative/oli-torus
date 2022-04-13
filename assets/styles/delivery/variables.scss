@@ -88,4 +88,9 @@ $z-highest: 10000 !default;
 
   --delivery-body-color: #{$body-color};
   --delivery-body-bg: #{$body-bg};
+
+  --delivery-choice-selected-bg: #{$choice-selected-bg};
+  --delivery-choice-selected-bg-hover: #{$choice-selected-bg-hover};
+  --delivery-choice-selected-color: #{$choice-selected-color};
+  --delivery-choice-selected-border-color: #{$choice-selected-border-color};
 }

@@ -1,3 +1,4 @@
+import * as Immutable from 'immutable';
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
@@ -5,7 +6,6 @@ import { ModelElement } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
-import { Node } from 'slate';
 import guid from 'utils/guid';
 import { ActivityEditContext } from './activity';
 
@@ -25,6 +25,19 @@ export type ResourceContent =
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection;
+
+export const getResourceContentName = (content: ResourceContent) => {
+  switch (content.type) {
+    case 'activity-reference':
+      return 'Activity';
+    case 'content':
+      return 'Content';
+    case 'group':
+      return 'Group';
+    case 'selection':
+      return 'Selection';
+  }
+};
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
@@ -51,18 +64,18 @@ export type Purpose = {
   label: string;
 };
 
-export const ActivityPurposes: Purpose[] = [
-  { value: 'none', label: 'Activity' },
+export const PurposeTypes: Purpose[] = [
+  { value: 'none', label: 'None' },
   { value: 'checkpoint', label: 'Checkpoint' },
   { value: 'didigetthis', label: 'Did I get this?' },
+  { value: 'lab', label: 'Lab' },
   { value: 'learnbydoing', label: 'Learn by doing' },
-];
-
-export const ContentPurposes: Purpose[] = [
-  { value: 'none', label: 'Content' },
-  { value: 'example', label: 'Example' },
   { value: 'learnmore', label: 'Learn more' },
   { value: 'manystudentswonder', label: 'Many students wonder' },
+  { value: 'quiz', label: 'Quiz' },
+  { value: 'simulation', label: 'Simulation' },
+  { value: 'walkthrough', label: 'Walkthrough' },
+  { value: 'example', label: 'Example' },
 ];
 
 export const createDefaultStructuredContent = (
@@ -71,6 +84,26 @@ export const createDefaultStructuredContent = (
   type: 'content',
   id: guid(),
   children,
+  purpose: 'none',
+});
+
+export const createDefaultGroupContent = (
+  children: ModelElement[] = [Model.p()],
+): Immutable.OrderedMap<string, StructuredContent> => {
+  const defaultStructuredContent = createDefaultStructuredContent(children);
+
+  return Immutable.OrderedMap<string, StructuredContent>([
+    [defaultStructuredContent.id, defaultStructuredContent],
+  ]);
+};
+
+export const createGroup = (
+  children: ResourceContent[] = [createDefaultStructuredContent()],
+): GroupContent => ({
+  type: 'group',
+  id: guid(),
+  children,
+  layout: 'vertical',
   purpose: 'none',
 });
 
@@ -108,9 +141,10 @@ export interface ActivityReference {
 }
 
 export interface GroupContent {
-  id: number | string;
+  id: string;
   type: 'group';
   layout: string; // TODO define layout types
+  purpose: string;
   children: ResourceContent[];
 }
 

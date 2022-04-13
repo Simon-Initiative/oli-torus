@@ -1,11 +1,6 @@
 import * as Immutable from 'immutable';
 import React from 'react';
-import {
-  ResourceContent,
-  ActivityPurposes,
-  ContentPurposes,
-  ResourceContext,
-} from 'data/content/resource';
+import { ResourceContent, ResourceContext } from 'data/content/resource';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug, ResourceSlug } from 'data/types';
@@ -74,20 +69,20 @@ export const Editors = (props: EditorsProps) => {
       props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
     };
 
-    const purposes = contentValue.type === 'content' ? ContentPurposes : ActivityPurposes;
-
     const editorProps = {
-      purposes,
       editMode,
       onEditPurpose,
       content,
       onRemove,
     };
 
+    const level = 0;
+
     const editor = createEditor(
       props.resourceContext,
       contentValue,
       index,
+      level,
       activityContexts,
       editMode,
       resourceSlug,
