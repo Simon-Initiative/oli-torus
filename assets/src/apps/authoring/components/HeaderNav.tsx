@@ -2,6 +2,7 @@ import React from 'react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import {
+  selectIsAdmin,
   selectPaths,
   selectProjectSlug,
   selectReadOnly,
@@ -24,6 +25,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
   const revisionSlug = useSelector(selectRevisionSlug);
   const paths = useSelector(selectPaths);
   const isReadOnly = useSelector(selectReadOnly);
+  const isAdmin = useSelector(selectIsAdmin);
   const PANEL_SIDE_WIDTH = '270px';
 
   const dispatch = useDispatch();
@@ -116,6 +118,33 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 </button>
               </span>
             </OverlayTrigger>
+            {isAdmin && (
+              <OverlayTrigger
+                placement="bottom"
+                delay={{ show: 150, hide: 150 }}
+                overlay={
+                  <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+                    View Page Revision History (Admin)
+                  </Tooltip>
+                }
+              >
+                <span>
+                  <button
+                    className="px-2 btn btn-link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // open revistion history in new tab
+                      window.open(`/project/${projectSlug}/history/slug/${revisionSlug}`);
+                    }}
+                  >
+                    <i
+                      className="fa fa-history"
+                      style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+                    />
+                  </button>
+                </span>
+              </OverlayTrigger>
+            )}
             {isReadOnly && (
               <OverlayTrigger
                 placement="bottom"
