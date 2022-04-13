@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectPageContent, selectScore } from '../../store/features/page/slice';
+import {
+  selectPageContent,
+  selectPageSlug,
+  selectPreviewMode,
+  selectScore,
+  selectSectionSlug,
+} from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
@@ -32,8 +38,67 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   const [showOptions, setShowOptions] = React.useState(false);
 
+  const isPreviewMode = useSelector(selectPreviewMode);
+
+  const [backButtonUrl, setBackButtonUrl] = useState('');
+  const [backButtonText, setBackButtonText] = useState('Back to Overview');
+
+  const projectSlug = useSelector(selectSectionSlug);
+  const resourceSlug = useSelector(selectPageSlug);
+
+  useEffect(() => {
+    if (isPreviewMode) {
+      // return to authoring
+      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
+      setBackButtonText('Back to Authoring');
+    } else {
+      setBackButtonUrl(window.location.href.split('/page')[0] + '/overview');
+      setBackButtonText('Back to Overview');
+    }
+  }, [isPreviewMode]);
+
   return (
     <div className="headerContainer">
+      <div className="back-button">
+        <style>
+          {`
+          .back-button {
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: calc(50% - 14px);
+          }
+          .back-button a {
+            text-decoration: none;
+            justify-content: center;
+            align-items: center;
+            padding: 0 4px;
+            font-size: 13px;
+            line-height: 1.5;
+            border-radius: 0 0 4px 4px;
+            color: #6c757d;
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            border: 1px solid #6c757d;
+            border-top: none;
+            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+          }
+          .back-button a:hover {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+          }
+          `}
+        </style>
+        <a href={backButtonUrl} title={backButtonText}>
+          <span className="fa fa-arrow-left">&nbsp;</span>
+        </a>
+      </div>
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
