@@ -1,6 +1,10 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { JanusConditionProperties } from 'adaptivity/capi';
-import { checkExpressionsWithWrongBrackets } from 'adaptivity/scripting';
+import {
+  checkExpressionsWithWrongBrackets,
+  defaultGlobalEnv,
+  evalScript,
+} from 'adaptivity/scripting';
 import { forEachCondition } from 'apps/authoring/components/AdaptivityEditor/ConditionsBlockEditor';
 import { LessonVariable } from 'apps/authoring/components/AdaptivityEditor/VariablePicker';
 import { DiagnosticTypes } from 'apps/authoring/components/Modal/diagnostics/DiagnosticTypes';
@@ -421,6 +425,51 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
   return errors;
 };
 
+const validateLessonVariables = (page: any) => {
+  const allNames = page.custom.variables.map((v: any) => v.name);
+  // variables can and will ref previous ones
+  // they will reference them "globally" so need to track the above
+  // in order to prepend the "variables" namespace
+  const statements: string[] = page.custom.variables
+    .map((v: any) => {
+      if (!v.name || !v.expression) {
+        return '';
+      }
+      let expr = v.expression;
+      allNames.forEach((name: string) => {
+        const regex = new RegExp(`{${name}}`, 'g');
+        expr = expr.replace(regex, `{variables.${name}}`);
+      });
+
+      const stmt = { expression: `let {variables.${v.name.trim()}} = ${expr};`, name: v.name };
+      return stmt;
+    })
+    .filter((s: any) => s);
+  // execute each sequentially in case there are errors (missing functions)
+  const broken: any[] = [];
+  statements.forEach((statement: any) => {
+    try {
+      const result = evalScript(statement.expression, defaultGlobalEnv);
+      if (result.result !== null) {
+        broken.push({
+          owner: page,
+          id: statement.name,
+          item: statement,
+          suggestedFix: ``,
+        });
+      }
+    } catch (e) {
+      broken.push({
+        owner: page,
+        key: statement.name,
+        fact: statement,
+        suggestedFix: ``,
+      });
+    }
+  });
+  return [...broken];
+};
+
 export const validatePartIds = createAsyncThunk<any, any, any>(
   `${AppSlice}/validatePartIds`,
   async (payload, { getState, fulfillWithValue }) => {
@@ -434,6 +483,17 @@ export const validatePartIds = createAsyncThunk<any, any, any>(
 
     const errors = diagnosePage(currentLesson, allActivities, sequence);
 
+    return fulfillWithValue({ errors });
+  },
+);
+
+export const validateVariables = createAsyncThunk<any, any, any>(
+  `${AppSlice}/validateVariables`,
+  async (payload, { getState, fulfillWithValue }) => {
+    const rootState = getState();
+    const currentLesson = selectPageState(rootState as any);
+    const errors = validateLessonVariables(currentLesson);
+    console.log({ errors });
     return fulfillWithValue({ errors });
   },
 );

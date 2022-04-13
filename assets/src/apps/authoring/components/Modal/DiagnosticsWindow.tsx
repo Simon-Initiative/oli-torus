@@ -1,6 +1,9 @@
 import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
-import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import {
+  validatePartIds,
+  validateVariables,
+} from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticTypes, DiagnosticRuleTypes } from './diagnostics/DiagnosticTypes';
 
@@ -156,6 +159,25 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   );
 };
 
+const PageError: React.FC<{ error: any }> = ({ error }) => {
+  return (
+    <ListGroup>
+      {error.map((problem: any) => (
+        <ListGroup.Item key={problem.owner.id}>
+          <ListGroup horizontal>
+            <ListGroup.Item className="flex-grow-1">
+              <span>
+                Custom variable &quot;
+                <strong>{problem.id} </strong> &quot; is not getting evaluated.
+              </span>
+            </ListGroup.Item>
+          </ListGroup>
+        </ListGroup.Item>
+      ))}
+    </ListGroup>
+  );
+};
+
 interface DiagnosticsWindowProps {
   onClose?: () => void;
 }
@@ -191,6 +213,19 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     }
   };
 
+  const handleValidateVariablesClick = async () => {
+    const result = await dispatch(validateVariables({}));
+    if ((result as any).meta.requestStatus === 'fulfilled') {
+      if ((result as any).payload.errors.length > 0) {
+        const errors = (result as any).payload.errors;
+        const errorList = <PageError key={errors[0].owner.title} error={errors} />;
+        setResults(errorList);
+      } else {
+        setResults(<p>No errors found.</p>);
+      }
+    }
+  };
+
   return (
     <Fragment>
       <Modal
@@ -208,6 +243,15 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
               <li>
                 Validate Lesson
                 <button className="btn btn-sm btn-primary ml-2" onClick={handleValidateClick}>
+                  Execute
+                </button>
+              </li>
+              <li style={{ marginTop: '5px' }}>
+                Validate Variables
+                <button
+                  className="btn btn-sm btn-primary ml-2"
+                  onClick={handleValidateVariablesClick}
+                >
                   Execute
                 </button>
               </li>
