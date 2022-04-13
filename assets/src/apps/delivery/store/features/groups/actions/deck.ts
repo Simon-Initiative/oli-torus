@@ -189,7 +189,7 @@ export const initializeActivity = createAsyncThunk(
     });
 
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
-    console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv });
+    /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
 
     const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {

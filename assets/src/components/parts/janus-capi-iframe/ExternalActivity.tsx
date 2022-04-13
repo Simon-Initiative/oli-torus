@@ -201,7 +201,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       setFrameSrc(sSrc);
     }
 
-    // INIT STATE also needs to take in all the sim values
+    // gather the changes with values only for my ID
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
         if (key.indexOf(`${domain}.${id}.`) === 0) {
