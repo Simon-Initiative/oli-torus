@@ -204,16 +204,17 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     // INIT STATE also needs to take in all the sim values
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        const value = currentStateSnapshot[key];
-        const typeOfValue = typeof value;
-        if (value === '[]') {
-          collect[key] = '';
-        } else if (typeOfValue === 'object') {
-          collect[key] = JSON.stringify(value);
-        } else {
-          collect[key] = value;
+        if (key.indexOf(`${domain}.${id}.`) === 0) {
+          const value = currentStateSnapshot[key];
+          const typeOfValue = typeof value;
+          if (value === '[]') {
+            collect[key] = '';
+          } else if (typeOfValue === 'object') {
+            collect[key] = JSON.stringify(value);
+          } else {
+            collect[key] = value;
+          }
         }
-
         return collect;
       },
       {},

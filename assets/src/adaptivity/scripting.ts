@@ -170,6 +170,9 @@ export const getExpressionStringForValue = (
     if (typeof val !== 'string') {
       val = JSON.stringify(val);
     }
+    if (!val) {
+      val = '';
+    }
     // strings need to have escaped quotes and backslashes
     // for janus-script
     val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '')}"`;

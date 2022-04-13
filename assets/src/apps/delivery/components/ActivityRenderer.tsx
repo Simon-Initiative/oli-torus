@@ -516,7 +516,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         data[everAppId][key.replace(`app.${everAppId}.`, '')] = getValue(key, defaultGlobalEnv);
         return data;
       }, {});
-      console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload });
+      /* console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload }); */
       await Extrinsic.updateGlobalUserState(updatePayload, isPreviewMode);
     }
     // we send ALL of the changes to the components
