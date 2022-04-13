@@ -2,7 +2,7 @@ defmodule OliWeb.PublisherLive.ShowView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
-  alias Oli.Publishing
+  alias Oli.Inventories
   alias OliWeb.Common.{Breadcrumb, DeleteModal, Params, ShowSection}
 
   alias OliWeb.PublisherLive.{
@@ -30,14 +30,14 @@ defmodule OliWeb.PublisherLive.ShowView do
 
   def mount(%{"publisher_id" => publisher_id}, _session, socket) do
     socket =
-      case Publishing.get_publisher(publisher_id) do
+      case Inventories.get_publisher(publisher_id) do
         nil ->
           socket
           |> put_flash(:info, "That publisher does not exist or it was deleted.")
           |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
         publisher ->
-          changeset = Publishing.change_publisher(publisher)
+          changeset = Inventories.change_publisher(publisher)
 
           assign(socket,
             publisher: publisher,
@@ -73,12 +73,12 @@ defmodule OliWeb.PublisherLive.ShowView do
   def handle_event("save", %{"publisher" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Publishing.update_publisher(socket.assigns.publisher, Params.trim(params)) do
+    case Inventories.update_publisher(socket.assigns.publisher, Params.trim(params)) do
       {:ok, publisher} ->
         socket = put_flash(socket, :info, "Publisher successfully updated.")
 
         {:noreply,
-         assign(socket, publisher: publisher, changeset: Publishing.change_publisher(publisher))}
+         assign(socket, publisher: publisher, changeset: Inventories.change_publisher(publisher))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         socket =
@@ -96,7 +96,7 @@ defmodule OliWeb.PublisherLive.ShowView do
     socket = clear_flash(socket)
 
     socket =
-      case Publishing.delete_publisher(socket.assigns.publisher) do
+      case Inventories.delete_publisher(socket.assigns.publisher) do
         {:ok, _publisher} ->
           socket
           |> put_flash(:info, "Publisher successfully deleted.")

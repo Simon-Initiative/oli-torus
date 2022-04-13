@@ -5,7 +5,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   alias OliWeb.Common.{Breadcrumb, Filter, Listing}
   alias OliWeb.PublisherLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Publishing
+  alias Oli.Inventories
   alias Surface.Components.Link
 
   data title, :string, default: "Publishers"
@@ -46,7 +46,7 @@ defmodule OliWeb.PublisherLive.IndexView do
   end
 
   def mount(_, _, socket) do
-    publishers = Publishing.list_publishers()
+    publishers = Inventories.list_publishers()
 
     {:ok, table_model} = TableModel.new(publishers)
 

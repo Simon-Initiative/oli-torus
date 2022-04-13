@@ -5,8 +5,8 @@ defmodule OliWeb.PublisherLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.Publishing
-  alias Oli.Publishing.Publisher
+  alias Oli.Inventories
+  alias Oli.Inventories.Publisher
 
   @live_view_index_route Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.IndexView)
   @live_view_new_route Routes.live_path(OliWeb.Endpoint, OliWeb.PublisherLive.NewView)
@@ -168,7 +168,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "can't be blank")
-      assert [] = Publishing.list_publishers()
+      assert [] = Inventories.list_publishers()
     end
 
     test "displays error message when publisher name already exists with leading or trailing whitespaces",
@@ -187,7 +187,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-      assert 1 = Publishing.list_publishers() |> length()
+      assert 1 = Inventories.list_publishers() |> length()
     end
 
     test "saves new publisher when data is valid", %{conn: conn} do
@@ -204,7 +204,7 @@ defmodule OliWeb.PublisherLiveTest do
       flash = assert_redirected(view, @live_view_index_route)
       assert flash["info"] == "Publisher successfully created."
 
-      [%Publisher{name: name} | _tail] = Publishing.list_publishers()
+      [%Publisher{name: name} | _tail] = Inventories.list_publishers()
 
       assert ^name = params.name
     end
@@ -250,7 +250,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be updated. Please check the errors below."
 
       assert has_element?(view, "span", "can't be blank")
-      refute Publishing.get_publisher(id).name == ""
+      refute Inventories.get_publisher(id).name == ""
     end
 
     test "updates a publisher correctly when data is valid", %{
@@ -270,7 +270,7 @@ defmodule OliWeb.PublisherLiveTest do
              |> render() =~
                "Publisher successfully updated."
 
-      %Publisher{name: new_name} = Publishing.get_publisher(id)
+      %Publisher{name: new_name} = Inventories.get_publisher(id)
 
       assert new_attributes.name == new_name
     end
@@ -292,7 +292,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be updated. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-      assert 2 = Publishing.list_publishers() |> length()
+      assert 2 = Inventories.list_publishers() |> length()
     end
 
     test "redirects to index view and displays error message when publisher does not exist", %{
@@ -371,7 +371,7 @@ defmodule OliWeb.PublisherLiveTest do
 
       flash = assert_redirected(view, @live_view_index_route)
       assert flash["info"] == "Publisher successfully deleted."
-      assert nil == Publishing.get_publisher(id)
+      assert nil == Inventories.get_publisher(id)
     end
   end
 end

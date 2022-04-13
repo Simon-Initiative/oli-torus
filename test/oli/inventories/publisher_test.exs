@@ -1,9 +1,9 @@
-defmodule Oli.Publishing.PublisherTest do
+defmodule Oli.Inventories.PublisherTest do
   use Oli.DataCase
 
   import Oli.Factory
 
-  alias Oli.Publishing.Publisher
+  alias Oli.Inventories.Publisher
   alias Oli.Repo
 
   describe "changeset/2" do

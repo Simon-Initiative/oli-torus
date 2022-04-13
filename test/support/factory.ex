@@ -20,9 +20,10 @@ defmodule Oli.Factory do
   alias Oli.Delivery.Paywall.Payment
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
+  alias Oli.Inventories.Publisher
   alias Oli.Lti.Tool.{Deployment, Registration}
   alias Oli.Notifications.SystemMessage
-  alias Oli.Publishing.{Publication, PublishedResource, Publisher}
+  alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources.{Resource, Revision}
 
   def author_factory() do

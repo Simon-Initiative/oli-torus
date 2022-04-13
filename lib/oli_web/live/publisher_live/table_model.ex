@@ -1,5 +1,5 @@
 defmodule OliWeb.PublisherLive.TableModel do
-  alias Oli.Publishing.Publisher
+  alias Oli.Inventories.Publisher
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 

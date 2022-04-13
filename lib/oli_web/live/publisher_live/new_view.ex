@@ -1,14 +1,14 @@
 defmodule OliWeb.PublisherLive.NewView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
-  alias Oli.Publishing
-  alias Oli.Publishing.Publisher
+  alias Oli.Inventories
+  alias Oli.Inventories.Publisher
   alias OliWeb.Common.{Breadcrumb, FormContainer, Params}
   alias OliWeb.PublisherLive.{Form, IndexView}
   alias OliWeb.Router.Helpers, as: Routes
 
   data(title, :string, default: "New Publisher")
-  data(publisher, :changeset, default: Publishing.change_publisher(%Publisher{}))
+  data(publisher, :changeset, default: Inventories.change_publisher(%Publisher{}))
   data(breadcrumbs, :list)
 
   def breadcrumb() do
@@ -39,7 +39,7 @@ defmodule OliWeb.PublisherLive.NewView do
   def handle_event("save", %{"publisher" => params}, socket) do
     socket = clear_flash(socket)
 
-    case Publishing.create_publisher(Params.trim(params)) do
+    case Inventories.create_publisher(Params.trim(params)) do
       {:ok, _publisher} ->
         {:noreply,
          socket

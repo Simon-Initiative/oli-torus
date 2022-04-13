@@ -1,4 +1,4 @@
-defmodule Oli.Publishing.Publisher do
+defmodule Oli.Inventories.Publisher do
   use Ecto.Schema
   import Ecto.Changeset
 
