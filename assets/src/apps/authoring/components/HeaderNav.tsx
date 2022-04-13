@@ -133,8 +133,8 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                     className="px-2 btn btn-link"
                     onClick={(e) => {
                       e.stopPropagation();
-                      // open revistion history in new tab
-                      window.open(`/project/${projectSlug}/history/slug/${revisionSlug}`);
+                      // open revistion history in same window
+                      window.open(`/project/${projectSlug}/history/slug/${revisionSlug}`, '_self');
                     }}
                   >
                     <i
