@@ -17,13 +17,8 @@ defmodule OliWeb.AuthoringView do
       else: "author-color"
   end
 
-  def author_account_linked?(%Author{} = author),
-    do: Accounts.get_user_by(author_id: author.id) != nil
-
-  def author_user_associated_email(author) do
-    %User{email: email} = Accounts.get_user_by(author_id: author.id)
-    email
-  end
+  def author_linked_account(%Author{} = author),
+    do: Accounts.get_user_by(author_id: author.id)
 
   def author_icon(%{current_author: current_author} = assigns) do
     case current_author.picture do

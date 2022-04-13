@@ -14,10 +14,9 @@ defmodule OliWeb.LayoutView do
 
   import OliWeb.AuthoringView,
     only: [
-      author_account_linked?: 1,
+      author_linked_account: 1,
       author_role_text: 1,
       author_role_color: 1,
-      author_user_associated_email: 1,
       author_icon: 1
     ]
 
