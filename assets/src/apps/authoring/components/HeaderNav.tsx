@@ -124,7 +124,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 delay={{ show: 150, hide: 150 }}
                 overlay={
                   <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                    View Page Revision History (Admin)
+                    Revision History (Admin)
                   </Tooltip>
                 }
               >

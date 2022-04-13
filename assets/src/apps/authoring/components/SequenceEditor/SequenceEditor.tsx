@@ -558,7 +558,7 @@ const SequenceEditor: React.FC<any> = () => {
                       window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
                     }}
                   >
-                    <i className="fas fa-history mr-2" /> View Revision History (Admin)
+                    <i className="fas fa-history mr-2" /> Revision History (Admin)
                   </button>
                   <div className="dropdown-divider"></div>
                 </>
