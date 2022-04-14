@@ -97,11 +97,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleRuleChange = (rule: any) => {
     const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
-    console.log('RULE CHANGE: ', {
+    /*console.log('RULE CHANGE: ', {
       rule,
       existing,
       diff,
-    });
+    });*/
     if (!existing) {
       console.warn("rule not found, shouldn't happen!!!");
       return;
