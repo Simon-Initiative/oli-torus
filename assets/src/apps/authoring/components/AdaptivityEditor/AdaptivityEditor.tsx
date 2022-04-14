@@ -13,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
-import { selectCurrentRule, setCurrentRule } from '../../../authoring/store/app/slice';
+import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import {
   findInSequence,
@@ -21,7 +21,6 @@ import {
   getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
-import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
@@ -158,10 +157,10 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
         new Set([...current, ...resourceIds]),
       );
-      console.log('[handleRuleChange] adding activities to required for evaluation', {
+      /*console.log('[handleRuleChange] adding activities to required for evaluation', {
         activityClone,
         rule,
-      });
+      });*/
 
       dispatch(saveActivity({ activity: activityClone, undoable: true }));
       // setTimeout(() => dispatch(setCurrentRule({ currentRule: rule })));
