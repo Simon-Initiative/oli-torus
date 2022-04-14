@@ -1,4 +1,4 @@
-defmodule OliWeb.CommunityLive.ShowSection do
+defmodule OliWeb.Common.ShowSection do
   use Surface.Component
 
   prop section_title, :string, required: true
