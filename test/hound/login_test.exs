@@ -42,8 +42,8 @@ defmodule Hound.LoginTest do
   end
 
   def account_seed(_) do
-    seeds = Oli.Seeder.create_author_account()
+    author_seed = Oli.Seeder.create_author_account()
 
-    {:ok, seeds}
+    {:ok, author_seed}
   end
 end
