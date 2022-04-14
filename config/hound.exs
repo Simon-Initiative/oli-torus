@@ -26,7 +26,8 @@ config :hound,
   torus_base_url: "https://localhost:9443"
 
 config :oli,
-  env: :test
+  env: :test,
+  prometheus_port: 9569
 
 config :oli, OliWeb.Endpoint,
   server: true,
