@@ -10,6 +10,8 @@ import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import { FIBModel } from './schema';
 
+import './FillBlanks.scss';
+
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
