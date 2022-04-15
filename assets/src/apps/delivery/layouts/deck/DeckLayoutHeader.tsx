@@ -68,30 +68,23 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
             align-items: center;
             position: fixed;
             top: 0;
-            left: calc(50% - 14px);
+            left: calc(50% - .65rem);
           }
           .back-button a {
             text-decoration: none;
-            justify-content: center;
-            align-items: center;
-            padding: 0 4px;
-            font-size: 13px;
+            padding: 0 0 0 4px;
+            font-size: 1.3rem;
             line-height: 1.5;
             border-radius: 0 0 4px 4px;
             color: #6c757d;
-            display: inline-block;
-            font-weight: 400;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: middle;
             border: 1px solid #6c757d;
             border-top: none;
-            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+            transition: color .15s ease-in-out, background-color .15s ease-in-out, box-shadow .15s ease-in-out;
           }
           .back-button a:hover {
             color: #fff;
             background-color: #6c757d;
-            border-color: #6c757d;
+            box-shadow: 0 1px 2px #00000079;
           }
           `}
         </style>
