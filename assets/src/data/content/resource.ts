@@ -87,18 +87,8 @@ export const createDefaultStructuredContent = (
   purpose: 'none',
 });
 
-export const createDefaultGroupContent = (
-  children: ModelElement[] = [Model.p()],
-): Immutable.OrderedMap<string, StructuredContent> => {
-  const defaultStructuredContent = createDefaultStructuredContent(children);
-
-  return Immutable.OrderedMap<string, StructuredContent>([
-    [defaultStructuredContent.id, defaultStructuredContent],
-  ]);
-};
-
 export const createGroup = (
-  children: ResourceContent[] = [createDefaultStructuredContent()],
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
 ): GroupContent => ({
   type: 'group',
   id: guid(),
@@ -130,6 +120,7 @@ export interface ActivityBankSelection {
   logic: Bank.Logic;
   count: number;
   purpose: string;
+  children: undefined;
 }
 
 export interface ActivityReference {
@@ -145,7 +136,7 @@ export interface GroupContent {
   type: 'group';
   layout: string; // TODO define layout types
   purpose: string;
-  children: ResourceContent[];
+  children: Immutable.List<ResourceContent>;
 }
 
 export interface Activity {

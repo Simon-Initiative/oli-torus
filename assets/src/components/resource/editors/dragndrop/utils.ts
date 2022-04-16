@@ -37,3 +37,9 @@ export const getDragPayload = (
     id: contentItem.id,
   } as UnknownPayload;
 };
+
+export const scrollToResourceEditor = (contentId: string) => {
+  setTimeout(() => {
+    document.querySelector(`#re${contentId}`)?.scrollIntoView({ behavior: 'smooth' });
+  });
+};

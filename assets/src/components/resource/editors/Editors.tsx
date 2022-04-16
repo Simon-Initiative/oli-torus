@@ -14,14 +14,15 @@ import { Tag } from 'data/content/tags';
 import { EditorErrorBoundary } from './editor_error_boundary';
 
 import './Editors.scss';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
 
 export type EditorsProps = {
   className?: ClassName;
   editMode: boolean; // Whether or not we can edit
-  content: Immutable.OrderedMap<string, ResourceContent>; // Content of the resource
+  content: PageEditorContent; // Content of the resource
   onEdit: (content: ResourceContent, key: string) => void;
   onRemove: (key: string) => void;
-  onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
+  onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
   activityContexts: Immutable.Map<string, ActivityEditContext>;
@@ -62,7 +63,8 @@ export const Editors = (props: EditorsProps) => {
   const allObjectives = props.objectives.toArray();
   const allTags = props.allTags.toArray();
 
-  const editors = content.entrySeq().map(([contentKey, contentValue], index) => {
+  const editors = content.model.map((contentValue, index) => {
+    const contentKey = contentValue.id;
     const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
     const onRemove = () => props.onRemove(contentKey);
     const onEditPurpose = (purpose: string) => {
