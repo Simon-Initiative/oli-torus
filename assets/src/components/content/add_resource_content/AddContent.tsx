@@ -5,8 +5,9 @@ import React from 'react';
 interface Props {
   onAddItem: AddCallback;
   index: number | number[];
+  level: number;
 }
-export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
+export const AddContent: React.FC<Props> = ({ onAddItem, index, level }) => {
   return (
     <>
       <div className="list-group">
@@ -18,17 +19,21 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
           <div className="type-label">Paragraph</div>
           <div className="type-description">Text, tables, images, video</div>
         </button>
-        <button
-          key={'content_group'}
-          className="list-group-item list-group-item-action d-flex flex-column align-items-start"
-          onClick={(_e) => addGroup(onAddItem, index)}
-        >
-          <div className="type-label">Group</div>
-          <div className="type-description">
-            A group for content with the same purpose such as a Checkpoint, Example, Learn by
-            doing...{' '}
-          </div>
-        </button>
+        {level === 0 ? (
+          <button
+            key={'content_group'}
+            className="list-group-item list-group-item-action d-flex flex-column align-items-start"
+            onClick={(_e) => addGroup(onAddItem, index)}
+          >
+            <div className="type-label">Group</div>
+            <div className="type-description">
+              A group for content with the same purpose such as a Checkpoint, Example, Learn by
+              doing...{' '}
+            </div>
+          </button>
+        ) : (
+          <></>
+        )}
       </div>
     </>
   );

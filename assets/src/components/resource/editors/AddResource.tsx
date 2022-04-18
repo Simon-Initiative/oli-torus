@@ -13,6 +13,7 @@ import React from 'react';
 export type AddResourceProps = {
   index: number | number[];
   isLast?: boolean;
+  level: number;
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
@@ -24,7 +25,7 @@ export type AddResourceProps = {
 
 export const AddResource = (props: AddResourceProps) => {
   return (
-    <AddResourceContent {...props} isLast={props.isLast}>
+    <AddResourceContent {...props}>
       <AddContent {...props} />
       <AddActivity {...props} />
       <AddOther {...props} />

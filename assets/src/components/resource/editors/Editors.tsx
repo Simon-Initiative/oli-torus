@@ -115,6 +115,7 @@ export const Editors = (props: EditorsProps) => {
           childrenObjectives={props.childrenObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
           index={index}
+          level={level}
           editMode={editMode}
           editorMap={editorMap}
           resourceContext={props.resourceContext}
@@ -139,6 +140,7 @@ export const Editors = (props: EditorsProps) => {
 
       <AddResource
         {...props}
+        level={0}
         onRegisterNewObjective={props.onRegisterNewObjective}
         isLast
         index={editors.size || 0}

@@ -97,6 +97,7 @@ export const createEditor = (
               {...editorProps}
               onRegisterNewObjective={onRegisterNewObjective}
               index={[index, groupIndex]}
+              level={level + 1}
               editMode={editMode}
               editorMap={editorMap}
               resourceContext={resourceContext}
@@ -131,6 +132,7 @@ export const createEditor = (
           {...editorProps}
           onRegisterNewObjective={onRegisterNewObjective}
           index={[index, contentItem.children.size + 1]}
+          level={level + 1}
           editMode={editMode}
           editorMap={editorMap}
           resourceContext={resourceContext}
