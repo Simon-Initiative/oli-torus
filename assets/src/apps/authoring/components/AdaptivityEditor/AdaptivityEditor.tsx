@@ -129,13 +129,13 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
 
-      const concatVars = uniq(flatten([...variableRefsInConditions, ...variableRefsInActions]));
+      const concatVars = [...variableRefsInConditions, ...variableRefsInActions];
 
       activityClone.authoring.variablesRequiredForEvaluation.push(concatVars);
       // make unique
-      activityClone.authoring.variablesRequiredForEvaluation = [
-        ...new Set(activityClone.authoring.variablesRequiredForEvaluation),
-      ];
+      activityClone.authoring.variablesRequiredForEvaluation = uniq(
+        flatten([...new Set(activityClone.authoring.variablesRequiredForEvaluation)]),
+      );
 
       if (!activityClone.authoring.activitiesRequiredForEvaluation) {
         activityClone.authoring.activitiesRequiredForEvaluation = [];
