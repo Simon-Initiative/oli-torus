@@ -333,6 +333,7 @@ const OutlineItem = ({
           <div
             id={`content-item-${id}`}
             className={classNames(styles.item, className)}
+            onClick={() => scrollToResourceEditor(id)}
             draggable={editMode}
             tabIndex={0}
             onDragStart={(e) => onDragStart(e, id)}

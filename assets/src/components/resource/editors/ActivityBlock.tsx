@@ -40,7 +40,7 @@ const ActivityBlock = (props: ActivityBlockProps) => {
           onClick={() => props.onRemove(props.activity.id)}
         />
       </div>
-      <div id={props.activity.id} className="p-2">
+      <div id={`block-${props.activity.id}`} className="p-2">
         {props.children}
       </div>
     </div>

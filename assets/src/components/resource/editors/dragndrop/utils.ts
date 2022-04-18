@@ -40,6 +40,17 @@ export const getDragPayload = (
 
 export const scrollToResourceEditor = (contentId: string) => {
   setTimeout(() => {
-    document.querySelector(`#re${contentId}`)?.scrollIntoView({ behavior: 'smooth' });
+    const element = document.querySelector(`#block-${contentId}`);
+
+    if (element) {
+      const headerOffset = 60;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth',
+      });
+    }
   });
 };

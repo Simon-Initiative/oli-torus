@@ -57,7 +57,7 @@ export const GroupBlock = (props: GroupBlockProps) => {
           onEdit={props.onEditPurpose}
         />
       </div>
-      <div id={props.contentItem.id}>{maybeRenderDeliveryPurposeContainer(props)}</div>
+      <div id={`block-${props.contentItem.id}`}>{maybeRenderDeliveryPurposeContainer(props)}</div>
     </div>
   );
 };

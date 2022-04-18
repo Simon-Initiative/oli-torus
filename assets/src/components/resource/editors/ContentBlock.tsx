@@ -32,7 +32,7 @@ export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
           onClick={() => props.onRemove(props.contentItem.id)}
         />
       </div>
-      <div id={props.contentItem.id}>{props.children}</div>
+      <div id={`block-${props.contentItem.id}`}>{props.children}</div>
     </div>
   );
 };
