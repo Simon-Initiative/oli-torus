@@ -104,8 +104,7 @@ export const Editors = (props: EditorsProps) => {
 
     return (
       <div
-        key={'control-container-' + contentItem.id}
-        id={`re${contentItem.id}`}
+        key={contentItem.id}
         className={classNames('resource-block-editor-and-controls', contentItem.id)}
       >
         <AddResource
