@@ -64,30 +64,27 @@ export const initializeActivity = createAsyncThunk(
       for (let i = 0; i < currentActivityTree.length - 1; i++) {
         const ancestor = currentActivityTree[i];
         for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
-          // We don't have to apply the 'anchor to'/'bind to' operator if currentSequenceId and ancestor.id is same
-          if (currentSequenceId !== ancestor.id) {
-            const part = ancestor.content.partsLayout[p];
-            // get the adaptivity variables for the part
-            const Klass = customElements.get(part.type);
-            if (Klass) {
-              const instance = new Klass() as any;
-              if (instance.getAdaptivitySchema) {
-                const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
-                // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
-                for (const key in variables) {
-                  // we don't need to apply binding for yhe
-                  if (currentSequenceId !== ancestor.id) {
-                    const target = `${currentSequenceId}|stage.${part.id}.${key}`;
-                    const operator = 'anchor to';
-                    const value = `${ancestor.id}|stage.${part.id}.${key}`;
-                    const op: ApplyStateOperation = {
-                      target,
-                      operator,
-                      value,
-                      type: variables[key],
-                    };
-                    syncOps.push(op);
-                  }
+          const part = ancestor.content.partsLayout[p];
+          // get the adaptivity variables for the part
+          const Klass = customElements.get(part.type);
+          if (Klass) {
+            const instance = new Klass() as any;
+            if (instance.getAdaptivitySchema) {
+              const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
+              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              for (const key in variables) {
+                const target = `${currentSequenceId}|stage.${part.id}.${key}`;
+                const operator = 'anchor to';
+                const value = `${ancestor.id}|stage.${part.id}.${key}`;
+                // we don't need to apply binding if both the target & value are same
+                if (target !== value) {
+                  const op: ApplyStateOperation = {
+                    target,
+                    operator,
+                    value,
+                    type: variables[key],
+                  };
+                  syncOps.push(op);
                 }
               }
             }
