@@ -162,18 +162,17 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
 const PageError: React.FC<{ error: any }> = ({ error }) => {
   return (
     <ListGroup>
-      {error.map((problem: any) => (
-        <ListGroup.Item key={problem.owner.id}>
-          <ListGroup horizontal>
-            <ListGroup.Item className="flex-grow-1">
-              <span>
-                Custom variable &quot;
-                <strong>{problem.id} </strong> &quot; is not getting evaluated.
-              </span>
-            </ListGroup.Item>
-          </ListGroup>
-        </ListGroup.Item>
-      ))}
+      <ListGroup.Item>
+        <ListGroup horizontal>
+          <ListGroup.Item className="flex-grow-1 alert alert-danger">
+            <span>
+              Variable(s) &quot;
+              <strong>{error.map((err: any) => err.id).join(', ')} </strong>
+            </span>
+            &quot; are not getting evaluated.
+          </ListGroup.Item>
+        </ListGroup>
+      </ListGroup.Item>
     </ListGroup>
   );
 };
