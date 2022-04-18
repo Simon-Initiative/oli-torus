@@ -96,7 +96,6 @@ export const createEditor = (
             <AddResource
               {...editorProps}
               onRegisterNewObjective={onRegisterNewObjective}
-              id={c.id}
               index={[index, groupIndex]}
               editMode={editMode}
               editorMap={editorMap}
@@ -128,6 +127,15 @@ export const createEditor = (
             )}
           </>
         ))}
+        <AddResource
+          {...editorProps}
+          onRegisterNewObjective={onRegisterNewObjective}
+          index={[index, contentItem.children.size + 1]}
+          editMode={editMode}
+          editorMap={editorMap}
+          resourceContext={resourceContext}
+          onAddItem={onAddItem}
+        />
       </GroupBlock>
     );
   }

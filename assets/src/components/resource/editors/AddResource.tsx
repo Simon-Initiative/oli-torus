@@ -11,8 +11,8 @@ import * as Immutable from 'immutable';
 import React from 'react';
 
 export type AddResourceProps = {
-  id: string;
   index: number | number[];
+  isLast?: boolean;
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
@@ -24,7 +24,7 @@ export type AddResourceProps = {
 
 export const AddResource = (props: AddResourceProps) => {
   return (
-    <AddResourceContent {...props} isLast={props.id === 'last'}>
+    <AddResourceContent {...props} isLast={props.isLast}>
       <AddContent {...props} />
       <AddActivity {...props} />
       <AddOther {...props} />

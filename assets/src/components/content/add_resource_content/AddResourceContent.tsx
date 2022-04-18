@@ -18,12 +18,10 @@ export type AddCallback = (
 interface AddResourceContentProps {
   editMode: boolean;
   isLast?: boolean;
-  index: number | number[];
 }
 export const AddResourceContent: React.FC<AddResourceContentProps> = ({
   editMode,
   isLast,
-  index,
   children,
 }) => {
   const [id] = useState(guid());

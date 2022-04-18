@@ -9,6 +9,7 @@ import {
   ActivityReference,
   ResourceContent,
   PurposeTypes,
+  GroupContent,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ActivityEditContext } from 'data/content/activity';
@@ -142,21 +143,16 @@ export const ContentOutline = ({
           }
         };
 
-        const level = 0;
-
-        // adjust for the fact that the item being dragged is filtered out of the rendered elements
-        const dropIndex = index >= activeDragIndex[level] ? [index + 1] : [index];
-
-        console.log(activeDragIndex);
-
         return (
           <OutlineItem
             key={contentItem.id}
             id={contentItem.id}
+            index={index}
             className={className}
-            level={level}
+            level={0}
             editMode={editMode}
             projectSlug={projectSlug}
+            activeDragId={activeDragId}
             setActiveDragId={setActiveDragId}
             handleKeyDown={handleKeyDown}
             onFocus={onFocus}
@@ -165,7 +161,7 @@ export const ContentOutline = ({
             activityContexts={activityContexts}
             isReorderMode={isReorderMode}
             activeDragIndex={activeDragIndex}
-            dropIndex={dropIndex}
+            parentDropIndex={[]}
             content={content}
             onEditContent={onEditContent}
           />
@@ -214,8 +210,10 @@ type OutlineItemProps = {
   className?: ClassName;
   id: string;
   level: number;
+  index: number;
   editMode: boolean;
   projectSlug: string;
+  activeDragId: string | null;
   setActiveDragId: (id: string) => void;
   handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
   onFocus: (id: string) => void;
@@ -224,7 +222,7 @@ type OutlineItemProps = {
   activityContexts: Immutable.Map<string, ActivityEditContext>;
   isReorderMode: boolean;
   activeDragIndex: number[];
-  dropIndex: number[];
+  parentDropIndex: number[];
   content: PageEditorContent;
   onEditContent: (content: PageEditorContent) => void;
 };
@@ -233,8 +231,10 @@ const OutlineItem = ({
   className,
   id,
   level,
+  index,
   editMode,
   projectSlug,
+  activeDragId,
   setActiveDragId,
   handleKeyDown,
   onFocus,
@@ -245,7 +245,7 @@ const OutlineItem = ({
   activityContexts,
   isReorderMode,
   activeDragIndex,
-  dropIndex,
+  parentDropIndex,
 }: OutlineItemProps) => {
   const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
   const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
@@ -258,6 +258,10 @@ const OutlineItem = ({
     dragEndHandler(setActiveDragId),
     editMode,
   );
+
+  // adjust for the fact that the item being dragged is filtered out of the rendered elements
+  const dropIndex =
+    index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
 
   return (
     <>
@@ -280,40 +284,42 @@ const OutlineItem = ({
             >
               <DragHandle style={{ margin: '10px 10px 10px 0' }} />
               <ExpandToggle expanded={true} />
-              <Description title="Group">{contentItem.children.size} items</Description>
+              <Description title={getGroupTitle(contentItem)}>
+                {contentItem.children.size} items
+              </Description>
             </div>
             <div className={styles.groupedOutline}>
-              {contentItem.children.map((c, i) => {
-                // adjust for the fact that the item being dragged is filtered out of the rendered elements
-                const cDropIndex =
-                  i >= activeDragIndex[level] ? [...dropIndex, i + 1] : [...dropIndex, i];
-
-                return (
-                  <OutlineItem
-                    key={id}
-                    className={className}
-                    id={c.id}
-                    level={level + 1}
-                    editMode={editMode}
-                    projectSlug={projectSlug}
-                    setActiveDragId={setActiveDragId}
-                    handleKeyDown={handleKeyDown}
-                    onFocus={onFocus}
-                    assistive={assistive}
-                    contentItem={c}
-                    activityContexts={activityContexts}
-                    isReorderMode={isReorderMode}
-                    activeDragIndex={activeDragIndex}
-                    dropIndex={cDropIndex}
-                    content={content}
-                    onEditContent={onEditContent}
-                  />
-                );
-              })}
+              {contentItem.children
+                .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+                .map((c, i) => {
+                  return (
+                    <OutlineItem
+                      key={id}
+                      className={className}
+                      id={c.id}
+                      level={level + 1}
+                      index={i}
+                      editMode={editMode}
+                      projectSlug={projectSlug}
+                      activeDragId={activeDragId}
+                      setActiveDragId={setActiveDragId}
+                      handleKeyDown={handleKeyDown}
+                      onFocus={onFocus}
+                      assistive={assistive}
+                      contentItem={c}
+                      activityContexts={activityContexts}
+                      isReorderMode={isReorderMode}
+                      activeDragIndex={activeDragIndex}
+                      parentDropIndex={dropIndex}
+                      content={content}
+                      onEditContent={onEditContent}
+                    />
+                  );
+                })}
               {isReorderMode && (
                 <DropTarget
                   id="last"
-                  index={[...dropIndex, contentItem.children.size + 1]}
+                  index={[...dropIndex, contentItem.children.size]}
                   onDrop={onDropLast}
                 />
               )}
@@ -392,6 +398,15 @@ const renderItem = (
       return <>Unknown</>;
   }
 };
+
+function getGroupTitle(contentItem: GroupContent) {
+  switch (contentItem.purpose) {
+    case 'none':
+      return 'Group';
+    default:
+      return PurposeTypes.find(({ value }) => value === contentItem.purpose)?.label;
+  }
+}
 
 interface ContentOutlineToolbarProps {
   onHideOutline: () => void;

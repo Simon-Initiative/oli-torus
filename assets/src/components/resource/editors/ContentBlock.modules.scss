@@ -65,7 +65,7 @@
 }
 
 .groupBlockHeader {
-  max-width: 768px;
+  padding: 0 max(50% - 400px, 50px);
   margin: 0 auto;
   display: flex;
   flex-direction: row;

@@ -110,7 +110,6 @@ export const Editors = (props: EditorsProps) => {
         className={classNames('resource-block-editor-and-controls', contentKey)}
       >
         <AddResource
-          id={contentKey}
           objectives={props.objectives}
           childrenObjectives={props.childrenObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
@@ -140,7 +139,7 @@ export const Editors = (props: EditorsProps) => {
       <AddResource
         {...props}
         onRegisterNewObjective={props.onRegisterNewObjective}
-        id="last"
+        isLast
         index={editors.size || 0}
         editMode={editMode}
         editorMap={editorMap}
