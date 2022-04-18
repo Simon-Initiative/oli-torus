@@ -15,7 +15,7 @@ defmodule Oli.Rendering.Activity.Html do
           mode: mode,
           user: user
         } = context,
-        %{"activity_id" => activity_id, "purpose" => purpose} = activity
+        %{"activity_id" => activity_id} = activity
       ) do
     activity_summary = activity_map[activity_id]
 
@@ -45,31 +45,15 @@ defmodule Oli.Rendering.Activity.Html do
         model_json = activity_summary.model
         section_slug = context.section_slug
 
-        activity_html =
-          case mode do
-            :instructor_preview ->
-              [
-                "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
-              ]
-
-            _ ->
-              [
-                "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
-              ]
-          end
-
-        case purpose do
-          "none" ->
-            activity_html
+        case mode do
+          :instructor_preview ->
+            [
+              "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+            ]
 
           _ ->
             [
-              "<h4 class=\"activity-purpose ",
-              Oli.Utils.Slug.slugify(purpose),
-              "\">",
-              Oli.Utils.Purposes.label_for(purpose),
-              "</h4>",
-              activity_html
+              "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
             ]
         end
     end

@@ -1,7 +1,7 @@
 defmodule Oli.Rendering.Content do
   @moduledoc """
   This modules defines the rendering functionality for Oli structured content. Rendering is
-  extensibile to any format which implements the behavior defined in this module, then specifying
+  extensible to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `content/html.ex`.
   """
   import Oli.Utils
@@ -48,39 +48,11 @@ defmodule Oli.Rendering.Content do
   Renders an Oli content element that contains children.
   Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
   """
-  def render(
-        %Context{} = context,
-        %{"type" => "content", "children" => children, "purpose" => "example"} = element,
-        writer
-      ) do
-    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
-    writer.example(context, next, element)
-  end
-
-  def render(
-        %Context{} = context,
-        %{"type" => "content", "children" => children, "purpose" => "learnmore"} = element,
-        writer
-      ) do
-    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
-    writer.learn_more(context, next, element)
-  end
-
-  def render(
-        %Context{} = context,
-        %{"type" => "content", "children" => children, "purpose" => "manystudentswonder"} =
-          element,
-        writer
-      ) do
-    next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
-    writer.manystudentswonder(context, next, element)
-  end
-
   def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
-  # Renders an text content
+  # Renders text content
   def render(%Context{} = context, %{"text" => _text} = text_element, writer) do
     writer.text(context, text_element)
   end

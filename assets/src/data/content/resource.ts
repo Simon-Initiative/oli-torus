@@ -68,14 +68,14 @@ export const PurposeTypes: Purpose[] = [
   { value: 'none', label: 'None' },
   { value: 'checkpoint', label: 'Checkpoint' },
   { value: 'didigetthis', label: 'Did I get this?' },
-  { value: 'lab', label: 'Lab' },
+  { value: 'example', label: 'Example' },
+  { value: 'labactivity', label: 'Lab' },
   { value: 'learnbydoing', label: 'Learn by doing' },
   { value: 'learnmore', label: 'Learn more' },
   { value: 'manystudentswonder', label: 'Many students wonder' },
   { value: 'quiz', label: 'Quiz' },
   { value: 'simulation', label: 'Simulation' },
   { value: 'walkthrough', label: 'Walkthrough' },
-  { value: 'example', label: 'Example' },
 ];
 
 export const createDefaultStructuredContent = (

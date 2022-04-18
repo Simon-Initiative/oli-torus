@@ -5,6 +5,7 @@ defmodule Oli.Rendering.Page.Html do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
   alias Oli.Rendering.Activity
+  alias Oli.Rendering.Group
 
   @behaviour Oli.Rendering.Page
 
@@ -14,6 +15,10 @@ defmodule Oli.Rendering.Page.Html do
 
   def activity(%Context{} = context, element) do
     Activity.render(context, element, Activity.Html)
+  end
+
+  def group(%Context{} = context, element, pageWriter) do
+    Group.render(context, element, Group.Html, pageWriter)
   end
 
   def error(%Context{}, element, error) do

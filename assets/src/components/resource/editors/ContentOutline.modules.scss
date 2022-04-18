@@ -190,7 +190,8 @@
     border-radius: 50%;
   }
 
-  .contentOutline {
+  .contentOutline,
+  .groupedOutline {
     border-radius: 6px;
     border-color: authoring.$gray-800;
     background: authoring.$gray-800;

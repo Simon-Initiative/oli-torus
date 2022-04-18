@@ -1,7 +1,6 @@
-@import 'delivery/variables';
-
 .content-purpose {
   border-radius: 4px;
+  margin-bottom: 1rem;
 
   .content-purpose-label {
     text-transform: uppercase;
@@ -12,98 +11,193 @@
     padding: 20px;
   }
 
+  &.none {
+    .content-purpose-label {
+      display: none;
+    }
+
+    .content-purpose-content {
+      padding: 0px;
+    }
+  }
+
+  &.checkpoint {
+    border: 1px solid $content-purpose-checkpoint-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-checkpoint-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f11e';
+      }
+    }
+  }
+
+  &.didigetthis {
+    border: 1px solid $content-purpose-didigetthis-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-didigetthis-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f256';
+      }
+    }
+  }
+
   &.example {
     border: 1px solid $content-purpose-example-color;
-    margin-bottom: 1rem;
 
     .content-purpose-label {
       background-color: $content-purpose-example-color;
       color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f1e5';
+      }
+    }
+  }
+
+  &.labactivity {
+    border: 1px solid $content-purpose-labactivity-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-labactivity-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f610';
+      }
+    }
+  }
+
+  &.learnbydoing {
+    border: 1px solid $content-purpose-learnbydoing-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-learnbydoing-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f51c';
+      }
     }
   }
 
   &.learnmore {
     border: 1px solid $content-purpose-learnmore-color;
-    margin-bottom: 1rem;
 
     .content-purpose-label {
       background-color: $content-purpose-learnmore-color;
       color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f51b';
+      }
     }
   }
 
   &.manystudentswonder {
     border: 1px solid $content-purpose-manystudentswonder-color;
-    margin-bottom: 1rem;
 
     .content-purpose-label {
       background-color: $content-purpose-manystudentswonder-color;
       color: $white;
-    }
 
-    .content-purpose-label::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f5da';
-    }
-  }
-
-  &.checkpoint .content-purpose-label,
-  &.didigetthis .content-purpose-label,
-  &.learnbydoing .content-purpose-label {
-    padding: 4px 8px;
-    font-weight: 200;
-    text-transform: uppercase;
-    color: white;
-    border-radius: 4px;
-  }
-
-  // Only display purpose type decorations for the first elem of that type
-  // in a series.
-  // HTML looks like:
-  // <h4 class="{purpose-type}" />
-  // <activity class="activity-container" />
-  // <h4 class="{purpose-type}" />
-  // <activity class="activity-container" />
-  // So, we use the sibling selector to hide duplicate purpose types
-  // that occur after an activity element.
-  &.checkpoint + .activity-container + .checkpoint,
-  &.didigetthis + .activity-container + .didigetthis,
-  &.learnbydoing + .activity-container + .learnbydoing {
-    display: none;
-  }
-
-  &.checkpoint .content-purpose-label {
-    background-color: $activity-purpose-checkpoint-color;
-
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f46c';
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f5da';
+      }
     }
   }
 
-  &.didigetthis .content-purpose-label {
-    background-color: $activity-purpose-didigetthis-color;
+  &.quiz {
+    border: 1px solid $content-purpose-quiz-color;
 
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f256';
+    .content-purpose-label {
+      background-color: $content-purpose-quiz-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f305';
+      }
     }
   }
 
-  &.learnbydoing .content-purpose-label {
-    background-color: $activity-purpose-learnbydoing-color;
+  &.simulation {
+    border: 1px solid $content-purpose-simulation-color;
 
-    &::before {
-      font-family: 'Line Awesome Free';
-      font-weight: 900;
-      margin-right: 8px;
-      content: '\f51c';
+    .content-purpose-label {
+      background-color: $content-purpose-simulation-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f109';
+      }
+    }
+  }
+
+  &.walkthrough {
+    border: 1px solid $content-purpose-walkthrough-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-walkthrough-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f6ec';
+      }
     }
   }
 }

@@ -260,15 +260,8 @@ html.authoring.dark .content-block .delivery {
   $feedback-error-bg: lighten($orange, 32%);
   $feedback-error-color: $orange;
 
-  $hints-color: $gray-200 !default;
-  $hints-bg: $gray-700 !default;
-
-  $content-purpose-example-color: lighten($blue, 20%);
-  $content-purpose-learnmore-color: lighten($teal, 20%);
-  $content-purpose-manystudentswonder-color: lighten($cyan, 10%);
-  $activity-purpose-checkpoint-color: lighten($blue, 10%);
-  $activity-purpose-didigetthis-color: lighten($purple, 10%);
-  $activity-purpose-learnbydoing-color: lighten($green, 10%);
+  $hints-color: $gray-200;
+  $hints-bg: $gray-700;
 
   // Auth providers buttons
 
