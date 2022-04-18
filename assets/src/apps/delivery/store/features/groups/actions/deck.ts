@@ -64,7 +64,7 @@ export const initializeActivity = createAsyncThunk(
       for (let i = 0; i < currentActivityTree.length - 1; i++) {
         const ancestor = currentActivityTree[i];
         for (let p = 0; p < ancestor.content.partsLayout.length; p++) {
-          // We don't have to apply the 'anchor to'/ 'bind to' operator if currentSequenceId and ancestor.id is same
+          // We don't have to apply the 'anchor to'/'bind to' operator if currentSequenceId and ancestor.id is same
           if (currentSequenceId !== ancestor.id) {
             const part = ancestor.content.partsLayout[p];
             // get the adaptivity variables for the part
