@@ -9,7 +9,8 @@ import {
   Tooltip,
 } from 'react-bootstrap';
 import { ObjectFieldTemplateProps } from '@rjsf/core';
-
+import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import { useDispatch, useSelector } from 'react-redux';
 interface CustomFieldProps {
   onAddClick: any;
   items: any[];
@@ -93,10 +94,41 @@ const VariableArrayItem: React.FC<any> = (props) => {
   );
 };
 
+const VariableError: React.FC<{ errors: any }> = ({ errors }) => {
+  return (
+    <ListGroup>
+      <ListGroup.Item>
+        <ListGroup horizontal>
+          <ListGroup.Item className="flex-grow-1 alert alert-danger">
+            <span>
+              Variable(s) &quot;
+              <strong>{errors.map((error: any) => error.id).join(', ')} </strong>
+            </span>
+            &quot; are not getting evaluated.
+          </ListGroup.Item>
+        </ListGroup>
+      </ListGroup.Item>
+    </ListGroup>
+  );
+};
+
 const VariableEditor: React.FC<CustomFieldProps> = (props) => {
   const [show, setShow] = useState(false);
-
-  const handleClose = () => setShow(false);
+  const [results, setResults] = useState<any>(null);
+  const dispatch = useDispatch();
+  const handleClose = async () => {
+    const result = await dispatch(validateVariables({}));
+    if ((result as any).meta.requestStatus === 'fulfilled') {
+      if ((result as any).payload.errors.length > 0) {
+        const errors = (result as any).payload.errors;
+        const errorList = <VariableError key={errors[0].owner.title} errors={errors} />;
+        setResults(errorList);
+      } else {
+        setResults(null);
+        setShow(false);
+      }
+    }
+  };
   const handleShow = () => setShow(true);
 
   return (
@@ -129,6 +161,7 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
           <Modal.Title>Variable editor</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          <div>{results}</div>
           {props.items.map((element: any) => VariableArrayItem(element))}
           {props.canAdd && (
             <button className="btn btn-primary mt-2" type="button" onClick={props.onAddClick}>
