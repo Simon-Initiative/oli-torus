@@ -9,13 +9,12 @@ interface ContentBlockProps {
   editMode: boolean;
   content: Immutable.List<ResourceContent>;
   contentItem: StructuredContent;
-  index: number;
   canRemove: boolean;
   onRemove: (key: string) => void;
 }
 
 export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
-  const id = `content-header-${props.index}`;
+  const id = `content-header-${props.contentItem.id}`;
 
   return (
     <div

@@ -1,12 +1,8 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import { State, Dispatch } from 'state';
 import { DeleteButton } from 'components/misc/DeleteButton';
 import { Purpose as PurposeType, ResourceContent, ActivityReference } from 'data/content/resource';
 import * as Immutable from 'immutable';
-import { updatePreferences } from 'state/preferences';
 import { Preferences } from 'data/persistence/preferences';
-import { valueOr } from 'utils/common';
 import { Maybe } from 'tsmonad';
 import styles from './ContentBlock.modules.scss';
 import { classNames } from 'utils/classNames';
@@ -31,9 +27,12 @@ interface ActivityBlockProps {
   onUpdatePreferences: (p: Partial<Preferences>) => any;
 }
 
-const ActivityBlock = (props: ActivityBlockProps) => {
+export const ActivityBlock = (props: ActivityBlockProps) => {
   return (
-    <div className={classNames(styles.activityBlock, 'activity-block')}>
+    <div
+      id={`content-header-${props.activity.id}`}
+      className={classNames(styles.activityBlock, 'activity-block')}
+    >
       <div className={styles.actions}>
         <DeleteButton
           editMode={props.editMode && props.canRemove}
@@ -46,36 +45,3 @@ const ActivityBlock = (props: ActivityBlockProps) => {
     </div>
   );
 };
-
-interface StateProps {
-  preferences: Maybe<Preferences>;
-}
-
-interface DispatchProps {
-  onUpdatePreferences: (p: Partial<Preferences>) => any;
-}
-
-// eslint-disable-next-line
-type OwnProps = {};
-
-const mapStateToProps = (state: State, ownProps: OwnProps): StateProps => {
-  const { preferences } = state.preferences;
-
-  return {
-    preferences,
-  };
-};
-
-const mapDispatchToProps = (dispatch: Dispatch, ownProps: OwnProps): DispatchProps => {
-  return {
-    onUpdatePreferences: ({ live_preview_display }: Partial<Preferences>) =>
-      dispatch(updatePreferences({ live_preview_display: valueOr(live_preview_display, null) })),
-  };
-};
-
-const controller = connect<StateProps, DispatchProps, OwnProps>(
-  mapStateToProps,
-  mapDispatchToProps,
-)(ActivityBlock);
-
-export { controller as ActivityBlock };

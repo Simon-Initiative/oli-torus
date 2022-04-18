@@ -21,7 +21,7 @@ import { AddResource } from './AddResource';
 export const createEditor = (
   resourceContext: ResourceContext,
   contentItem: ResourceContent,
-  index: number,
+  index: number[],
   level: number,
   activities: Immutable.Map<string, ActivityEditContext>,
   editMode: boolean,
@@ -96,7 +96,7 @@ export const createEditor = (
             <AddResource
               {...editorProps}
               onRegisterNewObjective={onRegisterNewObjective}
-              index={[index, groupIndex]}
+              index={[...index, groupIndex]}
               level={level + 1}
               editMode={editMode}
               editorMap={editorMap}
@@ -107,7 +107,7 @@ export const createEditor = (
             {createEditor(
               resourceContext,
               c,
-              groupIndex,
+              [...index, groupIndex],
               level + 1,
               activities,
               editMode,
@@ -131,7 +131,7 @@ export const createEditor = (
         <AddResource
           {...editorProps}
           onRegisterNewObjective={onRegisterNewObjective}
-          index={[index, contentItem.children.size + 1]}
+          index={[...index, contentItem.children.size + 1]}
           level={level + 1}
           editMode={editMode}
           editorMap={editorMap}

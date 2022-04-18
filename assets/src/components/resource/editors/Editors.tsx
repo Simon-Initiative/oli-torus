@@ -84,7 +84,7 @@ export const Editors = (props: EditorsProps) => {
     const editor = createEditor(
       props.resourceContext,
       contentItem,
-      index,
+      [index],
       level,
       activityContexts,
       editMode,
@@ -114,7 +114,7 @@ export const Editors = (props: EditorsProps) => {
           objectives={props.objectives}
           childrenObjectives={props.childrenObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
-          index={index}
+          index={[index]}
           level={level}
           editMode={editMode}
           editorMap={editorMap}
@@ -126,7 +126,7 @@ export const Editors = (props: EditorsProps) => {
           className={classNames('resource-block-editor')}
           role="option"
           aria-describedby="content-list-operation"
-          tabIndex={index + 1}
+          tabIndex={1}
         >
           <EditorErrorBoundary id={contentItem.id}>{editor}</EditorErrorBoundary>
         </div>
@@ -143,7 +143,7 @@ export const Editors = (props: EditorsProps) => {
         level={0}
         onRegisterNewObjective={props.onRegisterNewObjective}
         isLast
-        index={editors.size || 0}
+        index={[content.model.size]}
         editMode={editMode}
         editorMap={editorMap}
         resourceContext={props.resourceContext}

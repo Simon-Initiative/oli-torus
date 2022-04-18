@@ -11,13 +11,13 @@ import * as Immutable from 'immutable';
 import React from 'react';
 
 export type AddResourceProps = {
-  index: number | number[];
+  index: number[];
   isLast?: boolean;
   level: number;
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
-  onAddItem: (c: ResourceContent, index: number | number[], a?: ActivityEditContext) => void;
+  onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (objective: Objective) => void;

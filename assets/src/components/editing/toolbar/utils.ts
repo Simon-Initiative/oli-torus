@@ -19,7 +19,7 @@ interface Opts {
   resourceContext?: ResourceContext;
   onAddItem?: AddCallback;
   editorMap?: ActivityEditorMap;
-  index?: number | number[];
+  index?: number[];
   onRequestMedia?: any;
 }
 export function getToolbarForContentType(opts: Opts): CommandDescription[] {
@@ -77,7 +77,7 @@ export const addActivity = (
   resourceContext: ResourceContext,
   onAddItem: AddCallback,
   editorMap: ActivityEditorMap,
-  index: number | number[],
+  index: number[],
 ) => {
   let model: ActivityModelSchema;
 

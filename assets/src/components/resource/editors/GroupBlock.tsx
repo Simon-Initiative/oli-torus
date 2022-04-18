@@ -19,7 +19,7 @@ const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
   }
 
   return (
-    <div className={styles.purposeContainer}>
+    <div id={`content-header-${props.contentItem.id}`} className={styles.purposeContainer}>
       <div className={`content-purpose ${props.contentItem.purpose}`}>
         <div className="content-purpose-label">{purposeLabel}</div>
         <div className="content-purpose-content">{props.children}</div>

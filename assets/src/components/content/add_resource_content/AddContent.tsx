@@ -4,7 +4,7 @@ import React from 'react';
 
 interface Props {
   onAddItem: AddCallback;
-  index: number | number[];
+  index: number[];
   level: number;
 }
 export const AddContent: React.FC<Props> = ({ onAddItem, index, level }) => {
@@ -39,12 +39,12 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index, level }) => {
   );
 };
 
-const addContent = (onAddItem: AddCallback, index: number | number[]) => {
+const addContent = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createDefaultStructuredContent(), index);
   document.body.click();
 };
 
-const addGroup = (onAddItem: AddCallback, index: number | number[]) => {
+const addGroup = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createGroup(), index);
   document.body.click();
 };
