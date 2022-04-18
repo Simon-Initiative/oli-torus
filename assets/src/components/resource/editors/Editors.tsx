@@ -64,9 +64,7 @@ export const Editors = (props: EditorsProps) => {
   const allTags = props.allTags.toArray();
 
   const editors = content.model.map((contentItem, index) => {
-    // const contentKey = contentValue.id;
     const onEdit = props.onEdit;
-    // const onRemove = () => props.onRemove(contentKey);
     const onEditPurpose = (contentKey: string, purpose: string) => {
       props.onEdit(Object.assign(contentItem, { purpose }), contentKey);
     };

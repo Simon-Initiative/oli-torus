@@ -19,7 +19,7 @@ const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
   }
 
   return (
-    <div id={`content-header-${props.contentItem.id}`} className={styles.purposeContainer}>
+    <div className={styles.purposeContainer}>
       <div className={`content-purpose ${props.contentItem.purpose}`}>
         <div className="content-purpose-label">{purposeLabel}</div>
         <div className="content-purpose-content">{props.children}</div>
@@ -33,16 +33,16 @@ interface GroupBlockProps {
   children?: JSX.Element | JSX.Element[];
   content: Immutable.List<ResourceContent>;
   contentItem: StructuredContent;
-  index: number;
   canRemove: boolean;
-  onEditPurpose: (purpose: string) => void;
+  onEditPurpose: (key: string, purpose: string) => void;
   onRemove: (key: string) => void;
 }
 export const GroupBlock = (props: GroupBlockProps) => {
-  const id = `content-header-${props.index}`;
-
   return (
-    <div id={id} className={classNames(styles.groupBlock, `purpose-${props.contentItem.purpose}`)}>
+    <div
+      id={`resource-editor-${props.contentItem.id}`}
+      className={classNames(styles.groupBlock, `purpose-${props.contentItem.purpose}`)}
+    >
       <div className={styles.actions}>
         <DeleteButton
           editMode={props.editMode && props.canRemove}
@@ -54,10 +54,10 @@ export const GroupBlock = (props: GroupBlockProps) => {
         <Purpose
           purpose={props.contentItem.purpose}
           editMode={props.editMode}
-          onEdit={props.onEditPurpose}
+          onEdit={(p) => props.onEditPurpose(props.contentItem.id, p)}
         />
       </div>
-      <div id={`block-${props.contentItem.id}`}>{maybeRenderDeliveryPurposeContainer(props)}</div>
+      <div>{maybeRenderDeliveryPurposeContainer(props)}</div>
     </div>
   );
 };

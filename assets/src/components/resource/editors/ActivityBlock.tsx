@@ -30,7 +30,7 @@ interface ActivityBlockProps {
 export const ActivityBlock = (props: ActivityBlockProps) => {
   return (
     <div
-      id={`content-header-${props.activity.id}`}
+      id={`resource-editor-${props.activity.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
       <div className={styles.actions}>
@@ -39,9 +39,7 @@ export const ActivityBlock = (props: ActivityBlockProps) => {
           onClick={() => props.onRemove(props.activity.id)}
         />
       </div>
-      <div id={`block-${props.activity.id}`} className="p-2">
-        {props.children}
-      </div>
+      <div className="p-2">{props.children}</div>
     </div>
   );
 };

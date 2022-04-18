@@ -14,11 +14,9 @@ interface ContentBlockProps {
 }
 
 export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
-  const id = `content-header-${props.contentItem.id}`;
-
   return (
     <div
-      id={id}
+      id={`resource-editor-${props.contentItem.id}`}
       className={classNames(
         styles.contentBlock,
         'content-block',
@@ -31,7 +29,7 @@ export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
           onClick={() => props.onRemove(props.contentItem.id)}
         />
       </div>
-      <div id={`block-${props.contentItem.id}`}>{props.children}</div>
+      <div>{props.children}</div>
     </div>
   );
 };

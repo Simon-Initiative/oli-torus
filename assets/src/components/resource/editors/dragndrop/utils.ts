@@ -40,7 +40,7 @@ export const getDragPayload = (
 
 export const scrollToResourceEditor = (contentId: string) => {
   setTimeout(() => {
-    const element = document.querySelector(`#block-${contentId}`);
+    const element = document.querySelector(`#resource-editor-${contentId}`);
 
     if (element) {
       const headerOffset = 60;
