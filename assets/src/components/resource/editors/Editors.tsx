@@ -63,26 +63,27 @@ export const Editors = (props: EditorsProps) => {
   const allObjectives = props.objectives.toArray();
   const allTags = props.allTags.toArray();
 
-  const editors = content.model.map((contentValue, index) => {
-    const contentKey = contentValue.id;
-    const onEdit = (u: ResourceContent) => props.onEdit(u, contentKey);
-    const onRemove = () => props.onRemove(contentKey);
-    const onEditPurpose = (purpose: string) => {
-      props.onEdit(Object.assign(contentValue, { purpose }), contentKey);
+  const editors = content.model.map((contentItem, index) => {
+    // const contentKey = contentValue.id;
+    const onEdit = props.onEdit;
+    // const onRemove = () => props.onRemove(contentKey);
+    const onEditPurpose = (contentKey: string, purpose: string) => {
+      props.onEdit(Object.assign(contentItem, { purpose }), contentKey);
     };
 
     const editorProps = {
       editMode,
       onEditPurpose,
       content,
-      onRemove,
+      onRemove: props.onRemove,
+      canRemove: content.canDelete(),
     };
 
     const level = 0;
 
     const editor = createEditor(
       props.resourceContext,
-      contentValue,
+      contentItem,
       index,
       level,
       activityContexts,
@@ -105,9 +106,9 @@ export const Editors = (props: EditorsProps) => {
 
     return (
       <div
-        key={'control-container-' + contentKey}
-        id={`re${contentKey}`}
-        className={classNames('resource-block-editor-and-controls', contentKey)}
+        key={'control-container-' + contentItem.id}
+        id={`re${contentItem.id}`}
+        className={classNames('resource-block-editor-and-controls', contentItem.id)}
       >
         <AddResource
           objectives={props.objectives}
@@ -126,7 +127,7 @@ export const Editors = (props: EditorsProps) => {
           aria-describedby="content-list-operation"
           tabIndex={index + 1}
         >
-          <EditorErrorBoundary id={contentKey}>{editor}</EditorErrorBoundary>
+          <EditorErrorBoundary id={contentItem.id}>{editor}</EditorErrorBoundary>
         </div>
       </div>
     );

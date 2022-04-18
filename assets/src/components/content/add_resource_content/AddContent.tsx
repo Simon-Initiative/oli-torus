@@ -24,7 +24,10 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
           onClick={(_e) => addGroup(onAddItem, index)}
         >
           <div className="type-label">Group</div>
-          <div className="type-description">A collection of content items with similar purpose</div>
+          <div className="type-description">
+            A group for content with the same purpose such as a Checkpoint, Example, Learn by
+            doing...{' '}
+          </div>
         </button>
       </div>
     </>

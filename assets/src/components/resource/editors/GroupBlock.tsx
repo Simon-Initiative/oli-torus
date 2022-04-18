@@ -34,8 +34,9 @@ interface GroupBlockProps {
   content: Immutable.List<ResourceContent>;
   contentItem: StructuredContent;
   index: number;
+  canRemove: boolean;
   onEditPurpose: (purpose: string) => void;
-  onRemove: () => void;
+  onRemove: (key: string) => void;
 }
 export const GroupBlock = (props: GroupBlockProps) => {
   const id = `content-header-${props.index}`;
@@ -43,7 +44,10 @@ export const GroupBlock = (props: GroupBlockProps) => {
   return (
     <div id={id} className={classNames(styles.groupBlock, `purpose-${props.contentItem.purpose}`)}>
       <div className={styles.actions}>
-        <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
+        <DeleteButton
+          editMode={props.editMode && props.canRemove}
+          onClick={() => props.onRemove(props.contentItem.id)}
+        />
       </div>
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>

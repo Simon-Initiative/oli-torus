@@ -20,5 +20,5 @@ export const focusHandler =
         : activities.get((item as ActivityReference).activitySlug)?.friendlyName;
 
     const index = content.flattenedIndex(key);
-    setAssistive(`Listbox. ${index + 1} of ${content.size}. ${desc}.`);
+    setAssistive(`Listbox. ${index + 1} of ${content.count()}. ${desc}.`);
   };

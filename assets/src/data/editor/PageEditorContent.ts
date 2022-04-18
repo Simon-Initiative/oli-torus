@@ -108,8 +108,15 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
   /**
    * @returns the count of all resource content items
    */
-  size() {
+  count() {
     return this.flatten().size;
+  }
+
+  /**
+   * @returns true if an item can be deleted from the model
+   */
+  canDelete() {
+    return this.model.size > 1;
   }
 
   /**

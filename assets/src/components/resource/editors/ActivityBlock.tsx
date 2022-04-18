@@ -15,6 +15,7 @@ interface ActivityBlockProps {
   children?: JSX.Element | JSX.Element[];
   editMode: boolean;
   content: Immutable.List<ResourceContent>;
+  canRemove: boolean;
   purposes: PurposeType[];
   activity: ActivityReference;
   label: string;
@@ -26,7 +27,7 @@ interface ActivityBlockProps {
   onDragStart: (e: React.DragEvent<HTMLDivElement>, id: string) => void;
   onDragEnd: () => void;
   onEditPurpose: (purpose: string) => void;
-  onRemove: () => void;
+  onRemove: (key: string) => void;
   onUpdatePreferences: (p: Partial<Preferences>) => any;
 }
 
@@ -34,7 +35,10 @@ const ActivityBlock = (props: ActivityBlockProps) => {
   return (
     <div className={classNames(styles.activityBlock, 'activity-block')}>
       <div className={styles.actions}>
-        <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
+        <DeleteButton
+          editMode={props.editMode && props.canRemove}
+          onClick={() => props.onRemove(props.activity.id)}
+        />
       </div>
       <div id={props.activity.id} className="p-2">
         {props.children}

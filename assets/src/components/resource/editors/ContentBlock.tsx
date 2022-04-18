@@ -10,7 +10,8 @@ interface ContentBlockProps {
   content: Immutable.List<ResourceContent>;
   contentItem: StructuredContent;
   index: number;
-  onRemove: () => void;
+  canRemove: boolean;
+  onRemove: (key: string) => void;
 }
 
 export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
@@ -26,7 +27,10 @@ export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
       )}
     >
       <div className={styles.actions}>
-        <DeleteButton editMode={props.content.size > 1} onClick={props.onRemove} />
+        <DeleteButton
+          editMode={props.editMode && props.canRemove}
+          onClick={() => props.onRemove(props.contentItem.id)}
+        />
       </div>
       <div id={props.contentItem.id}>{props.children}</div>
     </div>

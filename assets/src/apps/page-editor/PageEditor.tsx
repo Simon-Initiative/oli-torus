@@ -140,8 +140,6 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       undoables: empty(),
     };
 
-    console.log(this.state.content.toPersistence());
-
     this.persistence = new DeferredPersistenceStrategy();
 
     this.update = this.update.bind(this);

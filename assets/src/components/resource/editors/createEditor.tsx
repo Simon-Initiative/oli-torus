@@ -33,7 +33,7 @@ export const createEditor = (
   allObjectives: Objective[],
   allTags: Tag[],
   editorMap: ActivityEditorMap,
-  onEdit: (content: ResourceContent) => void,
+  onEdit: (content: ResourceContent, key: string) => void,
   onActivityEdit: (key: string, update: EditorUpdate) => void,
   onPostUndoable: (key: string, undoable: Undoable) => void,
   onRegisterNewObjective: (o: Objective) => void,
@@ -48,7 +48,7 @@ export const createEditor = (
           key={contentItem.id}
           editMode={editMode}
           selection={contentItem}
-          onChange={onEdit}
+          onChange={(selection) => onEdit(selection, contentItem.id)}
           projectSlug={projectSlug}
           allObjectives={Immutable.List<Objective>(allObjectives)}
           allTags={Immutable.List<Tag>(allTags)}
@@ -66,7 +66,7 @@ export const createEditor = (
           key={contentItem.id}
           editMode={editMode}
           content={contentItem}
-          onEdit={onEdit}
+          onEdit={(c) => onEdit(c, contentItem.id)}
           projectSlug={projectSlug}
           toolbarInsertDescs={getToolbarForContentType({
             type: 'all',
@@ -86,7 +86,7 @@ export const createEditor = (
         ...contentItem,
         children: contentItem.children.map((c) => (c.id === child.id ? child : c)),
       };
-      onEdit(updatedContent);
+      onEdit(updatedContent, contentItem.id);
     };
 
     return (
