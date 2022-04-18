@@ -58,8 +58,6 @@ export const dropHandler =
           // Handle a same window drag and drop
           const adjustedIndex = adjustIndex(sourceIndex, index);
 
-          console.log(sourceIndex, index, adjustedIndex);
-
           let toInsert;
           if (droppedContent.type === 'ActivityPayload') {
             toInsert = droppedContent.reference;
