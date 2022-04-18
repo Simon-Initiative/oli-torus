@@ -71,7 +71,7 @@ export const initializeActivity = createAsyncThunk(
             const instance = new Klass() as any;
             if (instance.getAdaptivitySchema) {
               const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
-              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              // for each key in variables create a ApplyStateOperation with "anchor to" for the current activity
               for (const key in variables) {
                 const target = `${currentSequenceId}|stage.${part.id}.${key}`;
                 const operator = 'anchor to';
