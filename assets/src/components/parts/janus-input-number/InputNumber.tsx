@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
@@ -9,9 +8,8 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { parseBool } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
-import { InputNumberModel } from './schema';
-
 import './InputNumber.scss';
+import { InputNumberModel } from './schema';
 
 const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);

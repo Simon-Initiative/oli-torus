@@ -245,4 +245,6 @@ export const selectShowScoringOverview = createSelector(
   (state: AppState) => state.showScoringOverview,
 );
 
+export const selectIsAdmin = createSelector(selectState, (state: AppState) => state.isAdmin);
+
 export default slice.reducer;

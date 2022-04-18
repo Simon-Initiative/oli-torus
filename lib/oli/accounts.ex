@@ -15,6 +15,7 @@ defmodule Oli.Accounts do
 
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
+  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
@@ -315,6 +316,24 @@ defmodule Oli.Accounts do
 
       _ ->
         false
+    end
+  end
+
+  @doc """
+  Returns true if a user belongs to an LMS.
+  """
+  def is_lms_user?(email) do
+    case get_user_by(%{email: email}) do
+      nil ->
+        false
+
+      %User{id: user_id} ->
+        Repo.exists?(
+          from(
+            lti in LtiParams,
+            where: lti.user_id == ^user_id
+          )
+        )
     end
   end
 
@@ -664,7 +683,7 @@ defmodule Oli.Accounts do
   end
 
   @doc """
-  Inserts or updates an user logged in via sso, and adds the user as a member of the given community.
+  Inserts or updates a user logged in via sso, and adds the user as a member of the given community.
 
   ## Examples
 

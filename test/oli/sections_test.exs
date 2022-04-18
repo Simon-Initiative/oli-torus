@@ -53,17 +53,12 @@ defmodule Oli.SectionsTest do
       Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user3.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      assert length(Sections.list_enrollments(section.slug)) == 3
+      enrollments = Sections.list_enrollments(section.slug)
 
-      [one, two, three] = Sections.list_enrollments(section.slug)
+      assert enrollments |> Enum.map(& &1.user_id) |> Enum.sort() ==
+               [user1, user2, user3] |> Enum.map(& &1.id) |> Enum.sort()
 
-      assert one.user_id == user1.id
-      assert two.user_id == user2.id
-      assert three.user_id == user3.id
-
-      assert one.section_id == section.id
-      assert two.section_id == section.id
-      assert three.section_id == section.id
+      assert enrollments |> Enum.map(& &1.section_id) |> Enum.uniq() == [section.id]
 
       assert ContextRoles.has_role?(
                user1,

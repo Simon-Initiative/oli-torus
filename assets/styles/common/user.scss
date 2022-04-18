@@ -1,13 +1,21 @@
 nav .nav-item a.user {
   color: inherit;
   display: flex;
-}
 
-nav .nav-item a.user .role {
-  color: $gray-600;
-  font-size: 0.8em;
-  font-weight: 600;
-  text-transform: uppercase;
+  .role {
+    color: $gray-600;
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.admin-color {
+      color: #2ecc71;
+    }
+
+    &.author-color {
+      color: #3498db;
+    }
+  }
 }
 
 nav .nav-item a.user .user-icon,

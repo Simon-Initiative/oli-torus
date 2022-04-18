@@ -23,8 +23,8 @@ defmodule OliWeb.Progress.StudentResourceView do
   data is_editing, :boolean, default: false
   data grade_sync_result, :any, default: nil
 
-  defp set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+  defp set_breadcrumbs(type, section, user_id) do
+    OliWeb.Progress.StudentView.set_breadcrumbs(type, section, user_id)
     |> breadcrumb(section)
   end
 
@@ -63,7 +63,8 @@ defmodule OliWeb.Progress.StudentResourceView do
             {:ok,
              assign(socket,
                changeset: changeset,
-               breadcrumbs: set_breadcrumbs(type, section),
+               breadcrumbs: set_breadcrumbs(type, section, user_id),
+               delivery_breadcrumb: true,
                section: section,
                resource_access: resource_access,
                revision: revision,

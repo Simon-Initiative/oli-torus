@@ -71,13 +71,21 @@ export const initializeActivity = createAsyncThunk(
             const instance = new Klass() as any;
             if (instance.getAdaptivitySchema) {
               const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
-              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              // for each key in variables create a ApplyStateOperation with "anchor to" for the current activity
               for (const key in variables) {
                 const target = `${currentSequenceId}|stage.${part.id}.${key}`;
                 const operator = 'anchor to';
                 const value = `${ancestor.id}|stage.${part.id}.${key}`;
-                const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
-                syncOps.push(op);
+                // we don't need to apply binding if both the target & value are same
+                if (target !== value) {
+                  const op: ApplyStateOperation = {
+                    target,
+                    operator,
+                    value,
+                    type: variables[key],
+                  };
+                  syncOps.push(op);
+                }
               }
             }
           }
@@ -163,8 +171,15 @@ export const initializeActivity = createAsyncThunk(
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
     const globalizedInitState = initState.map((s: any) => {
+      // do this first so that *all* can have their values processed
+      let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
+      modifiedValue =
+        typeof modifiedValue === 'string'
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          : modifiedValue;
+
       if (s.target.indexOf('stage.') !== 0) {
-        return { ...s };
+        return { ...s, value: modifiedValue };
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
@@ -173,18 +188,17 @@ export const initializeActivity = createAsyncThunk(
       if (s.type === CapiVariableTypes.MATH_EXPR) {
         return { ...s, target: `${ownerActivity.id}|${s.target}` };
       }
-      let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
-      modifiedValue =
-        typeof modifiedValue === 'string'
-          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
-          : modifiedValue;
+
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
+
     const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
+
     const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {
       console.warn('[INIT STATE] applyState has errors', results);

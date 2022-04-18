@@ -1,6 +1,4 @@
-import { ResourceContent } from 'data/content/resource';
 import { DragPayload } from '../interfaces';
-import * as Immutable from 'immutable';
 import * as Persistence from 'data/persistence/activity';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 

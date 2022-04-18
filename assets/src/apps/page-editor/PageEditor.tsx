@@ -39,9 +39,8 @@ import { Operations } from 'utils/pathOperations';
 import { registerUnload, unregisterUnload } from './listeners';
 import { empty, PageUndoable, Undoables } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
-
-import '../ResourceEditor.scss';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
+import '../ResourceEditor.scss';
 
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
