@@ -76,8 +76,16 @@ export const initializeActivity = createAsyncThunk(
                 const target = `${currentSequenceId}|stage.${part.id}.${key}`;
                 const operator = 'anchor to';
                 const value = `${ancestor.id}|stage.${part.id}.${key}`;
-                const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
-                syncOps.push(op);
+                // we don't need to apply binding if both the target & value are same
+                if (target !== value) {
+                  const op: ApplyStateOperation = {
+                    target,
+                    operator,
+                    value,
+                    type: variables[key],
+                  };
+                  syncOps.push(op);
+                }
               }
             }
           }
