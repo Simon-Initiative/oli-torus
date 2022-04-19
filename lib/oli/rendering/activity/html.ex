@@ -45,15 +45,35 @@ defmodule Oli.Rendering.Activity.Html do
         model_json = activity_summary.model
         section_slug = context.section_slug
 
-        case mode do
-          :instructor_preview ->
-            [
-              "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
-            ]
+        activity_html =
+          case mode do
+            :instructor_preview ->
+              [
+                "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+              ]
 
-          _ ->
+            _ ->
+              [
+                "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+              ]
+          end
+
+        # purposes types directly on activities is deprecated but rendering is left here to support legacy content
+        case activity["purpose"] do
+          nil ->
+            activity_html
+
+          "none" ->
+            activity_html
+
+          purpose ->
             [
-              "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+              "<h4 class=\"activity-purpose ",
+              Oli.Utils.Slug.slugify(purpose),
+              "\">",
+              Oli.Utils.Purposes.label_for(purpose),
+              "</h4>",
+              activity_html
             ]
         end
     end

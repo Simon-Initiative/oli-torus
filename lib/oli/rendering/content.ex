@@ -46,8 +46,39 @@ defmodule Oli.Rendering.Content do
 
   @doc """
   Renders an Oli content element that contains children.
-  Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
+  Returns an IO list of raw html strings to be further processed by Phoenix/BEAM writev.
+
+  Content elements with purposes attached are deprecated but the rendering code is
+  left here to support these existing elements.
   """
+  def render(
+    %Context{} = context,
+    %{"type" => "content", "children" => children, "purpose" => "example"} = element,
+    writer
+  ) do
+  next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+  writer.example(context, next, element)
+  end
+
+  def render(
+      %Context{} = context,
+      %{"type" => "content", "children" => children, "purpose" => "learnmore"} = element,
+      writer
+    ) do
+  next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+  writer.learn_more(context, next, element)
+  end
+
+  def render(
+      %Context{} = context,
+      %{"type" => "content", "children" => children, "purpose" => "manystudentswonder"} =
+        element,
+      writer
+    ) do
+  next = fn -> Enum.map(children, fn child -> render(context, child, writer) end) end
+  writer.manystudentswonder(context, next, element)
+  end
+
   def render(%Context{} = context, %{"type" => "content", "children" => children}, writer) do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end

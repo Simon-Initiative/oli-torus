@@ -201,3 +201,60 @@
     }
   }
 }
+
+// activity-purpose is deprecated but is left here to support existing content
+.activity-purpose {
+  padding: 4px 8px;
+  font-weight: 200;
+  text-transform: uppercase;
+  color: white;
+  border-radius: 4px;
+
+  // Only display purpose type decorations for the first elem of that type
+  // in a series.
+  // HTML looks like:
+  // <h4 class="{purpose-type}" />
+  // <activity class="activity-container" />
+  // <h4 class="{purpose-type}" />
+  // <activity class="activity-container" />
+  // So, we use the sibling selector to hide duplicate purpose types
+  // that occur after an activity element.
+  &.checkpoint + .activity-container + .checkpoint,
+  &.didigetthis + .activity-container + .didigetthis,
+  &.learnbydoing + .activity-container + .learnbydoing {
+    display: none;
+  }
+
+  &.checkpoint {
+    background-color: $content-purpose-checkpoint-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f46c';
+    }
+  }
+
+  &.didigetthis {
+    background-color: $content-purpose-didigetthis-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f256';
+    }
+  }
+
+  &.learnbydoing {
+    background-color: $content-purpose-learnbydoing-color;
+
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-right: 8px;
+      content: '\f51c';
+    }
+  }
+}
