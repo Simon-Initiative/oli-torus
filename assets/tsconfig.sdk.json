@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "removeComments": false,
+    "inlineSources": true,
+    "sourceMap": true,
+    "noEmitHelpers": false,
+    "alwaysStrict": true,
+    "isolatedModules": false,
+    "paths": {
+      "*": ["./src/*"]
+    },
+    "baseUrl": "./",
+    "types": ["node", "jest", "jquery"],
+    "target": "es5",
+    "module": "commonjs",
+    "lib": ["es2017", "es7", "es6", "dom"],
+    "declaration": true,
+    "outDir": "./sdk/dist",
+    "strict": true,
+    "esModuleInterop": true
+  },
+  "include": ["./src/components/activities/index.ts"],
+  "exclude": ["node_modules", "dist"]
+}

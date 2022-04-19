@@ -1,10 +1,6 @@
 import { ProjectSlug } from 'data/types';
-import produce from 'immer';
-import React, { useContext } from 'react';
-import { Maybe } from 'tsmonad';
-import { ActivityModelSchema, MediaItemRequest, PostUndoable, Undoable } from './types';
+import { ActivityModelSchema, MediaItemRequest, Undoable } from './types';
 import { EventEmitter } from 'events';
-import { ModalDisplay } from 'components/modal/ModalDisplay';
 
 export interface AuthoringElementProps<T extends ActivityModelSchema> {
   model: T;
@@ -35,7 +31,7 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     super();
 
     this.mountPoint = document.createElement('div');
-
+    this.connected = false;
     this._notify = new EventEmitter().setMaxListeners(50);
   }
 
@@ -124,44 +120,3 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
   // Lower case here as opposed to camelCase is required
   static observedAttributes = ['editmode', 'model', 'authoringcontext'];
 }
-
-export interface AuthoringElementState<T> {
-  projectSlug: string;
-  editMode: boolean;
-  onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
-  dispatch: (action: (model: T, post: PostUndoable) => any) => T;
-  model: T;
-}
-const AuthoringElementContext = React.createContext<AuthoringElementState<any> | undefined>(
-  undefined,
-);
-export function useAuthoringElementContext<T>() {
-  return Maybe.maybe(
-    useContext<AuthoringElementState<T> | undefined>(AuthoringElementContext),
-  ).valueOrThrow(
-    new Error('useAuthoringElementContext must be used within an AuthoringElementProvider'),
-  );
-}
-export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityModelSchema>> = ({
-  projectSlug,
-  editMode,
-  children,
-  model,
-  onPostUndoable,
-  onRequestMedia,
-  onEdit,
-}) => {
-  const dispatch: AuthoringElementState<any>['dispatch'] = (action) => {
-    const newModel = produce(model, (draftState) => action(draftState, onPostUndoable));
-    onEdit(newModel);
-    return newModel;
-  };
-  return (
-    <AuthoringElementContext.Provider
-      value={{ projectSlug, editMode, dispatch, model, onRequestMedia }}
-    >
-      {children}
-      <ModalDisplay />
-    </AuthoringElementContext.Provider>
-  );
-};

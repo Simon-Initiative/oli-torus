@@ -514,13 +514,18 @@ defmodule Oli.Interop.Ingest do
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, tag_map, hierarchy_details, as_author) do
     # Process top-level items and containers, add recursively add containers
+    Map.keys(page_map)
+    |> IO.inspect
+
     children =
       Map.get(hierarchy_details, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
           "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, tag_map, c)
+          "container" ->
+            IO.inspect c
+            create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 
@@ -540,7 +545,12 @@ defmodule Oli.Interop.Ingest do
       Map.get(container, "children")
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
-          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
+          "item" ->
+            p = Map.get(page_map, Map.get(c, "idref"))
+            if is_nil(p) do
+              IO.inspect c
+            end
+            p.resource_id
           "container" -> create_container(project, page_map, as_author, tag_map, c)
         end
       end)

@@ -1,5 +1,5 @@
 import { HintsDelivery } from 'components/activities/common/hints/delivery/HintsDelivery';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { HasHints, PartId } from 'components/activities/types';
 import {
   ActivityDeliveryState,

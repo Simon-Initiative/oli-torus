@@ -1,11 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MCSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';

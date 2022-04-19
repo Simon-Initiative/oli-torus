@@ -1,9 +1,11 @@
 {
-  "name": "oli",
-  "version": "0.1.0",
+  "name": "oli-torus-sdk",
+  "version": "0.1.1",
   "description": "Next Generation OLI Authoring and Delivery Platform",
   "repository": {},
   "license": "MIT",
+  "main": "dist-sdk/index.js",
+  "types": "dist-sdk/index.d.ts",
   "scripts": {
     "deploy": "node --max-old-space-size=8192 node_modules/webpack/bin/webpack.js --mode production",
     "deploy-node": "webpack --mode production --config webpack.config.node.js",
@@ -13,7 +15,8 @@
     "lint": "eslint --quiet \"src/**/*.ts*\"",
     "format": "eslint --fix --quiet \"src/**/*.ts*\"",
     "test": "jest && type-coverage",
-    "test:watch": "jest --watch -o"
+    "test:watch": "jest --watch -o",
+    "sdk-build": "webpack --mode production --config webpack.config.sdk.js"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.5.1",

@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButton } from 'components/activities/common/authoring/AuthoringButton';
 import React from 'react';
 import './RemoveButton.scss';
