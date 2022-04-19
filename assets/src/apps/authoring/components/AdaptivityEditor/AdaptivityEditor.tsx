@@ -25,7 +25,8 @@ import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
-
+import uniq from 'lodash/uniq';
+import flatten from 'lodash/flatten';
 export interface AdaptivityEditorProps {
   content?: any;
 }
@@ -127,14 +128,14 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
-      activityClone.authoring.variablesRequiredForEvaluation.push([
-        ...variableRefsInConditions,
-        ...variableRefsInActions,
-      ]);
+
+      const concatVars = [...variableRefsInConditions, ...variableRefsInActions];
+
+      activityClone.authoring.variablesRequiredForEvaluation.push(concatVars);
       // make unique
-      activityClone.authoring.variablesRequiredForEvaluation = [
-        ...new Set(activityClone.authoring.variablesRequiredForEvaluation),
-      ];
+      activityClone.authoring.variablesRequiredForEvaluation = uniq(
+        flatten([...new Set(activityClone.authoring.variablesRequiredForEvaluation)]),
+      );
 
       if (!activityClone.authoring.activitiesRequiredForEvaluation) {
         activityClone.authoring.activitiesRequiredForEvaluation = [];
