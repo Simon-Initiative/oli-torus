@@ -11,6 +11,7 @@ import {
 import { ObjectFieldTemplateProps } from '@rjsf/core';
 import { validateVariables } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import { useDispatch, useSelector } from 'react-redux';
+import { PageError } from '../../Modal/DiagnosticsWindow';
 interface CustomFieldProps {
   onAddClick: any;
   items: any[];
@@ -94,24 +95,6 @@ const VariableArrayItem: React.FC<any> = (props) => {
   );
 };
 
-const VariableError: React.FC<{ errors: any }> = ({ errors }) => {
-  return (
-    <ListGroup>
-      <ListGroup.Item>
-        <ListGroup horizontal>
-          <ListGroup.Item className="flex-grow-1 alert alert-danger">
-            <span>
-              Variable(s) &quot;
-              <strong>{errors.map((error: any) => error.id).join(', ')} </strong>
-            </span>
-            &quot; are not getting evaluated.
-          </ListGroup.Item>
-        </ListGroup>
-      </ListGroup.Item>
-    </ListGroup>
-  );
-};
-
 const VariableEditor: React.FC<CustomFieldProps> = (props) => {
   const [show, setShow] = useState(false);
   const [results, setResults] = useState<any>(null);
@@ -121,7 +104,7 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
     if ((result as any).meta.requestStatus === 'fulfilled') {
       if ((result as any).payload.errors.length > 0) {
         const errors = (result as any).payload.errors;
-        const errorList = <VariableError key={errors[0].owner.title} errors={errors} />;
+        const errorList = <PageError key={errors[0].owner.title} error={errors} />;
         setResults(errorList);
       } else {
         setResults(null);

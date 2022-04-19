@@ -159,7 +159,7 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   );
 };
 
-const PageError: React.FC<{ error: any }> = ({ error }) => {
+export const PageError: React.FC<{ error: any }> = ({ error }) => {
   return (
     <ListGroup>
       <ListGroup.Item>
@@ -169,7 +169,7 @@ const PageError: React.FC<{ error: any }> = ({ error }) => {
               Variable(s) &quot;
               <strong>{error.map((err: any) => err.id).join(', ')} </strong>
             </span>
-            &quot; are not getting evaluated.
+            &quot; failed to evaluate.
           </ListGroup.Item>
         </ListGroup>
       </ListGroup.Item>
