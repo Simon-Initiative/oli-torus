@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { JanusConditionProperties } from 'adaptivity/capi';
+import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import {
   checkExpressionsWithWrongBrackets,
   defaultGlobalEnv,
@@ -19,6 +20,7 @@ import {
   SequenceEntryType,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import { Environment } from 'janus-script';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
 import { clone } from 'utils/common';
@@ -445,11 +447,13 @@ const validateLessonVariables = (page: any) => {
       return stmt;
     })
     .filter((s: any) => s);
+  const testEnv = new Environment();
+  evalScript(janus_std, testEnv);
   // execute each sequentially in case there are errors (missing functions)
   const broken: any[] = [];
   statements.forEach((statement: any) => {
     try {
-      const result = evalScript(statement.expression, defaultGlobalEnv);
+      const result = evalScript(statement.expression, testEnv);
       if (result.result !== null) {
         broken.push({
           owner: page,
