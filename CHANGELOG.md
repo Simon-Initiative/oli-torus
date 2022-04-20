@@ -10,6 +10,7 @@
 - Fix table styling when words overflow bounds
 - Fix popup content editing
 - Fix image alt text rendering
+- Add tooltips to insights table headers, add keyboard navigation
 
 ### Enhancements
 
