@@ -28,7 +28,8 @@ config :oli, Oli.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
   timeout: 600_000,
-  ownership_timeout: 600_000
+  ownership_timeout: 600_000,
+  log: System.get_env("DEV_DB_LOG_LEVEL", "debug") |> String.to_existing_atom()
 
 # Configure email for development
 config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
