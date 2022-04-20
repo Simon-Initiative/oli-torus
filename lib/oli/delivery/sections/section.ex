@@ -89,6 +89,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:enrollments_count, :integer, virtual: true)
     field(:total_count, :integer, virtual: true)
     field(:institution_name, :string, virtual: true)
+    field(:instructor_name, :string, virtual: true)
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
 

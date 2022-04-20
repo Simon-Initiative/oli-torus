@@ -1,8 +1,11 @@
 defmodule Oli.Delivery.Sections.Browse do
   import Ecto.Query, warn: false
+
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Accounts.User
+  alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
-  alias Oli.Delivery.Sections.{Section, Enrollment, BrowseOptions}
 
   @doc """
     Paged, sorted, filterable queries for course sections. Joins the institution,
@@ -19,11 +22,12 @@ defmodule Oli.Delivery.Sections.Browse do
         true
       else
         dynamic(
-          [s, _, i, proj, prod],
+          [s, _, i, proj, prod, u],
           ilike(s.title, ^"%#{options.text_search}%") or
           ilike(i.name, ^"%#{options.text_search}%") or
           ilike(proj.title, ^"%#{options.text_search}%") or
-          ilike(prod.title, ^"%#{options.text_search}%")
+          ilike(prod.title, ^"%#{options.text_search}%") or
+          ilike(u.name, ^"%#{options.text_search}%")
         )
       end
 
@@ -60,12 +64,24 @@ defmodule Oli.Delivery.Sections.Browse do
         do: true,
         else: dynamic([s, _], s.blueprint_id == ^options.blueprint_id)
 
+    instructor_role_id = ContextRoles.get_role(:context_instructor).id
+    instructor =
+      from u in User,
+      join: e in Enrollment,
+      on: e.user_id == u.id,
+      join: ecr in "enrollments_context_roles",
+      on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id,
+      select: %{id: u.id, name: u.name, section_id: e.section_id},
+      order_by: [asc: e.inserted_at],
+      limit: 1
+
     query =
       Section
-      |> join(:left, [s], e in Enrollment, on: s.id == e.section_id)
+      |> join(:left, [s], e in Enrollment, as: :enrollment, on: s.id == e.section_id)
       |> join(:left, [s, _], i in Oli.Institutions.Institution, on: s.institution_id == i.id)
       |> join(:left, [s, _], proj in Oli.Authoring.Course.Project, on: s.base_project_id == proj.id)
       |> join(:left, [s, _], prod in Section, on: s.blueprint_id == prod.id)
+      |> join(:left, [s, e], u in subquery(instructor), on: u.section_id == s.id)
       |> where([s, _], s.type == :enrollable)
       |> where(^filter_by_status)
       |> where(^filter_by_type)
@@ -76,11 +92,12 @@ defmodule Oli.Delivery.Sections.Browse do
       |> limit(^limit)
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])
-      |> group_by([s, _, i, proj, prod], [s.id, i.name, proj.title, prod.title])
-      |> select_merge([p, e, i, proj], %{
+      |> group_by([s, _, i, proj, prod, u], [s.id, i.name, proj.title, prod.title, u.name])
+      |> select_merge([p, e, i, proj, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),
-        institution_name: i.name
+        institution_name: i.name,
+        instructor_name: u.name
       })
 
     # sorting
@@ -88,6 +105,7 @@ defmodule Oli.Delivery.Sections.Browse do
       case field do
         :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
         :institution -> order_by(query, [_, _, i], {^direction, i.name})
+        :instructor -> order_by(query, [_, _, _, _, _, u], {^direction, u.name})
         :requires_payment -> order_by(query, [s, _, _], {^direction, s.amount})
         :type -> order_by(query, [s, _, _], {^direction, s.open_and_free})
         :base -> order_by(query, [_, _, _, proj, prod], [{^direction, prod.title}, {^direction, proj.title}])

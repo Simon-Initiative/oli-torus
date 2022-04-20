@@ -2,6 +2,9 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
   use ExUnit.Case
   use OliWeb.ConnCase
 
+  alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.Sections
+
   import Phoenix.LiveViewTest
   import Oli.Factory
 
@@ -140,6 +143,15 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
+
+      # by instructor
+      user = insert(:user, name: "Instructor")
+      Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
+
+      render_hook(view, "text_search_change", %{value: "instructor"})
+
+      assert has_element?(view, "td", s1.title)
+      refute has_element?(view, "td", s2.title)
     end
 
     test "applies sorting", %{conn: conn} do
@@ -178,6 +190,26 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       assert view
       |> element("tr:first-child > td:first-child")
       |> render() =~ s1.title
+
+      # by instructor
+      user = insert(:user, name: "Instructor")
+      Sections.enroll(user.id, s1.id, [ContextRoles.get_role(:context_instructor)])
+
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> render_click(%{sort_by: "instructor"})
+
+      assert view
+      |> element("tr:first-child > td:first-child")
+      |> render() =~ s1.title
+
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
+      |> render_click(%{sort_by: "instructor"})
+
+      assert view
+      |> element("tr:first-child > td:first-child")
+      |> render() =~ s2.title
     end
 
     test "applies paging", %{conn: conn} do

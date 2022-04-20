@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
   alias Lti_1p3.Tool.ContextRoles
 
   import Ecto.Query, warn: false
+  import Oli.Factory
 
   @default_opts %BrowseOptions{
     institution_id: nil,
@@ -81,6 +82,16 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 30
       assert hd(results).enrollments_count == 0
+
+      results = browse(0, :instructor, :asc, @default_opts)
+      assert length(results) == 3
+      assert hd(results).total_count == 30
+      assert hd(results).instructor_name == "Instructor"
+
+      results = browse(12, :instructor, :asc, @default_opts)
+      assert length(results) == 3
+      assert hd(results).total_count == 30
+      refute hd(results).instructor_name
     end
 
     test "searching" do
@@ -104,6 +115,11 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "Example"}))
       assert length(results) == 3
       assert hd(results).total_count == 30
+
+      # there is one section with an instructor associated with name "Instructor"
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "instructor"}))
+      assert length(results) == 1
+      assert hd(results).total_count == 1
     end
 
     test "filtering", %{second: second, sections: sections} do
@@ -182,6 +198,10 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       open_and_free: true,
       amount: Money.new(:USD, 10000000)
     })
+
+    # Enroll an instructor to first section
+    user = insert(:user, name: "Instructor")
+    Sections.enroll(user.id, hd(sections).id, [ContextRoles.get_role(:context_instructor)])
 
     Sections.update_section(Enum.at(sections, 1), %{
       start_date: yesterday(),

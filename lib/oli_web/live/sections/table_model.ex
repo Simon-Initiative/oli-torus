@@ -1,9 +1,6 @@
 defmodule OliWeb.Sections.SectionsTableModel do
   use Surface.LiveComponent
 
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.EnrollmentBrowseOptions
-  alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.SessionContext
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
@@ -108,20 +105,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
     end
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :instructor}) do
-    Sections.browse_enrollments(
-      section,
-      %Paging{offset: 0, limit: 1},
-      %Sorting{direction: :asc, field: :inserted_at},
-      %EnrollmentBrowseOptions{
-        is_student: false,
-        is_instructor: true,
-        text_search: nil
-      }
-    )
-    |> List.first(%{})
-    |> Map.get(:name, "")
-  end
+  def custom_render(_assigns, section, %ColumnSpec{name: :instructor}),
+    do: Map.get(section, :instructor_name, "")
 
   def render(assigns) do
     ~F"""
