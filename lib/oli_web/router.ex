@@ -506,6 +506,12 @@ defmodule OliWeb.Router do
     post("/", Api.PaymentController, :new)
   end
 
+  scope "/api/v1/registration", OliWeb do
+    pipe_through([:api])
+    # This endpoint is secured via an API token
+    resources "/", Api.RegistrationController, only: [:create]
+  end
+
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api, :delivery_protected, :with_current_user])
 

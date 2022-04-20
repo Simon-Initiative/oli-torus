@@ -22,4 +22,20 @@ defmodule OliWeb.Api.Helpers do
         false
     end
   end
+
+  def get_api_namespace(conn) do
+    case get_req_header(conn, "authorization") do
+      ["Bearer " <> encoded_key] ->
+        case Base.decode64(encoded_key) do
+          {:ok, decoded} ->
+            Oli.Interop.get_namespace(decoded)
+
+          _ ->
+            nil
+        end
+
+      _ ->
+        nil
+    end
+  end
 end

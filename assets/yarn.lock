@@ -4127,6 +4127,11 @@ csstype@^3.0.2:
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.0.8.tgz#d2266a792729fb227cd216fb572f43728e1ad340"
   integrity sha512-jXKhWqXPmlUeoQnF/EhTtTl4C9SnrxSH/jZUih3jmO6lBKr99rP3/+FmrMj4EFpOXzMtXHAZkd3x0E6h6Fgflw==
 
+custom-elements-native-shim@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/custom-elements-native-shim/-/custom-elements-native-shim-1.1.0.tgz#2be7c6389bbff3e6bb1d950d49b18307b8dbc513"
+  integrity sha512-jx7J58mgj2ldf194LJaO/SfBKd40ogxHgIAPnu+q1eAltnsbaX47x/vYD0W6fniQjZjIxYdWQog+FrCcLWKyvw==
+
 data-urls@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/data-urls/-/data-urls-2.0.0.tgz#156485a72963a970f5d5821aaf642bef2bf2db9b"

@@ -20,7 +20,7 @@ defmodule Oli.Activities.Manifest do
           "authoring" => authoring
         } = json
       ) do
-    %Oli.Activities.Manifest{
+    {:ok, %Oli.Activities.Manifest{
       id: id,
       friendlyName: friendlyName,
       description: description,
@@ -28,6 +28,10 @@ defmodule Oli.Activities.Manifest do
       authoring: Oli.Activities.ModeSpecification.parse(authoring),
       allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
       global: false
-    }
+    }}
+  end
+
+  def parse(_json) do
+    {:error, :invalid_manifest}
   end
 end

@@ -30,6 +30,7 @@
     "ace-builds": "^1.4.13",
     "bootstrap": "^4.5.0",
     "chroma-js": "^2.1.1",
+    "custom-elements-native-shim": "^1.1.0",
     "deep-object-diff": "^1.1.0",
     "file-loader": "^6.2.0",
     "immer": "^9.0.5",

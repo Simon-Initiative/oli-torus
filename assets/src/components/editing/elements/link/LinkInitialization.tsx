@@ -1,7 +1,7 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import * as Persistence from 'data/persistence/resource';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { LinkablePages, toInternalLink } from 'components/editing/elements/link/utils';
+import { LinkablePages, toInternalLink } from 'data/content/model/elements/utils';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import React, { useEffect } from 'react';

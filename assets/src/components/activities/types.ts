@@ -5,7 +5,6 @@ import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
 import { Model } from 'data/content/model/elements/factories';
-import { NIL } from 'uuid';
 
 export type PostUndoable = (undoable: Undoable) => void;
 

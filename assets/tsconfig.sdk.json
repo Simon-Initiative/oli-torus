@@ -5,24 +5,22 @@
     "experimentalDecorators": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
+    "moduleResolution": "node",
     "removeComments": false,
     "inlineSources": true,
     "sourceMap": true,
     "noEmitHelpers": false,
     "alwaysStrict": true,
     "isolatedModules": false,
-    "paths": {
-      "*": ["./src/*"]
-    },
     "baseUrl": "./",
     "types": ["node", "jest", "jquery"],
-    "target": "es5",
-    "module": "commonjs",
-    "lib": ["es2017", "es7", "es6", "dom"],
+    "paths": {
+      "*": ["src/*"]
+    },
+    "target": "es6",
+    "module": "es2015",
     "declaration": true,
-    "outDir": "./sdk/dist",
-    "strict": true,
-    "esModuleInterop": true
+    "outDir": "./sdk/dist"
   },
   "include": ["./src/components/activities/index.ts"],
   "exclude": ["node_modules", "dist"]

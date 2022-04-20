@@ -25,13 +25,15 @@ module.exports = (env, options) => ({
     rules: [
       {
         test: /\.ts(x?)$/,
-        include: path.resolve(__dirname, '../src'),
-        use: [{ loader: 'ts-loader', options: { configFile: 'tsconfig.sdk.json' } }],
-      },
-      {
-        test: /\.ts(x?)$/,
-        include: path.resolve(__dirname, './src'),
-        use: [{ loader: 'ts-loader', options: { configFile: 'tsconfig.sdk.json' } }],
+        include: path.resolve(__dirname, 'src'),
+        use: [
+          {
+            loader: 'esbuild-loader',
+            options: {
+              loader: 'tsx',
+            },
+          },
+        ],
       },
     ],
   },
