@@ -806,11 +806,9 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :delivery_protected, :require_lti_params, :pow_email_layout])
 
     get("/", DeliveryController, :index)
-    get("/select_project", DeliveryController, :select_project)
+    live("/select_project", Delivery.SelectSource, :lms_instructor, as: :select_source)
 
     post("/research_consent", DeliveryController, :research_consent)
-
-    post("/", DeliveryController, :create_section)
   end
 
   ### Admin Dashboard / Telemetry
@@ -866,6 +864,11 @@ defmodule OliWeb.Router do
 
     # System Message Banner
     live("/system_messages", SystemMessageLive.IndexView)
+
+    # Publishers
+    live("/publishers", PublisherLive.IndexView)
+    live("/publishers/new", PublisherLive.NewView)
+    live("/publishers/:publisher_id", PublisherLive.ShowView)
 
     # Course Ingestion
     live("/ingest", Admin.Ingest)
@@ -926,6 +929,47 @@ defmodule OliWeb.Router do
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
+
+    get("/launch_clone/products/:product_slug", CognitoController, :launch_clone,
+      as: :product_clone
+    )
+
+    get("/launch_clone/projects/:project_slug", CognitoController, :launch_clone,
+      as: :project_clone
+    )
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([
+      :browser,
+      :authoring_protected,
+      :workspace,
+      :authoring
+    ])
+
+    get("/prompt_clone/projects/:project_slug", CognitoController, :prompt_clone,
+      as: :prompt_project_clone
+    )
+
+    get("/clone/:project_slug", CognitoController, :clone)
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([
+      :browser,
+      :delivery,
+      :delivery_protected,
+      :require_independent_instructor,
+      :delivery_layout
+    ])
+
+    get("/prompt_create/projects/:project_slug", CognitoController, :prompt_create,
+      as: :prompt_project_create
+    )
+
+    get("/prompt_create/products/:product_slug", CognitoController, :prompt_create,
+      as: :prompt_product_create
+    )
   end
 
   # routes only accessible when load testing mode is enabled. These routes exist solely

@@ -53,6 +53,12 @@ npm-debug.log
 /assets/static/custom/*
 !/assets/static/custom/README.md
 
+# Ignore custom themes
+/assets/styles/themes/authoring/custom/*
+!/assets/styles/themes/authoring/custom/README.md
+/assets/styles/themes/delivery/custom/*
+!/assets/styles/themes/delivery/custom/README.md
+
 oli.env
 postgres.env
 /assets/test-results/

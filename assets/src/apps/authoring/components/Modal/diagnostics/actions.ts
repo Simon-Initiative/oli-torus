@@ -1,6 +1,9 @@
 import { clone } from 'utils/common';
 
-import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import {
+  updatePart,
+  updatePartWithCorrectExpression,
+} from 'apps/authoring/store/parts/actions/updatePart';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
 import { DiagnosticTypes } from './DiagnosticTypes';
 import cloneDeep from 'lodash/cloneDeep';
@@ -13,6 +16,18 @@ export const updateId = (problem: any, fixed: string) => {
   const partId = problem.item.id;
   const changes = { id: fixed };
   return updatePart({ activityId, partId, changes });
+};
+
+export const updatePartsWithCorrectExpression = (problem: any, fixed: string) => {
+  const activityId = problem.owner.resourceId;
+  const partId = problem.item.part.id;
+  const changes = {
+    item: problem.item.item,
+    part: problem.item.part,
+    formattedExpression: problem.item.formattedExpression,
+    message: problem.item.message,
+  };
+  return updatePartWithCorrectExpression({ activityId, partId, changes });
 };
 
 export const updateRule = (rule: any, problem: any, activities: any) => {
@@ -69,27 +84,39 @@ export const updateConditionProperty =
 
     const ruleClone = cloneDeep(item.rule);
     const type = has(ruleClone.conditions, 'all') ? 'all' : 'any';
-    const list = ruleClone.conditions[type];
-    forEachCondition(list, (condition: any) => {
-      // console.log(condition, item.condition);
-      if (condition.id === item.condition.id) {
-        const cond = findConditionById(condition.id, list) as JanusConditionProperties;
-        if (cond) {
-          cond[t] = fixed;
+    if (ruleClone.conditions) {
+      const list = ruleClone.conditions[type];
+      forEachCondition(list, (condition: any) => {
+        // console.log(condition, item.condition);
+        if (condition.id === item.condition.id) {
+          const cond = findConditionById(condition.id, list) as JanusConditionProperties;
+          if (cond) {
+            cond[t] = fixed;
+          }
         }
-      }
-    });
+      });
 
-    return updateRule(ruleClone, problem, activities);
+      return updateRule(ruleClone, problem, activities);
+    } else {
+      return updateInitComponentPath(problem, fixed, activities, true);
+    }
   };
 
-export const updateInitComponentPath = (problem: any, fixed: string, activities: any) => {
+export const updateInitComponentPath = (
+  problem: any,
+  fixed: string,
+  activities: any,
+  isInitExpression?: boolean,
+) => {
   const { item, owner } = problem;
   const { fact } = item;
 
   const factClone = clone(fact);
-  factClone.target = fixed;
-
+  if (isInitExpression) {
+    factClone.value = fixed;
+  } else {
+    factClone.target = fixed;
+  }
   const activity = activities.find((a: any) => a.id === owner.resourceId);
   const existing = activity?.content.custom.facts.find((r: any) => r.id === fact.id);
 
@@ -120,6 +147,8 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath,
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION]: updatePartsWithCorrectExpression,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };

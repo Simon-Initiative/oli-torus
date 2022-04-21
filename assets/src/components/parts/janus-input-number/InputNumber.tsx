@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';

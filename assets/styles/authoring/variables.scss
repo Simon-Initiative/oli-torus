@@ -4,8 +4,8 @@
  * These along with any bootstrap variables can be overridden by a specific theme.
  * When creating a new variable, make sure you use !default so it can be overridden.
  **/
-@import "../../node_modules/bootstrap/scss/_functions.scss";
-@import "../../node_modules/bootstrap/scss/_variables.scss";
+@import '../../node_modules/bootstrap/scss/_functions.scss';
+@import '../../node_modules/bootstrap/scss/_variables.scss';
 
 $remove: $danger !default;
 $add: darken($primary, 10%) !default;
@@ -22,7 +22,7 @@ $workspace-logo-bg: #f5f8fb !default;
 $workspace-breadcrumb-bg: $workspace-logo-bg !default;
 
 $code-color: rgba(0, 0, 0, 0.84) !default;
-$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
+$font-family-monospace: 'Source Code Pro', 'Courier New', Courier, monospace !default;
 
 // Master z-index list
 // Because of the inherent global nature of z-index, all z-indexes used should be defined and
@@ -40,3 +40,56 @@ $z-overlay-4: 1150 !default;
 $z-highest: 10000 !default;
 $reposition-target: 999 !default;
 $dropdown-menu: 999 !default;
+
+// Export all theme SASS variables to CSS
+& {
+  // Custom variable values only support SassScript inside `#{}`.
+  @each $color, $value in $colors {
+    --authoring-#{$color}: #{$value};
+  }
+
+  @each $color, $value in $theme-colors {
+    --authoring-#{$color}: #{$value};
+  }
+
+  @each $bp, $value in $grid-breakpoints {
+    --authoring-breakpoint-#{$bp}: #{$value};
+  }
+
+  // Use `inspect` for lists so that quoted items keep the quotes.
+  // See https://github.com/sass/sass/issues/2383#issuecomment-336349172
+  --authoring-font-family-sans-serif: #{inspect($font-family-sans-serif)};
+  --authoring-font-family-monospace: #{inspect($font-family-monospace)};
+
+  --authoring-gray-100: #{$gray-100};
+  --authoring-gray-200: #{$gray-200};
+  --authoring-gray-300: #{$gray-300};
+  --authoring-gray-400: #{$gray-400};
+  --authoring-gray-500: #{$gray-500};
+  --authoring-gray-600: #{$gray-600};
+  --authoring-gray-700: #{$gray-700};
+  --authoring-gray-800: #{$gray-800};
+  --authoring-gray-900: #{$gray-900};
+
+  --authoring-selection: #{$selection};
+  --authoring-hover: #{$hover};
+  --authoring-active: #{$active};
+
+  --authoring-body-color: #{$body-color};
+  --authoring-body-bg: #{$body-bg};
+
+  --authoring-z-overlay-1: #{$z-overlay-1};
+  --authoring-z-highest: #{$z-highest};
+
+  --authoring-google-button-font-color: #{$google-button-font-color};
+  --authoring-google-button-background-color: #{$google-button-background-color};
+
+  --authoring-card-cap-bg: #{$card-cap-bg};
+
+  --authoring-choice-selected-bg-hover: #{choice-selected-bg-hover};
+  --authoring-choice-selected-color: #{choice-selected-bg-hover};
+  --authoring-choice-selected-bg: #{choice-selected-bg-hover};
+  --authoring-choice-selected-border-color: #{choice-selected-bg-hover};
+
+  --authoring-dropdown-menu: #{dropdown-menu};
+}

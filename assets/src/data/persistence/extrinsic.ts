@@ -1,5 +1,6 @@
 import { SectionSlug } from 'data/types';
 import { makeRequest } from './common';
+import { debounce } from 'lodash';
 
 // eslint-disable-next-line
 export type ExtrinsicRead = Object;
@@ -47,10 +48,32 @@ export const readGlobalUserState = async (
   return result;
 };
 
+let updatesToApply: any = {};
+const updateInterval = 300;
+const debouncedUpdate = debounce(
+  async (useLocalStorage: boolean) => {
+    const result = await internalUpdateGlobalUserState(updatesToApply, useLocalStorage);
+    updatesToApply = {};
+    return result;
+  },
+  updateInterval,
+  { leading: false, maxWait: updateInterval * 2 },
+);
+
 export const updateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
+  // combine all arguments within the interval into a single request to internalUpdateGlobalUserState
+  updatesToApply = { ...updatesToApply, ...updates };
+  return debouncedUpdate(useLocalStorage);
+};
+
+export const internalUpdateGlobalUserState = async (
+  updates: { [topKey: string]: { [key: string]: any } },
+  useLocalStorage = false,
+) => {
+  console.log('updateGlobalUserState', updates);
   const topLevelKeys = Object.keys(updates);
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
 

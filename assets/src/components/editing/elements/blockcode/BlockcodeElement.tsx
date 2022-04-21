@@ -12,6 +12,8 @@ import { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
 import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
 
+import './BlockcodeElement.scss';
+
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 
 const getInitialModel = (model: ContentModel.Code) => {

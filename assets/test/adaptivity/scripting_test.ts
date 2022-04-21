@@ -7,6 +7,8 @@ import {
   getValue,
   getExpressionStringForValue,
   looksLikeJson,
+  templatizeText,
+  checkExpressionsWithWrongBrackets,
 } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 
@@ -245,6 +247,31 @@ describe('Scripting Interface', () => {
       expect(result.result).toBe(null);
       expect(valuex).toBe(varValueFormat1);
       expect(valuey).toBe(varValueFormat2);
+    });
+
+    it('should return the CSS as it is', () => {
+      const environment = new Environment();
+      let text =
+        '@font-face{font-family:PTSerif;src:url(https://dev-etx.ws.asu.edu/fonts/PT%20Serif/PT_Serif-Web-Regular.ttf)}.button{white-space:normal;font-family:PTSerif,Georgia,serif;font-size:16px;font-weight:700;text-transform:none;line-height:120%;color:#E7A96B;width:calc(100% - 2px);height:auto!important;background-color:#484848;background-image:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6));border-radius:3px;border:none;-moz-box-shadow:2px 2px rgba(0,0,0,.2);-webkit-box-shadow:2px 2px rgba(0,0,0,.2);box-shadow:2px 2px rgba(0,0,0,.2);padding:10px 20px;cursor:pointer}.button:active,.button:focus,.button:hover{background-color:#5C5C5C!important;background-image:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.6))}.button:focus,.button:hover{-moz-box-shadow:2px 2px rgba(0,0,0,.2);-webkit-box-shadow:2px 2px rgba(0,0,0,.2);box-shadow:2px 2px rgba(0,0,0,.2)}.button:active{-moz-box-shadow:inset 0 2px rgba(0,0,0,.4);-webkit-box-shadow:inset 0 2px rgba(0,0,0,.4);box-shadow:inset 0 2px rgba(0,0,0,.4);transform:translateY(1px);color:#E7A96B!important}.button:disabled{background-color:#858585;cursor:default}.button:disabled:active{-moz-box-	shadow:inset 0 0 transparent;-webkit-box-shadow:inset 0 0 transparent;box-shadow:inset 0 0 transparent;color:rgba(255,255,255,.9);transform:translateY(0)}';
+      let result = templatizeText(text, environment);
+      expect(result).toBe(text);
+
+      text = 'stage.foo.value =  {stage.foo.value}; stage.foo1.value =  {stage.foo1.value};';
+      evalScript(
+        'let {stage.foo.value} = 1;let {stage.foo1.value}=80;let {stage.foo2.value}=50',
+        environment,
+      );
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('stage.foo.value =  1; stage.foo1.value =  80;');
+
+      text = 'Lets try with variables {variables.foo}';
+      evalScript('let {variables.foo} = 0.529', environment);
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('Lets try with variables 0.529');
+
+      text = 'Lets try with variables {variables.foo';
+      result = templatizeText(text, environment);
+      expect(result).toBe(text);
     });
 
     it('it should return math expression as it is', () => {
@@ -582,6 +609,75 @@ describe('Scripting Interface', () => {
       expect(script).toBe('true');
       script = getExpressionStringForValue(variable6);
       expect(script).toBe('false');
+    });
+  });
+
+  describe('checkExpressionsWithWrongBrackets', () => {
+    it('should update all the invalid curly brackets with round brackets', () => {
+      let exppression =
+        '{round{{6.23*{q:1468628289324:408|stage.weight.value}}+{12.7*{q:1468628289324:408|stage.height.value}}-{6.8*{q:1468628289324:408|stage.age.value}}+66}}';
+      let script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{round((6.23*{q:1468628289324:408|stage.weight.value})+(12.7*{q:1468628289324:408|stage.height.value})-(6.8*{q:1468628289324:408|stage.age.value})+66)}',
+      );
+
+      exppression = '{round{{stage.a.value}*{{stage.b.value}*{stage.c.value}}}}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe('{round({stage.a.value}*({stage.b.value}*{stage.c.value}))}');
+
+      exppression =
+        '{q:1468628289959:468|stage.exercise.value}+{q:1468628289415:435|stage.BMR.value}+{q:1468628289959:468|stage.TEF.value}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{q:1468628289959:468|stage.exercise.value}+{q:1468628289415:435|stage.BMR.value}+{q:1468628289959:468|stage.TEF.value}',
+      );
+
+      exppression = '{session.tutorialScore}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe('{session.tutorialScore}');
+
+      exppression = '{round({{session.tutorialScore}/30}*100)}%';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe('{round(({session.tutorialScore}/30)*100)}%');
+
+      exppression =
+        '{"cards":[{"front":{"text":"a) I just can’t understand why anyone would think that about this issue. Can you explain your reasoning?"},"back":{"text":"b) I see that you feel strongly about this issue, as do I.  I find it difficult to understand the other side here. Can you give me another example to help me gain more insight on this?"}}]}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{"cards":[{"front":{"text":"a) I just can’t understand why anyone would think that about this issue. Can you explain your reasoning?"},"back":{"text":"b) I see that you feel strongly about this issue, as do I.  I find it difficult to understand the other side here. Can you give me another example to help me gain more insight on this?"}}]}',
+      );
+
+      exppression = 'You Score is {round({{session.tutorialScore}/30}*100)}%';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe('You Score is {round(({session.tutorialScore}/30)*100)}%');
+
+      exppression =
+        '{"metadata":{"rowCount":3,"colCount":2,"properties":{"type":{"default":"Not Editable","values":{}},"format":{"default":"TextFormatDefault","values":{}},"textAlign":{"default":"Left","values":{}},"fontSize":{"default":"16","values":{}},"bold":{"default":"true","values":{"false":{"0":[0],"1":[0],"2":[0]}}},"italic":{"default":"false","values":{}},"strikethrough":{"default":"false","values":{}},"textColor":{"default":"black","values":{}},"backgroundColor":{"default":"#E6e6e6","values":{}},"borderColorTop":{"default":"#ccc","values":{}},"borderColorRight":{"default":"#ccc","values":{}},"borderColorBottom":{"default":"#ccc","values":{}},"borderColorLeft":{"default":"#ccc","values":{}}}},"table":{"mergedCells":[],"rowHeaderWidth":50,"answers":[]}}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{"metadata":{"rowCount":3,"colCount":2,"properties":{"type":{"default":"Not Editable","values":{}},"format":{"default":"TextFormatDefault","values":{}},"textAlign":{"default":"Left","values":{}},"fontSize":{"default":"16","values":{}},"bold":{"default":"true","values":{"false":{"0":[0],"1":[0],"2":[0]}}},"italic":{"default":"false","values":{}},"strikethrough":{"default":"false","values":{}},"textColor":{"default":"black","values":{}},"backgroundColor":{"default":"#E6e6e6","values":{}},"borderColorTop":{"default":"#ccc","values":{}},"borderColorRight":{"default":"#ccc","values":{}},"borderColorBottom":{"default":"#ccc","values":{}},"borderColorLeft":{"default":"#ccc","values":{}}}},"table":{"mergedCells":[],"rowHeaderWidth":50,"answers":[]}}',
+      );
+
+      exppression =
+        '[["Total Points Possible:","30"],["Your Score:","{session.tutorialScore}"],["Your Percentage:","{round({{session.tutorialScore}/30}*100)}%"]]';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '[["Total Points Possible:","30"],["Your Score:","{session.tutorialScore}"],["Your Percentage:","{round(({session.tutorialScore}/30)*100)}%"]]',
+      );
+
+      exppression =
+        '{round({{q:1468628289415:435|stage.BMR.value}*{q:1468628289656:443|stage.activityFactor.value}})}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{round(({q:1468628289415:435|stage.BMR.value}*{q:1468628289656:443|stage.activityFactor.value}))}',
+      );
+
+      exppression =
+        '{{q:1468628289415:435|stage.BMR.value}+{{q:1468628289415:435|stage.BMR.value}*{q:1468628289656:443|stage.activityFactor.value}}}*0.10';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(
+        '{{q:1468628289415:435|stage.BMR.value}+({q:1468628289415:435|stage.BMR.value}*{q:1468628289656:443|stage.activityFactor.value})}*0.10',
+      );
     });
   });
 });

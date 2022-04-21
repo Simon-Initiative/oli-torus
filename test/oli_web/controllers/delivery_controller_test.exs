@@ -71,26 +71,6 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Online Consent Form"
     end
-
-    test "handles instructor create section", %{
-      conn: conn,
-      lti_param_ids: lti_param_ids,
-      user: user,
-      publication: publication
-    } do
-      {:ok, _user} = Accounts.update_user(user, %{author_id: 1})
-
-      conn =
-        conn
-        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_section)
-        |> post(
-          Routes.delivery_path(conn, :create_section, %{
-            source_id: "publication:#{publication.id}"
-          })
-        )
-
-      assert html_response(conn, 302) =~ "redirect"
-    end
   end
 
   describe "delivery_controller link_account" do

@@ -34,7 +34,7 @@ import {
   selectLastMutateTriggered,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
-import { selectPreviewMode, selectUserId } from '../store/features/page/slice';
+import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
 import { NotificationType } from './NotificationContext';
 
 interface ActivityRendererProps {
@@ -85,6 +85,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = useSelector(selectUserId);
+  const currentLessonId = useSelector(selectPageSlug);
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key, value } = payload;
@@ -430,19 +431,27 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateBindToFacts: any = {};
   const currentActivityTree = useSelector(selectCurrentActivityTree);
-  const updateGlobalState = async (snapshot: any, stateFacts: any) => {
-    const payloadData = stateFacts.reduce((data: any, fact: any) => {
-      const target = fact.target;
-      // EverApp Information
-      if (target.startsWith('app.')) {
-        const targetParts = target.split('.');
-        const objId = targetParts.splice(2).join('.');
-        const value = snapshot[target];
-        data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
-      }
-      return data;
-    }, {});
-    await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+
+  // update all init state facts that target everApps using the app.
+  const updateGlobalState = async (snapshot: any, initStates: any[]) => {
+    const everAppInits = initStates.filter(
+      (initState: any) => initState.target.indexOf('app.') === 0,
+    );
+    if (everAppInits.length > 0) {
+      const payloadData = everAppInits.reduce((data: any, fact: any) => {
+        const { target } = fact;
+        // EverApp Information
+        if (target.startsWith('app.')) {
+          const targetParts = target.split('.');
+          const objId = targetParts.splice(2).join('.');
+          const value = snapshot[target];
+          data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
+        }
+        return data;
+      }, {});
+      /* console.log('updateGlobalState', { payloadData }); */
+      await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+    }
   };
 
   const notifyContextChanged = async () => {
@@ -461,6 +470,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     const finalInitSnapshot = handleInitStateVars(initState, snapshot);
     ref.current.notify(NotificationType.CONTEXT_CHANGED, {
       currentActivityId,
+      currentLessonId,
       mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
       snapshot,
       initStateFacts: finalInitSnapshot || {},
@@ -497,6 +507,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       return;
     }
     const currentStateSnapshot: any = {};
+    const appChanges = changes.changed.filter((change: any) => change.includes('app.'));
+    if (appChanges.length) {
+      // need to write the updated state to the global state
+      const updatePayload = appChanges.reduce((data: any, key: string) => {
+        const [, everAppId] = key.split('.');
+        data[everAppId] = data[everAppId] || {};
+        data[everAppId][key.replace(`app.${everAppId}.`, '')] = getValue(key, defaultGlobalEnv);
+        return data;
+      }, {});
+      /* console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload }); */
+      await Extrinsic.updateGlobalUserState(updatePayload, isPreviewMode);
+    }
+    // we send ALL of the changes to the components
     if (changes?.changed?.length > 1) {
       changes.changed.forEach((element: string, index: number) => {
         if (index > 0) {

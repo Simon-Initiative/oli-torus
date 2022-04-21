@@ -131,8 +131,30 @@ export const getExpressionStringForValue = (
           }
         }
       } catch (e) {
-        // if we have parsing error then we're guessing it's CSS
-        actuallyAString = true;
+        //lets evaluat everything if first and last char are {}
+        if (val[0] === '{' && val[val.length - 1] === '}') {
+          const evaluatedValues = evalScript(expressions[0], env).result;
+          if (evaluatedValues !== undefined) {
+            val = evaluatedValues;
+            actuallyAString = false;
+          }
+        } else {
+          const containsExpression = val.match(/{([^{^}]+)}/g) || [];
+          if (containsExpression?.length) {
+            try {
+              const modifiedVal = templatizeText(val, {}, env);
+              const updatedValue = evalScript(modifiedVal, env).result;
+              if (updatedValue !== undefined) {
+                val = updatedValue;
+              }
+            } catch (ex) {
+              actuallyAString = true;
+            }
+          } else {
+            // if we have parsing error then we're guessing it's CSS
+            actuallyAString = true;
+          }
+        }
       }
     }
     if (!actuallyAString) {
@@ -147,6 +169,9 @@ export const getExpressionStringForValue = (
   ) {
     if (typeof val !== 'string') {
       val = JSON.stringify(val);
+    }
+    if (!val) {
+      val = '';
     }
     // strings need to have escaped quotes and backslashes
     // for janus-script
@@ -456,6 +481,7 @@ export const templatizeText = (
   vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
   /* console.log('templatizeText call: ', { text, vars, locals, env }); */
   //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
+
   const isCSSString = totalVariablesLength !== vars.length;
   if (!vars || isCSSString) {
     return text;
@@ -550,6 +576,71 @@ export const templatizeText = (
 
   // support nested {} like {{variables.foo} * 3}
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
+};
+
+export const checkExpressionsWithWrongBrackets = (value: string) => {
+  let originalValue = value;
+  const allexpression = extractAllExpressionsFromText(originalValue);
+  const lstEvaluatedExpression: Record<string, string> = {};
+  allexpression.forEach((expression) => {
+    const actualExpression = expression;
+    let result = expression.match(/{([^{^}]+)}/g) || [];
+    result = result.filter(
+      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
+    );
+    if (result?.length) {
+      const obj: Record<string, string> = {};
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace(result[i], 'obj' + i);
+      }
+      expression = expression.replace(/{/g, '(');
+      expression = expression.replace(/}/g, ')');
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace('obj' + i, obj['obj' + i]);
+      }
+    }
+    lstEvaluatedExpression[actualExpression] = expression;
+  });
+  Object.keys(lstEvaluatedExpression).forEach((key) => {
+    originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
+  });
+  return originalValue;
+};
+
+export const formatExpression = (child: any): string => {
+  let updatedExpression = '';
+  //this section is to check the expression in CAPI-configData variables
+  if (child.key && typeof child.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
+    if (evaluatedExp !== child.value) {
+      child.value = evaluatedExp;
+      updatedExpression = evaluatedExp;
+    }
+  } else {
+    //this section is to check the expression in text flow which can be in text flow component / MCQ options etc
+    let optionText = '';
+    if (child.tag === 'text') {
+      optionText = child.text;
+      const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
+      if (evaluatedExp !== optionText) {
+        updatedExpression = evaluatedExp;
+        child.text = evaluatedExp;
+      }
+    } else if (child?.children?.length) {
+      child.children.forEach((child: any) => {
+        updatedExpression = formatExpression(child);
+      });
+    } else if (Array.isArray(child)) {
+      child.forEach((child) => {
+        child.children.forEach((child: any) => {
+          updatedExpression = formatExpression(child);
+        });
+      });
+    }
+  }
+  return updatedExpression;
 };
 
 // for use by client side scripting evalution

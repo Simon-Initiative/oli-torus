@@ -2,6 +2,8 @@ import * as React from 'react';
 import { Undoables } from '../../../apps/page-editor/types';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
+import styles from './UndoToasts.modules.scss';
+
 export type UndoToastsProps = {
   undoables: Undoables;
   onInvokeUndo: (guid: string) => void;
@@ -25,9 +27,14 @@ export const UndoToasts = (props: UndoToastsProps) => {
           enter: 500,
           exit: 50,
         }}
-        classNames="undotoast"
+        classNames={{
+          enter: styles.undoToastEnter,
+          enterActive: styles.undoToastEnterActive,
+          exit: styles.undoToastLeave,
+          exitActive: styles.undoToastLeaveActive,
+        }}
       >
-        <div key={key} className="undotoast">
+        <div key={key} className={styles.undoToast}>
           <div className="toast-body d-flex justify-content-between">
             <span className="undo-toast-desc">{toProperCase(action.undoable.description)}</span>
             <button onClick={() => props.onInvokeUndo(key)} className="btn btn-primary btn-xs">
@@ -40,7 +47,7 @@ export const UndoToasts = (props: UndoToastsProps) => {
   });
 
   return (
-    <div className="undo-toasts">
+    <div className={styles.undoToasts}>
       <TransitionGroup>{toasts}</TransitionGroup>
     </div>
   );

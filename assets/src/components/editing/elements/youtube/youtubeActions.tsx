@@ -54,7 +54,7 @@ const YoutubeCreation = (props: YoutubeCreationProps) => {
             props.onChange(e.target.value);
             setSrc(e.target.value);
           }}
-          onKeyPress={(e) => onEnterApply(e, () => props.onEdit(src))}
+          onKeyPress={(e: any) => onEnterApply(e, () => props.onEdit(src))}
           className="form-control mr-sm-2"
         />
         <div className="mb-2">

@@ -1,12 +1,3 @@
-// webpack automatically bundles all modules in your
-// entry points. Those entry points can be configured
-// in 'webpack.config.js'.
-//
-// Import deps with the dep name or local files with a relative path, for example:
-//
-//     import {Socket} from 'phoenix'
-//     import socket from './socket'
-//
 import { selectCookieConsent } from 'components/cookies/CookieConsent';
 import { selectCookiePreferences } from 'components/cookies/CookiePreferences';
 import { retrieveCookies } from 'components/cookies/utils';
@@ -22,6 +13,7 @@ import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
+import { component } from 'components/component';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -60,6 +52,8 @@ window.OLI = {
   onReady,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
+
+window.component = component;
 
 // connect if there are any LiveViews on the page
 liveSocket.connect();
@@ -120,5 +114,6 @@ declare global {
       onReady: typeof onReady;
       CreateAccountPopup: (node: any, props: any) => void;
     };
+    component: typeof component;
   }
 }

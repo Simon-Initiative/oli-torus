@@ -94,6 +94,8 @@ defmodule OliWeb.Common.SortableTable.TableHandlers do
          )}
       end
 
+      def handle_event("sort", _, socket), do: {:noreply, socket}
+
       def handle_event(
             "apply_filter",
             params,

@@ -3,17 +3,13 @@ defmodule Oli.PublishingTest do
 
   import Oli.Factory
 
-  alias Oli.Authoring.Course
-  alias Oli.Publishing
-  alias Oli.Publishing.Publication
-  alias Oli.Publishing.PublishedResource
-  alias Oli.Resources
-  alias Oli.Authoring.Editing.PageEditor
-  alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Authoring.Editing.ActivityEditor
-  alias Oli.Authoring.Locks
   alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Authoring.{Course, Locks}
+  alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
   alias Oli.Delivery.Sections.Section
+  alias Oli.Publishing
+  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Resources
 
   def create_activity(parts, author, project, page_revision, obj_resource_id) do
     # Create a two part activity where each part is tied to one of the objectives above

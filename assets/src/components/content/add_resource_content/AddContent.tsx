@@ -18,7 +18,7 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
             document.body.click();
           }}
         >
-          <div className="type-label">Content</div>
+          <div className="type-label">Paragraph</div>
           <div className="type-description">Text, tables, images, video</div>
         </button>
       </div>

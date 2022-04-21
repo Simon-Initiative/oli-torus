@@ -1,0 +1,23 @@
+.expression {
+  display: flex;
+  margin-bottom: 9px;
+}
+
+.fact {
+  flex: 1 0 0;
+}
+
+.operator {
+  flex: 1 0 0;
+  margin-left: 8px;
+}
+
+.value {
+  flex: 3 0 0;
+  margin-left: 8px;
+}
+
+.remove {
+  flex: 0 0 0;
+  margin-left: 8px;
+}

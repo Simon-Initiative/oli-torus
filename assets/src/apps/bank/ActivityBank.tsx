@@ -38,6 +38,8 @@ import { EditingLock } from './EditingLock';
 import { LogicFilter } from './LogicFilter';
 import { Paging } from './Paging';
 
+import '../ResourceEditor.scss';
+
 const PAGE_SIZE = 5;
 
 export interface ActivityBankProps {

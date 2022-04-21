@@ -372,10 +372,10 @@
           "type": "string"
         },
         "height": {
-          "type": "string"
+          "type":  ["string", "number"]
         },
         "width": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "alt": {
           "type": "string"

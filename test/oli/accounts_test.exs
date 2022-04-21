@@ -231,6 +231,58 @@ defmodule Oli.AccountsTest do
 
       refute Accounts.get_user_by(%{sub: "sub", email: "email"})
     end
+
+    test "setup_sso_author/2 creates author and user if do not exist and associates user to the given community" do
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+      {:ok, author} = Accounts.setup_sso_author(fields, community.id)
+
+      assert author.name == "username"
+      assert author.email == "email"
+
+      user = Accounts.get_user_by(%{email: "email"})
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+
+      assert user.author_id == author.id
+    end
+
+    test "setup_sso_author/2 links user with author when they have the same email" do
+      community = insert(:community)
+      user = insert(:user)
+      author = insert(:author, email: user.email)
+
+      fields = %{"sub" => user.sub, "cognito:username" => "username", "email" => user.email}
+      {:ok, returned_author} = Accounts.setup_sso_author(fields, community.id)
+
+      assert returned_author == author
+
+      returned_user = Accounts.get_user_by(%{email: user.email})
+      assert returned_user.email == user.email
+      assert returned_user.author_id == returned_author.id
+    end
+
+    test "is_lms_user?/1 returns true when the user exists and belongs to an lms" do
+      user = insert(:user)
+      insert(:lti_params, user_id: user.id)
+
+      assert Accounts.is_lms_user?(user.email)
+    end
+
+    test "is_lms_user?/1 returns false when the user does not exist" do
+      refute Accounts.is_lms_user?("invalid_email")
+    end
+
+    test "is_lms_user?/1 returns false when the user exists but is not from an lms" do
+      user = insert(:user)
+
+      refute Accounts.is_lms_user?(user.email)
+    end
   end
 
   describe "communities accounts" do
