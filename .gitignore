@@ -11,6 +11,8 @@ Mnesia.nonode@nohost
 # The directory where the NodeJS Elixir bridge will read files from
 /priv/node/
 
+/assets/typedocs/
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 
