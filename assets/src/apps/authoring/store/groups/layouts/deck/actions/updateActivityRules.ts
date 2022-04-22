@@ -146,6 +146,7 @@ export const updateActivityRules = createAsyncThunk(
             }
           })
           .filter((id) => id) as number[];
+
         if (
           !isEqual(
             childActivityClone.authoring.activitiesRequiredForEvaluation,
@@ -154,8 +155,13 @@ export const updateActivityRules = createAsyncThunk(
         ) {
           // console.log('RULE REFS: ', referencedActivityIds);
           childActivityClone.authoring.activitiesRequiredForEvaluation = referencedActivityIds;
+          console.log('UPDATE ACTIVITY REFS REQUIRED FOR EVALUATION', {
+            referencedActivityIds,
+            childActivityClone,
+          });
           activitiesToUpdate.push(childActivityClone);
         }
+
         if (
           !isEqual(
             childActivityClone.authoring.variablesRequiredForEvaluation,
@@ -163,16 +169,15 @@ export const updateActivityRules = createAsyncThunk(
           )
         ) {
           childActivityClone.authoring.variablesRequiredForEvaluation = referencedVariableKeys;
-          console.log('UPDATE VALUES REQUIRED FOR EVALUATION', {
+          childActivityClone.authoring.variablesRequiredForEvaluation = uniq(
+            flatten(childActivityClone.authoring.variablesRequiredForEvaluation),
+          );
+          console.log('UPDATE VARS REQUIRED FOR EVALUATION', {
             referencedVariableKeys,
             childActivityClone,
           });
           activitiesToUpdate.push(childActivityClone);
         }
-
-        childActivityClone.authoring.variablesRequiredForEvaluation = uniq(
-          flatten(childActivityClone.authoring.variablesRequiredForEvaluation),
-        );
 
         childActivityClone.authoring.rules = activityRulesClone;
         /* console.log('CLONE RULES', { childActivityClone, childActivity }); */
