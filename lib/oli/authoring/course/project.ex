@@ -31,6 +31,8 @@ defmodule Oli.Authoring.Course.Project do
 
     has_many :publications, Oli.Publishing.Publication
 
+    belongs_to :publisher, Oli.Inventories.Publisher, foreign_key: :publisher_id
+
     field :owner_id, :integer, virtual: true
     field :owner_name, :string, virtual: true
 
@@ -49,9 +51,10 @@ defmodule Oli.Authoring.Course.Project do
       :project_id,
       :visibility,
       :status,
-      :allow_duplication
+      :allow_duplication,
+      :publisher_id
     ])
-    |> validate_required([:title, :version, :family_id])
+    |> validate_required([:title, :version, :family_id, :publisher_id])
     |> Slug.update_never("projects")
   end
 end

@@ -92,6 +92,8 @@ defmodule Oli.Delivery.Sections.Section do
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
 
+    belongs_to :publisher, Oli.Inventories.Publisher, foreign_key: :publisher_id
+
     timestamps(type: :utc_datetime)
   end
 
@@ -132,7 +134,8 @@ defmodule Oli.Delivery.Sections.Section do
       :blueprint_id,
       :root_section_resource_id,
       :requires_enrollment,
-      :skip_email_verification
+      :skip_email_verification,
+      :publisher_id
     ])
     |> validate_required([
       :type,
@@ -143,6 +146,7 @@ defmodule Oli.Delivery.Sections.Section do
     ])
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
+    |> validate_required_if([:publisher_id], &is_product?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)
     |> validate_dates_consistency(:start_date, :end_date)
@@ -163,7 +167,7 @@ defmodule Oli.Delivery.Sections.Section do
     end)
   end
 
-  def requires_payment?(changeset) do
+  defp requires_payment?(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :requires_payment)
@@ -173,10 +177,20 @@ defmodule Oli.Delivery.Sections.Section do
     end
   end
 
-  def has_grace_period?(changeset) do
+  defp has_grace_period?(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true} = changeset ->
         get_field(changeset, :has_grace_period) and get_field(changeset, :requires_payment)
+
+      _ ->
+        false
+    end
+  end
+
+  defp is_product?(changeset) do
+    case changeset do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        get_field(changeset, :type) == :blueprint
 
       _ ->
         false

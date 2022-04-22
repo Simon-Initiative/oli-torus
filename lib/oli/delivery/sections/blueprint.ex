@@ -149,7 +149,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "registration_open" => false,
             "timezone" => "America/New_York",
             "grace_period_days" => 1,
-            "amount" => Money.new(:USD, "25.00")
+            "amount" => Money.new(:USD, "25.00"),
+            "publisher_id" => project.publisher_id
           }
 
           case Sections.create_section(new_blueprint) do
