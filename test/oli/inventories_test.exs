@@ -24,6 +24,12 @@ defmodule Oli.InventoriesTest do
       assert {:error, %Ecto.Changeset{}} = Inventories.create_publisher(%{name: publisher.name})
     end
 
+    test "create_publisher/1 with invalid email returns error changeset" do
+      publisher_attrs = params_for(:publisher, %{email: "invalid_email"})
+
+      assert {:error, %Ecto.Changeset{}} = Inventories.create_publisher(publisher_attrs)
+    end
+
     test "find_or_create_publisher/1 with valid data creates a publisher" do
       params = params_for(:publisher)
       assert {:ok, %Publisher{} = publisher} = Inventories.find_or_create_publisher(params)

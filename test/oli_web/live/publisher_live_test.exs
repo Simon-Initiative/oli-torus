@@ -182,7 +182,7 @@ defmodule OliWeb.PublisherLiveTest do
 
       view
       |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{publisher: %{name: publisher.name <> " ", email: "email"}})
+      |> render_submit(%{publisher: %{name: publisher.name <> " ", email: "test@email.com"}})
 
       assert view
              |> element("div.alert.alert-danger")
