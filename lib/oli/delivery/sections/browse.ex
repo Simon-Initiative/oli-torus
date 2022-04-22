@@ -21,13 +21,24 @@ defmodule Oli.Delivery.Sections.Browse do
       if options.text_search == "" or is_nil(options.text_search) do
         true
       else
+        # allow to search by prefix
+        search_term =
+          case String.replace(options.text_search, ~r/\W/u, "") do
+            "" -> ""
+            term -> term <> ":*"
+          end
+
         dynamic(
           [s, _, i, proj, prod, u],
-          ilike(s.title, ^"%#{options.text_search}%") or
-          ilike(i.name, ^"%#{options.text_search}%") or
-          ilike(proj.title, ^"%#{options.text_search}%") or
-          ilike(prod.title, ^"%#{options.text_search}%") or
-          ilike(u.name, ^"%#{options.text_search}%")
+          fragment(
+            "to_tsvector('english', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery(?)",
+            s.title,
+            i.name,
+            proj.title,
+            prod.title,
+            u.name,
+            ^search_term
+          )
         )
       end
 

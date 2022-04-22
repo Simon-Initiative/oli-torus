@@ -95,10 +95,10 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     end
 
     test "searching" do
-      # there are three sections with H in the title
-      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "G"}))
-      assert length(results) == 3
-      assert hd(results).total_count == 3
+      # there is one section with cB as title
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "cB"}))
+      assert length(results) == 1
+      assert hd(results).total_count == 1
 
       # there are ten sections associated with the insitution titled "ZZZ", and two with
       # zzz in the title
@@ -106,7 +106,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert length(results) == 3
       assert hd(results).total_count == 12
 
-      # there is one section with base on a-A (apart from itself)
+      # there is one section with base on aA (apart from itself)
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "aA"}))
       assert length(results) == 2
       assert hd(results).total_count == 2

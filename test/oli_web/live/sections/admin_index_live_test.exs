@@ -112,7 +112,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
     test "applies searching", %{conn: conn} do
       project = insert(:project, title: "Project", authors: [])
       other_project = insert(:project, title: "OtherProj", authors: [])
-      institution = insert(:institution, name: "TestInsti")
+      institution = insert(:institution, name: "OtherInsti")
       blueprint = insert(:section, title: "TestSection")
 
       s1 = insert(:section, type: :enrollable, base_project: other_project, title: "Testing", blueprint: blueprint)
@@ -127,7 +127,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       refute has_element?(view, "td", s2.title)
 
       # by institution
-      render_hook(view, "text_search_change", %{value: "testinsti"})
+      render_hook(view, "text_search_change", %{value: "otherins"})
 
       refute has_element?(view, "td", s1.title)
       assert has_element?(view, "td", s2.title)
