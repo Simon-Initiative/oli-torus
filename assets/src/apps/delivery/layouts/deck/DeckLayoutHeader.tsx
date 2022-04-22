@@ -8,6 +8,7 @@ import {
   selectSectionSlug,
 } from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
+import EverappMenuLegacyTheme from './components/EverappMenuLegacyTheme';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
 
@@ -122,6 +123,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               <span className="theme-header-score__label">Score:&nbsp;</span>
               <span className="theme-header-score__value">{scoreText}</span>
             </div>
+            {!isLegacyTheme && hasEverApps && <EverappMenuLegacyTheme apps={everApps} />}
             <div className="theme-header-profile" style={{ display: 'flex' }}>
               <button
                 className="theme-header-profile__toggle"
@@ -134,7 +136,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                   <span className="theme-header-profile__label">{userName}</span>
                 </span>
               </button>
-              {!isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
               {/*update panel - logout and update details button*/}
             </div>
             {/*  */}
