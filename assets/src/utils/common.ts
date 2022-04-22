@@ -208,3 +208,46 @@ export const parseArrayWithoutStringConversion = (val: unknown): unknown[] => {
   const err = new Error('not a valid array');
   throw err;
 };
+
+export const batchedBuffer = (fn: any, ms: number) => {
+  let timer: any = null;
+  let buffer: any[] = [];
+  let batch = {};
+
+  const batchedFn = (batchedInput: any, ...nonBatchedInputs: any[]) => {
+    const myDeferred: any = { promise: null, resolve: null, reject: null };
+    const myPromise = new Promise((resolve, reject) => {
+      myDeferred.resolve = resolve;
+      myDeferred.reject = reject;
+    });
+    myDeferred.promise = myPromise;
+    buffer.push(myDeferred);
+    batch = { ...batch, ...batchedInput };
+
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    timer = setTimeout(async () => {
+      const result = await fn(batch, ...nonBatchedInputs);
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i].resolve(result);
+      }
+      buffer = [];
+      batch = {};
+    }, ms);
+
+    return myDeferred.promise;
+  };
+
+  const teardown = () => {
+    for (let i = 0; i < buffer.length; i++) {
+      buffer[i].reject('cancelled');
+    }
+    clearTimeout(timer);
+    buffer = [];
+    batch = {};
+  };
+
+  return [batchedFn, teardown];
+};
