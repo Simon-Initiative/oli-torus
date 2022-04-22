@@ -52,7 +52,7 @@ export const internalUpdateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
-  console.log('updateGlobalUserState', updates);
+  /* console.log('updateGlobalUserState', updates); */
   const topLevelKeys = Object.keys(updates);
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
 
@@ -77,7 +77,7 @@ export const internalUpdateGlobalUserState = async (
   return newState;
 };
 
-const updateInterval = 100;
+const updateInterval = 300;
 const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInterval);
 
 export const updateGlobalUserState = async (
