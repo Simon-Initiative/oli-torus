@@ -132,10 +132,7 @@ export const triggerCheck = createAsyncThunk(
         requiredVariables = Object.keys(localizedSnapshot);
       }
       const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
-        const isRequiredKey =
-          requiredVariables.includes(key) ||
-          key.indexOf('variables.') === 0 ||
-          key.indexOf('session.') === 0;
+        const isRequiredKey = requiredVariables.includes(key);
         if (isRequiredKey) {
           acc[key] = localizedSnapshot[key];
         }
