@@ -128,10 +128,14 @@ export const triggerCheck = createAsyncThunk(
       let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
       if (!requiredVariables) {
         // assume they are all required since authoring hasn't specified
+        console.warn('No variables required for evaluation, assuming all are required');
         requiredVariables = Object.keys(localizedSnapshot);
       }
       const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
-        const isRequiredKey = requiredVariables.includes(key);
+        const isRequiredKey =
+          requiredVariables.includes(key) ||
+          key.indexOf('variables.') === 0 ||
+          key.indexOf('session.') === 0;
         if (isRequiredKey) {
           acc[key] = localizedSnapshot[key];
         }
