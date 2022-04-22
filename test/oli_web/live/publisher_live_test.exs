@@ -72,12 +72,14 @@ defmodule OliWeb.PublisherLiveTest do
   describe "index" do
     setup [:admin_conn]
 
-    test "loads correctly when there are no publishers", %{conn: conn} do
+    test "loads correctly when there is only the default publisher", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
-      assert has_element?(view, "#publishers-table")
-      assert has_element?(view, "p", "None exist")
       assert has_element?(view, "a[href=\"#{@live_view_new_route}\"]")
+
+      assert view
+             |> element("#publishers-table")
+             |> render() =~ "Torus Publisher"
     end
 
     test "applies searching", %{conn: conn} do
@@ -106,15 +108,15 @@ defmodule OliWeb.PublisherLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
-      insert(:publisher, %{name: "Testing A"})
-      insert(:publisher, %{name: "Testing B"})
+      insert(:publisher, %{name: "A Publisher"})
+      insert(:publisher, %{name: "Z Publisher"})
 
       {:ok, view, _html} = live(conn, @live_view_index_route)
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               "Testing A"
+               "A Publisher"
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
@@ -123,7 +125,7 @@ defmodule OliWeb.PublisherLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               "Testing B"
+               "Z Publisher"
     end
 
     test "applies paging", %{conn: conn} do
@@ -168,7 +170,8 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "can't be blank")
-      assert [] = Inventories.list_publishers()
+      # Only the default publisher
+      assert 1 = Inventories.list_publishers() |> length()
     end
 
     test "displays error message when publisher name already exists with leading or trailing whitespaces",
@@ -187,7 +190,8 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be created. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-      assert 1 = Inventories.list_publishers() |> length()
+      # There are 2 considering the default publisher
+      assert 2 = Inventories.list_publishers() |> length()
     end
 
     test "saves new publisher when data is valid", %{conn: conn} do
@@ -204,7 +208,7 @@ defmodule OliWeb.PublisherLiveTest do
       flash = assert_redirected(view, @live_view_index_route)
       assert flash["info"] == "Publisher successfully created."
 
-      [%Publisher{name: name} | _tail] = Inventories.list_publishers()
+      %Publisher{name: name} = Inventories.get_publisher_by(name: params[:name])
 
       assert ^name = params.name
     end
@@ -292,7 +296,7 @@ defmodule OliWeb.PublisherLiveTest do
                "Publisher couldn&#39;t be updated. Please check the errors below."
 
       assert has_element?(view, "span", "has already been taken")
-      assert 2 = Inventories.list_publishers() |> length()
+      assert 3 = Inventories.list_publishers() |> length()
     end
 
     test "redirects to index view and displays error message when publisher does not exist", %{
@@ -319,6 +323,19 @@ defmodule OliWeb.PublisherLiveTest do
              |> element("#delete_publisher_modal h5.modal-title")
              |> render() =~
                "Are you absolutely sure?"
+    end
+
+    test "disables the default publisher deletion", %{
+      conn: conn
+    } do
+      {:ok, default_publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
+
+      assert view
+      |> element("button[phx-click=\"show_delete_modal\"]")
+      |> render() =~
+        "disabled"
     end
 
     test "does not allow deleting the publisher if names do not match", %{
@@ -372,6 +389,17 @@ defmodule OliWeb.PublisherLiveTest do
       flash = assert_redirected(view, @live_view_index_route)
       assert flash["info"] == "Publisher successfully deleted."
       assert nil == Inventories.get_publisher(id)
+    end
+
+    test "disables the default publisher name edition", %{conn: conn} do
+      {:ok, default_publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+
+      {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
+
+      assert view
+             |> element("#publisher_name")
+             |> render() =~
+               "disabled"
     end
   end
 end

@@ -24,14 +24,39 @@ defmodule Oli.InventoriesTest do
       assert {:error, %Ecto.Changeset{}} = Inventories.create_publisher(%{name: publisher.name})
     end
 
-    test "list_publishers/0 returns ok when there are no publishers" do
-      assert [] = Inventories.list_publishers()
+    test "find_or_create_publisher/1 with valid data creates a publisher" do
+      params = params_for(:publisher)
+      assert {:ok, %Publisher{} = publisher} = Inventories.find_or_create_publisher(params)
+
+      assert publisher.name == params.name
+      assert publisher.email == params.email
+      assert publisher.address == params.address
+      assert publisher.main_contact == params.main_contact
+      assert publisher.website_url == params.website_url
+    end
+
+    test "find_or_create_publisher/1 returns existing publisher" do
+      publisher = insert(:publisher)
+      assert {:ok, %Publisher{} = returned_publisher} = Inventories.find_or_create_publisher(%{name: publisher.name})
+
+      assert publisher == returned_publisher
+    end
+
+    test "find_or_create_publisher/1 with invalid_data returns error changeset" do
+      params = Map.delete(params_for(:publisher), :email)
+
+      assert {:error, %Ecto.Changeset{}} = Inventories.find_or_create_publisher(params)
+    end
+
+    test "default_publisher_name/0 returns default publisher name" do
+      assert "Torus Publisher" == Inventories.default_publisher_name()
     end
 
     test "list_publishers/0 returns all the publishers" do
       insert_list(3, :publisher)
 
-      assert 3 = length(Inventories.list_publishers())
+      # There is an existing default publisher
+      assert 4 = length(Inventories.list_publishers())
     end
 
     test "get_publisher/1 returns a publisher when the id exists" do
@@ -44,7 +69,19 @@ defmodule Oli.InventoriesTest do
     end
 
     test "get_publisher/1 returns nil if the publisher does not exist" do
-      assert nil == Inventories.get_publisher(123)
+      refute Inventories.get_publisher(123)
+    end
+
+    test "get_publisher_by/1 returns a publisher if it exists" do
+      publisher = insert(:publisher)
+
+      returned_publisher = Inventories.get_publisher_by(%{name: publisher.name})
+
+      assert publisher == returned_publisher
+    end
+
+    test "get_publisher_by/1 returns nil if the publisher does not exist" do
+      refute Inventories.get_publisher_by(%{name: "invalid"})
     end
 
     test "update_publisher/2 updates the publisher successfully" do

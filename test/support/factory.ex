@@ -104,7 +104,8 @@ defmodule Oli.Factory do
       version: "1",
       family: insert(:family),
       visibility: :global,
-      authors: insert_list(2, :author)
+      authors: insert_list(2, :author),
+      publisher: insert(:publisher)
     }
   end
 
@@ -158,7 +159,8 @@ defmodule Oli.Factory do
       type: :blueprint,
       open_and_free: false,
       description: "A description",
-      brand: insert(:brand)
+      brand: insert(:brand),
+      publisher: insert(:publisher)
     }
   end
 
