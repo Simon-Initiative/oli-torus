@@ -4,6 +4,7 @@ defmodule OliWeb.ManualGrading.Rendering do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity.Html
 
+
   def create_rendering_context(attempt, part_attempts, activity_types_map, %Section{slug: section_slug}) do
 
     part_attempts_map = Enum.reduce(part_attempts, %{}, fn pa, m -> Map.put(m, pa.part_id, pa) end)
@@ -25,13 +26,15 @@ defmodule OliWeb.ManualGrading.Rendering do
     # Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => Map.keys(context.activity_map) |> hd})
     activity_id = Map.keys(context.activity_map) |> hd
     activity_summary = context.activity_map[activity_id]
+
     case activity_summary.delivery_element do
       "oli-adaptive-delivery" ->
         case mode do
           :instructor_preview ->
             ["<div>link to instructor preview</div>"]
           _ ->
-            ["<pre>#{context.page_id}</pre>"]
+            # ["<pre>#{context.page_id}</pre>"]
+            Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => activity_id})
         end
 
       _ ->

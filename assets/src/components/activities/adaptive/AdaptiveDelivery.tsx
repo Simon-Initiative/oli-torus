@@ -6,20 +6,23 @@ import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
-import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import * as ActivityTypes from '../types';
+import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { AdaptiveModelSchema } from './schema';
-import { getValue } from 'adaptivity/scripting';
 
 const sharedInitMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
-  const {
-    content: { custom: config, partsLayout },
-  } = props.model;
+  console.log('Adaptive props', props);
+  const [activityId, setActivityId] = useState<string>(props.model?.id || `unknown-${Date.now()}`);
+  const [mode, setMode] = useState<string>(props.mode);
+
+  const [partsLayout, setPartsLayout] = useState(
+    props.model.content?.partsLayout || props.model.partsLayout || [],
+  );
 
   const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
 
@@ -28,8 +31,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [scriptEnv, setScriptEnv] = useState<any>();
 
   const [adaptivityDomain, setAdaptivityDomain] = useState<string>('stage');
-
-  const parts = partsLayout || [];
 
   const [init, setInit] = useState<boolean>(false);
 
@@ -57,7 +58,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           // if the attempt was incorrect, then this will result in a new attempt record being generated
           // if that is the case then the activity and all its parts need to update their guid references
           const attempt = e.attempt;
-          const currentAttempt = sharedAttemptStateMap.get(props.model.id);
+          const currentAttempt = sharedAttemptStateMap.get(activityId);
           /* console.log('AD CHECK COMPLETE: ', {attempt, currentAttempt, props}); */
           if (
             attempt &&
@@ -68,7 +69,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             /* console.log(
               `ATTEMPT CHANGING from ${currentAttempt.attemptGuid} to ${attempt.attemptGuid}`,
             ); */
-            sharedAttemptStateMap.set(props.model.id, attempt);
+            sharedAttemptStateMap.set(activityId, attempt);
             /* setAttemptState(attempt); */
           }
         }
@@ -94,13 +95,15 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     let resolve: any;
     let reject;
 
-    if (!parts.length) {
+    if (!partsLayout.length) {
       if (props.onReady) {
         props.onReady(props.state.attemptGuid);
       }
       setInit(true);
       return;
     }
+
+    const partInitWaitLimit = 1000 * 10; // 10 seconds
 
     const promise = new Promise((res, rej) => {
       let resolved = false;
@@ -119,45 +122,45 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         console.error('[AllPartsInitialized] failed to resolve within time limit', {
           timeout,
           attemptState: props.state,
-          parts,
+          partsLayout,
         });
-      }, 10000);
+      }, partInitWaitLimit);
     });
-    sharedPromiseMap.set(props.model.id, { promise, resolve, reject });
+    sharedPromiseMap.set(activityId, { promise, resolve, reject });
 
     sharedInitMap.set(
-      props.model.id,
-      parts.reduce((collect: Record<string, boolean>, part) => {
+      activityId,
+      partsLayout.reduce((collect: Record<string, boolean>, part) => {
         collect[part.id] = false;
         return collect;
       }, {}),
     );
 
-    /* console.log('INIT AD', { props }); */
-    sharedAttemptStateMap.set(props.model.id, props.state);
+    console.log('INIT AD', { props, sharedAttemptStateMap, sharedInitMap });
+    sharedAttemptStateMap.set(activityId, props.state);
 
     setInit(true);
 
     return () => {
       clearTimeout(timeout);
-      sharedInitMap.delete(props.model.id);
-      sharedPromiseMap.delete(props.model.id);
-      sharedAttemptStateMap.delete(props.model.id);
+      sharedInitMap.delete(activityId);
+      sharedPromiseMap.delete(activityId);
+      sharedAttemptStateMap.delete(activityId);
       setInit(false);
     };
   }, []);
 
   const partInit = useCallback(
     async (partId: string) => {
-      const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
-      const partsInitStatus = sharedInitMap.get(props.model.id);
-      const partsInitDeferred = sharedPromiseMap.get(props.model.id);
+      const currentAttemptState = sharedAttemptStateMap.get(activityId);
+      const partsInitStatus = sharedInitMap.get(activityId);
+      const partsInitDeferred = sharedPromiseMap.get(activityId);
       partsInitStatus[partId] = true;
       /* console.log(`%c INIT ${partId} CB`, 'background: blue;color:white;', {
-        parts,
+        partsLayout,
         partsInitStatus,
       }); */
-      if (parts.every((part) => partsInitStatus[part.id] === true)) {
+      if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
         if (props.onReady) {
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
           const { env, domain } = readyResults;
@@ -179,6 +182,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
+          console.log('PARTS READY NO ONREADY HOST', { scriptEnv, adaptivityDomain, props });
           partsInitDeferred.resolve({
             snapshot: {},
             context: { mode: 'VIEWER', host: props.mountPoint },
@@ -189,7 +193,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }
       return partsInitDeferred.promise;
     },
-    [parts, adaptivityDomain],
+    [partsLayout, adaptivityDomain],
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
@@ -216,7 +220,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   };
 
   const handleSetData = async (payload: any) => {
-    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    const currentAttemptState = sharedAttemptStateMap.get(activityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
     if (!partAttempt) {
@@ -234,7 +238,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   };
 
   const handleGetData = async (payload: any) => {
-    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    const currentAttemptState = sharedAttemptStateMap.get(activityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === payload.id);
     if (!partAttempt) {
@@ -257,7 +261,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // TODO: throw? no reason to save something with no response
       return;
     }
-    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    const currentAttemptState = sharedAttemptStateMap.get(activityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
@@ -279,7 +283,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
     /* console.log('onPartSubmit', { id, responses }); */
-    const currentAttemptState = sharedAttemptStateMap.get(props.model.id);
+    const currentAttemptState = sharedAttemptStateMap.get(activityId);
     // part attempt guid should be located in currentAttemptState.parts matched to id
     const partAttempt = currentAttemptState.parts.find((p: any) => p.partId === id);
     if (!partAttempt) {
@@ -302,7 +306,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   return init ? (
     <NotificationContext.Provider value={pusher}>
       <PartsLayoutRenderer
-        parts={parts}
+        parts={partsLayout}
         onPartInit={handlePartInit}
         onPartReady={handlePartReady}
         onPartSave={handlePartSave}
