@@ -83,7 +83,6 @@ defmodule Oli.Interop do
     case Repo.get_by(ApiKey, hash: hash) do
       nil -> false
       key ->
-        IO.inspect key
         Map.get(key, field) == true and key.status == :enabled
     end
   end

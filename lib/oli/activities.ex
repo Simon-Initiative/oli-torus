@@ -66,14 +66,10 @@ defmodule Oli.Activities do
   end
 
   defp parse_manifest({f, content}) do
-    IO.inspect  f
-    IO.inspect content
-
     case Poison.decode(content) do
       {:ok, json} -> Manifest.parse(json)
       e -> e
     end
-
   end
 
   defp process_register_from_bundle(%Manifest{} = manifest, entries) do

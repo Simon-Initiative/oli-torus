@@ -6,6 +6,22 @@ import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
 import { Model } from 'data/content/model/elements/factories';
 
+export function feedbackToString(feedback: Feedback): string {
+  return contentToString(feedback.content);
+}
+
+function contentToString(content: any) {
+  return content.reduce((acc: any, e: any) => {
+    if (e.text !== undefined) {
+      return acc + e.text;
+    }
+    if (e.children !== undefined) {
+      return acc + contentToString(e.children);
+    }
+    return acc;
+  }, '');
+}
+
 export type PostUndoable = (undoable: Undoable) => void;
 
 export type DeliveryMode = 'delivery' | 'review' | 'preview';
@@ -164,12 +180,6 @@ export const makeResponse = (rule: string, score: number, text = ''): Response =
   feedback: makeFeedback(text),
 });
 
-export interface ConditionalOutcome extends Identifiable {
-  // eslint-disable-next-line
-  rule: Object;
-  actions: ActionDesc[];
-}
-
 export interface IsAction {
   attempt_guid: string;
   error?: string;
@@ -177,64 +187,31 @@ export interface IsAction {
 }
 
 export type Action = NavigationAction | FeedbackAction | StateUpdateAction | SubmissionAction;
-export type ActionDesc =
-  | NavigationActionDesc
-  | FeedbackActionDesc
-  | StateUpdateActionDesc
-  | SubmissionActionDesc;
 
-export interface FeedbackActionCore {
+export interface NavigationAction extends IsAction {
+  type: 'NavigationAction';
+  to: string;
+}
+
+export interface FeedbackAction extends IsAction {
+  type: 'FeedbackAction';
+  out_of: number;
   score: number;
   feedback: Feedback;
 }
 
-export interface NavigationActionCore {
-  to: string;
-}
-
-export interface StateUpdateActionCore {
+export interface StateUpdateAction extends IsAction {
+  type: 'StateUpdateAction';
   // eslint-disable-next-line
   update: Object;
 }
 
-export interface SubmissionActionCore {}
-
-export interface NavigationActionDesc extends Identifiable, NavigationActionCore {
-  type: 'NavigationActionDesc';
-}
-
-export interface NavigationAction extends NavigationActionCore, IsAction {
-  type: 'NavigationAction';
-}
-
-export interface FeedbackActionDesc extends Identifiable, FeedbackActionCore {
-  type: 'FeedbackActionDesc';
-}
-
-export interface FeedbackAction extends FeedbackActionCore, IsAction {
-  type: 'FeedbackAction';
-  out_of: number;
-}
-
-export interface StateUpdateActionDesc extends Identifiable, StateUpdateActionCore {
-  type: 'StateUpdateActionDesc';
-}
-
-export interface StateUpdateAction extends StateUpdateActionCore, IsAction {
-  type: 'StateUpdateAction';
-}
-
-export interface SubmissionActionDesc extends Identifiable, SubmissionActionCore {
-  type: 'SubmissionActionDesc';
-}
-
-export interface SubmissionAction extends SubmissionActionCore, IsAction {
+export interface SubmissionAction extends IsAction {
   type: 'SubmissionAction';
 }
 
 export interface Part extends Identifiable {
   responses: Response[];
-  outcomes?: ConditionalOutcome[];
   hints: Hint[];
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;

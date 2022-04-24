@@ -1,4 +1,4 @@
-defmodule OliWeb.Api.RegistrationController do
+defmodule OliWeb.Api.ActivityRegistrationController do
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
@@ -20,7 +20,6 @@ defmodule OliWeb.Api.RegistrationController do
       case Activities.register_from_bundle(upload.path, expected_namespace) do
         {:ok, _} -> json(conn, %{result: :success})
         {:error, e} ->
-          IO.inspect e
           error(conn, 400, "error")
       end
     else

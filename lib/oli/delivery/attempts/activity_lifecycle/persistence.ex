@@ -3,10 +3,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   alias Oli.Repo
 
   alias Oli.Delivery.Evaluation.Actions.{
-    FeedbackActionResult,
-    NavigationActionResult,
-    StateUpdateActionResult,
-    SubmissionActionResult
+    FeedbackAction,
+    NavigationAction,
+    StateUpdateAction,
+    SubmissionAction
   }
 
   alias Oli.Delivery.Attempts.Core.PartAttempt
@@ -55,14 +55,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
 
   defp persist_single_evaluation(
-         {_, {:ok, %NavigationActionResult{} = action_result}},
+         {_, {:ok, %NavigationAction{} = action_result}},
          {:ok, replace, results}
        ) do
     {:cont, {:ok, replace, results ++ [action_result]}}
   end
 
   defp persist_single_evaluation(
-         {_, {:ok, %StateUpdateActionResult{} = action_result}},
+         {_, {:ok, %StateUpdateAction{} = action_result}},
          {:ok, replace, results}
        ) do
     {:cont, {:ok, replace, results ++ [action_result]}}
@@ -71,7 +71,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
           {:ok,
-           %FeedbackActionResult{
+           %FeedbackAction{
              feedback: feedback,
              score: score,
              out_of: out_of
@@ -117,7 +117,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
-          {:ok, %SubmissionActionResult{} = submission_action}},
+          {:ok, %SubmissionAction{} = submission_action}},
          {:ok, replace, results}
        ) do
     now = DateTime.utc_now()
