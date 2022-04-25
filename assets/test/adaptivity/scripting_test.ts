@@ -265,9 +265,9 @@ describe('Scripting Interface', () => {
       expect(result).toBe('stage.foo.value =  1; stage.foo1.value =  80;');
 
       text = 'Lets try with variables {variables.foo}';
-      evalScript('let {variables.foo} = 0.529', environment);
+      evalScript('let {variables.foo} = 0.52', environment);
       result = templatizeText(text, environment, environment);
-      expect(result).toBe('Lets try with variables 0.529');
+      expect(result).toBe('Lets try with variables 0.52');
 
       text = 'Lets try with variables {variables.foo';
       result = templatizeText(text, environment);
