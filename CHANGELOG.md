@@ -11,6 +11,7 @@
 - Fix popup content editing
 - Fix image alt text rendering
 - Add tooltips to insights table headers, add keyboard navigation
+- Change ordering question interaction after activity is submitted
 
 ### Enhancements
 
