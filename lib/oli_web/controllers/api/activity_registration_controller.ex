@@ -19,7 +19,7 @@ defmodule OliWeb.Api.ActivityRegistrationController do
 
       case Activities.register_from_bundle(upload.path, expected_namespace) do
         {:ok, _} -> json(conn, %{result: :success})
-        {:error, e} ->
+        {:error, _} ->
           error(conn, 400, "error")
       end
     else

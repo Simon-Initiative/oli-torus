@@ -65,7 +65,7 @@ defmodule Oli.Activities do
     {:error, :missing_manifest}
   end
 
-  defp parse_manifest({f, content}) do
+  defp parse_manifest({_, content}) do
     case Poison.decode(content) do
       {:ok, json} -> Manifest.parse(json)
       e -> e
