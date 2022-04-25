@@ -274,15 +274,27 @@ describe('Scripting Interface', () => {
       expect(result).toBe(text);
     });
 
+    it('should be able to templatizeText of math expressions', () => {
+      const expr1 = '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}';
+      const expr2 = '2\\times\\frac{3}{2}=\\editable{}';
+      const env = new Environment();
+      const result = templatizeText(expr1, env);
+      expect(result).toEqual(expr1);
+      const result2 = templatizeText(expr2, env);
+      expect(result2).toEqual(expr2);
+    });
+
     it('it should return math expression as it is', () => {
       const environment = new Environment();
+      const mathExpr1 = '2\\times\\frac{3}{2}=\\editable{}';
+      const mathExpr2 = '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}';
 
       const script = getAssignScript(
         {
           x: {
             key: 'Math Expression',
             path: 'stage.x',
-            value: '2\\times\\frac{3}{2}=\\editable{}',
+            value: mathExpr1,
           },
         },
         environment,
@@ -290,7 +302,13 @@ describe('Scripting Interface', () => {
       const result = evalScript(script, environment);
       const valuex = getValue('stage.x', environment);
       expect(result.result).toBe(null);
-      expect(valuex).toBe('2\\times\\frac{3}{2}=\\editable{}');
+      expect(valuex).toBe(mathExpr1);
+
+      const script2 = `let {stage.x} = "${mathExpr2}";`;
+      const result2 = evalScript(script2, environment);
+      const valuex2 = getValue('stage.x', environment);
+      expect(result2.result).toBe(null);
+      expect(valuex2).toBe(mathExpr2);
     });
 
     it('should assign variable expression value and calculate the expression', () => {
