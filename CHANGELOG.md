@@ -10,6 +10,7 @@
 - Fix table styling when words overflow bounds
 - Fix popup content editing
 - Fix image alt text rendering
+- Change ordering question interaction after activity is submitted
 
 ### Enhancements
 
