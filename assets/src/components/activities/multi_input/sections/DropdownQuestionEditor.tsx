@@ -21,7 +21,6 @@ export const DropdownQuestionEditor: React.FC<Props> = (props) => {
         setAll={(choices) => dispatch(MultiInputActions.reorderChoices(props.input.id, choices))}
         onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
         onRemove={(id) => dispatch(MultiInputActions.removeChoice(props.input.id, id))}
-        simpleText
       />
     </>
   );
