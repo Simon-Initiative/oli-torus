@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import {
@@ -20,6 +21,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   const [activityId, setActivityId] = useState<string>(props.model?.id || `unknown-${Date.now()}`);
   const [mode, setMode] = useState<string>(props.mode);
 
+  const isReviewMode = mode === 'review';
+
   const [partsLayout, setPartsLayout] = useState(
     props.model.content?.partsLayout || props.model.partsLayout || [],
   );
@@ -28,7 +31,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   // TODO: this type should be Environment | undefined; this is a local script env for each activity
   // should be provided by the parent as a child env, possibly default to having its own instead
-  const [scriptEnv, setScriptEnv] = useState<any>();
+  const [scriptEnv, setScriptEnv] = useState<any>(new Environment());
 
   const [adaptivityDomain, setAdaptivityDomain] = useState<string>('stage');
 
@@ -96,7 +99,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     let reject;
 
     if (!partsLayout.length) {
-      if (props.onReady) {
+      if (props.onReady && !isReviewMode) {
         props.onReady(props.state.attemptGuid);
       }
       setInit(true);
@@ -161,7 +164,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partsInitStatus,
       }); */
       if (partsLayout.every((part) => partsInitStatus[part.id] === true)) {
-        if (props.onReady) {
+        if (props.onReady && !isReviewMode) {
           const readyResults: any = await props.onReady(currentAttemptState.attemptGuid);
           const { env, domain } = readyResults;
           if (env) {
@@ -182,10 +185,14 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           });
         } else {
           // if for some reason this isn't defined, don't leave it hanging
-          console.log('PARTS READY NO ONREADY HOST', { scriptEnv, adaptivityDomain, props });
+          console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
+            scriptEnv,
+            adaptivityDomain,
+            props,
+          });
           partsInitDeferred.resolve({
             snapshot: {},
-            context: { mode: 'VIEWER', host: props.mountPoint },
+            context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
           });
@@ -197,10 +204,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
-    /* console.log('onPartInit', payload); */
+    console.log('onPartInit', payload);
     // a part should send initial state values
     if (payload.responses.length) {
       const saveResults = await handlePartSave(payload);
+      console.log('onPartInit saveResults', payload.id, saveResults);
     }
 
     const { snapshot, context, env } = await partInit(payload.id.toString());
@@ -228,7 +236,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       console.error(`part attempt guid for ${payload.id} not found!`);
       return;
     }
-    if (props.onWriteUserState) {
+    if (props.onWriteUserState && !isReviewMode) {
       await props.onWriteUserState(
         currentAttemptState.attemptGuid,
         partAttempt?.attemptGuid,
@@ -246,7 +254,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       console.error(`part attempt guid for ${payload.id} not found!`);
       return;
     }
-    if (props.onReadUserState) {
+    if (props.onReadUserState && !isReviewMode) {
       return await props.onReadUserState(
         currentAttemptState.attemptGuid,
         partAttempt?.attemptGuid,
@@ -272,13 +280,21 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     const response: ActivityTypes.StudentResponse = {
       input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
-    const result = await props.onSavePart(
-      currentAttemptState.attemptGuid,
-      partAttempt?.attemptGuid,
-      response,
-    );
-    // BS: this is the result from the layout pushed down, need to push down to part here?
-    return result;
+    if (props.onSavePart && !isReviewMode) {
+      const result = await props.onSavePart(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        response,
+      );
+      // BS: this is the result from the layout pushed down, need to push down to part here?
+      return result;
+    } else {
+      console.warn('onSavePart not defined, not saving');
+      return {
+        type: 'success',
+        snapshot: {},
+      };
+    }
   };
 
   const handlePartSubmit = async ({ id, responses }: { id: string | number; responses: any[] }) => {
@@ -294,13 +310,21 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     const response: ActivityTypes.StudentResponse = {
       input: responses.map((pr) => ({ ...pr, path: `${id}.${pr.key}` })),
     };
-    const result = await props.onSubmitPart(
-      currentAttemptState.attemptGuid,
-      partAttempt?.attemptGuid,
-      response,
-    );
-    // BS: this is the result from the layout pushed down, need to push down to part here?
-    return result;
+    if (props.onSubmitPart && !isReviewMode) {
+      const result = await props.onSubmitPart(
+        currentAttemptState.attemptGuid,
+        partAttempt?.attemptGuid,
+        response,
+      );
+      // BS: this is the result from the layout pushed down, need to push down to part here?
+      return result;
+    } else {
+      console.warn('onSubmitPart not defined, not submitting');
+      return {
+        type: 'success',
+        snapshot: {},
+      };
+    }
   };
 
   return init ? (

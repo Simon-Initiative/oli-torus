@@ -194,12 +194,17 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       const handler = wcEvents[e.type];
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
-        const result = await handler(payload);
-        if (e.type === 'resize') {
-          onResize(payload);
-        }
-        if (callback) {
-          callback(result);
+        console.log(`${e.type} event handled [PC : ${props.id}]`, e);
+        try {
+          const result = await handler(payload);
+          if (e.type === 'resize') {
+            onResize(payload);
+          }
+          if (callback) {
+            callback(result);
+          }
+        } catch (error) {
+          console.error('Error in PC handler', { error, type: e.type, payload, callback, handler });
         }
       }
     };
@@ -231,6 +236,10 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   if (!(props as AuthorProps).editMode) {
     webComponentProps.style = componentStyle;
     // console.log('DELIVERY RENDER:', wcTagName, props);
+  }
+
+  if (listening) {
+    console.log('PC LISTENING:', props.id);
   }
 
   // don't render until we're listening because otherwise the init event will post too fast
