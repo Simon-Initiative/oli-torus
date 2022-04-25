@@ -43,7 +43,9 @@ defmodule Oli.InventoriesTest do
 
     test "find_or_create_publisher/1 returns existing publisher" do
       publisher = insert(:publisher)
-      assert {:ok, %Publisher{} = returned_publisher} = Inventories.find_or_create_publisher(%{name: publisher.name})
+
+      assert {:ok, %Publisher{} = returned_publisher} =
+               Inventories.find_or_create_publisher(%{name: publisher.name})
 
       assert publisher == returned_publisher
     end
@@ -55,14 +57,14 @@ defmodule Oli.InventoriesTest do
     end
 
     test "default_publisher_name/0 returns default publisher name" do
-      assert "Torus Publisher" == Inventories.default_publisher_name()
+      assert Inventories.default_publisher_name() == "Torus Publisher"
     end
 
     test "list_publishers/0 returns all the publishers" do
       insert_list(3, :publisher)
 
       # There is an existing default publisher
-      assert 4 = length(Inventories.list_publishers())
+      assert length(Inventories.list_publishers()) == 4
     end
 
     test "get_publisher/1 returns a publisher when the id exists" do

@@ -31,7 +31,7 @@ defmodule Oli.Authoring.Course.Project do
 
     has_many :publications, Oli.Publishing.Publication
 
-    belongs_to :publisher, Oli.Inventories.Publisher, foreign_key: :publisher_id
+    belongs_to :publisher, Oli.Inventories.Publisher
 
     field :owner_id, :integer, virtual: true
     field :owner_name, :string, virtual: true

@@ -17,6 +17,7 @@ defmodule OliWeb.PublisherLive.ShowView do
   data changeset, :changeset
   data breadcrumbs, :list
   data modal, :any, default: nil
+  data is_default_publisher, :boolean, default: false
 
   def breadcrumb(publisher_id) do
     IndexView.breadcrumb() ++
@@ -39,13 +40,13 @@ defmodule OliWeb.PublisherLive.ShowView do
         publisher ->
           changeset = Inventories.change_publisher(publisher)
 
-          default_publisher? = publisher.name == Inventories.default_publisher_name()
+          is_default_publisher = publisher.name == Inventories.default_publisher_name()
 
           assign(socket,
             publisher: publisher,
             changeset: changeset,
             breadcrumbs: breadcrumb(publisher_id),
-            default_publisher?: default_publisher?
+            is_default_publisher: is_default_publisher
           )
       end
 
@@ -60,12 +61,12 @@ defmodule OliWeb.PublisherLive.ShowView do
           section_title="Details"
           section_description="Main publisher fields that will be shown to system admins."
         >
-          <Form changeset={@changeset} default_publisher?={@default_publisher?} save="save"/>
+          <Form changeset={@changeset} is_default_publisher={@is_default_publisher} save="save"/>
         </ShowSection>
 
         <ShowSection section_title="Actions">
           <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal" disabled={@default_publisher?}>Delete</button>
+            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal" disabled={@is_default_publisher}>Delete</button>
             <span>Permanently delete this publisher.</span>
           </div>
         </ShowSection>
