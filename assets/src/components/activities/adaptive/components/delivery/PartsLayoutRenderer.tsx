@@ -33,7 +33,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
   onPartGetData,
 }) => {
   return (
-    <React.Fragment>
+    <>
       {parts.map((partDefinition: PartComponentDefinition) => {
         const partProps = {
           id: partDefinition.id,
@@ -50,7 +50,7 @@ const PartsLayoutRenderer: React.FC<PartsLayoutRendererProps> = ({
         };
         return <PartComponent key={partDefinition.id} {...partProps} />;
       })}
-    </React.Fragment>
+    </>
   );
 };
 

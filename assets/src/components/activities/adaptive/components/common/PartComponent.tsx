@@ -238,10 +238,6 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     // console.log('DELIVERY RENDER:', wcTagName, props);
   }
 
-  if (listening) {
-    console.log('PC LISTENING:', props.id);
-  }
-
   // don't render until we're listening because otherwise the init event will post too fast
   return listening ? React.createElement(wcTagName, webComponentProps) : null;
 };

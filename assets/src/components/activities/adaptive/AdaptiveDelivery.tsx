@@ -12,6 +12,9 @@ import * as ActivityTypes from '../types';
 import PartsLayoutRenderer from './components/delivery/PartsLayoutRenderer';
 import { AdaptiveModelSchema } from './schema';
 
+// eslint-disable-next-line
+const manifest = require('./manifest.json') as ActivityTypes.Manifest;
+
 const sharedInitMap = new Map();
 const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
@@ -329,16 +332,26 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
 
   return init ? (
     <NotificationContext.Provider value={pusher}>
-      <PartsLayoutRenderer
-        parts={partsLayout}
-        onPartInit={handlePartInit}
-        onPartReady={handlePartReady}
-        onPartSave={handlePartSave}
-        onPartSubmit={handlePartSubmit}
-        onPartResize={handlePartResize}
-        onPartSetData={handleSetData}
-        onPartGetData={handleGetData}
-      />
+      <>
+        {isReviewMode ? (
+          <style>
+            {`
+              style { display: none; }
+              ${manifest.delivery.element} { min-height: 500px; display: block; position: relative; }
+            `}
+          </style>
+        ) : null}
+        <PartsLayoutRenderer
+          parts={partsLayout}
+          onPartInit={handlePartInit}
+          onPartReady={handlePartReady}
+          onPartSave={handlePartSave}
+          onPartSubmit={handlePartSubmit}
+          onPartResize={handlePartResize}
+          onPartSetData={handleSetData}
+          onPartGetData={handleGetData}
+        />
+      </>
     </NotificationContext.Provider>
   ) : null;
 };
@@ -356,6 +369,4 @@ export class AdaptiveDelivery extends DeliveryElement<AdaptiveModelSchema> {
 }
 
 // Register the web component:
-// eslint-disable-next-line
-const manifest = require('./manifest.json') as ActivityTypes.Manifest;
 window.customElements.define(manifest.delivery.element, AdaptiveDelivery);
