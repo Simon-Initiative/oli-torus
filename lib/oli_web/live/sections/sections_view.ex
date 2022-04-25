@@ -16,7 +16,7 @@ defmodule OliWeb.Sections.SectionsView do
     institution_id: nil,
     blueprint_id: nil,
     text_search: "",
-    active_date: false,
+    active_today: false,
     filter_status: nil,
     filter_type: nil,
   }
@@ -77,7 +77,7 @@ defmodule OliWeb.Sections.SectionsView do
     offset = get_int_param(params, "offset", 0)
     options = %BrowseOptions{
       text_search: get_param(params, "text_search", ""),
-      active_date: get_boolean_param(params, "active_date", false),
+      active_today: get_boolean_param(params, "active_today", false),
       filter_status: get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
       filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
       # This view is currently for all institutions and all root products
@@ -120,7 +120,7 @@ defmodule OliWeb.Sections.SectionsView do
           <TextSearch id="text-search" text={@options.text_search}/>
 
           <:extra_opts>
-            <Check checked={@options.active_date} click="active_date">Only active by date</Check>
+            <Check checked={@options.active_today} click="active_today">Active today (between start/end dates)</Check>
 
             <form :on-change="change_type" class="d-flex">
               <select name="type" id="select_type" class="custom-select custom-select mr-2">
@@ -155,8 +155,8 @@ defmodule OliWeb.Sections.SectionsView do
     """
   end
 
-  def handle_event("active_date", _, socket),
-    do: patch_with(socket, %{active_date: !socket.assigns.options.active_date})
+  def handle_event("active_today", _, socket),
+    do: patch_with(socket, %{active_today: !socket.assigns.options.active_today})
 
   def handle_event("change_status", %{"status" => status}, socket),
     do: patch_with(socket, %{filter_status: status})
@@ -188,7 +188,7 @@ defmodule OliWeb.Sections.SectionsView do
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
                text_search: socket.assigns.options.text_search,
-               active_date: socket.assigns.options.active_date,
+               active_today: socket.assigns.options.active_today,
                filter_status: socket.assigns.options.filter_status,
                filter_type: socket.assigns.options.filter_type
              },

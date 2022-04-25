@@ -7,7 +7,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
     :institution_id,
     :blueprint_id,
     :text_search,
-    :active_date,
+    :active_today,
     :filter_status,
     :filter_type
   ]
@@ -16,7 +16,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
     :institution_id,
     :blueprint_id,
     :text_search,
-    :active_date,
+    :active_today,
     :filter_status,
     :filter_type
   ]
@@ -25,7 +25,7 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
           institution_id: integer(),
           blueprint_id: integer(),
           text_search: String.t(),
-          active_date: boolean(),
+          active_today: boolean(),
           filter_status: atom(),
           filter_type: atom()
         }

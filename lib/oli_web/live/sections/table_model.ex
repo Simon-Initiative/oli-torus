@@ -90,7 +90,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :institution}),
-    do: if section.open_and_free, do: "", else: section.institution.name
+    do: if section.open_and_free or is_nil(section.institution), do: "", else: section.institution.name
 
   def custom_render(_assigns, section, %ColumnSpec{name: :status}),
     do: Phoenix.Naming.humanize(section.status)

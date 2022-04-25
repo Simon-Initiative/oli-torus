@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     institution_id: nil,
     blueprint_id: nil,
     text_search: "",
-    active_date: false,
+    active_today: false,
     filter_status: nil,
     filter_type: nil,
   }
@@ -130,7 +130,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert hd(results).institution_name == "ZZZ"
 
       # by active date: finds the one section with start and end dates that overlap today
-      results = browse(0, :title, :asc, Map.merge(@default_opts, %{active_date: true}))
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{active_today: true}))
       assert length(results) == 1
       assert hd(results).total_count == 1
       assert hd(results).title == "aA"

@@ -57,7 +57,7 @@ defmodule Oli.Delivery.Sections.Browse do
       end
 
     filter_by_date_active =
-      if options.active_date do
+      if options.active_today do
         today = DateTime.utc_now()
         dynamic([s, _], s.start_date <= ^today and s.end_date >= ^today)
       else
@@ -88,7 +88,7 @@ defmodule Oli.Delivery.Sections.Browse do
 
     query =
       Section
-      |> join(:left, [s], e in Enrollment, as: :enrollment, on: s.id == e.section_id)
+      |> join(:left, [s], e in Enrollment, on: s.id == e.section_id)
       |> join(:left, [s, _], i in Oli.Institutions.Institution, on: s.institution_id == i.id)
       |> join(:left, [s, _], proj in Oli.Authoring.Course.Project, on: s.base_project_id == proj.id)
       |> join(:left, [s, _], prod in Section, on: s.blueprint_id == prod.id)
@@ -104,7 +104,7 @@ defmodule Oli.Delivery.Sections.Browse do
       |> offset(^offset)
       |> preload([:institution, :base_project, :blueprint])
       |> group_by([s, _, i, proj, prod, u], [s.id, i.name, proj.title, prod.title, u.name])
-      |> select_merge([p, e, i, proj, _, u], %{
+      |> select_merge([_, e, i, _, _, u], %{
         enrollments_count: count(e.id),
         total_count: fragment("count(*) OVER()"),
         institution_name: i.name,

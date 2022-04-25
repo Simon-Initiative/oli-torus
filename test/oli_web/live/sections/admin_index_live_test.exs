@@ -54,7 +54,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # by active date
       view
-      |> element("input[phx-click=\"active_date\"]")
+      |> element("input[phx-click=\"active_today\"]")
       |> render_click()
 
       assert has_element?(view, "td", s1.title)
@@ -62,7 +62,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       # reset filter active date
       view
-      |> element("input[phx-click=\"active_date\"]")
+      |> element("input[phx-click=\"active_today\"]")
       |> render_click()
 
       # by type
