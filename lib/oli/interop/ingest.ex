@@ -4,6 +4,7 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
   alias Oli.Utils.SchemaResolver
+  alias Oli.Resources.ContentMigrator
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
@@ -343,7 +344,7 @@ defmodule Oli.Interop.Ingest do
 
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
-    with content <- Map.get(page, "content"),
+    with {:ok, %{"content" => content} = page} <- maybe_migrate_page_content(page),
          :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
@@ -375,6 +376,15 @@ defmodule Oli.Interop.Ingest do
           end
       }
       |> create_resource(project)
+    end
+  end
+
+  defp maybe_migrate_page_content(page) do
+    case ContentMigrator.migrate(Map.get(page, "content"), to: :latest) do
+      {:migrated, migrated} ->
+        {:ok, Map.put(page, "content", migrated)}
+      {:skipped, _} ->
+        {:ok, page}
     end
   end
 

@@ -196,8 +196,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            |> trap_nil(),
          {:ok, %{deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
-         {_, %{content: content} = revision} <-
-           ContentMigrator.migrate(revision, to: :latest),
+         {:ok, %{content: content} = revision} <- maybe_migrate_revision_content(revision),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
@@ -234,6 +233,16 @@ defmodule Oli.Authoring.Editing.PageEditor do
        }}
     else
       _ -> {:error, :not_found}
+    end
+  end
+
+  defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
+    case ContentMigrator.migrate(content, to: :latest) do
+      {:migrated, migrated_content} ->
+        {:ok, %Revision{revision | content: migrated_content}}
+
+      {:skipped, _content} ->
+        {:ok, revision}
     end
   end
 

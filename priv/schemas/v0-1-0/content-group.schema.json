@@ -52,6 +52,7 @@
   "required": [
     "type",
     "layout",
+    "purpose",
     "children"
   ]
 }
