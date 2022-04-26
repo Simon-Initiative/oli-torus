@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Hierarchy
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
-  alias OliWeb.Common.Hierarchy.MoveModal
+  alias OliWeb.Common.Hierarchy.{HierarchyPicker, MoveModal}
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount

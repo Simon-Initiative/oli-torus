@@ -28,7 +28,7 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.uuid != @dragging end) do %>
+        <%= for {node, index} <- HierarchyPicker.sort_items(@active.children, assigns) |> Enum.with_index() |> Enum.filter(fn {c, _i} -> c.uuid != @dragging end) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
               index={index}
