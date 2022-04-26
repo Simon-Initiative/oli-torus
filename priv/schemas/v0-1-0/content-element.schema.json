@@ -723,6 +723,28 @@
         "children"
       ]
     },
+    "citation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "cite"
+        },
+        "idref": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "idref",
+        "children"
+      ]
+    },
     "popup": {
       "type": "object",
       "properties": {

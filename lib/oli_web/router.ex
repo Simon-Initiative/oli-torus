@@ -353,6 +353,9 @@ defmodule OliWeb.Router do
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 
+    # Bibliography
+    get("/:project_id/bibliography", BibliographyController, :index)
+
     # Objectives
     live("/:project_id/objectives", Objectives.Objectives)
 
@@ -494,12 +497,14 @@ defmodule OliWeb.Router do
     get("/", Api.TagController, :index)
   end
 
-  # Tags Service
-  scope "/api/v1/bib/project/:project", OliWeb do
+  # Bibliography Service
+  scope "/api/v1/bibs/project/:project", OliWeb do
     pipe_through([:api, :authoring_protected])
 
-    post("/", Api.BibController, :new)
-    get("/", Api.BibController, :index)
+
+    post("/retrieve", Api.BibEntryController, :retrieve)
+    post("/", Api.BibEntryController, :new)
+    get("/", Api.BibEntryController, :index)
   end
 
   scope "/api/v1/products", OliWeb do

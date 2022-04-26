@@ -1,22 +1,24 @@
-defmodule Oli.Authoring.Editing.BibEditor do
+defmodule Oli.Authoring.Editing.BibEntryEditor do
   @moduledoc """
   This module provides content editing facilities for activities.
 
   """
 
   import Oli.Authoring.Editing.Utils
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Revision, ResourceType}
+  alias Oli.Publishing.{AuthoringResolver, PublishedResource}
   alias Oli.Authoring.Course
-  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Repo.{Paging}
+  alias Oli.Repo
 
   import Ecto.Query, warn: false
 
   @doc """
-  Retrieves a list of all tags for a given project.
+  Retrieves a list of all bib_entries for a given project.
 
   Returns:
 
-  .`{:ok, [%Revision{}]}` when the tags are retrieved
+  .`{:ok, [%Revision{}]}` when the bib_entries are retrieved
   .`{:error, {:not_found}}` if the project is not found
   """
   @spec list(String.t(), any()) ::
@@ -31,6 +33,57 @@ defmodule Oli.Authoring.Editing.BibEditor do
     else
       error -> error
     end
+  end
+
+  @doc """
+  Retrieves a paged list of bib_entries for a given project.
+
+  Returns:
+
+  .`{:ok, [%Revision{}]}` when the bib_entries are retrieved
+  .`{:error, {:not_found}}` if the project is not found
+  """
+  @spec retrieve(nil | binary, any, Oli.Repo.Paging.t()) ::
+          {:error, {:not_authorized} | {:not_found}} | {:ok, list}
+  def retrieve(project_slug, author, %Paging{limit: limit, offset: offset}) do
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project) do
+      case paged_bib_entrys(project_slug, %Paging{limit: limit, offset: offset}) do
+        nil -> {:error, {:not_found}}
+        revisions ->
+          # IO.inspect(revisions)
+          # list = Enum.map(revisions)
+          revision_list = Enum.reduce(revisions, %{total_count: 0, rows: []}, fn e, m ->
+            Map.put(m, :total_count, e.full_count)
+            |> Map.put(:rows,  [e.rev | Map.get(m, :rows)])
+          end)
+          IO.inspect(revision_list)
+          {:ok, revision_list}
+          # {:ok, Enum.filter(revisions, fn r -> !r.rev.deleted end)}
+      end
+    else
+      error -> error
+    end
+  end
+
+  defp paged_bib_entrys(project_slug, %Paging{limit: limit, offset: offset}) do
+    publication_id = Oli.Publishing.project_working_publication(project_slug).id
+    resource_type_id = ResourceType.get_id_by_type("bibentry")
+
+    query = from rev in Revision,
+      join: mapping in PublishedResource,
+      on: mapping.revision_id == rev.id,
+      distinct: rev.resource_id,
+      where:
+        mapping.publication_id == ^publication_id and
+          rev.resource_type_id == ^resource_type_id and
+          rev.deleted == false,
+      limit: ^limit,
+      offset: ^offset,
+      preload: :resource_type,
+      select: %{rev: rev, full_count: fragment("COUNT(?) OVER()", rev.id)}
+
+      Repo.all(query)
   end
 
   @doc """
@@ -63,6 +116,7 @@ defmodule Oli.Authoring.Editing.BibEditor do
   Creates a new tag resource with given attributes as part of its initial revision.
   """
   def create(project_slug, author, attrs) do
+    Repo.transaction(fn ->
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
          {:ok} <- authorize_user(author, project),
          {:ok, publication} <-
@@ -83,7 +137,11 @@ defmodule Oli.Authoring.Editing.BibEditor do
            }) do
       {:ok, revision}
     else
-      error -> error
+      error ->
+        IO.inspect(error)
+        Repo.rollback(error)
+        error
     end
+  end)
   end
 end
