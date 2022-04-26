@@ -16,7 +16,7 @@ defmodule Oli.Rendering.Activity do
   activity_map from context. Returns an IO list of raw html strings to be further processed by
   Phoenix/BEAM writev.
   """
-  def render(%Context{} = context, %{"activity_id" => _, "purpose" => _} = element, writer) do
+  def render(%Context{} = context, %{"activity_id" => _} = element, writer) do
     writer.activity(context, element)
   end
 

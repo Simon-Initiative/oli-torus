@@ -33,7 +33,7 @@ describe('PageEditorContent', () => {
     ]);
 
     const model = Immutable.List<ResourceContent>().push(exampleContent).push(exampleGroup);
-    const pageEditorContent = new PageEditorContent({ model });
+    const pageEditorContent = new PageEditorContent({ version: '0.1.0', model });
 
     return {
       pageEditorContent,
@@ -173,7 +173,7 @@ describe('PageEditorContent', () => {
   it('size', () => {
     const { pageEditorContent } = createDefaultPageEditorContent();
 
-    expect(pageEditorContent.size()).toEqual(3);
+    expect(pageEditorContent.count()).toEqual(3);
   });
 
   it('first', () => {
@@ -192,6 +192,7 @@ describe('PageEditorContent', () => {
     const { pageEditorContent } = createDefaultPageEditorContent();
 
     expect(pageEditorContent.toPersistence()).toEqual({
+      version: '0.1.0',
       model: [
         {
           children: [
@@ -269,6 +270,7 @@ describe('PageEditorContent', () => {
   it('fromPersistence', () => {
     const nestedGuid = guid();
     const pageEditorContent = PageEditorContent.fromPersistence({
+      version: '0.1.0',
       model: [
         {
           children: [
@@ -342,6 +344,7 @@ describe('PageEditorContent', () => {
       ],
     });
 
+    expect(pageEditorContent.version).toEqual('0.1.0');
     expect(pageEditorContent.model.size).toEqual(2);
     expect((pageEditorContent.find(nestedGuid) as any).children.length).toEqual(2);
     expect((pageEditorContent.find(nestedGuid) as any).children[1].children[0]).toEqual({

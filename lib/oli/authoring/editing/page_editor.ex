@@ -20,6 +20,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Resources.ContentMigrator
 
   import Ecto.Query, warn: false
 
@@ -193,8 +194,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.project_working_publication(project_slug)
            |> Repo.preload(:project)
            |> trap_nil(),
-         {:ok, %{content: content, deleted: false} = revision} <-
+         {:ok, %{deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
+         {_, %{content: content} = revision} <-
+           ContentMigrator.migrate(revision, to: :latest),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-

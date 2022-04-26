@@ -5,6 +5,9 @@
   "description": "Workbook page content",
   "type": "object",
   "properties": {
+    "version": {
+      "const": "0.1.0"
+    },
     "model": {
       "type": "array",
       "items": {
@@ -28,5 +31,8 @@
       }
     }
   },
-  "required": ["model"]
+  "required": [
+    "version",
+    "model"
+  ]
 }

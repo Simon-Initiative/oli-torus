@@ -103,7 +103,7 @@ defmodule Oli.Content.Page.HtmlTest do
                # render an error message for the unsupported page item
                assert rendered_html_string =~
                         "<div class=\"page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
-             end) =~ "Page item is not supported"
+             end) =~ "Element type is not supported"
     end
 
     test "handles missing language attributes on codeblocks gracefully", %{author: author} do

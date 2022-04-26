@@ -8,21 +8,24 @@ import {
 import guid from 'utils/guid';
 
 type PageEditorContentParams = {
+  version: string;
   model: Immutable.List<ResourceContent>;
 };
 
 const defaultParams = (params: Partial<PageEditorContentParams> = {}): PageEditorContentParams => ({
+  version: params.version as string,
   model: params.model ?? Immutable.List<ResourceContent>(),
 });
 
 export class PageEditorContent extends Immutable.Record(defaultParams()) {
+  version: string;
   model: Immutable.List<ResourceContent>;
 
   constructor(params?: PageEditorContentParams) {
     params ? super(params) : super();
   }
 
-  with(values: PageEditorContentParams) {
+  with(values: Partial<PageEditorContentParams>) {
     return this.merge(values) as this;
   }
 
@@ -135,10 +138,10 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
 
   /**
    * Converts the page editor content to a plain-old js object
-   * @returns persistence compatable js object
+   * @returns persistence compatible js object
    */
-  toPersistence(): { model: ResourceContent[] } {
-    return { model: toPersistence(this.model) };
+  toPersistence(): { version: string; model: ResourceContent[] } {
+    return { version: this.version, model: toPersistence(this.model) };
   }
 
   /**
@@ -146,7 +149,10 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
    * @returns page editor content representation
    */
   static fromPersistence(content: any) {
-    return new PageEditorContent({ model: withDefaultContent(fromPersistence(content.model)) });
+    return new PageEditorContent({
+      version: content.version,
+      model: withDefaultContent(fromPersistence(content.model)),
+    });
   }
 }
 
