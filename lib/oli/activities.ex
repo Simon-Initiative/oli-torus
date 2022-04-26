@@ -44,11 +44,10 @@ defmodule Oli.Activities do
             else
               {:error, :invalid_namespace}
             end
-          e ->
-            IO.inspect e
-            e
+          e -> e
         end
-      _ -> {:error, :invalid_archive}
+      _ ->
+        {:error, :invalid_archive}
     end
   end
 
