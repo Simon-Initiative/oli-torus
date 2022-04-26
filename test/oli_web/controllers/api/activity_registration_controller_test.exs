@@ -8,8 +8,7 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
     setup [:setup_session]
 
     test "can register an activity", %{
-      conn: conn,
-      map: map
+      conn: conn
     } do
 
       original_count = Oli.Activities.list_activity_registrations() |> Enum.count()

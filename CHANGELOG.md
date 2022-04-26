@@ -21,6 +21,7 @@
 - Allow gates to be defined in products
 - Hide subsequent purpose types for activities when the same purpose type is used in a series
 - Allow students to pay and apply codes during a grace period
+- Activity SDK
 
 ## 0.18.4 (2022-02-24)
 
