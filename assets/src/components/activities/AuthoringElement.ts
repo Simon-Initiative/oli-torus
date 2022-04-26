@@ -15,14 +15,35 @@ export interface AuthoringElementProps<T extends ActivityModelSchema> {
 }
 
 /**
-  An abstract authoring web component, designed to delegate to
-  a React authoring component.  This authoring web component will re-render
-  the underlying React component when the 'model' attribute of the
-  the web component changes.  It also traps onEdit callbacks from the
-  React component and translated these calls into dispatches of the
-  'modelUpdated' CustomEvent.  It is this CustomEvent that is handled by
-  Torus to process updates from the authoring web component.
-  */
+ * An abstract authoring web component, designed to delegate rendering
+ * via the `render` method.  This authoring web component will re-render
+ * when the 'model' attribute of the the web component changes.  It also traps onEdit
+ * callbacks from the concrete implementation and translates these calls into dispatches of the
+ * 'modelUpdated' CustomEvent.  It is this CustomEvent that is handled by
+ * Torus to process updates from the authoring web component.
+ *
+ * While the delegated implementation is a React component in the case of natively
+ * implemented activities, this does not need to be the case.  This `AuthoringElement`
+ * implementation is tech-stack agnostic.  One can use it to implement the authoring
+ * component of a Torus activity in Vanilla JS, React, Vue, Angular, etc.
+ *
+ * ```typescript
+ * // A typical React delegation
+ * export class MultipleChoiceAuthoring extends AuthoringElement<MCSchema> {
+ *
+ *   render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MCSchema>) {
+ *     ReactDOM.render(
+ *       <Provider store={store}>
+ *         <AuthoringElementProvider {...props}>
+ *           <MultipleChoice />
+ *         </AuthoringElementProvider>
+ *       </Provider>,
+ *       mountPoint,
+ *     );
+ *   }
+ * }
+ * ```
+ */
 export abstract class AuthoringElement<T extends ActivityModelSchema> extends HTMLElement {
   mountPoint: HTMLDivElement;
   connected: boolean;
@@ -73,6 +94,19 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     };
   }
 
+  /**
+   * Allows for an activity to perform an inline, just in time, model migration. As an activity's
+   * implementation changes over time, it may become necessary to make structural changes to the
+   * schema of the activity's model. The activity will need to support the original versions of this
+   * model, however, as there will likely have been many instances of this original model already
+   * created and stored in the Torus database.
+   *
+   * The `migrateModelVersion` function will be called by the component just before each call to `render`.
+   *
+   * @param model the state of the model of the activity, as deliveredy by Torus to this activity
+   * @returns a possibly migrated (i.e. upgraded) activity model, or the model as-is if no
+   * migration is needed
+   */
   migrateModelVersion(model: any): T {
     return model as T;
   }
@@ -105,6 +139,15 @@ export abstract class AuthoringElement<T extends ActivityModelSchema> extends HT
     this._notify.emit(eventName, payload);
   }
 
+  /**
+   * Implemented by concrete web component, the `render` method is called
+   * once after the web component has been mounted and "connected" to the DOM, and
+   * then again every time that either the `editMode` or `model` attributes have
+   * changed on the web component.
+   * @param mountPoint a top level div element created by the component that the
+   * concrete impl can use to render the rest of the actual UX
+   * @param props the current set of authoring component properties
+   */
   abstract render(mountPoint: HTMLDivElement, props: AuthoringElementProps<T>): void;
 
   connectedCallback() {

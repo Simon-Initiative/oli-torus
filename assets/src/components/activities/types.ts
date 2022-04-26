@@ -217,73 +217,220 @@ export interface PartState {
    * The number of this attempt.
    */
   attemptNumber: number;
+  /**
+   * If this attempt has been evaluated, the date of the evaluation, null
+   * if this attempt has not been evaluated.
+   */
   dateEvaluated: Date | null;
+
+  /**
+   * The date that this attempt was submitted, if it has been submitted, null
+   * if not.
+   */
   dateSubmitted: Date | null;
+
+  /**
+   * Score received. Null if this attempt has not been evaluated.
+   */
   score: number | null;
+  /**
+   * Maximum point value that could have been received.
+   */
   outOf: number | null;
+  /**
+   * The student's response.
+   */
   response: any;
+  /**
+   * Feedback received, if this attempt has been evaluated.
+   */
   feedback: Feedback | null;
+  /**
+   * Hints that were requested and received by the student.
+   */
   hints: [];
+  /**
+   * The id of the part that this attempt pertains to.
+   */
   partId: string | number;
+  /**
+   * Whether or not additional attempts exist.
+   */
   hasMoreAttempts: boolean;
+  /**
+   * Whether or not additional hints exist.
+   */
   hasMoreHints: boolean;
+  /**
+   * Any error associated with this attempt.
+   */
   error?: string;
 }
 
+/**
+ * Details the current state of an activity attempt for a student
+ * and a specific activity instance.
+ */
 export interface ActivityState {
+  /**
+   * Resource id of the activity that this attempt pertains to.
+   */
   activityId?: ResourceId;
+  /**
+   * Unique identifier of this attempt.
+   */
   attemptGuid: string;
+
+  /**
+   * The orindal number of this attempt, relative to other attempts.
+   */
   attemptNumber: number;
+  /**
+   * If this attempt has been evaluated, the date of the evaluation, null
+   * if this attempt has not been evaluated.
+   */
   dateEvaluated: Date | null;
+
+  /**
+   * The date that this attempt was submitted, if it has been submitted, null
+   * if not.
+   */
   dateSubmitted: Date | null;
+
+  /**
+   * Score received. Null if this attempt has not been evaluated.
+   */
   score: number | null;
+  /**
+   * Maximum point value that could have been received.
+   */
   outOf: number | null;
+  /**
+   * Collection of the part attempt states.
+   */
   parts: PartState[];
+
+  /**
+   * Whether or not this attempt has additional attempts.
+   */
   hasMoreAttempts: boolean;
+  /**
+   * Whether or not this attempt has additonal hints.
+   */
   hasMoreHints: boolean;
   snapshot?: any;
 }
 
+/**
+ * Defines an option, or choice, within activities such as a
+ * multiple choice activity.
+ */
 export interface Choice extends Identifiable, HasContent {}
+/**
+ * Helper function to create a choice from simple text.
+ */
 export const makeChoice: (text: string, id?: string) => Choice = makeContent;
+/**
+ * Marker interface for an entity that has choices.
+ */
 export interface HasChoices {
   choices: Choice[];
 }
 
+/**
+ * Defines a question stem.
+ */
 export interface Stem extends Identifiable, HasContent {}
+/**
+ * Marker interface for an entity that has a question stem.
+ */
 export interface HasStem {
   stem: Stem;
 }
+/**
+ * Marker interface for an entity that has a collection of stems.
+ */
 export type HasStems = { stems: Stem[] };
+/**
+ * Helper function to create a stem from a simple string.
+ */
 export const makeStem: (text: string) => Stem = makeContent;
+/**
+ * Defines a hint.
+ */
 export interface Hint extends Identifiable, HasContent {}
+/**
+ * Marker interface for an entity that has hints.
+ */
 export type HasHints = HasParts;
+/**
+ * Helper function to create a hint from simple text.
+ */
 export const makeHint: (text: string) => Hint = makeContent;
+/**
+ * Defines feedback entity.
+ */
 export interface Feedback extends Identifiable, HasContent {}
+/**
+ * Helper function to create Feedback from simple text.
+ */
 export const makeFeedback: (text: string) => Feedback = makeContent;
+
+/**
+ * A transformation is a client-specified mutation of the activity
+ * content model that the server will perform during activity
+ * instantiation.
+ */
 export interface Transformation extends Identifiable {
   path: string;
   operation: Transform;
 }
+/**
+ * Marker interface for an entity that has transformations.
+ */
 export interface HasTransformations {
   authoring: {
     transformations: Transformation[];
   };
 }
-
+/**
+ * Helper function to create a transformation.
+ * @param path  JSON path of the node within the model to transform
+ * @param operation The transformation operation
+ * @returns
+ */
 export const makeTransformation = (path: string, operation: Transform): Transformation => ({
   id: guid(),
   path,
   operation,
 });
 
+/**
+ * Defines a response.
+ */
 export interface Response extends Identifiable {
   // see `parser.ex` and `rule.ex`
+  /**
+   * Rule based match.
+   */
   rule: string;
-  // `score >= 0` indicates the feedback corresponds to a correct choice
+  /**
+   * Score to assign if this response matches.
+   */
   score: number;
+  /**
+   * Feedback to assign if this response matches.
+   */
   feedback: Feedback;
 }
+
+/**
+ * Helper function to create a response.
+ * @param rule match rule
+ * @param score score to assign
+ * @param text simple text to formulate a Feedback from
+ * @returns
+ */
 export const makeResponse = (rule: string, score: number, text = ''): Response => ({
   id: guid(),
   rule,
@@ -291,19 +438,32 @@ export const makeResponse = (rule: string, score: number, text = ''): Response =
   feedback: makeFeedback(text),
 });
 
+/**
+ * Marker interface for an action.
+ */
 export interface IsAction {
   attempt_guid: string;
   error?: string;
   part_id: string;
 }
 
+/**
+ * Supported actions.
+ */
 export type Action = NavigationAction | FeedbackAction | StateUpdateAction | SubmissionAction;
 
+/**
+ * An action indicating that the current view should navigate
+ * to another view.  Currently not in use.
+ */
 export interface NavigationAction extends IsAction {
   type: 'NavigationAction';
   to: string;
 }
 
+/**
+ * An action indicating that feedback should be displayed.
+ */
 export interface FeedbackAction extends IsAction {
   type: 'FeedbackAction';
   out_of: number;
@@ -311,16 +471,26 @@ export interface FeedbackAction extends IsAction {
   feedback: Feedback;
 }
 
+/**
+ * An action indicating that global user state should be updated.
+ * Currently not in use.
+ */
 export interface StateUpdateAction extends IsAction {
   type: 'StateUpdateAction';
   // eslint-disable-next-line
   update: Object;
 }
 
+/**
+ * An action indicating that the submission was completed.
+ */
 export interface SubmissionAction extends IsAction {
   type: 'SubmissionAction';
 }
 
+/**
+ * Defines an activity part.
+ */
 export interface Part extends Identifiable {
   responses: Response[];
   hints: Hint[];
@@ -329,6 +499,13 @@ export interface Part extends Identifiable {
   outOf?: null | number;
 }
 
+/**
+ * Helper function to create a part.
+ * @param responses responses to use
+ * @param hints hints to use
+ * @param id the part id
+ * @returns the formulated part
+ */
 export const makePart = (
   responses: Response[],
   // By default, parts have 3 hints (deer in headlights, cognitive, bottom out)
@@ -344,46 +521,78 @@ export const makePart = (
   hints,
 });
 
+/**
+ * Marker interface for an entity that has parts.
+ */
 export interface HasParts {
   authoring: {
     parts: Part[];
   };
 }
 
+/**
+ * The types of grading, or scoring, supported for a part.
+ */
 export enum GradingApproach {
+  /**
+   * Part will be automatically graded by either the client or server.
+   */
   'automatic' = 'automatic',
+  /**
+   * Part requires manual grading by an instructor.
+   */
   'manual' = 'manual',
 }
 
+/**
+ * Strategy to use in calculating a score across a collection of
+ * either parts or attempts.
+ */
 export enum ScoringStrategy {
   'average' = 'average',
   'best' = 'best',
   'most_recent' = 'most_recent',
 }
 
-export enum EvaluationStrategy {
-  'regex' = 'regex',
-  'numeric' = 'numeric',
-  'none' = 'none',
-}
-
+/**
+ * Supported transforms.
+ */
 export enum Transform {
+  /**
+   * Randomly shuffles a collection of items.
+   */
   'shuffle' = 'shuffle',
 }
 
+/**
+ * Context supplied to a creation function.
+ */
 export interface CreationContext extends ResourceContext {}
 
+/**
+ * @ignore
+ */
 export interface PartComponentDefinition {
   id: string;
   type: string;
   custom: Record<string, any>;
 }
 
+/**
+ * Marker interface for an entity that has preview text.
+ */
 export interface HasPreviewText {
   authoring: {
     previewText: string;
   };
 }
+/**
+ * Helper function to create preview text.
+ * @returns
+ */
 export const makePreviewText = () => '';
 
+/**
+ * Defines a mapping of a collection of choices to a response.
+ */
 export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];
