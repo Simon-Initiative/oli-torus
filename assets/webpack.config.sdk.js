@@ -26,14 +26,7 @@ module.exports = (env, options) => ({
       {
         test: /\.ts(x?)$/,
         include: path.resolve(__dirname, 'src'),
-        use: [
-          {
-            loader: 'esbuild-loader',
-            options: {
-              loader: 'tsx',
-            },
-          },
-        ],
+        use: [{ loader: 'ts-loader', options: { configFile: 'tsconfig.sdk.json' } }],
       },
     ],
   },
