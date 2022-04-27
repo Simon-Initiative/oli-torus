@@ -202,18 +202,6 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             env: scriptEnv,
             domain: adaptivityDomain,
           });
-
-          const context = {
-            currentActivityId: activityId,
-            currentLessonId: props.sectionSlug, // TODO: this is not correct, but it's the best we can do for now
-            mode: 'REVIEW',
-            snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
-            initStateFacts: {}, // TODO: need to do init state here?
-            domain: 'stage',
-            initStateBindToFacts: {}, // TODO: need this?
-          };
-          console.log('AD REVIEW CONTEXT', context);
-          pusher.emit(NotificationType.CONTEXT_CHANGED, context);
         }
       }
       return partsInitDeferred.promise;

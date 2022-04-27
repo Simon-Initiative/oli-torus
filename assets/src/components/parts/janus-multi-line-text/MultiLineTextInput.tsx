@@ -139,7 +139,6 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
 
   useEffect(() => {
     if (!props.notify) {
-      console.warn('MLT: No notify function provided');
       return;
     }
     const notificationsHandled = [
