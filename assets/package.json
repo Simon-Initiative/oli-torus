@@ -52,6 +52,7 @@
     "react-draggable": "^4.4.3",
     "react-keyed-file-browser": "^1.13.1",
     "react-popper": "^2.2.5",
+    "react-phoenix": "file:../deps/react_phoenix",
     "react-quill": "^1.3.5",
     "react-redux": "^7.2.4",
     "react-select2-wrapper": "^1.0.4-beta6",

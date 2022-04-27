@@ -166,6 +166,7 @@ defmodule Oli.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:pow, "~> 1.0.21"},
       {:pow_assent, "~> 0.4.9"},
+      {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
       {:surface, "~> 0.5.1"},

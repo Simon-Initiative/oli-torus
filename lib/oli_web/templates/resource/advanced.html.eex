@@ -13,23 +13,10 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<div id="editor" class="container"/>
+<div id="editor" class="container">
+  <%= ReactPhoenix.ClientSide.react_component("Components.Authoring", @app_params) %>
+</div>
 
-<script>
-  const params = {
-    isAdmin: <%= @is_admin? %>,
-    revisionSlug: "<%= @revision_slug %>",
-    projectSlug: "<%= @project_slug %>",
-    graded: <%= @graded %>,
-    content: "<%= Base.encode64(@context) %>",
-    paths: {
-      images: "<%= Routes.static_path(@conn, "/images") %>"
-    },
-    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
-    partComponentTypes: "<%= Jason.encode!(@part_component_types) |> Base.encode64() %>",
-  };
 
-  window.oliMountApplication(document.getElementById('editor'), params);
-</script>
 
 <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @raw_context, action: :edit %>
