@@ -25,8 +25,6 @@ export const TableSettings = (props: TableSettingsProps) => {
     }
   });
 
-  const setCaption = (caption: string) => setModel(Object.assign({}, model, { caption }));
-
   const applyButton = (disabled: boolean) => (
     <button
       onClick={(e) => {
