@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import {
   DragDropContext,
   Draggable as DraggableDND,
@@ -13,9 +13,19 @@ import guid from 'utils/guid';
 
 import styles from './DraggableColumn.modules.scss';
 
-const DragIndicator: React.FC = () => {
+interface DragIndicatorProps
+  extends PropsWithChildren<{
+    isDragDisabled?: boolean;
+  }> {}
+const DragIndicator: React.FC<DragIndicatorProps> = ({ isDragDisabled }) => {
   return (
-    <div className={classNames(styles.draggableColumnIndicator, 'material-icons')}>
+    <div
+      className={classNames(
+        styles.draggableColumnIndicator,
+        isDragDisabled && styles.disabled,
+        'material-icons',
+      )}
+    >
       drag_indicator
     </div>
   );
@@ -30,6 +40,7 @@ interface ItemProps {
   items?: any[];
   index?: number;
   displayOutline?: boolean;
+  isDragDisabled?: boolean;
 }
 const Item: React.FC<ItemProps> = ({
   id,
@@ -40,9 +51,10 @@ const Item: React.FC<ItemProps> = ({
   setItems = () => undefined,
   children,
   displayOutline,
+  isDragDisabled,
 }) => {
   return (
-    <DraggableDND draggableId={id} key={id} index={index}>
+    <DraggableDND draggableId={id} key={id} index={index} isDragDisabled={isDragDisabled ?? false}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
