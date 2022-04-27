@@ -282,7 +282,12 @@ function flatten(items: Immutable.List<ResourceContent>) {
 
 function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   return items.reduce((acc, val) => {
-    const children = val.type === 'group' ? toPersistence(val.children) : val.children;
+    const children =
+      val.type === 'group'
+        ? toPersistence(val.children)
+        : val.type === 'page-break'
+        ? undefined
+        : val.children;
 
     return [...acc, { ...val, children }];
   }, []);
