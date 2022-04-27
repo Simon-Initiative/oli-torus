@@ -1,3 +1,4 @@
+import { evalAssignScript, getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { EventEmitter } from 'events';
 import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -187,18 +188,32 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             env,
           });
         } else {
+          const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
           console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
             scriptEnv,
             adaptivityDomain,
             props,
+            snapshot,
           });
           partsInitDeferred.resolve({
-            snapshot: {},
+            snapshot,
             context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
           });
+
+          const context = {
+            currentActivityId: activityId,
+            currentLessonId: props.sectionSlug, // TODO: this is not correct, but it's the best we can do for now
+            mode: 'REVIEW',
+            snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
+            initStateFacts: {}, // TODO: need to do init state here?
+            domain: 'stage',
+            initStateBindToFacts: {}, // TODO: need this?
+          };
+          console.log('AD REVIEW CONTEXT', context);
+          pusher.emit(NotificationType.CONTEXT_CHANGED, context);
         }
       }
       return partsInitDeferred.promise;
@@ -292,10 +307,21 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       // BS: this is the result from the layout pushed down, need to push down to part here?
       return result;
     } else {
-      console.warn('onSavePart not defined, not saving');
+      console.warn('onSavePart not defined, not saving', { response, scriptEnv });
+      // should write to the scriptEnv so that all parts can have the full snapshot?
+      const statePrefix = `${activityId}|stage`;
+      const responseMap = response.input.reduce(
+        (result: { [x: string]: any }, item: { key: string; path: string }) => {
+          result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
+          return result;
+        },
+        {},
+      );
+      const evalResult = evalAssignScript(responseMap, scriptEnv);
+      console.log('review mode save evalResult', evalResult);
       return {
         type: 'success',
-        snapshot: {},
+        snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
       };
     }
   };

@@ -139,6 +139,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
 
   useEffect(() => {
     if (!props.notify) {
+      console.warn('MLT: No notify function provided');
       return;
     }
     const notificationsHandled = [
@@ -149,10 +150,12 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        /* console.log(
-          `${notificationType.toString()} notification handled [Multiline text Input]`,
+        console.log(
+          `${notificationType.toString()} notification handled [%cMultiline text Input%c]`,
+          'color: aqua;',
+          'color: black;',
           payload,
-        ); */
+        );
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
