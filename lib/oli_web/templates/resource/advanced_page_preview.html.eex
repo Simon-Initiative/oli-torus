@@ -13,27 +13,10 @@
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
-<div id="delivery_container"></div>
+<div id="delivery_container">
+  <%= ReactPhoenix.ClientSide.react_component("Components.Delivery", @app_params) %>
+</div>
 
 <script>
   window.userToken = "<%= assigns[:user_token] %>";
-
-  const params = {
-    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
-    resourceId: <%= @revision.resource_id %>,
-    sectionSlug: "<%= @project_slug %>",
-    userId: <%= @user.id %>,
-    pageSlug: "<%= @revision.slug %>",
-    pageTitle: "<%= Base.encode64(@title) %>",
-    content: "<%= Jason.encode!(@revision.content) |> Base.encode64() %>",
-    graded: <%= @revision.graded %>,
-    resourceAttemptState: null,
-    resourceAttemptGuid: null,
-    activityGuidMapping: null,
-    previousPageURL: null,
-    nextPageURL: null,
-    previewMode: true,
-  };
-
-  window.oliMountApplication(document.getElementById('delivery_container'), params);
 </script>

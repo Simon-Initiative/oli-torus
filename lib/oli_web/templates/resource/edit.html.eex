@@ -6,10 +6,10 @@
 
 <%= render OliWeb.SharedView, "_admin_edit_banner.html", %{is_admin?: @is_admin?, project_slug: @project_slug, revision_slug: @revision_slug} %>
 
-<div id="editor" class="container"/>
 
-<script>
-  window.oliMountApplication(document.getElementById('editor'), "<%= Base.encode64(@context) %>");
-</script>
+<div id="editor" class="container">
+  <%= ReactPhoenix.ClientSide.react_component("Components.PageEditor", @raw_context) %>
+</div>
+
 
 <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @raw_context, action: :edit %>

@@ -4,10 +4,6 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<div id="editor" class="container"/>
-
-<script>
-
-  const params = <%= raw(Jason.encode!(@context)) %>;
-  window.oliMountApplication(document.getElementById('editor'), params);
-</script>
+<div id="editor" class="container">
+  <%= ReactPhoenix.ClientSide.react_component("Components.ActivityBank", @context) %>
+</div>

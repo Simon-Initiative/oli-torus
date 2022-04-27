@@ -14,43 +14,14 @@
 
 <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/delivery.js") %>"></script>
 
-<div id="delivery_container"></div>
+<div id="delivery_container">
+  <%= ReactPhoenix.ClientSide.react_component("Components.Delivery", @app_params) %>
+</div>
+
 
 <script>
+  // Used in assets/src/phoenix/socket.ts
   window.userToken = "<%= assigns[:user_token] %>";
-
-  <%= if @previous_page != nil do %>
-    const previousPageURL = "<%= previous_url(@conn) %>";
-  <% else %>
-    const previousPageURL = null;
-  <% end %>
-
-  <%= if @next_page != nil do %>
-    const nextPageURL = "<%= next_url(@conn) %>";
-  <% else %>
-    const nextPageURL = null;
-  <% end %>
-
-  const params = {
-    activityTypes: "<%= Jason.encode!(@activity_types) |> Base.encode64() %>",
-    resourceId: <%= @resource_id %>,
-    sectionSlug: "<%= @section_slug %>",
-    userId: <%= @user_id %>,
-    userName: "<%= @current_user.name %>",
-    pageTitle: "<%= Base.encode64(@title) %>",
-    pageSlug: "<%= @slug %>",
-    graded: <%= @graded %>,
-    content: "<%= Base.encode64(@content) %>",
-    resourceAttemptState: <%= raw(@resource_attempt_state) %>,
-    resourceAttemptGuid: "<%= @resource_attempt_guid %>",
-    activityGuidMapping: <%= raw(@activity_guid_mapping) %>,
-    previousPageURL,
-    nextPageURL,
-    previewMode: false,
-    reviewMode: <%= @review_mode %>
-  };
-
-  window.oliMountApplication(document.getElementById('delivery_container'), params);
 </script>
 
 <%= if Oli.Utils.LoadTesting.enabled?() do %>

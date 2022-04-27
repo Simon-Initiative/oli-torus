@@ -222,6 +222,100 @@ defmodule Oli.Seeder do
     |> Map.put(:revision2, revision2)
   end
 
+  def add_adaptive_page(
+        %{project: project, publication: publication, author: author} = seed,
+        activity_resource_tag \\ :adaptive_resource,
+        activity_revision_tag \\ :adaptive_revision,
+        page_resource_tag \\ :adaptive_page_resource,
+        page_revision_tag \\ :adaptive_page_revision
+      ) do
+    # A minimal adaptive activity consisting of a single hello-world screen
+    adaptive_content = %{
+      "custom" => %{
+        "x" => 0,
+        "y" => 0,
+        "z" => 0,
+        "facts" => [],
+        "width" => 1024,
+        "height" => 800
+      },
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "__default",
+            "type" => "janus-text-flow",
+            "owner" => "aa_4134662282",
+            "inherited" => false
+          }
+        ],
+        "rules" => [],
+        "variablesRequiredForEvaluation" => [],
+        "activitiesRequiredForEvaluation" => []
+      },
+      "partsLayout" => [
+        %{
+          "id" => "hello_world",
+          "type" => "janus-text-flow",
+          "custom" => %{
+            "x" => 100,
+            "y" => 213,
+            "z" => 0,
+            "nodes" => [
+              %{
+                "tag" => "p",
+                "children" => [
+                  %{
+                    "tag" => "span",
+                    "style" => %{},
+                    "children" => [
+                      %{
+                        "tag" => "text",
+                        "text" => "Hello World",
+                        "children" => []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "width" => 330,
+            "height" => 22,
+            "visible" => true,
+            "overrideWidth" => true,
+            "customCssClass" => "",
+            "overrideHeight" => false
+          }
+        }
+      ]
+    }
+
+    %{resource: activity_resource, revision: activity_revision} =
+      create_activity(
+        %{
+          activity_type_id: Activities.get_registration_by_slug("oli_adaptive").id,
+          content: adaptive_content
+        },
+        publication,
+        project,
+        author
+      )
+
+    %{resource: page_resource, revision: page_revision} =
+      create_page(
+        "Seeded Adaptive Page",
+        publication,
+        project,
+        author,
+        create_sample_adaptive_page_content(activity_revision.resource_id)
+      )
+
+    seed
+    |> Map.put(page_resource_tag, page_resource)
+    |> Map.put(page_revision_tag, page_revision)
+    |> Map.put(activity_resource_tag, activity_resource)
+    |> Map.put(activity_revision_tag, activity_revision)
+  end
+
   def base_project_with_resource3() do
     mappings = base_project_with_resource2()
 
@@ -696,6 +790,26 @@ defmodule Oli.Seeder do
     create_published_resource(publication, resource, revision)
 
     %{resource: resource, revision: revision}
+  end
+
+  def create_sample_adaptive_page_content(activity_resource_id) do
+    %{
+      "advancedDelivery" => true,
+      "advancedAuthoring" => true,
+      "model" => [
+        %{
+          "id" => "1649184696677",
+          "type" => "group",
+          "layout" => "deck",
+          "children" => [
+            %{
+              "type" => "activity-reference",
+              "activity_id" => activity_resource_id
+            }
+          ]
+        }
+      ]
+    }
   end
 
   def create_sample_content() do
