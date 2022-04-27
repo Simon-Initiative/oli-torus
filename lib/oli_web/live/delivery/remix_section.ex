@@ -635,4 +635,10 @@ defmodule OliWeb.Delivery.RemixSection do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
   end
+
+  defp build_entries(items, assigns, selected) do
+    HierarchyPicker.sort_items(items, assigns)
+    |> Enum.with_index()
+    |> Enum.filter(fn {c, _i} -> c.uuid != selected end)
+  end
 end
