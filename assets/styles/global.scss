@@ -18,3 +18,10 @@ html.delivery.dark {
     transition: all 0.5s ease-in-out;
   }
 }
+
+@media (max-width: 992px) {
+  .filter-opts {
+    flex-direction: column;
+    gap: 1em;
+  }
+}

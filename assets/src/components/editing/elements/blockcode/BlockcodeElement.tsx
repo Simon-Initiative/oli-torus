@@ -114,7 +114,11 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
       </div>
 
       {props.children}
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
     </div>
   );
 };

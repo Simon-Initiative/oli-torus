@@ -411,7 +411,7 @@ defmodule Oli.TestHelpers do
   def make_sections(project, institution, prefix, n, attrs) do
     65..(65 + (n - 1))
     |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
+    |> Enum.map(fn value -> make(project, institution, "#{prefix}#{value}", attrs) end)
   end
 
   def make(project, institution, title, attrs) do

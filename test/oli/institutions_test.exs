@@ -393,6 +393,22 @@ defmodule Oli.InstitutionsTest do
       assert result_institution.id == first_institution.id
     end
 
+    test "find_or_create_institution_by_normalized_url/1 finds existing institution if mixed casing is used",
+         %{institution: first_institution} do
+      _second_institution = institution_fixture()
+
+      {:ok, result_institution} =
+        Institutions.find_or_create_institution_by_normalized_url(%{
+          country_code: "US",
+          institution_email: "institution@example.edu",
+          institution_url: "https://institution.ExAmPle.EDU/",
+          name: "Example Institution",
+          timezone: "US/Eastern"
+        })
+
+      assert result_institution.id == first_institution.id
+    end
+
     test "approve_pending_registration/1 creates a new institution and registration and removes pending registration" do
       {:ok, %PendingRegistration{} = pending_registration} =
         Institutions.create_pending_registration(%{
