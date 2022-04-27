@@ -11,6 +11,7 @@
 - Fix popup content editing
 - Fix image alt text rendering
 - Change ordering question interaction after activity is submitted
+- Fix cross-project activity deletion bug
 
 ### Enhancements
 
