@@ -68,6 +68,7 @@ defmodule Oli.CloneTest do
       assert duplicated.version == "1.0.0"
       assert project.family_id != duplicated.family_id
       assert duplicated.project_id == project.id
+      assert duplicated.publisher_id == project.publisher_id
     end
 
     test "clone_project/2 creates a new collaborator", %{author2: author, duplicated: duplicated} do

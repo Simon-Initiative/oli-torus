@@ -5,6 +5,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Utils
   alias Oli.Authoring.{Course}
   alias Oli.Authoring.Course.Project
+  alias Oli.Inventories
   alias Oli.Publishing
   alias Oli.Qa
   alias Oli.Analytics.Datashop
@@ -29,7 +30,8 @@ defmodule OliWeb.ProjectController do
           Map.get(project_params, :changeset),
           Project.changeset(project)
         ),
-      latest_published_publication: latest_published_publication
+      latest_published_publication: latest_published_publication,
+      publishers: Inventories.list_publishers()
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -181,7 +183,8 @@ defmodule OliWeb.ProjectController do
           activities_enabled: Activities.advanced_activities(project),
           changeset: changeset,
           latest_published_publication:
-            Publishing.get_latest_published_publication_by_slug(project.slug)
+            Publishing.get_latest_published_publication_by_slug(project.slug),
+          publishers: Inventories.list_publishers()
         }
 
         conn
@@ -253,7 +256,8 @@ defmodule OliWeb.ProjectController do
           activities_enabled: Activities.advanced_activities(project),
           changeset: changeset,
           latest_published_publication:
-            Publishing.get_latest_published_publication_by_slug(project.slug)
+            Publishing.get_latest_published_publication_by_slug(project.slug),
+          publishers: Inventories.list_publishers()
         }
 
         conn

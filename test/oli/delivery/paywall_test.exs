@@ -37,7 +37,8 @@ defmodule Oli.Delivery.PaywallTest do
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       user1 = user_fixture() |> Repo.preload(:platform_roles)
@@ -199,7 +200,8 @@ defmodule Oli.Delivery.PaywallTest do
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, product2} =
@@ -213,7 +215,8 @@ defmodule Oli.Delivery.PaywallTest do
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       user1 = user_fixture()
@@ -361,7 +364,8 @@ defmodule Oli.Delivery.PaywallTest do
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, free} =
@@ -375,7 +379,8 @@ defmodule Oli.Delivery.PaywallTest do
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, section} =

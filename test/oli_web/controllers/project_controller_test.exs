@@ -29,6 +29,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
+      publisher = Oli.Inventories.get_publisher(project.publisher_id)
       custom_act = Activities.get_registration_by_slug("oli_image_coding")
 
       %ActivityRegistrationProject{}
@@ -40,7 +41,10 @@ defmodule OliWeb.ProjectControllerTest do
 
       conn = get(conn, Routes.project_path(conn, :overview, project.slug))
 
-      assert html_response(conn, 200) =~ "Overview"
+      response = html_response(conn, 200)
+      assert response =~ "Overview"
+      assert response =~ project.title
+      assert response =~ publisher.name
     end
   end
 
