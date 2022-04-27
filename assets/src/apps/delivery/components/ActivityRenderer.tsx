@@ -92,26 +92,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
-  const [userDataCacheExpiry, setUserDataCacheExpiry] = useState(new Map<string, number>());
-  const [userDataCache, setUserDataCache] = useState<Map<string, any>>(new Map<string, any>());
-
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key } = payload;
-    let data;
-    // if we have a cached value, return it
-    if (userDataCacheExpiry.has(simId) && userDataCache.has(simId)) {
-      const lastRefreshed = userDataCacheExpiry.get(simId) as number;
-      const now = Date.now();
-      // allow updates every 1 second (we really just want to avoid the sim making rapid calls)
-      if (now - lastRefreshed < 1000) {
-        data = userDataCache.get(simId);
-      }
-    }
-    if (!data) {
-      data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
-      userDataCacheExpiry.set(simId, Date.now());
-      userDataCache.set(simId, data);
-    }
+    const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
       /* console.log('GOT DATA', { simId, key, value, data }); */
