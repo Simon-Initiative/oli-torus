@@ -132,7 +132,8 @@ defmodule Oli.EditingTest do
       assert latest_revision.deleted
     end
 
-    test "edit/4 can edit multiple parameters", %{
+
+    test "edit/4 properly handles deleted activities even when an edit to a duplicate", %{
       author: author,
       project: project,
       revision1: revision1
@@ -160,6 +161,88 @@ defmodule Oli.EditingTest do
 
       assert "a new title" == from_db.title
       assert length(Map.get(from_db.content, "model")) == 1
+    end
+
+    test "edit/4 can edit multiple parameters", %{
+      author: author,
+      project: project,
+      revision1: revision1
+    } do
+
+      content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "responses" => [
+                %{
+                  "rule" => "input like {a}",
+                  "score" => 10,
+                  "id" => "r1",
+                  "feedback" => %{"id" => "1", "content" => "yes"}
+                },
+                %{
+                  "rule" => "input like {b}",
+                  "score" => 1,
+                  "id" => "r2",
+                  "feedback" => %{"id" => "2", "content" => "almost"}
+                },
+                %{
+                  "rule" => "input like {c}",
+                  "score" => 0,
+                  "id" => "r3",
+                  "feedback" => %{"id" => "3", "content" => "no"}
+                }
+              ],
+              "scoringStrategy" => "best"
+            }
+          ],
+          "transformations" => []
+        }
+      }
+
+      {:ok, {revision, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
+
+
+      content = %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "id" => 1,
+            "activitySlug" => revision.slug,
+            "purpose" => "none"
+          }
+        ]
+      }
+
+      PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
+
+      {:ok, updated_revision} =
+        PageEditor.edit(project.slug, revision1.slug, author.email, %{
+          "content" => content
+        })
+
+      PageEditor.release_lock(project.slug, revision1.slug, author.email)
+
+      # Now create a duplicate project, and make an edit in that page that removes the activity
+      {:ok, cloned_project} = Oli.Authoring.Clone.clone_project(project.slug, author)
+
+      PageEditor.acquire_lock(cloned_project.slug, revision1.slug, author.email)
+
+      {:ok, updated_revision2} =
+        PageEditor.edit(cloned_project.slug, revision1.slug, author.email, %{
+          "content" => %{
+            "model" => []
+          }
+        })
+
+      refute updated_revision.id == updated_revision2.id
+
+      # Reread the revision of the activity, and verify that it is not deleted
+      refute Oli.Repo.get!(Oli.Resources.Revision, revision.id).deleted
+
     end
 
     test "edit/4 can handle string keys in the update map", %{

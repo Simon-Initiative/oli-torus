@@ -11,7 +11,7 @@ defmodule Oli.PublishingTest do
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources
 
-  def create_activity(parts, author, project, page_revision, obj_resource_id) do
+  def create_activity(parts, author, project, page_revision) do
     # Create a two part activity where each part is tied to one of the objectives above
 
     objectives =
@@ -24,24 +24,6 @@ defmodule Oli.PublishingTest do
 
     {:ok, {revision, _}} =
       ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
-
-    # attach just one activity
-    update = %{
-      "objectives" => %{"attached" => [obj_resource_id]},
-      "content" => %{
-        "model" => [
-          %{
-            "type" => "activity-reference",
-            "id" => 1,
-            "activitySlug" => revision.slug,
-            "purpose" => "none"
-          }
-        ]
-      }
-    }
-
-    PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
-    assert {:ok, _} = PageEditor.edit(project.slug, page_revision.slug, author.email, update)
 
     update = %{"objectives" => objectives}
 
@@ -178,13 +160,14 @@ defmodule Oli.PublishingTest do
       {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
       activity1 =
         create_activity(
           [{"1", [obj1.resource_id]}, {"2", []}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity2 =
@@ -192,8 +175,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj1.resource_id]}, {"2", [obj1.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity3 =
@@ -201,8 +183,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj1.resource_id]}, {"2", [obj2.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity4 =
@@ -210,23 +191,56 @@ defmodule Oli.PublishingTest do
           [{"1", [obj2.resource_id]}, {"2", [obj3.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
+
+      update = %{
+        "objectives" => %{"attached" => [obj1.resource_id]},
+        "content" => %{
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "id" => 1,
+              "activitySlug" => activity1.slug,
+              "purpose" => "none"
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => 2,
+              "activitySlug" => activity2.slug,
+              "purpose" => "none"
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => 3,
+              "activitySlug" => activity3.slug,
+              "purpose" => "none"
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => 4,
+              "activitySlug" => activity4.slug,
+              "purpose" => "none"
+            }
+          ]
+        }
+      }
+
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 
       assert length(results) == 5
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
-      assert Enum.filter(results, fn r -> r.id == activity2.id end) |> length == 2
+      assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length == 2
 
       # the next two have it in only one part
-      assert Enum.filter(results, fn r -> r.id == activity1.id end) |> length == 1
-      assert Enum.filter(results, fn r -> r.id == activity3.id end) |> length == 1
+      assert Enum.filter(results, fn r -> r.resource_id == activity1.resource_id end) |> length == 1
+      assert Enum.filter(results, fn r -> r.resource_id == activity3.resource_id end) |> length == 1
 
       # this activity does not have this objective attached at all
-      assert Enum.filter(results, fn r -> r.id == activity4.id end) |> length == 0
+      assert Enum.filter(results, fn r -> r.resource_id == activity4.resource_id end) |> length == 0
 
       # the page has it attached as well
       assert Enum.filter(results, fn r -> r.resource_id == revision.resource_id end) |> length ==
@@ -295,8 +309,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj.resource_id]}, {"1", []}],
           author,
           project,
-          original_revision,
-          obj.resource_id
+          original_revision
         )
 
       {:acquired} =
