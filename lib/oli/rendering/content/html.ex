@@ -86,7 +86,7 @@ defmodule Oli.Rendering.Content.Html do
     # If the width is hard-coded, do not display responsively.
     figure(attrs, [
       """
-      <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)}class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       """
     ])
   end
@@ -95,7 +95,7 @@ defmodule Oli.Rendering.Content.Html do
     figure(attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9">
-        <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)}class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
