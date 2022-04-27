@@ -65,26 +65,8 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    maybeAlt =
-      case attrs do
-        %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
-        _ -> ""
-      end
-
-    maybeWidth =
-      case attrs do
-        %{"width" => width} -> " width=#{escape_xml!(width)}"
-        _ -> ""
-      end
-
-    maybeHeight =
-      case attrs do
-        %{"height" => height} -> " height=#{escape_xml!(height)}"
-        _ -> ""
-      end
-
     figure(attrs, [
-      ~s|<img class="figure-img img-fluid"#{maybeAlt}#{maybeWidth}#{maybeHeight} src="#{escape_xml!(src)}"/>\n|
+      ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)}#{maybeHeight(attrs)} src="#{escape_xml!(src)}"/>\n|
     ])
   end
 
@@ -100,11 +82,20 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
+  def iframe(%Context{} = _context, _, %{"src" => src, "width" => _w} = attrs) do
+    # If the width is hard-coded, do not display responsively.
+    figure(attrs, [
+      """
+      <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)}class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      """
+    ])
+  end
+
   def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
     figure(attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9">
-        <iframe class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)}class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
@@ -421,6 +412,27 @@ defmodule Oli.Rendering.Content.Html do
       error(context, element, {:invalid, error_id, error_msg})
     else
       []
+    end
+  end
+
+  defp maybeAlt(attrs) do
+    case attrs do
+      %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
+      _ -> ""
+    end
+  end
+
+  defp maybeWidth(attrs) do
+    case attrs do
+      %{"width" => width} -> " width=\"#{escape_xml!(width)}\""
+      _ -> ""
+    end
+  end
+
+  defp maybeHeight(attrs) do
+    case attrs do
+      %{"height" => height} -> " height=\"#{escape_xml!(height)}\""
+      _ -> ""
     end
   end
 end

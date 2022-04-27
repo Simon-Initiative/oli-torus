@@ -14,6 +14,8 @@ import { Maybe } from 'tsmonad';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { modalActions } from 'actions/modal';
 import { ImageModal } from 'components/editing/elements/image/ImageModal';
+import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 
 interface Props extends EditorProps<ContentModel.Image> {}
 export const ImageEditor = (props: Props) => {
@@ -36,10 +38,7 @@ export const ImageEditor = (props: Props) => {
             className="btn btn-primary mr-2"
             onClick={(_e) => {
               selectImage(props.commandContext.projectSlug, props.model.src).then((selection) =>
-                Maybe.maybe(selection).caseOf({
-                  just: (src) => onEdit({ src }),
-                  nothing: () => {},
-                }),
+                Maybe.maybe(selection).map((src) => onEdit({ src })),
               );
             }}
           >
@@ -59,57 +58,7 @@ export const ImageEditor = (props: Props) => {
         align="start"
         position="top"
         content={
-          <Toolbar context={props.commandContext}>
-            <Toolbar.Group>
-              <CommandButton
-                description={{
-                  type: 'CommandDesc',
-                  icon: () => 'insert_photo',
-                  description: () => 'Select Image',
-                  command: {
-                    execute: (context, _editor) => {
-                      selectImage(context.projectSlug, props.model.src).then((selection) =>
-                        Maybe.maybe(selection).caseOf({
-                          just: (src) => onEdit({ src }),
-                          nothing: () => {},
-                        }),
-                      );
-                    },
-                    precondition: (_editor) => {
-                      return true;
-                    },
-                  },
-                }}
-              />
-              <DescriptiveButton
-                description={{
-                  type: 'CommandDesc',
-                  icon: () => '',
-                  description: () => 'Alt text',
-                  command: {
-                    execute: (_context, _editor, _params) => {
-                      const dismiss = () => window.oliDispatch(modalActions.dismiss());
-                      const display = (c: any) => window.oliDispatch(modalActions.display(c));
-
-                      display(
-                        <ImageModal
-                          model={props.model}
-                          onDone={(alt) => {
-                            dismiss();
-                            onEdit({ alt });
-                          }}
-                          onCancel={() => {
-                            dismiss();
-                          }}
-                        />,
-                      );
-                    },
-                    precondition: () => true,
-                  },
-                }}
-              />
-            </Toolbar.Group>
-          </Toolbar>
+          <Settings model={props.model} onEdit={onEdit} commandContext={props.commandContext} />
         }
       >
         <div>
@@ -118,8 +67,67 @@ export const ImageEditor = (props: Props) => {
           </Resizable>
         </div>
       </HoverContainer>
-
       <CaptionEditor onEdit={(caption: string) => onEdit({ caption })} model={props.model} />
     </div>
   );
 };
+
+interface SettingsProps {
+  commandContext: CommandContext;
+  model: ContentModel.Image;
+  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+}
+const Settings = (props: SettingsProps) => {
+  return (
+    <Toolbar context={props.commandContext}>
+      <Toolbar.Group>
+        <SelectImageButton model={props.model} onEdit={props.onEdit} />
+      </Toolbar.Group>
+      <Toolbar.Group>
+        <SettingsButton model={props.model} onEdit={props.onEdit} />
+      </Toolbar.Group>
+    </Toolbar>
+  );
+};
+interface SelectImageProps {
+  model: ContentModel.Image;
+  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+}
+const SelectImageButton = (props: SelectImageProps) => (
+  <CommandButton
+    description={createButtonCommandDesc({
+      icon: 'insert_photo',
+      description: 'Select Image',
+      execute: (context, _editor) =>
+        selectImage(context.projectSlug, props.model.src).then((selection) =>
+          Maybe.maybe(selection).map((src) => props.onEdit({ src })),
+        ),
+    })}
+  />
+);
+
+interface SettingsButtonProps {
+  model: ContentModel.Image;
+  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+}
+const SettingsButton = (props: SettingsButtonProps) => (
+  <DescriptiveButton
+    description={createButtonCommandDesc({
+      icon: '',
+      description: 'Settings',
+      execute: (_context, _editor, _params) =>
+        window.oliDispatch(
+          modalActions.display(
+            <ImageModal
+              model={props.model}
+              onDone={({ alt, width }: Partial<ContentModel.Image>) => {
+                window.oliDispatch(modalActions.dismiss());
+                props.onEdit({ alt, width });
+              }}
+              onCancel={() => window.oliDispatch(modalActions.dismiss())}
+            />,
+          ),
+        ),
+    })}
+  />
+);
