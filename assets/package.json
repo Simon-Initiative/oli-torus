@@ -12,8 +12,9 @@
     "clean": "del --force coverage/** ../priv/static",
     "lint": "eslint --quiet \"src/**/*.ts*\"",
     "format": "eslint --fix --quiet \"src/**/*.ts*\"",
-    "test": "jest && type-coverage",
-    "test:watch": "jest --watch -o"
+    "test": "jest",
+    "test:watch": "jest --watch -o",
+    "type-coverage": "type-coverage"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.5.1",
