@@ -183,6 +183,26 @@
     margin-top: 10px;
     margin-right: 10px;
   }
+
+  .pageBreak {
+    min-height: 20px;
+
+    .contentLink {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+  .pageBreakLabel {
+    font-size: 12px;
+    color: authoring.$gray-600;
+  }
+
+  .pageBreakDashed {
+    flex-grow: 1;
+    border-bottom: 1px dashed authoring.$gray-600;
+    margin: 0 10px 8px 10px;
+  }
 }
 
 :global(html.authoring.dark) {

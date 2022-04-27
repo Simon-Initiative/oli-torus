@@ -16,6 +16,7 @@ import { defaultActivityState } from 'data/activities/utils';
 import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { AddResource } from './AddResource';
+import { PageBreak } from './PageBreak';
 
 // content or referenced activities
 export const createEditor = (
@@ -140,6 +141,10 @@ export const createEditor = (
         />
       </GroupBlock>
     );
+  }
+
+  if (contentItem.type === 'page-break') {
+    return <PageBreak {...editorProps} contentItem={contentItem} index={index}></PageBreak>;
   }
 
   const activity = activities.get((contentItem as ActivityReference).activitySlug);

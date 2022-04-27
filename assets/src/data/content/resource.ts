@@ -22,6 +22,7 @@ export type AttachedObjectives = {
 // entries in a resource content array
 export type ResourceContent =
   | GroupContent
+  | PageBreak
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection;
@@ -34,6 +35,8 @@ export const getResourceContentName = (content: ResourceContent) => {
       return 'Content';
     case 'group':
       return 'Group';
+    case 'page-break':
+      return 'Page Break';
     case 'selection':
       return 'Selection';
   }
@@ -97,6 +100,11 @@ export const createGroup = (
   purpose: 'none',
 });
 
+export const createPageBreak = (): PageBreak => ({
+  type: 'page-break',
+  id: guid(),
+});
+
 export const createDefaultSelection = () => {
   return {
     type: 'selection',
@@ -132,11 +140,16 @@ export interface ActivityReference {
 }
 
 export interface GroupContent {
-  id: string;
   type: 'group';
+  id: string;
   layout: string; // TODO define layout types
   purpose: string;
   children: Immutable.List<ResourceContent>;
+}
+
+export interface PageBreak {
+  type: 'page-break';
+  id: string;
 }
 
 export interface Activity {

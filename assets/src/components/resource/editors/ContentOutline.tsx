@@ -263,77 +263,16 @@ const OutlineItem = ({
   const dropIndex =
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
 
-  return (
-    <>
-      {contentItem.type === 'group' ? (
-        <>
-          {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+  if (contentItem.type === 'group') {
+    return (
+      <>
+        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
-          <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
-            <div
-              className={styles.groupLink}
-              onClick={() => scrollToResourceEditor(id)}
-              role="button"
-              draggable={editMode}
-              tabIndex={0}
-              onDragStart={(e) => onDragStart(e, id)}
-              onDragEnd={onDragEnd}
-              onKeyDown={handleKeyDown(id)}
-              onFocus={(_e) => onFocus(id)}
-              aria-label={assistive}
-            >
-              <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-              <ExpandToggle expanded={true} />
-              <Description title={getGroupTitle(contentItem)}>
-                {contentItem.children.size} items
-              </Description>
-            </div>
-            <div className={styles.groupedOutline}>
-              {contentItem.children
-                .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
-                .map((c, i) => {
-                  return (
-                    <OutlineItem
-                      key={id}
-                      className={className}
-                      id={c.id}
-                      level={level + 1}
-                      index={i}
-                      editMode={editMode}
-                      projectSlug={projectSlug}
-                      activeDragId={activeDragId}
-                      setActiveDragId={setActiveDragId}
-                      handleKeyDown={handleKeyDown}
-                      onFocus={onFocus}
-                      assistive={assistive}
-                      contentItem={c}
-                      activityContexts={activityContexts}
-                      isReorderMode={isReorderMode}
-                      activeDragIndex={activeDragIndex}
-                      parentDropIndex={dropIndex}
-                      content={content}
-                      onEditContent={onEditContent}
-                    />
-                  );
-                })}
-              {isReorderMode && (
-                <DropTarget
-                  id="last"
-                  index={[...dropIndex, contentItem.children.size]}
-                  onDrop={onDropLast}
-                />
-              )}
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
-
+        <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
           <div
-            id={`content-item-${id}`}
-            className={classNames(styles.item, className)}
+            className={styles.groupLink}
             onClick={() => scrollToResourceEditor(id)}
+            role="button"
             draggable={editMode}
             tabIndex={0}
             onDragStart={(e) => onDragStart(e, id)}
@@ -343,16 +282,108 @@ const OutlineItem = ({
             aria-label={assistive}
           >
             <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-            <div
-              className={styles.contentLink}
-              onClick={() => scrollToResourceEditor(id)}
-              role="button"
-            >
-              {renderItem(id, contentItem, activityContexts)}
-            </div>
+            <ExpandToggle expanded={true} />
+            <Description title={getGroupTitle(contentItem)}>
+              {contentItem.children.size} items
+            </Description>
           </div>
-        </>
-      )}
+          <div className={styles.groupedOutline}>
+            {contentItem.children
+              .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+              .map((c, i) => {
+                return (
+                  <OutlineItem
+                    key={id}
+                    className={className}
+                    id={c.id}
+                    level={level + 1}
+                    index={i}
+                    editMode={editMode}
+                    projectSlug={projectSlug}
+                    activeDragId={activeDragId}
+                    setActiveDragId={setActiveDragId}
+                    handleKeyDown={handleKeyDown}
+                    onFocus={onFocus}
+                    assistive={assistive}
+                    contentItem={c}
+                    activityContexts={activityContexts}
+                    isReorderMode={isReorderMode}
+                    activeDragIndex={activeDragIndex}
+                    parentDropIndex={dropIndex}
+                    content={content}
+                    onEditContent={onEditContent}
+                  />
+                );
+              })}
+            {isReorderMode && (
+              <DropTarget
+                id="last"
+                index={[...dropIndex, contentItem.children.size]}
+                onDrop={onDropLast}
+              />
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (contentItem.type === 'page-break') {
+    return (
+      <>
+        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+        <div
+          id={`content-item-${id}`}
+          className={classNames(styles.item, styles.pageBreak, className)}
+          onClick={() => scrollToResourceEditor(id)}
+          draggable={editMode}
+          tabIndex={0}
+          onDragStart={(e) => onDragStart(e, id)}
+          onDragEnd={onDragEnd}
+          onKeyDown={handleKeyDown(id)}
+          onFocus={(_e) => onFocus(id)}
+          aria-label={assistive}
+        >
+          <div
+            className={styles.contentLink}
+            onClick={() => scrollToResourceEditor(id)}
+            role="button"
+          >
+            <div className={styles.pageBreakDashed}></div>
+            <div className={styles.pageBreakLabel}>PAGE BREAK</div>
+            <div className={styles.pageBreakDashed}></div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+      <div
+        id={`content-item-${id}`}
+        className={classNames(styles.item, className)}
+        onClick={() => scrollToResourceEditor(id)}
+        draggable={editMode}
+        tabIndex={0}
+        onDragStart={(e) => onDragStart(e, id)}
+        onDragEnd={onDragEnd}
+        onKeyDown={handleKeyDown(id)}
+        onFocus={(_e) => onFocus(id)}
+        aria-label={assistive}
+      >
+        <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+        <div
+          className={styles.contentLink}
+          onClick={() => scrollToResourceEditor(id)}
+          role="button"
+        >
+          {renderItem(id, contentItem, activityContexts)}
+        </div>
+      </div>
     </>
   );
 };

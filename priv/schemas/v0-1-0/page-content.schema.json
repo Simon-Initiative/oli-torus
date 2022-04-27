@@ -19,6 +19,9 @@
             "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
           },
           {
+            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-page-break.schema.json"
+          },
+          {
             "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
           },
           {
