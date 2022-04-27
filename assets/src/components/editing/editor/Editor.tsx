@@ -35,6 +35,7 @@ export type EditorProps = {
   style?: React.CSSProperties;
   placeholder?: string;
   children?: React.ReactNode;
+  onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -128,6 +129,8 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           onKeyDown={onKeyDown}
           onFocus={emptyOnFocus}
           onPaste={(e) => {
+            if (props.onPaste) return props.onPaste(e);
+
             const pastedText = e.clipboardData?.getData('text')?.trim();
             const youtubeRegex =
               /^(?:(?:https?:)?\/\/)?(?:(?:www|m)\.)?(?:(?:youtube\.com|youtu.be))(?:\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(?:\S+)?$/;

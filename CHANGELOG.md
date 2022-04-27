@@ -22,6 +22,7 @@
 - Allow gates to be defined in products
 - Hide subsequent purpose types for activities when the same purpose type is used in a series
 - Allow students to pay and apply codes during a grace period
+- Support rich text (formatting, etc.) in page content captions
 
 ## 0.18.4 (2022-02-24)
 

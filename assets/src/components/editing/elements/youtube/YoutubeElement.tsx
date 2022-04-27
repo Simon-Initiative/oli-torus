@@ -64,7 +64,11 @@ export const YouTubeEditor = (props: YouTubeProps) => {
           frameBorder={0}
         ></iframe>
       </div>
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
     </div>
   );
 };

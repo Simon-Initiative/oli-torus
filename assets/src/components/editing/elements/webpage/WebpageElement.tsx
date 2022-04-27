@@ -31,7 +31,11 @@ export const WebpageEditor = (props: Props) => {
         allowFullScreen
         frameBorder={0}
       />
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
     </div>
   );
 };
