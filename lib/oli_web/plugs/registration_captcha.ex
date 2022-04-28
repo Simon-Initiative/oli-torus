@@ -8,6 +8,8 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     # plug is only applicable to registration POSTs
     register_path = Routes.pow_registration_path(conn, :create)
 
+    author_register_path = Routes.authoring_pow_registration_path(conn, :create)
+
     register_and_link_provider_path =
       case conn do
         %{params: %{"provider" => provider}} ->
@@ -21,6 +23,10 @@ defmodule Oli.Plugs.RegistrationCaptcha do
       Routes.delivery_path(conn, :process_create_and_link_account_user)
 
     case conn do
+      %Plug.Conn{method: "POST", request_path: ^author_register_path}
+      when author_register_path != nil ->
+        verify_captcha(conn, :register)
+
       %Plug.Conn{method: "POST", request_path: ^register_path} when register_path != nil ->
         verify_captcha(conn, :register)
 
