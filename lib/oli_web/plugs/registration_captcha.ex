@@ -59,7 +59,7 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     end
   end
 
-  defp render_captcha_error(conn, purpose) do
+  defp render_captcha_error(conn, :register_author) do
     conn =
       conn
       |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
@@ -67,31 +67,47 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     changeset = Pow.Plug.change_user(conn, conn.params["user"])
     changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
 
-    case purpose do
-      :register_author ->
-        conn
-        |> OliWeb.DeliveryController.render_create_form(
-          changeset: %{changeset | action: :insert},
-          sign_in_path: Routes.authoring_pow_session_path(conn, :new),
-          cancel_path: Routes.static_page_path(conn, :index)
-        )
-        |> halt()
+    conn
+    |> OliWeb.DeliveryController.render_create_form(
+      changeset: %{changeset | action: :insert},
+      sign_in_path: Routes.authoring_pow_session_path(conn, :new),
+      cancel_path: Routes.static_page_path(conn, :index)
+    )
+    |> halt()
+  end
 
-      :register ->
-        conn
-        |> OliWeb.DeliveryController.render_create_and_link_form(
-          changeset: %{changeset | action: :insert},
-          sign_in_path: Routes.authoring_pow_session_path(conn, :new),
-          cancel_path: Routes.static_page_path(conn, :index)
-        )
-        |> halt()
+  defp render_captcha_error(conn, :register) do
+    conn =
+      conn
+      |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
 
-      :create_and_link_account ->
-        conn
-        |> OliWeb.DeliveryController.render_create_and_link_form(
-          changeset: %{changeset | action: :insert}
-        )
-        |> halt()
-    end
+    {:error, changeset} =
+      Pow.Plug.change_user(conn, conn.params["user"])
+      |> Ecto.Changeset.add_error(:captcha, "failed, please try again")
+      |> Ecto.Changeset.apply_action(:insert)
+
+    conn
+    |> assign(:changeset, changeset)
+    |> assign(:action, Routes.pow_registration_path(conn, :create))
+    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
+    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.render("new.html")
+    |> halt()
+  end
+
+  defp render_captcha_error(conn, :create_and_link_account) do
+    conn =
+      conn
+      |> OliWeb.Pow.PowHelpers.use_pow_config(:author)
+
+    changeset = Pow.Plug.change_user(conn, conn.params["user"])
+    changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
+
+    conn
+    |> OliWeb.DeliveryController.render_create_and_link_form(
+      changeset: %{changeset | action: :insert}
+    )
+    |> halt()
   end
 end
