@@ -27,6 +27,7 @@
   used in a series
 - Allow students to pay and apply codes during a grace period
 - Activity SDK
+- Add editor settings for Image, Webpage (iframe), Youtube elements
 - Support rich text (formatting, etc.) in page content captions
 
 ## 0.18.4 (2022-02-24)
