@@ -32,6 +32,11 @@
             <p class="text-secondary">This project has not been published</p>
         <% end %>
       </div>
+      <div class="form-label-group mb-3">
+        <%= label f, :publisher_id, "Course Publisher", class: "control-label" %>
+        <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
+      </div>
+
       <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
     <% end %>
   </div>

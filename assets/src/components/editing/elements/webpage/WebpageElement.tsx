@@ -48,7 +48,12 @@ export const WebpageEditor = (props: Props) => {
         </div>
       </HoverContainer>
 
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
+
     </div>
   );
 };

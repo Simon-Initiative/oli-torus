@@ -64,9 +64,28 @@ defmodule Oli.Rendering.Content.Html do
     ["<h6>", next.(), "</h6>\n"]
   end
 
-  def img(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [
-      ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)}#{maybeHeight(attrs)} src="#{escape_xml!(src)}"/>\n|
+
+  def img(%Context{} = context, _, %{"src" => src} = attrs) do
+    maybeAlt =
+      case attrs do
+        %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
+        _ -> ""
+      end
+
+    maybeWidth =
+      case attrs do
+        %{"width" => width} -> " width=#{escape_xml!(width)}"
+        _ -> ""
+      end
+
+    maybeHeight =
+      case attrs do
+        %{"height" => height} -> " height=#{escape_xml!(height)}"
+        _ -> ""
+      end
+
+    figure(context, attrs, [
+      ~s|<img class="figure-img img-fluid"#{maybeAlt}#{maybeWidth}#{maybeHeight} src="#{escape_xml!(src)}"/>\n|
     ])
   end
 
@@ -105,8 +124,8 @@ defmodule Oli.Rendering.Content.Html do
     missing_media_src(context, e)
   end
 
-  def audio(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [~s|<audio controls src="#{escape_xml!(src)}">
+  def audio(%Context{} = context, _, %{"src" => src} = attrs) do
+    figure(context, attrs, [~s|<audio controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
     </audio>\n|])
   end
@@ -159,7 +178,7 @@ defmodule Oli.Rendering.Content.Html do
 
   # V2 - presence of "code" attr
   def code(
-        %Context{} = _context,
+        %Context{} = context,
         _next,
         %{
           "language" => language,
@@ -175,14 +194,14 @@ defmodule Oli.Rendering.Content.Html do
         "text"
       end
 
-    figure(attrs, [
+    figure(context, attrs, [
       ~s|<pre><code class="language-#{language}">#{escape_xml!(code)}</code></pre>\n|
     ])
   end
 
   # V1 - content as children
   def code(
-        %Context{} = _context,
+        %Context{} = context,
         next,
         %{
           "language" => language
@@ -197,7 +216,7 @@ defmodule Oli.Rendering.Content.Html do
         "text"
       end
 
-    figure(attrs, [
+    figure(context, attrs, [
       ~s|<pre><code class="language-#{language}">|,
       next.(),
       "</code></pre>\n"
@@ -205,14 +224,14 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def code(
-        %Context{} = _context,
+        %Context{} = context,
         next,
         attrs
       ) do
     {_error_id, _error_msg} =
       log_error("Malformed content element. Missing language attribute", attrs)
 
-    figure(attrs, [
+    figure(context, attrs, [
       ~s|<pre><code class="language-none">|,
       next.(),
       "</code></pre>\n"
@@ -390,20 +409,28 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp figure(%{"caption" => ""} = _attrs, content), do: content
+  defp figure(_context, %{"caption" => ""} = _attrs, content), do: content
 
-  defp figure(%{"caption" => caption} = _attrs, content) do
+  defp figure(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
     [~s|<div class="figure-wrapper">|] ++
       [~s|<figure class="figure embed-responsive text-center">|] ++
       content ++
       [~s|<figcaption class="figure-caption text-center">|] ++
-      [escape_xml!(caption)] ++
+      [caption(context, caption_content)] ++
       ["</figcaption>"] ++
       ["</figure>"] ++
       ["</div>"]
   end
 
-  defp figure(_attrs, content), do: content
+  defp figure(_context, _attrs, content), do: content
+
+  defp caption(_context, content) when is_binary(content) do
+    escape_xml!(content)
+  end
+
+  defp caption(context, content) do
+    Oli.Rendering.Content.render(context, content, __MODULE__)
+  end
 
   defp missing_media_src(%Context{render_opts: render_opts} = context, element) do
     {error_id, error_msg} = log_error("Malformed content element. Missing src attribute", element)

@@ -9,6 +9,9 @@ interface SlateElement<Children extends Descendant[]> extends BaseElement, Ident
 
 export type ModelElement = TopLevel | Block | Inline;
 
+// All allows all SlateElement types. Small disallows full-width items like tables, webpages. Inline is only formatted text and inline elements like links.
+export type ContentModelMode = 'all' | 'small' | 'inline';
+
 type TopLevel = TextBlock | List | Media | Table | Math | (CodeV1 | CodeV2) | Blockquote;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
 type Inline = Hyperlink | Popup | InputRef;
@@ -64,7 +67,7 @@ export interface Image extends SlateElement<VoidChildren> {
   height?: number;
   width?: number;
   alt?: string;
-  caption?: string;
+  caption?: Caption;
   // Legacy, unused;
   display?: string;
 }
@@ -75,7 +78,7 @@ export interface YouTube extends SlateElement<VoidChildren> {
   height?: number;
   width?: number;
   alt?: string;
-  caption?: string;
+  caption?: Caption;
   // Legacy, unused;
   display?: string;
 }
@@ -84,7 +87,7 @@ export interface Audio extends SlateElement<VoidChildren> {
   type: 'audio';
   src?: string;
   alt?: string;
-  caption?: string;
+  caption?: Caption;
 }
 
 // Webpage and Iframe are synonymous. Webpage is used in most UI-related
@@ -95,14 +98,14 @@ export interface Webpage extends SlateElement<VoidChildren> {
   height?: number;
   width?: number;
   alt?: string;
-  caption?: string;
+  caption?: Caption;
   // Legacy, unused
   display?: string;
 }
 
 export interface Table extends SlateElement<TableRow[]> {
   type: 'table';
-  caption?: string;
+  caption?: Caption;
 }
 
 export interface Math extends SlateElement<MathLine[]> {
@@ -112,13 +115,13 @@ export interface Math extends SlateElement<MathLine[]> {
 export interface CodeV1 extends SlateElement<CodeLine[]> {
   type: 'code';
   language: string;
-  caption?: string;
+  caption?: Caption;
 }
 export interface CodeV2 extends SlateElement<VoidChildren> {
   type: 'code';
   code: string;
   language: string;
-  caption?: string;
+  caption?: Caption;
 }
 export type Code = CodeV2;
 
@@ -166,3 +169,8 @@ export interface Popup extends SlateElement<Text[]> {
   trigger: OverlayTriggerType;
   content: RichText;
 }
+
+// Captions were formerly only strings
+type CaptionV1 = string;
+export type CaptionV2 = (Inline | Paragraph)[];
+export type Caption = CaptionV2 | CaptionV1;

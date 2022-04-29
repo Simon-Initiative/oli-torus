@@ -60,6 +60,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   return (
     <div {...props.attributes} className="youtube-editor" contentEditable={false}>
       {props.children}
+
       <HoverContainer
         style={{ margin: '0 auto', display: 'block' }}
         isOpen={selected}
@@ -81,7 +82,12 @@ export const YouTubeEditor = (props: YouTubeProps) => {
         </div>
       </HoverContainer>
 
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
+
     </div>
   );
 };
