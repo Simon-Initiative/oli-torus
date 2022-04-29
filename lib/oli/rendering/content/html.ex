@@ -101,17 +101,17 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
-  def iframe(%Context{} = _context, _, %{"src" => src, "width" => _w} = attrs) do
+  def iframe(%Context{} = context, _, %{"src" => src, "width" => _w} = attrs) do
     # If the width is hard-coded, do not display responsively.
-    figure(attrs, [
+    figure(context, attrs, [
       """
       <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       """
     ])
   end
 
-  def iframe(%Context{} = _context, _, %{"src" => src} = attrs) do
-    figure(attrs, [
+  def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
+    figure(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9">
         <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
@@ -456,10 +456,4 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  defp maybeHeight(attrs) do
-    case attrs do
-      %{"height" => height} -> " height=\"#{escape_xml!(height)}\""
-      _ -> ""
-    end
-  end
 end
