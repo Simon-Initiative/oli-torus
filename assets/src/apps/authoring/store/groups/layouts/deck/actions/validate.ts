@@ -449,6 +449,13 @@ const validateLessonVariables = (page: any) => {
     .filter((s: any) => s);
   const testEnv = new Environment();
   evalScript(janus_std, testEnv);
+  if (page.customScript) {
+    try {
+      evalScript(page.customScript, testEnv);
+    } catch (e) {
+      console.error('Error evaluating custom script: ', e);
+    }
+  }
   // execute each sequentially in case there are errors (missing functions)
   const broken: any[] = [];
   statements.forEach((statement: any) => {
