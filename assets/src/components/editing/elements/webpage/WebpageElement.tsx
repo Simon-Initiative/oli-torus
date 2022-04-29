@@ -53,7 +53,6 @@ export const WebpageEditor = (props: Props) => {
         model={props.model}
         commandContext={props.commandContext}
       />
-
     </div>
   );
 };
