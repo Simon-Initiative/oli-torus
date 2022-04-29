@@ -34,9 +34,12 @@ defmodule Oli.Delivery.Paywall do
     else
       enrollment = Sections.get_enrollment(slug, id)
 
-      case is_nil(enrollment) do
-        true -> AccessSummary.not_enrolled()
-        _ ->
+      if is_nil(enrollment) and section.requires_enrollment do
+        AccessSummary.not_enrolled()
+      else
+        if section.pay_by_institution do
+          AccessSummary.pay_by_institution()
+        else
           case has_paid?(enrollment) do
             true -> AccessSummary.paid()
             _ ->
@@ -45,10 +48,12 @@ defmodule Oli.Delivery.Paywall do
                 _ -> AccessSummary.not_paid()
               end
           end
+        end
       end
     end
-
   end
+
+  defp has_paid?(nil), do: false
 
   defp has_paid?(%Enrollment{id: id}) do
     query =
@@ -64,6 +69,8 @@ defmodule Oli.Delivery.Paywall do
       _ -> true
     end
   end
+
+  defp within_grace_period?(nil, _), do: false
 
   defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
 

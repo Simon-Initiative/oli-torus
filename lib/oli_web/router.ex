@@ -90,8 +90,8 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
-  pipeline :enforce_paywall do
-    plug(Oli.Plugs.EnforcePaywall)
+  pipeline :enforce_enroll_and_paywall do
+    plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
   # Ensure that we have a logged in user
@@ -685,7 +685,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery_protected,
       :maybe_gated_resource,
-      :enforce_paywall,
+      :enforce_enroll_and_paywall,
       :pow_email_layout
     ])
 

@@ -78,6 +78,47 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Not authorized"
     end
 
+    test "handles student access who is not enrolled when section requires enrollment", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Not authorized"
+    end
+
+    test "handles student access who is enrolled but has not paid", %{conn: conn, user: user, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
+    end
+
+    test "handles student access who is enrolled, has not paid but is pay by institution", %{conn: conn, user: user, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        pay_by_institution: true
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
+
     test "shows the prologue page on an assessment", %{
       user: user,
       conn: conn,
@@ -583,6 +624,59 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
+    end
+
+    test "handles student access who has not paid when section not requires enrollment", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false
+      })
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
+    end
+
+    test "handles student access who is not enrolled and has not paid when section requires enrollment", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Not authorized"
+    end
+
+    test "handles student access who is enrolled but has not paid", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
     end
   end
 
