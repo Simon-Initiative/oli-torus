@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Hierarchy
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
-  alias OliWeb.Common.Hierarchy.MoveModal
+  alias OliWeb.Common.Hierarchy.{HierarchyPicker, MoveModal}
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
@@ -634,5 +634,11 @@ defmodule OliWeb.Delivery.RemixSection do
   defp previous_uuid(breadcrumbs) do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
+  end
+
+  defp build_entries(items, assigns, selected) do
+    HierarchyPicker.sort_items(items, assigns)
+    |> Enum.with_index()
+    |> Enum.filter(fn {c, _i} -> c.uuid != selected end)
   end
 end

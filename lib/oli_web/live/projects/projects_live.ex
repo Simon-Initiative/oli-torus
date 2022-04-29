@@ -205,7 +205,7 @@ defmodule OliWeb.Projects.ProjectsLive do
           <%= live_component PagedTable, page_change: "paged_table_page_change", sort: "paged_table_sort",
             total_count: @total_count, filter: @text_search,
             selection_change: nil, allow_selection: false,
-            limit: @limit, offset: @offset, table_model: @table_model %>
+            limit: @limit, offset: @offset, table_model: @table_model, show_bottom_paging: true %>
         </div>
       </div>
     </div>

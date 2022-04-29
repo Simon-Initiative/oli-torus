@@ -117,11 +117,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // apply a custom *janus* script if defined
       // this is for user defined functions (also legacy)
       // TODO: something if there are errors
-      const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
-      /* console.log('Lesson Custom Script: ', {
+      try {
+        const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
+        /* console.log('Lesson Custom Script: ', {
         script: pageContent?.customScript,
         csResult,
       }); */
+      } catch (e) {
+        console.error('Error in custom script: ', e);
+      }
     }
 
     if (Array.isArray(pageContent?.custom?.variables)) {

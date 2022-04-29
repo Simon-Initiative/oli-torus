@@ -10,6 +10,8 @@ import {
   activityDeliverySlice,
   ActivityDeliveryState,
   initializeState,
+  isEvaluated,
+  isSubmitted,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -91,6 +93,7 @@ export const OrderingComponent: React.FC = () => {
             .valueOr<StudentInput>([])
             .map((id) => Choices.getOne(model, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
+          disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
         <ResetButtonConnected
           onReset={() =>

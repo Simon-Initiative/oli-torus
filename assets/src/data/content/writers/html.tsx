@@ -41,7 +41,7 @@ import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import { WriterContext } from './context';
-import { Next, WriterImpl } from './writer';
+import { Next, WriterImpl, ContentWriter } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -69,18 +69,21 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => mark(acc), <>{text}</>);
   }
 
-  private figure(attrs: any, content: React.ReactElement) {
+  private figure(context: WriterContext, attrs: any, content: React.ReactElement) {
     if (!attrs.caption) {
       return content;
     }
+    const caption =
+      attrs.caption &&
+      (typeof attrs.caption === 'string'
+        ? this.escapeXml(attrs.caption)
+        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
 
     return (
       <div className="figure-wrapper">
         <figure className="figure embed-responsive text-center">
           {content}
-          <figcaption className="figure-caption text-center">
-            {this.escapeXml(attrs.caption)}
-          </figcaption>
+          <figcaption className="figure-caption text-center">{caption}</figcaption>
         </figure>
       </div>
     );
@@ -110,6 +113,7 @@ export class HtmlParser implements WriterImpl {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <img
         className="figure-img img-fluid"
@@ -132,6 +136,7 @@ export class HtmlParser implements WriterImpl {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <div className="embed-responsive embed-responsive-16by9">
         <iframe className="embed-responsive-item" allowFullScreen src={this.escapeXml(attrs.src)} />
@@ -142,6 +147,7 @@ export class HtmlParser implements WriterImpl {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <audio controls src={this.escapeXml(attrs.src)}>
         Your browser does not support the <code>audio</code> element.
@@ -149,9 +155,15 @@ export class HtmlParser implements WriterImpl {
     );
   }
   table(context: WriterContext, next: Next, attrs: Table) {
+    const caption =
+      attrs.caption &&
+      (typeof attrs.caption === 'string'
+        ? this.escapeXml(attrs.caption)
+        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
+
     return (
       <table>
-        {attrs.caption ? <caption>{this.escapeXml(attrs.caption)}</caption> : undefined}
+        {attrs.caption ? <caption>{caption}</caption> : undefined}
         {next()}
       </table>
     );
@@ -186,16 +198,18 @@ export class HtmlParser implements WriterImpl {
     if ('code' in attrs) return this.codev2(context, next, attrs as CodeV2, langClass);
     return this.codev1(context, next, attrs as CodeV1, langClass);
   }
-  codev1(_context: WriterContext, next: Next, attrs: CodeV1, className: string) {
+  codev1(context: WriterContext, next: Next, attrs: CodeV1, className: string) {
     return this.figure(
+      context,
       attrs,
       <pre>
         <code className={`language-${className}`}>{next()}</code>
       </pre>,
     );
   }
-  codev2(_context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
+  codev2(context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
     return this.figure(
+      context,
       attrs,
       <pre>
         <code className={`language-${className}`}>{this.escapeXml(attrs.code)}</code>

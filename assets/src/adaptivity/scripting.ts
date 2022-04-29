@@ -475,6 +475,11 @@ export const templatizeText = (
   isFromTrapStates = false,
 ): string => {
   let innerEnv = env; // TODO: this should be a child scope
+  // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
+  // and we should just return it as is; if it has variables inside, then we still need to evaluate it
+  if (text.indexOf('\\') >= 0 && text.search(/app\.|variables\.|stage\.|session\./) === -1) {
+    return text;
+  }
   let vars = extractAllExpressionsFromText(text);
   const totalVariablesLength = vars?.length;
   // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
@@ -565,7 +570,7 @@ export const templatizeText = (
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
     } else if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toString());
+      strValue = parseFloat(parseFloat(strValue).toFixed(2));
     }
     return strValue;
   });
