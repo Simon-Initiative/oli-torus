@@ -15,5 +15,6 @@ defmodule Oli.Rendering.Context do
             page_id: nil,
             section_slug: nil,
             project_slug: nil,
-            activity_types_map: %{}
+            activity_types_map: %{},
+            resource_attempt: nil
 end

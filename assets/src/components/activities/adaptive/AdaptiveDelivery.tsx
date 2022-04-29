@@ -22,7 +22,9 @@ const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   console.log('Adaptive props', props);
-  const [activityId, setActivityId] = useState<string>(props.model?.id || `unknown-${Date.now()}`);
+  const [activityId, setActivityId] = useState<string>(
+    props.model?.id || `adaptive_activity_dkgjg_413217445`,
+  );
   const [mode, setMode] = useState<string>(props.mode);
 
   const isReviewMode = mode === 'review';
@@ -188,6 +190,24 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             env,
           });
         } else {
+          // when calling onReady normally it would do all the init state and fill in from attempt state too
+          const attemptStateMap = currentAttemptState.parts.reduce((collect: any, part: any) => {
+            // build like we do a responseMap
+            const { response } = part;
+            if (response) {
+              const responseElements = Object.keys(response).reduce((final: any, key) => {
+                const responseElement = response[key];
+                final[key] = responseElement;
+
+                return final;
+              }, {});
+              collect = { ...collect, ...responseElements };
+            }
+            // TODO
+            return collect;
+          }, {});
+          const testRes = evalAssignScript(attemptStateMap, scriptEnv);
+          console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap });
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
           console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
@@ -195,13 +215,16 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             adaptivityDomain,
             props,
             snapshot,
+            currentAttemptState,
           });
-          partsInitDeferred.resolve({
+          const context = {
             snapshot,
             context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
-          });
+          };
+          partsInitDeferred.resolve(context);
+          pusher.emit(NotificationType.CONTEXT_CHANGED, context);
         }
       }
       return partsInitDeferred.promise;
