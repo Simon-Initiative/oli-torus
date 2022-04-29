@@ -40,4 +40,4 @@
   </script>
 <% end %>
 
-<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>
+<%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview, active_page_break: @active_page_break %>

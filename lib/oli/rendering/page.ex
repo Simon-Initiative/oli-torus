@@ -16,33 +16,50 @@ defmodule Oli.Rendering.Page do
   Renders an Oli page given a valid page model (list of page items).
   Returns an IO list of raw html strings to be further processed by Phoenix/BEAM writev.
   """
-  def render(%Context{render_opts: render_opts} = context, elements, writer) when is_list(elements) do
-    Enum.reduce(elements, [], fn element, output ->
-      case element do
-        %{"type" => "content"} ->
-          output ++ writer.content(context, element)
+  def render(%Context{render_opts: render_opts, active_page_break: active_page_break} = context, elements, writer) when is_list(elements) do
+    {rendered, _} = Enum.reduce(elements, {[], 1}, fn element, {output, pb_counter} ->
+      # we only take the rendered output if we are in the active page. by default, all content is
+      # considered to be on page 1 unless a page break is encountered
+      if active_page_break == pb_counter do
+        case element do
+          %{"type" => "content"} ->
+            {output ++ writer.content(context, element), pb_counter}
 
-        # Activity bank selections only are rendered during an instructor preview, otherwise
-        # they have already been realized into specific activity-references
-        %{"type" => "selection"} ->
-          output ++ writer.content(context, element)
+          # Activity bank selections only are rendered during an instructor preview, otherwise
+          # they have already been realized into specific activity-references
+          %{"type" => "selection"} ->
+            {output ++ writer.content(context, element), pb_counter}
 
-        %{"type" => "activity-reference"} ->
-          output ++ writer.activity(context, element)
+          %{"type" => "activity-reference"} ->
+            {output ++ writer.activity(context, element), pb_counter}
 
-        %{"type" => "group"} ->
-          output ++ writer.group(context, element, writer)
+          %{"type" => "group"} ->
+            {output ++ writer.group(context, element, writer), pb_counter}
 
-        _ ->
-          {error_id, error_msg} = log_error("Element type is not supported", element)
+          %{"type" => "page-break"} ->
+            {output, pb_counter + 1}
 
-          if render_opts.render_errors do
-            output ++ writer.error(context, element, {:unsupported, error_id, error_msg})
-          else
-            output
-          end
+          _ ->
+            {error_id, error_msg} = log_error("Element type is not supported", element)
+
+            if render_opts.render_errors do
+              {output ++ writer.error(context, element, {:unsupported, error_id, error_msg}), pb_counter}
+            else
+              {output, pb_counter}
+            end
+        end
+      else
+        case element do
+          %{"type" => "page-break"} ->
+            {output, pb_counter + 1}
+
+          _ ->
+            {output, pb_counter}
+        end
       end
     end)
+
+    rendered
   end
 
   # Renders an error message if the signature above does not match. Logging and rendering of errors

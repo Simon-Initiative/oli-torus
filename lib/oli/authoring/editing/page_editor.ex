@@ -21,6 +21,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
+  alias Oli.Resources.PageContent
 
   import Ecto.Query, warn: false
 
@@ -229,7 +230,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
          activityContexts: ActivityEditor.create_contexts(project_slug, activity_ids),
          project: publication.project,
          previous_page: previous,
-         next_page: next
+         next_page: next,
+         num_page_breaks: PageContent.count_page_breaks(revision.content)
        }}
     else
       _ -> {:error, :not_found}
@@ -261,7 +263,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            user: author,
            mode: mode,
            activity_map: activities,
-           project_slug: project_slug
+           project_slug: project_slug,
+           active_page_break: Keyword.get(options, :active_page_break, 1)
          } do
       Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
     else

@@ -14,6 +14,7 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
+  alias Oli.Resources.PageContent
 
   @doc """
   This method should be called after any hierarchy-changing operation
@@ -353,6 +354,7 @@ defmodule Oli.Delivery.Hierarchy do
               _ -> previous
             end,
           "next" => nil,
+          "num_page_breaks" => PageContent.count_page_breaks(node.revision.content),
           "graded" => "#{node.revision.graded}",
           "children" =>
             Enum.map(node.children, fn hn -> Integer.to_string(hn.revision.resource_id) end)

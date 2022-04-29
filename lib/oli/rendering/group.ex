@@ -24,7 +24,9 @@ defmodule Oli.Rendering.Group do
         writer,
         pageWriter
       ) do
-    next = fn -> Page.render(context, children, pageWriter) end
+    # reset active_page_break here to 1 since we only want it to affect top-level model children and
+    # groups should not contain any more than the single implicit page break
+    next = fn -> Page.render(%Context{context | active_page_break: 1}, children, pageWriter) end
     writer.group(context, next, element)
   end
 
