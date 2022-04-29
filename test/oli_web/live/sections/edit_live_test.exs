@@ -109,6 +109,16 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "loads section data correctly", %{conn: conn} do
+      section = insert(:section, requires_payment: true)
+
+      {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
+
+      assert html =~ "Edit Section Details"
+      assert html =~ "Payment Settings"
+      assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
+    end
+
+    test "loads open and free section data correctly", %{conn: conn} do
       section = insert(:section, open_and_free: true)
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))

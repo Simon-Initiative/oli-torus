@@ -74,6 +74,13 @@ defmodule OliWeb.Products.Details.Edit do
               <div><%= error_tag f, :amount %></div>
             </div>
 
+            <%= unless get_field(@changeset, :open_and_free) do %>
+              <div class="custom-control custom-switch" style="width: 200px;">
+                <%= checkbox f, :pay_by_institution, disabled: !@is_admin or !get_field(@changeset, :requires_payment), class: "custom-control-input" <> error_class(f, :pay_by_institution, "is-invalid"), autofocus: focusHelper(f, :pay_by_institution) %>
+                <%= label f, :pay_by_institution, "Pay by institution", class: "custom-control-label" %>
+                <%= error_tag f, :pay_by_institution %>
+              </div>
+            <% end %>
           </div>
 
           <div class="form-row">

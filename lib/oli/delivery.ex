@@ -72,6 +72,7 @@ defmodule Oli.Delivery do
           lti_1p3_deployment_id: deployment.id,
           blueprint_id: blueprint.id,
           amount: amount,
+          pay_by_institution: blueprint.pay_by_institution,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
           line_items_service_url: AGS.get_line_items_url(lti_params),
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
