@@ -1,7 +1,7 @@
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
-import { isInternalLink, normalizeHref, toInternalLink } from './utils';
+import { isInternalLink, normalizeHref, toInternalLink } from 'data/content/model/elements/utils';
 import { Hyperlink } from 'data/content/model/elements/types';
 
 type ExistingLinkEditorProps = {

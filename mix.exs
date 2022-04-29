@@ -76,8 +76,15 @@ defmodule Oli.MixProject do
       "guides/lti/implementing.md",
       "guides/lti/config.md",
       "guides/ingest/overview.md",
-      "guides/ingest/media.md"
-    ]
+      "guides/ingest/media.md",
+      "assets/typedocs/modules.md"
+    ] ++ list_typedoc_files()
+  end
+
+  defp list_typedoc_files() do
+    Path.wildcard("assets/typedocs/interfaces/*.md")
+    ++ Path.wildcard("assets/typedocs/enums/*.md")
+    ++ Path.wildcard("assets/typedocs/classes/*.md")
   end
 
   defp groups_for_extras do
@@ -88,7 +95,11 @@ defmodule Oli.MixProject do
       "System design": ~r/guides\/design\/.?/,
       "Activity SDK": ~r/guides\/activities\/.?/,
       "LTI 1.3": ~r/guides\/lti\/.?/,
-      "Content ingestion": ~r/guides\/ingest\/.?/
+      "Content ingestion": ~r/guides\/ingest\/.?/,
+      "Client Side API": ~r/assets\/typedocs\/modules.md/,
+      "Interfaces": ~r/assets\/typedocs\/interfaces\/.?/,
+      "Enums": ~r/assets\/typedocs\/enums\/.?/,
+      "Classes": ~r/assets\/typedocs\/classes\/.?/,
     ]
   end
 

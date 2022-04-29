@@ -26,6 +26,7 @@
 - Hide subsequent purpose types for activities when the same purpose type is
   used in a series
 - Allow students to pay and apply codes during a grace period
+- Activity SDK
 - Add editor settings for Image, Webpage (iframe), Youtube elements
 - Support rich text (formatting, etc.) in page content captions
 

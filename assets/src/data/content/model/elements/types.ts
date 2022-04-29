@@ -1,5 +1,4 @@
 import { RichText } from 'components/activities/types';
-import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { BaseElement, Descendant, Text } from 'slate';
 import { Identifiable } from '../other';
 
@@ -166,7 +165,7 @@ export interface InputRef extends SlateElement<Text[]> {
 
 export interface Popup extends SlateElement<Text[]> {
   type: 'popup';
-  trigger: OverlayTriggerType;
+  trigger: any;
   content: RichText;
 }
 

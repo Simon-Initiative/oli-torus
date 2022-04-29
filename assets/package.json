@@ -13,7 +13,8 @@
     "lint": "eslint --quiet \"src/**/*.ts*\"",
     "format": "eslint --fix --quiet \"src/**/*.ts*\"",
     "test": "jest && type-coverage",
-    "test:watch": "jest --watch -o"
+    "test:watch": "jest --watch -o",
+    "sdk-docs": "npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.5.1",
@@ -68,6 +69,8 @@
     "swiper": "^8.0.6",
     "terser-webpack-plugin": "^5.2.4",
     "tsmonad": "^0.8.0",
+    "typedoc": "^0.22.15",
+    "typedoc-plugin-markdown": "^3.12.0",
     "typescript": "^4.4.4",
     "uuid": "^8.3.2",
     "vm-browserify": "^1.1.2",
