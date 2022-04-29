@@ -25,7 +25,7 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     case conn do
       %Plug.Conn{method: "POST", request_path: ^author_register_path}
       when author_register_path != nil ->
-        verify_captcha(conn, :register)
+        verify_captcha(conn, :register_author)
 
       %Plug.Conn{method: "POST", request_path: ^register_path} when register_path != nil ->
         verify_captcha(conn, :register)
@@ -68,6 +68,15 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
 
     case purpose do
+      :register_author ->
+        conn
+        |> OliWeb.DeliveryController.render_create_form(
+          changeset: %{changeset | action: :insert},
+          sign_in_path: Routes.authoring_pow_session_path(conn, :new),
+          cancel_path: Routes.static_page_path(conn, :index)
+        )
+        |> halt()
+
       :register ->
         conn
         |> OliWeb.DeliveryController.render_create_and_link_form(
