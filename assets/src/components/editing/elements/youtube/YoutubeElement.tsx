@@ -87,7 +87,6 @@ export const YouTubeEditor = (props: YouTubeProps) => {
         model={props.model}
         commandContext={props.commandContext}
       />
-
     </div>
   );
 };
