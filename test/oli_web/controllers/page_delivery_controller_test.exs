@@ -770,6 +770,21 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
+  describe "export" do
+    setup [:admin_conn]
+
+    test "export enrollments as csv", %{conn: conn} do
+      user = insert(:user)
+      section = insert(:section)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+    end
+  end
+
   defp setup_session(%{conn: conn}) do
     user = user_fixture()
 

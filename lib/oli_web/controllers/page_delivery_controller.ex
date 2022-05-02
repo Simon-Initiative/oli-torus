@@ -719,6 +719,41 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
+  def export_enrollments(conn, %{"section_slug" => section_slug}) do
+    user = conn.assigns.current_user
+
+    if is_admin?(conn) or
+         ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) do
+      section = Sections.get_section_by(slug: section_slug)
+
+      enrollments_csv_text = build_enrollments_text(Sections.list_enrollments(section.slug))
+      cost = case section do
+        %Section{requires_payment: false} -> "Free"
+        %Section{requires_payment: true, amount: amount} ->
+          {:ok, m} = Money.to_string(amount)
+          m
+      end
+      csv_text = "Cost: #{cost}\r\n\r\n" <> enrollments_csv_text
+
+      filename = "Enrollments-#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+
+      conn
+      |> put_resp_content_type("text/csv")
+      |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+      |> send_resp(200, csv_text)
+    else
+      render(conn, "not_authorized.html")
+    end
+  end
+
+  defp build_enrollments_text(enrollments) do
+    ([["Student name", "Student email", "Enrolled on"]] ++
+      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, record.inserted_at] end))
+    |> CSV.encode()
+    |> Enum.to_list()
+    |> to_string()
+  end
+
   def is_admin?(conn) do
     case conn.assigns.current_author do
       nil -> false

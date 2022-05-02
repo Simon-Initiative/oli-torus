@@ -749,6 +749,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
+    post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
