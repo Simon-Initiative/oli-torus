@@ -151,7 +151,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
       const handler = (payload: any) => {
         console.log(
           `${notificationType.toString()} notification handled [%cMultiline text Input%c]`,
-          'color: aqua;',
+          'color: lime;',
           'color: black;',
           payload,
         );
