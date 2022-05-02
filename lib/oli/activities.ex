@@ -55,6 +55,10 @@ defmodule Oli.Activities do
     end
   end
 
+  defp build_path(path) do
+    Application.app_dir(:oli, path)
+  end
+
   defp locate_manifest(entries) do
     case Enum.find(entries, fn {name, _} ->  List.to_string(name) == "manifest.json" end) do
       nil -> {nil, %{}}
@@ -82,7 +86,7 @@ defmodule Oli.Activities do
       :ok ->
         Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
           filename = List.to_string(file)
-          case File.write("priv/static/js/#{manifest.id}/#{filename}", content) do
+          case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
             :ok -> {:cont, {:ok}}
             e -> {:halt, e}
           end
@@ -101,7 +105,7 @@ defmodule Oli.Activities do
   end
 
   defp make_dir(%Manifest{} = manifest) do
-    case File.mkdir("priv/static/js/#{manifest.id}") do
+    case build_path("priv/static/js/#{manifest.id}") |> File.mkdir() do
       :ok -> :ok
       {:error, :eexist} -> :ok
       e -> e
