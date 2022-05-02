@@ -361,5 +361,33 @@
     "children": [],
     "id": 4097071353,
     "type": "activity-reference"
+  },
+  {
+    "type": "page-break",
+    "id": 4097071354
+  },
+  {
+    "type": "content",
+    "id": 2635423624,
+    "children": [
+      {
+        "type": "h3",
+        "id": 2652513352,
+        "children": [
+          {
+            "text": "Part 2"
+          }
+        ]
+      },
+      {
+        "type": "p",
+        "id": 2652513352,
+        "children": [
+          {
+            "text": "This content should be rendered on page 2"
+          }
+        ]
+      }
+    ]
   }
 ]
