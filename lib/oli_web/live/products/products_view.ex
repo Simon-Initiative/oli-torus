@@ -139,16 +139,10 @@ defmodule OliWeb.Products.ProductsView do
   def handle_event("create", _, socket) do
     case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
       {:ok, blueprint} ->
-        blueprint = Repo.preload(blueprint, :base_project)
-        products = [blueprint | socket.assigns.products]
-        table_model = Map.put(socket.assigns.table_model, :rows, products)
-
         {:noreply,
-         assign(socket,
-           table_model: table_model,
-           products: products,
-           total_count: socket.assigns.total_count + 1
-         )}
+          socket
+          |> put_flash(:info, "Product successfully created.")
+          |> redirect(to: Routes.live_path(socket, OliWeb.Products.DetailsView, blueprint.slug))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}

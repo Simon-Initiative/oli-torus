@@ -25,6 +25,13 @@ defmodule Oli.Inventories.PublisherTest do
       refute changeset.valid?
     end
 
+    test "changeset should be invalid if email has invalid format" do
+      changeset = Publisher.changeset(build(:publisher), %{email: "invalid_email"})
+
+      refute changeset.valid?
+      assert changeset.errors[:email] |> elem(0) == "has invalid format"
+    end
+
     test "changeset should be invalid if name is not unique" do
       publisher = insert(:publisher)
 

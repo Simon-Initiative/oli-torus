@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { FeedbackCard } from 'components/activities/common/responses/FeedbackCard';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { HasParts, RichText } from 'components/activities/types';

@@ -1,11 +1,7 @@
 import { configureStore } from 'state/store';
 import React from 'react';
-import {
-  AuthoringElement,
-  AuthoringElementProps,
-  AuthoringElementProvider,
-  useAuthoringElementContext,
-} from 'components/activities/AuthoringElement';
+import { AuthoringElement, AuthoringElementProps } from 'components/activities/AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';

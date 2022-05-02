@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';

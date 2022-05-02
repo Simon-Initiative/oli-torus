@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.DetailsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
@@ -8,6 +8,7 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Branding
+  alias Oli.Inventories
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Confirm
   alias OliWeb.Sections.Mount
@@ -41,9 +42,12 @@ defmodule OliWeb.Products.DetailsView do
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
+        publishers = Inventories.list_publishers()
+
         {:ok,
          assign(socket,
            available_brands: available_brands,
+           publishers: publishers,
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
@@ -66,7 +70,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-md-8">
-          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} is_admin={@is_admin}/>
+          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} publishers={@publishers} is_admin={@is_admin}/>
         </div>
       </div>
       <div class="row py-5 border-bottom">

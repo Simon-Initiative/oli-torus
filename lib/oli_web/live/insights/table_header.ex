@@ -1,11 +1,47 @@
 defmodule OliWeb.Insights.TableHeader do
   use Phoenix.LiveComponent
 
+  def th(assigns, sort_by, title, tooltip) do
+    ~L"""
+    <th
+      tabindex="0"
+      style="cursor: pointer"
+      phx-click="sort"
+      phx-keyup="sort"
+      phx-value-sort-by="<%= sort_by %>"
+      scope="col"
+      data-trigger="hover focus"
+      data-toggle=<%= if tooltip do "popover" else "" end %>
+      data-placement="top"
+      data-content="<%= tooltip %>"
+    >
+      <%= title %>
+      <%= sort_order_icon(sort_by, @sort_by, @sort_order) %>
+    </th>
+    """
+  end
+
   def render(assigns) do
     ~L"""
     <thead>
       <tr>
-        <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="title" scope="col">
+        <%= th(assigns,
+          "title",
+          case @selected do
+            :by_page -> "Page Title"
+            :by_activity -> "Activity Title"
+            :by_objective -> "Objective"
+            _ -> "Objective"
+          end,
+          false)
+        %>
+        <th
+          tabindex="0"
+          style="cursor: pointer"
+          phx-click="sort"
+          phx-value-sort-by="title"
+          scope="col"
+          phx-keyup="sort">
           <%= case @selected do
             :by_page -> "Page Title"
             :by_activity -> "Activity Title"
@@ -17,22 +53,26 @@ defmodule OliWeb.Insights.TableHeader do
         <%= if @selected == :by_page || @selected == :by_objective do %>
           <th scope="col">Activity Title</th>
         <% end %>
-        <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="number_of_attempts" scope="col">
-          Number of Attempts
-          <%= sort_order_icon("number_of_attempts", @sort_by, @sort_order) %>
-        </th>
-        <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="relative_difficulty" scope="col">
-          Relative Difficulty
-          <%= sort_order_icon("relative_difficulty", @sort_by, @sort_order) %>
-        </th>
-        <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="eventually_correct" scope="col">
-          Eventually Correct
-          <%= sort_order_icon("eventually_correct", @sort_by, @sort_order) %>
-        </th>
-        <th style="cursor: pointer" phx-click="sort" phx-value-sort-by="first_try_correct" scope="col">
-          First Try Correct
-          <%= sort_order_icon("first_try_correct", @sort_by, @sort_order) %>
-        </th>
+        <%= th(assigns,
+          "number_of_attempts",
+          "Number of Attempts",
+          "Number of total student submissions")
+        %>
+        <%= th(assigns,
+          "relative_difficulty",
+          "Relative Difficulty",
+          "(Number of hints requested + Number of incorrect submissions) / Total submissions")
+        %>
+        <%= th(assigns,
+          "eventually_correct",
+          "Eventually Correct",
+          "Ratio of the time a student with at least one submission eventually gets the correct answer")
+        %>
+        <%= th(assigns,
+          "first_try_correct",
+          "First Try Correct",
+          "Ratio of the time a student gets the correct answer on their first submission")
+        %>
       </tr>
     </thead>
     """

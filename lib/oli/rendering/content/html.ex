@@ -64,6 +64,7 @@ defmodule Oli.Rendering.Content.Html do
     ["<h6>", next.(), "</h6>\n"]
   end
 
+
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
     maybeAlt =
       case attrs do
@@ -100,11 +101,20 @@ defmodule Oli.Rendering.Content.Html do
 
   def youtube(%Context{} = _context, _, _e), do: ""
 
+  def iframe(%Context{} = context, _, %{"src" => src, "width" => _w} = attrs) do
+    # If the width is hard-coded, do not display responsively.
+    figure(context, attrs, [
+      """
+      <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      """
+    ])
+  end
+
   def iframe(%Context{} = context, _, %{"src" => src} = attrs) do
     figure(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9">
-        <iframe class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+        <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
       </div>
       """
     ])
@@ -431,4 +441,19 @@ defmodule Oli.Rendering.Content.Html do
       []
     end
   end
+
+  defp maybeAlt(attrs) do
+    case attrs do
+      %{"alt" => alt} -> " alt=\"#{escape_xml!(alt)}\""
+      _ -> ""
+    end
+  end
+
+  defp maybeWidth(attrs) do
+    case attrs do
+      %{"width" => width} -> " width=\"#{escape_xml!(width)}\""
+      _ -> ""
+    end
+  end
+
 end

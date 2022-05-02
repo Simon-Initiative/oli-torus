@@ -8,7 +8,7 @@ import { MultipleChoiceComponent } from 'components/activities/multiple_choice/M
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
-import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { makeHint } from 'components/activities/types';
 import { defaultActivityState } from 'data/activities/utils';
 
