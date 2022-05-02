@@ -26,7 +26,8 @@ defmodule Oli.Authoring.Clone do
                title: base_project.title <> new_project_title_suffix,
                version: "1.0.0",
                family_id: cloned_family.id,
-               project_id: base_project.id
+               project_id: base_project.id,
+               publisher_id: base_project.publisher_id
              }),
            {:ok, _} <- Collaborators.add_collaborator(author, cloned_project),
            base_root_container <- AuthoringResolver.root_container(base_project.slug),

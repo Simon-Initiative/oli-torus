@@ -37,6 +37,30 @@ defmodule Oli.Inventories do
   end
 
   @doc """
+  Finds or creates a publisher.
+
+  ## Examples
+
+      iex> find_or_create_publisher(%{field: value})
+      {:ok, %Publisher{}}
+
+      iex> find_or_create_publisher(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def find_or_create_publisher(attrs) do
+    case get_publisher_by(%{name: attrs[:name]}) do
+      nil ->
+        create_publisher(attrs)
+
+      %Publisher{} = publisher ->
+        {:ok, publisher}
+    end
+  end
+
+  def default_publisher_name, do: "Torus Publisher"
+
+  @doc """
   Gets a publisher by id.
 
   ## Examples
@@ -47,6 +71,18 @@ defmodule Oli.Inventories do
       nil
   """
   def get_publisher(id), do: Repo.get(Publisher, id)
+
+  @doc """
+  Gets a single publisher by query parameter
+
+  ## Examples
+
+      iex> get_publisher_by(%{name: "example"})
+      %Publisher{}
+      iex> get_publisher_by(%{name: "bad_name"})
+      nil
+  """
+  def get_publisher_by(clauses), do: Repo.get_by(Publisher, clauses)
 
   @doc """
   Updates a publisher.

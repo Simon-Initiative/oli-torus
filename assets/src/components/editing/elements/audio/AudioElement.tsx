@@ -15,7 +15,11 @@ export const AudioEditor = (props: AudioProps) => {
     <div {...props.attributes} contentEditable={false} className="m-4 pl-4 pr-4 text-center">
       {props.children}
       <audio src={props.model.src} controls />
-      <CaptionEditor onEdit={(caption: string) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
     </div>
   );
 };

@@ -18,6 +18,7 @@ defmodule Oli.Seeder do
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Delivery.Snapshots.Snapshot
+  alias Oli.Inventories
   alias Oli.Qa.Reviews
   alias Oli.Activities
   alias Oli.Delivery.Gating
@@ -26,12 +27,15 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
+    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+
     {:ok, project} =
       Project.changeset(%Project{}, %{
         description: "description",
         title: "Example Course",
         version: "1",
-        family_id: family.id
+        family_id: family.id,
+        publisher_id: publisher.id
       })
       |> Repo.insert()
 
@@ -111,12 +115,15 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
+    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+
     {:ok, project} =
       Project.changeset(%Project{}, %{
         description: "description",
         title: "Example Open and Free Course",
         version: "1",
-        family_id: family.id
+        family_id: family.id,
+        publisher_id: publisher.id
       })
       |> Repo.insert()
 
@@ -407,7 +414,8 @@ defmodule Oli.Seeder do
           description: "a description",
           context_id: UUID.uuid4(),
           base_project_id: map.project.id,
-          institution_id: map.institution.id
+          institution_id: map.institution.id,
+          publisher_id: map.project.publisher_id
         },
         attrs
       )
@@ -455,12 +463,15 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
+    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+
     {:ok, project} =
       Project.changeset(%Project{}, %{
         description: "description",
         title: title,
         version: "1",
-        family_id: family.id
+        family_id: family.id,
+        publisher_id: publisher.id
       })
       |> Repo.insert()
 

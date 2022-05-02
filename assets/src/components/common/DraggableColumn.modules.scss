@@ -11,6 +11,9 @@
   width: 24px;
   margin-right: 0.5rem;
 }
+.draggableColumnIndicator.disabled {
+  cursor: default !important;
+}
 
 .draggableColumnCard {
   @extend .d-flex;
@@ -18,6 +21,7 @@
   @extend .align-items-center;
   cursor: default !important;
   border-radius: 4px;
+  background: authoring.$body-bg;
 }
 
 .draggableColumnOutlined {

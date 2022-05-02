@@ -37,7 +37,7 @@ export const EditorToolbar = (props: Props) => {
 
   const activeBlockDesc = activeBlockType(editor);
 
-  const blockToggling = (
+  const blockToggling = props.toolbarInsertDescs.length > 0 && (
     <Toolbar.Group>
       <DropdownButton description={activeBlockDesc}>
         {toggleTextTypes
@@ -118,7 +118,7 @@ export const EditorToolbar = (props: Props) => {
     </Toolbar.Group>
   );
 
-  const insertMenu = (
+  const insertMenu = props.toolbarInsertDescs.length > 0 && (
     <Toolbar.Group>
       <DropdownButton description={addItemDropdown}>
         {props.toolbarInsertDescs

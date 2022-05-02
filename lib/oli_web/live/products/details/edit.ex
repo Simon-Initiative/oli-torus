@@ -8,6 +8,7 @@ defmodule OliWeb.Products.Details.Edit do
   prop product, :any, default: nil
   prop changeset, :any, default: nil
   prop available_brands, :any, default: nil
+  prop publishers, :list, required: true
   prop is_admin, :boolean
 
   defp statuses do
@@ -47,6 +48,14 @@ defmodule OliWeb.Products.Details.Edit do
             <%= label f, :description %>
             <%= text_input f, :description, class: "form-control" %>
             <div><%= error_tag f, :description %></div>
+          </div>
+
+          <div class="form-group">
+            <%= label f, :publisher_id, "Course Publisher" %>
+            <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
+              class: "form-control " <> error_class(f, :publisher_id, "is-invalid"),
+              autofocus: focusHelper(f, :publisher_id), required: true %>
+            <div><%= error_tag f, :publisher_id %></div>
           </div>
 
           <h5 class="mt-5 mb-3">Paywall Settings</h5>

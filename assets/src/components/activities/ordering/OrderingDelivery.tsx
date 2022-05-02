@@ -10,6 +10,8 @@ import {
   activityDeliverySlice,
   ActivityDeliveryState,
   initializeState,
+  isEvaluated,
+  isSubmitted,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -20,12 +22,8 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
 
@@ -95,6 +93,7 @@ export const OrderingComponent: React.FC = () => {
             .valueOr<StudentInput>([])
             .map((id) => Choices.getOne(model, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
+          disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
         <ResetButtonConnected
           onReset={() =>

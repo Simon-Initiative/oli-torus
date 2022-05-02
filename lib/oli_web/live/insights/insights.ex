@@ -112,25 +112,44 @@ defmodule OliWeb.Insights do
   # CLick same column -> reverse sort order
   def handle_event(
         "sort",
-        %{"sort-by" => column} = _event,
+        %{"sort-by" => column} = event,
         %{assigns: %{sort_by: sort_by, sort_order: :asc}} = socket
       )
       when column == sort_by do
-    {:noreply, assign(socket, sort_by: sort_by, sort_order: :desc)}
+    {:noreply,
+     if click_or_enter_key?(event) do
+       assign(socket, sort_by: sort_by, sort_order: :desc)
+     else
+       socket
+     end}
   end
 
   def handle_event(
         "sort",
-        %{"sort-by" => column} = _event,
+        %{"sort-by" => column} = event,
         %{assigns: %{sort_by: sort_by, sort_order: :desc}} = socket
       )
       when column == sort_by do
-    {:noreply, assign(socket, sort_by: sort_by, sort_order: :asc)}
+    {:noreply,
+     if click_or_enter_key?(event) do
+       assign(socket, sort_by: sort_by, sort_order: :asc)
+     else
+       socket
+     end}
   end
 
   # Click new column
-  def handle_event("sort", %{"sort-by" => column} = _event, socket) do
-    {:noreply, assign(socket, sort_by: column)}
+  def handle_event("sort", %{"sort-by" => column} = event, socket) do
+    {:noreply,
+     if click_or_enter_key?(event) do
+       assign(socket, sort_by: column)
+     else
+       socket
+     end}
+  end
+
+  defp click_or_enter_key?(event) do
+    event["key"] == nil or event["key"] == "Enter"
   end
 
   defp sort(rows, "title", :asc), do: rows |> Enum.sort(&(&1.slice.title > &2.slice.title))

@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import { Maybe } from 'tsmonad';
 import { valueOr } from 'utils/common';
 import {
   Action,
@@ -13,74 +12,181 @@ import {
   Success,
   DeliveryMode,
 } from './types';
-import React, { useContext } from 'react';
-import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 
+/**
+ * Response to a submitted activity evaluation.
+ */
 export interface EvaluationResponse extends Success {
   actions: Action[];
 }
 
-// Notice that the hint attribute here is optional.  If a
-// client requests a hint and there are no more, the platform
-// will return an instance of this interface with hasMoreHints set to false
-// and the hint attribute missing.
+/**
+ * Reponse to a request for an additional hint.
+ * Notice that the hint attribute here is optional.  If a
+ * client requests a hint and there are no more, the platform
+ * will return an instance of this interface with hasMoreHints set to false
+ * and the hint attribute missing.
+ */
 export interface RequestHintResponse extends Success {
   hint?: Hint;
   hasMoreHints: boolean;
 }
 
+/**
+ * Response to a request to reset the activity attempt. Resetting
+ * an activity attempt simply creates a new activity attempt.
+ */
 export interface ResetActivityResponse extends Success {
   attemptState: ActivityState;
   model: ActivityModelSchema;
 }
 
+/**
+ * Response to reset a specific part attempt.
+ */
 export interface PartActivityResponse extends Success {
   attemptState: PartState;
 }
 
+/**
+ * Delivery web component properties made available via the
+ * `render` method.
+ */
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
+  /**
+   * Whether the activity is operating within the context of a graded page.
+   */
   graded: boolean;
+  /**
+   * The model of the activity, pruned to remove the authoring specific portion.
+   */
   model: T;
+  /**
+   * The state of the activity and part attempts.
+   */
   state: ActivityState;
+  /**
+   * The current delivery mode.
+   */
   mode: DeliveryMode;
+  /**
+   * The unique id of the course section.
+   */
   sectionSlug?: string;
+  /**
+   * The unique id of the student user.
+   */
   userId: number;
+  /**
+   * @ignore
+   */
   notify?: EventEmitter;
+  /**
+   * The HTML div element reference created by the abstract component for use in
+   * rendering by the concrete implementation.
+   */
   mountPoint?: HTMLElement;
 
+  /**
+   * Allows read access to the user state.
+   */
   onReadUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+  /**
+   * Allows writing to the user state.
+   */
   onWriteUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+
+  /**
+   * Initiaties saving of the student response for all parts.
+   */
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
+
+  /**
+   * Submits all parts of the attempt for evaluation.
+   */
   onSubmitActivity: (
     attemptGuid: string,
     partResponses: PartResponse[],
   ) => Promise<EvaluationResponse>;
+
+  /**
+   * Resets this activity attempt to create a new attempt.
+   */
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>;
 
+  /**
+   * Requests a hint for a specific part.
+   */
   onRequestHint: (attemptGuid: string, partAttemptGuid: string) => Promise<RequestHintResponse>;
+
+  /**
+   * Saves the state of a specific part.
+   */
   onSavePart: (
     attemptGuid: string,
     partAttemptGuid: string,
     response: StudentResponse,
   ) => Promise<Success>;
+
+  /**
+   * Submits for evaluation one part.
+   */
   onSubmitPart: (
     attemptGuid: string,
     partAttemptGuid: string,
     response: StudentResponse,
   ) => Promise<EvaluationResponse>;
+  /**
+   * Resets the attempt for one part.
+   */
   onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>;
+
+  /**
+   * Submits client-side evaluations.
+   */
   onSubmitEvaluations: (
     attemptGuid: string,
     clientEvaluations: ClientEvaluation[],
   ) => Promise<EvaluationResponse>;
+  /**
+   * @ignore
+   */
   onReady?: (attemptGuid: string) => Promise<Success>;
+  /**
+   * @ignore
+   */
   onResize?: (attemptGuid: string) => Promise<Success>;
 }
 
-// An abstract delivery web component, designed to delegate to
-// a React component.  This delivery web component will re-render
-// the underlying React component when the 'model' attribute of the
-// the web component changes
+/**
+ * An abstract delivery web component, designed to delegate rendering
+ * via the `render` method.  This delivery web component will re-render
+ * when the 'model' attribute of the the web component changes.  It also provides
+ * several callback function to allow the concrete implemenation to initiate
+ * lifecylce events (e.g. request a hint, reset an attempt, etc).
+ *
+ * While the delegated implementation is a React component in the case of natively
+ * implemented activities, this does not need to be the case.  This `DeliveryElement`
+ * implementation is tech-stack agnostic.  One can use it to implement the authoring
+ * component of a Torus activity in Vanilla JS, React, Vue, Angular, etc.
+ *
+ * ```typescript
+ * // A typical React delegation
+ * export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
+ *   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
+ *     const store = configureStore({}, activityDeliverySlice.reducer);
+ *     ReactDOM.render(
+ *       <Provider store={store}>
+ *         <DeliveryElementProvider {...props}>
+ *           <MultipleChoiceComponent />
+ *         </DeliveryElementProvider>
+ *       </Provider>,
+ *       mountPoint,
+ *     );
+ *   }
+ *  }
+ * ```
+ */
 export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTMLElement {
   mountPoint: HTMLDivElement;
   connected: boolean;
@@ -120,6 +226,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     super();
     this.mountPoint = document.createElement('div');
     this.connected = false;
+    this.review = false;
 
     // need a way to push into the react component w/o rerendering the custom element
     this._notify = new EventEmitter().setMaxListeners(50);
@@ -238,6 +345,15 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     };
   }
 
+  /**
+   * Implemented by concrete web component, the `render` method is called
+   * once after the web component has been mounted and "connected" to the DOM, and
+   * then again every time that either the `state` or `model` attributes have
+   * changed on the web component.
+   * @param mountPoint a top level div element created by the component that the
+   * concrete impl can use to render the rest of the actual UX
+   * @param props the current set of delivery component properties
+   */
   abstract render(mountPoint: HTMLDivElement, props: DeliveryElementProps<T>): void;
 
   connectedCallback() {
@@ -252,26 +368,3 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     }
   }
 }
-
-export interface DeliveryElementState<T> extends DeliveryElementProps<T> {
-  writerContext: WriterContext;
-}
-const DeliveryElementContext = React.createContext<DeliveryElementState<any> | undefined>(
-  undefined,
-);
-export function useDeliveryElementContext<T>() {
-  return Maybe.maybe(
-    useContext<DeliveryElementState<T> | undefined>(DeliveryElementContext),
-  ).valueOrThrow(
-    new Error('useDeliveryElementContext must be used within an DeliveryElementProvider'),
-  );
-}
-export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
-  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
-
-  return (
-    <DeliveryElementContext.Provider value={{ ...props, writerContext }}>
-      {props.children}
-    </DeliveryElementContext.Provider>
-  );
-};

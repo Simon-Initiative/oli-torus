@@ -290,6 +290,26 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
 export const getReferencedKeysInConditions = (conditions: any) => {
   const references: Set<string> = new Set();
 
+  const extractRefsFromString = (str: string) => {
+    // value could have more than one reference inside it
+    const exprs = extractAllExpressionsFromText(str);
+    const expressions = str.match(/{([^{^}]+)}/g) || [];
+    exprs.forEach((expr: string) => {
+      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+        references.add(expr);
+      }
+    });
+    expressions.forEach((expr: string) => {
+      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+        //we should remove the {}
+        const actualExp = expr.substring(1, expr.length - 1);
+        if (!references.has(actualExp)) {
+          references.add(expr.substring(1, expr.length - 1));
+        }
+      }
+    });
+  };
+
   conditions.forEach(
     (condition: {
       all: boolean;
@@ -302,25 +322,12 @@ export const getReferencedKeysInConditions = (conditions: any) => {
         references.add(condition.fact);
       }
       // the value *might* contain a reference to a key we need
-      if (
-        typeof condition.value === 'string' &&
-        condition.value.search(/app\.|variables\.|stage\.|session\./) !== -1
-      ) {
-        // value could have more than one reference inside it
-        const exprs = extractAllExpressionsFromText(condition.value);
-        const expressions = condition.value.match(/{([^{^}]+)}/g) || [];
-        exprs.forEach((expr: string) => {
-          if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-            references.add(expr);
-          }
-        });
-        expressions.forEach((expr: string) => {
-          if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-            //we should remove the {}
-            const actualExp = expr.substring(1, expr.length - 1);
-            if (!references.has(actualExp)) {
-              references.add(expr.substring(1, expr.length - 1));
-            }
+      if (typeof condition.value === 'string') {
+        extractRefsFromString(condition.value);
+      } else if (Array.isArray(condition.value)) {
+        condition.value.forEach((value: any) => {
+          if (typeof value === 'string') {
+            extractRefsFromString(value);
           }
         });
       }

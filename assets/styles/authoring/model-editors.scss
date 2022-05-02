@@ -17,6 +17,7 @@
       overflow: hidden;
 
       .table-dropdown {
+        z-index: 1;
         position: absolute;
         top: 5px;
         right: 8px;
@@ -70,16 +71,10 @@
   }
 
   .settings-input {
+    padding-top: 0 !important;
     text-align: center;
-    border: 0;
     width: 100%;
     height: auto;
     color: rgba($color: $body-color, $alpha: 0.68);
-    background: transparent;
-    outline: none;
-  }
-  .settings-input:active::placeholder,
-  .settings-input:focus::placeholder {
-    color: transparent;
   }
 }
