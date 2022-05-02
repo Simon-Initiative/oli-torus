@@ -384,6 +384,25 @@ defmodule Oli.TestHelpers do
     end)
   end
 
+  # Sets up a mock to simulate a recaptcha failure
+  def expect_recaptcha_http_failure_post() do
+    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+
+    Oli.Test.MockHTTP
+    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "challenge_ts" => "some-challenge-ts",
+             "hostname" => "testkey.google.com",
+             "success" => false
+           })
+       }}
+    end)
+  end
+
   def part_component_registration_fixture(attrs \\ %{}) do
     params =
       attrs
