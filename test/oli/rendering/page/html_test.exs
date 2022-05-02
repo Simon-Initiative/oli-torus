@@ -44,6 +44,9 @@ defmodule Oli.Content.Page.HtmlTest do
       assert rendered_html_string =~ "<h3>Introduction</h3>"
       assert rendered_html_string =~ "<oli-multiple-choice-delivery"
       assert rendered_html_string =~ "<oli-check-all-that-apply-delivery"
+
+      assert rendered_html_string =~ "<div class=\"content-purpose-label\">Learn by doing"
+      assert rendered_html_string =~ "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
     end
 
     test "renders malformed page gracefully", %{author: author} do
