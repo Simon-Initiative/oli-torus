@@ -12,6 +12,7 @@ defmodule Oli.Activities do
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Activities.ActivityMapEntry
   import Oli.Utils
+  require Logger
 
   def register_activity(%Manifest{} = manifest, subdirectory \\ "") do
     attrs = %{
@@ -42,17 +43,19 @@ defmodule Oli.Activities do
             if String.starts_with?(manifest.id, "#{expected_namespace}_") do
               process_register_from_bundle(manifest, entries)
             else
+              Logger.info("Invalid namespace")
               {:error, :invalid_namespace}
             end
-          e -> e
+          e ->
+            e
         end
       _ ->
+        Logger.info("Invalid archive")
         {:error, :invalid_archive}
     end
   end
 
   defp locate_manifest(entries) do
-
     case Enum.find(entries, fn {name, _} ->  List.to_string(name) == "manifest.json" end) do
       nil -> {nil, %{}}
       manifest -> manifest
@@ -61,13 +64,16 @@ defmodule Oli.Activities do
 
 
   defp parse_manifest({nil, _}) do
+    Logger.info("Missing manifest")
     {:error, :missing_manifest}
   end
 
   defp parse_manifest({_, content}) do
     case Poison.decode(content) do
       {:ok, json} -> Manifest.parse(json)
-      e -> e
+      e ->
+        Logger.info("Could not parse manifest")
+        e
     end
   end
 
@@ -81,7 +87,9 @@ defmodule Oli.Activities do
             e -> {:halt, e}
           end
         end)
-      e -> e
+      e ->
+        Logger.info("Error encountered during unbundling")
+        e
     end
 
     case result do

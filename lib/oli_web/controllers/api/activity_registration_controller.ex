@@ -66,12 +66,11 @@ defmodule OliWeb.Api.ActivityRegistrationController do
       expected_namespace = get_api_namespace(conn)
       case Activities.register_from_bundle(upload.path, expected_namespace) do
         {:ok, _} -> json(conn, %{result: :success})
-        _ ->
-          error(conn, 400, "error")
+        e ->
+          error(conn, 400, Kernel.inspect(e))
       end
     else
       error(conn, 400, "invalid key")
-
     end
   end
 
