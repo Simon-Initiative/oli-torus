@@ -30,12 +30,11 @@
           section_slug: @section_slug,
           previous_page: @previous_page,
           next_page: @next_page,
+          current_page: @current_page,
           section: @section,
           preview_mode: @preview_mode,
           revision: @revision,
-          title: @title,
           resource_slug: @resource_slug,
-          num_page_breaks: @num_page_breaks,
           active_page_break: @active_page_break %>
 
       </div>

@@ -89,9 +89,7 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_visit(Section, String.t(), Oli.Accounts.User, Integer.t()) ::
-          %PageContext{}
-  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user, active_page_break) do
+  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user, active_page_break \\ 1) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 

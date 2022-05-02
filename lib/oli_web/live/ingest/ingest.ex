@@ -58,13 +58,8 @@ defmodule OliWeb.Admin.Ingest do
   def handle_event("ingest", _params, socket) do
     %{author: author} = socket.assigns
 
-    with path_upload <-
-          consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry ->
-            path
-            |> IO.inspect
-          end),
+    with path_upload <- consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
          {:ok, project} <- Ingest.ingest(hd(path_upload), author) do
-
       {:noreply , redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
     else
       error ->

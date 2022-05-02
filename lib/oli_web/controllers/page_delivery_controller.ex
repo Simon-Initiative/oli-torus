@@ -148,13 +148,13 @@ defmodule OliWeb.PageDeliveryController do
             section_slug: section_slug,
             previous_page: previous,
             next_page: next,
+            current_page: current,
             preview_mode: preview_mode,
             page_link_url: page_link_url,
             container_link_url: container_link_url,
             active_page: nil,
             revision: revision,
             resource_slug: revision.slug,
-            num_page_breaks: 1,
             active_page_break: 1
           )
 
@@ -293,6 +293,7 @@ defmodule OliWeb.PageDeliveryController do
         preview_mode: true,
         previous_page: previous,
         next_page: next,
+        current_page: current,
         title: revision.title,
         html: html,
         objectives: [],
@@ -301,7 +302,6 @@ defmodule OliWeb.PageDeliveryController do
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
         container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
         resource_slug: revision.slug,
-        num_page_breaks: current["num_page_breaks"],
         active_page_break: active_page_break
       }
     )
@@ -372,6 +372,7 @@ defmodule OliWeb.PageDeliveryController do
       resource_attempts: resource_attempts,
       previous_page: previous,
       next_page: next,
+      current_page: current,
       title: context.page.title,
       allow_attempt?: allow_attempt?,
       message: message,
@@ -383,7 +384,6 @@ defmodule OliWeb.PageDeliveryController do
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
-      num_page_breaks: current["num_page_breaks"],
       active_page_break: context.active_page_break
     })
   end
@@ -435,6 +435,7 @@ defmodule OliWeb.PageDeliveryController do
       slug: context.page.slug,
       previous_page: previous,
       next_page: next,
+      current_page: current,
       user_id: user.id,
       preview_mode: preview_mode,
       section: section,
@@ -442,7 +443,6 @@ defmodule OliWeb.PageDeliveryController do
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
-      num_page_breaks: current["num_page_breaks"],
       active_page_break: context.active_page_break
     })
   end
@@ -503,6 +503,7 @@ defmodule OliWeb.PageDeliveryController do
           Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a.slug) end),
         previous_page: previous,
         next_page: next,
+        current_page: current,
         title: context.page.title,
         graded: context.page.graded,
         activity_count: map_size(context.activities),
@@ -518,7 +519,6 @@ defmodule OliWeb.PageDeliveryController do
         container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
         revision: context.page,
         resource_slug: context.page.slug,
-        num_page_breaks: current["num_page_breaks"],
         active_page_break: context.active_page_break
       }
     )
@@ -629,7 +629,7 @@ defmodule OliWeb.PageDeliveryController do
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user) do
     section = conn.assigns.section
-    context = PageContext.create_for_visit(section, revision_slug, user, 1)
+    context = PageContext.create_for_visit(section, revision_slug, user)
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
@@ -662,6 +662,7 @@ defmodule OliWeb.PageDeliveryController do
       preview_mode: preview_mode,
       previous_page: previous,
       next_page: next,
+      current_page: current,
       title: context.page.title,
       message: message,
       slug: context.page.slug,
@@ -670,7 +671,6 @@ defmodule OliWeb.PageDeliveryController do
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
       resource_slug: context.page.slug,
-      num_page_breaks: current["num_page_breaks"],
       active_page_break: context.active_page_break
     )
   end
