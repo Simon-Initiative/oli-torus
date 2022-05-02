@@ -24,6 +24,22 @@ const partSchema: JSONSchema7 = {
         height: { type: 'number', title: 'Height' },
       },
     },
+    Scoring: {
+      type: 'object',
+      title: 'Scoring',
+      properties: {
+        requiresManualGrading: {
+          title: 'Requires Manual Grading',
+          type: 'boolean',
+          format: 'checkbox',
+          default: false,
+        },
+        maxScore: {
+          title: 'Max Score',
+          type: 'number',
+        },
+      },
+    },
     custom: { type: 'object', properties: { addtionalProperties: { type: 'string' } } },
   },
   required: ['id'],
@@ -57,11 +73,21 @@ export const partUiSchema = {
       classNames: 'col-6',
     },
   },
+  Scoring: {
+    'ui:ObjectFieldTemplate': CustomFieldTemplate,
+    'ui:title': 'Scoring',
+    requiresManualGrading: {
+      classNames: 'col-6',
+    },
+    maxScore: {
+      classNames: 'col-6',
+    },
+  },
 };
 
 export const transformModelToSchema = (model: any) => {
   const { id, type } = model;
-  const { x, y, z, width, height } = model.custom;
+  const { x, y, z, width, height, requiresManualGrading, maxScore } = model.custom;
   const result: any = {
     id,
     type,
@@ -74,6 +100,10 @@ export const transformModelToSchema = (model: any) => {
       width,
       height,
     },
+    Scoring: {
+      requiresManualGrading: !!requiresManualGrading,
+      maxScore: parseNumString(maxScore) || 1,
+    },
     custom: { ...model.custom },
   };
 
@@ -83,7 +113,7 @@ export const transformModelToSchema = (model: any) => {
 };
 
 export const transformSchemaToModel = (schema: any) => {
-  const { id, type, Position, Size, palette } = schema;
+  const { id, type, Position, Size, palette, Scoring } = schema;
   const result = {
     id,
     type,
@@ -94,6 +124,8 @@ export const transformSchemaToModel = (schema: any) => {
       z: Position.z,
       width: Size.width,
       height: Size.height,
+      requiresManualGrading: Scoring.requiresManualGrading,
+      maxScore: Scoring.maxScore,
     },
   };
 
