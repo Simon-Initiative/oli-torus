@@ -126,6 +126,12 @@ defmodule Oli.Delivery.ActivityProvider do
               {[error | errors], activities, model, source}
           end
 
+        "group" ->
+          {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
+          e = %{e | "children" => Enum.reverse(c_model)}
+
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source}
+
         _ ->
           {errors, activities, [e | model], source}
       end
