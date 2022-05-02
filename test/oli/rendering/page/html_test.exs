@@ -69,7 +69,7 @@ defmodule Oli.Content.Page.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # render an error message for the invalid page
-               assert rendered_html_string =~ "<div class=\"page invalid\">Page is invalid"
+               assert rendered_html_string =~ "<div class=\"alert alert-danger page invalid\">Page is invalid"
              end) =~ "Page model is invalid"
     end
 
@@ -102,7 +102,7 @@ defmodule Oli.Content.Page.HtmlTest do
 
                # render an error message for the unsupported page item
                assert rendered_html_string =~
-                        "<div class=\"page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
+                        "<div class=\"alert alert-danger page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
              end) =~ "Element type is not supported"
     end
 
