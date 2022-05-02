@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { Dropdown, MultiInputSchema } from 'components/activities/multi_input/schema';

@@ -413,16 +413,14 @@ defmodule Oli.Authoring.Editing.PageEditor do
         {revision, []}
 
       activity_ids ->
-        activity_revisions =
-          AuthoringResolver.from_resource_id(project_slug, activity_ids)
-          |> Enum.map(fn revision ->
-            {:ok, updated} =
-              Oli.Resources.update_revision(revision, %{
-                deleted: MapSet.member?(deletions, revision.resource_id)
-              })
+        AuthoringResolver.from_resource_id(project_slug, activity_ids)
+        |> Enum.each(fn revision ->
+          Oli.Publishing.ChangeTracker.track_revision(project_slug, revision, %{
+            deleted: MapSet.member?(deletions, revision.resource_id)
+          })
+        end)
 
-            updated
-          end)
+        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
 
         {revision, activity_revisions}
     end

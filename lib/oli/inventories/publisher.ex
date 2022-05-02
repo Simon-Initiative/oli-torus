@@ -17,6 +17,7 @@ defmodule Oli.Inventories.Publisher do
     publisher
     |> cast(attrs, [:name, :email, :address, :main_contact, :website_url])
     |> validate_required([:name, :email])
+    |> validate_format(:email, Oli.Utils.email_regex())
     |> unique_constraint(:name)
   end
 end

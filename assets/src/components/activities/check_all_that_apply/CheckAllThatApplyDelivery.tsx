@@ -13,12 +13,8 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';

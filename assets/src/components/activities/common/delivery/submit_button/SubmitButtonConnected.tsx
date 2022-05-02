@@ -1,5 +1,5 @@
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import {
   ActivityDeliveryState,
   isEvaluated,

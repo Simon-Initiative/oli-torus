@@ -63,7 +63,6 @@ export const PopupContentModal = (props: Props) => {
           <div className="popup__modalContent">
             {triggerSettings}
             <RichTextEditor
-              preventLargeContent
               editMode={true}
               projectSlug={props.commandContext.projectSlug}
               value={content}

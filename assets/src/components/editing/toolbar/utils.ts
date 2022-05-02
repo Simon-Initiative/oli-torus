@@ -12,10 +12,10 @@ import { insertAudio } from 'components/editing/elements/audio/audioActions';
 import { insertImage } from 'components/editing/elements/image/imageActions';
 import { ytCmdDesc } from 'components/editing/elements/youtube/YoutubeElement';
 import { addItemActions } from 'components/editing/toolbar/items';
+import { ContentModelMode } from 'data/content/model/elements/types';
 
-type ToolbarContentType = 'all' | 'small';
 interface Opts {
-  type?: ToolbarContentType;
+  type?: ContentModelMode;
   resourceContext?: ResourceContext;
   onAddItem?: AddCallback;
   editorMap?: ActivityEditorMap;
@@ -31,6 +31,10 @@ export function getToolbarForContentType(opts: Opts): CommandDescription[] {
 
   if (type === 'small') {
     return [insertCodeblock, insertImage(onRequestMedia), ytCmdDesc, insertAudio(onRequestMedia)];
+  }
+
+  if (type === 'inline') {
+    return [];
   }
 
   if (!resourceContext || !onAddItem || !editorMap || !index) return addItemActions(onRequestMedia);

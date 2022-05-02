@@ -15,12 +15,9 @@ import { Provider } from 'react-redux';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { configureStore } from 'state/store';
-import {
-  AuthoringElement,
-  AuthoringElementProps,
-  AuthoringElementProvider,
-  useAuthoringElementContext,
-} from '../AuthoringElement';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 
 const store = configureStore();
 

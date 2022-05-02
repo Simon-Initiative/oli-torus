@@ -69,7 +69,12 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
           </div>
           <nav className="history">
             {items.map((item, index) => (
-              <div key={item.id} id={`qrID${item.id}`} className={getItemClasses(item)}>
+              <div
+                key={item.id}
+                id={`qrID${item.id}`}
+                className={getItemClasses(item)}
+                onClick={() => itemClickHandler(item)}
+              >
                 {items.length - index}. {item.name}
               </div>
             ))}

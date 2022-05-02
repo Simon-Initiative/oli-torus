@@ -1,10 +1,5 @@
 import * as Persistence from 'data/persistence/activity';
-import {
-  PartResponse,
-  FeedbackAction,
-  SubmissionAction,
-  ClientEvaluation,
-} from 'components/activities/types';
+import { PartResponse, ClientEvaluation } from 'components/activities/types';
 import { RequestHintResponse } from 'components/activities/DeliveryElement';
 import { valueOr, removeEmpty } from 'utils/common';
 import { defaultActivityState } from 'data/activities/utils';
@@ -33,28 +28,7 @@ function makeRequest(
 
 const nothingTransform = (result: any) => Promise.resolve(result);
 const submissionTransform = (key: string, result: any) => {
-  return Promise.resolve({
-    actions: result[key].map((e: any) => {
-      if (e.type === 'FeedbackActionResult') {
-        return {
-          type: 'FeedbackAction',
-          attempt_guid: e.attempt_guid,
-          out_of: e.out_of,
-          score: e.score,
-          feedback: e.feedback,
-          part_id: e.part_id,
-          error: e.error,
-        };
-      }
-
-      return {
-        type: 'SubmissionAction',
-        attempt_guid: e.part_id,
-        part_id: e.part_id,
-        error: e.error,
-      };
-    }),
-  });
+  return Promise.resolve({ actions: result[key] });
 };
 
 export const initActivityBridge = (elementId: string) => {

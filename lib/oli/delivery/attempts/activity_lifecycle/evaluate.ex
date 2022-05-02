@@ -466,8 +466,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                           }
                         } ->
            {:ok,
-            %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
-              type: "FeedbackActionResult",
+            %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+              type: "FeedbackAction",
               attempt_guid: attempt_guid,
               feedback: feedback,
               score: score,
