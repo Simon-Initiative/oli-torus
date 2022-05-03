@@ -28,9 +28,6 @@
       "items": {
         "oneOf": [
           {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
-          },
-          {
             "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
           },
           {

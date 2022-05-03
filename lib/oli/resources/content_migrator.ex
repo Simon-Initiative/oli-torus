@@ -3,11 +3,16 @@ defmodule Oli.Resources.ContentMigrator do
 
   alias Oli.Utils.SchemaResolver
 
-  def migrate(%{"model" => _} = content, to: :latest) do
+  @doc """
+  Migrates a resource content model to version specified.
+
+  resource_type can be :page or :activity. A content model is determined by it's schema under priv/schemas.
+  """
+  def migrate(content, :page, to: :latest) do
     if content["version"] !== SchemaResolver.current_version() do
       # as more content migrations are implemented, they should be added
       # sequentially to this with block so that they are all executed in order
-      with {status, content} <- migrate(content, to: :v0_1_0) do
+      with {status, content} <- migrate(content, :page, to: :v0_1_0) do
         {status, content}
       end
     else
@@ -16,10 +21,7 @@ defmodule Oli.Resources.ContentMigrator do
     end
   end
 
-  @doc """
-  Initial migration that takes an un-versioned content model and migrates it to version 0.1.0
-  """
-  def migrate(%{"model" => _} = content, to: :v0_1_0) do
+  def migrate(%{"model" => _} = content, :page, to: :v0_1_0) do
     previous_version = nil
 
     # A migration should only execute if the previous version matches the
@@ -62,5 +64,11 @@ defmodule Oli.Resources.ContentMigrator do
       _ ->
         {:skipped, content}
     end
+  end
+
+  # TODO: implement migration for activities when schemas are finalized.
+  def migrate(content, :activity, to: :latest) do
+    # for now we just skip the migration and return content as it is
+    {:skipped, content}
   end
 end

@@ -4,6 +4,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   """
   import Oli.Authoring.Editing.Utils
+  import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Authoring.{Locks, Course}
   alias Oli.Resources.Revision
   alias Oli.Resources
@@ -22,8 +26,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
   alias Oli.Resources.PageContent
-
-  import Ecto.Query, warn: false
+  alias Oli.Utils.SchemaResolver
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -60,7 +63,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update) do
+           {:ok, converted_update} <- convert_to_activity_ids(update),
+           :ok <- validate_page_content_json(converted_update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired the lock, we must first create a new revision
@@ -108,6 +112,35 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     previous
   end
+
+  defp validate_page_content_json(page) do
+    case page_content(page) do
+      nil ->
+        :ok
+
+      json ->
+        schema = SchemaResolver.schema("page-content.schema.json")
+
+        case ExJsonSchema.Validator.validate(schema, json) do
+          :ok ->
+            :ok
+
+          {:error, errors} ->
+            error_details = [
+              schema: "page-content.schema.json",
+              page: page,
+              errors: errors
+            ]
+
+            Logger.error("Page content JSON invalid #{Kernel.inspect(error_details)}")
+            {:error, errors}
+        end
+    end
+  end
+
+  defp page_content(%{"content" => content}), do: content
+  defp page_content(%{content: content}), do: content
+  defp page_content(_), do: nil
 
   @doc """
   Attempts to lock a resource for editing.
@@ -239,7 +272,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
-    case ContentMigrator.migrate(content, to: :latest) do
+    case ContentMigrator.migrate(content, :page, to: :latest) do
       {:migrated, migrated_content} ->
         {:ok, %Revision{revision | content: migrated_content}}
 
@@ -426,7 +459,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
     end
   end
 
-  # Reverse references found in a resource update for activites. They will
+  # Reverse references found in a resource update for activities. They will
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
   defp convert_to_activity_ids(%{"content" => content} = update) do

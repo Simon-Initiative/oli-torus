@@ -89,7 +89,7 @@ defmodule Oli.Resources.ContentMigratorTest do
     test "migrate to 0.1.0", %{publication: publication, project: project, author: author} do
       %{revision: revision} = Seeder.create_page("Page with Unversioned Model", publication, project, author, @content)
 
-      assert {:migrated, migrated_content} = ContentMigrator.migrate(revision.content, to: :v0_1_0)
+      assert {:migrated, migrated_content} = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
 
       assert migrated_content |> Map.get("version") == "0.1.0"
 

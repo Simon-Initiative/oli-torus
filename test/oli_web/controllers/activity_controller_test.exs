@@ -388,18 +388,17 @@ defmodule OliWeb.ActivityControllerTest do
 
     update = %{
       "content" => %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "activity-reference",
-            "id" => 1,
-            "activitySlug" => slug,
-            "purpose" => "none"
+            "id" => "1",
+            "activitySlug" => slug
           },
           %{
             "type" => "activity-reference",
-            "id" => 2,
-            "activitySlug" => slug2,
-            "purpose" => "none"
+            "id" => "2",
+            "activitySlug" => slug2
           }
         ]
       }
