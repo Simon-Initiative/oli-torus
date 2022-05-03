@@ -14,7 +14,6 @@ defmodule OliWeb.Api.ActivityRegistrationController do
 
   alias OpenApiSpex.Schema
 
-
   defmodule RegistrationResponse do
     require OpenApiSpex
 
@@ -53,19 +52,24 @@ defmodule OliWeb.Api.ActivityRegistrationController do
   Uploads an activity bundle for registation or update.
   """
   @doc parameters: [],
-  request_body:
+       security: [%{"bearer-authorization" => []}],
+       request_body:
          {"File upload", "multipart/form-data",
-         OliWeb.Api.ActivityRegistrationController.RegistrationUploadBody, required: true},
-  responses: %{
-    200 =>
-      {"Retrieval Response", "application/json",
-       OliWeb.Api.ActivityRegistrationController.RegistrationResponse}
-  }
+          OliWeb.Api.ActivityRegistrationController.RegistrationUploadBody, required: true},
+       responses: %{
+         200 =>
+           {"Retrieval Response", "application/json",
+            OliWeb.Api.ActivityRegistrationController.RegistrationResponse}
+       }
+
   def create(conn, %{"upload" => upload}) do
     if is_valid_api_key?(conn, &Oli.Interop.validate_for_registration/1) do
       expected_namespace = get_api_namespace(conn)
+
       case Activities.register_from_bundle(upload.path, expected_namespace) do
-        {:ok, _} -> json(conn, %{result: :success})
+        {:ok, _} ->
+          json(conn, %{result: :success})
+
         e ->
           error(conn, 400, Kernel.inspect(e))
       end
@@ -73,5 +77,4 @@ defmodule OliWeb.Api.ActivityRegistrationController do
       error(conn, 400, "invalid key")
     end
   end
-
 end
