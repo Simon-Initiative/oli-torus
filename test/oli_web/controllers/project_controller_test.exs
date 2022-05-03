@@ -5,6 +5,8 @@ defmodule OliWeb.ProjectControllerTest do
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
 
+  import Oli.Factory
+
   @basic_get_routes [:overview, :publish, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
@@ -25,6 +27,19 @@ defmodule OliWeb.ProjectControllerTest do
 
     @basic_get_routes
     |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
+  end
+
+  describe "projects" do
+    # this test demonstrates the valid case where an author has multiple user accounts associated
+    # which will result in an error (consider an authoring account shared across lms or independent instructor accounts)
+    test "multiple linked user accounts still renders properly", %{conn: conn, author: author} do
+      _user_associated = insert(:user, author: author)
+      _user2_associated = insert(:user, author: author)
+
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+
+      assert html_response(conn, 200) =~ "<h3>Projects</h3>"
+    end
   end
 
   describe "overview" do
