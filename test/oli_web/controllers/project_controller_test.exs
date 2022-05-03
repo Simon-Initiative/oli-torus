@@ -31,7 +31,7 @@ defmodule OliWeb.ProjectControllerTest do
 
   describe "projects" do
     # this test demonstrates the valid case where an author has multiple user accounts associated
-    # which will result in an error (consider an authoring account shared across lms or independent instructor accounts)
+    # (consider an authoring account shared across lms or independent instructor accounts)
     test "multiple linked user accounts still renders properly", %{conn: conn, author: author} do
       _user_associated = insert(:user, author: author)
       _user2_associated = insert(:user, author: author)
