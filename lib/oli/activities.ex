@@ -43,16 +43,20 @@ defmodule Oli.Activities do
             if String.starts_with?(manifest.id, "#{expected_namespace}_") do
               process_register_from_bundle(manifest, entries)
             else
-              Logger.info("Invalid namespace")
+              Logger.warn("Invalid namespace")
               {:error, :invalid_namespace}
             end
           e ->
             e
         end
       _ ->
-        Logger.info("Invalid archive")
+        Logger.warn("Invalid archive")
         {:error, :invalid_archive}
     end
+  end
+
+  defp build_path(path) do
+    Application.app_dir(:oli, path)
   end
 
   defp locate_manifest(entries) do
@@ -64,7 +68,7 @@ defmodule Oli.Activities do
 
 
   defp parse_manifest({nil, _}) do
-    Logger.info("Missing manifest")
+    Logger.warn("Missing manifest")
     {:error, :missing_manifest}
   end
 
@@ -72,7 +76,7 @@ defmodule Oli.Activities do
     case Poison.decode(content) do
       {:ok, json} -> Manifest.parse(json)
       e ->
-        Logger.info("Could not parse manifest")
+        Logger.warn("Could not parse manifest")
         e
     end
   end
@@ -82,24 +86,26 @@ defmodule Oli.Activities do
       :ok ->
         Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
           filename = List.to_string(file)
-          case File.write("priv/static/js/#{manifest.id}/#{filename}", content) do
+          case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
             :ok -> {:cont, {:ok}}
             e -> {:halt, e}
           end
         end)
       e ->
-        Logger.info("Error encountered during unbundling")
+        Logger.warn("Error encountered creating directory")
         e
     end
 
     case result do
       {:ok} -> register_activity(manifest, "#{manifest.id}/")
-      e -> e
+      e ->
+        Logger.warn("Error encountered writing bundle files")
+        e
     end
   end
 
   defp make_dir(%Manifest{} = manifest) do
-    case File.mkdir("priv/static/js/#{manifest.id}") do
+    case build_path("priv/static/js/#{manifest.id}") |> File.mkdir() do
       :ok -> :ok
       {:error, :eexist} -> :ok
       e -> e

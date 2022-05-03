@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.19.0 (2022-05-03)
+
+### Bug Fixes
+
 - Fix inability to search in projects and users view
 - Properly handle the case that a section invite link leads to an unavailable
   section

@@ -11,7 +11,7 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
       conn: conn
     } do
 
-      original_count = Oli.Activities.list_activity_registrations() |> Enum.count()
+      _original_count = Oli.Activities.list_activity_registrations() |> Enum.count()
 
       payload = %{"upload" => %{path: "./test/oli_web/controllers/api/activity/bundle.zip"}}
 
@@ -23,7 +23,7 @@ defmodule OliWeb.Api.ActivityRegistrationControllerTest do
       |> Plug.Conn.put_req_header("content-type", "multipart/form-data")
       |> ActivityRegistrationController.create(payload)
 
-      new_count = Oli.Activities.list_activity_registrations() |> Enum.count()
+      _new_count = Oli.Activities.list_activity_registrations() |> Enum.count()
 
       # This assertion succeeds when running the test locally, but fails when
       # run on the server as part of the build
