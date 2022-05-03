@@ -99,7 +99,7 @@ jobs:
         run: npm install -g yarn && cd assets && yarn
 
       - name: Build client-side API markdown docs
-        run: npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts
+        run: cd assets && npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts
 
       - name: 🔨📄 Build Docs
         run: mix docs
