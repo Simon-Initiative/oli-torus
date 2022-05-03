@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';

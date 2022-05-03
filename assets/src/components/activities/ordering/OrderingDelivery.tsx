@@ -22,12 +22,8 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
 

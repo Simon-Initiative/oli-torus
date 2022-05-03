@@ -1,7 +1,7 @@
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { EditLink } from 'components/editing/elements/link/EditLink';
 import { Initialization } from 'components/editing/elements/link/LinkInitialization';
-import { LinkablePages } from 'components/editing/elements/link/utils';
+import { LinkablePages } from 'data/content/model/elements/utils';
 import { InlineChromiumBugfix, onEditModel } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';

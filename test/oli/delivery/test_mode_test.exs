@@ -3,8 +3,8 @@ defmodule Oli.Delivery.TestModeTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
   alias Oli.Delivery.Attempts.Core.StudentInput
-  alias Oli.Delivery.Evaluation.Actions.FeedbackActionResult
-  alias Oli.Delivery.Evaluation.Actions.SubmissionActionResult
+  alias Oli.Delivery.Evaluation.Actions.FeedbackAction
+  alias Oli.Delivery.Evaluation.Actions.SubmissionAction
 
   describe "test mode evaluation and transformation" do
     setup do
@@ -85,7 +85,7 @@ defmodule Oli.Delivery.TestModeTest do
         %{part_id: "1", input: %StudentInput{input: "a"}}
       ]
 
-      assert {:ok, [%FeedbackActionResult{part_id: "1", score: _, out_of: _, feedback: _}]} =
+      assert {:ok, [%FeedbackAction{part_id: "1", score: _, out_of: _, feedback: _}]} =
                Evaluate.evaluate_from_preview(content, part_inputs)
 
       part_inputs = [
@@ -95,8 +95,8 @@ defmodule Oli.Delivery.TestModeTest do
 
       assert {:ok,
               [
-                %FeedbackActionResult{part_id: "1", score: _, out_of: _, feedback: _},
-                %SubmissionActionResult{part_id: "2"}
+                %FeedbackAction{part_id: "1", score: _, out_of: _, feedback: _},
+                %SubmissionAction{part_id: "2"}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
 
@@ -115,8 +115,8 @@ defmodule Oli.Delivery.TestModeTest do
               [
                 # Finding no matching response marks the answer as incorrect
                 # with out_of being the highest of any response considered
-                %FeedbackActionResult{part_id: "1", score: 0, out_of: 10, feedback: _},
-                %SubmissionActionResult{part_id: "2"}
+                %FeedbackAction{part_id: "1", score: 0, out_of: 10, feedback: _},
+                %SubmissionAction{part_id: "2"}
               ]} = Evaluate.evaluate_from_preview(content, part_inputs)
     end
   end

@@ -12,12 +12,13 @@ defmodule Oli.Activities do
   alias Oli.Activities.ActivityRegistrationProject
   alias Oli.Activities.ActivityMapEntry
   import Oli.Utils
+  require Logger
 
-  def register_activity(%Manifest{} = manifest) do
+  def register_activity(%Manifest{} = manifest, subdirectory \\ "") do
     attrs = %{
-      authoring_script: manifest.id <> "_authoring.js",
+      authoring_script: "#{subdirectory}#{manifest.id}_authoring.js",
       authoring_element: manifest.authoring.element,
-      delivery_script: manifest.id <> "_delivery.js",
+      delivery_script: "#{subdirectory}#{manifest.id}_delivery.js",
       delivery_element: manifest.delivery.element,
       allow_client_evaluation: manifest.allowClientEvaluation,
       globally_available: manifest.global,
@@ -30,6 +31,84 @@ defmodule Oli.Activities do
     case get_registration_by_slug(attrs.slug) do
       nil -> create_registration(attrs)
       registration -> update_registration(registration, attrs)
+    end
+  end
+
+
+  def register_from_bundle(file, expected_namespace) do
+    case :zip.unzip(to_charlist(file), [:memory]) do
+      {:ok, entries} ->
+        case locate_manifest(entries) |> parse_manifest() do
+          {:ok, %Manifest{} = manifest} ->
+            if String.starts_with?(manifest.id, "#{expected_namespace}_") do
+              process_register_from_bundle(manifest, entries)
+            else
+              Logger.warn("Invalid namespace")
+              {:error, :invalid_namespace}
+            end
+          e ->
+            e
+        end
+      _ ->
+        Logger.warn("Invalid archive")
+        {:error, :invalid_archive}
+    end
+  end
+
+  defp build_path(path) do
+    Application.app_dir(:oli, path)
+  end
+
+  defp locate_manifest(entries) do
+    case Enum.find(entries, fn {name, _} ->  List.to_string(name) == "manifest.json" end) do
+      nil -> {nil, %{}}
+      manifest -> manifest
+    end
+  end
+
+
+  defp parse_manifest({nil, _}) do
+    Logger.warn("Missing manifest")
+    {:error, :missing_manifest}
+  end
+
+  defp parse_manifest({_, content}) do
+    case Poison.decode(content) do
+      {:ok, json} -> Manifest.parse(json)
+      e ->
+        Logger.warn("Could not parse manifest")
+        e
+    end
+  end
+
+  defp process_register_from_bundle(%Manifest{} = manifest, entries) do
+    result = case make_dir(manifest) do
+      :ok ->
+        Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
+          filename = List.to_string(file)
+          case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
+            :ok -> {:cont, {:ok}}
+            e -> {:halt, e}
+          end
+        end)
+      e ->
+        Logger.warn("Error encountered creating directory")
+        e
+    end
+
+    case result do
+      {:ok} -> register_activity(manifest, "#{manifest.id}/")
+      e ->
+        Logger.warn("Error encountered writing bundle files")
+        e
+    end
+  end
+
+  defp make_dir(%Manifest{} = manifest) do
+    case build_path("priv/static/js/#{manifest.id}") |> File.mkdir() do
+      :ok -> :ok
+      {:error, :eexist} -> :ok
+      e -> e
     end
   end
 
