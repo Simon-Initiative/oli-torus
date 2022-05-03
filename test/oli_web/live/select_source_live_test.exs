@@ -106,14 +106,14 @@ defmodule OliWeb.SelectSourceTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_s | tail] = insert_list(21, :section, open_and_free: true) |> Enum.sort_by(& &1.inserted_at)
+      [first_s | tail] = insert_list(21, :section, open_and_free: true) |> Enum.sort_by(& &1.title)
       last_s = List.last(tail)
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
-      |> render_click(%{sort_by: "inserted_at"})
+      |> render_click(%{sort_by: "title"})
 
       assert has_element?(view, "a[href=\"#{details_view(first_s)}\"]")
       refute has_element?(view, "a[href=\"#{details_view(last_s)}\"]")
