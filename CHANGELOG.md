@@ -6,6 +6,12 @@
 
 ### Enhancements
 
+## 0.19.1 (2022-05-03)
+
+### Bug Fixes
+
+- Fix an issue where multiple user accounts linked to a single author results in an internal server error
+
 ## 0.19.0 (2022-05-03)
 
 ### Bug Fixes
