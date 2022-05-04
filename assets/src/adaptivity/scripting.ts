@@ -175,7 +175,8 @@ export const getExpressionStringForValue = (
     }
     // strings need to have escaped quotes and backslashes
     // for janus-script
-    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '')}"`;
+    // PMP-2785: Replacing the new line with the space
+    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
   }
 
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
