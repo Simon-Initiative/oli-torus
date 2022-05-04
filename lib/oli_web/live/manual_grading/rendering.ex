@@ -3,6 +3,7 @@ defmodule OliWeb.ManualGrading.Rendering do
   alias Oli.Delivery.Sections.Section
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity.Html
+  alias OliWeb.Router.Helpers, as: Routes
 
   require Logger
 
@@ -35,7 +36,9 @@ defmodule OliWeb.ManualGrading.Rendering do
         # somewhere around here or before here I need to get the sequenceId from the page and map it to the activity model
         case mode do
           :instructor_preview ->
-            ["<div>link to instructor preview</div>"]
+            # should this go straight to the page instead of section overview?
+            preview_url = Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, context.section_slug)
+            ["<a target=_blank href=#{preview_url}>Preview Course Content</a>"]
           _ ->
             # ["<pre>#{context.page_id}</pre>"]
             Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => activity_id})
