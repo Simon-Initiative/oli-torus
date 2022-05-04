@@ -22,9 +22,7 @@ const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   console.log('Adaptive props', props);
-  const [activityId, setActivityId] = useState<string>(
-    props.model?.id || `adaptive_activity_dkgjg_413217445`,
-  );
+  const [activityId, setActivityId] = useState<string>(props.model?.id || `unknown_activity`);
   const [mode, setMode] = useState<string>(props.mode);
 
   const isReviewMode = mode === 'review';

@@ -6,14 +6,34 @@ defmodule Oli.Rendering.Activity.Html do
 
   alias Oli.Rendering.Context
 
+  require Logger
+
   @behaviour Oli.Rendering.Activity
+
+  defp get_flattened_activity_model(page_content, activity_id, activity_model) do
+    [first | _tail] = page_content
+    sequenceEntry = Enum.find(Map.get(first, "children", []), fn(%{"activity_id" => child_activity_id}) -> child_activity_id == activity_id end)
+    case sequenceEntry do
+      nil ->
+        Logger.error("Could not find activity_id #{activity_id} in page_content sequence")
+        activity_model
+      _ ->
+        sequenceCustom = Map.get(sequenceEntry, "custom")
+        sequenceId = Map.get(sequenceCustom, "sequenceId")
+        mapped = Poison.decode!(HtmlEntities.decode(activity_model))
+        Map.put(mapped, "id", sequenceId)
+        |> Poison.encode!
+        |> HtmlEntities.encode
+    end
+  end
 
   def activity(
         %Context{
           activity_map: activity_map,
           render_opts: render_opts,
           mode: mode,
-          user: user
+          user: user,
+          resource_attempt: resource_attempt
         } = context,
         %{"activity_id" => activity_id, "purpose" => purpose} = activity
       ) do
@@ -42,7 +62,16 @@ defmodule Oli.Rendering.Activity.Html do
 
         state = activity_summary.state
         graded = activity_summary.graded
-        model_json = activity_summary.model
+
+        model_json = case tag do
+          "oli-adaptive-delivery" ->
+            page_model = Map.get(resource_attempt.content, "model")
+            get_flattened_activity_model(page_model, activity_id, activity_summary.model)
+
+          _ -> activity_summary.model
+        end
+
+
         section_slug = context.section_slug
 
         activity_html =
