@@ -1,9 +1,6 @@
 defmodule Oli.Repo.Migrations.AddDefaultToPublishers do
   use Ecto.Migration
 
-  alias Oli.Inventories.Publisher
-  alias Oli.Repo
-
   def up do
     alter table(:publishers) do
       add :default, :boolean, default: false, null: false
@@ -16,12 +13,11 @@ defmodule Oli.Repo.Migrations.AddDefaultToPublishers do
 
     flush()
 
-    default_publisher_attrs = %{name: "Torus Publisher"}
-    default_publisher = Repo.get_by!(Publisher, default_publisher_attrs)
-
-    default_publisher
-    |> Publisher.changeset(%{default: true})
-    |> Repo.update()
+    execute """
+      UPDATE public.publishers
+      SET "default" = true
+      WHERE name = 'Torus Publisher';
+    """
   end
 
   def down do

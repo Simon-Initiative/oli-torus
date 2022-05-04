@@ -4,7 +4,6 @@ defmodule Oli.Repo.Migrations.AddPublisherToProjectsAndProducts do
   import Ecto.Query, warn: false
 
   alias Oli.Delivery.Sections.Section
-  alias Oli.Inventories
   alias Oli.Inventories.Publisher
   alias Oli.Repo
 
@@ -16,12 +15,10 @@ defmodule Oli.Repo.Migrations.AddPublisherToProjectsAndProducts do
       email: "publisher@cmu.edu"
     }
 
-    _publisher =
+    %Publisher{id: publisher_id} =
       Publisher
       |> struct(default_publisher_attrs)
       |> Repo.insert!(on_conflict: :nothing)
-
-    %Publisher{id: publisher_id} = Repo.get_by!(Publisher, default_publisher_attrs)
 
     flush()
 
