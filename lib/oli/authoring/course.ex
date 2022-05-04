@@ -286,8 +286,7 @@ defmodule Oli.Authoring.Course do
   end
 
   defp default_project(title, family) do
-    publisher_name = Inventories.default_publisher_name()
-    default_publisher = Inventories.get_publisher_by(%{name: publisher_name})
+    default_publisher = Inventories.default_publisher()
 
     %{
       title: title,

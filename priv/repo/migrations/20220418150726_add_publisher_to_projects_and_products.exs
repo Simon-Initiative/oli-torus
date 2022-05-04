@@ -12,7 +12,7 @@ defmodule Oli.Repo.Migrations.AddPublisherToProjectsAndProducts do
 
   def up do
     default_publisher_attrs = %{
-      name: Inventories.default_publisher_name(),
+      name: "Torus Publisher",
       email: "publisher@cmu.edu"
     }
 

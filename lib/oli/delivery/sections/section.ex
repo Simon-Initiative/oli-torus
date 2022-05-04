@@ -93,7 +93,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     many_to_many(:communities, Oli.Groups.Community, join_through: Oli.Groups.CommunityVisibility)
 
-    belongs_to :publisher, Oli.Inventories.Publisher, foreign_key: :publisher_id
+    belongs_to(:publisher, Oli.Inventories.Publisher)
 
     timestamps(type: :utc_datetime)
   end

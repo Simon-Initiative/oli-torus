@@ -16,7 +16,9 @@ defmodule Oli.Inventories do
       [%Publisher{}, ...]
 
   """
-  def list_publishers, do: Repo.all(Publisher)
+  def list_publishers do
+    Repo.all(from(p in Publisher, order_by: [desc: :default]))
+  end
 
   @doc """
   Creates a publisher.
@@ -58,7 +60,47 @@ defmodule Oli.Inventories do
     end
   end
 
-  def default_publisher_name, do: "Torus Publisher"
+  @doc """
+  Gets the default publisher.
+
+  ## Examples
+
+      iex> default_publisher()
+      %Publisher{}
+  """
+  def default_publisher do
+    get_publisher_by(%{default: true})
+  end
+
+  @doc """
+  Set the default publisher.
+
+  ## Examples
+
+      iex> set_default_publisher(publisher)
+      {:ok, %Publisher{}}
+
+      iex> set_default_publisher(publisher)
+      {:error, %Ecto.Changeset{}}
+  """
+  def set_default_publisher(publisher) do
+    old_default = Publisher.changeset(default_publisher(), %{default: false})
+    new_default = Publisher.changeset(publisher, %{default: true})
+
+    res =
+      Multi.new()
+      |> Multi.update(:old_default, old_default)
+      |> Multi.update(:new_default, new_default)
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{new_default: new_default}} ->
+        {:ok, new_default}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
 
   @doc """
   Gets a publisher by id.
