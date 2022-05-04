@@ -25,7 +25,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
-  alias Oli.Resources.PageContent
   alias Oli.Utils.SchemaResolver
 
   @doc """

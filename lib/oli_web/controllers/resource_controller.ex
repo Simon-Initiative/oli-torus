@@ -52,7 +52,7 @@ defmodule OliWeb.ResourceController do
     end
   end
 
-  def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug} = params) do
+  def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     project = conn.assigns.project
 

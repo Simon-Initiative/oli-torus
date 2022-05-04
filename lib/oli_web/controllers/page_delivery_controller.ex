@@ -178,7 +178,7 @@ defmodule OliWeb.PageDeliveryController do
         %{
           "section_slug" => section_slug,
           "revision_slug" => revision_slug
-        } = params
+        }
       ) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author
@@ -202,7 +202,7 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug} = params) do
+  def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
 
@@ -569,7 +569,7 @@ defmodule OliWeb.PageDeliveryController do
         %{
           "section_slug" => section_slug,
           "attempt_guid" => attempt_guid
-        } = params
+        }
       ) do
     user = conn.assigns.current_user
     author = conn.assigns.current_author

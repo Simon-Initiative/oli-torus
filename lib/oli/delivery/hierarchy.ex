@@ -14,7 +14,6 @@ defmodule Oli.Delivery.Hierarchy do
   alias Oli.Resources.Numbering
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.ResourceType
-  alias Oli.Resources.PageContent
 
   @doc """
   This method should be called after any hierarchy-changing operation

@@ -3,8 +3,6 @@ defmodule Oli.Delivery.Page.PageContext do
   Defines the context required to render a page in delivery mode.
   """
 
-  alias Oli.Resources.PageContent
-
   @enforce_keys [
     :review_mode,
     :page,
