@@ -55,6 +55,7 @@ defmodule Oli.Authoring.Course.Project do
       :publisher_id
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])
+    |> foreign_key_constraint(:publisher_id)
     |> Slug.update_never("projects")
   end
 end

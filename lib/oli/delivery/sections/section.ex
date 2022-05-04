@@ -148,6 +148,7 @@ defmodule Oli.Delivery.Sections.Section do
     |> validate_required_if([:amount], &requires_payment?/1)
     |> validate_required_if([:grace_period_days], &has_grace_period?/1)
     |> validate_required_if([:publisher_id], &is_product?/1)
+    |> foreign_key_constraint_if(:publisher_id, &is_product?/1)
     |> validate_positive_grace_period()
     |> Oli.Delivery.Utils.validate_positive_money(:amount)
     |> validate_dates_consistency(:start_date, :end_date)

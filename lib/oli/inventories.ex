@@ -1,6 +1,7 @@
 defmodule Oli.Inventories do
   import Ecto.Query, warn: false
 
+  alias Ecto.{Changeset, Multi}
   alias Oli.Inventories.Publisher
   alias Oli.Repo
 
@@ -155,7 +156,11 @@ defmodule Oli.Inventories do
 
   """
   def delete_publisher(%Publisher{} = publisher) do
-    Repo.delete(publisher)
+    publisher
+    |> Changeset.change()
+    |> Changeset.no_assoc_constraint(:projects)
+    |> Changeset.no_assoc_constraint(:products)
+    |> Repo.delete()
   end
 
   @doc """

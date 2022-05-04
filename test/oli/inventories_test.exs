@@ -116,6 +116,18 @@ defmodule Oli.InventoriesTest do
       refute Inventories.get_publisher(deleted_publisher.id)
     end
 
+    test "delete_publisher/1 returns an error when the publisher has associated projects" do
+      project = insert(:project)
+      assert {:error, changeset} = Inventories.delete_publisher(project.publisher)
+      assert changeset.errors[:projects] |> elem(0) == "are still associated with this entry"
+    end
+
+    test "delete_publisher/1 returns an error when the publisher has associated products" do
+      section = insert(:section)
+      assert {:error, changeset} = Inventories.delete_publisher(section.publisher)
+      assert changeset.errors[:products] |> elem(0) == "are still associated with this entry"
+    end
+
     test "change_publisher/1 returns a publisher changeset" do
       publisher = insert(:publisher)
       assert %Ecto.Changeset{} = Inventories.change_publisher(publisher)

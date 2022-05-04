@@ -11,6 +11,9 @@ defmodule Oli.Inventories.Publisher do
     field :website_url, :string
     field :default, :boolean
 
+    has_many :products, Oli.Delivery.Sections.Section
+    has_many :projects, Oli.Authoring.Course.Project
+
     timestamps(type: :utc_datetime)
   end
 
