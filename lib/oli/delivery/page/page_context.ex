@@ -12,9 +12,7 @@ defmodule Oli.Delivery.Page.PageContext do
     :resource_attempts,
     :activities,
     :objectives,
-    :latest_attempts,
-    :num_page_breaks,
-    :active_page_break
+    :latest_attempts
   ]
   defstruct [
     :review_mode,
@@ -23,9 +21,7 @@ defmodule Oli.Delivery.Page.PageContext do
     :resource_attempts,
     :activities,
     :objectives,
-    :latest_attempts,
-    :num_page_breaks,
-    :active_page_break
+    :latest_attempts
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -46,8 +42,9 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User, Integer.t()) :: %PageContext{}
-  def create_for_review(section_slug, attempt_guid, _, active_page_break) do
+  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) ::
+          %PageContext{}
+  def create_for_review(section_slug, attempt_guid, _) do
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
         {:ok,
@@ -74,9 +71,7 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
-      latest_attempts: latest_attempts,
-      num_page_breaks: PageContent.count_page_breaks(page_revision.content),
-      active_page_break: active_page_break
+      latest_attempts: latest_attempts
     }
   end
 
@@ -89,7 +84,11 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user, active_page_break \\ 1) do
+  def create_for_visit(
+        %Section{slug: section_slug, id: section_id},
+        page_slug,
+        user
+      ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
@@ -134,9 +133,7 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
-      latest_attempts: latest_attempts,
-      num_page_breaks: PageContent.count_page_breaks(page_revision.content),
-      active_page_break: active_page_break
+      latest_attempts: latest_attempts
     }
   end
 

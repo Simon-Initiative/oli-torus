@@ -16,7 +16,7 @@ import { defaultActivityState } from 'data/activities/utils';
 import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { AddResource } from './AddResource';
-import { PageBreak } from './PageBreak';
+import { ContentBreak } from './ContentBreak';
 
 // content or referenced activities
 export const createEditor = (
@@ -143,8 +143,8 @@ export const createEditor = (
     );
   }
 
-  if (contentItem.type === 'page-break') {
-    return <PageBreak {...editorProps} contentItem={contentItem} index={index}></PageBreak>;
+  if (contentItem.type === 'break') {
+    return <ContentBreak {...editorProps} contentItem={contentItem} index={index}></ContentBreak>;
   }
 
   const activity = activities.get((contentItem as ActivityReference).activitySlug);

@@ -1,10 +1,11 @@
 defmodule Oli.Rendering.Activity.Html do
   @moduledoc """
-  Implements the Html writer for Oli activity rendering
+  Implements the Html writer for activity rendering
   """
   import Oli.Utils
 
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Error
 
   @behaviour Oli.Rendering.Activity
 
@@ -79,17 +80,7 @@ defmodule Oli.Rendering.Activity.Html do
     end
   end
 
-  def error(%Context{}, _activity, error) do
-    case error do
-      {:invalid, error_id, _error_msg} ->
-        [
-          "<div class=\"activity invalid alert alert-danger\">Activity error. Please contact support with issue <strong>##{error_id}</strong></div>\n"
-        ]
-
-      {_, error_id, _error_msg} ->
-        [
-          "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue <strong>##{error_id}</strong></div>\n"
-        ]
-    end
+  def error(%Context{} = context, element, error) do
+    Error.render(context, element, error, Error.Html)
   end
 end

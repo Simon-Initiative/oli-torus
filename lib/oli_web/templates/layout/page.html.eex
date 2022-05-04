@@ -34,8 +34,7 @@
           section: @section,
           preview_mode: @preview_mode,
           revision: @revision,
-          resource_slug: @resource_slug,
-          active_page_break: @active_page_break %>
+          resource_slug: @resource_slug %>
 
       </div>
 

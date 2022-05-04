@@ -263,8 +263,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          activityContexts: ActivityEditor.create_contexts(project_slug, activity_ids),
          project: publication.project,
          previous_page: previous,
-         next_page: next,
-         num_page_breaks: PageContent.count_page_breaks(revision.content)
+         next_page: next
        }}
     else
       _ -> {:error, :not_found}
@@ -296,10 +295,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
            user: author,
            mode: mode,
            activity_map: activities,
-           project_slug: project_slug,
-           active_page_break: Keyword.get(options, :active_page_break, 1)
+           project_slug: project_slug
          } do
-      Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
+      Rendering.Page.render(render_context, content, Rendering.Page.Html)
     else
       _ -> {:error, :not_found}
     end

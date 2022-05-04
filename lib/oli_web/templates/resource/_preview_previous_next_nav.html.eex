@@ -1,15 +1,10 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
   <%= cond do %>
-    <% @action != :edit && @context.num_page_breaks > 1 && @active_page_break > 1 -> %>
-      <%= OliWeb.PageDeliveryView.prev_link(%{
-        to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.resourceSlug, @active_page_break - 1),
-        title: "#{@context.title} (#{@active_page_break - 1}/#{@context.num_page_breaks})" }) %>
-
     <% @context.previous_page != nil -> %>
       <%= OliWeb.PageDeliveryView.prev_link(%{
         to: previous_url(@conn, @context, @action),
-        title: previous_title(@context, @action) }) %>
+        title: previous_title(@context) }) %>
 
     <% true -> %>
       <div class="page-nav-link-placeholder"></div>
@@ -18,15 +13,10 @@
   <div class="flex-grow-1"></div>
 
   <%= cond do %>
-    <% @action != :edit && @context.num_page_breaks > 1 && @active_page_break < @context.num_page_breaks -> %>
-      <%= OliWeb.PageDeliveryView.next_link(%{
-        to: Routes.resource_path(@conn, @action, @context.projectSlug, @context.resourceSlug, @active_page_break + 1),
-        title: "#{@context.title} (#{@active_page_break + 1}/#{@context.num_page_breaks})" }) %>
-
     <% @context.next_page != nil -> %>
       <%= OliWeb.PageDeliveryView.next_link(%{
         to: next_url(@conn, @context, @action),
-        title: next_title(@context, @action) }) %>
+        title: next_title(@context) }) %>
 
     <% @action != :edit -> %>
       <%= link to: "#", class: "page-nav-link btn", onclick: "window.close();" do %>

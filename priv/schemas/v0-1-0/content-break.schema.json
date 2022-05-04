@@ -1,0 +1,18 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Break",
+  "description": "A content break to split content across different layouts",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "type": {
+      "const": "break"
+    }
+  },
+  "required": [
+    "type"
+  ]
+}

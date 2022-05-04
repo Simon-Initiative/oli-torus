@@ -184,7 +184,7 @@
     margin-right: 10px;
   }
 
-  .pageBreak {
+  .contentBreak {
     min-height: 20px;
 
     .contentLink {
@@ -193,12 +193,12 @@
     }
   }
 
-  .pageBreakLabel {
+  .contentBreakLabel {
     font-size: 12px;
     color: authoring.$gray-600;
   }
 
-  .pageBreakDashed {
+  .contentBreakDashed {
     flex-grow: 1;
     border-bottom: 1px dashed authoring.$gray-600;
     margin: 0 10px 8px 10px;

@@ -1,5 +1,5 @@
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { createDefaultSelection, createPageBreak } from 'data/content/resource';
+import { createDefaultSelection, createBreak } from 'data/content/resource';
 import React from 'react';
 
 interface Props {
@@ -29,8 +29,10 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
           className="list-group-item list-group-item-action d-flex flex-column align-items-start"
           onClick={(_e) => addPageBreak(onAddItem, index)}
         >
-          <div className="type-label">Page Break</div>
-          <div className="type-description">A content page break</div>
+          <div className="type-label">Content Break</div>
+          <div className="type-description">
+            Add a content break to split content across multiple pages
+          </div>
         </button>
       </div>
     </>
@@ -38,6 +40,6 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
 };
 
 const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
-  onAddItem(createPageBreak(), index);
+  onAddItem(createBreak(), index);
   document.body.click();
 };

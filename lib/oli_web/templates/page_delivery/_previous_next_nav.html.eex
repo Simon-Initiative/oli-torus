@@ -1,11 +1,6 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
   <%= cond do %>
-    <% @current_page["num_page_breaks"] > 1 && @active_page_break > 1 -> %>
-      <%= OliWeb.PageDeliveryView.prev_link(%{
-        to: Routes.page_delivery_path(@conn, action(@preview_mode, @revision), @section_slug, @resource_slug, @active_page_break - 1),
-        title: "#{@current_page["title"]} (#{@active_page_break - 1}/#{@current_page["num_page_breaks"]})" }) %>
-
     <% @previous_page != nil -> %>
       <%= OliWeb.PageDeliveryView.prev_link(%{
         to: previous_url(@conn, @previous_page, @preview_mode, @section_slug),
@@ -19,11 +14,6 @@
   <div class="flex-grow-1"></div>
 
   <%= cond do %>
-    <% @current_page["num_page_breaks"] > 1 && @active_page_break < @current_page["num_page_breaks"] -> %>
-      <%= OliWeb.PageDeliveryView.next_link(%{
-        to: Routes.page_delivery_path(@conn, action(@preview_mode, @revision), @section_slug, @resource_slug, @active_page_break + 1),
-        title: "#{@current_page["title"]} (#{@active_page_break + 1}/#{@current_page["num_page_breaks"]})" }) %>
-
     <% @next_page != nil -> %>
       <%= OliWeb.PageDeliveryView.next_link(%{
         to: next_url(@conn, @next_page, @preview_mode, @section_slug),

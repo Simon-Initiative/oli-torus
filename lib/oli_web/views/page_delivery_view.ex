@@ -35,40 +35,24 @@ defmodule OliWeb.PageDeliveryView do
     url_from_desc(conn, conn.assigns.previous_page)
   end
 
-  def previous_url(conn, %{"slug" => slug, "num_page_breaks" => num_page_breaks} = previous_page, preview_mode, section_slug) do
-    if num_page_breaks > 1 do
-      Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug, num_page_breaks)
-    else
-      Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug)
-    end
+  def previous_url(conn, %{"slug" => slug} = previous_page, preview_mode, section_slug) do
+    Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug)
   end
 
-  def previous_title(%{"title" => title, "num_page_breaks" => num_page_breaks}) do
-    if num_page_breaks > 1 do
-      "#{title} (#{num_page_breaks}/#{num_page_breaks})"
-    else
-      title
-    end
+  def previous_title(%{"title" => title}) do
+    title
   end
 
   def next_url(conn) do
     url_from_desc(conn, conn.assigns.next_page)
   end
 
-  def next_url(conn, %{"slug" => slug, "num_page_breaks" => num_page_breaks} = next_page, preview_mode, section_slug) do
-    if num_page_breaks > 1 do
-      Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug, 1)
-    else
-      Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug)
-    end
+  def next_url(conn, %{"slug" => slug} = next_page, preview_mode, section_slug) do
+    Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug)
   end
 
-  def next_title(%{"title" => title, "num_page_breaks" => num_page_breaks}) do
-    if num_page_breaks > 1 do
-      "#{title} (1/#{num_page_breaks})"
-    else
-      title
-    end
+  def next_title(%{"title" => title}) do
+    title
   end
 
   def prev_link(%{to: path, title: title} = assigns) do
@@ -108,13 +92,16 @@ defmodule OliWeb.PageDeliveryView do
   def action(preview_mode, %{"type" => type}), do: action(preview_mode, type == "container")
 
   def action(preview_mode, is_container) when is_boolean(is_container) do
-     case {preview_mode, is_container} do
+    case {preview_mode, is_container} do
       {true, true} ->
         :container_preview
+
       {true, false} ->
         :page_preview
+
       {false, true} ->
         :container
+
       {false, false} ->
         :page
     end

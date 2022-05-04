@@ -328,14 +328,14 @@ const OutlineItem = ({
     );
   }
 
-  if (contentItem.type === 'page-break') {
+  if (contentItem.type === 'break') {
     return (
       <>
         {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
         <div
           id={`content-item-${id}`}
-          className={classNames(styles.item, styles.pageBreak, className)}
+          className={classNames(styles.item, styles.contentBreak, className)}
           onClick={() => scrollToResourceEditor(id)}
           draggable={editMode}
           tabIndex={0}
@@ -350,9 +350,9 @@ const OutlineItem = ({
             onClick={() => scrollToResourceEditor(id)}
             role="button"
           >
-            <div className={styles.pageBreakDashed}></div>
-            <div className={styles.pageBreakLabel}>PAGE BREAK</div>
-            <div className={styles.pageBreakDashed}></div>
+            <div className={styles.contentBreakDashed}></div>
+            <div className={styles.contentBreakLabel}>CONTENT BREAK</div>
+            <div className={styles.contentBreakDashed}></div>
           </div>
         </div>
       </>

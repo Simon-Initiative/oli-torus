@@ -46,57 +46,16 @@ defmodule Oli.Content.Page.HtmlTest do
       assert rendered_html_string =~ "<oli-check-all-that-apply-delivery"
 
       assert rendered_html_string =~ "<div class=\"content-purpose-label\">Learn by doing"
-      assert rendered_html_string =~ "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
-    end
 
-    test "renders page with page break properly", %{author: author} do
-      {:ok, page_content} = read_json_file("./test/oli/rendering/page/example_page.json")
-
-      activity_map = %{
-        1 => %{
-          id: 1,
-          graded: false,
-          slug: "test",
-          state: "{}",
-          model:
-            "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
-        },
-        2 => %{
-          id: 2,
-          graded: false,
-          slug: "test",
-          state: "{}",
-          model:
-            "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-check-all-that-apply-delivery"
-        }
-      }
-
-      context = %Context{user: author, activity_map: activity_map}
-      rendered_html = Page.render(context, page_content, Page.Html)
-      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
-
-      assert rendered_html_string =~ "<h3>Introduction</h3>"
-      assert rendered_html_string =~ "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
-
-      assert !(rendered_html_string =~ "<h3>Part 2</h3>")
-      assert !(rendered_html_string =~ "This content should be rendered on page 2")
-
-      context = %Context{user: author, activity_map: activity_map, active_page_break: 2}
-      rendered_html = Page.render(context, page_content, Page.Html)
-      rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
-
-      assert !(rendered_html_string =~ "<h3>Introduction</h3>")
-      assert !(rendered_html_string =~ "The American Revolution was a colonial revolt which occurred between 1765 and 1783")
-
-      assert rendered_html_string =~ "<h3>Part 2</h3>"
-      assert rendered_html_string =~ "This content should be rendered on page 2"
-
+      assert rendered_html_string =~
+               "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
     end
 
     test "renders malformed page gracefully", %{author: author} do
-      invalid_page_content = %{"this-is-not-valid" => "page model should be a list of items"}
+      invalid_page_content = %{
+        "this-is-not-valid" =>
+          "page content should contain a model consisting of a list of elements"
+      }
 
       activity_map = %{
         1 => %{
@@ -118,7 +77,8 @@ defmodule Oli.Content.Page.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # render an error message for the invalid page
-               assert rendered_html_string =~ "<div class=\"alert alert-danger page invalid\">Page is invalid"
+               assert rendered_html_string =~
+                        "<div class=\"alert alert-danger page invalid\">Page is invalid"
              end) =~ "Page model is invalid"
     end
 
@@ -175,28 +135,28 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/image_missing_src.json")
 
       assert capture_log(fn ->
-        context = %Context{user: author, activity_map: %{}}
-        rendered_html = Page.render(context, page_content, Page.Html)
+               context = %Context{user: author, activity_map: %{}}
+               rendered_html = Page.render(context, page_content, Page.Html)
 
-        rendered_html_string =
-          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-        assert rendered_html_string == "<p>some specific content</p>\n"
-      end)
+               assert rendered_html_string == "<p>some specific content</p>\n"
+             end)
     end
 
     test "does not display youtube videos without a src", %{author: author} do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/youtube_missing_src.json")
 
       assert capture_log(fn ->
-        context = %Context{user: author, activity_map: %{}}
-        rendered_html = Page.render(context, page_content, Page.Html)
+               context = %Context{user: author, activity_map: %{}}
+               rendered_html = Page.render(context, page_content, Page.Html)
 
-        rendered_html_string =
-          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-        assert rendered_html_string == "<p>some specific content</p>\n"
-      end)
+               assert rendered_html_string == "<p>some specific content</p>\n"
+             end)
     end
 
     test "renders malformed audio robustly", %{author: author} do

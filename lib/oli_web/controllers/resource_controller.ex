@@ -75,8 +75,6 @@ defmodule OliWeb.ResourceController do
         )
 
       revision ->
-        active_page_break = page_param(params)
-
         %Oli.Delivery.ActivityProvider.Result{
           revisions: activity_revisions,
           transformed_content: transformed_content
@@ -105,8 +103,7 @@ defmodule OliWeb.ResourceController do
                 ),
               content_html:
                 PageEditor.render_page_html(project_slug, transformed_content, author,
-                  preview: true,
-                  active_page_break: active_page_break
+                  preview: true
                 ),
               context: context,
               scripts: Activities.get_activity_scripts(),
@@ -119,8 +116,7 @@ defmodule OliWeb.ResourceController do
                   nil
                 end,
               page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
-              container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
-              active_page_break: active_page_break
+              container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )
 
           {:error, :not_found} ->
@@ -160,18 +156,5 @@ defmodule OliWeb.ResourceController do
         Breadcrumb.new(%{full_title: "Not Found"})
       ]
     )
-  end
-
-  defp page_param(params) do
-    case params do
-      %{"page" => page_param} ->
-        case Integer.parse(page_param) do
-          {parsed, _} -> parsed
-          :error -> 1
-        end
-
-      _ ->
-        1
-    end
   end
 end

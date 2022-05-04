@@ -22,7 +22,7 @@ export type AttachedObjectives = {
 // entries in a resource content array
 export type ResourceContent =
   | GroupContent
-  | PageBreak
+  | Break
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection;
@@ -35,7 +35,7 @@ export const getResourceContentName = (content: ResourceContent) => {
       return 'Content';
     case 'group':
       return 'Group';
-    case 'page-break':
+    case 'break':
       return 'Page Break';
     case 'selection':
       return 'Selection';
@@ -100,8 +100,8 @@ export const createGroup = (
   purpose: 'none',
 });
 
-export const createPageBreak = (): PageBreak => ({
-  type: 'page-break',
+export const createBreak = (): Break => ({
+  type: 'break',
   id: guid(),
 });
 
@@ -147,8 +147,8 @@ export interface GroupContent {
   children: Immutable.List<ResourceContent>;
 }
 
-export interface PageBreak {
-  type: 'page-break';
+export interface Break {
+  type: 'break';
   id: string;
 }
 

@@ -63,22 +63,4 @@ defmodule Oli.Resources.PageContent do
 
     mapped
   end
-
-  @doc """
-  Counts the number of top-level page breaks inside a workbook page. By default, all pages
-  are implicitly considered to have 1 page break. (page breaks use 1-based indexing)
-  """
-  def count_page_breaks(%{"model" => model}) do
-    Enum.reduce(model, 1, fn block, count ->
-      case block do
-        %{"type" => "page-break"} ->
-          count + 1
-
-          _ ->
-          count
-      end
-    end)
-  end
-
-  def count_page_breaks(%{}), do: nil
 end

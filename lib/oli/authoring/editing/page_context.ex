@@ -1,5 +1,5 @@
 defmodule Oli.Authoring.Editing.ResourceContext do
-  @derive {Jason.Encoder, except: [:project, :previous_page, :next_page, :num_page_breaks]}
+  @derive {Jason.Encoder, except: [:project, :previous_page, :next_page]}
   defstruct [
     :graded,
     :authorEmail,
@@ -17,7 +17,6 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     # these fields are not JSON encoded
     :project,
     :previous_page,
-    :next_page,
-    :num_page_breaks
+    :next_page
   ]
 end

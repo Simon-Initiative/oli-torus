@@ -1,15 +1,12 @@
-defmodule Oli.Rendering.Group do
+defmodule Oli.Rendering.Break do
   @moduledoc """
-  This modules defines the rendering functionality for group.
+  This modules defines the rendering functionality for content break.
   """
   import Oli.Utils
 
   alias Oli.Rendering.Context
 
-  @type next :: (() -> String.t())
-
-  @callback group(%Context{}, next, %{}) :: [any()]
-  @callback elements(%Context{}, []) :: [any()]
+  @callback break(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -17,18 +14,16 @@ defmodule Oli.Rendering.Group do
   """
   def render(
         %Context{} = context,
-        %{"type" => "group", "children" => children} = element,
+        %{"type" => "break"} = element,
         writer
       ) do
-    next = fn -> writer.elements(context, children) end
-
-    writer.group(context, next, element)
+    writer.break(context, element)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, element, writer) do
-    {error_id, error_msg} = log_error("Group render error", element)
+    {error_id, error_msg} = log_error("Element invalid", element)
 
     if render_opts.render_errors do
       writer.error(context, element, {:invalid, error_id, error_msg})
