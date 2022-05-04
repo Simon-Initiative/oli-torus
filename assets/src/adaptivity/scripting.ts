@@ -1,5 +1,5 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { parseArray, parseBoolean } from 'utils/common';
+import { formatNumber, parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
@@ -466,29 +466,6 @@ export const extractAllExpressionsFromText = (text: string): string[] => {
     expressions.push(...extractAllExpressionsFromText(rest));
   }
   return expressions;
-};
-
-export const formatNumber = (number: number) => {
-  const arrNumber = number.toString().split('.');
-  const containsDecimal = arrNumber.length > 1;
-  if (!containsDecimal) {
-    return number;
-  }
-  const decimalNumber = arrNumber[1];
-  const LeadingZerosInNumber = decimalNumber.toString().match(/\b0+/g);
-  let totalLeadingZerosInNumber = 0;
-  if (LeadingZerosInNumber?.length) {
-    totalLeadingZerosInNumber = LeadingZerosInNumber[0].length;
-  }
-
-  const modifiedNumber =
-    containsDecimal && totalLeadingZerosInNumber
-      ? Number(number).toFixed(totalLeadingZerosInNumber + 2)
-      : containsDecimal && decimalNumber.length > 2
-      ? Number(number).toFixed(2)
-      : number;
-
-  return modifiedNumber;
 };
 
 export const templatizeText = (
