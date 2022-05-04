@@ -220,6 +220,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             context: { mode: 'REVIEW', host: props.mountPoint },
             env: scriptEnv,
             domain: adaptivityDomain,
+            initStateFacts: {},
+            initStateBindToFacts: {},
           };
           partsInitDeferred.resolve(context);
           pusher.emit(NotificationType.CONTEXT_CHANGED, context);
