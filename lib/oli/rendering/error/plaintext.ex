@@ -6,9 +6,9 @@ defmodule Oli.Rendering.Error.Plaintext do
 
   alias Oli.Rendering.Context
 
-  def error(%Context{}, _element, {_, error_id, error_msg}) do
+  def error(%Context{}, _element, {_, _error_id, error_msg}) do
     [
-      "[#{error_msg}. Please contact support with issue ##{error_id}]\n"
+      "[#{error_msg}]\n"
     ]
   end
 end

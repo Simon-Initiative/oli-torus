@@ -22,7 +22,7 @@ defmodule Oli.Rendering.Page do
   # Renders an error message if the signature above does not match. Logging and rendering of errors
   # can be configured using the render_opts in context
   def render(%Context{render_opts: render_opts} = context, page_content, writer) do
-    {error_id, error_msg} = log_error("Page content is invalid", page_content)
+    {error_id, error_msg} = log_error("Page is invalid", page_content)
 
     if render_opts.render_errors do
       writer.error(context, page_content, {:invalid_page, error_id, error_msg})

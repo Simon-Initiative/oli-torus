@@ -6,9 +6,9 @@ defmodule Oli.Rendering.Error.Html do
 
   alias Oli.Rendering.Context
 
-  def error(%Context{}, _element, {_, error_id, error_msg}) do
+  def error(%Context{}, _element, {_, _error_id, error_msg}) do
     [
-      "<div class=\"alert alert-danger\">#{error_msg}. Please contact support with issue ##{error_id}</div>\n"
+      "<div class=\"alert alert-danger\">#{error_msg}\n"
     ]
   end
 end

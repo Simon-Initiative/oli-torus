@@ -285,7 +285,7 @@ function toPersistence(items: Immutable.List<ResourceContent>): any[] {
     const children =
       val.type === 'group'
         ? toPersistence(val.children)
-        : val.type === 'page-break'
+        : val.type === 'break'
         ? undefined
         : val.children;
 

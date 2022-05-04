@@ -78,8 +78,8 @@ defmodule Oli.Content.Page.HtmlTest do
 
                # render an error message for the invalid page
                assert rendered_html_string =~
-                        "<div class=\"alert alert-danger page invalid\">Page is invalid"
-             end) =~ "Page model is invalid"
+                        "<div class=\"alert alert-danger\">Page is invalid"
+             end) =~ "Page is invalid"
     end
 
     test "renders unsupported page items gracefully", %{author: author} do
@@ -111,8 +111,8 @@ defmodule Oli.Content.Page.HtmlTest do
 
                # render an error message for the unsupported page item
                assert rendered_html_string =~
-                        "<div class=\"alert alert-danger page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
-             end) =~ "Element type is not supported"
+                        "<div class=\"alert alert-danger\">Element type 'some-unsupported-page-item' is not supported"
+             end) =~ "Element type 'some-unsupported-page-item' is not supported"
     end
 
     test "handles missing language attributes on codeblocks gracefully", %{author: author} do
