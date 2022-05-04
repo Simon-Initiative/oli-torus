@@ -1,5 +1,5 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { parseArray, parseBoolean } from 'utils/common';
+import { formatNumber, parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
@@ -570,7 +570,8 @@ export const templatizeText = (
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
     } else if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toFixed(2));
+      const modifiedValue = formatNumber(strValue);
+      strValue = parseFloat(modifiedValue.toString());
     }
     return strValue;
   });
