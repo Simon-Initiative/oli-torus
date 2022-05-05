@@ -55,6 +55,7 @@ defmodule OliWeb.Api.ProductController do
   Access the list of available products.
   """
   @doc parameters: [],
+       security: [%{"bearer-authorization" => []}],
        responses: %{
          200 =>
            {"Product Listing Response", "application/json",
