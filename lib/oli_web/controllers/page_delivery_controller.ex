@@ -434,7 +434,6 @@ defmodule OliWeb.PageDeliveryController do
       activity_type_slug_mapping: %{},
       activity_types: activity_types,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       graded: context.page.graded,
       latest_attempts: %{},
       next_page: next,
