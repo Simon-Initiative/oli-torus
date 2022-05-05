@@ -155,6 +155,15 @@ defmodule Oli.Inventories do
       {:error, %Ecto.Changeset{}}
 
   """
+  def delete_publisher(%Publisher{default: true} = publisher) do
+    changeset =
+      publisher
+      |> Changeset.change()
+      |> Changeset.add_error(:default, "cannot delete the default publisher")
+
+    {:error, changeset}
+  end
+
   def delete_publisher(%Publisher{} = publisher) do
     publisher
     |> Changeset.change()

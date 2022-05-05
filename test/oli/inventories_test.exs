@@ -128,6 +128,12 @@ defmodule Oli.InventoriesTest do
       assert changeset.errors[:products] |> elem(0) == "are still associated with this entry"
     end
 
+    test "delete_publisher/1 returns an error when trying to delete the default publisher" do
+      default_publisher = Inventories.default_publisher()
+      assert {:error, changeset} = Inventories.delete_publisher(default_publisher)
+      assert changeset.errors[:default] |> elem(0) == "cannot delete the default publisher"
+    end
+
     test "change_publisher/1 returns a publisher changeset" do
       publisher = insert(:publisher)
       assert %Ecto.Changeset{} = Inventories.change_publisher(publisher)
