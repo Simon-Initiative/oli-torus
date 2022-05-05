@@ -81,6 +81,7 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                 <th>Prodcuts Enabled</th>
                 <th>Registration Enabled</th>
                 <th>Registration Namespace</th>
+                <th>Automation Data<br/>Setup Enabled</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -106,10 +107,16 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                   </td>
                   <td><input id={"text_#{key.id}"} type="text" phx-hook="TextInputListener" value={key.registration_namespace}/></td>
                   <td>
+                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="automation_setup_enabled" phx-value-id={key.id} phx-value-action={if key.automation_setup_enabled do "false" else "true" end}>
+                      <%= key.automation_setup_enabled %>
+                    </button>
+                  </td>
+                  <td>
                     <button type="button" class="btn btn-outline-danger" phx-click="toggle" phx-value-id={key.id} phx-value-action={action(key.status)}>
                       <%= action(key.status) %>
                     </button>
                   </td>
+
                 </tr>
               <% end %>
             </tbody>
@@ -152,8 +159,16 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
   end
 
   def handle_event("update", %{"field" => field, "id" => id, "action" => action}, socket) do
-
-    attrs = Map.put(%{}, String.to_existing_atom(field), if action == "true" do true else false end)
+    attrs =
+      Map.put(
+        %{},
+        String.to_existing_atom(field),
+        if action == "true" do
+          true
+        else
+          false
+        end
+      )
 
     Oli.Interop.get_key(id)
     |> Oli.Interop.update_key(attrs)
