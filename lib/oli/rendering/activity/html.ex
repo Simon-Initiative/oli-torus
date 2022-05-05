@@ -10,7 +10,8 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
-  defp get_flattened_activity_model(page_content, activity_id, activity_model) do
+  defp get_flattened_activity_model(page_content, activity_id, activity_map) do
+    activity_model = activity_map[activity_id].model
     [first | _tail] = page_content
     sequenceEntry = Enum.find(Map.get(first, "children", []), fn(%{"activity_id" => child_activity_id}) -> child_activity_id == activity_id end)
     case sequenceEntry do
@@ -18,6 +19,8 @@ defmodule Oli.Rendering.Activity.Html do
         Logger.error("Could not find activity_id #{activity_id} in page_content sequence")
         activity_model
       _ ->
+        parent_activity_id = Map.get(sequenceEntry, "layerRef", nil)
+        # if there is a parent, need to merge the model with the parent model, and recursively do so all the way up
         sequenceCustom = Map.get(sequenceEntry, "custom")
         sequenceId = Map.get(sequenceCustom, "sequenceId")
         mapped = Poison.decode!(HtmlEntities.decode(activity_model))
@@ -66,7 +69,7 @@ defmodule Oli.Rendering.Activity.Html do
         model_json = case tag do
           "oli-adaptive-delivery" ->
             page_model = Map.get(resource_attempt.content, "model")
-            get_flattened_activity_model(page_model, activity_id, activity_summary.model)
+            get_flattened_activity_model(page_model, activity_id, activity_map)
 
           _ -> activity_summary.model
         end
