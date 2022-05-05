@@ -500,6 +500,12 @@ defmodule OliWeb.Router do
     get("/", Api.ProductController, :index)
   end
 
+  scope "/api/v1/publishers", OliWeb do
+    pipe_through([:api])
+
+    get("/:publisher_id", Api.PublisherController, :show)
+  end
+
   scope "/api/v1/payments", OliWeb do
     pipe_through([:api])
     # This endpoint is secured via an API token

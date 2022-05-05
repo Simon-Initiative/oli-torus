@@ -2,16 +2,13 @@ defmodule OliWeb.Api.ProductController do
   @moduledoc """
   Endpoint for payment code bulk request.
   """
-
-  alias OpenApiSpex.Schema
-
-  alias Oli.Delivery.Sections
-  import OliWeb.Api.Helpers
-
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  plug :valid_product_api_key
+  alias Oli.Delivery.Sections
+  alias OpenApiSpex.Schema
+
+  plug Oli.Plugs.ValidateProductApiKey
 
   action_fallback OliWeb.FallbackController
 
@@ -65,13 +62,5 @@ defmodule OliWeb.Api.ProductController do
   def index(conn, _params) do
     products = Sections.list_blueprint_sections()
     render(conn, "index.json", products: products)
-  end
-
-  defp valid_product_api_key(conn, _options) do
-    if is_valid_api_key?(conn, &Oli.Interop.validate_for_products/1) do
-      conn
-    else
-      error(conn, 401, "Unauthorized")
-    end
   end
 end
