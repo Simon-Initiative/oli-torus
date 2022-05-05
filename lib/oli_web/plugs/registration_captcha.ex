@@ -68,7 +68,7 @@ defmodule Oli.Plugs.RegistrationCaptcha do
     changeset = Ecto.Changeset.add_error(changeset, :captcha, "failed, please try again")
 
     conn
-    |> OliWeb.DeliveryController.render_create_form(
+    |> OliWeb.DeliveryController.render_author_register_form(
       changeset: %{changeset | action: :insert},
       sign_in_path: Routes.authoring_pow_session_path(conn, :new),
       cancel_path: Routes.static_page_path(conn, :index)
@@ -87,12 +87,7 @@ defmodule Oli.Plugs.RegistrationCaptcha do
       |> Ecto.Changeset.apply_action(:insert)
 
     conn
-    |> assign(:changeset, changeset)
-    |> assign(:action, Routes.pow_registration_path(conn, :create))
-    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
-    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
-    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
-    |> Phoenix.Controller.render("new.html")
+    |> OliWeb.DeliveryController.render_user_register_form(changeset)
     |> halt()
   end
 
