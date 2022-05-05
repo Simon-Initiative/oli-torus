@@ -526,6 +526,18 @@ describe('Scripting Interface', () => {
       expect(script).toBe('"foo"');
     });
 
+    // Added Test case for the fix related to PMP-2785
+    it('should replace newline in a string with an empty space', () => {
+      const variable = {
+        type: CapiVariableTypes.STRING,
+        key: 'x',
+        value: 'Test\nString\n1',
+      };
+
+      const script = getExpressionStringForValue(variable);
+      expect(script).toBe('"Test String 1"');
+    });
+
     it('should deal with JSON values', () => {
       const jsonVal = '{"content":{"ops":[1, 2, 3]}}';
       const escapedVal = '{\\"content\\":{\\"ops\\":[1,2,3]}}';
