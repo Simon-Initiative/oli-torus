@@ -3,6 +3,7 @@ defmodule OliWeb.ProductControllerTest do
 
   use OliWeb.ConnCase
 
+  alias Oli.Inventories
   alias Oli.Seeder
 
   describe "index" do
@@ -13,6 +14,9 @@ defmodule OliWeb.ProductControllerTest do
       api_key: api_key,
       map: map
     } do
+      publisher_name = Oli.Inventories.default_publisher_name()
+      publisher_id = Inventories.get_publisher_by(%{name: publisher_name}).id
+
       prod1 = map.prod1
       prod2 = map.prod2
 
@@ -34,7 +38,8 @@ defmodule OliWeb.ProductControllerTest do
                  "requires_payment" => prod1.requires_payment,
                  "slug" => prod1.slug,
                  "status" => Atom.to_string(prod1.status),
-                 "title" => prod1.title
+                 "title" => prod1.title,
+                 "publisher_id" => publisher_id
                }
              end)
 
@@ -49,7 +54,8 @@ defmodule OliWeb.ProductControllerTest do
                  "requires_payment" => prod2.requires_payment,
                  "slug" => prod2.slug,
                  "status" => Atom.to_string(prod2.status),
-                 "title" => prod2.title
+                 "title" => prod2.title,
+                 "publisher_id" => publisher_id
                }
              end)
     end

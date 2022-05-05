@@ -44,7 +44,8 @@ defmodule OliWeb.Api.ProductController do
             "amount" => "$100.00",
             "has_grace_period" => true,
             "grace_period_days" => 10,
-            "grace_period_strategy" => "relative_to_student"
+            "grace_period_strategy" => "relative_to_student",
+            "publisher_id" => 10
           }
         ]
       }
