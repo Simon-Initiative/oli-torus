@@ -1,5 +1,7 @@
+import { defaultGlobalEnv } from 'adaptivity/scripting';
 import chroma from 'chroma-js';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { Environment } from 'janus-script';
 import React, { CSSProperties, useEffect, useRef } from 'react';
 import { ContextProps, InitResultProps } from './types';
 
@@ -102,9 +104,11 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
   };
 
   const handlePartInit = async ({ id, responses }: { id: string; responses: any[] }) => {
+    const activityScriptEnv = new Environment(defaultGlobalEnv);
     const result: InitResultProps = {
       snapshot,
       context,
+      env: activityScriptEnv,
     };
 
     /*   console.log('PopupWindow.handlePartInit', { result, id, responses }); */
