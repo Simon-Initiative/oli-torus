@@ -15,6 +15,8 @@ import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
 import { component } from 'components/component';
 
+import 'react-phoenix';
+
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
   .getAttribute('content');

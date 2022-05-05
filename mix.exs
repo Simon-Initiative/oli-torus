@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.19.0",
+      version: "0.19.1",
       elixir: "~> 1.13.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -177,6 +177,7 @@ defmodule Oli.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:pow, "~> 1.0.21"},
       {:pow_assent, "~> 0.4.9"},
+      {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
       {:surface, "~> 0.5.1"},
