@@ -850,6 +850,7 @@ defmodule OliWeb.Router do
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+    live("/products/:product_id/discounts", Products.Payments.Discounts)
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)

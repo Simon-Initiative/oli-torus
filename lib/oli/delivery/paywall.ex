@@ -420,6 +420,9 @@ defmodule Oli.Delivery.Paywall do
     |> Repo.update()
   end
 
+  # ------------------------------------------
+  # Discounts
+
   @doc """
   Creates a discount.
   ## Examples
@@ -432,5 +435,95 @@ defmodule Oli.Delivery.Paywall do
     %Discount{}
     |> Discount.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking discount changes.
+  ## Examples
+      iex> change_discount(discount)
+      %Ecto.Changeset{data: %Discount{}}
+  """
+  def change_discount(%Discount{} = discount, attrs \\ %{}),
+    do: Discount.changeset(discount, attrs)
+
+  @doc """
+  Deletes a discount.
+  ## Examples
+      iex> delete_discount(%{section_id: 1, institution_id: 1})
+      {:ok, %CommunityAccount{}}
+      iex> delete_discount(%{section_id: 1, institution_id: bad})
+      nil
+  """
+  def delete_discount(clauses) do
+    case get_discount_by!(clauses) do
+      nil -> {:error, :not_found}
+      discount -> Repo.delete(discount)
+    end
+  end
+
+  @doc """
+  Gets a discount by clauses. Will raise an error if
+  more than one matches the criteria.
+  ## Examples
+      iex> get_discount_by!(%{section_id: 1})
+      %Discount{}
+      iex> get_discount_by!(%{section_id: 123})
+      nil
+      iex> get_discount_by!(%{section_id: 2, u})
+      Ecto.MultipleResultsError
+  """
+  def get_discount_by!(clauses),
+    do: Repo.get_by(Discount, clauses)
+
+  @doc """
+  Gets a discount by institution id and section_id == nil
+  ## Examples
+      iex> get_institution_wide_discount!(1)
+      %Discount{}
+      iex> get_institution_wide_discount!(123)
+      nil
+      iex> get_institution_wide_discount!(2)
+      Ecto.MultipleResultsError
+  """
+  def get_institution_wide_discount!(institution_id) do
+    Repo.one(from(
+      d in Discount,
+      where: d.institution_id == ^institution_id and is_nil(d.section_id),
+      select: d
+    ))
+  end
+
+  @doc """
+  Updates a discount.
+  ## Examples
+      iex> update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_discount(%Discount{} = discount, attrs) do
+    discount
+    |> Discount.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Create or update (if exists) a discount.
+  ## Examples
+      iex> create_or_update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> create_or_update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_or_update_discount(attrs) do
+    case get_discount_by!(%{
+      section_id: attrs.section_id,
+      institution_id: attrs.institution_id
+    }) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
   end
 end

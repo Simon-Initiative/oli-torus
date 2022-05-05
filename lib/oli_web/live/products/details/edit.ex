@@ -5,6 +5,8 @@ defmodule OliWeb.Products.Details.Edit do
   import OliWeb.ErrorHelpers
   import Ecto.Changeset
 
+  alias OliWeb.Router.Helpers, as: Routes
+
   prop product, :any, default: nil
   prop changeset, :any, default: nil
   prop available_brands, :any, default: nil
@@ -107,6 +109,12 @@ defmodule OliWeb.Products.Details.Edit do
               <div><%= error_tag f, :grace_period_strategy %></div>
             </div>
 
+          </div>
+
+          <div class="form-row float-right">
+            <%= if @is_admin and get_field(@changeset, :requires_payment) do %>
+              <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts, @product.slug)}>Manage Discounts</a>
+            <% end %>
           </div>
 
           <%= submit "Save", class: "btn btn-primary" %>

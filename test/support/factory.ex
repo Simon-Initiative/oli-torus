@@ -17,7 +17,7 @@ defmodule Oli.Factory do
     SectionInvite
   }
 
-  alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Paywall.{Discount, Payment}
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Inventories.Publisher
@@ -185,6 +185,16 @@ defmodule Oli.Factory do
       logo: "www.logo.com",
       logo_dark: "www.logodark.com",
       favicons: "www.favicons.com",
+      institution: insert(:institution)
+    }
+  end
+
+  def discount_factory() do
+    %Discount{
+      type: :percentage,
+      percentage: 10,
+      amount: Money.new(:USD, 25),
+      section: insert(:section),
       institution: insert(:institution)
     }
   end

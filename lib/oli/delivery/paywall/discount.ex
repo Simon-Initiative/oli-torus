@@ -26,5 +26,7 @@ defmodule Oli.Delivery.Paywall.Discount do
     ])
     # section_id is not required, leaving it nil means the discount applies to all products
     |> validate_required([:type, :percentage, :amount, :institution_id])
+    |> unique_constraint([:section_id, :institution_id], name: :index_discount_section_institution)
+    |> foreign_key_constraint(:institution_id)
   end
 end

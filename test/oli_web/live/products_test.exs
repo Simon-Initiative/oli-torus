@@ -12,7 +12,7 @@ defmodule OliWeb.ProductsLiveTest do
   end
 
   defp create_product(_conn) do
-    product = insert(:section, type: :blueprint)
+    product = insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
 
     [product: product]
   end
@@ -90,6 +90,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "The Product title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
       assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
+      assert has_element?(view, "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts, product.slug)}\"]")
     end
   end
 end

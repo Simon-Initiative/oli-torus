@@ -1,13 +1,13 @@
 defmodule Oli.Delivery.PaywallTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Paywall
-  alias Oli.Delivery.Paywall.AccessSummary
+  import Ecto.Query, warn: false
+  import Oli.Factory
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.{Sections, Paywall}
+  alias Oli.Delivery.Paywall.{AccessSummary, Discount}
   alias Oli.Publishing
-  import Ecto.Query, warn: false
 
   def last_week() do
     {:ok, datetime} = DateTime.now("Etc/UTC")
@@ -478,6 +478,136 @@ defmodule Oli.Delivery.PaywallTest do
       section: section
     } do
       assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(section, nil)
+    end
+  end
+
+  describe "discount" do
+    test "create_discount/1 with valid data creates a discount" do
+      params = params_for(:discount)
+
+      assert {:ok, %Discount{} = discount} = Paywall.create_discount(params)
+      assert discount.type == params.type
+      assert discount.percentage == params.percentage
+      assert discount.amount == params.amount
+    end
+
+    test "create_discount/1 for existing product/institution returns error changeset" do
+      institution = insert(:institution)
+      product = insert(:section, type: :blueprint)
+      insert(:discount, institution: institution, section: product)
+      params = %{
+        institution_id: institution.id,
+        section_id: product.id,
+        type: :percentage,
+        amount: Money.new(:USD, 10),
+        percentage: 10.0
+      }
+
+      assert {:error, changeset} = Paywall.create_discount(params)
+      {error, _} = changeset.errors[:section_id]
+
+      refute changeset.valid?
+      assert error =~ "has already been taken"
+    end
+
+    test "get_discount_by!/1 returns a discount when exists one for the section and the institution" do
+      discount = insert(:discount)
+
+      returned_discount = Paywall.get_discount_by!(%{
+        section_id: discount.section_id,
+        institution_id: discount.institution_id
+      })
+
+      assert discount.id == returned_discount.id
+      assert discount.type == returned_discount.type
+    end
+
+    test "get_discount_by!/1 returns nil if the discount does not exist" do
+      refute Paywall.get_discount_by!(%{id: 123})
+    end
+
+    test "get_discount_by!/1 raises if returns more than one result" do
+      discount = insert(:discount)
+      insert(:discount, section: discount.section)
+
+      assert_raise Ecto.MultipleResultsError,
+                  ~r/^expected at most one result but got 2 in query/,
+                  fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
+    end
+
+    test "get_institution_wide_discount!/1 returns a discount when exists one for the institution" do
+      discount = insert(:discount, section: nil)
+
+      returned_discount = Paywall.get_institution_wide_discount!(discount.institution_id)
+
+      assert discount.id == returned_discount.id
+      assert discount.type == returned_discount.type
+    end
+
+    test "get_institution_wide_discount!/1 returns nil if a discount does not exist for the institution" do
+      refute Paywall.get_institution_wide_discount!(123)
+    end
+
+    test "get_institution_wide_discount!/1 raises if returns more than one result" do
+      discount = insert(:discount, section: nil)
+      insert(:discount, institution: discount.institution, section: nil)
+
+      assert_raise Ecto.MultipleResultsError,
+                  ~r/^expected at most one result but got 2 in query/,
+                  fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
+    end
+
+    test "update_discount/2 updates the discount successfully" do
+      discount = insert(:discount)
+
+      {:ok, updated_discount} = Paywall.update_discount(discount, %{percentage: 99.0})
+
+      assert discount.id == updated_discount.id
+      assert updated_discount.percentage == 99.0
+    end
+
+    test "update_discount/2 does not update the discount when there is an invalid field" do
+      discount = insert(:discount)
+
+      {:error, changeset} = Paywall.update_discount(discount, %{amount: nil})
+      {error, _} = changeset.errors[:amount]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
+    end
+
+    test "delete_discount/1 deletes the discount" do
+      discount = insert(:discount)
+
+      assert {:ok, _deleted_discount} = Paywall.delete_discount(%{id: discount.id})
+      refute Paywall.get_discount_by!(%{id: discount.id})
+    end
+
+    test "change_discount/1 returns a discount changeset" do
+      discount = insert(:discount)
+      assert %Ecto.Changeset{} = Paywall.change_discount(discount)
+    end
+
+    test "create_or_update_discount/1 creates a discount" do
+      params = params_for(:discount)
+
+      assert {:ok, %Discount{} = discount} = Paywall.create_or_update_discount(params)
+      assert discount.type == params.type
+      assert discount.percentage == params.percentage
+      assert discount.amount == params.amount
+    end
+
+    test "create_or_update_discount/1 updates an existing discount" do
+      discount = insert(:discount)
+      params = %{
+        institution_id: discount.institution_id,
+        section_id: discount.section_id,
+        type: :fixed_amount,
+      }
+
+      assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
+      assert updated_discount.id == discount.id
+      assert updated_discount.type == :fixed_amount
     end
   end
 end
