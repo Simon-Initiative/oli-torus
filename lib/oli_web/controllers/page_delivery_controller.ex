@@ -441,7 +441,6 @@ defmodule OliWeb.PageDeliveryController do
       current_page: current,
       user_id: user.id,
       next_url: next_url,
-      page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
       preview_mode: preview_mode,
       previous_url: previous_url,
