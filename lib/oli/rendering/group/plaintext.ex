@@ -19,9 +19,7 @@ defmodule Oli.Rendering.Group.Plaintext do
   end
 
   def elements(%Context{} = context, elements) do
-    {rendered, _br_count} = Elements.render(context, elements, Elements.Plaintext)
-
-    rendered
+    Elements.render(context, elements, Elements.Plaintext)
   end
 
   def error(%Context{} = context, element, error) do

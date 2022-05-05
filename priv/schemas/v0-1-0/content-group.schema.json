@@ -24,23 +24,7 @@
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     },
     "children": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
-          }
-        ]
-      }
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }
   },
   "required": [

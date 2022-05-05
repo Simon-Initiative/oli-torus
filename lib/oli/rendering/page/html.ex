@@ -9,9 +9,7 @@ defmodule Oli.Rendering.Page.Html do
   @behaviour Oli.Rendering.Page
 
   def page(%Context{} = context, model) do
-    {rendered, _br_count} = Elements.render(context, model, Elements.Html)
-
-    rendered
+    Elements.render(context, model, Elements.Html)
   end
 
   def error(%Context{} = context, element, error) do

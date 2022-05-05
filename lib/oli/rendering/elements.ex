@@ -13,6 +13,7 @@ defmodule Oli.Rendering.Elements do
   @callback group(%Context{}, %{}) :: [any()]
   @callback break(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
+  @callback paginate({[], Integer.t()}) :: [any()]
 
   @doc """
   Renders an Oli page given a valid page model (list of page items).
@@ -51,6 +52,7 @@ defmodule Oli.Rendering.Elements do
              writer.error(context, element, {:unsupported, error_id, error_msg}), br_count}
       end
     end)
+    |> writer.paginate()
   end
 
   # Renders an error message if the signature above does not match. Logging and rendering of errors

@@ -17,10 +17,8 @@
       <%= link "Sign in / Create account", to: Routes.delivery_path(@conn, :signin, section: maybe_section_slug(@conn)), class: "dropdown-item btn" %>
       <div class="dropdown-divider"></div>
       <div class="dropdown-item no-hover">
-        Dark Mode <div id="theme-toggle"></div>
-        <script>
-        window.component.mount('DarkModeSelector', document.getElementById('theme-toggle'), {showLabels: false})
-        </script>
+        Dark Mode
+        <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
       </div>
       <div class="dropdown-divider"></div>
       <%= link "Leave course", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
@@ -46,8 +44,8 @@
       <%= if user_is_independent_learner?(@current_user) do %>
         <%= link "Edit Account", to: Routes.pow_registration_path(@conn, :edit), class: "dropdown-item btn" %>
         <div class="dropdown-item no-hover">
-          Dark Mode <div id="theme-toggle"></div>
-          <script>window.component.mount('DarkModeSelector', document.getElementById('theme-toggle'), {showLabels: false})</script>
+          Dark Mode
+          <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
         </div>
         <div class="dropdown-divider"></div>
       <% end %>
