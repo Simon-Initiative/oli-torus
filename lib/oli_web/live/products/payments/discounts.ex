@@ -88,7 +88,7 @@ defmodule OliWeb.Products.Payments.Discounts do
   end
 
   defp mount_for(:institution = live_action, %{"institution_id" => institution_id}, socket) do
-    case Institutions.get_institution!(institution_id) do
+    case Institutions.get_institution_by!(%{id: institution_id}) do
       %Institution{name: name} = institution ->
         {discount, changeset} =
           case Paywall.get_institution_wide_discount!(institution_id) do

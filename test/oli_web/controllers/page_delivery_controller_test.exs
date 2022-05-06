@@ -775,13 +775,70 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
     test "export enrollments as csv", %{conn: conn} do
       user = insert(:user)
-      section = insert(:section)
+      section = insert(:section, open_and_free: true)
       {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
 
       conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
 
       assert response(conn, 200) =~
-        "Cost: Free\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+        "Cost: Free\r\nDiscount N/A\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+    end
+
+    test "export enrollments as csv with discount info - percentage", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, section: product, institution: institution)
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Product-Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+    end
+
+    test "export enrollments as csv with discount info - amount", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, section: product, institution: institution, type: :fixed_amount, amount: Money.new(:USD, 100))
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Product-Institution: $100.00\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+    end
+
+    test "export enrollments as csv with discount info - institution wide", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, institution: institution, section: nil)
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
     end
   end
 
