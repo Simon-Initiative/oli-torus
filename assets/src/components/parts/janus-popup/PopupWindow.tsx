@@ -1,5 +1,6 @@
 import chroma from 'chroma-js';
 import PartsLayoutRenderer from 'components/activities/adaptive/components/delivery/PartsLayoutRenderer';
+import { Environment } from 'janus-script';
 import React, { CSSProperties, useEffect, useRef } from 'react';
 import { ContextProps, InitResultProps } from './types';
 
@@ -9,6 +10,7 @@ interface PopupWindowProps {
   context: ContextProps;
   snapshot?: Record<string, unknown>;
   onClose?: () => void;
+  env?: Environment;
 }
 
 const PopupWindow: React.FC<PopupWindowProps> = ({
@@ -17,6 +19,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
   context,
   onClose,
   snapshot = {},
+  env,
 }) => {
   const popupModalStyles: CSSProperties = {
     width: config?.width || 300,
@@ -105,6 +108,7 @@ const PopupWindow: React.FC<PopupWindowProps> = ({
     const result: InitResultProps = {
       snapshot,
       context,
+      env,
     };
 
     /*   console.log('PopupWindow.handlePartInit', { result, id, responses }); */
