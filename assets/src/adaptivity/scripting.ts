@@ -95,6 +95,15 @@ export const getExpressionStringForValue = (
     if (isCSSString?.length) {
       actuallyAString = true;
     }
+
+    // at this point, if the value fails an evalScript check, it is probably a math expression
+    try {
+      const testEnv = new Environment(env);
+      evalScript(val, testEnv);
+    } catch (err) {
+      actuallyAString = true;
+    }
+
     if (!actuallyAString) {
       try {
         const testEnv = new Environment(env);
