@@ -49,14 +49,14 @@ defmodule Hound.LoginTest do
     {:ok, author_seed}
   end
 
-  defp create_author_account(), do: create_user_account(SystemRole.role_id().author)
+  defp create_author_account(), do: create_user_account(Oli.Accounts.SystemRole.role_id().author)
 
   defp create_user_account(role_id) do
     password =
       for _ <- 1..20, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz_$#@!')>>
 
     {:ok, user} =
-      Author.changeset(Factory.author_factory(), %{
+      Oli.Accounts.Author.changeset(Factory.author_factory(), %{
         password: password,
         password_confirmation: password,
         system_role_id: role_id
