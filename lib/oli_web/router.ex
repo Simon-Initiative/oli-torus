@@ -850,7 +850,7 @@ defmodule OliWeb.Router do
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
-    live("/products/:product_id/discounts", Products.Payments.Discounts)
+    live("/products/:product_id/discounts", Products.Payments.Discounts, :product, as: :discount)
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
@@ -860,6 +860,7 @@ defmodule OliWeb.Router do
 
     # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController)
+    live("/institutions/:institution_id/discounts", Products.Payments.Discounts, :institution, as: :discount)
 
     live("/registrations", Admin.RegistrationsView)
 

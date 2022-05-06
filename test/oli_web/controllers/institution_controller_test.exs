@@ -72,6 +72,7 @@ defmodule OliWeb.InstitutionControllerTest do
     test "renders institution details", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some name"
+      assert html_response(conn, 200) =~ "href=\"#{Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)}\""
     end
 
     test "renders institution registration details", %{conn: conn, institution: institution} do

@@ -4,54 +4,103 @@ defmodule OliWeb.Products.Payments.Discounts do
   alias Oli.Delivery.{Paywall, Sections}
   alias Oli.Delivery.Paywall.Discount
   alias Oli.Delivery.Sections.Section
+  alias Oli.Institutions
   alias Oli.Institutions.Institution
   alias Oli.Lti.Tool.Deployment
   alias OliWeb.Common.{Breadcrumb, FormContainer}
   alias OliWeb.Products.Payments.DiscountsForm
+  alias OliWeb.InstitutionController
   alias OliWeb.Router.Helpers, as: Routes
 
   data breadcrumbs, :any
-  data title, :string, default: "Product Discount"
+  data title, :string, default: "Manage Discount"
   data product, :any, default: nil
+  data institution, :any, default: nil
   data discount, :any, default: nil
   data changeset, :changeset, default: nil
+  data institution_name, :string, default: ""
 
-  defp set_breadcrumbs(product) do
-    OliWeb.Products.DetailsView.set_breadcrumbs(product)
-    |> breadcrumb(product)
+  defp set_breadcrumbs(:product = live_action, product) do
+    breadcrumb(
+      OliWeb.Products.DetailsView.set_breadcrumbs(product),
+      live_action,
+      product.slug
+    )
   end
 
-  def breadcrumb(previous, product) do
+  defp set_breadcrumbs(:institution = live_action, institution) do
+    (InstitutionController.root_breadcrumbs() ++
+      [
+        Breadcrumb.new(%{
+          full_title: "#{institution.name}",
+          link: Routes.institution_path(OliWeb.Endpoint, :show, institution.id)
+        })
+      ]
+    )
+    |> breadcrumb(live_action, institution.id)
+  end
+
+  def breadcrumb(previous, live_action, entity_slug) do
     previous ++
       [
         Breadcrumb.new(%{
           full_title: "Discounts",
-          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, product.slug)
+          link: Routes.discount_path(OliWeb.Endpoint, live_action, entity_slug)
         })
       ]
   end
 
-  def mount(%{"product_id" => product_slug}, _session, socket) do
+  def mount(params, _session, socket) do
+    # Discounts used in two routes.
+    # live_action is :institution or :product
+    live_action = socket.assigns.live_action
+
+    mount_for(live_action, params, socket)
+  end
+
+  defp mount_for(:product = live_action, %{"product_id" => product_slug}, socket) do
     case Sections.get_section_by_slug(product_slug) do
       %Section{
         type: :blueprint,
         lti_1p3_deployment: %Deployment{
-          institution: %Institution{id: institution_id}
+          institution: %Institution{id: institution_id, name: institution_name}
         }
       } = product ->
-        {has_discount, changeset} =
+        {discount, changeset} =
           case Paywall.get_discount_by!(%{
             section_id: product.id,
             institution_id: institution_id
           }) do
-            nil -> {false, Paywall.change_discount(%Discount{})}
-            discount -> {true, Paywall.change_discount(discount)}
+            nil -> {nil, Paywall.change_discount(%Discount{})}
+            discount -> {discount, Paywall.change_discount(discount)}
           end
 
         {:ok, assign(socket,
-          breadcrumbs: set_breadcrumbs(product),
+          breadcrumbs: set_breadcrumbs(live_action, product),
+          institution_name: institution_name,
           product: product,
-          has_discount: has_discount,
+          discount: discount,
+          changeset: changeset
+        )}
+
+      _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+    end
+  end
+
+  defp mount_for(:institution = live_action, %{"institution_id" => institution_id}, socket) do
+    case Institutions.get_institution!(institution_id) do
+      %Institution{name: name} = institution ->
+        {discount, changeset} =
+          case Paywall.get_institution_wide_discount!(institution_id) do
+            nil -> {nil, Paywall.change_discount(%Discount{})}
+            discount -> {discount, Paywall.change_discount(discount)}
+          end
+
+        {:ok, assign(socket,
+          breadcrumbs: set_breadcrumbs(live_action, institution),
+          institution_name: name,
+          institution: institution,
+          discount: discount,
           changeset: changeset
         )}
 
@@ -63,8 +112,8 @@ defmodule OliWeb.Products.Payments.Discounts do
     ~F"""
       <FormContainer title={@title}>
         <DiscountsForm
-          institution_name={@product.lti_1p3_deployment.institution.name}
-          has_discount={@has_discount}
+          institution_name={@institution_name}
+          discount={@discount}
           changeset={@changeset}
           save="save"
           clear="clear" />
@@ -75,9 +124,10 @@ defmodule OliWeb.Products.Payments.Discounts do
   def handle_event("save", %{"discount" => params}, socket) do
     socket = clear_flash(socket)
 
+    rels_params = get_rels_params(socket.assigns)
     attrs = %{
-      section_id: socket.assigns.product.id,
-      institution_id: socket.assigns.product.lti_1p3_deployment.institution.id,
+      section_id: rels_params.section_id,
+      institution_id: rels_params.institution_id,
       percentage: params["percentage"],
       amount: params["amount"],
       type: params["type"]
@@ -88,7 +138,7 @@ defmodule OliWeb.Products.Payments.Discounts do
         {:noreply,
           socket
           |> put_flash(:info, "Discount successfully created/updated.")
-          |> assign(has_discount: true, changeset: Paywall.change_discount(discount))}
+          |> assign(discount: discount, changeset: Paywall.change_discount(discount))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -101,17 +151,12 @@ defmodule OliWeb.Products.Payments.Discounts do
   def handle_event("clear", _params, socket) do
     socket = clear_flash(socket)
 
-    attrs = %{
-      section_id: socket.assigns.product.id,
-      institution_id: socket.assigns.product.lti_1p3_deployment.institution.id,
-    }
-
-    case Paywall.delete_discount(attrs) do
+    case Paywall.delete_discount(socket.assigns.discount) do
       {:ok, _discount} ->
         {:noreply,
           socket
           |> put_flash(:info, "Discount successfully cleared.")
-          |> assign(has_discount: false, changeset: Paywall.change_discount(%Discount{}))}
+          |> assign(discount: nil, changeset: Paywall.change_discount(%Discount{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -119,5 +164,19 @@ defmodule OliWeb.Products.Payments.Discounts do
           |> put_flash(:error, "Discount couldn't be cleared.")
           |> assign(changeset: changeset)}
     end
+  end
+
+  defp get_rels_params(%{live_action: :product} = assigns) do
+    %{
+      section_id: assigns.product.id,
+      institution_id: assigns.product.lti_1p3_deployment.institution.id
+    }
+  end
+
+  defp get_rels_params(%{live_action: :institution} = assigns) do
+    %{
+      section_id: nil,
+      institution_id: assigns.institution.id,
+    }
   end
 end

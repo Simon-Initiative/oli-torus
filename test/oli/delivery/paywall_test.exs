@@ -579,7 +579,7 @@ defmodule Oli.Delivery.PaywallTest do
     test "delete_discount/1 deletes the discount" do
       discount = insert(:discount)
 
-      assert {:ok, _deleted_discount} = Paywall.delete_discount(%{id: discount.id})
+      assert {:ok, _deleted_discount} = Paywall.delete_discount(discount)
       refute Paywall.get_discount_by!(%{id: discount.id})
     end
 
@@ -602,7 +602,20 @@ defmodule Oli.Delivery.PaywallTest do
       params = %{
         institution_id: discount.institution_id,
         section_id: discount.section_id,
-        type: :fixed_amount,
+        type: :fixed_amount
+      }
+
+      assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
+      assert updated_discount.id == discount.id
+      assert updated_discount.type == :fixed_amount
+    end
+
+    test "create_or_update_discount/1 updates an existing discount (only institution)" do
+      discount = insert(:discount, section: nil)
+      params = %{
+        institution_id: discount.institution_id,
+        section_id: nil,
+        type: :fixed_amount
       }
 
       assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)

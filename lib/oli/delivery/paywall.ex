@@ -449,17 +449,13 @@ defmodule Oli.Delivery.Paywall do
   @doc """
   Deletes a discount.
   ## Examples
-      iex> delete_discount(%{section_id: 1, institution_id: 1})
-      {:ok, %CommunityAccount{}}
-      iex> delete_discount(%{section_id: 1, institution_id: bad})
+      iex> delete_discount(discount)
+      {:ok, %Discount{}}
+      iex> delete_discount(discount)
       nil
   """
-  def delete_discount(clauses) do
-    case get_discount_by!(clauses) do
-      nil -> {:error, :not_found}
-      discount -> Repo.delete(discount)
-    end
-  end
+  def delete_discount(%Discount{} = discount),
+    do: Repo.delete(discount)
 
   @doc """
   Gets a discount by clauses. Will raise an error if
@@ -515,6 +511,15 @@ defmodule Oli.Delivery.Paywall do
       iex> create_or_update_discount(discount, %{name: bad_value})
       {:error, %Ecto.Changeset{}}
   """
+  def create_or_update_discount(%{section_id: nil} = attrs) do
+    case get_institution_wide_discount!(attrs.institution_id) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
+  end
+
   def create_or_update_discount(attrs) do
     case get_discount_by!(%{
       section_id: attrs.section_id,

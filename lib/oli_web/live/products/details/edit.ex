@@ -113,7 +113,7 @@ defmodule OliWeb.Products.Details.Edit do
 
           <div class="form-row float-right">
             <%= if @is_admin and get_field(@changeset, :requires_payment) do %>
-              <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts, @product.slug)}>Manage Discounts</a>
+              <a class="btn btn-link action-button" href={Routes.discount_path(OliWeb.Endpoint, :product, @product.slug)}>Manage Discounts</a>
             <% end %>
           </div>
 

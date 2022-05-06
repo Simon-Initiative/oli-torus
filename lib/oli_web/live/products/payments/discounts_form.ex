@@ -8,7 +8,7 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
   alias OliWeb.Common.Properties.ReadOnly
 
   prop changeset, :changeset, required: true
-  prop has_discount, :boolean, default: false
+  prop discount, :any, required: true
   prop save, :event, required: true
   prop clear, :event, required: true
   prop institution_name, :string
@@ -39,7 +39,7 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
         <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
       </Form>
 
-      <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={!@has_discount}>Clear</button>
+      <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={is_nil(@discount)}>Clear</button>
     """
   end
 end
