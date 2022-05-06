@@ -370,6 +370,7 @@ defmodule OliWeb.PageDeliveryController do
     })
   end
 
+  # Advanced / adaptive lesson page rendering
   defp render_page(
          %PageContext{page: %{content: %{"advancedDelivery" => true}}} = context,
          conn,
@@ -389,39 +390,54 @@ defmodule OliWeb.PageDeliveryController do
     user = conn.assigns.current_user
 
     resource_attempt = Enum.at(context.resource_attempts, 0)
-    {:ok, resource_attempt_state} = Jason.encode(resource_attempt.state)
-
-    {:ok, activity_guid_mapping} =
-      context.activities
-      |> Jason.encode()
 
     {:ok, {previous, next, _}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, context.page.resource_id)
 
+    previous_url = url_from_desc(conn, section_slug, previous)
+    next_url = url_from_desc(conn, section_slug, next)
+
+    activity_types = Activities.activities_for_section()
+
     render(conn, "advanced_delivery.html", %{
-      review_mode: context.review_mode,
-      graded: context.page.graded,
-      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
-      resource_attempt_guid: resource_attempt.attempt_guid,
-      latest_attempts: %{},
+      app_params: %{
+        activityTypes: activity_types,
+        resourceId: context.page.resource_id,
+        sectionSlug: section_slug,
+        userId: user.id,
+        userName: conn.assigns.current_user.name,
+        pageTitle: context.page.title,
+        pageSlug: context.page.slug,
+        graded: context.page.graded,
+        content: context.page.content,
+        resourceAttemptState: resource_attempt.state,
+        resourceAttemptGuid: resource_attempt.attempt_guid,
+        activityGuidMapping: context.activities,
+        previousPageURL: previous_url,
+        nextPageURL: next_url,
+        previewMode: preview_mode,
+        reviewMode: context.review_mode
+      },
       activity_type_slug_mapping: %{},
-      resource_attempt_state: resource_attempt_state,
-      activity_guid_mapping: activity_guid_mapping,
-      content: Jason.encode!(context.page.content),
-      activity_types: Activities.activities_for_section(),
-      scripts: Activities.get_activity_scripts(:delivery_script),
-      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
-      section_slug: section_slug,
-      title: context.page.title,
-      resource_id: context.page.resource_id,
-      slug: context.page.slug,
-      previous_page: previous,
+      activity_types: activity_types,
+      additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
+      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
+      graded: context.page.graded,
+      latest_attempts: %{},
       next_page: next,
-      user_id: user.id,
-      preview_mode: preview_mode,
-      section: section,
+      next_url: next_url,
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
+      part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+      preview_mode: preview_mode,
+      previous_url: previous_url,
+      previous_page: previous,
+      resource_attempt_guid: resource_attempt.attempt_guid,
+      resource_id: context.page.resource_id,
+      section: section,
+      section_slug: section_slug,
+      slug: context.page.slug,
+      scripts: Activities.get_activity_scripts(:delivery_script),
+      title: context.page.title
     })
   end
 
@@ -718,4 +734,12 @@ defmodule OliWeb.PageDeliveryController do
       date(datetime, conn: conn, precision: :minutes)
     end
   end
+
+  defp url_from_desc(_, _, nil), do: nil
+
+  defp url_from_desc(conn, section_slug, %{"type" => "container", "slug" => slug}),
+    do: Routes.page_delivery_path(conn, :container_preview, section_slug, slug)
+
+  defp url_from_desc(conn, section_slug, %{"type" => "page", "slug" => slug}),
+    do: Routes.page_delivery_path(conn, :page_preview, section_slug, slug)
 end

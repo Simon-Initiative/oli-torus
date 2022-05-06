@@ -8,7 +8,20 @@ defmodule OliWeb.ResourceControllerTest do
   describe "edit" do
     test "renders resource editor", %{conn: conn, project: project, revision1: revision} do
       conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
-      assert html_response(conn, 200) =~ "window.oliMountApplication"
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.PageEditor\" data-react-props=\""
+    end
+
+    test "renders adaptive editor", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: revision
+    } do
+      conn = get(conn, Routes.resource_path(conn, :edit, project.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.Authoring\" data-react-props=\""
     end
 
     test "renders error when resource does not exist", %{conn: conn, project: project} do
@@ -75,6 +88,18 @@ defmodule OliWeb.ResourceControllerTest do
   end
 
   describe "preview" do
+    test "renders an adanced lesson preview", %{
+      conn: conn,
+      project: project,
+      adaptive_page_revision: adaptive_page_revision
+    } do
+      conn =
+        get(conn, Routes.resource_path(conn, :preview, project.slug, adaptive_page_revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.Delivery\" data-react-props=\""
+    end
+
     test "renders page preview with next page links", %{
       conn: conn,
       project: project,
@@ -126,7 +151,9 @@ defmodule OliWeb.ResourceControllerTest do
   end
 
   def project_seed(%{conn: conn}) do
-    seeds = Oli.Seeder.base_project_with_resource2()
+    seeds =
+      Oli.Seeder.base_project_with_resource2()
+      |> Oli.Seeder.add_adaptive_page()
 
     conn =
       Pow.Plug.assign_current_user(

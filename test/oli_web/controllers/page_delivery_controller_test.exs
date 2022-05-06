@@ -41,6 +41,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h1 class=\"title\">"
     end
 
+    test "handles student adaptive page access by an enrolled student", %{
+      conn: conn,
+      map: %{adaptive_page_revision: revision},
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.Delivery\" data-react-props=\""
+    end
+
     test "handles student page access by a non enrolled student", %{
       conn: conn,
       revision: revision,
@@ -546,6 +562,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         :author,
         :activity
       )
+      |> Seeder.add_adaptive_page()
 
     attrs = %{
       graded: true,

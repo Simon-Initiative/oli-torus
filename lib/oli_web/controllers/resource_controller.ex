@@ -19,37 +19,67 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
-    project = conn.assigns.project
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} ->
-        render(conn, determine_editor(context),
-          active: :curriculum,
-          breadcrumbs:
-            Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
-          is_admin?: is_admin?,
-          context: Jason.encode!(context),
-          raw_context: context,
-          scripts: Activities.get_activity_scripts(:authoring_script),
-          part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
-          project_slug: project_slug,
-          revision_slug: revision_slug,
-          activity_types: Activities.activities_for_project(project),
-          part_component_types: PartComponents.part_components_for_project(project),
-          graded: context.graded
-        )
+        render_editor(context, conn, project_slug, revision_slug, is_admin?)
 
       {:error, :not_found} ->
         render_not_found(conn, project_slug)
     end
   end
 
-  # Look at the revision content to determine which editor to display
-  defp determine_editor(context) do
-    case context.content do
-      %{"advancedAuthoring" => true} -> "advanced.html"
-      _ -> "edit.html"
-    end
+  defp render_editor(
+         %{content: %{"advancedAuthoring" => true}} = context,
+         conn,
+         project_slug,
+         revision_slug,
+         is_admin?
+       ) do
+    project = conn.assigns.project
+    activity_types = Activities.activities_for_project(project)
+
+    render(conn, "advanced.html",
+      app_params: %{
+        isAdmin: is_admin?,
+        revisionSlug: revision_slug,
+        projectSlug: project_slug,
+        graded: context.graded,
+        content: context,
+        paths: %{
+          images: Routes.static_path(conn, "/images")
+        },
+        activityTypes: activity_types,
+        partComponentTypes: PartComponents.part_components_for_project(project)
+      },
+      active: :curriculum,
+      activity_types: activity_types,
+      breadcrumbs:
+        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+      graded: context.graded,
+      part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
+      raw_context: context,
+      scripts: Activities.get_activity_scripts(:authoring_script)
+    )
+  end
+
+  defp render_editor(context, conn, project_slug, revision_slug, is_admin?) do
+    project = conn.assigns.project
+
+    render(conn, "edit.html",
+      active: :curriculum,
+      breadcrumbs:
+        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+      is_admin?: is_admin?,
+      raw_context: context,
+      scripts: Activities.get_activity_scripts(:authoring_script),
+      part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
+      project_slug: project_slug,
+      revision_slug: revision_slug,
+      activity_types: Activities.activities_for_project(project),
+      part_component_types: PartComponents.part_components_for_project(project),
+      graded: context.graded
+    )
   end
 
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
@@ -61,17 +91,34 @@ defmodule OliWeb.ResourceController do
         render_not_found(conn, project_slug)
 
       %{content: %{"advancedDelivery" => true}} = revision ->
+        activity_types = Activities.activities_for_project(project)
+
         put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
         |> render("advanced_page_preview.html",
-          revision: revision,
           additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-          activity_types: Activities.activities_for_project(project),
+          activity_types: activity_types,
           scripts: Activities.get_activity_scripts(:delivery_script),
           part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
           user: author,
           project_slug: project_slug,
           title: revision.title,
-          preview_mode: true
+          preview_mode: true,
+          app_params: %{
+            activityTypes: activity_types,
+            resourceId: revision.resource_id,
+            sectionSlug: project_slug,
+            userId: author.id,
+            pageSlug: revision.slug,
+            pageTitle: revision.title,
+            content: revision.content,
+            graded: revision.graded,
+            resourceAttemptState: nil,
+            resourceAttemptGuid: nil,
+            activityGuidMapping: nil,
+            previousPageURL: nil,
+            nextPageURL: nil,
+            previewMode: true
+          }
         )
 
       revision ->
