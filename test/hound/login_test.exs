@@ -1,6 +1,8 @@
 defmodule Hound.LoginTest do
   use Oli.HoundCase
 
+  alias Oli.Factory
+
   setup [:account_seed]
 
   @doc """
@@ -42,8 +44,28 @@ defmodule Hound.LoginTest do
   end
 
   def account_seed(_) do
-    author_seed = Oli.Seeder.create_author_account()
+    author_seed = create_author_account()
 
     {:ok, author_seed}
+  end
+
+  defp create_author_account(), do: create_user_account(SystemRole.role_id().author)
+
+  defp create_user_account(role_id) do
+    password =
+      for _ <- 1..20, into: "", do: <<Enum.random('0123456789abcdefghijklmnopqrstuvwxyz_$#@!')>>
+
+    {:ok, user} =
+      Author.changeset(Factory.author_factory(), %{
+        password: password,
+        password_confirmation: password,
+        system_role_id: role_id
+      })
+      |> Repo.insert()
+
+    %{
+      user: user,
+      password: password
+    }
   end
 end
