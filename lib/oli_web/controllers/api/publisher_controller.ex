@@ -47,6 +47,37 @@ defmodule OliWeb.Api.PublisherController do
     })
   end
 
+  defmodule PublisherListingResponse do
+    require OpenApiSpex
+
+    OpenApiSpex.schema(%{
+      title: "Publisher listing reponse",
+      description: "A collection of publishers available in the system",
+      type: :object,
+      properties: %{
+        publishers: %Schema{
+          type: :list,
+          description: "List of the publishers and their details"
+        },
+        result: %Schema{type: :string, description: "success"}
+      },
+      required: [:publishers, :result],
+      example: %{
+        "result" => "success",
+        "publishers" => [
+          %{
+            "id" => 1,
+            "name" => "Torus Publisher",
+            "email" => "publisher@torus.com",
+            "address" => "Torus Address",
+            "main_contact" => "Torus Contact",
+            "website_url" => "toruspublisher.com"
+          }
+        ]
+      }
+    })
+  end
+
   @doc """
   Access a publisher by id.
   """
@@ -73,5 +104,20 @@ defmodule OliWeb.Api.PublisherController do
       publisher ->
         render(conn, "show.json", publisher: publisher)
     end
+  end
+
+  @doc """
+  Access the list of available publishers.
+  """
+  @doc parameters: [],
+       security: [%{"bearer-authorization" => []}],
+       responses: %{
+         200 =>
+           {"Publisher Listing Response", "application/json",
+            OliWeb.Api.PublisherController.PublisherListingResponse}
+       }
+  def index(conn, _) do
+    publishers = Inventories.list_publishers()
+    render(conn, "index.json", publishers: publishers)
   end
 end

@@ -5,6 +5,8 @@ defmodule OliWeb.PublisherControllerTest do
 
   import Oli.Factory
 
+  alias Oli.Inventories
+
   describe "show" do
     setup [:setup_session]
 
@@ -66,6 +68,78 @@ defmodule OliWeb.PublisherControllerTest do
       Oli.Interop.update_key(key, %{status: :disabled})
 
       conn = get(conn, Routes.publisher_path(conn, :show, publisher.id))
+
+      assert response(conn, 401)
+    end
+  end
+
+  describe "index" do
+    setup [:setup_session]
+
+    test "returns all the existing publishers", %{
+      conn: conn,
+      api_key: api_key,
+      publisher: publisher
+    } do
+      conn =
+        conn
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> Base.encode64(api_key))
+        |> get(Routes.publisher_path(conn, :index))
+
+      default_publisher_name = Inventories.default_publisher_name()
+      default_publisher = Inventories.get_publisher_by(%{name: default_publisher_name})
+
+      publishers_response = json_response(conn, 200)["publishers"]
+
+      assert Enum.count(publishers_response) == 2
+
+      assert Enum.find(publishers_response, fn p ->
+               p == %{
+                 "id" => publisher.id,
+                 "name" => publisher.name,
+                 "email" => publisher.email,
+                 "address" => publisher.address,
+                 "main_contact" => publisher.main_contact,
+                 "website_url" => publisher.website_url
+               }
+             end)
+
+      assert Enum.find(publishers_response, fn p ->
+               p == %{
+                 "id" => default_publisher.id,
+                 "name" => default_publisher.name,
+                 "email" => default_publisher.email,
+                 "address" => default_publisher.address,
+                 "main_contact" => default_publisher.main_contact,
+                 "website_url" => default_publisher.website_url
+               }
+             end)
+    end
+
+    test "renders error when api key does not have product scope", %{
+      conn: conn,
+      api_key: api_key,
+      key: key
+    } do
+      conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
+
+      Oli.Interop.update_key(key, %{products_enabled: false})
+
+      conn = get(conn, Routes.publisher_path(conn, :index))
+
+      assert response(conn, 401)
+    end
+
+    test "renders error when api key has been disabled", %{
+      conn: conn,
+      api_key: api_key,
+      key: key
+    } do
+      conn = Plug.Conn.put_req_header(conn, "authorization", "Bearer " <> Base.encode64(api_key))
+
+      Oli.Interop.update_key(key, %{status: :disabled})
+
+      conn = get(conn, Routes.publisher_path(conn, :index))
 
       assert response(conn, 401)
     end

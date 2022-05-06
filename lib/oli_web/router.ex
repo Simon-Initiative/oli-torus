@@ -503,6 +503,7 @@ defmodule OliWeb.Router do
   scope "/api/v1/publishers", OliWeb do
     pipe_through([:api])
 
+    get("/", Api.PublisherController, :index)
     get("/:publisher_id", Api.PublisherController, :show)
   end
 
