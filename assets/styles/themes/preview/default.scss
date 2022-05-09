@@ -248,12 +248,16 @@ html.preview.dark {
   $feedback-error-bg: lighten($orange, 42%);
   $feedback-error-color: $orange;
 
-  $content-purpose-example-color: lighten($blue, 20%);
-  $content-purpose-learnmore-color: lighten($teal, 20%);
-  $content-purpose-manystudentswonder-color: lighten($cyan, 10%);
-  $activity-purpose-checkpoint-color: lighten($blue, 10%);
-  $activity-purpose-didigetthis-color: lighten($purple, 10%);
-  $activity-purpose-learnbydoing-color: lighten($green, 10%);
+  $content-purpose-checkpoint-color: lighten($blue, 20%);
+  $content-purpose-didigetthis-color: lighten($purple, 20%);
+  $content-purpose-example-color: lighten($blue, 30%);
+  $content-purpose-labactivity-color: lighten($teal, 30%);
+  $content-purpose-learnbydoing-color: lighten($green, 20%);
+  $content-purpose-learnmore-color: lighten($teal, 30%);
+  $content-purpose-manystudentswonder-color: lighten($cyan, 20%);
+  $content-purpose-quiz-color: lighten($cyan, 20%);
+  $content-purpose-simulation-color: lighten($cyan, 20%);
+  $content-purpose-walkthrough-color: lighten($cyan, 20%);
 
   // Auth providers buttons
 

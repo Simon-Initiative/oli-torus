@@ -12,8 +12,9 @@
     "clean": "del --force coverage/** ../priv/static",
     "lint": "eslint --quiet \"src/**/*.ts*\"",
     "format": "eslint --fix --quiet \"src/**/*.ts*\"",
-    "test": "jest && type-coverage",
+    "test": "jest",
     "test:watch": "jest --watch -o",
+    "type-coverage": "type-coverage",
     "sdk-docs": "npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts"
   },
   "dependencies": {

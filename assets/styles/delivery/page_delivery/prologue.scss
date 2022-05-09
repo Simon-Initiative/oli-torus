@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@import 'delivery/variables';
 
 .prologue {
   &.jumbotron {
@@ -16,25 +16,5 @@
       lighten($primary, 55%) 82%,
       lighten($primary, 45%) 100%
     );
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  .prologue {
-    &.jumbotron {
-      background: $gray-800;
-    }
-
-    &.allow-attempt {
-      // background: rgb(228,237,254);
-      background: linear-gradient(
-        135deg,
-        rgba($primary, 0.1) 0%,
-        rgba($primary, 0.25) 60%,
-        rgba($primary, 0.2) 70%,
-        rgba($primary, 0.25) 82%,
-        rgba($primary, 0.1) 100%
-      );
-    }
   }
 }

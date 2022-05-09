@@ -9,7 +9,7 @@ import styles from './AddResourceContent.modules.scss';
 
 export type AddCallback = (
   content: ResourceContent,
-  index: number,
+  index: number[],
   a?: ActivityEditContext,
 ) => void;
 

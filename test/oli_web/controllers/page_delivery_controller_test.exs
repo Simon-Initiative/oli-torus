@@ -386,6 +386,75 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = get(conn, redir_path)
       assert html_response(conn, 200) =~ "Submit Assessment"
     end
+
+    test "page with content breaks renders pagination controls", %{
+      map: map,
+      project: project,
+      user: user,
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      # add some content breaks to the page, and issue a publication
+      update_with_content_breaks = %{content: content_with_page_breaks()}
+
+      Oli.Authoring.Editing.PageEditor.acquire_lock(
+        project.slug,
+        page_revision.slug,
+        map.author.email
+      )
+
+      Oli.Authoring.Editing.PageEditor.edit(
+        project.slug,
+        page_revision.slug,
+        map.author.email,
+        update_with_content_breaks
+      )
+
+      Oli.Authoring.Editing.PageEditor.release_lock(
+        project.slug,
+        page_revision.slug,
+        map.author.email
+      )
+
+      {:ok, pub} = Oli.Publishing.publish_project(project, "add some content breaks")
+      Sections.update_section_project_publication(section, project.id, pub.id)
+      Oli.Delivery.Sections.rebuild_section_resources(section: section, publication: pub)
+
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the graded attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, page_revision.slug)
+        )
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the page, which should contain a pagination control
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert html_response(conn, 200) =~ ~s|<div class="paginated"><div class="elements">|
+      assert html_response(conn, 200) =~ "part one"
+      assert html_response(conn, 200) =~ ~s|<div class="content-break"></div>|
+      assert html_response(conn, 200) =~ "part two"
+      assert html_response(conn, 200) =~ "part three"
+      assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
+    end
   end
 
   describe "open and free page_delivery_controller" do
@@ -637,5 +706,69 @@ defmodule OliWeb.PageDeliveryControllerTest do
     {:ok, section} = Sections.create_section_resources(section, publication)
 
     %{section: section, project: project, publication: publication, author: author}
+  end
+
+  defp content_with_page_breaks() do
+    %{
+      "model" => [
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "text" => "part one"
+                }
+              ],
+              "id" => "1336568196",
+              "type" => "p"
+            }
+          ],
+          "id" => "1771657333",
+          "purpose" => "none",
+          "type" => "content"
+        },
+        %{
+          "id" => "3756901939",
+          "type" => "break"
+        },
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "text" => "part two"
+                }
+              ],
+              "id" => "3143315989",
+              "type" => "p"
+            }
+          ],
+          "id" => "1056281351",
+          "purpose" => "none",
+          "type" => "content"
+        },
+        %{
+          "id" => "4183898367",
+          "type" => "break"
+        },
+        %{
+          "children" => [
+            %{
+              "children" => [
+                %{
+                  "text" => "part three"
+                }
+              ],
+              "id" => "1908654643",
+              "type" => "p"
+            }
+          ],
+          "id" => "4063802480",
+          "purpose" => "none",
+          "type" => "content"
+        }
+      ],
+      "version" => "0.1.0"
+    }
   end
 end

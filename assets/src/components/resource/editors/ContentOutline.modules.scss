@@ -4,6 +4,7 @@
   .contentOutlineContainer {
     position: relative;
     width: 0px;
+    z-index: authoring.$z-content-1;
 
     transition: width 200ms ease-out;
   }
@@ -53,6 +54,12 @@
     background: authoring.$gray-200;
   }
 
+  .groupedOutline {
+    @extend .contentOutline;
+    padding-left: 10px;
+    border-right: none;
+  }
+
   .contentOutlineItems {
     overflow: auto;
   }
@@ -61,17 +68,29 @@
     padding-bottom: 60px;
   }
 
-  .header {
+  .toolbar {
+    display: flex;
+    flex-direction: row;
     padding: 4px;
   }
 
-  .headerButton {
+  .toolbarButton {
     border: none;
     border-radius: 4px;
     color: authoring.$body-color;
+    font-size: 14px;
 
     &:hover {
       background: authoring.$gray-400;
+    }
+  }
+
+  .buttonPrimary {
+    background-color: authoring.$primary;
+    color: authoring.$white;
+
+    &:hover {
+      background: authoring.$hover;
     }
   }
 
@@ -81,13 +100,41 @@
     padding: 6px 12px;
     border-radius: 4px;
     background: authoring.$body-bg;
-    height: 60px;
+    min-height: 60px;
     margin-bottom: 4px;
-    cursor: pointer;
 
     &:last-child {
       margin-bottom: 0;
     }
+  }
+
+  .contentLink {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .groupLink {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    background: authoring.$body-bg;
+    overflow: hidden;
+    padding: 6px 0px 6px 12px;
+    border-radius: 4px;
+    min-height: 60px;
+    cursor: pointer;
   }
 
   .icon {
@@ -126,6 +173,36 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+
+  .expandToggle {
+    padding: 4px;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    text-align: center;
+    margin-top: 10px;
+    margin-right: 10px;
+  }
+
+  .contentBreak {
+    min-height: 20px;
+
+    .contentLink {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+  .contentBreakLabel {
+    font-size: 12px;
+    color: authoring.$gray-600;
+  }
+
+  .contentBreakDashed {
+    flex-grow: 1;
+    border-bottom: 1px dashed authoring.$gray-600;
+    margin: 0 10px 8px 10px;
+  }
 }
 
 :global(html.authoring.dark) {
@@ -133,13 +210,14 @@
     border-radius: 50%;
   }
 
-  .contentOutline {
+  .contentOutline,
+  .groupedOutline {
     border-radius: 6px;
     border-color: authoring.$gray-800;
     background: authoring.$gray-800;
   }
 
-  .headerButton {
+  .toolbarButton {
     border-radius: 4px;
     background: authoring.$gray-800;
 

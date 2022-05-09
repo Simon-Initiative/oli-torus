@@ -21,7 +21,18 @@ defmodule Oli.EditingTest do
       revision1: revision1,
       project: project
     } do
-      content = %{"model" => [%{"type" => "p", children: [%{"text" => "A paragraph."}]}]}
+      content = %{
+        "version" => "0.1.0",
+        "model" => [
+          %{
+            "type" => "content",
+            "id" => "1",
+            "children" => [
+              %{"type" => "p", "children" => [%{"text" => "A paragraph."}]}
+            ]
+          }
+        ]
+      }
 
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
@@ -46,6 +57,7 @@ defmodule Oli.EditingTest do
 
       some_new_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "content",
@@ -77,6 +89,7 @@ defmodule Oli.EditingTest do
       # Now have author 1 make another edit:
       another_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "content",
@@ -107,6 +120,7 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       page_content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -132,13 +146,13 @@ defmodule Oli.EditingTest do
       assert latest_revision.deleted
     end
 
-
     test "edit/4 properly handles deleted activities even when an edit to a duplicate", %{
       author: author,
       project: project,
       revision1: revision1
     } do
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -168,7 +182,6 @@ defmodule Oli.EditingTest do
       project: project,
       revision1: revision1
     } do
-
       content = %{
         "stem" => "1",
         "authoring" => %{
@@ -205,14 +218,13 @@ defmodule Oli.EditingTest do
       {:ok, {revision, _}} =
         ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
-
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "activity-reference",
-            "id" => 1,
-            "activitySlug" => revision.slug,
-            "purpose" => "none"
+            "id" => "1",
+            "activitySlug" => revision.slug
           }
         ]
       }
@@ -234,6 +246,7 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision2} =
         PageEditor.edit(cloned_project.slug, revision1.slug, author.email, %{
           "content" => %{
+            "version" => "0.1.0",
             "model" => []
           }
         })
@@ -242,7 +255,6 @@ defmodule Oli.EditingTest do
 
       # Reread the revision of the activity, and verify that it is not deleted
       refute Oli.Repo.get!(Oli.Resources.Revision, revision.id).deleted
-
     end
 
     test "edit/4 can handle string keys in the update map", %{
@@ -277,6 +289,7 @@ defmodule Oli.EditingTest do
       })
 
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -306,6 +319,7 @@ defmodule Oli.EditingTest do
       })
 
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -333,6 +347,7 @@ defmodule Oli.EditingTest do
 
       # now try to make the edit with the original user
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -357,6 +372,7 @@ defmodule Oli.EditingTest do
       revision1: revision1
     } do
       content = %{
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",

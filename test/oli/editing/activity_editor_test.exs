@@ -182,12 +182,12 @@ defmodule Oli.ActivityEditingTest do
       # Verify that we can issue a resource edit that attaches the activity
       update = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",
-              "id" => 1,
-              "activitySlug" => slug,
-              "purpose" => "none"
+              "id" => "1",
+              "activitySlug" => slug
             }
           ]
         }
@@ -233,12 +233,12 @@ defmodule Oli.ActivityEditingTest do
       # Verify that we can issue a resource edit that attaches the activity
       update = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",
-              "id" => 1,
-              "activitySlug" => slug,
-              "purpose" => "none"
+              "id" => "1",
+              "activitySlug" => slug
             }
           ]
         }
@@ -274,12 +274,12 @@ defmodule Oli.ActivityEditingTest do
       # attach the activity
       update = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",
-              "id" => 1,
-              "activitySlug" => slug_1,
-              "purpose" => "none"
+              "id" => "1",
+              "activitySlug" => slug_1
             }
           ]
         }
