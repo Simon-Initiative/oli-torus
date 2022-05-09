@@ -64,7 +64,7 @@ defmodule OliWeb.Products.Details.Edit do
 
           <div class="form-row">
 
-            <div class="custom-control custom-switch" style="width: 200px;">
+            <div class="custom-control custom-switch fixed-width">
               <%= checkbox f, :requires_payment, disabled: !@is_admin, class: "custom-control-input" <> error_class(f, :requires_payment, "is-invalid"), autofocus: focusHelper(f, :requires_payment) %>
               <%= label f, :requires_payment, "Requires Payment", class: "custom-control-label" %>
               <%= error_tag f, :requires_payment %>
@@ -77,7 +77,7 @@ defmodule OliWeb.Products.Details.Edit do
             </div>
 
             <%= unless get_field(@changeset, :open_and_free) do %>
-              <div class="custom-control custom-switch" style="width: 200px;">
+              <div class="custom-control custom-switch fixed-width">
                 <%= checkbox f, :pay_by_institution, disabled: !@is_admin or !get_field(@changeset, :requires_payment), class: "custom-control-input" <> error_class(f, :pay_by_institution, "is-invalid"), autofocus: focusHelper(f, :pay_by_institution) %>
                 <%= label f, :pay_by_institution, "Pay by institution", class: "custom-control-label" %>
                 <%= error_tag f, :pay_by_institution %>
@@ -87,7 +87,7 @@ defmodule OliWeb.Products.Details.Edit do
 
           <div class="form-row">
 
-            <div class="custom-control custom-switch" style="width: 200px;">
+            <div class="custom-control custom-switch fixed-width">
               <%= checkbox f, :has_grace_period,
                 disabled: !@is_admin or !get_field(@changeset, :requires_payment),
                 class: "custom-control-input" <> error_class(f, :has_grace_period, "is-invalid"), autofocus: focusHelper(f, :requires_payment) %>

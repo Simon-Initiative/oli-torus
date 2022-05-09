@@ -452,7 +452,7 @@ defmodule Oli.Delivery.Paywall do
       iex> delete_discount(discount)
       {:ok, %Discount{}}
       iex> delete_discount(discount)
-      nil
+      {:error, changeset}
   """
   def delete_discount(%Discount{} = discount),
     do: Repo.delete(discount)
