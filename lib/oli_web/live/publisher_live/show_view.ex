@@ -2,8 +2,10 @@ defmodule OliWeb.PublisherLive.ShowView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
+  import OliWeb.ErrorHelpers
+
   alias Oli.Inventories
-  alias OliWeb.Common.{Breadcrumb, DeleteModal, Params, ShowSection}
+  alias OliWeb.Common.{Breadcrumb, Confirm, DeleteModal, Params, ShowSection}
 
   alias OliWeb.PublisherLive.{
     Form,
@@ -17,7 +19,7 @@ defmodule OliWeb.PublisherLive.ShowView do
   data changeset, :changeset
   data breadcrumbs, :list
   data modal, :any, default: nil
-  data is_default_publisher, :boolean, default: false
+  data show_confirm_default, :boolean, default: false
 
   def breadcrumb(publisher_id) do
     IndexView.breadcrumb() ++
@@ -40,13 +42,10 @@ defmodule OliWeb.PublisherLive.ShowView do
         publisher ->
           changeset = Inventories.change_publisher(publisher)
 
-          is_default_publisher = publisher.name == Inventories.default_publisher_name()
-
           assign(socket,
             publisher: publisher,
             changeset: changeset,
-            breadcrumbs: breadcrumb(publisher_id),
-            is_default_publisher: is_default_publisher
+            breadcrumbs: breadcrumb(publisher_id)
           )
       end
 
@@ -61,16 +60,26 @@ defmodule OliWeb.PublisherLive.ShowView do
           section_title="Details"
           section_description="Main publisher fields that will be shown to system admins."
         >
-          <Form changeset={@changeset} is_default_publisher={@is_default_publisher} save="save"/>
+          <Form changeset={@changeset} save="save"/>
         </ShowSection>
 
-        <ShowSection section_title="Actions">
-          <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal" disabled={@is_default_publisher}>Delete</button>
-            <span>Permanently delete this publisher.</span>
-          </div>
-        </ShowSection>
+        {#unless @publisher.default}
+          <ShowSection section_title="Actions">
+            <div class="d-flex align-items-center">
+              <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
+              <span>Permanently delete this publisher.</span>
+            </div>
+            <div class="d-flex align-items-center">
+              <button type="button" class="btn btn-link action-button" :on-click="show_set_default_modal">Set this publisher as the default</button>
+            </div>
+          </ShowSection>
+        {/unless}
       </div>
+      {#if @show_confirm_default}
+        <Confirm title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
+          Are you sure that you wish to set this publisher as the default?
+        </Confirm>
+      {/if}
     """
   end
 
@@ -106,11 +115,11 @@ defmodule OliWeb.PublisherLive.ShowView do
           |> put_flash(:info, "Publisher successfully deleted.")
           |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, IndexView))
 
-        {:error, %Ecto.Changeset{}} ->
+        {:error, %Ecto.Changeset{} = changeset} ->
           put_flash(
             socket,
             :error,
-            "Publisher couldn't be deleted."
+            "Publisher couldn't be deleted: #{translate_all_changeset_errors(changeset)}."
           )
       end
 
@@ -147,5 +156,28 @@ defmodule OliWeb.PublisherLive.ShowView do
     }
 
     {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("show_set_default_modal", _, socket) do
+    {:noreply, assign(socket, show_confirm_default: true)}
+  end
+
+  def handle_event("cancel_set_default_modal", _, socket) do
+    {:noreply, assign(socket, show_confirm_default: false)}
+  end
+
+  def handle_event("set_default", _, socket) do
+    socket = assign(socket, show_confirm_default: false)
+
+    case Inventories.set_default_publisher(socket.assigns.publisher) do
+      {:ok, default} ->
+        socket = put_flash(socket, :info, "Publisher successfully set as the default.")
+
+        {:noreply,
+         assign(socket, publisher: default, changeset: Inventories.change_publisher(default))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not update default publisher: #{translate_all_changeset_errors(changeset)}")}
+    end
   end
 end

@@ -188,7 +188,7 @@ defmodule Oli.CourseTest do
     end
 
     test "associates the default publisher with the new project", %{project: project} do
-      {:ok, default_publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+      default_publisher = Inventories.default_publisher()
 
       assert project.publisher_id == default_publisher.id
     end

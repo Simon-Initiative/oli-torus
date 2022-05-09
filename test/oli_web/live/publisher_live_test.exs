@@ -80,6 +80,10 @@ defmodule OliWeb.PublisherLiveTest do
       assert view
              |> element("#publishers-table")
              |> render() =~ "Torus Publisher"
+
+      assert view
+             |> element("#publishers-table span")
+             |> render() =~ "default"
     end
 
     test "applies searching", %{conn: conn} do
@@ -182,7 +186,9 @@ defmodule OliWeb.PublisherLiveTest do
 
       view
       |> element("form[phx-submit=\"save\"")
-      |> render_submit(%{publisher: %{name: publisher.name <> " ", email: "test@email.com"}})
+      |> render_submit(%{
+        publisher: %{name: publisher.name <> " ", email: "test@email.com", default: false}
+      })
 
       assert view
              |> element("div.alert.alert-danger")
@@ -223,6 +229,12 @@ defmodule OliWeb.PublisherLiveTest do
       |> render_click()
     end
 
+    defp render_set_default_modal(view) do
+      view
+      |> element("button[phx-click=\"show_set_default_modal\"]")
+      |> render_click()
+    end
+
     test "loads correctly with publisher data", %{conn: conn, publisher: publisher} do
       {:ok, view, _html} = live(conn, live_view_show_route(publisher.id))
 
@@ -236,6 +248,15 @@ defmodule OliWeb.PublisherLiveTest do
                |> render() =~
                  value
       end)
+    end
+
+    test "displays default badge when visiting the default publisher show page", %{conn: conn} do
+      %Publisher{id: id} = Inventories.default_publisher()
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      assert view
+             |> element("#publisher-overview span")
+             |> render() =~ "default"
     end
 
     test "displays error message when data is invalid", %{
@@ -328,14 +349,11 @@ defmodule OliWeb.PublisherLiveTest do
     test "disables the default publisher deletion", %{
       conn: conn
     } do
-      {:ok, default_publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+      default_publisher = Inventories.default_publisher()
 
       {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
 
-      assert view
-      |> element("button[phx-click=\"show_delete_modal\"]")
-      |> render() =~
-        "disabled"
+      refute has_element?(view, "button[phx-click=\"show_delete_modal\"]")
     end
 
     test "does not allow deleting the publisher if names do not match", %{
@@ -391,15 +409,47 @@ defmodule OliWeb.PublisherLiveTest do
       assert nil == Inventories.get_publisher(id)
     end
 
-    test "disables the default publisher name edition", %{conn: conn} do
-      {:ok, default_publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+    test "displays a confirm modal before setting a publisher as default", %{
+      conn: conn,
+      publisher: %Publisher{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      render_set_default_modal(view)
+
+      assert view
+             |> element("#set_default_modal h5.modal-title")
+             |> render() =~
+               "Confirm Default"
+    end
+
+    test "sets the publisher as the default", %{
+      conn: conn,
+      publisher: %Publisher{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      render_set_default_modal(view)
+
+      view
+      |> element("button[phx-click=\"set_default\"]")
+      |> render_click()
+
+      assert render(view) =~ "Publisher successfully set as the default."
+
+      assert view
+             |> element("#publisher-overview span")
+             |> render() =~ "default"
+    end
+
+    test "disables setting the publisher as the default when it is already the default", %{
+      conn: conn
+    } do
+      default_publisher = Inventories.default_publisher()
 
       {:ok, view, _html} = live(conn, live_view_show_route(default_publisher.id))
 
-      assert view
-             |> element("#publisher_name")
-             |> render() =~
-               "disabled"
+      refute has_element?(view, "button[phx-click=\"show_set_default_modal\"]")
     end
   end
 end
