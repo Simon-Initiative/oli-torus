@@ -14,8 +14,7 @@ defmodule OliWeb.ProductControllerTest do
       api_key: api_key,
       map: map
     } do
-      publisher_name = Oli.Inventories.default_publisher_name()
-      publisher_id = Inventories.get_publisher_by(%{name: publisher_name}).id
+      publisher_id = Inventories.default_publisher().id
 
       prod1 = map.prod1
       prod2 = map.prod2

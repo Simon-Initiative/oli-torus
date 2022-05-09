@@ -86,8 +86,7 @@ defmodule OliWeb.PublisherControllerTest do
         |> Plug.Conn.put_req_header("authorization", "Bearer " <> Base.encode64(api_key))
         |> get(Routes.publisher_path(conn, :index))
 
-      default_publisher_name = Inventories.default_publisher_name()
-      default_publisher = Inventories.get_publisher_by(%{name: default_publisher_name})
+      default_publisher = Inventories.default_publisher()
 
       publishers_response = json_response(conn, 200)["publishers"]
 
