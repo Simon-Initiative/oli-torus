@@ -129,9 +129,9 @@ defmodule Oli.Delivery.Hierarchy do
   end
 
   defp purge_duplicate_resources(
-        %HierarchyNode{resource_id: resource_id, children: children} = node,
-        processed_nodes
-      ) do
+         %HierarchyNode{resource_id: resource_id, children: children} = node,
+         processed_nodes
+       ) do
     processed_nodes = Map.put_new(processed_nodes, resource_id, node)
 
     {children, processed_nodes} =
@@ -195,7 +195,9 @@ defmodule Oli.Delivery.Hierarchy do
       end
 
     children =
-      Enum.filter(container_node.children, fn %HierarchyNode{revision: r} -> r.id !== source_node.revision.id end)
+      Enum.filter(container_node.children, fn %HierarchyNode{revision: r} ->
+        r.id !== source_node.revision.id
+      end)
       |> List.insert_at(insert_index, source_node)
 
     %HierarchyNode{container_node | children: children}

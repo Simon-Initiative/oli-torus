@@ -78,7 +78,7 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~
-                        "<div class=\"activity invalid alert alert-danger\">Activity error"
+                        "<div class=\"alert alert-danger\">Activity render error"
              end) =~ "Activity render error"
     end
 
@@ -115,7 +115,7 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~
-                        "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue"
+                        "<div class=\"alert alert-danger\">ActivitySummary with id 1 missing from activity_map"
              end) =~ "ActivitySummary with id 1 missing from activity_map"
     end
   end

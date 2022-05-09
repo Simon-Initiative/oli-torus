@@ -1,6 +1,7 @@
 defmodule Oli.Inventories.Publisher do
   use Ecto.Schema
   import Ecto.Changeset
+  import Oli.Utils
 
   schema "publishers" do
     field :name, :string
@@ -8,6 +9,10 @@ defmodule Oli.Inventories.Publisher do
     field :address, :string
     field :main_contact, :string
     field :website_url, :string
+    field :default, :boolean
+
+    has_many :products, Oli.Delivery.Sections.Section
+    has_many :projects, Oli.Authoring.Course.Project
 
     timestamps(type: :utc_datetime)
   end
@@ -15,9 +20,23 @@ defmodule Oli.Inventories.Publisher do
   @doc false
   def changeset(publisher, attrs \\ %{}) do
     publisher
-    |> cast(attrs, [:name, :email, :address, :main_contact, :website_url])
-    |> validate_required([:name, :email])
+    |> cast(attrs, [:name, :email, :address, :main_contact, :website_url, :default])
+    |> validate_required([:name, :email, :default])
     |> validate_format(:email, Oli.Utils.email_regex())
     |> unique_constraint(:name)
+    |> unique_constraint_if([:default], &is_default?/1,
+      name: :publisher_default_true_index,
+      message: "there must only be one default"
+    )
+  end
+
+  defp is_default?(changeset) do
+    case changeset do
+      %Ecto.Changeset{valid?: true} = changeset ->
+        get_field(changeset, :default)
+
+      _ ->
+        false
+    end
   end
 end

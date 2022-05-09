@@ -38,8 +38,20 @@ $z-overlay-2: 1050 !default;
 $z-overlay-3: 1100 !default;
 $z-overlay-4: 1150 !default;
 $z-highest: 10000 !default;
+
 $reposition-target: 999 !default;
 $dropdown-menu: 999 !default;
+
+$content-purpose-checkpoint-color: rgba(#0984e3, 0.75) !default;
+$content-purpose-didigetthis-color: rgba(#8e44ad, 0.75) !default;
+$content-purpose-example-color: rgba(#74b9ff, 0.75) !default;
+$content-purpose-labactivity-color: rgba(#fdcb6e, 0.75) !default;
+$content-purpose-learnbydoing-color: rgba(#00b894, 0.75) !default;
+$content-purpose-learnmore-color: rgba(#27ae60, 0.75) !default;
+$content-purpose-manystudentswonder-color: rgba(#42729b, 0.75) !default;
+$content-purpose-quiz-color: rgba(#3498db, 0.75) !default;
+$content-purpose-simulation-color: rgba(#ff7675, 0.75) !default;
+$content-purpose-walkthrough-color: rgba(#536d86, 0.75) !default;
 
 // Export all theme SASS variables to CSS
 & {
@@ -86,10 +98,29 @@ $dropdown-menu: 999 !default;
 
   --authoring-card-cap-bg: #{$card-cap-bg};
 
-  --authoring-choice-selected-bg-hover: #{choice-selected-bg-hover};
-  --authoring-choice-selected-color: #{choice-selected-bg-hover};
-  --authoring-choice-selected-bg: #{choice-selected-bg-hover};
-  --authoring-choice-selected-border-color: #{choice-selected-bg-hover};
+  --authoring-z-content-1: #{$z-content-1};
+  --authoring-z-content-2: #{$z-content-2};
+  --authoring-z-content-3: #{$z-content-3};
+  --authoring-z-content-4: #{$z-content-4};
+  --authoring-z-content-5: #{$z-content-5};
+  --authoring-z-content-6: #{$z-content-6};
+  --authoring-z-overlay-1: #{$z-content-1};
+  --authoring-z-overlay-2: #{$z-content-2};
+  --authoring-z-overlay-3: #{$z-content-3};
+  --authoring-z-overlay-4: #{$z-content-4};
+  --authoring-z-highest: #{$z-highest};
 
-  --authoring-dropdown-menu: #{dropdown-menu};
+  --authoring-reposition-target: #{$reposition-target};
+  --authoring-dropdown-menu: #{$dropdown-menu};
+
+  --content-purpose-checkpoint-color: var(#{$content-purpose-checkpoint-color});
+  --content-purpose-didigetthis-color: var(#{$content-purpose-didigetthis-color});
+  --content-purpose-example-color: var(#{$content-purpose-example-color});
+  --content-purpose-labactivity-color: var(#{$content-purpose-labactivity-color});
+  --content-purpose-learnbydoing-color: var(#{$content-purpose-learnbydoing-color});
+  --content-purpose-learnmore-color: var(#{$content-purpose-learnmore-color});
+  --content-purpose-manystudentswonder-color: var(#{$content-purpose-manystudentswonder-color});
+  --content-purpose-quiz-color: var(#{$content-purpose-quiz-color});
+  --content-purpose-simulation-color: var(#{$content-purpose-simulation-color});
+  --content-purpose-walkthrough-color: var(#{$content-purpose-walkthrough-color});
 }

@@ -1,47 +1,36 @@
 <nav class="previous-next-nav d-flex flex-row" aria-label="Page navigation">
 
-  <%= if @previous_page != nil do %>
-    <%= link to: previous_url(@conn), class: "page-nav-link btn" do %>
-      <div class="d-flex flex-row">
-        <div>
-          <i class="fas fa-arrow-left nav-icon"></i>
-        </div>
-        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-right">
-          <div class="nav-label">Previous</div>
-          <div class="nav-title"><%= @previous_page["title"] %></div>
-        </div>
-      </div>
-    <% end %>
-  <% else %>
-    <div class="page-nav-link-placeholder"></div>
+  <%= cond do %>
+    <% @previous_page != nil -> %>
+      <%= OliWeb.PageDeliveryView.prev_link(%{
+        to: previous_url(@conn, @previous_page, @preview_mode, @section_slug),
+        title: previous_title(@previous_page) }) %>
+
+    <% true -> %>
+      <div class="page-nav-link-placeholder"></div>
   <% end %>
+
 
   <div class="flex-grow-1"></div>
 
-  <%= if @next_page != nil do %>
-    <%= link to: next_url(@conn), class: "page-nav-link btn" do %>
-      <div class="d-flex flex-row">
-        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
-          <div class="nav-label">Next</div>
-          <div class="nav-title"><%= @next_page["title"] %></div>
+  <%= cond do %>
+    <% @next_page != nil -> %>
+      <%= OliWeb.PageDeliveryView.next_link(%{
+        to: next_url(@conn, @next_page, @preview_mode, @section_slug),
+        title: next_title(@next_page) }) %>
+
+    <% true -> %>
+      <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-nav-link btn" do %>
+        <div class="d-flex flex-row">
+          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
+            <div class="nav-label">Complete</div>
+            <div class="nav-title"><%= @section.title %></div>
+          </div>
+          <div>
+            <i class="fas fa-check nav-icon"></i>
+          </div>
         </div>
-        <div>
-          <i class="fas fa-arrow-right nav-icon"></i>
-        </div>
-      </div>
-    <% end %>
-  <% else %>
-    <%= link to: Routes.page_delivery_path(@conn, :index, @section_slug), class: "page-nav-link btn" do %>
-      <div class="d-flex flex-row">
-        <div class="d-flex flex-column flex-fill flex-ellipsize-fix text-left">
-          <div class="nav-label">Complete</div>
-          <div class="nav-title"><%= @section.title %></div>
-        </div>
-        <div>
-          <i class="fas fa-check nav-icon"></i>
-        </div>
-      </div>
-    <% end %>
+      <% end %>
   <% end %>
 
 </nav>

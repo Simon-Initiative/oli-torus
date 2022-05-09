@@ -197,30 +197,27 @@ defmodule Oli.PublishingTest do
       update = %{
         "objectives" => %{"attached" => [obj1.resource_id]},
         "content" => %{
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",
-              "id" => 1,
-              "activitySlug" => activity1.slug,
-              "purpose" => "none"
+              "id" => "1",
+              "activitySlug" => activity1.slug
             },
             %{
               "type" => "activity-reference",
-              "id" => 2,
-              "activitySlug" => activity2.slug,
-              "purpose" => "none"
+              "id" => "2",
+              "activitySlug" => activity2.slug
             },
             %{
               "type" => "activity-reference",
-              "id" => 3,
-              "activitySlug" => activity3.slug,
-              "purpose" => "none"
+              "id" => "3",
+              "activitySlug" => activity3.slug
             },
             %{
               "type" => "activity-reference",
-              "id" => 4,
-              "activitySlug" => activity4.slug,
-              "purpose" => "none"
+              "id" => "4",
+              "activitySlug" => activity4.slug
             }
           ]
         }
@@ -233,14 +230,19 @@ defmodule Oli.PublishingTest do
       assert length(results) == 5
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
-      assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length == 2
+      assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length ==
+               2
 
       # the next two have it in only one part
-      assert Enum.filter(results, fn r -> r.resource_id == activity1.resource_id end) |> length == 1
-      assert Enum.filter(results, fn r -> r.resource_id == activity3.resource_id end) |> length == 1
+      assert Enum.filter(results, fn r -> r.resource_id == activity1.resource_id end) |> length ==
+               1
+
+      assert Enum.filter(results, fn r -> r.resource_id == activity3.resource_id end) |> length ==
+               1
 
       # this activity does not have this objective attached at all
-      assert Enum.filter(results, fn r -> r.resource_id == activity4.resource_id end) |> length == 0
+      assert Enum.filter(results, fn r -> r.resource_id == activity4.resource_id end) |> length ==
+               0
 
       # the page has it attached as well
       assert Enum.filter(results, fn r -> r.resource_id == revision.resource_id end) |> length ==
@@ -330,6 +332,7 @@ defmodule Oli.PublishingTest do
       # Update a page
       page_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -397,6 +400,7 @@ defmodule Oli.PublishingTest do
 
       # make some edits
       content = %{
+        "version" => "0.1.0",
         "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
       }
 

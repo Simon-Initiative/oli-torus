@@ -108,6 +108,17 @@ defmodule OliWeb.DeliveryController do
     |> render_link_account_form()
   end
 
+  def render_user_register_form(conn, changeset) do
+    # The learner/educator register form.
+    conn
+    |> assign(:changeset, changeset)
+    |> assign(:action, Routes.pow_registration_path(conn, :create))
+    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
+    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.render("new.html")
+  end
+
   def render_link_account_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Link Existing Account")
     changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
@@ -238,7 +249,7 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
-  def render_create_form(conn, opts \\ []) do
+  def render_author_register_form(conn, opts \\ []) do
     # This is currently used when an author is registering, and they failed the captcha. They are sent here from
     # Oli.Plugs.RegistrationCaptcha.render_captcha_error
     changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))

@@ -431,7 +431,8 @@ defmodule Oli.Factory do
       email: "#{sequence("publisher")}@example.edu",
       address: "Publisher Address",
       main_contact: "Publisher Contact",
-      website_url: "mypublisher.com"
+      website_url: "mypublisher.com",
+      default: false
     }
   end
 end
