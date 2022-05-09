@@ -422,6 +422,7 @@ export interface ScoringContext {
   trapStateScoreScheme: boolean;
   negativeScoreAllowed: boolean;
   currentAttemptNumber: number;
+  isManuallyGraded: boolean;
 }
 
 export const check = async (
@@ -512,6 +513,11 @@ export const check = async (
   score = Math.min(score, scoringContext.maxScore);
   if (!scoringContext.negativeScoreAllowed) {
     score = Math.max(0, score);
+  }
+
+  // if this activity has manual grading, then the score should just be zero so that it can be graded manually
+  if (scoringContext.isManuallyGraded) {
+    score = 0;
   }
 
   const finalResults = {

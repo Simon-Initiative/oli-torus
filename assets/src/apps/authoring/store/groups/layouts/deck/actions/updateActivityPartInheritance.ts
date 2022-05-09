@@ -31,11 +31,17 @@ export const updateActivityPartInheritance = createAsyncThunk(
           }
           /* console.log('ACTIVITY" TO MAP: ', { activity }); */
           const activityParts = activity?.content?.partsLayout.map((part: any) => {
+            const authorPartDef =
+              activity.authoring.parts.find((partDef: any) => partDef.id === part.id) || {};
+
             const partDefinition = {
-              id: part.id,
-              type: part.type,
-              inherited: activity.resourceId !== child.resourceId,
-              owner: sequenceEntry.custom.sequenceId,
+              ...authorPartDef,
+              ...{
+                id: part.id,
+                type: part.type,
+                inherited: activity.resourceId !== child.resourceId,
+                owner: sequenceEntry.custom.sequenceId,
+              },
             };
 
             // for now exclude janus-text-flow and janus-image
