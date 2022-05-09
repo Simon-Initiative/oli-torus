@@ -56,10 +56,6 @@ defmodule Oli.InventoriesTest do
       assert {:error, %Ecto.Changeset{}} = Inventories.find_or_create_publisher(params)
     end
 
-    test "default_publisher_name/0 returns default publisher name" do
-      assert Inventories.default_publisher_name() == "Torus Publisher"
-    end
-
     test "list_publishers/0 returns all the publishers" do
       insert_list(3, :publisher)
 
@@ -120,9 +116,45 @@ defmodule Oli.InventoriesTest do
       refute Inventories.get_publisher(deleted_publisher.id)
     end
 
+    test "delete_publisher/1 returns an error when the publisher has associated projects" do
+      project = insert(:project)
+      assert {:error, changeset} = Inventories.delete_publisher(project.publisher)
+      assert changeset.errors[:projects] |> elem(0) == "are still associated with this entry"
+    end
+
+    test "delete_publisher/1 returns an error when the publisher has associated products" do
+      section = insert(:section)
+      assert {:error, changeset} = Inventories.delete_publisher(section.publisher)
+      assert changeset.errors[:products] |> elem(0) == "are still associated with this entry"
+    end
+
+    test "delete_publisher/1 returns an error when trying to delete the default publisher" do
+      default_publisher = Inventories.default_publisher()
+      assert {:error, changeset} = Inventories.delete_publisher(default_publisher)
+      assert changeset.errors[:default] |> elem(0) == "cannot delete the default publisher"
+    end
+
     test "change_publisher/1 returns a publisher changeset" do
       publisher = insert(:publisher)
       assert %Ecto.Changeset{} = Inventories.change_publisher(publisher)
+    end
+
+    test "default_publisher/0 returns the default publisher" do
+      assert Inventories.default_publisher().default
+    end
+
+    test "set_default_publisher/1 unsets the current one and sets the new one" do
+      publisher = insert(:publisher)
+      old_default = Inventories.default_publisher()
+
+      assert old_default.default
+      refute publisher.default
+
+      assert {:ok, new_default} = Inventories.set_default_publisher(publisher)
+
+      assert new_default.id == publisher.id
+      assert new_default.default
+      refute Inventories.get_publisher(old_default.id).default
     end
   end
 end

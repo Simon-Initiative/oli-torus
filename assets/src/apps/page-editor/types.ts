@@ -5,7 +5,7 @@ import { ResourceContent } from 'data/content/resource';
 export type PageUndoable = {
   type: 'PageUndoable';
   description: string;
-  index: number;
+  index: number[];
   item: ResourceContent;
 };
 

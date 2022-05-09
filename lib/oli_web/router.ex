@@ -376,6 +376,7 @@ defmodule OliWeb.Router do
     # Preview
     get("/:project_id/preview", ResourceController, :preview)
     get("/:project_id/preview/:revision_slug", ResourceController, :preview)
+    get("/:project_id/preview/:revision_slug/page/:page", ResourceController, :preview)
 
     # Editors
     get("/:project_id/resource/:revision_slug", ResourceController, :edit)
@@ -684,6 +685,7 @@ defmodule OliWeb.Router do
     get("/:section_slug/overview", PageDeliveryController, :index)
     get("/:section_slug/container/:revision_slug", PageDeliveryController, :container)
     get("/:section_slug/page/:revision_slug", PageDeliveryController, :page)
+    get("/:section_slug/page/:revision_slug/page/:page", PageDeliveryController, :page)
     get("/:section_slug/page/:revision_slug/attempt", PageDeliveryController, :start_attempt)
 
     get(
@@ -712,6 +714,7 @@ defmodule OliWeb.Router do
     get("/overview", PageDeliveryController, :index_preview)
     get("/container/:revision_slug", PageDeliveryController, :container_preview)
     get("/page/:revision_slug", PageDeliveryController, :page_preview)
+    get("/page/:revision_slug/page/:page", PageDeliveryController, :page_preview)
     get("/page/:revision_slug/selection/:selection_id", ActivityBankController, :preview)
   end
 

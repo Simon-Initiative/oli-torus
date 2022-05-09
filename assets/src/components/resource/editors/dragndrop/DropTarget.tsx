@@ -4,8 +4,8 @@ import styles from './DropTarget.modules.scss';
 
 interface DropTargetProps {
   id: string | 'last';
-  index: number;
-  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
+  index: number[];
+  onDrop: (e: React.DragEvent<HTMLDivElement>, index: number[]) => void;
 }
 export const DropTarget = ({ id, index, onDrop }: DropTargetProps) => {
   const [hovered, setHovered] = useState(false);

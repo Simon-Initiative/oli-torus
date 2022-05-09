@@ -1,10 +1,11 @@
 defmodule Oli.Rendering.Activity.Html do
   @moduledoc """
-  Implements the Html writer for Oli activity rendering
+  Implements the Html writer for activity rendering
   """
   import Oli.Utils
 
   alias Oli.Rendering.Context
+  alias Oli.Rendering.Error
 
   require Logger
 
@@ -38,7 +39,7 @@ defmodule Oli.Rendering.Activity.Html do
           user: user,
           resource_attempt: resource_attempt
         } = context,
-        %{"activity_id" => activity_id, "purpose" => purpose} = activity
+        %{"activity_id" => activity_id} = activity
       ) do
     activity_summary = activity_map[activity_id]
 
@@ -90,11 +91,15 @@ defmodule Oli.Rendering.Activity.Html do
               ]
           end
 
-        case purpose do
+        # purposes types directly on activities is deprecated but rendering is left here to support legacy content
+        case activity["purpose"] do
+          nil ->
+            activity_html
+
           "none" ->
             activity_html
 
-          _ ->
+          purpose ->
             [
               "<h4 class=\"activity-purpose ",
               Oli.Utils.Slug.slugify(purpose),
@@ -107,17 +112,7 @@ defmodule Oli.Rendering.Activity.Html do
     end
   end
 
-  def error(%Context{}, _activity, error) do
-    case error do
-      {:invalid, error_id, _error_msg} ->
-        [
-          "<div class=\"activity invalid alert alert-danger\">Activity error. Please contact support with issue <strong>##{error_id}</strong></div>\n"
-        ]
-
-      {_, error_id, _error_msg} ->
-        [
-          "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue <strong>##{error_id}</strong></div>\n"
-        ]
-    end
+  def error(%Context{} = context, element, error) do
+    Error.render(context, element, error, Error.Html)
   end
 end

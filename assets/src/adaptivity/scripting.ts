@@ -95,6 +95,15 @@ export const getExpressionStringForValue = (
     if (isCSSString?.length) {
       actuallyAString = true;
     }
+
+    // at this point, if the value fails an evalScript check, it is probably a math expression
+    try {
+      const testEnv = new Environment(env);
+      evalScript(val, testEnv);
+    } catch (err) {
+      actuallyAString = true;
+    }
+
     if (!actuallyAString) {
       try {
         const testEnv = new Environment(env);
@@ -478,7 +487,10 @@ export const templatizeText = (
   let innerEnv = env; // TODO: this should be a child scope
   // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it
-  if (text.indexOf('\\') >= 0 && text.search(/app\.|variables\.|stage\.|session\./) === -1) {
+  if (
+    typeof text !== 'string' ||
+    (text?.indexOf('\\') >= 0 && text?.search(/app\.|variables\.|stage\.|session\./) === -1)
+  ) {
     return text;
   }
   let vars = extractAllExpressionsFromText(text);

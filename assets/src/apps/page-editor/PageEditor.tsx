@@ -16,10 +16,10 @@ import { Objective } from 'data/content/objective';
 import {
   ActivityMap,
   ActivityReference,
-  createDefaultStructuredContent,
   ResourceContent,
   ResourceContext,
   StructuredContent,
+  getResourceContentName,
 } from 'data/content/resource';
 import { Tag } from 'data/content/tags';
 import { createMessage, Message, Severity } from 'data/messages/messages';
@@ -39,7 +39,7 @@ import { Operations } from 'utils/pathOperations';
 import { registerUnload, unregisterUnload } from './listeners';
 import { empty, PageUndoable, Undoables } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
-
+import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
 
 export interface PageEditorProps extends ResourceContext {
@@ -51,14 +51,14 @@ export interface PageEditorProps extends ResourceContext {
 // The changes that the editor can make
 type EditorUpdate = {
   title: string;
-  content: Immutable.OrderedMap<string, ResourceContent>;
+  content: PageEditorContent;
   objectives: Immutable.List<ResourceId>;
 };
 
 type PageEditorState = {
   messages: Message[];
   title: string;
-  content: Immutable.OrderedMap<string, ResourceContent>;
+  content: PageEditorContent;
   activityContexts: Immutable.OrderedMap<string, ActivityEditContext>;
   objectives: Immutable.List<ResourceId>;
   allObjectives: Immutable.List<Objective>;
@@ -84,25 +84,6 @@ function prepareSaveFn(
       }
       return result;
     });
-}
-
-// Ensures that there is some default content if the initial content
-// of this resource is empty
-function withDefaultContent(
-  content: (StructuredContent | ActivityReference)[],
-): [string, ResourceContent][] {
-  if (content.length > 0) {
-    return content.map((contentItem) => {
-      // There is the possibility that ingested course material did not specify the
-      // id attribute. If so, we will assign one here that will get persisted once the user
-      // edits the page.
-      contentItem =
-        contentItem.id === undefined ? Object.assign({}, contentItem, { id: guid() }) : contentItem;
-      return [contentItem.id, contentItem];
-    });
-  }
-  const defaultContent = createDefaultStructuredContent();
-  return [[defaultContent.id, defaultContent]];
 }
 
 function mapChildrenObjectives(
@@ -151,9 +132,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       title,
       allTags: Immutable.List<Tag>(allTags),
       objectives: Immutable.List<ResourceId>(objectives.attached),
-      content: Immutable.OrderedMap<string, ResourceContent>(
-        withDefaultContent(content.model as any),
-      ),
+      content: PageEditorContent.fromPersistence(content),
       persistence: 'idle',
       allObjectives: Immutable.List<Objective>(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
@@ -300,13 +279,13 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   onRemove(key: string) {
-    const item = this.state.content.get(key);
-    const index = this.state.content.toArray().findIndex(([k, _item]) => k === key);
+    const item = this.state.content.find(key);
+    const index = this.state.content.findIndex((c) => c.id === key);
 
     if (item !== undefined) {
       const undoable: PageUndoable = {
         type: 'PageUndoable',
-        description: 'Removed ' + (item.type === 'content' ? 'Content' : 'Activity'),
+        description: 'Removed ' + getResourceContentName(item),
         index,
         item,
       };
@@ -351,9 +330,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     if (item !== undefined) {
       if (item.undoable.type === 'PageUndoable') {
-        const content = this.state.content.toArray();
-        content.splice(item.undoable.index, 0, [item.contentKey, item.undoable.item]);
-        this.update({ content: Immutable.OrderedMap<string, ResourceContent>(content) });
+        this.update({
+          content: this.state.content.insertAt(item.undoable.index, item.undoable.item),
+        });
       } else {
         const context = this.state.activityContexts.get(item.contentKey);
         if (context !== undefined) {
@@ -413,17 +392,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   // of content to be saved.  In this manner, we allow the user interface to display invalid, intermediate
   // states (as the user is creating a selection, for instance) that will always be saved
   // as valid states.
-  adjustContentForConstraints(
-    content: Immutable.OrderedMap<string, ResourceContent>,
-  ): ResourceContent[] {
-    const arr = content.toArray();
-
-    return arr.map((v: any) => {
-      const e = v[1];
-      if (e.type === 'selection') {
-        return Object.assign({}, e, { logic: guaranteeValididty(e.logic) });
+  adjustContentForConstraints(content: PageEditorContent): PageEditorContent {
+    return content.updateAll((c: ResourceContent) => {
+      if (c.type === 'selection') {
+        return Object.assign({}, c, { logic: guaranteeValididty(c.logic) });
       }
-      return e;
+      return c;
     });
   }
 
@@ -440,12 +414,12 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   save() {
     const { projectSlug, resourceSlug } = this.props;
 
-    const model = this.adjustContentForConstraints(this.state.content);
+    const adjusted = this.adjustContentForConstraints(this.state.content);
 
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model },
+      content: adjusted.toPersistence(),
       releaseLock: false,
     };
 
@@ -458,7 +432,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.toArray().map(([_k, v]) => v) },
+      content: { model: this.state.content.model.toJS() },
       releaseLock: false,
     };
 
@@ -471,7 +445,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const { projectSlug, resourceSlug } = this.props;
 
-    const onEdit = (content: Immutable.OrderedMap<string, ResourceContent>) => {
+    const onEdit = (content: PageEditorContent) => {
       this.update({ content });
     };
 
@@ -481,14 +455,11 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const onAddItem = (
       c: StructuredContent | ActivityReference,
-      index: number,
+      index: number[],
       a?: ActivityEditContext,
     ) => {
       this.update({
-        content: this.state.content
-          .take(index)
-          .concat([[c.id, c]])
-          .concat(this.state.content.skip(index)),
+        content: this.state.content.insertAt(index, c),
       });
       if (a) {
         const persistence = new DeferredPersistenceStrategy();
@@ -574,7 +545,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 activityContexts={this.state.activityContexts}
                 editorMap={props.editorMap}
                 projectSlug={projectSlug}
-                onEditContentList={onEdit}
+                onEditContent={onEdit}
               />
               <Editors
                 {...props}
@@ -586,7 +557,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 onRegisterNewTag={onRegisterNewTag}
                 activityContexts={this.state.activityContexts}
                 onRemove={(key: string) => this.onRemove(key)}
-                onEdit={(c: any, key: string) => onEdit(this.state.content.set(key, c))}
+                onEdit={(c: any, key: string) =>
+                  onEdit(this.state.content.updateContentItem(key, c))
+                }
                 onActivityEdit={this.onActivityEdit}
                 onPostUndoable={this.onPostUndoable}
                 content={this.state.content}

@@ -260,15 +260,8 @@ html.authoring.dark .content-block .delivery {
   $feedback-error-bg: lighten($orange, 32%);
   $feedback-error-color: $orange;
 
-  $hints-color: $gray-200 !default;
-  $hints-bg: $gray-700 !default;
-
-  $content-purpose-example-color: lighten($blue, 20%);
-  $content-purpose-learnmore-color: lighten($teal, 20%);
-  $content-purpose-manystudentswonder-color: lighten($cyan, 10%);
-  $activity-purpose-checkpoint-color: lighten($blue, 10%);
-  $activity-purpose-didigetthis-color: lighten($purple, 10%);
-  $activity-purpose-learnbydoing-color: lighten($green, 10%);
+  $hints-color: $gray-200;
+  $hints-bg: $gray-700;
 
   // Auth providers buttons
 
@@ -318,6 +311,24 @@ html.authoring.dark .content-block .delivery {
   .course-outline a,
   .course-outline a:hover {
     color: white;
+  }
+
+  .prologue {
+    &.jumbotron {
+      background: $gray-800;
+    }
+
+    &.allow-attempt {
+      // background: rgb(228,237,254);
+      background: linear-gradient(
+        135deg,
+        rgba($primary, 0.1) 0%,
+        rgba($primary, 0.25) 60%,
+        rgba($primary, 0.2) 70%,
+        rgba($primary, 0.25) 82%,
+        rgba($primary, 0.1) 100%
+      );
+    }
   }
 }
 

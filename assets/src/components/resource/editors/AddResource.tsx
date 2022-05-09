@@ -11,12 +11,13 @@ import * as Immutable from 'immutable';
 import React from 'react';
 
 export type AddResourceProps = {
-  id: string;
-  index: number;
+  index: number[];
+  isLast?: boolean;
+  level: number;
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
-  onAddItem: (c: ResourceContent, index: number, a?: ActivityEditContext) => void;
+  onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (objective: Objective) => void;
@@ -24,7 +25,7 @@ export type AddResourceProps = {
 
 export const AddResource = (props: AddResourceProps) => {
   return (
-    <AddResourceContent {...props} isLast={props.id === 'last'}>
+    <AddResourceContent {...props}>
       <AddContent {...props} />
       <AddActivity {...props} />
       <AddOther {...props} />

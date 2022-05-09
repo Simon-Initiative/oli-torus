@@ -10,10 +10,10 @@ import { Maybe } from 'tsmonad';
  * that as window.Component.*name*
  *
  * @param name Name of the app to register. Is used in both the key on window.Components and the debugging label in react-dev-tools
- * @param Component Any react component that represents a top-level applicacation
+ * @param Component Any react component that represents a top-level application
  */
 export function registerApplication(name: string, Component: React.FunctionComponent<any>) {
-  // FUTURE CONSIDERATION: Currently, all apps use the same common redux store. It may become neccessary to customize that in the future.
+  // FUTURE CONSIDERATION: Currently, all apps use the same common redux store. It may become necessary to customize that in the future.
 
   console.info('Registering OLI App', name);
   const store = configureStore();
