@@ -8,7 +8,8 @@ defmodule OliWeb.Telemetry do
 
   def init(_arg) do
     children = [
-      {TelemetryMetricsPrometheus, [metrics: metrics()]},
+      {TelemetryMetricsPrometheus,
+       [metrics: metrics(), port: Application.get_env(:oli, :prometheus_port)]},
       {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
     ]
 
