@@ -18,7 +18,7 @@ defmodule OliWeb.Sections.SectionsView do
     text_search: "",
     active_today: false,
     filter_status: nil,
-    filter_type: nil,
+    filter_type: nil
   }
   @type_opts [:open, :lms]
 
@@ -75,10 +75,12 @@ defmodule OliWeb.Sections.SectionsView do
   def handle_params(params, _, socket) do
     table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = get_int_param(params, "offset", 0)
+
     options = %BrowseOptions{
       text_search: get_param(params, "text_search", ""),
       active_today: get_boolean_param(params, "active_today", false),
-      filter_status: get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
+      filter_status:
+        get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
       filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
       # This view is currently for all institutions and all root products
       institution_id: nil,
@@ -120,13 +122,13 @@ defmodule OliWeb.Sections.SectionsView do
           <TextSearch id="text-search" text={@options.text_search}/>
 
           <:extra_opts>
-            <Check checked={@options.active_today} click="active_today">Active today (between start/end dates)</Check>
+            <Check checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check>
 
             <form :on-change="change_type" class="d-flex">
               <select name="type" id="select_type" class="custom-select custom-select mr-2">
                 <option value="" selected>Type</option>
                 {#for type_opt <- type_opts}
-                  <option value={type_opt} selected={@options.filter_type == type_opt}>{Phoenix.Naming.humanize(type_opt)}</option>
+                  <option value={type_opt} selected={@options.filter_type == type_opt}>{humanize_type_opt(type_opt)}</option>
                 {/for}
               </select>
             </form>
@@ -144,13 +146,15 @@ defmodule OliWeb.Sections.SectionsView do
 
         <div class="mb-5"/>
 
-        <PagedTable
-          filter={@options.text_search}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={@limit}
-          show_bottom_paging={false}/>
+        <div class="sections-table">
+          <PagedTable
+            filter={@options.text_search}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            show_bottom_paging={false}/>
+        </div>
       </div>
     """
   end
@@ -165,8 +169,11 @@ defmodule OliWeb.Sections.SectionsView do
     do: patch_with(socket, %{filter_type: type})
 
   def handle_event(event, params, socket),
-    do: delegate_to({event, params, socket, &__MODULE__.patch_with/2},
-        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4])
+    do:
+      delegate_to(
+        {event, params, socket, &__MODULE__.patch_with/2},
+        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4]
+      )
 
   defp determine_total(projects) do
     case projects do
@@ -198,4 +205,7 @@ defmodule OliWeb.Sections.SectionsView do
        replace: true
      )}
   end
+
+  defp humanize_type_opt(:open), do: "Open"
+  defp humanize_type_opt(:lms), do: "LMS"
 end

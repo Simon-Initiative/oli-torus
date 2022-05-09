@@ -47,12 +47,12 @@ defmodule OliWeb.Sections.SectionsTableModel do
         },
         %ColumnSpec{
           name: :base,
-          label: "Base",
+          label: "Base Project/Product",
           render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
           name: :instructor,
-          label: "Instructor",
+          label: "Instructors",
           render_fn: &__MODULE__.custom_render/3
         },
         %ColumnSpec{
@@ -64,7 +64,8 @@ defmodule OliWeb.Sections.SectionsTableModel do
       event_suffix: "",
       id_field: [:id],
       data: %{
-        context: context
+        context: context,
+        fade_data: true
       }
     )
   end
@@ -76,7 +77,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),
-    do: if section.open_and_free, do: "Open", else: "LMS"
+    do: if(section.open_and_free, do: "Open", else: "LMS")
 
   def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
     if section.requires_payment do
@@ -90,14 +91,20 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :institution}),
-    do: if section.open_and_free or is_nil(section.institution), do: "", else: section.institution.name
+    do:
+      if(section.open_and_free or is_nil(section.institution),
+        do: "",
+        else: section.institution.name
+      )
 
   def custom_render(_assigns, section, %ColumnSpec{name: :status}),
     do: Phoenix.Naming.humanize(section.status)
 
   def custom_render(assigns, section, %ColumnSpec{name: :base}) do
     if section.blueprint do
-      route_path = Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug)
+      route_path =
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section.blueprint.slug)
+
       SortableTableModel.render_link_column(assigns, section.blueprint.title, route_path)
     else
       route_path = Routes.project_path(OliWeb.Endpoint, :overview, section.base_project.slug)

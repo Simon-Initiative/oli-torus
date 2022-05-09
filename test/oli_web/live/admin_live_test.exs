@@ -269,7 +269,7 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click(%{sort_by: "name"})
 
       assert view
-             |> element("tr:first-child > td:first-child")
+             |> element("tr:first-child > td:first-child > div")
              |> render() =~
                user_2.given_name
     end
