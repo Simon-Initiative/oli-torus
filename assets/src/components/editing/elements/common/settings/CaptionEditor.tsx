@@ -5,7 +5,7 @@ import { useSlate } from 'slate-react';
 import { Model } from 'data/content/model/elements/factories';
 import { Descendant } from 'slate';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
+import { getToolbarForContentType } from 'components/editing/toolbar/toolbarUtils';
 import { Editor } from 'components/editing/editor/Editor';
 
 const defaultCaption = (text = '') => [Model.p(text)];

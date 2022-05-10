@@ -13,7 +13,7 @@ export type ContentModelMode = 'all' | 'small' | 'inline';
 
 type TopLevel = TextBlock | List | Media | Table | Math | (CodeV1 | CodeV2) | Blockquote;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
-type Inline = Hyperlink | Popup | InputRef;
+type Inline = Hyperlink | Popup | InputRef | InlineImage;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
@@ -60,15 +60,22 @@ export interface UnorderedList extends SlateElement<ListChildren> {
 }
 
 type VoidChildren = Text[];
-export interface Image extends SlateElement<VoidChildren> {
-  type: 'img';
+
+interface BaseImage extends SlateElement<VoidChildren> {
   src?: string;
   height?: number;
   width?: number;
   alt?: string;
+}
+export interface Image extends BaseImage {
+  type: 'img';
   caption?: Caption;
-  // Legacy, unused;
+  // Legacy, unused; was previously used to set image alignment (left, center, right)
   display?: string;
+}
+
+export interface InlineImage extends BaseImage {
+  type: 'inline_image';
 }
 
 export interface YouTube extends SlateElement<VoidChildren> {

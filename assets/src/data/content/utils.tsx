@@ -1,4 +1,4 @@
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
 import * as React from 'react';

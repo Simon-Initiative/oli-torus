@@ -4,7 +4,7 @@ import { AuthoringButtonConnected } from 'components/activities/common/authoring
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
 import { classNames } from 'utils/classNames';
 

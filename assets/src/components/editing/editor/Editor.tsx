@@ -18,7 +18,7 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
-import { EditorToolbar } from 'components/editing/toolbar/EditorToolbar';
+import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor

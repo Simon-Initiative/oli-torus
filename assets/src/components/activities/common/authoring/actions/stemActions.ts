@@ -1,7 +1,7 @@
 import { PREVIEW_TEXT_PATH, STEM_PATH } from 'data/activities/model/utils';
 import { HasPreviewText } from 'components/activities/types';
 import { Operations } from 'utils/pathOperations';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
 
 export const StemActions = {

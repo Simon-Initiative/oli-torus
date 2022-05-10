@@ -7,7 +7,7 @@ import { ProjectSlug } from 'data/types';
 import React from 'react';
 import { Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { classNames } from 'utils/classNames';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
+import { getToolbarForContentType } from 'components/editing/toolbar/toolbarUtils';
 import { MediaItemRequest } from 'components/activities/types';
 
 type Props = {

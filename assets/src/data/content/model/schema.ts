@@ -64,6 +64,12 @@ export const schema: Schema = {
   h5: header,
   h6: header,
   img: media,
+  inline_image: {
+    isVoid: true,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
   youtube: media,
   audio: media,
   iframe: media,
