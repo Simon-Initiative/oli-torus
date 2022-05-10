@@ -9,7 +9,7 @@ defmodule Oli.Inventories.Publisher do
     field :address, :string
     field :main_contact, :string
     field :website_url, :string
-    field :default, :boolean
+    field :default, :boolean, default: false
 
     has_many :products, Oli.Delivery.Sections.Section
     has_many :projects, Oli.Authoring.Course.Project
