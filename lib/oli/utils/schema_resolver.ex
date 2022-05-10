@@ -32,8 +32,6 @@ defmodule Oli.Utils.SchemaResolver do
   end
 
   def schema(name) do
-    IO.inspect(name)
-
     @schemas
     |> Enum.find(fn s -> s.name == name end)
     |> Map.get(:schema)
