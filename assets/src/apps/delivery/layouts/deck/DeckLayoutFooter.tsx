@@ -28,6 +28,7 @@ import {
   setIsGoodFeedback,
   setMutationTriggered,
   setNextActivityId,
+  setProcessedCheckResults,
 } from '../../store/features/adaptivity/slice';
 import {
   navigateToActivity,
@@ -442,6 +443,12 @@ const DeckLayoutFooter: React.FC = () => {
     if (!hasFeedback && !hasNavigation) {
       setHasOnlyMutation(true);
     }
+    dispatch(
+      setProcessedCheckResults({
+        results: eventsToProcess,
+        correct: isCorrect,
+      }),
+    );
   }, [lastCheckResults, isPreviewMode]);
 
   const checkHandler = () => {
