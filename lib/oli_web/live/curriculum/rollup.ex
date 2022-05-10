@@ -128,7 +128,7 @@ defmodule OliWeb.Curriculum.Rollup do
       |> List.flatten()
 
     AuthoringResolver.from_resource_id(project_slug, all_activities)
-    |> Enum.filter(fn r -> !is_nil(r) end)
+    # |> Enum.filter(fn r -> !is_nil(r) end)
     |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a) end)
   end
 

@@ -443,14 +443,16 @@ defmodule Oli.Authoring.Editing.PageEditor do
         {revision, []}
 
       activity_ids ->
-        AuthoringResolver.from_resource_id(project_slug, activity_ids)
-        |> Enum.each(fn revision ->
-          Oli.Publishing.ChangeTracker.track_revision(project_slug, revision, %{
-            deleted: MapSet.member?(deletions, revision.resource_id)
-          })
-        end)
+        activity_revisions =
+          AuthoringResolver.from_resource_id(project_slug, activity_ids)
+          |> Enum.map(fn revision ->
+            {:ok, updated} =
+              Oli.Resources.update_revision(revision, %{
+                deleted: MapSet.member?(deletions, revision.resource_id)
+              })
 
-        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
+            updated
+          end)
 
         {revision, activity_revisions}
     end
