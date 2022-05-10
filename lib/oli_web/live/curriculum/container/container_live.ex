@@ -410,7 +410,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
           _ ->
             %{
-              "version" => SchemaResolver.current_version(),
+              "version" => "0.1.0",
               "model" => []
             }
         end,
