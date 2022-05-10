@@ -1,0 +1,41 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-0/page-content-adaptive.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Adaptive Page Content",
+  "description": "Adaptive Page Content",
+  "type": "object",
+  "properties": {
+    "advancedAuthoring": {
+      "const": true
+    },
+    "advancedDelivery": {
+      "const": true
+    },
+    "model": {
+      "type": "array"
+    },
+    "additionalStylesheets": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "custom": {
+      "type": "object"
+    },
+    "customCss": {
+      "type": "string"
+    },
+    "customScript": {
+      "type": "string"
+    },
+    "displayApplicationChrome": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "advancedAuthoring",
+    "advancedDelivery",
+    "model"
+  ]
+}
