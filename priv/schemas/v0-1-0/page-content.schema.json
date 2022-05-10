@@ -5,28 +5,15 @@
   "description": "Workbook page content",
   "type": "object",
   "properties": {
+    "version": {
+      "const": "0.1.0"
+    },
     "model": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
-          }
-        ]
-      }
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }
   },
-  "required": ["model"]
+  "required": [
+    "version",
+    "model"
+  ]
 }

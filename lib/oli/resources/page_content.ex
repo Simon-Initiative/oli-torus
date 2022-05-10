@@ -38,7 +38,7 @@ defmodule Oli.Resources.PageContent do
   end
 
   @doc """
-  Flattens and filters the page content elements into a list. Implementated as a
+  Flattens and filters the page content elements into a list. Implemented as a
   convenience function, over top of map_reduce.
   """
   def flat_filter(content, filter_fn) do

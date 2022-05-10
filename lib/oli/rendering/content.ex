@@ -1,7 +1,7 @@
 defmodule Oli.Rendering.Content do
   @moduledoc """
   This modules defines the rendering functionality for Oli structured content. Rendering is
-  extensibile to any format which implements the behavior defined in this module, then specifying
+  extensible to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `content/html.ex`.
   """
   import Oli.Utils
@@ -46,7 +46,10 @@ defmodule Oli.Rendering.Content do
 
   @doc """
   Renders an Oli content element that contains children.
-  Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
+  Returns an IO list of strings.
+
+  Content elements with purposes attached are deprecated but the rendering code is
+  left here to support these existing elements.
   """
   def render(
         %Context{} = context,
@@ -80,7 +83,7 @@ defmodule Oli.Rendering.Content do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
-  # Renders an text content
+  # Renders text content
   def render(%Context{} = context, %{"text" => _text} = text_element, writer) do
     writer.text(context, text_element)
   end

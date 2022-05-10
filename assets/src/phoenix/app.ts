@@ -13,8 +13,6 @@ import { initActivityBridge, initPreviewActivityBridge } from './activity_bridge
 import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
-import { component } from 'components/component';
-
 import 'react-phoenix';
 
 const csrfToken = (document as any)
@@ -54,8 +52,6 @@ window.OLI = {
   onReady,
   CreateAccountPopup: (node: any, props: any) => mount(CreateAccountPopup, node, props),
 };
-
-window.component = component;
 
 // connect if there are any LiveViews on the page
 liveSocket.connect();
@@ -116,6 +112,5 @@ declare global {
       onReady: typeof onReady;
       CreateAccountPopup: (node: any, props: any) => void;
     };
-    component: typeof component;
   }
 }

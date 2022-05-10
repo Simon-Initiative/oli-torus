@@ -43,5 +43,15 @@ defmodule Oli.Inventories.PublisherTest do
       assert length(changeset.errors) == 1
       assert changeset.errors[:name] |> elem(0) == "has already been taken"
     end
+
+    test "changeset should be invalid if default true is not unique" do
+      assert {:error, changeset} =
+               build(:publisher, %{default: true})
+               |> Publisher.changeset()
+               |> Repo.insert()
+
+      assert length(changeset.errors) == 1
+      assert changeset.errors[:default] |> elem(0) == "there must only be one default"
+    end
   end
 end

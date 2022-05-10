@@ -8,8 +8,10 @@ import {
   StructuredContent,
   ActivityReference,
   ResourceContent,
-  ContentPurposes,
+  PurposeTypes,
+  GroupContent,
 } from 'data/content/resource';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityBankSelection } from 'data/content/resource';
 import { getContentDescription } from 'data/content/utils';
@@ -17,7 +19,8 @@ import { DragHandle } from 'components/resource/DragHandle';
 import { focusHandler } from './dragndrop/handlers/focus';
 import { moveHandler } from './dragndrop/handlers/move';
 import { dragEndHandler } from './dragndrop/handlers/dragEnd';
-import { dropHandler, scrollToResourceEditor } from './dragndrop/handlers/drop';
+import { dropHandler } from './dragndrop/handlers/drop';
+import { scrollToResourceEditor } from './dragndrop/utils';
 import { getDragPayload } from './dragndrop/utils';
 import { dragStartHandler } from './dragndrop/handlers/dragStart';
 import { DropTarget } from './dragndrop/DropTarget';
@@ -34,7 +37,7 @@ const getContentTitle = (item: StructuredContent) => {
     return 'Paragraph';
   }
 
-  return ContentPurposes.find((p) => p.value === item.purpose)?.label;
+  return PurposeTypes.find((p) => p.value === item.purpose)?.label;
 };
 
 const getActivitySelectionTitle = (_selection: ActivityBankSelection) => {
@@ -59,11 +62,11 @@ const loadShowOutlineState = () => localStorage.getItem(EDITOR_SHOW_OUTLINE_KEY)
 interface ContentOutlineProps {
   className?: ClassName;
   editMode: boolean;
-  content: Immutable.OrderedMap<string, ResourceContent>;
+  content: PageEditorContent;
   activityContexts: Immutable.Map<string, ActivityEditContext>;
   editorMap: ActivityEditorMap;
   projectSlug: ProjectSlug;
-  onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void;
+  onEditContent: (content: PageEditorContent) => void;
 }
 
 export const ContentOutline = ({
@@ -73,7 +76,7 @@ export const ContentOutline = ({
   activityContexts,
   editorMap,
   projectSlug,
-  onEditContentList,
+  onEditContent,
 }: ContentOutlineProps) => {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [assistive, setAssistive] = useState('');
@@ -108,21 +111,23 @@ export const ContentOutline = ({
   const isShiftArrowUp = isHotkey('shift+up');
 
   const isReorderMode = activeDragId !== null;
-  const activeDragIndex = content
-    .entrySeq()
-    .findIndex(([id, _contentItem], _index) => id == activeDragId);
-  const onDragEnd = dragEndHandler(setActiveDragId);
-  const onDrop = dropHandler(content, onEditContentList, projectSlug, onDragEnd, editMode);
+  const activeDragIndex = content.findIndex((c: ResourceContent) => c.id == activeDragId);
+  const onDropLast = dropHandler(
+    content,
+    onEditContent,
+    projectSlug,
+    dragEndHandler(setActiveDragId),
+    editMode,
+  );
 
   const items = [
-    ...content
-      .entrySeq()
-      .filter(([id, _contentItem], _index) => id !== activeDragId)
-      .map(([id, contentItem], index) => {
+    ...content.model
+      .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+      .map((contentItem: ResourceContent, index: number) => {
         const onFocus = focusHandler(setAssistive, content, editorMap, activityContexts);
         const onMove = moveHandler(
           content,
-          onEditContentList,
+          onEditContent,
           editorMap,
           activityContexts,
           setAssistive,
@@ -138,36 +143,31 @@ export const ContentOutline = ({
           }
         };
 
-        const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
-        const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
-
-        // adjust for the fact that the item being dragged is filtered out of the rendered elements
-        const dropIndex = index >= activeDragIndex ? index + 1 : index;
-
         return (
-          <>
-            {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
-
-            <div
-              id={`content-item-${id}`}
-              className={classNames(styles.item, className)}
-              draggable={editMode}
-              tabIndex={0}
-              onDragStart={(e) => onDragStart(e, id)}
-              onDragEnd={onDragEnd}
-              onKeyDown={handleKeyDown(id)}
-              onFocus={(_e) => onFocus(id)}
-              onClick={() => scrollToResourceEditor(id)}
-              role="button"
-              aria-label={assistive}
-            >
-              <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-              {renderItem(contentItem, activityContexts)}
-            </div>
-          </>
+          <OutlineItem
+            key={contentItem.id}
+            id={contentItem.id}
+            index={index}
+            className={className}
+            level={0}
+            editMode={editMode}
+            projectSlug={projectSlug}
+            activeDragId={activeDragId}
+            setActiveDragId={setActiveDragId}
+            handleKeyDown={handleKeyDown}
+            onFocus={onFocus}
+            assistive={assistive}
+            contentItem={contentItem}
+            activityContexts={activityContexts}
+            isReorderMode={isReorderMode}
+            activeDragIndex={activeDragIndex}
+            parentDropIndex={[]}
+            content={content}
+            onEditContent={onEditContent}
+          />
         );
       }),
-    isReorderMode && <DropTarget id="last" index={content.size || 0} onDrop={onDrop} />,
+    isReorderMode && <DropTarget id="last" index={[content.model.size + 1]} onDrop={onDropLast} />,
   ];
 
   return (
@@ -179,7 +179,7 @@ export const ContentOutline = ({
     >
       {showOutline ? (
         <div className={classNames(styles.contentOutline, className)}>
-          <Header onHideOutline={() => setShowOutline(false)} />
+          <ContentOutlineToolbar onHideOutline={() => setShowOutline(false)} />
           <div
             className={classNames(
               styles.contentOutlineItems,
@@ -206,7 +206,190 @@ export const ContentOutline = ({
   );
 };
 
+type OutlineItemProps = {
+  className?: ClassName;
+  id: string;
+  level: number;
+  index: number;
+  editMode: boolean;
+  projectSlug: string;
+  activeDragId: string | null;
+  setActiveDragId: (id: string) => void;
+  handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
+  onFocus: (id: string) => void;
+  assistive: string;
+  contentItem: ResourceContent;
+  activityContexts: Immutable.Map<string, ActivityEditContext>;
+  isReorderMode: boolean;
+  activeDragIndex: number[];
+  parentDropIndex: number[];
+  content: PageEditorContent;
+  onEditContent: (content: PageEditorContent) => void;
+};
+
+const OutlineItem = ({
+  className,
+  id,
+  level,
+  index,
+  editMode,
+  projectSlug,
+  activeDragId,
+  setActiveDragId,
+  handleKeyDown,
+  onFocus,
+  assistive,
+  content,
+  onEditContent,
+  contentItem,
+  activityContexts,
+  isReorderMode,
+  activeDragIndex,
+  parentDropIndex,
+}: OutlineItemProps) => {
+  const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
+  const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
+  const onDragEnd = dragEndHandler(setActiveDragId);
+  const onDrop = dropHandler(content, onEditContent, projectSlug, onDragEnd, editMode);
+  const onDropLast = dropHandler(
+    content,
+    onEditContent,
+    projectSlug,
+    dragEndHandler(setActiveDragId),
+    editMode,
+  );
+
+  // adjust for the fact that the item being dragged is filtered out of the rendered elements
+  const dropIndex =
+    index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
+
+  if (contentItem.type === 'group') {
+    return (
+      <>
+        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+        <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
+          <div
+            className={styles.groupLink}
+            onClick={() => scrollToResourceEditor(id)}
+            role="button"
+            draggable={editMode}
+            tabIndex={0}
+            onDragStart={(e) => onDragStart(e, id)}
+            onDragEnd={onDragEnd}
+            onKeyDown={handleKeyDown(id)}
+            onFocus={(_e) => onFocus(id)}
+            aria-label={assistive}
+          >
+            <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+            <ExpandToggle expanded={true} />
+            <Description title={getGroupTitle(contentItem)}>
+              {contentItem.children.size} items
+            </Description>
+          </div>
+          <div className={styles.groupedOutline}>
+            {contentItem.children
+              .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+              .map((c, i) => {
+                return (
+                  <OutlineItem
+                    key={id}
+                    className={className}
+                    id={c.id}
+                    level={level + 1}
+                    index={i}
+                    editMode={editMode}
+                    projectSlug={projectSlug}
+                    activeDragId={activeDragId}
+                    setActiveDragId={setActiveDragId}
+                    handleKeyDown={handleKeyDown}
+                    onFocus={onFocus}
+                    assistive={assistive}
+                    contentItem={c}
+                    activityContexts={activityContexts}
+                    isReorderMode={isReorderMode}
+                    activeDragIndex={activeDragIndex}
+                    parentDropIndex={dropIndex}
+                    content={content}
+                    onEditContent={onEditContent}
+                  />
+                );
+              })}
+            {isReorderMode && (
+              <DropTarget
+                id="last"
+                index={[...dropIndex, contentItem.children.size]}
+                onDrop={onDropLast}
+              />
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (contentItem.type === 'break') {
+    return (
+      <>
+        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+        <div
+          id={`content-item-${id}`}
+          className={classNames(styles.item, styles.contentBreak, className)}
+          onClick={() => scrollToResourceEditor(id)}
+          draggable={editMode}
+          tabIndex={0}
+          onDragStart={(e) => onDragStart(e, id)}
+          onDragEnd={onDragEnd}
+          onKeyDown={handleKeyDown(id)}
+          onFocus={(_e) => onFocus(id)}
+          aria-label={assistive}
+        >
+          <div
+            className={styles.contentLink}
+            onClick={() => scrollToResourceEditor(id)}
+            role="button"
+          >
+            <div className={styles.contentBreakDashed}></div>
+            <div className={styles.contentBreakLabel}>CONTENT BREAK</div>
+            <div className={styles.contentBreakDashed}></div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+
+      <div
+        id={`content-item-${id}`}
+        className={classNames(styles.item, className)}
+        onClick={() => scrollToResourceEditor(id)}
+        draggable={editMode}
+        tabIndex={0}
+        onDragStart={(e) => onDragStart(e, id)}
+        onDragEnd={onDragEnd}
+        onKeyDown={handleKeyDown(id)}
+        onFocus={(_e) => onFocus(id)}
+        aria-label={assistive}
+      >
+        <DragHandle style={{ margin: '10px 10px 10px 0' }} />
+        <div
+          className={styles.contentLink}
+          onClick={() => scrollToResourceEditor(id)}
+          role="button"
+        >
+          {renderItem(id, contentItem, activityContexts)}
+        </div>
+      </div>
+    </>
+  );
+};
+
 const renderItem = (
+  id: string,
   item: ResourceContent,
   activityContexts: Immutable.Map<string, ActivityEditContext>,
 ) => {
@@ -243,21 +426,27 @@ const renderItem = (
         return <div className="text-danger">An Unknown Error Occurred</div>;
       }
 
-    case 'group':
-      return <>Group</>;
-
     default:
       return <>Unknown</>;
   }
 };
 
-interface HeaderProps {
+function getGroupTitle(contentItem: GroupContent) {
+  switch (contentItem.purpose) {
+    case 'none':
+      return 'Group';
+    default:
+      return PurposeTypes.find(({ value }) => value === contentItem.purpose)?.label;
+  }
+}
+
+interface ContentOutlineToolbarProps {
   onHideOutline: () => void;
 }
 
-const Header = ({ onHideOutline }: HeaderProps) => (
-  <div className={styles.header}>
-    <button className={classNames(styles.headerButton)} onClick={onHideOutline}>
+const ContentOutlineToolbar = ({ onHideOutline }: ContentOutlineToolbarProps) => (
+  <div className={styles.toolbar}>
+    <button className={classNames(styles.toolbarButton)} onClick={onHideOutline}>
       <i className="fa fa-angle-left"></i>
     </button>
   </div>
@@ -270,6 +459,16 @@ interface IconProps {
 const Icon = ({ iconName }: IconProps) => (
   <div className={styles.icon}>
     <i className={iconName}></i>
+  </div>
+);
+
+interface ExpandToggleProps {
+  expanded: boolean;
+}
+
+const ExpandToggle = ({ expanded }: ExpandToggleProps) => (
+  <div className={styles.expandToggle}>
+    <i className="las la-chevron-down"></i>
   </div>
 );
 

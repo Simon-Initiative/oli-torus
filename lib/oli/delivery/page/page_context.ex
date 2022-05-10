@@ -40,7 +40,8 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
+  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) ::
+          %PageContext{}
   def create_for_review(section_slug, attempt_guid, _) do
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
@@ -81,9 +82,11 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_visit(Section, String.t(), Oli.Accounts.User) ::
-          %PageContext{}
-  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user) do
+  def create_for_visit(
+        %Section{slug: section_slug, id: section_id},
+        page_slug,
+        user
+      ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
