@@ -261,8 +261,7 @@ defmodule Oli.Interop.IngestTest do
                 :invalid_json,
                 _schema,
                 [
-                  {"Expected exactly one of the schemata to match, but none of them did.",
-                   "#/model/3"}
+                  {"Expected exactly one of the schemata to match, but none of them did.", "#"}
                 ],
                 _json
               }} =
