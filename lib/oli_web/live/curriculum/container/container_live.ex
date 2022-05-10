@@ -35,6 +35,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   alias Oli.Delivery.Hierarchy
   alias Oli.Resources.Revision
   alias OliWeb.Common.SessionContext
+  alias Oli.Utils.SchemaResolver
 
   def mount(
         %{"project_id" => project_slug} = params,
@@ -408,7 +409,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
             }
 
           _ ->
-            %{"model" => []}
+            %{
+              "version" => SchemaResolver.current_version(),
+              "model" => []
+            }
         end,
       title:
         case type do
