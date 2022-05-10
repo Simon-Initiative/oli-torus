@@ -1,4 +1,6 @@
 defmodule OliWeb.PublisherLive.TableModel do
+  use Surface.LiveComponent
+
   alias Oli.Inventories.Publisher
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
@@ -9,7 +11,8 @@ defmodule OliWeb.PublisherLive.TableModel do
       column_specs: [
         %ColumnSpec{
           name: :name,
-          label: "Name"
+          label: "Name",
+          render_fn: &__MODULE__.render_name/3
         },
         %ColumnSpec{
           name: :email,
@@ -52,5 +55,20 @@ defmodule OliWeb.PublisherLive.TableModel do
       route_path,
       "btn btn-sm btn-primary"
     )
+  end
+
+  def render_name(assigns, %Publisher{name: name, default: default}, _) do
+    ~F"""
+      {name}
+      {#if default}
+        <span class="badge badge-info">default</span>
+      {/if}
+    """
+  end
+
+  def render(assigns) do
+    ~F"""
+    <div>nothing</div>
+    """
   end
 end

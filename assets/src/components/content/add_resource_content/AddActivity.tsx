@@ -10,7 +10,7 @@ interface Props {
   resourceContext: ResourceContext;
   onAddItem: AddCallback;
   editorMap: ActivityEditorMap;
-  index: number;
+  index: number[];
 }
 export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, editorMap, index }) => {
   const activityEntries = Object.keys(editorMap)
@@ -47,7 +47,7 @@ const addActivity = (
   resourceContext: ResourceContext,
   onAddItem: AddCallback,
   editorMap: ActivityEditorMap,
-  index: number,
+  index: number[],
 ) => {
   let model: ActivityModelSchema;
 

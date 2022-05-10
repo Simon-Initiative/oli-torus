@@ -27,7 +27,7 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
-    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+    publisher = Inventories.default_publisher()
 
     {:ok, project} =
       Project.changeset(%Project{}, %{
@@ -115,7 +115,7 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
-    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+    publisher = Inventories.default_publisher()
 
     {:ok, project} =
       Project.changeset(%Project{}, %{
@@ -557,7 +557,7 @@ defmodule Oli.Seeder do
     {:ok, family} =
       Family.changeset(%Family{}, %{description: "description", title: "title"}) |> Repo.insert()
 
-    {:ok, publisher} = Inventories.find_or_create_publisher(%{name: Inventories.default_publisher_name()})
+    publisher = Inventories.default_publisher()
 
     {:ok, project} =
       Project.changeset(%Project{}, %{

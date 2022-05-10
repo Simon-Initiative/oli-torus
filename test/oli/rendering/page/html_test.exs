@@ -44,10 +44,18 @@ defmodule Oli.Content.Page.HtmlTest do
       assert rendered_html_string =~ "<h3>Introduction</h3>"
       assert rendered_html_string =~ "<oli-multiple-choice-delivery"
       assert rendered_html_string =~ "<oli-check-all-that-apply-delivery"
+
+      assert rendered_html_string =~ "<div class=\"content-purpose-label\">Learn by doing"
+
+      assert rendered_html_string =~
+               "The American Revolution was a colonial revolt which occurred between 1765 and 1783"
     end
 
     test "renders malformed page gracefully", %{author: author} do
-      invalid_page_content = %{"this-is-not-valid" => "page model should be a list of items"}
+      invalid_page_content = %{
+        "this-is-not-valid" =>
+          "page content should contain a model consisting of a list of elements"
+      }
 
       activity_map = %{
         1 => %{
@@ -69,8 +77,9 @@ defmodule Oli.Content.Page.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                # render an error message for the invalid page
-               assert rendered_html_string =~ "<div class=\"page invalid\">Page is invalid"
-             end) =~ "Page model is invalid"
+               assert rendered_html_string =~
+                        "<div class=\"alert alert-danger\">Page is invalid"
+             end) =~ "Page is invalid"
     end
 
     test "renders unsupported page items gracefully", %{author: author} do
@@ -102,8 +111,8 @@ defmodule Oli.Content.Page.HtmlTest do
 
                # render an error message for the unsupported page item
                assert rendered_html_string =~
-                        "<div class=\"page-item unsupported\">Page item of type 'some-unsupported-page-item' is not supported"
-             end) =~ "Page item is not supported"
+                        "<div class=\"alert alert-danger\">Element type 'some-unsupported-page-item' is not supported"
+             end) =~ "Element type 'some-unsupported-page-item' is not supported"
     end
 
     test "handles missing language attributes on codeblocks gracefully", %{author: author} do
@@ -126,28 +135,28 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/image_missing_src.json")
 
       assert capture_log(fn ->
-        context = %Context{user: author, activity_map: %{}}
-        rendered_html = Page.render(context, page_content, Page.Html)
+               context = %Context{user: author, activity_map: %{}}
+               rendered_html = Page.render(context, page_content, Page.Html)
 
-        rendered_html_string =
-          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-        assert rendered_html_string == "<p>some specific content</p>\n"
-      end)
+               assert rendered_html_string == "<p>some specific content</p>\n"
+             end)
     end
 
     test "does not display youtube videos without a src", %{author: author} do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/youtube_missing_src.json")
 
       assert capture_log(fn ->
-        context = %Context{user: author, activity_map: %{}}
-        rendered_html = Page.render(context, page_content, Page.Html)
+               context = %Context{user: author, activity_map: %{}}
+               rendered_html = Page.render(context, page_content, Page.Html)
 
-        rendered_html_string =
-          Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
+               rendered_html_string =
+                 Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
-        assert rendered_html_string == "<p>some specific content</p>\n"
-      end)
+               assert rendered_html_string == "<p>some specific content</p>\n"
+             end)
     end
 
     test "renders malformed audio robustly", %{author: author} do

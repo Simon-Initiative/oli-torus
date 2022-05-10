@@ -126,3 +126,9 @@ h1.title {
     max-width: 100%;
   }
 }
+
+.paginated {
+  .elements > * {
+    display: none;
+  }
+}

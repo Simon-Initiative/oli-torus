@@ -27,7 +27,7 @@ interface Opts {
   resourceContext?: ResourceContext;
   onAddItem?: AddCallback;
   editorMap?: ActivityEditorMap;
-  index?: number;
+  index?: number[];
   onRequestMedia?: any;
 }
 export function getToolbarForContentType(opts: Opts): CommandDescription[] {

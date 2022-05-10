@@ -6,7 +6,7 @@ import { BlockToggle } from 'components/editing/toolbar/editorToolbar/Block';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { activeBlockType } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { getHighestTopLevel, safeToDOMNode } from 'components/editing/utils';
+import { getHighestTopLevel, safeToDOMNode } from 'components/editing/slateUtils';
 import React from 'react';
 import { Editor, Element } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
@@ -17,8 +17,6 @@ interface Props {
 }
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
-
-  const activeBlockDesc = activeBlockType(editor);
 
   return (
     <HoverContainer

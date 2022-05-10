@@ -6,7 +6,6 @@ defmodule OliWeb.PublisherLive.Form do
 
   prop(changeset, :changeset, required: true)
   prop(save, :event, required: true)
-  prop(is_default_publisher, :boolean, default: false)
   prop(display_labels, :boolean, default: true)
 
   def render(assigns) do
@@ -15,8 +14,11 @@ defmodule OliWeb.PublisherLive.Form do
       <Field name={:name} class="form-group">
         {#if @display_labels}
           <Label class="control-label">Publisher Name</Label>
+          {#if @changeset.data.default}
+            <span class="badge badge-info">default</span>
+          {/if}
         {/if}
-        <TextInput class="form-control" opts={placeholder: "Name", maxlength: "255", disabled: @is_default_publisher}/>
+        <TextInput class="form-control" opts={placeholder: "Name", maxlength: "255"}/>
         <ErrorTag/>
       </Field>
 

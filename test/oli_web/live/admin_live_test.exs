@@ -259,15 +259,10 @@ defmodule OliWeb.AdminLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
-      user_1 = insert(:user, %{given_name: "Testing A"})
+      _user_1 = insert(:user, %{given_name: "Testing A"})
       user_2 = insert(:user, %{given_name: "Testing B"})
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
-
-      assert view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               user_1.given_name
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")

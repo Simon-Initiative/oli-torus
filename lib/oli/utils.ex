@@ -165,6 +165,22 @@ defmodule Oli.Utils do
     end
   end
 
+  def unique_constraint_if(changeset, fields, condition, opts \\ []) do
+    if condition.(changeset) do
+      Ecto.Changeset.unique_constraint(changeset, fields, opts)
+    else
+      changeset
+    end
+  end
+
+  def foreign_key_constraint_if(changeset, field, condition, opts \\ []) do
+    if condition.(changeset) do
+      Ecto.Changeset.foreign_key_constraint(changeset, field, opts)
+    else
+      changeset
+    end
+  end
+
   def validate_dates_consistency(changeset, start_date_field, end_date_field) do
     validate_change(changeset, start_date_field, fn _, field ->
       # check if the start date is after the end date
