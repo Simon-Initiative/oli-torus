@@ -487,8 +487,10 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       domain: adaptivityDomain,
       initStateBindToFacts,
     });
-
-    notifyCheckComplete(lastCheckResults);
+    const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
+    if (hasNavigationToDifferentActivity) {
+      notifyCheckComplete(lastCheckResults);
+    }
   };
 
   useEffect(() => {
