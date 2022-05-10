@@ -408,7 +408,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
             }
 
           _ ->
-            %{"model" => []}
+            %{
+              "version" => "0.1.0",
+              "model" => []
+            }
         end,
       title:
         case type do
