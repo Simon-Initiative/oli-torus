@@ -83,7 +83,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       |> DateTime.truncate(:second)
 
     # Create the activity attempts, in bulk
-    Enum.map(activity_revisions, fn r ->
+    Enum.filter(activity_revisions, fn r -> !is_nil(r) end)
+    |> Enum.map(fn r ->
       scoreable = !MapSet.member?(unscored, r.resource_id)
       create_raw_activity_attempt(r, scoreable)
     end)
