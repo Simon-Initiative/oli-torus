@@ -717,6 +717,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
 
     AuthoringResolver.from_resource_id(project_slug, activity_ids)
+    |> Enum.filter(fn r -> !is_nil(r) end)
     |> Enum.map(fn r ->
       activity_type = Map.get(type_by_id, r.activity_type_id)
 

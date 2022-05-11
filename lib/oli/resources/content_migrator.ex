@@ -21,6 +21,11 @@ defmodule Oli.Resources.ContentMigrator do
     end
   end
 
+  # TODO: implement migration for adaptive pages when schemas are finalized.
+  # For now, we skip all migrations for adaptive content
+  def migrate(%{"advancedAuthoring" => true} = content, :page, to: _any),
+    do: {:skipped, content}
+
   def migrate(%{"model" => _} = content, :page, to: :v0_1_0) do
     previous_version = nil
 
