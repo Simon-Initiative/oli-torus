@@ -64,7 +64,6 @@ defmodule Oli.Rendering.Content.Html do
     ["<h6>", next.(), "</h6>\n"]
   end
 
-
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
     maybeAlt =
       case attrs do
@@ -105,7 +104,9 @@ defmodule Oli.Rendering.Content.Html do
     # If the width is hard-coded, do not display responsively.
     figure(context, attrs, [
       """
-      <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      <div class="embed-responsive embed-responsive-16by9">
+        <iframe#{maybeWidth(attrs)}#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
+      </div>
       """
     ])
   end
@@ -455,5 +456,4 @@ defmodule Oli.Rendering.Content.Html do
       _ -> ""
     end
   end
-
 end
