@@ -23,7 +23,8 @@ defmodule OliWeb.Api.ProductView do
       amount: amount(product.requires_payment, product.amount),
       has_grace_period: product.has_grace_period,
       grace_period_days: product.grace_period_days,
-      grace_period_strategy: product.grace_period_strategy
+      grace_period_strategy: product.grace_period_strategy,
+      publisher_id: product.publisher_id
     }
   end
 
