@@ -257,6 +257,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
   const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
 
+  // converts stringfied number array to number array
+  const convertToNumberArray = (arr: any[]) =>
+    arr.map((element) => parseInt(element.replace(/"/g, ''), 10));
+
   const initialize = useCallback(async (pModel) => {
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -346,7 +350,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     if (dMultipleSelection && sSelectedChoices !== undefined) {
       hasDoneMultiple = true;
       hasDoneSelectedChoice = true;
-      const selectedArray = parseArray(sSelectedChoices);
+      let selectedArray = parseArray(sSelectedChoices);
+      // convert stringfied number array to number array
+      selectedArray = convertToNumberArray(selectedArray);
+
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray.map((choice) => ({
           value: choice,
@@ -588,7 +595,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                let selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                selectedArray = convertToNumberArray(selectedArray);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,
@@ -667,7 +677,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (multipleSelection && sSelectedChoices !== undefined && sSelectedChoices.length) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                let selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                selectedArray = convertToNumberArray(selectedArray);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,
