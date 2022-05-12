@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where paging in Activity Bank did not preserve filtered logic
+
 ### Enhancements
 
 ## 0.19.1 (2022-05-03)

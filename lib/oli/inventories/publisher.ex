@@ -3,6 +3,8 @@ defmodule Oli.Inventories.Publisher do
   import Ecto.Changeset
   import Oli.Utils
 
+  @derive {Jason.Encoder, only: [:id, :name, :email, :address, :main_contact, :website_url]}
+
   schema "publishers" do
     field :name, :string
     field :email, :string
