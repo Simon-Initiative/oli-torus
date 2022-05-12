@@ -10,15 +10,14 @@ defmodule Oli.Repo.Migrations.AddPublisherToProjectsAndProducts do
   require Logger
 
   def up do
-    default_publisher_attrs = %{
-      name: "Torus Publisher",
-      email: "publisher@cmu.edu"
-    }
+    execute """
+      INSERT INTO publishers(email, name, inserted_at, updated_at)
+      VALUES ('publisher@cmu.edu', 'Torus Publisher', now(), now())
+      ON CONFLICT DO NOTHING
+    """
 
-    %Publisher{id: publisher_id} =
-      Publisher
-      |> struct(default_publisher_attrs)
-      |> Repo.insert!(on_conflict: :nothing)
+    publisher_id =
+      Repo.one(from(p in Publisher, where: p.name == "Torus Publisher", select: p.id))
 
     flush()
 
