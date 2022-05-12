@@ -6,8 +6,8 @@ import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Resizable } from 'components/misc/resizable/Resizable';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { useElementSelected } from 'data/content/utils';
-import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 import { ImagePlaceholder } from 'components/editing/elements/image/block/ImagePlaceholder';
+import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 export const ImageEditor = (props: Props) => {
