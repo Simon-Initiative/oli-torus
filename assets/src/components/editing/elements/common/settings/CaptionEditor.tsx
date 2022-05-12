@@ -5,8 +5,8 @@ import { useSlate } from 'slate-react';
 import { Model } from 'data/content/model/elements/factories';
 import { Descendant } from 'slate';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { getToolbarForContentType } from 'components/editing/toolbar/toolbarUtils';
 import { Editor } from 'components/editing/editor/Editor';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 
 const defaultCaption = (text = '') => [Model.p(text)];
 
@@ -34,7 +34,7 @@ export const CaptionEditor = (props: Props) => {
         onEdit={(content: CaptionV2) => {
           props.onEdit(content);
         }}
-        toolbarInsertDescs={getToolbarForContentType({
+        toolbarInsertDescs={blockInsertOptions({
           type: 'inline',
           onRequestMedia: () => {},
         })}

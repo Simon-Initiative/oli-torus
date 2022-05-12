@@ -1,5 +1,5 @@
 import React from 'react';
-import { Editor, Transforms } from 'slate';
+import { BaseSelection, Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 import { modalActions } from 'actions/modal';
@@ -10,6 +10,8 @@ import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
+import { SlateEditor } from 'data/content/model/slate';
+import { Maybe } from 'tsmonad';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -31,7 +33,7 @@ export function selectImage(
             dismiss();
             resolve(selectedUrl);
           }}
-          onCancel={() => dismiss()}
+          onCancel={dismiss}
           disableInsert={true}
           okLabel="Select"
         >
@@ -52,42 +54,47 @@ export function selectImage(
   });
 }
 
-function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | boolean>) {
-  const customEventCommand: Command = {
-    execute: (context, editor: Editor) => {
-      const at = editor.selection;
+const insertAction = (
+  editor: SlateEditor,
+  at: BaseSelection,
+  type: 'img' | 'img_inline',
+  src: undefined | string = undefined,
+) =>
+  Transforms.insertNodes(
+    editor,
+    type === 'img' ? Model.image(src) : Model.imageInline(src),
+    at ? { at } : undefined,
+  );
 
-      const request = {
-        type: 'MediaItemRequest',
-        mimeTypes: MIMETYPE_FILTERS.IMAGE,
-      };
+// Block images insert the placeholder block by default
+const execute =
+  (onReqMedia: any): Command['execute'] =>
+  (_context, editor) =>
+    onReqMedia === null || onReqMedia === undefined
+      ? insertAction(editor, editor.selection, 'img')
+      : onReqMedia({
+          type: 'MediaItemRequest',
+          mimeTypes: MIMETYPE_FILTERS.IMAGE,
+        }).then(
+          (src: any) =>
+            typeof src === 'string' && insertAction(editor, editor.selection, 'img', src),
+        );
 
-      onRequestMedia(request).then((r) => {
-        if (typeof r === 'string') {
-          Transforms.insertNodes(editor, Model.image(r), at ? { at } : undefined);
-        }
-      });
-    },
-    precondition: (_editor) => {
-      return true;
-    },
-  };
-  return customEventCommand;
-}
-
-export const insertImage = (onRequestMedia: any) =>
+export const insertImage = (onReqMedia: any) =>
   createButtonCommandDesc({
     icon: 'image',
     description: 'Image',
-    ...(onRequestMedia === null || onRequestMedia === undefined
-      ? {
-          execute: (context, editor) => {
-            const at = editor.selection;
-            Transforms.insertNodes(editor, Model.image(), at ? { at } : undefined);
-          },
-          precondition: (_editor) => {
-            return true;
-          },
-        }
-      : createCustomEventCommand(onRequestMedia)),
+    execute: execute(onReqMedia),
   });
+
+// Inline images force the media library modal to insert an image
+export const insertImageInline = createButtonCommandDesc({
+  icon: 'burst_mode',
+  description: 'Image (Inline)',
+  execute: (context, editor) =>
+    selectImage(context.projectSlug).then((selection) =>
+      Maybe.maybe(selection).map((src) =>
+        insertAction(editor, editor.selection, 'img_inline', src),
+      ),
+    ),
+});

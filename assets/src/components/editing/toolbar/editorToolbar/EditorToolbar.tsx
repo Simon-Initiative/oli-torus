@@ -2,18 +2,20 @@ import {
   CommandContext,
   CommandDescription,
 } from 'components/editing/elements/commands/interfaces';
-import { BlockToggle } from 'components/editing/toolbar/editorToolbar/Block';
+import { BlockToggle } from 'components/editing/toolbar/editorToolbar/blocks/BlockToggle';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
-import { activeBlockType } from 'components/editing/toolbar/items';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { getHighestTopLevel, safeToDOMNode } from 'components/editing/slateUtils';
 import React from 'react';
 import { Editor, Element } from 'slate';
 import { ReactEditor, useSlate } from 'slate-react';
+import { Inlines } from 'components/editing/toolbar/editorToolbar/Inlines';
+import { BlockInsertMenu } from 'components/editing/toolbar/editorToolbar/blocks/BlockInsertMenu';
+import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/BlockSettings';
 
 interface Props {
   context: CommandContext;
-  toolbarInsertDescs: CommandDescription[];
+  insertOptions: CommandDescription[];
 }
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
@@ -23,15 +25,17 @@ export const EditorToolbar = (props: Props) => {
       isOpen={isOpen}
       position="top"
       align="start"
-      relativeTo={getHighestTopLevel(editor)
-        .map((node) => safeToDOMNode(editor, node))
-        .valueOr<any>(undefined)}
+      relativeTo={() =>
+        getHighestTopLevel(editor)
+          .bind((node) => safeToDOMNode(editor, node))
+          .valueOr<any>(undefined)
+      }
       content={
         <Toolbar context={props.context}>
-          <BlockToggle descriptions={props.toolbarInsertDescs} />
-          <BlockSettings type={activeBlockDesc.description(editor)} />
-          {formatting}
-          {insertMenu}
+          <BlockToggle blockInsertOptions={props.insertOptions} />
+          <BlockSettings />
+          <Inlines />
+          <BlockInsertMenu blockInsertOptions={props.insertOptions} />
         </Toolbar>
       }
     />

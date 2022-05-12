@@ -12,8 +12,8 @@ import * as ContentModel from 'data/content/model/elements/types';
 
 interface SettingsProps {
   commandContext: CommandContext;
-  model: ContentModel.Image;
-  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+  model: ContentModel.ImageBlock | ContentModel.ImageInline;
+  onEdit: (attrs: Partial<ContentModel.ImageBlock | ContentModel.ImageInline>) => void;
 }
 export const ImageSettings = (props: SettingsProps) => {
   return (
@@ -28,8 +28,8 @@ export const ImageSettings = (props: SettingsProps) => {
   );
 };
 interface SelectImageProps {
-  model: ContentModel.Image;
-  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+  model: ContentModel.ImageBlock | ContentModel.ImageInline;
+  onEdit: (attrs: Partial<ContentModel.ImageBlock | ContentModel.ImageInline>) => void;
 }
 const SelectImageButton = (props: SelectImageProps) => (
   <CommandButton
@@ -45,8 +45,8 @@ const SelectImageButton = (props: SelectImageProps) => (
 );
 
 interface SettingsButtonProps {
-  model: ContentModel.Image;
-  onEdit: (attrs: Partial<ContentModel.Image>) => void;
+  model: ContentModel.ImageBlock | ContentModel.ImageInline;
+  onEdit: (attrs: Partial<ContentModel.ImageBlock | ContentModel.ImageInline>) => void;
 }
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
@@ -58,7 +58,7 @@ const SettingsButton = (props: SettingsButtonProps) => (
           modalActions.display(
             <ImageModal
               model={props.model}
-              onDone={({ alt, width }: Partial<ContentModel.Image>) => {
+              onDone={({ alt, width }: Partial<ContentModel.ImageBlock>) => {
                 window.oliDispatch(modalActions.dismiss());
                 props.onEdit({ alt, width });
               }}

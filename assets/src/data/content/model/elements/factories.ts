@@ -1,5 +1,4 @@
 import { normalizeHref } from './utils';
-
 import {
   TableData,
   TableRow,
@@ -14,12 +13,13 @@ import {
   Popup,
   Table,
   YouTube,
-  Image,
+  ImageBlock,
   Audio,
   Blockquote,
   ModelElement,
   HeadingOne,
   HeadingTwo,
+  ImageInline,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -55,7 +55,9 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
+  image: (src?: string) => create<ImageBlock>({ type: 'img', src }),
+
+  imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 
   audio: (src?: string) => create<Audio>({ type: 'audio', src }),
 

@@ -136,7 +136,7 @@ const SettingsButton = (props: SettingsButtonProps) => (
           modalActions.display(
             <YouTubeModal
               model={props.model}
-              onDone={({ alt, width, src }: Partial<ContentModel.Image>) => {
+              onDone={({ alt, width, src }: Partial<ContentModel.ImageBlock>) => {
                 window.oliDispatch(modalActions.dismiss());
                 props.onEdit({ alt, width, src });
               }}

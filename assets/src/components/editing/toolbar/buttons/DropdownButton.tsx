@@ -1,5 +1,5 @@
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { ButtonContent } from 'components/editing/toolbar/buttons/shared';
+import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
 import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React, { PropsWithChildren } from 'react';
 import { Popover } from 'react-tiny-popover';
