@@ -524,6 +524,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         this.setState({
           activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(contexts as any),
           paging,
+          logic,
           totalCount: result.queryResult.totalCount,
         });
         result.queryResult.rows;

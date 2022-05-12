@@ -444,6 +444,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
       activity_ids ->
         AuthoringResolver.from_resource_id(project_slug, activity_ids)
+        |> Enum.filter(fn r -> !is_nil(r) end)
         |> Enum.each(fn revision ->
           Oli.Publishing.ChangeTracker.track_revision(project_slug, revision, %{
             deleted: MapSet.member?(deletions, revision.resource_id)
