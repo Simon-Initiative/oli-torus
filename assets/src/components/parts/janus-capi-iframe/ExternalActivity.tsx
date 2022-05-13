@@ -8,7 +8,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
+import { clone, parseArray, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
@@ -213,6 +213,28 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             collect[key] = JSON.stringify(value);
           } else {
             collect[key] = value;
+          }
+          // if the array contains values like "00.12" then they need special handling as it's not same as "0.12" so
+          //the array needs to be modified from ['00.23'] to ['"00.23"'] otherwise SIM throws an errors.
+          if (typeOfValue === 'string' && value[0] == '[' && value[value.length - 1] == ']') {
+            const convertedValue = parseArray(value);
+            if (Array.isArray(convertedValue)) {
+              const modifiedValues = convertedValue.map((item: any) => {
+                if (!isNaN(Number(item)) && item.includes('.')) {
+                  const spl = item.split('.');
+                  if (spl.length > 1) {
+                    //Also, making sure that we don't touch if the values are ["0.12"]
+                    if (spl[0].length > 1 && Number(spl[0]) === 0) {
+                      return `"${spl[0]}.${spl[1]}"`;
+                    }
+                    return item;
+                  }
+                  return item;
+                }
+                return item;
+              });
+              collect[key] = modifiedValues;
+            }
           }
         }
         return collect;
