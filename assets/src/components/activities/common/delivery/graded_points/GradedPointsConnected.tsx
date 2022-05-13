@@ -1,5 +1,5 @@
 import { GradedPoints } from 'components/activities/common/delivery/graded_points/GradedPoints';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { Checkmark } from 'components/misc/icons/Checkmark';
 import { Cross } from 'components/misc/icons/Cross';
 import { isCorrect } from 'data/activities/utils';

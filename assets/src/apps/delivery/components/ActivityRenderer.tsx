@@ -32,6 +32,7 @@ import {
   selectLastCheckTriggered,
   selectLastMutateChanges,
   selectLastMutateTriggered,
+  selectProcessedCheckResults,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
@@ -92,26 +93,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
-  const [userDataCacheExpiry, setUserDataCacheExpiry] = useState(new Map<string, number>());
-  const [userDataCache, setUserDataCache] = useState<Map<string, any>>(new Map<string, any>());
-
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key } = payload;
-    let data;
-    // if we have a cached value, return it
-    if (userDataCacheExpiry.has(simId) && userDataCache.has(simId)) {
-      const lastRefreshed = userDataCacheExpiry.get(simId) as number;
-      const now = Date.now();
-      // allow updates every 1 second (we really just want to avoid the sim making rapid calls)
-      if (now - lastRefreshed < 1000) {
-        data = userDataCache.get(simId);
-      }
-    }
-    if (!data) {
-      data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
-      userDataCacheExpiry.set(simId, Date.now());
-      userDataCache.set(simId, data);
-    }
+    const data = await Extrinsic.readGlobalUserState([simId], isPreviewMode);
     if (data) {
       const value = data[simId]?.[key];
       /* console.log('GOT DATA', { simId, key, value, data }); */
@@ -327,6 +311,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
+  const processedCheckResult = useSelector(selectProcessedCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   useEffect(() => {
@@ -405,7 +390,28 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (!ref.current) {
       return;
     }
-    ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
+    ref?.current?.notify(NotificationType.CHECK_COMPLETE, payload);
+  };
+  const hasNavigation = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.results.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    if (actionsByType.navigation.length > 0) {
+      const [firstNavAction] = actionsByType.navigation;
+      const navTarget = firstNavAction.params.target;
+      if (navTarget !== activity.id) {
+        return true;
+      }
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -420,9 +426,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           attempt: lastCheckResults.attempt,
         });
       }
-      notifyCheckComplete(lastCheckResults);
+
+      const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
+      if (!hasNavigationToDifferentActivity) {
+        notifyCheckComplete(lastCheckResults);
+      }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered, processedCheckResult]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.
@@ -431,19 +441,27 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateBindToFacts: any = {};
   const currentActivityTree = useSelector(selectCurrentActivityTree);
-  const updateGlobalState = async (snapshot: any, stateFacts: any) => {
-    const payloadData = stateFacts.reduce((data: any, fact: any) => {
-      const target = fact.target;
-      // EverApp Information
-      if (target.startsWith('app.')) {
-        const targetParts = target.split('.');
-        const objId = targetParts.splice(2).join('.');
-        const value = snapshot[target];
-        data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
-      }
-      return data;
-    }, {});
-    await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+
+  // update all init state facts that target everApps using the app.
+  const updateGlobalState = async (snapshot: any, initStates: any[]) => {
+    const everAppInits = initStates.filter(
+      (initState: any) => initState.target.indexOf('app.') === 0,
+    );
+    if (everAppInits.length > 0) {
+      const payloadData = everAppInits.reduce((data: any, fact: any) => {
+        const { target } = fact;
+        // EverApp Information
+        if (target.startsWith('app.')) {
+          const targetParts = target.split('.');
+          const objId = targetParts.splice(2).join('.');
+          const value = snapshot[target];
+          data[targetParts[1]] = { ...data[targetParts[1]], [objId]: value };
+        }
+        return data;
+      }, {});
+      /* console.log('updateGlobalState', { payloadData }); */
+      await Extrinsic.updateGlobalUserState(payloadData, isPreviewMode);
+    }
   };
 
   const notifyContextChanged = async () => {
@@ -469,6 +487,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       domain: adaptivityDomain,
       initStateBindToFacts,
     });
+
+    notifyCheckComplete(lastCheckResults);
   };
 
   useEffect(() => {
@@ -499,6 +519,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       return;
     }
     const currentStateSnapshot: any = {};
+    const appChanges = changes.changed.filter((change: any) => change.includes('app.'));
+    if (appChanges.length) {
+      // need to write the updated state to the global state
+      const updatePayload = appChanges.reduce((data: any, key: string) => {
+        const [, everAppId] = key.split('.');
+        data[everAppId] = data[everAppId] || {};
+        data[everAppId][key.replace(`app.${everAppId}.`, '')] = getValue(key, defaultGlobalEnv);
+        return data;
+      }, {});
+      /* console.log('CHANGE EVENT EVERAPP', { changes, appChanges, updatePayload }); */
+      await Extrinsic.updateGlobalUserState(updatePayload, isPreviewMode);
+    }
+    // we send ALL of the changes to the components
     if (changes?.changed?.length > 1) {
       changes.changed.forEach((element: string, index: number) => {
         if (index > 0) {

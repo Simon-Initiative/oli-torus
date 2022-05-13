@@ -7,7 +7,7 @@ defmodule OliWeb.CommunityLive.ShowView do
   alias Oli.Groups
   alias Oli.Institutions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, DeleteModal, Params}
+  alias OliWeb.Common.{Breadcrumb, DeleteModal, Params, ShowSection}
   alias OliWeb.CommunityLive.Associated.IndexView, as: IndexAssociated
   alias Surface.Components.Link
 
@@ -15,12 +15,10 @@ defmodule OliWeb.CommunityLive.ShowView do
     Form,
     IndexView,
     Invitation,
-    ShowSection,
     MembersIndexView
   }
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Surface.Components.Link
 
   data title, :string, default: "Edit Community"
   data community, :struct

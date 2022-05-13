@@ -284,47 +284,127 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
       childRefs.forEach((ref) => referencedActivities.add(ref));
     }
   });
-
   return Array.from(referencedActivities);
 };
 
 export const getReferencedKeysInConditions = (conditions: any) => {
   const references: Set<string> = new Set();
 
-  conditions.forEach((condition: any) => {
-    // the fact *must* be a reference to a key we need
-    if (condition.fact) {
-      references.add(condition.fact);
-    }
-    // the value *might* contain a reference to a key we need
-    if (
-      typeof condition.value === 'string' &&
-      condition.value.search(/app\.|variables\.|stage\.|session\./) !== -1
-    ) {
-      // value could have more than one reference inside it
-      const exprs = extractAllExpressionsFromText(condition.value);
-      const expressions = condition.value.match(/{([^{^}]+)}/g);
-      exprs.forEach((expr: string) => {
-        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-          references.add(expr);
+  const extractRefsFromString = (str: string) => {
+    // value could have more than one reference inside it
+    const exprs = extractAllExpressionsFromText(str);
+    const expressions = str.match(/{([^{^}]+)}/g) || [];
+    exprs.forEach((expr: string) => {
+      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+        references.add(expr);
+      }
+    });
+    expressions.forEach((expr: string) => {
+      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+        //we should remove the {}
+        const actualExp = expr.substring(1, expr.length - 1);
+        if (!references.has(actualExp)) {
+          references.add(expr.substring(1, expr.length - 1));
         }
-      });
-      expressions.forEach((expr: string) => {
-        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-          //we should remove the {}
-          const actualExp = expr.substring(1, expr.length - 1);
-          if (!references.has(actualExp)) {
-            references.add(expr.substring(1, expr.length - 1));
-          }
-        }
-      });
-    }
-    if (condition.any || condition.all) {
-      const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
-      childRefs.forEach((ref) => references.add(ref));
-    }
-  });
+      }
+    });
+  };
 
+  conditions.forEach(
+    (condition: {
+      all: boolean;
+      any: boolean;
+      fact: string;
+      value: string | number | boolean | unknown;
+    }) => {
+      // the fact *must* be a reference to a key we need
+      if (condition.fact) {
+        references.add(condition.fact);
+      }
+      // the value *might* contain a reference to a key we need
+      if (typeof condition.value === 'string') {
+        extractRefsFromString(condition.value);
+      } else if (Array.isArray(condition.value)) {
+        condition.value.forEach((value: any) => {
+          if (typeof value === 'string') {
+            extractRefsFromString(value);
+          }
+        });
+      }
+      if (condition.any || condition.all) {
+        const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
+        childRefs.forEach((ref) => references.add(ref));
+      }
+    },
+  );
+
+  return Array.from(references);
+};
+
+export const findReferencedActivitiesInActions = (actions: any) => {
+  const referencedActivities: Set<string> = new Set();
+  actions.forEach(
+    (action: { type: string; target: string; value: string | number | boolean | unknown }) => {
+      if (action.type === 'mutateState') {
+        if (action.target && action.target.indexOf('|stage.') !== -1) {
+          const referencedSequenceId = action.target.split('|stage.')[0];
+          referencedActivities.add(referencedSequenceId);
+        }
+        if (typeof action.value === 'string' && action.value.indexOf('|stage.') !== -1) {
+          // value could have more than one reference inside it
+          const exprs = extractAllExpressionsFromText(action.value);
+          exprs.forEach((expr: string) => {
+            if (expr.indexOf('|stage.') !== -1) {
+              const referencedSequenceId = expr.split('|stage.')[0];
+              referencedActivities.add(referencedSequenceId);
+            }
+          });
+        }
+      }
+    },
+  );
+
+  return Array.from(referencedActivities);
+};
+
+export const getReferencedKeysInActions = (actions: any) => {
+  const references: Set<string> = new Set();
+  actions.forEach(
+    (action: {
+      params: { target: string; value: string | number | boolean | unknown };
+      type: string;
+    }) => {
+      if (action.type === 'mutateState') {
+        // the target *must* be a reference to a key we need
+        if (action.params.target) {
+          references.add(action.params.target);
+        }
+        // the value *might* contain a reference to a key we need
+        if (
+          typeof action.params.value === 'string' &&
+          action.params.value.search(/app\.|variables\.|stage\.|session\./) !== -1
+        ) {
+          // value could have more than one reference inside it
+          const exprs = extractAllExpressionsFromText(action.params.value);
+          const expressions = action.params.value.match(/{([^{^}]+)}/g) || [];
+          exprs.forEach((expr: string) => {
+            if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+              references.add(expr);
+            }
+          });
+          expressions.forEach((expr: string) => {
+            if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
+              //we should remove the {}
+              const actualExp = expr.substring(1, expr.length - 1);
+              if (!references.has(actualExp)) {
+                references.add(expr.substring(1, expr.length - 1));
+              }
+            }
+          });
+        }
+      }
+    },
+  );
   return Array.from(references);
 };
 
@@ -403,36 +483,35 @@ export const check = async (
   }
 
   let score = 0;
+  if (scoringContext.trapStateScoreScheme) {
+    // apply all the actions from the resultEvents that mutate the state
+    // then check the session.currentQuestionScore and clamp it against the maxScore
+    // setting that value to score
+    const mutations = resultEvents.reduce((acc, evt) => {
+      const { actions } = evt.params as Record<string, any>;
+      const mActions = actions.filter(
+        (action: any) =>
+          action.type === 'mutateState' && action.params.target === 'session.currentQuestionScore',
+      );
+      return acc.concat(...acc, mActions);
+    }, []);
+    if (mutations.length) {
+      const mutApplies = mutations.map(({ params }) => params);
+
+      bulkApplyState(mutApplies, env);
+      score = getValue('session.currentQuestionScore', env) || 0;
+    }
+  }
   //below condition make sure the score calculation will happen only if the answer is correct and
   //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
-  if (isCorrect || scoringContext.negativeScoreAllowed) {
-    if (scoringContext.trapStateScoreScheme) {
-      // apply all the actions from the resultEvents that mutate the state
-      // then check the session.currentQuestionScore and clamp it against the maxScore
-      // setting that value to score
-      const mutations = resultEvents.reduce((acc, evt) => {
-        const { actions } = evt.params as Record<string, any>;
-        const mActions = actions.filter(
-          (action: any) =>
-            action.type === 'mutateState' &&
-            action.params.target === 'session.currentQuestionScore',
-        );
-        return acc.concat(...acc, mActions);
-      }, []);
-      if (mutations.length) {
-        const mutApplies = mutations.map(({ params }) => params);
-        bulkApplyState(mutApplies, env);
-        score = getValue('session.currentQuestionScore', env) || 0;
-      }
-    } else {
-      const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
-      const scorePerAttempt = maxScore / maxAttempt;
-      score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
-    }
-    score = Math.min(score, scoringContext.maxScore);
-    if (!scoringContext.negativeScoreAllowed) {
-      score = Math.max(0, score);
-    }
+  else if (isCorrect || scoringContext.negativeScoreAllowed) {
+    const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+    const scorePerAttempt = maxScore / maxAttempt;
+    score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
+  }
+  score = Math.min(score, scoringContext.maxScore);
+  if (!scoringContext.negativeScoreAllowed) {
+    score = Math.max(0, score);
   }
 
   const finalResults = {

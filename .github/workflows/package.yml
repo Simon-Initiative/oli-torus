@@ -76,6 +76,11 @@ jobs:
           persist-credentials: false
 
       - name: 🔧 Configure
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.13.2"
+
+      - name: 🔧 Configure
         run: cp oli.example.env oli.env
 
       - name: 🧪 Setup Elixir
@@ -89,6 +94,12 @@ jobs:
 
       - name: 🔨📦 Build Dependencies
         run: mix deps.compile
+
+      - name: Install node_module dependencies 📦
+        run: npm install -g yarn && cd assets && yarn
+
+      - name: Build client-side API markdown docs
+        run: cd assets && npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts
 
       - name: 🔨📄 Build Docs
         run: mix docs

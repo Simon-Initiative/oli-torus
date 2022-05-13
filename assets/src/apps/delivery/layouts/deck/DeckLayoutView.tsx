@@ -117,11 +117,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // apply a custom *janus* script if defined
       // this is for user defined functions (also legacy)
       // TODO: something if there are errors
-      const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
-      /* console.log('Lesson Custom Script: ', {
+      try {
+        const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
+        /* console.log('Lesson Custom Script: ', {
         script: pageContent?.customScript,
         csResult,
       }); */
+      } catch (e) {
+        console.error('Error in custom script: ', e);
+      }
     }
 
     if (Array.isArray(pageContent?.custom?.variables)) {
@@ -146,7 +150,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         .filter((s: any) => s);
       // execute each sequentially in case there are errors (missing functions)
       statements.forEach((statement) => {
-        evalScript(statement, defaultGlobalEnv);
+        try {
+          evalScript(statement, defaultGlobalEnv);
+        } catch (e) {
+          console.error('Error found processing variables: ', e);
+        }
       });
     }
   }, [pageContent]);

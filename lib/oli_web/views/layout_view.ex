@@ -12,6 +12,13 @@ defmodule OliWeb.LayoutView do
       logo_link_path: 1
     ]
 
+  import OliWeb.AuthoringView,
+    only: [
+      author_role_text: 1,
+      author_role_color: 1,
+      author_icon: 1
+    ]
+
   import Oli.Branding
 
   alias Oli.Accounts
@@ -110,43 +117,8 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_link(%{:assigns => assigns} = conn) do
-    current_author = assigns.current_author
-
-    initials =
-      case current_author.name do
-        nil ->
-          "?"
-
-        name ->
-          name = String.trim(name)
-
-          cond do
-            # After trimming, if a name contains a space that space can only be between two other non-space characters
-            # so we guarantee that two initials can be extracted
-            String.contains?(name, " ") ->
-              name
-              |> String.split(~r{\s+})
-              |> Enum.map(&String.at(&1, 0))
-              |> Enum.take(2)
-
-            # If after trimming there is no space, but there is text, we simply take the first character as a singular
-            String.length(name) > 0 ->
-              String.at(name, 0)
-
-            # If after trimming, there is the empty string, we show the question mark
-            true ->
-              "?"
-          end
-      end
-
-    icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")
-
-    link([icon],
-      to: Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive),
-      class: "#{active_class(active_or_nil(assigns), :account)} account-link"
-    )
-  end
+  def account_dropdown(%{assigns: %{current_author: current_author}} = conn),
+    do: render(__MODULE__, "_author_account_dropdown.html", conn: conn, current_author: current_author)
 
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))

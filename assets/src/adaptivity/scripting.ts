@@ -1,5 +1,5 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { parseArray, parseBoolean } from 'utils/common';
+import { formatNumber, parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
@@ -95,6 +95,15 @@ export const getExpressionStringForValue = (
     if (isCSSString?.length) {
       actuallyAString = true;
     }
+
+    // at this point, if the value fails an evalScript check, it is probably a math expression
+    try {
+      const testEnv = new Environment(env);
+      evalScript(val, testEnv);
+    } catch (err) {
+      actuallyAString = true;
+    }
+
     if (!actuallyAString) {
       try {
         const testEnv = new Environment(env);
@@ -131,8 +140,30 @@ export const getExpressionStringForValue = (
           }
         }
       } catch (e) {
-        // if we have parsing error then we're guessing it's CSS
-        actuallyAString = true;
+        //lets evaluat everything if first and last char are {}
+        if (val[0] === '{' && val[val.length - 1] === '}') {
+          const evaluatedValues = evalScript(expressions[0], env).result;
+          if (evaluatedValues !== undefined) {
+            val = evaluatedValues;
+            actuallyAString = false;
+          }
+        } else {
+          const containsExpression = val.match(/{([^{^}]+)}/g) || [];
+          if (containsExpression?.length) {
+            try {
+              const modifiedVal = templatizeText(val, {}, env);
+              const updatedValue = evalScript(modifiedVal, env).result;
+              if (updatedValue !== undefined) {
+                val = updatedValue;
+              }
+            } catch (ex) {
+              actuallyAString = true;
+            }
+          } else {
+            // if we have parsing error then we're guessing it's CSS
+            actuallyAString = true;
+          }
+        }
       }
     }
     if (!actuallyAString) {
@@ -148,9 +179,13 @@ export const getExpressionStringForValue = (
     if (typeof val !== 'string') {
       val = JSON.stringify(val);
     }
+    if (!val) {
+      val = '';
+    }
     // strings need to have escaped quotes and backslashes
     // for janus-script
-    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '')}"`;
+    // PMP-2785: Replacing the new line with the space
+    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
   }
 
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
@@ -450,6 +485,14 @@ export const templatizeText = (
   isFromTrapStates = false,
 ): string => {
   let innerEnv = env; // TODO: this should be a child scope
+  // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
+  // and we should just return it as is; if it has variables inside, then we still need to evaluate it
+  if (
+    typeof text !== 'string' ||
+    (text?.indexOf('\\') >= 0 && text?.search(/app\.|variables\.|stage\.|session\./) === -1)
+  ) {
+    return text;
+  }
   let vars = extractAllExpressionsFromText(text);
   const totalVariablesLength = vars?.length;
   // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
@@ -540,7 +583,8 @@ export const templatizeText = (
     } else if (typeof stateValue === 'object') {
       strValue = JSON.stringify(stateValue);
     } else if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toString());
+      const modifiedValue = formatNumber(strValue);
+      strValue = parseFloat(modifiedValue.toString());
     }
     return strValue;
   });

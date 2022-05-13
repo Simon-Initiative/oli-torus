@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { HasParts, makeHint } from 'components/activities/types';
 import { Hints as HintUtils } from 'data/activities/model/hints';

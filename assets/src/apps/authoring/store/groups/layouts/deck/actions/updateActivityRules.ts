@@ -1,7 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import {
@@ -13,7 +15,9 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import { isEqual } from 'lodash';
+import isEqual from 'lodash/isEqual';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import {
@@ -100,6 +104,7 @@ export const updateActivityRules = createAsyncThunk(
             const rootCondition = clone(conditions || { all: [] }); // layers might not have conditions
             const rootConditionIsAll = !!rootCondition.all;
             const conditionsToUpdate = rootCondition[rootConditionIsAll ? 'all' : 'any'];
+            const actionsToUpdate = event.params.actions;
             if (!rootCondition.id) {
               rootCondition.id = `b:${guid()}`;
             }
@@ -110,6 +115,8 @@ export const updateActivityRules = createAsyncThunk(
             await updateNestedConditions(conditionsToUpdate, activityTree);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
+            referencedSequenceIds.push(...findReferencedActivitiesInActions(actionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInActions(actionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(
@@ -139,6 +146,7 @@ export const updateActivityRules = createAsyncThunk(
             }
           })
           .filter((id) => id) as number[];
+
         if (
           !isEqual(
             childActivityClone.authoring.activitiesRequiredForEvaluation,
@@ -147,8 +155,13 @@ export const updateActivityRules = createAsyncThunk(
         ) {
           // console.log('RULE REFS: ', referencedActivityIds);
           childActivityClone.authoring.activitiesRequiredForEvaluation = referencedActivityIds;
+          console.log('UPDATE ACTIVITY REFS REQUIRED FOR EVALUATION', {
+            referencedActivityIds,
+            childActivityClone,
+          });
           activitiesToUpdate.push(childActivityClone);
         }
+
         if (
           !isEqual(
             childActivityClone.authoring.variablesRequiredForEvaluation,
@@ -156,12 +169,16 @@ export const updateActivityRules = createAsyncThunk(
           )
         ) {
           childActivityClone.authoring.variablesRequiredForEvaluation = referencedVariableKeys;
-          console.log('UPDATE VALUES REQUIRED FOR EVALUATION', {
+          childActivityClone.authoring.variablesRequiredForEvaluation = uniq(
+            flatten(childActivityClone.authoring.variablesRequiredForEvaluation),
+          );
+          console.log('UPDATE VARS REQUIRED FOR EVALUATION', {
             referencedVariableKeys,
             childActivityClone,
           });
           activitiesToUpdate.push(childActivityClone);
         }
+
         childActivityClone.authoring.rules = activityRulesClone;
         /* console.log('CLONE RULES', { childActivityClone, childActivity }); */
         if (!isEqual(childActivity.authoring.rules, childActivityClone.authoring.rules)) {

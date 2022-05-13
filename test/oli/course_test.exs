@@ -5,6 +5,7 @@ defmodule Oli.CourseTest do
 
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.{Family, Project}
+  alias Oli.Inventories
 
   describe "projects basic" do
     @valid_attrs %{description: "some description", version: "1", title: "some title"}
@@ -16,37 +17,34 @@ defmodule Oli.CourseTest do
     @invalid_attrs %{description: nil, slug: nil, title: nil}
 
     setup do
-      {:ok, family} =
-        Family.changeset(%Family{}, %{description: "description", slug: "slug", title: "title"})
-        |> Repo.insert()
-
-      {:ok, project} =
-        Project.changeset(%Project{}, %{
-          description: "description",
-          title: "title",
-          version: "1",
-          family_id: family.id
-        })
-        |> Repo.insert()
+      project = insert(:project)
 
       valid_attrs =
-        Map.put(@valid_attrs, :family_id, family.id)
+        Map.put(@valid_attrs, :family_id, project.family_id)
         |> Map.put(:project_id, project.id)
+        |> Map.put(:publisher_id, project.publisher_id)
 
-      {:ok, %{project: project, family: family, valid_attrs: valid_attrs}}
+      {:ok, %{project: project, valid_attrs: valid_attrs}}
     end
 
     test "list_projects/0 returns all projects", %{project: project} do
-      assert Course.list_projects() == [project]
+      assert [returned_project] = Course.list_projects()
+      assert returned_project.id == project.id
     end
 
     test "get_project!/1 returns the project with given id", %{project: project} do
-      assert Course.get_project!(project.id) == project
+      assert returned_project = Course.get_project!(project.id)
+      assert returned_project.id == project.id
     end
 
-    test "create project with invalid data returns error changeset" do
+    test "create_project/2 with invalid data returns error changeset" do
       empty_title = ""
       assert {:error, _} = Course.create_project(empty_title, author_fixture())
+    end
+
+    test "create_project/1 with invalid data returns error changeset" do
+      project_params = Map.delete(params_for(:project), :publisher_id)
+      assert {:error, _} = Course.create_project(project_params)
     end
 
     test "create_empty_project/1 with valid data creates a project", %{valid_attrs: valid_attrs} do
@@ -61,16 +59,20 @@ defmodule Oli.CourseTest do
     end
 
     test "update_project/2 with valid data updates the project", %{project: project} do
-      assert {:ok, %Project{} = project} = Course.update_project(project, @update_attrs)
-      assert project.description == "some updated description"
+      assert {:ok, %Project{} = returned_project} = Course.update_project(project, @update_attrs)
+      assert returned_project.description == "some updated description"
       # The slug should never change
-      assert project.slug == "title"
-      assert project.title == "some updated title"
+      assert returned_project.slug == project.slug
+      assert returned_project.title == "some updated title"
     end
 
     test "update_project/2 with invalid data returns error changeset", %{project: project} do
       assert {:error, %Ecto.Changeset{}} = Course.update_project(project, @invalid_attrs)
-      assert project == Course.get_project!(project.id)
+
+      returned_project = Course.get_project!(project.id)
+      assert project.slug == returned_project.slug
+      assert project.description == returned_project.description
+      assert project.title == returned_project.title
     end
 
     test "list_projects_not_in_community/1 returns the projects that are not associated to the community" do
@@ -183,6 +185,12 @@ defmodule Oli.CourseTest do
       publication = Repo.preload(publication, [:project])
       assert publication.project == project
       assert Repo.preload(publication, [:root_resource]).root_resource == resource
+    end
+
+    test "associates the default publisher with the new project", %{project: project} do
+      default_publisher = Inventories.default_publisher()
+
+      assert project.publisher_id == default_publisher.id
     end
   end
 end

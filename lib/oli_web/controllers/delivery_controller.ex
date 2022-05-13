@@ -2,15 +2,10 @@ defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
 
   alias Oli.Delivery.Sections
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Publishing
-  alias Oli.Institutions
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Repo
-  alias Lti_1p3.Tool.Services.AGS
-  alias Lti_1p3.Tool.Services.NRPS
 
   import Oli.Utils
 
@@ -82,23 +77,6 @@ defmodule OliWeb.DeliveryController do
     |> render("research_consent.html")
   end
 
-  def select_project(conn, params) do
-    user = conn.assigns.current_user
-    lti_params = conn.assigns.lti_params
-    issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
-    deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-
-    {institution, _registration, _deployment} =
-      Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
-
-    render(conn, "select_project.html",
-      author: user.author,
-      sources: Publishing.retrieve_visible_sources(user, institution),
-      remix: Map.get(params, "remix", "false")
-    )
-  end
-
   defp redirect_to_page_delivery(conn, section) do
     redirect(conn, to: Routes.page_delivery_path(conn, :index, section.slug))
   end
@@ -128,6 +106,17 @@ defmodule OliWeb.DeliveryController do
 
     conn
     |> render_link_account_form()
+  end
+
+  def render_user_register_form(conn, changeset) do
+    # The learner/educator register form.
+    conn
+    |> assign(:changeset, changeset)
+    |> assign(:action, Routes.pow_registration_path(conn, :create))
+    |> assign(:sign_in_path, Routes.pow_session_path(conn, :new))
+    |> assign(:cancel_path, Routes.delivery_path(conn, :index))
+    |> Phoenix.Controller.put_view(OliWeb.Pow.RegistrationView)
+    |> Phoenix.Controller.render("new.html")
   end
 
   def render_link_account_form(conn, opts \\ []) do
@@ -260,6 +249,30 @@ defmodule OliWeb.DeliveryController do
     end
   end
 
+  def render_author_register_form(conn, opts \\ []) do
+    # This is currently used when an author is registering, and they failed the captcha. They are sent here from
+    # Oli.Plugs.RegistrationCaptcha.render_captcha_error
+    changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
+
+    action =
+      Keyword.get(
+        opts,
+        :action,
+        Routes.authoring_pow_registration_path(conn, :create)
+      )
+
+    sign_in_path = Keyword.get(opts, :sign_in_path, Routes.authoring_pow_session_path(conn, :new))
+    cancel_path = Keyword.get(opts, :cancel_path, Routes.delivery_path(conn, :index))
+
+    conn
+    |> assign(:changeset, changeset)
+    |> assign(:action, action)
+    |> assign(:sign_in_path, sign_in_path)
+    |> assign(:cancel_path, cancel_path)
+    |> put_view(OliWeb.Pow.RegistrationView)
+    |> render("new.html")
+  end
+
   def render_create_and_link_form(conn, opts \\ []) do
     title = Keyword.get(opts, :title, "Create and Link Account")
     changeset = Keyword.get(opts, :changeset, Author.noauth_changeset(%Author{}))
@@ -283,139 +296,6 @@ defmodule OliWeb.DeliveryController do
     |> assign(:link_account, true)
     |> put_view(OliWeb.Pow.RegistrationView)
     |> render("new.html")
-  end
-
-  def create_section(conn, %{"source_id" => source_id} = params) do
-    lti_params = conn.assigns.lti_params
-    user = conn.assigns.current_user
-
-    # guard against creating a new section if one already exists
-    Repo.transaction(fn ->
-      case Sections.get_section_from_lti_params(lti_params) do
-        nil ->
-          issuer = lti_params["iss"]
-          client_id = lti_params["aud"]
-          deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
-
-          {institution, _registration, deployment} =
-            Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id)
-
-          # create section, section resources and enroll instructor
-          {:ok, section} =
-            case source_id do
-              "publication:" <> publication_id ->
-                create_from_publication(
-                  String.to_integer(publication_id),
-                  user,
-                  institution,
-                  lti_params,
-                  deployment
-                )
-
-              "product:" <> product_id ->
-                create_from_product(
-                  String.to_integer(product_id),
-                  user,
-                  institution,
-                  lti_params,
-                  deployment
-                )
-            end
-
-          if is_remix?(params) do
-            conn
-            |> redirect(to: Routes.live_path(conn, OliWeb.Delivery.RemixSection, section.slug))
-          else
-            conn
-            |> redirect(to: Routes.delivery_path(conn, :index))
-          end
-
-        section ->
-          # a section already exists, redirect to index
-          conn
-          |> put_flash(:error, "Unable to create new section. This section already exists.")
-          |> redirect_to_page_delivery(section)
-      end
-    end)
-    |> case do
-      {:ok, conn} ->
-        conn
-
-      {:error, error} ->
-        {_error_id, error_msg} = log_error("Failed to create new section", error)
-
-        conn
-        |> put_flash(:error, error_msg)
-        |> redirect(to: Routes.delivery_path(conn, :index))
-    end
-  end
-
-  defp create_from_product(product_id, user, institution, lti_params, deployment) do
-    blueprint = Oli.Delivery.Sections.get_section!(product_id)
-
-    Repo.transaction(fn ->
-      # calculate a cost, if an error, fallback to the amount in the blueprint
-      # TODO: we may need to move this to AFTER a remix if the cost calculation factors
-      # in the percentage project usage
-      amount =
-        case Oli.Delivery.Paywall.calculate_product_cost(blueprint, institution) do
-          {:ok, amount} -> amount
-          _ -> blueprint.amount
-        end
-
-      {:ok, section} =
-        Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
-          type: :enrollable,
-          timezone: institution.timezone,
-          title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
-          context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-          institution_id: institution.id,
-          lti_1p3_deployment_id: deployment.id,
-          blueprint_id: blueprint.id,
-          amount: amount,
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params),
-          nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-        })
-
-      # Enroll this user with their proper roles (instructor)
-      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-      Sections.enroll(user.id, section.id, context_roles)
-
-      section
-    end)
-  end
-
-  defp create_from_publication(publication_id, user, institution, lti_params, deployment) do
-    publication = Publishing.get_publication!(publication_id)
-
-    Repo.transaction(fn ->
-      {:ok, section} =
-        Sections.create_section(%{
-          type: :enrollable,
-          timezone: institution.timezone,
-          title: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["title"],
-          context_id: lti_params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"],
-          institution_id: institution.id,
-          base_project_id: publication.project_id,
-          lti_1p3_deployment_id: deployment.id,
-          grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params),
-          nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
-        })
-
-      {:ok, %Section{id: section_id}} = Sections.create_section_resources(section, publication)
-
-      # Enroll this user with their proper roles (instructor)
-      lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
-      context_roles = ContextRoles.get_roles_by_uris(lti_roles)
-      Sections.enroll(user.id, section_id, context_roles)
-
-      section
-    end)
   end
 
   def signin(conn, %{"section" => section}) do
@@ -500,16 +380,6 @@ defmodule OliWeb.DeliveryController do
 
       user ->
         {:ok, user}
-    end
-  end
-
-  defp is_remix?(params) do
-    case Map.get(params, "remix") do
-      "true" ->
-        true
-
-      _ ->
-        false
     end
   end
 

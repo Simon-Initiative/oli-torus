@@ -1,7 +1,7 @@
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
-import { isInternalLink, normalizeHref, toInternalLink } from './utils';
+import { isInternalLink, normalizeHref, toInternalLink } from 'data/content/model/elements/utils';
 import { Hyperlink } from 'data/content/model/elements/types';
 
 type ExistingLinkEditorProps = {
@@ -92,7 +92,7 @@ export const EditLink = (props: ExistingLinkEditorProps) => {
       defaultValue={href}
       placeholder="www.google.com"
       onChange={(e) => setHref(e.target.value)}
-      onKeyPress={(e) => onEnterApply(e, () => props.onEdit(normalizeHref(href)))}
+      onKeyPress={(e: any) => onEnterApply(e, () => props.onEdit(normalizeHref(href)))}
       className={'form-control mr-sm-2'}
       style={{ display: 'inline ', width: '300px' }}
     />

@@ -1,10 +1,11 @@
+import { ErrorBoundary } from 'components/common/ErrorBoundary';
+import { Editor } from 'components/editing/editor/Editor';
+import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { StructuredContent } from 'data/content/resource';
+import { ProjectSlug, ResourceSlug } from 'data/types';
 import React from 'react';
 import { Descendant } from 'slate';
-import { StructuredContent } from 'data/content/resource';
-import { Editor } from 'components/editing/editor/Editor';
-import { ProjectSlug, ResourceSlug } from 'data/types';
-import { ErrorBoundary } from 'components/common/ErrorBoundary';
-import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { slateFixer } from './SlateFixer';
 
 export type StructuredContentEditor = {
   editMode: boolean; // Whether or not we can edit
@@ -24,13 +25,15 @@ export const StructuredContentEditor = (props: StructuredContentEditor) => {
     [props.content, props.onEdit],
   );
 
+  const [value, setValue] = React.useState(slateFixer(props.content));
+
   return (
     <ErrorBoundary>
       <Editor
         className="structured-content"
         commandContext={{ projectSlug: props.projectSlug, resourceSlug: props.resourceSlug }}
         editMode={props.editMode}
-        value={props.content.children}
+        value={value.children}
         onEdit={onEdit}
         toolbarInsertDescs={props.toolbarInsertDescs}
       />

@@ -4,6 +4,7 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
   alias Oli.Utils.SchemaResolver
+  alias Oli.Resources.ContentMigrator
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
@@ -343,7 +344,7 @@ defmodule Oli.Interop.Ingest do
 
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
-    with content <- Map.get(page, "content"),
+    with {:ok, %{"content" => content} = page} <- maybe_migrate_resource_content(page, :page),
          :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map) do
@@ -378,16 +379,6 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp validate_json(json, schema) do
-    case ExJsonSchema.Validator.validate(schema, json) do
-      :ok ->
-        :ok
-
-      {:error, errors} ->
-        {:error, {:invalid_json, schema, errors, json}}
-    end
-  end
-
   defp create_activity(
          project,
          activity,
@@ -396,8 +387,9 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    with :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
-
+    with {:ok, %{"content" => content} = activity} <-
+           maybe_migrate_resource_content(activity, :activity),
+         :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
       title =
         case Map.get(activity, "title") do
           nil -> Map.get(activity, "subType")
@@ -415,7 +407,7 @@ defmodule Oli.Interop.Ingest do
         scope: scope,
         tags: transform_tags(activity, tag_map),
         title: title,
-        content: Map.get(activity, "content"),
+        content: content,
         author_id: as_author.id,
         objectives: process_activity_objectives(activity, objective_map),
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
@@ -423,6 +415,26 @@ defmodule Oli.Interop.Ingest do
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
       }
       |> create_resource(project)
+    end
+  end
+
+  defp maybe_migrate_resource_content(resource, resource_type) do
+    case ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest) do
+      {:migrated, migrated} ->
+        {:ok, Map.put(resource, "content", migrated)}
+
+      {:skipped, _} ->
+        {:ok, resource}
+    end
+  end
+
+  defp validate_json(json, schema) do
+    case ExJsonSchema.Validator.validate(schema, json) do
+      :ok ->
+        :ok
+
+      {:error, errors} ->
+        {:error, {:invalid_json, schema, errors, json}}
     end
   end
 
@@ -513,14 +525,17 @@ defmodule Oli.Interop.Ingest do
 
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, tag_map, hierarchy_details, as_author) do
-    # Process top-level items and containers, add recursively add containers
+    # Process top-level items and containers, add recursively add container
     children =
       Map.get(hierarchy_details, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
-          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, tag_map, c)
+          "item" ->
+            Map.get(page_map, Map.get(c, "idref")).resource_id
+
+          "container" ->
+            create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 
@@ -540,8 +555,12 @@ defmodule Oli.Interop.Ingest do
       Map.get(container, "children")
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
-          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, tag_map, c)
+          "item" ->
+            p = Map.get(page_map, Map.get(c, "idref"))
+            p.resource_id
+
+          "container" ->
+            create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 

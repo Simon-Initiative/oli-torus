@@ -21,12 +21,8 @@ import { safelySelectStringInputs } from 'data/activities/utils';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { TextareaInput } from 'components/activities/common/delivery/inputs/TextareaInput';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from 'components/activities/DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from 'components/activities/types';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';

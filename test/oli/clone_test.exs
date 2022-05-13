@@ -12,6 +12,23 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
 
+  describe "need for new revision checks" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "needs_new_revision_for_edit?/2", %{
+      project: project,
+      revision1: revision1,
+      author2: author2
+    } do
+      refute Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
+
+      {:ok, _} = Clone.clone_project(project.slug, author2)
+      assert Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
+    end
+  end
+
   describe "project duplication" do
     setup do
       project_map = Oli.Seeder.base_project_with_resource2()
@@ -68,6 +85,7 @@ defmodule Oli.CloneTest do
       assert duplicated.version == "1.0.0"
       assert project.family_id != duplicated.family_id
       assert duplicated.project_id == project.id
+      assert duplicated.publisher_id == project.publisher_id
     end
 
     test "clone_project/2 creates a new collaborator", %{author2: author, duplicated: duplicated} do
@@ -166,6 +184,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -195,6 +214,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }

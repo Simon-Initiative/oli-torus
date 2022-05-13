@@ -4,12 +4,8 @@ import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schem
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import * as ActivityTypes from 'components/activities/types';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from 'components/activities/DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 
 interface Context {

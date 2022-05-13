@@ -1,8 +1,9 @@
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { HasStem, Stem } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
+
 import './StemDelivery.scss';
 
 interface StemProps {

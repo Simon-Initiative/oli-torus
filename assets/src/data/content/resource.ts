@@ -1,3 +1,4 @@
+import * as Immutable from 'immutable';
 import { ActivityModelSchema } from 'components/activities/types';
 import * as Bank from 'data/content/bank';
 import { Model } from 'data/content/model/elements/factories';
@@ -5,7 +6,6 @@ import { ModelElement } from 'data/content/model/elements/types';
 import { Objective } from 'data/content/objective';
 import { Tag } from 'data/content/tags';
 import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug } from 'data/types';
-import { Node } from 'slate';
 import guid from 'utils/guid';
 import { ActivityEditContext } from './activity';
 
@@ -22,9 +22,25 @@ export type AttachedObjectives = {
 // entries in a resource content array
 export type ResourceContent =
   | GroupContent
+  | Break
   | StructuredContent
   | ActivityReference
   | ActivityBankSelection;
+
+export const getResourceContentName = (content: ResourceContent) => {
+  switch (content.type) {
+    case 'activity-reference':
+      return 'Activity';
+    case 'content':
+      return 'Content';
+    case 'group':
+      return 'Group';
+    case 'break':
+      return 'Page Break';
+    case 'selection':
+      return 'Selection';
+  }
+};
 
 // The full context necessary to operate a resource editing session
 export type ResourceContext = {
@@ -51,18 +67,18 @@ export type Purpose = {
   label: string;
 };
 
-export const ActivityPurposes: Purpose[] = [
-  { value: 'none', label: 'Activity' },
+export const PurposeTypes: Purpose[] = [
+  { value: 'none', label: 'None' },
   { value: 'checkpoint', label: 'Checkpoint' },
   { value: 'didigetthis', label: 'Did I get this?' },
-  { value: 'learnbydoing', label: 'Learn by doing' },
-];
-
-export const ContentPurposes: Purpose[] = [
-  { value: 'none', label: 'Content' },
   { value: 'example', label: 'Example' },
+  { value: 'labactivity', label: 'Lab' },
+  { value: 'learnbydoing', label: 'Learn by doing' },
   { value: 'learnmore', label: 'Learn more' },
   { value: 'manystudentswonder', label: 'Many students wonder' },
+  { value: 'quiz', label: 'Quiz' },
+  { value: 'simulation', label: 'Simulation' },
+  { value: 'walkthrough', label: 'Walkthrough' },
 ];
 
 export const createDefaultStructuredContent = (
@@ -72,6 +88,21 @@ export const createDefaultStructuredContent = (
   id: guid(),
   children,
   purpose: 'none',
+});
+
+export const createGroup = (
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+): GroupContent => ({
+  type: 'group',
+  id: guid(),
+  children,
+  layout: 'vertical',
+  purpose: 'none',
+});
+
+export const createBreak = (): Break => ({
+  type: 'break',
+  id: guid(),
 });
 
 export const createDefaultSelection = () => {
@@ -97,6 +128,7 @@ export interface ActivityBankSelection {
   logic: Bank.Logic;
   count: number;
   purpose: string;
+  children: undefined;
 }
 
 export interface ActivityReference {
@@ -108,10 +140,16 @@ export interface ActivityReference {
 }
 
 export interface GroupContent {
-  id: number | string;
   type: 'group';
+  id: string;
   layout: string; // TODO define layout types
-  children: ResourceContent[];
+  purpose: string;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface Break {
+  type: 'break';
+  id: string;
 }
 
 export interface Activity {

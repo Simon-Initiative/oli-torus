@@ -1,3 +1,4 @@
+import * as Immutable from 'immutable';
 import { toSimpleText } from 'components/editing/utils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
@@ -5,7 +6,7 @@ import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
 import { Element, Range, Text } from 'slate';
 import { useFocused, useSelected, useSlate } from 'slate-react';
-import { StructuredContent } from './resource';
+import { StructuredContent, ResourceContent } from './resource';
 
 export const useElementSelected = () => {
   const focused = useFocused();
@@ -66,7 +67,7 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
     }
   }
 
-  return <i>Empty</i>;
+  return <i>No content</i>;
 }
 
 export const positionRect = ({

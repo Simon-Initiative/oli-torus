@@ -101,6 +101,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
       onSelected(selection);
     }
   };
+
   return (
     <React.Fragment>
       <div style={mcqItemStyles}>
@@ -248,11 +249,17 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const [randomized, setRandomized] = useState(false);
   const [options, setOptions] = useState<McqOptionModel[]>([]);
   const [numberOfSelectedChoices, setNumberOfSelectedChoices] = useState(0);
+  const [multipleSelection, setMultipleSelection] = useState(false);
+
   // note in SS selection is 1 based
   const [selectedChoice, setSelectedChoice] = useState<number>(0);
   const [selectedChoiceText, setSelectedChoiceText] = useState<string>('');
   const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
   const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
+
+  // converts stringfied number array to number array
+  const convertToNumberArray = (arr: string[]) =>
+    arr.map((element) => parseInt(element.replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
     // set defaults from model
@@ -261,6 +268,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
     const dRandomized = parseBoolean(pModel.randomize);
     setRandomized(dRandomized);
+
+    const dMultipleSelection = parseBoolean(pModel.multipleSelection);
+    setMultipleSelection(dMultipleSelection);
 
     // we need to set up a new list so that we can shuffle while maintaining correct index/values
     let mcqList: McqOptionModel[] = pModel.mcqItems?.map((item: any, index: number) => ({
@@ -336,11 +346,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     let hasDoneSelectedChoice = false;
 
     // this is for setting *multiple* choices being selected by the number value
-    const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
-    if (sSelectedChoices !== undefined) {
+    const sSelectedChoices: string[] = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    if (dMultipleSelection && sSelectedChoices !== undefined) {
       hasDoneMultiple = true;
       hasDoneSelectedChoice = true;
-      const selectedArray = parseArray(sSelectedChoices);
+      // convert stringfied number array to number array
+      const selectedArray = convertToNumberArray(sSelectedChoices);
+
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray.map((choice) => ({
           value: choice,
@@ -353,7 +365,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
     // this is for setting *multiple* choices being selected by the text value
     const sSelectedChoicesText = currentStateSnapshot[`stage.${id}.selectedChoicesText`];
-    if (sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
+    if (dMultipleSelection && sSelectedChoicesText !== undefined && !hasDoneSelectedChoice) {
       hasDoneMultiple = true;
       const selectedArray = parseArray(sSelectedChoicesText);
       if (Array.isArray(selectedArray)) {
@@ -401,15 +413,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     setReady(true);
   }, []);
 
-  const {
-    width,
-    multipleSelection,
-    customCssClass,
-    layoutType,
-    height,
-    overrideHeight = false,
-    verticalGap,
-  } = model;
+  const { width, customCssClass, layoutType, height, overrideHeight = false, verticalGap } = model;
 
   useEffect(() => {
     let pModel;
@@ -470,6 +474,16 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     setSelectedChoiceText(newSelectedChoiceText);
     setSelectedChoicesText(newSelectedChoicesText);
 
+    /* console.log('HANDLE MULTIPLE SELECTION', {
+      newCount,
+      newSelectedChoice,
+      newSelectedChoices,
+      newSelectedChoiceText,
+      newSelectedChoicesText,
+      selections,
+      shouldSave,
+    }); */
+
     if (shouldSave) {
       saveState({
         numberOfSelectedChoices: newCount,
@@ -527,14 +541,14 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           selectedChoicesText: updatedChoicesText,
         });
       }
-      console.log('MCQ HANDLE SELECT', {
+      /* console.log('MCQ HANDLE SELECT', {
         shouldSave,
         newCount,
         newChoice,
         newSelectedChoices,
         updatedChoiceText,
         updatedChoicesText,
-      });
+      }); */
     },
     [multipleSelection, selectedChoices, selectedChoice, selectedChoicesText],
   );
@@ -580,7 +594,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                const selectedArray = convertToNumberArray(sSelectedChoices);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,
@@ -656,10 +672,12 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
               // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (sSelectedChoices !== undefined && sSelectedChoices.length) {
+              if (multipleSelection && sSelectedChoices !== undefined && sSelectedChoices.length) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                const selectedArray = convertToNumberArray(sSelectedChoices);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,
@@ -673,6 +691,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               // this is for setting *multiple* choices being selected by the text value
               const sSelectedChoicesText = changes[`stage.${id}.selectedChoicesText`];
               if (
+                multipleSelection &&
                 sSelectedChoicesText !== undefined &&
                 sSelectedChoicesText.length &&
                 !hasDoneSelectedChoice
@@ -729,7 +748,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         unsub();
       });
     };
-  }, [props.notify, options, handleItemSelection]);
+  }, [props.notify, options, handleItemSelection, multipleSelection]);
 
   // Set up the styles
   const styles: CSSProperties = {
@@ -812,16 +831,26 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     });
   };
 
-  const isItemSelected = (index: number) => {
-    // checks if the item is selected to set the input's "selected" attr
-    let selected = false;
-    if (multipleSelection) {
-      selected = selectedChoices.includes(index + 1);
-    } else {
-      selected = selectedChoice === index + 1;
-    }
-    return selected;
-  };
+  const isItemSelected = useCallback(
+    (item: McqOptionModel) => {
+      // checks if the item is selected to set the input's "selected" attr
+      let selected = false;
+      if (multipleSelection) {
+        selected = selectedChoices.includes(item.index + 1);
+      } else {
+        selected = selectedChoice === item.index + 1;
+      }
+      /* console.log('isItemSelected', {
+        item,
+        selected,
+        multipleSelection,
+        selectedChoice,
+        selectedChoices,
+      }); */
+      return selected;
+    },
+    [multipleSelection, selectedChoice, selectedChoices],
+  );
 
   let columns = 1;
   if (customCssClass === 'two-columns') {
@@ -845,7 +874,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           layoutType={layoutType}
           itemId={`${id}-item-${index}`}
           groupId={`mcq-${id}`}
-          selected={isItemSelected(item.index)}
+          selected={isItemSelected(item)}
           val={item.value}
           onSelected={handleItemSelection}
           state={state}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CSSTransition } from 'react-transition-group';
 
+import styles from './CreateAccountPopup.modules.scss';
+
 export interface CreateAccountPopupProps {
   sectionSlug?: string;
 }
@@ -39,8 +41,8 @@ export function CreateAccountPopup(props: CreateAccountPopupProps): JSX.Element 
 
   return (
     <CSSTransition in={show} appear={true} timeout={300} unmountOnExit>
-      <div className="create-account-popup" onClick={(e) => onClick(e)}>
-        <div id="arrow"></div>
+      <div className={styles.createAccountPopup} onClick={(e) => onClick(e)}>
+        <div className={styles.arrow}></div>
 
         <div className="d-flex flex-row">
           <h4>Welcome to Open and Free!</h4>

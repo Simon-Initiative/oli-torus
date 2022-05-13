@@ -8,6 +8,7 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
 
   defp determine_activities(activity_ids, activity_map) do
     Enum.map(activity_ids, fn id -> Map.get(activity_map, id) end)
+    |> Enum.filter(fn r -> !is_nil(r) end)
   end
 
   # For the given list of activity ids, find and return the set of objective revisions
@@ -22,6 +23,7 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
     end)
     |> MapSet.to_list()
     |> Enum.map(fn id -> Map.get(objective_map, id) end)
+    |> Enum.filter(fn r -> !is_nil(r) end)
   end
 
   defp render_activities(assigns, activities) do

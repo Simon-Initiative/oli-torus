@@ -1,6 +1,9 @@
 import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
-import { validatePartIds } from 'apps/authoring/store/groups/layouts/deck/actions/validate';
+import {
+  validatePartIds,
+  validateVariables,
+} from 'apps/authoring/store/groups/layouts/deck/actions/validate';
 import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticTypes, DiagnosticRuleTypes } from './diagnostics/DiagnosticTypes';
 
@@ -156,6 +159,24 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   );
 };
 
+export const PageError: React.FC<{ error: any }> = ({ error }) => {
+  return (
+    <ListGroup>
+      <ListGroup.Item>
+        <ListGroup horizontal>
+          <ListGroup.Item className="flex-grow-1 alert alert-danger">
+            <span>
+              Variable(s) &quot;
+              <strong>{error.map((err: any) => err.id).join(', ')} </strong>
+            </span>
+            &quot; failed to evaluate.
+          </ListGroup.Item>
+        </ListGroup>
+      </ListGroup.Item>
+    </ListGroup>
+  );
+};
+
 interface DiagnosticsWindowProps {
   onClose?: () => void;
 }
@@ -191,6 +212,19 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
     }
   };
 
+  const handleValidateVariablesClick = async () => {
+    const result = await dispatch(validateVariables({}));
+    if ((result as any).meta.requestStatus === 'fulfilled') {
+      if ((result as any).payload.errors.length > 0) {
+        const errors = (result as any).payload.errors;
+        const errorList = <PageError key={errors[0].owner.title} error={errors} />;
+        setResults(errorList);
+      } else {
+        setResults(<p>No errors found.</p>);
+      }
+    }
+  };
+
   return (
     <Fragment>
       <Modal
@@ -208,6 +242,15 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
               <li>
                 Validate Lesson
                 <button className="btn btn-sm btn-primary ml-2" onClick={handleValidateClick}>
+                  Execute
+                </button>
+              </li>
+              <li style={{ marginTop: '5px' }}>
+                Validate Variables
+                <button
+                  className="btn btn-sm btn-primary ml-2"
+                  onClick={handleValidateVariablesClick}
+                >
                   Execute
                 </button>
               </li>

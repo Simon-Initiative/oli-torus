@@ -7,6 +7,7 @@ defmodule OliWeb.Common.SortableTable.Table do
   prop sort, :event, required: true
   prop select, :event
   prop additional_table_class, :string, default: "table-sm"
+  prop context, :any
 
   @spec id_field(any, %{:id_field => any, optional(any) => any}) :: any
   def id_field(row, %{id_field: id_field}) when is_list(id_field) do

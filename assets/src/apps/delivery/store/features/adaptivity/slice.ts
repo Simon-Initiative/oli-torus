@@ -10,6 +10,10 @@ export interface CheckResults {
   score: number;
   outOf: number;
 }
+export interface ProcessedCheckResults {
+  results?: any;
+  correct: boolean;
+}
 export interface AdaptivityState {
   isGoodFeedback: boolean;
   currentFeedbacks: any[];
@@ -22,6 +26,7 @@ export interface AdaptivityState {
   lastMutateChanges: any;
   initPhaseComplete: any; // timestamp
   historyModeNavigation: boolean;
+  processedCheckResults?: ProcessedCheckResults;
 }
 
 const initialState: AdaptivityState = {
@@ -44,6 +49,10 @@ const initialState: AdaptivityState = {
   lastMutateChanges: null,
   initPhaseComplete: null,
   historyModeNavigation: false,
+  processedCheckResults: {
+    results: [],
+    correct: false,
+  },
 };
 
 const slice: Slice<AdaptivityState> = createSlice({
@@ -85,6 +94,10 @@ const slice: Slice<AdaptivityState> = createSlice({
     setInitPhaseComplete(state) {
       state.initPhaseComplete = Date.now();
     },
+    setProcessedCheckResults(state, action: PayloadAction<ProcessedCheckResults>) {
+      const { results, correct } = action.payload;
+      state.processedCheckResults = { results, correct };
+    },
   },
 });
 
@@ -100,6 +113,7 @@ export const {
   setInitPhaseComplete,
   setHistoryNavigationTriggered,
   setInitStateFacts,
+  setProcessedCheckResults,
 } = slice.actions;
 
 // selectors
@@ -133,6 +147,11 @@ export const selectLastCheckTriggered = createSelector(
 export const selectLastCheckResults = createSelector(
   selectState,
   (state: AdaptivityState) => state.lastCheckResults,
+);
+
+export const selectProcessedCheckResults = createSelector(
+  selectState,
+  (state: AdaptivityState) => state.processedCheckResults,
 );
 
 export const selectHistoryNavigationActivity = createSelector(

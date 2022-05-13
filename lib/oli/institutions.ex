@@ -502,6 +502,7 @@ defmodule Oli.Institutions do
   def find_or_create_institution_by_normalized_url(institution_attrs) do
     normalized_url =
       institution_attrs[:institution_url]
+      |> String.downcase()
       |> String.replace(~r/^https?\:\/\//i, "")
       |> String.replace_trailing("/", "")
 

@@ -14,6 +14,8 @@ import { useSlate } from 'slate-react';
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
+import './PopupElement.scss';
+
 interface Props extends EditorProps<ContentModel.Popup> {}
 export const PopupEditor = (props: Props) => {
   const editor = useSlate();

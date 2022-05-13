@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import React from 'react';
 import { classNames } from 'utils/classNames';
 
@@ -23,7 +23,7 @@ export const AuthoringButton: React.FC<Props> = (props: Props) => {
       disabled={props.disabled || !props.editMode}
       type="button"
       onClick={(e) => props.action(e)}
-      onKeyPress={(e) => (e.key === 'Enter' ? props.action(e) : null)}
+      onKeyPress={(e: any) => (e.key === 'Enter' ? props.action(e) : null)}
     >
       {props.children}
     </button>

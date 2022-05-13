@@ -1,0 +1,30 @@
+@use 'authoring/theme' as authoring;
+@import 'bootstrap';
+
+.draggableColumnContainer {
+  @extend .mt-3;
+}
+
+.draggableColumnIndicator {
+  color: rgba($color: authoring.$body-color, $alpha: 0.6);
+  cursor: grab !important;
+  width: 24px;
+  margin-right: 0.5rem;
+}
+.draggableColumnIndicator.disabled {
+  cursor: default !important;
+}
+
+.draggableColumnCard {
+  @extend .d-flex;
+  @extend .mb-2;
+  @extend .align-items-center;
+  cursor: default !important;
+  border-radius: 4px;
+  background: authoring.$body-bg;
+}
+
+.draggableColumnOutlined {
+  padding: 0.8rem 0.5rem;
+  box-shadow: 1px 1px 8px 1px rgb(206 212 218 / 33%);
+}

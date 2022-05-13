@@ -8,6 +8,8 @@ import * as Bank from 'data/content/bank';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 
+import './ActivityBankSelection.scss';
+
 export type ActivityBankSelectionProps = {
   selection: Selection;
   onChange: (selection: Selection) => void;

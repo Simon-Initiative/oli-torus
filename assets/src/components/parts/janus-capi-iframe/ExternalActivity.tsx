@@ -8,7 +8,7 @@ import {
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { clone, parseBool, parseBoolean } from '../../../utils/common';
+import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
@@ -201,19 +201,20 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       setFrameSrc(sSrc);
     }
 
-    // INIT STATE also needs to take in all the sim values
+    // gather the changes with values only for my ID
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        const value = currentStateSnapshot[key];
-        const typeOfValue = typeof value;
-        if (value === '[]') {
-          collect[key] = '';
-        } else if (typeOfValue === 'object') {
-          collect[key] = JSON.stringify(value);
-        } else {
-          collect[key] = value;
+        if (key.indexOf(`${domain}.${id}.`) === 0) {
+          const value = currentStateSnapshot[key];
+          const typeOfValue = typeof value;
+          if (value === '[]') {
+            collect[key] = '';
+          } else if (typeOfValue === 'object') {
+            collect[key] = JSON.stringify(value);
+          } else {
+            collect[key] = value;
+          }
         }
-
         return collect;
       },
       {},
@@ -585,6 +586,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             typeof changedVar.value === 'number'
           ) {
             changedVar.type = CapiVariableTypes.NUMBER;
+          } else if (
+            changedVar.type === CapiVariableTypes.STRING &&
+            !Number.isNaN(changedVar.value)
+          ) {
+            const parsedValue = parseNumString(changedVar.value);
+            if (typeof parsedValue === 'number') {
+              changedVar.type = CapiVariableTypes.NUMBER;
+              changedVar.value = parsedValue;
+            }
           }
           mutableState.push(changedVar);
           hasDiff = true;
@@ -671,12 +681,19 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
         const value = formatted[variable].value;
-        if (typeof value === 'string') {
+        const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
+
+        if (typeof value === 'string' && !isMathExpr) {
           //we don't want to evaluate a JSON string
           const looksLikeJSON = looksLikeJson(value);
           formatted[variable].value = looksLikeJSON
             ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
             : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true);
+        } else if (typeof value === 'string' && isMathExpr) {
+          if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
+            // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing
+            formatted[variable].value = templatizeText(value, simLife.snapshot, scriptEnv, true);
+          }
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
@@ -718,7 +735,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         value = JSON.stringify(val);
       }
       response.values.responseType = 'success';
-      response.values.value = value;
+      response.values.value = value?.length ? value : '{}';
       response.values.exists = exists;
     } catch (err) {
       response.values.responseType = 'error';
@@ -970,11 +987,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
-          handleSetData(data);
+          if (context !== contexts.REVIEW) handleSetData(data);
           break;
 
         case JanusCAPIRequestTypes.CHECK_REQUEST:
-          handleCheckRequest(data);
+          if (context !== contexts.REVIEW) handleCheckRequest(data);
           break;
 
         case JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_REQUEST:

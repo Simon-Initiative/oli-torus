@@ -3,6 +3,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Activities.Realizer.Query.Result
   alias Oli.Activities.Realizer.Selection
   alias Oli.Resources.Revision
+  alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
 
   @doc """
@@ -13,7 +14,7 @@ defmodule Oli.Delivery.ActivityProvider do
   collection, but do need to look for selections as well as static activity-reference instances.
 
   Activities are realized in different ways, depending on the type of reference. First, a static
-  reference to an activity (via "activity-reference") is simply resovled to the correct published
+  reference to an activity (via "activity-reference") is simply resolved to the correct published
   resource. A second type of reference is a selection from the activity bank (via "selection" element).
   These are realized by fulfilling the selection (i.e. drawing the required number of activities randomly
   from the bank according to defined criteria).
@@ -32,7 +33,7 @@ defmodule Oli.Delivery.ActivityProvider do
         resolver
       ) do
     refs =
-      Oli.Resources.PageContent.flat_filter(content, fn e ->
+      PageContent.flat_filter(content, fn e ->
         case Map.get(e, "type", nil) do
           nil -> false
           "activity-reference" -> true
@@ -112,10 +113,10 @@ defmodule Oli.Delivery.ActivityProvider do
   # and to fulfill all activity bank selections.
   #
   # In order to prevent multiple selections on the page potentially realizing the same activity more
-  # than once, we update the blacklististed activity ids within the source as we proceed through the
+  # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
   #
-  # Note: To optimize performance we preprend all activity ids and revisions as we pass through, and
+  # Note: To optimize performance we prepend all activity ids and revisions as we pass through, and
   # then do a final Enum.reverse to restore the correct order.  We do the same thing for the elements
   # within the transformed page model.
   defp fulfill(model, %Source{} = source) do
@@ -148,6 +149,12 @@ defmodule Oli.Delivery.ActivityProvider do
               error = "Selection failed to fulfill with error: #{e}"
               {[error | errors], activities, model, source}
           end
+
+        "group" ->
+          {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
+          e = %{e | "children" => Enum.reverse(c_model)}
+
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source}
 
         _ ->
           {errors, activities, [e | model], source}

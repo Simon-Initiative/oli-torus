@@ -43,8 +43,25 @@ jobs:
       - name: 🔨 Build project
         run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
 
-      - name: ▶️ Run tests
+      - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
+
+      - name: Install node_module dependencies 📦
+        run: cd assets && yarn --frozen-lockfile
+
+      - name: ▶️ Run integration tests
+        run: |
+          /usr/local/share/chrome_driver/chromedriver &
+          timeout 90 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9515)" != "404" ]]; do sleep 1; done' || false
+          set -a;source oli.env && MIX_ENV=hound mix test.hound
+
+      - name: 📈 Save test results
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: integration-test-results
+          path: test-results
+          if-no-files-found: ignore
 
   ts-build-test:
     runs-on: ubuntu-latest
@@ -56,7 +73,7 @@ jobs:
       - name: 🔧 Configure
         uses: actions/setup-node@v1
         with:
-          node-version: '16.13.2'
+          node-version: "16.13.2"
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
@@ -68,7 +85,7 @@ jobs:
         run: mix deps.get
 
       - name: Install node_module dependencies 📦
-        run: npm install -g yarn && cd assets && yarn
+        run: cd assets && yarn --frozen-lockfile
 
       - name: 🧹 Lint
         run: cd assets && npm run lint

@@ -11,9 +11,6 @@
     "type": {
       "const": "content"
     },
-    "purpose": {
-      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
-    },
     "children": {
       "type": "array",
       "items": {
@@ -21,5 +18,8 @@
       }
     }
   },
-  "required": ["id", "type", "purpose", "children"]
+  "required": [
+    "type",
+    "children"
+  ]
 }

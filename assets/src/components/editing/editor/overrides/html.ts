@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { normalizeHref } from 'components/editing/elements/link/utils';
+import { normalizeHref } from 'data/content/model/elements/utils';
 import { Model } from 'data/content/model/elements/factories';
 import { Hyperlink, ModelElement } from 'data/content/model/elements/types';
 import { Editor, Node } from 'slate';

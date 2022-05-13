@@ -1,7 +1,7 @@
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { EditLink } from 'components/editing/elements/link/EditLink';
 import { Initialization } from 'components/editing/elements/link/LinkInitialization';
-import { LinkablePages } from 'components/editing/elements/link/utils';
+import { LinkablePages } from 'data/content/model/elements/utils';
 import { InlineChromiumBugfix, onEditModel } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
@@ -9,6 +9,8 @@ import * as ContentModel from 'data/content/model/elements/types';
 import * as Persistence from 'data/persistence/resource';
 import React, { useState } from 'react';
 import { useSelected } from 'slate-react';
+
+import './LinkElement.scss';
 
 export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {

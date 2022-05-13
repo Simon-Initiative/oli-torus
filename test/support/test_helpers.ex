@@ -1,19 +1,19 @@
 defmodule Oli.TestHelpers do
   import Ecto.Query, warn: false
+  import Mox
+  import Oli.Factory
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Institutions
-  alias Oli.Accounts.User
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Publishing
-  alias Oli.PartComponents
   alias Oli.Delivery.Sections
-
-  import Mox
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Institutions
+  alias Oli.PartComponents
+  alias Oli.Publishing
+  alias OliWeb.Common.LtiSession
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -243,11 +243,65 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
-  def user_conn(%{conn: conn}) do
-    user = user_fixture()
+  def independent_instructor_conn(context), do: user_conn(context, %{can_create_sections: true})
+
+  def user_conn(%{conn: conn}, attrs \\ %{}) do
+    user = user_fixture(attrs)
     conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn, user: user}
+  end
+
+  def instructor_conn(%{conn: conn}) do
+    {:ok, instructor} =
+      Accounts.update_user_platform_roles(
+        insert(:user, %{can_create_sections: true, independent_learner: true}),
+        [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
+      )
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
+      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn}
+  end
+
+  def lms_instructor_conn(%{conn: conn}) do
+    institution = insert(:institution)
+    tool_jwk = jwk_fixture()
+    registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+    deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+    instructor = insert(:user)
+
+    lti_param_ids = %{
+      instructor:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => instructor.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => "some_id",
+              "title" => "some_title"
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+          },
+          instructor.id
+        )
+    }
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
+      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+
+    {:ok, conn: conn}
   end
 
   def author_conn(%{conn: conn}) do
@@ -330,6 +384,25 @@ defmodule Oli.TestHelpers do
     end)
   end
 
+  # Sets up a mock to simulate a recaptcha failure
+  def expect_recaptcha_http_failure_post() do
+    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+
+    Oli.Test.MockHTTP
+    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "challenge_ts" => "some-challenge-ts",
+             "hostname" => "testkey.google.com",
+             "success" => false
+           })
+       }}
+    end)
+  end
+
   def part_component_registration_fixture(attrs \\ %{}) do
     params =
       attrs
@@ -357,7 +430,7 @@ defmodule Oli.TestHelpers do
   def make_sections(project, institution, prefix, n, attrs) do
     65..(65 + (n - 1))
     |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
+    |> Enum.map(fn value -> make(project, institution, "#{prefix}#{value}", attrs) end)
   end
 
   def make(project, institution, title, attrs) do

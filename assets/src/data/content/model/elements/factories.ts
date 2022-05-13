@@ -1,4 +1,5 @@
-import { normalizeHref } from 'components/editing/elements/link/utils';
+import { normalizeHref } from './utils';
+
 import {
   TableData,
   TableRow,
