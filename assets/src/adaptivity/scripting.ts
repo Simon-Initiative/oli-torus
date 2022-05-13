@@ -576,9 +576,12 @@ export const templatizeText = (
       }
     }
     let strValue = stateValue;
-    /* console.log({ strValue, typeOD: typeof stateValue }); */
-
-    if (vars.length === 1 && Array.isArray(stateValue) && typeof stateValue === 'object') {
+    if (
+      vars.length === 1 &&
+      text === `{${vars[0]}}` &&
+      Array.isArray(stateValue) &&
+      typeof stateValue === 'object'
+    ) {
       strValue = stateValue;
     } else if (Array.isArray(stateValue)) {
       strValue = stateValue.map((v) => `"${v}"`).join(', ');
