@@ -7,6 +7,7 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import {
   Audio,
   Blockquote,
+  Citation,
   CodeLine,
   CodeV1,
   CodeV2,
@@ -295,6 +296,10 @@ export class HtmlParser implements WriterImpl {
         </span>
       </OverlayTrigger>
     );
+  }
+
+  cite(context: WriterContext, next: Next, _x: Citation) {
+    return <cite>{next()}</cite>;
   }
 
   text(context: WriterContext, textEntity: Text) {

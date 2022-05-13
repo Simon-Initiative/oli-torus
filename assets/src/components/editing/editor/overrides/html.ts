@@ -20,6 +20,7 @@ const ELEMENT_TAGS: Record<string, (...args: any) => ModelElement> = {
   LI: Model.li,
   P: Model.p,
   PRE: Model.code,
+  CITE: Model.cite,
 };
 
 // COMPAT: `B` is omitted here because Google Docs uses `<b>` in weird ways.
@@ -30,6 +31,7 @@ const TEXT_TAGS: Record<string, Function> = {
   SUB: () => ({ sub: true }),
   SUP: () => ({ sup: true }),
   CODE: () => ({ code: true }),
+  // CITE: () => ({ cite: true }),
 };
 
 const deserialize = (el: HTMLElement): (Node | string | null)[] | string | null | Node => {

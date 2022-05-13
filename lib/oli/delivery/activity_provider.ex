@@ -58,6 +58,16 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
+    bib_ids =
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "cite"
+      end)
+      |> Enum.map(fn %{"bibref" => id} -> id end)
+      |> MapSet.new()
+
+    IO.inspect(bib_ids, label: "good bibs advancedDelivery")
+
+
     %ProviderResult{
       errors: [],
       revisions: revisions,
@@ -75,6 +85,20 @@ defmodule Oli.Delivery.ActivityProvider do
 
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
+
+    IO.inspect(Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+      true
+    end))
+
+    bib_ids =
+      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+        type == "cite"
+      end)
+      |> Enum.map(fn %{"bibref" => id} -> id end)
+      |> MapSet.new()
+
+    IO.inspect(bib_ids, label: "good bibs main")
+
 
     %ProviderResult{
       errors: errors,

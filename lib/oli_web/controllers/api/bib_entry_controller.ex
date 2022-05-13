@@ -14,7 +14,7 @@ defmodule OliWeb.Api.BibEntryController do
 
     case BibEntryEditor.list(project_slug, author) do
       {:ok, revisions} ->
-        json(conn, %{"result" => "success", "bibentrys" => Enum.map(revisions, &serialize_revision/1)})
+        json(conn, %{"result" => "success", "rows" => Enum.map(revisions, &serialize_revision/1)})
 
       {:error, {:not_found}} ->
         error(conn, 404, "not found")
@@ -30,9 +30,8 @@ defmodule OliWeb.Api.BibEntryController do
   def new(conn, %{"project" => project_slug, "title" => title, "content" => content}) do
     author = conn.assigns[:current_author]
 
-    case BibEntryEditor.create(project_slug, author, %{"title" => title, "author_id" => author.id, "content" => Poison.decode!(content)}) do
+    case BibEntryEditor.create(project_slug, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
       {:ok, {:ok, revision}} ->
-        IO.inspect(revision)
         json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
 
       {:error, {:not_found}} ->
@@ -70,10 +69,30 @@ defmodule OliWeb.Api.BibEntryController do
     end
   end
 
+  def delete(conn, %{"project" => project_slug, "entry" => entry_id}) do
+    author = conn.assigns[:current_author]
+
+    case BibEntryEditor.delete(project_slug, entry_id, author) do
+      {:ok, _} ->
+        json(conn, %{"result" => "success"})
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      e ->
+        {_, msg} = Oli.Utils.log_error("Could not delete bibliography entry", e)
+        error(conn, 500, msg)
+    end
+  end
+
   defp serialize_revision(%Oli.Resources.Revision{} = revision) do
     %{
       title: revision.title,
       id: revision.resource_id,
+      slug: revision.slug,
       content: revision.content
     }
   end

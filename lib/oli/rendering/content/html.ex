@@ -285,6 +285,11 @@ defmodule Oli.Rendering.Content.Html do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
   end
 
+  def cite(%Context{} = _context, next, a) do
+    IO.inspect(a)
+    ["<cite><sup>", next.(), "</sup></cite>\n"]
+  end
+
   def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
     trigger =
       if escape_xml!(trigger) == "hover" do

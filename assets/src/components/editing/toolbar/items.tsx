@@ -1,6 +1,7 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
+// import { commandDesc as citeCmd } from 'components/editing/elements/cite/CiteCmd';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
 import { toggleBlockquote } from 'components/editing/elements/blockquote/blockquoteActions';

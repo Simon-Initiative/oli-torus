@@ -19,6 +19,7 @@ import {
   ModelElement,
   HeadingOne,
   HeadingTwo,
+  Citation,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -53,6 +54,9 @@ export const Model = {
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+
+  cite: (text = '', bibref: number, slug = guid()) =>
+    create<Citation>({ type: 'cite', bibref: bibref, slug: slug, children: [{ text }] }),
 
   image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
 

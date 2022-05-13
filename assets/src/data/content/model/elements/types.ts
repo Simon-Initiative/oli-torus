@@ -11,7 +11,7 @@ export type ModelElement = TopLevel | Block | Inline;
 
 type TopLevel = TextBlock | List | Media | Table | Math | (CodeV1 | CodeV2) | Blockquote;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
-type Inline = Hyperlink | Popup | InputRef;
+type Inline = Hyperlink | Popup | InputRef | Citation;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
@@ -149,6 +149,13 @@ export interface MathLine extends SlateElement<Text[]> {
 
 export interface CodeLine extends SlateElement<Text[]> {
   type: 'code_line';
+}
+
+export interface Citation extends SlateElement<Text[]> {
+  type: 'cite';
+  cite?: string;
+  slug: string;
+  bibref: number;
 }
 
 export interface Hyperlink extends SlateElement<Text[]> {

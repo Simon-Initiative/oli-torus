@@ -65,6 +65,7 @@ export const createEditor = (
           content={content}
           onEdit={onEdit}
           projectSlug={projectSlug}
+          resourceSlug={resourceSlug}
           toolbarInsertDescs={getToolbarForContentType({
             type: 'all',
             resourceContext,

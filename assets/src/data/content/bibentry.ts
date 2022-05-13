@@ -7,6 +7,7 @@ export interface Paging {
 
 export interface BibEntry {
   id: ResourceId;
+  slug: string;
   title: string;
   content: any;
 }

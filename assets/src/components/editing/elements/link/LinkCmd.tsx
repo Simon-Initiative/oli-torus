@@ -14,7 +14,9 @@ const command: Command = {
       });
     }
 
+    console.log(JSON.stringify(selection));
     const href = Editor.string(editor, selection);
+    console.log(JSON.stringify(href));
     Transforms.wrapNodes(editor, Model.link(href), { split: true });
   },
   precondition: (editor) => {

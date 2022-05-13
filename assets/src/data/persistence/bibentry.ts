@@ -4,7 +4,7 @@ import { makeRequest } from './common';
 
 export interface BibEntrysRetrieval {
   result: 'success';
-  bibEntrys: BibEntry[];
+  rows: BibEntry[];
 }
 
 export interface BibEntryCreation {
@@ -50,4 +50,13 @@ export function create(project: ProjectSlug, title: string, content: string) {
   };
 
   return makeRequest<BibEntryCreation>(params);
+}
+
+export function deleteEntry(project: ProjectSlug, entryId: number) {
+  const params = {
+    method: 'DELETE',
+    url: `/bibs/project/${project}/entry/${entryId}`,
+  };
+
+  return makeRequest<BibEntrysRetrieval>(params);
 }

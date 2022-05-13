@@ -51,15 +51,11 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
       case paged_bib_entrys(project_slug, %Paging{limit: limit, offset: offset}) do
         nil -> {:error, {:not_found}}
         revisions ->
-          # IO.inspect(revisions)
-          # list = Enum.map(revisions)
           revision_list = Enum.reduce(revisions, %{total_count: 0, rows: []}, fn e, m ->
             Map.put(m, :total_count, e.full_count)
-            |> Map.put(:rows,  [e.rev | Map.get(m, :rows)])
+            |> Map.put(:rows,  Map.get(m, :rows) ++ [e.rev])
           end)
-          IO.inspect(revision_list)
           {:ok, revision_list}
-          # {:ok, Enum.filter(revisions, fn r -> !r.rev.deleted end)}
       end
     else
       error -> error
@@ -113,6 +109,34 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
   end
 
   @doc """
+  Deletes a bibentry, always generating a new revision to capture the deletion.
+
+  Returns:
+
+  .`{:ok, revision}` when the resource is deleted
+  .`{:error, {:not_found}}` if the project or bibentry or user cannot be found
+  .`{:error, {:not_authorized}}` if the user is not authorized to edit this project
+  .`{:error, {:error}}` unknown error
+  """
+  @spec delete(String.t(), any(), String.t()) ::
+          {:ok, %Revision{}}
+          | {:error, {:not_found}}
+          | {:error, {:error}}
+          | {:error, {:not_authorized}}
+  def delete(project_slug, resource_id, author) do
+    update = %{"deleted" => true}
+    with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
+         {:ok} <- authorize_user(author, project),
+         {:ok, revision} <-
+           AuthoringResolver.from_resource_id(project_slug, resource_id) |> trap_nil() do
+      Oli.Publishing.ChangeTracker.track_revision(project_slug, revision, update)
+    else
+      error -> error
+    end
+  end
+
+
+  @doc """
   Creates a new tag resource with given attributes as part of its initial revision.
   """
   def create(project_slug, author, attrs) do
@@ -138,7 +162,6 @@ defmodule Oli.Authoring.Editing.BibEntryEditor do
       {:ok, revision}
     else
       error ->
-        IO.inspect(error)
         Repo.rollback(error)
         error
     end

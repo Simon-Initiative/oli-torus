@@ -9,7 +9,7 @@ defmodule Oli.BibEntryEditorTest do
   describe "bib entry editing" do
     setup do
       Seeder.base_project_with_resource2()
-      |> Seeder.create_bib_entry(:first, "Correlation of the Base Strengths of Amines 1", Poison.decode!('{
+      |> Seeder.create_bib_entry(:first, "Correlation of the Base Strengths of Amines 1", %{data: Poison.decode!('[{
         "container-title": "Journal of the American Chemical Society",
         "author": [{
           "given": "H. K.",
@@ -26,17 +26,9 @@ defmodule Oli.BibEntryEditorTest do
         },
         "page": "5441-5444",
         "title": "Correlation of the Base Strengths of Amines 1",
-        "volume": "79",
-        "_graph": [{
-          "type": "@biblatex/text",
-          "data": "@article{Hall1957Correlation,\nauthor = {Hall, H. K.},\njournal = {Journal of the American Chemical Society},\nnumber = {20},\nyear = {1957},\nmonth = {jan 1},\npages = {5441--5444},\ntitle = {Correlation of the {Base} {Strengths} of {Amines} 1},\nvolume = {79},\n}"
-        }, {
-          "type": "@biblatex/entries+list"
-        }, {
-          "type": "@csl/list+object"
-        }]
-      }'))
-      |> Seeder.create_bib_entry(:second, "Gitksan medicinal plants-cultural choice and efficacy", Poison.decode!('{
+        "volume": "79"
+      }]')})
+      |> Seeder.create_bib_entry(:second, "Gitksan medicinal plants-cultural choice and efficacy", %{data: Poison.decode!('[{
         "container-title": "Journal of Ethnobiology and Ethnomedicine",
         "author": [{
           "given": "Leslie Main",
@@ -53,16 +45,8 @@ defmodule Oli.BibEntryEditorTest do
         },
         "publisher": "BioMed Central",
         "title": "Gitksan medicinal plants-cultural choice and efficacy",
-        "volume": "2",
-        "_graph": [{
-          "type": "@biblatex/text",
-          "data": "@article{Johnson2006Gitksan,\nauthor = {Johnson, Leslie Main},\njournal = {Journal of Ethnobiology and Ethnomedicine},\nnumber = {1},\nyear = {2006},\nmonth = {jun 21},\npublisher = {BioMed Central},\ntitle = {Gitksan medicinal plants-cultural choice and efficacy},\nvolume = {2},\n}"
-        }, {
-          "type": "@biblatex/entries+list"
-        }, {
-          "type": "@csl/list+object"
-        }]
-      }'))
+        "volume": "2"
+      }]')})
     end
 
     test "list/2 lists both bib_entrys", %{author: author, project: project, first: first, second: second} do
@@ -73,11 +57,11 @@ defmodule Oli.BibEntryEditorTest do
       assert Enum.at(revisions, 1).resource_id == second.revision.resource_id
     end
 
-    test "browse_entrys/3 lists paged bib_entrys", %{author: author, project: project, first: first, second: second} do
+    test "browse_entrys/3 lists paged bib_entrys", %{author: author, project: project, first: first, _second: second} do
       {:ok, revisions} = BibEntryEditor.retrieve(project.slug, author, %Paging{limit: 1, offset: 0})
 
-      assert length(revisions) == 1
-      assert Enum.at(revisions, 0).resource_id == first.revision.resource_id
+      assert length(revisions.rows) == 1
+      assert Enum.at(revisions.rows, 0).resource_id == first.revision.resource_id
     end
 
     test "list/2 fails when project does not exist", %{

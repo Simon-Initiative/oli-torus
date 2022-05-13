@@ -21,7 +21,6 @@ defmodule Oli.Authoring.Editing.BibliographyEditor do
        %Oli.Authoring.Editing.BibliographyContext{
          authorEmail: author.email,
          projectSlug: project_slug,
-        #  allBibEntrys: Enum.map(bib_entries, fn t -> %{id: t.resource_id, title: t.title} end),
          totalCount: length(bib_entries)
        }}
     else
