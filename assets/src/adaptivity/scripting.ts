@@ -578,10 +578,12 @@ export const templatizeText = (
     let strValue = stateValue;
     /* console.log({ strValue, typeOD: typeof stateValue }); */
 
-    if (typeof stateValue === 'object') {
+    if (vars.length === 1 && typeof stateValue === 'object') {
       strValue = stateValue;
     } else if (Array.isArray(stateValue)) {
       strValue = stateValue.map((v) => `"${v}"`).join(', ');
+    } else if (typeof stateValue === 'object') {
+      strValue = stateValue;
     } else if (typeof stateValue === 'number') {
       const modifiedValue = formatNumber(strValue);
       strValue = parseFloat(modifiedValue.toString());
