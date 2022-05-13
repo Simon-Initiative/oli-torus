@@ -1,0 +1,10 @@
+@use 'delivery/variables' as delivery;
+
+.inline-link {
+  color: delivery.$blue;
+  text-decoration: underline;
+}
+
+.link-editor {
+  transition: none !important;
+}
