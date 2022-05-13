@@ -26,6 +26,13 @@ $(function() {
     }
   });
 
+  const lms_config_details = document.querySelector('#lms-config-details');
+  const lms_config_details_toggle = document.querySelector('a#lms-config-details-toggle');
+
+  lms_config_details_toggle.addEventListener('click', function() {
+    lms_config_details.classList.toggle('d-none');
+  })
+
 })
 </script>
 
@@ -40,9 +47,9 @@ $(function() {
           Click the button below to get started.
         </p>
 
-        <a href="#" class="btn btn-primary mt-3" data-toggle="collapse" data-target="#lms-config-details">Get Connected</a>
+        <a id="lms-config-details-toggle" href="#" class="btn btn-primary mt-3" data-toggle="collapse" data-target="#lms-config-details">Get Connected</a>
 
-        <div class="collapse" id="lms-config-details">
+        <div id="lms-config-details" class="d-none">
           <hr class="my-3" />
 
           <p class="my-3 text-secondary">
