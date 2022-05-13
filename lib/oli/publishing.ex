@@ -18,6 +18,30 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
 
+  @doc """
+  Returns true if editing this revision requires the creation of a new revision first.
+
+  A new revision is needed if there exists either:
+  1. A published resource record with this revision ID that pertains to a published publication for this project
+  2. A published resource record with this revision ID for a publication (published or not) for any other project.
+
+  """
+  def needs_new_revision_for_edit?(project_slug, resource_revision_id) do
+    query =
+      from pr in PublishedResource,
+        join: pub in Publication,
+        on: pr.publication_id == pub.id,
+        join: proj in Project,
+        on: proj.id == pub.project_id,
+        where:
+          (proj.slug != ^project_slug or
+             (proj.slug == ^project_slug and not is_nil(pub.published))) and
+            pr.revision_id == ^resource_revision_id,
+        select: count(pr.id)
+
+    Repo.one(query) > 0
+  end
+
   def get_publication_id_for_resource(section_slug, resource_id) do
     spp =
       from(s in Section,
