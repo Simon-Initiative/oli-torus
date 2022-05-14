@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { LikertModelSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { defaultWriterContext } from 'data/content/writers/context';
@@ -29,6 +24,7 @@ import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationCon
 import { DEFAULT_PART_ID } from '../common/utils';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
+import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
 
 const LikertComponent: React.FC = () => {
   const {
