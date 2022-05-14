@@ -66,19 +66,18 @@ defmodule Oli.Authoring.Editing.PageEditor do
            :ok <- validate_page_content_json(converted_update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
-            # If we acquired the lock, we must first create a new revision
-            {:acquired} ->
+            # If we acquired or updated the lock, we can proceed
+            lock_result when lock_result in [{:acquired}, {:updated}] ->
               get_latest_revision(publication, resource)
               |> resurrect_or_delete_activity_references(converted_update, project.slug)
-              |> create_new_revision(publication, resource, author.id)
-              |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(project, publication, resource, author, update)
-
-            # A successful lock update means we can safely edit the existing revision
-            {:updated} ->
-              get_latest_revision(publication, resource)
-              |> resurrect_or_delete_activity_references(converted_update, project.slug)
-              |> maybe_create_new_revision(publication, resource, author.id, converted_update)
+              |> maybe_create_new_revision(
+                publication,
+                project,
+                resource,
+                author.id,
+                converted_update,
+                lock_result
+              )
               |> update_revision(converted_update, project.slug)
               |> possibly_release_lock(project, publication, resource, author, update)
 
@@ -571,13 +570,17 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp maybe_create_new_revision(
          {previous, changed_activity_revisions},
          publication,
+         project,
          resource,
          author_id,
-         update
+         update,
+         lock_result
        ) do
     title = Map.get(update, "title", previous.title)
 
-    if title != previous.title do
+    needs_new_revision = Oli.Publishing.needs_new_revision_for_edit?(project.slug, previous.id)
+
+    if title != previous.title or needs_new_revision or lock_result == {:acquired} do
       create_new_revision(
         {previous, changed_activity_revisions},
         publication,
