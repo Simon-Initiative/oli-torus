@@ -1,5 +1,5 @@
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
-import { HasStem, Stem } from 'components/activities/types';
+import { HasStem, Stem, HasContent } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
@@ -7,7 +7,7 @@ import React from 'react';
 import './StemDelivery.scss';
 
 interface StemProps {
-  stem: Stem;
+  stem: HasContent; // So can use for anything that has content
   context: WriterContext;
   className?: string;
 }

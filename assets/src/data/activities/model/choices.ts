@@ -17,3 +17,16 @@ export const Choices = {
     };
   },
 };
+
+const ITEMS_PATH = '$..items';
+export const Items = {
+  path: ITEMS_PATH,
+
+  ...List<Choice>(ITEMS_PATH),
+
+  setContent(id: string, content: Descendant[]) {
+    return (model: any, _post: PostUndoable) => {
+      Operations.apply(model, Operations.replace(`$..items[?(@.id==${id})].content`, content));
+    };
+  },
+};

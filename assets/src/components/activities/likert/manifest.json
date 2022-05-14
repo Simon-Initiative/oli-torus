@@ -1,0 +1,19 @@
+{
+  "id": "oli_likert",
+  "friendlyName": "Likert",
+  "description": "Likert Scale question",
+  "icon": "integration_instructions",
+  "allowClientEvaluation": false,
+  "delivery": {
+    "element": "oli-likert-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-likert-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}
