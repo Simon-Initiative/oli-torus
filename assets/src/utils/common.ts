@@ -282,7 +282,7 @@ export const isSpecialArrayString = (value: string) => {
     const convertedValue = parseArray(value);
     if (Array.isArray(convertedValue)) {
       convertedValue.forEach((item: any) => {
-        if (!isNaN(Number(item)) && item.includes('.')) {
+        if (!isNaN(Number(item)) && typeof item === 'string' && item.includes('.')) {
           const spl = item.split('.');
           if (spl.length > 1) {
             //Also, making sure that we don't touch if the values are ["0.12"]
