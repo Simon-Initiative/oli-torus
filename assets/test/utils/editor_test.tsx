@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import { render } from '@testing-library/react';
-import * as Utils from 'components/editing/utils';
+import * as Utils from 'components/editing/slateUtils';
 import React from 'react';
 import '@testing-library/jest-dom';
 import { Editable, Slate, withReact } from 'slate-react';

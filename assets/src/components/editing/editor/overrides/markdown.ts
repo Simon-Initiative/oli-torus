@@ -1,7 +1,7 @@
 import { toggleUnorderedList, toggleOrderedList } from './../../elements/list/listActions';
 import { toggleBlockquote } from './../../elements/blockquote/blockquoteActions';
 import { Range, Editor, Transforms } from 'slate';
-import { isTopLevel } from 'components/editing/utils';
+import { isTopLevel } from 'components/editing/slateUtils';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { insertCodeblock } from 'components/editing/elements/blockcode/codeblockActions';
 

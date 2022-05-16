@@ -9,7 +9,7 @@ interface ModalProps {
 }
 export const WebpageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [src, setSrc] = useState(model.src);
-  const [alt, setAlt] = useState(model.alt);
+  const [alt, setAlt] = useState(model.alt ?? '');
   const [width, setWidth] = useState(model.width);
 
   return (

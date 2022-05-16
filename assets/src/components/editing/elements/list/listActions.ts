@@ -2,7 +2,7 @@ import { handleOutdent, handleIndent } from 'components/editing/editor/handlers/
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
-import { isActive, isActiveList, isTopLevel } from 'components/editing/utils';
+import { isActive, isTopLevel } from 'components/editing/slateUtils';
 import { Transforms, Editor, Element } from 'slate';
 import guid from 'utils/guid';
 
@@ -111,3 +111,7 @@ export const listSettings = [
     execute: (_ctx, editor) => handleIndent(editor),
   }),
 ];
+
+function isActiveList(editor: Editor) {
+  return isActive(editor, ['ul', 'ol']);
+}

@@ -1,5 +1,4 @@
-import { popupCmdDesc } from 'components/editing/elements/popup/PopupCmd';
-import { isActive, isMarkActive } from 'components/editing/utils';
+import { isActive, isMarkActive } from 'components/editing/slateUtils';
 import { Command } from 'components/editing/elements/commands/interfaces';
 import { Mark } from 'data/content/model/text';
 import { Editor } from 'slate';
@@ -61,5 +60,4 @@ export const additionalFormattingOptions = [
   inlineCodeDesc,
   subscriptDesc,
   superscriptDesc,
-  popupCmdDesc,
 ];

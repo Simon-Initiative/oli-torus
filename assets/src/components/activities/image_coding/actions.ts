@@ -5,7 +5,7 @@ import { Identifiable } from 'data/content/model/other';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
 
 export class ICActions {

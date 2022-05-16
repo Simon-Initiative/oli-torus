@@ -1,14 +1,13 @@
 import * as Persistence from 'data/persistence/resource';
 
-interface Waiting {
-  type: 'Waiting';
-}
-
-interface Uninitialized {
-  type: 'Uninitialized';
-}
-
-export type LinkablePages = Uninitialized | Waiting | Persistence.PagesReceived;
+export type LinkablePages =
+  | {
+      type: 'Uninitialized';
+    }
+  | {
+      type: 'Waiting';
+    }
+  | Persistence.PagesReceived;
 
 export const internalLinkPrefix = '/course/link';
 

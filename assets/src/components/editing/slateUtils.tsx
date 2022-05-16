@@ -16,19 +16,6 @@ import {
 import { ReactEditor } from 'slate-react';
 import { Maybe } from 'tsmonad';
 
-// Native input selection -- not slate
-export const cursorAtEndOfInput = (input: HTMLInputElement) => {
-  return input.selectionStart === input.selectionEnd && input.selectionStart === input.value.length;
-};
-export const cursorAtBeginningOfInput = (input: HTMLInputElement) => {
-  return input.selectionStart === input.selectionEnd && input.selectionStart === 0;
-};
-
-// Returns true if a text node contains the mark string key
-export function hasMark(textNode: Text, mark: string): boolean {
-  return Object.keys(textNode).some((k) => k === mark);
-}
-
 export function elementsOfType<T extends Element>(root: Editor, type: string): T[] {
   return [...Node.elements(root)]
     .map(([element]) => element)
@@ -55,22 +42,6 @@ export function elementsRemoved<T extends Element>(operations: Operation[], type
         operation.node.type === type,
     )
     .map((operation: RemoveNodeOperation) => operation.node as T);
-}
-
-// Returns all the Text nodes in the current selection
-export function textNodesInSelection(editor: Editor) {
-  const selection = editor.selection;
-  if (!selection) {
-    return [];
-  }
-
-  return Node.fragment(editor, selection)
-    .map((node) =>
-      Array.from(Node.descendants(node)).reduce((acc: Text[], [node]) => {
-        return Text.isText(node) ? acc.concat(node) : acc;
-      }, []),
-    )
-    .reduce((acc, curr) => acc.concat(curr), []);
 }
 
 export function isMarkActive(editor: Editor, mark: Mark): boolean {
@@ -145,15 +116,4 @@ export const isActive = (editor: Editor, type: string | string[]) => {
       (typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1),
   });
   return !!match;
-};
-
-export const nearestOfType = (editor: Editor, type: string) => {
-  const [match] = Editor.nodes(editor, {
-    match: (n) => Element.isElement(n) && n.type === type,
-  });
-  return match[0];
-};
-
-export const isActiveList = (editor: Editor) => {
-  return isActive(editor, ['ul', 'ol']);
 };
