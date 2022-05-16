@@ -26,7 +26,7 @@ export const LikertTable: React.FC<Props> = ({
         <tr>
           <th></th>
           {choices.map((choice) => (
-            <th>
+            <th key={choice.id}>
               <HtmlContentModelRenderer content={choice.content} context={context} />
             </th>
           ))}
@@ -34,12 +34,12 @@ export const LikertTable: React.FC<Props> = ({
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr>
+          <tr key={item.id}>
             <td>
               <HtmlContentModelRenderer content={item.content} context={context} />
             </td>
             {choices.map((choice, i) => (
-              <td align="center">
+              <td align="center" key={item.id + '-' + choice.id}>
                 <input
                   type="radio"
                   checked={isSelected(item.id, choice.id)}
