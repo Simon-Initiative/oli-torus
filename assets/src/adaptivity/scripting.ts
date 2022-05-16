@@ -576,12 +576,7 @@ export const templatizeText = (
       }
     }
     let strValue = stateValue;
-    if (
-      vars.length === 1 &&
-      text === `{${vars[0]}}` &&
-      Array.isArray(stateValue) &&
-      typeof stateValue === 'object'
-    ) {
+    if (vars.length === 1 && text === `{${vars[0]}}` && Array.isArray(stateValue)) {
       strValue = stateValue;
     } else if (Array.isArray(stateValue)) {
       strValue = stateValue.map((v) => `"${v}"`).join(', ');
