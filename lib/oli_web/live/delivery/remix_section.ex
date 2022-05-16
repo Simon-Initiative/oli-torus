@@ -25,6 +25,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
+  alias Oli.Delivery.Sections.Section
 
   def set_breadcrumbs(type, section) do
     type
@@ -179,6 +180,7 @@ defmodule OliWeb.Delivery.RemixSection do
      assign(socket,
        title: "Customize Content",
        section: section,
+       changeset: Section.changeset(section, %{}),
        pinned_project_publications: pinned_project_publications,
        previous_hierarchy: hierarchy,
        hierarchy: hierarchy,
@@ -192,6 +194,25 @@ defmodule OliWeb.Delivery.RemixSection do
        redirect_after_save: redirect_after_save,
        available_publications: available_publications
      )}
+  end
+
+  def handle_event("update_numbering_visibility", %{"section" => section_params}, socket) do
+    socket = clear_flash(socket)
+
+    case Sections.update_section(socket.assigns.section, section_params) do
+      {:ok, updated_section} ->
+        {:noreply,
+         assign(socket,
+           section: updated_section,
+           changeset: Section.changeset(updated_section, %{})
+         )}
+
+      {:error, changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error updating section")
+         |> assign(changeset: changeset)}
+    end
   end
 
   # handle change of selection

@@ -111,14 +111,19 @@ defmodule OliWeb.PageDeliveryView do
     ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 
-  def container_title(%HierarchyNode{
-        numbering: %Numbering{
-          level: level,
-          index: index
+  def container_title(
+        %HierarchyNode{
+          numbering: %Numbering{
+            level: level,
+            index: index
+          },
+          revision: revision
         },
-        revision: revision
-      }) do
-    Numbering.container_type(level) <> " #{index}: #{revision.title}"
+        display_curriculum_item_numbering \\ true
+      ) do
+    if display_curriculum_item_numbering,
+      do: "#{Numbering.container_type(level)} #{index}: #{revision.title}",
+      else: "#{Numbering.container_type(level)}: #{revision.title}"
   end
 
   def has_submitted_attempt?(resource_access) do
