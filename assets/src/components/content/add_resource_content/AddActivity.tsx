@@ -1,8 +1,10 @@
+import { ActivityModelSchema, invokeCreationFunc } from 'components/activities';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { addActivity } from 'components/editing/toolbar/utils';
 import { ActivityEditorMap, EditorDesc } from 'data/content/editors';
-import { ResourceContext } from 'data/content/resource';
+import { ActivityReference, ResourceContext } from 'data/content/resource';
 import React from 'react';
+import guid from 'utils/guid';
+import * as Persistence from 'data/persistence/activity';
 
 interface Props {
   resourceContext: ResourceContext;
@@ -38,4 +40,58 @@ export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, edito
       <div className="list-group">{activityEntries}</div>
     </>
   );
+};
+
+const addActivity = (
+  editorDesc: EditorDesc,
+  resourceContext: ResourceContext,
+  onAddItem: AddCallback,
+  editorMap: ActivityEditorMap,
+  index: number[],
+) => {
+  let model: ActivityModelSchema;
+
+  invokeCreationFunc(editorDesc.slug, resourceContext)
+    .then((createdModel) => {
+      model = createdModel;
+
+      return Persistence.create(resourceContext.projectSlug, editorDesc.slug, model, []);
+    })
+    .then((result: Persistence.Created) => {
+      const resourceContent: ActivityReference = {
+        type: 'activity-reference',
+        id: guid(),
+        activitySlug: result.revisionSlug,
+        purpose: 'none',
+        children: [],
+      };
+
+      // For every part that we find in the model, we attach the selected
+      // objectives to it
+      const objectives = model.authoring.parts
+        .map((p: any) => p.id)
+        .reduce((p: any, id: string) => {
+          p[id] = [];
+          return p;
+        }, {});
+
+      const editor = editorMap[editorDesc.slug];
+
+      onAddItem(resourceContent, index, {
+        authoringElement: editor.authoringElement as string,
+        description: editor.description,
+        friendlyName: editor.friendlyName,
+        activitySlug: result.revisionSlug,
+        typeSlug: editorDesc.slug,
+        activityId: result.resourceId,
+        title: editor.friendlyName,
+        model,
+        objectives,
+        tags: [],
+      });
+    })
+    .catch((err) => {
+      // tslint:disable-next-line
+      console.error(err);
+    });
 };

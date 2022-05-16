@@ -100,6 +100,10 @@ const slice: Slice<AppState> = createSlice({
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
+
+      // HACK! AddPartToolbar needs partComponentTypes on the window for now
+      (window as any)['partComponentTypes'] = state.partComponentTypes;
+
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
     },

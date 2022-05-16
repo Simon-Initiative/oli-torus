@@ -33,10 +33,7 @@ export const insertYoutube = createButtonCommandDesc({
   },
 });
 
-const dismiss = () => window.oliDispatch(modalActions.dismiss());
-const display = (c: any) => window.oliDispatch(modalActions.display(c));
-
-export type YoutubeCreationProps = {
+type YoutubeCreationProps = {
   onChange: (src: string) => void;
   onEdit: (src: string) => void;
 };
@@ -68,6 +65,8 @@ const YoutubeCreation = (props: YoutubeCreationProps) => {
 export function selectYoutube(): Promise<string | null> {
   return new Promise((resolve, _reject) => {
     const selected: { src: null | string } = { src: null };
+    const dismiss = () => window.oliDispatch(modalActions.dismiss());
+    const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
     const selection = (
       <ModalSelection

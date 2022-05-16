@@ -4,7 +4,15 @@
 
 ### Bug Fixes
 
+- Fix an issue where paging in Activity Bank did not preserve filtered logic
+
 ### Enhancements
+
+## 0.19.2 (2022-05-13)
+
+### Bug Fixes
+
+- Fix an issue where get connected button on publish page doesn't work
 
 ## 0.19.1 (2022-05-03)
 

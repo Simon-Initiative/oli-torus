@@ -5,7 +5,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 interface ModalProps {
   onDone: (x: any) => void;
   onCancel: () => void;
-  model: ContentModel.Image;
+  model: ContentModel.ImageBlock | ContentModel.ImageInline;
 }
 export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [alt, setAlt] = useState(model.alt);

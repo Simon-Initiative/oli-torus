@@ -7,8 +7,8 @@ import { ProjectSlug } from 'data/types';
 import React from 'react';
 import { Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { classNames } from 'utils/classNames';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { MediaItemRequest } from 'components/activities/types';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 
 type Props = {
   projectSlug: ProjectSlug;
@@ -37,7 +37,7 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           commandContext={props.commandContext ?? { projectSlug: props.projectSlug }}
           onEdit={props.onEdit}
           value={value}
-          toolbarInsertDescs={getToolbarForContentType({
+          toolbarInsertDescs={blockInsertOptions({
             type: 'small',
             onRequestMedia: props.onRequestMedia,
           })}
