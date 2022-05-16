@@ -30,6 +30,7 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Utils.Slug
 
   require Logger
 
@@ -772,7 +773,7 @@ defmodule Oli.Delivery.Sections do
         numbering_index: numbering_index,
         numbering_level: level,
         children: children,
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        slug: Slug.generate(:section_resources, revision.title),
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         section_id: section.id
@@ -1112,15 +1113,18 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a map of resource_id to published resource
   """
-  def published_resources_map(publication_ids) when is_list(publication_ids) do
-    Publishing.get_published_resources_by_publication(publication_ids,
-      preload: [:resource, :revision, :publication]
-    )
+  def published_resources_map(
+        publication_ids,
+        opts \\ [preload: [:resource, :revision, :publication]]
+      )
+
+  def published_resources_map(publication_ids, opts) when is_list(publication_ids) do
+    Publishing.get_published_resources_by_publication(publication_ids, opts)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
   end
 
-  def published_resources_map(publication_id) do
-    published_resources_map([publication_id])
+  def published_resources_map(publication_id, opts) do
+    published_resources_map([publication_id], opts)
   end
 
   @doc """
@@ -1322,7 +1326,7 @@ defmodule Oli.Delivery.Sections do
           SectionResource.changeset(%SectionResource{}, %{
             numbering_index: numbering.index,
             numbering_level: numbering.level,
-            slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+            slug: Slug.generate(:section_resources, revision.title),
             resource_id: resource_id,
             project_id: project_id,
             section_id: section_id,
@@ -1354,7 +1358,8 @@ defmodule Oli.Delivery.Sections do
   defp create_nonstructural_section_resources(section_id, publication_ids,
          skip_resource_ids: skip_resource_ids
        ) do
-    published_resources_by_resource_id = published_resources_map(publication_ids)
+    published_resources_by_resource_id =
+      published_resources_map(publication_ids, preload: [:revision, :publication])
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
@@ -1364,9 +1369,10 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
       !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
     end)
-    |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
+    |> generate_slugs_until_uniq()
+    |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
       [
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        slug: slug,
         resource_id: revision.resource_id,
         project_id: pub.project_id,
         section_id: section_id,
@@ -1381,6 +1387,76 @@ defmodule Oli.Delivery.Sections do
     container = ResourceType.get_id_by_type("container")
 
     resource_type_id == container
+  end
+
+  # Function that generates a set of unique slugs that don't collide with any of the existing ones from the
+  # section_resources table. It aims to minimize the number of queries to the database for ensuring that the slugs
+  # generated are unique.
+  defp generate_slugs_until_uniq(published_resources) do
+    # generate initial slugs for new section resources
+    published_resources_by_slug =
+      Enum.reduce(published_resources, %{}, fn {_, pr}, acc ->
+        title = pr.revision.title
+
+        # if a previous published resource has the same revision then generate a new initial slug different from the default
+        slug_attempt = if Map.has_key?(acc, Slug.slugify(title)), do: 1, else: 0
+        initial_slug = Slug.generate_nth(title, slug_attempt)
+
+        Map.put(acc, initial_slug, pr)
+      end)
+
+    # until all slugs are unique or up to 10 attempts
+    {prs_by_non_uniq_slug, prs_by_uniq_slug} =
+      Enum.reduce_while(1..10, {published_resources_by_slug, %{}}, fn attempt,
+                                                                      {prs_by_non_uniq_slug,
+                                                                       prs_by_uniq_slug} ->
+        # get all slugs that already exist in the system and can't be used for new section resources
+        existing_slugs =
+          prs_by_non_uniq_slug
+          |> Map.keys()
+          |> get_existing_slugs()
+
+        # if all slugs are unique then finish the loop, otherwise generate new slugs for the non unique ones
+        if Enum.empty?(existing_slugs) do
+          {:halt, {%{}, Map.merge(prs_by_non_uniq_slug, prs_by_uniq_slug)}}
+        else
+          # separate the slug candidates that succeeded and are unique from the ones that are not unique yet
+          {new_prs_by_non_uniq_slug, new_uniq_to_merge} =
+            Map.split(prs_by_non_uniq_slug, existing_slugs)
+
+          new_prs_by_non_uniq_slug = regenerate_slugs(new_prs_by_non_uniq_slug, attempt)
+          new_prs_by_uniq_slug = Map.merge(prs_by_uniq_slug, new_uniq_to_merge)
+
+          {:cont, {new_prs_by_non_uniq_slug, new_prs_by_uniq_slug}}
+        end
+      end)
+
+    Map.merge(prs_by_non_uniq_slug, prs_by_uniq_slug)
+  end
+
+  @doc """
+  Filters a given list of slugs, returning only the ones that already exist in the section_resources table.
+  """
+  def get_existing_slugs(slugs) do
+    Repo.all(
+      from(
+        sr in SectionResource,
+        where: sr.slug in ^slugs,
+        select: sr.slug,
+        distinct: true
+      )
+    )
+  end
+
+  # Generates a new set of slug candidates
+  defp regenerate_slugs(prs_by_slug, attempt) do
+    Enum.reduce(prs_by_slug, %{}, fn {_slug,
+                                      %PublishedResource{revision: revision} = published_resource},
+                                     acc ->
+      new_slug = Slug.generate_nth(revision.title, attempt)
+
+      Map.put(acc, new_slug, published_resource)
+    end)
   end
 
   @doc """
