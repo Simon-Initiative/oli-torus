@@ -17,6 +17,7 @@ export const defaultLikertModel: () => LikertModelSchema = () => {
         makePart(
           Responses.forMultipleChoice(choiceA.id),
           [makeHint(''), makeHint(''), makeHint('')],
+          // partId is same as associated item's
           item1.id,
         ),
       ],

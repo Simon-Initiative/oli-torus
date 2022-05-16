@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { LikertModelSchema } from './schema';
 import * as ActivityTypes from '../types';
-import { defaultWriterContext } from 'data/content/writers/context';
-import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import './LikertDelivery.scss';
 import { StemDelivery } from '../common/stem/delivery/StemDelivery';
 import { configureStore } from 'state/store';
 import {
@@ -15,6 +12,7 @@ import {
   setSelection,
   resetAction,
   PartInputs,
+  isEvaluated,
 } from 'data/activities/DeliveryState';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs } from 'data/activities/utils';
@@ -25,6 +23,7 @@ import { DEFAULT_PART_ID } from '../common/utils';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
 import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
+import { LikertTable } from './Sections/LikertTable';
 
 const LikertComponent: React.FC = () => {
   const {
@@ -46,68 +45,35 @@ const LikertComponent: React.FC = () => {
     return null;
   }
 
-  const isSelected = (partId: string, choiceId: string): boolean => {
-    return uiState.partState[partId].studentInput[0] == choiceId;
+  const isSelected = (itemId: string, choiceId: string): boolean => {
+    return uiState.partState[itemId].studentInput[0] == choiceId;
   };
 
-  const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const btn = event.currentTarget;
-    const i = parseInt(btn.value);
-    console.log('Changed ' + btn.name + ' value=' + btn.value + ' choiceId=' + model.choices[i].id);
-
-    dispatch(setSelection(btn.name, model.choices[i].id, onSaveActivity, 'single'));
+  const onSelect = (itemId: string, choiceId: string) => {
+    dispatch(setSelection(itemId, choiceId, onSaveActivity, 'single'));
   };
+
+  const emptySelectionMap = model.items.reduce((acc, item) => {
+    acc[item.id] = [''];
+    return acc;
+  }, {} as PartInputs);
 
   return (
-    <div className="activity short-answer-activity">
+    <div className="activity multiple-choice-activity">
       <div className="activity-content">
         <StemDelivery stem={model.stem} context={writerContext} />
-        <table className="likertTable">
-          <thead>
-            <tr>
-              <th></th>
-              {model.choices.map((choice) => (
-                <th align="center">
-                  <HtmlContentModelRenderer content={choice.content} context={writerContext} />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {model.items.map((item) => (
-              <tr>
-                <td>
-                  <HtmlContentModelRenderer content={item.content} context={writerContext} />
-                </td>
-                {model.choices.map((choice, i) => (
-                  <td align="center">
-                    <input
-                      type="radio"
-                      value={i}
-                      name={item.id}
-                      onChange={onChange}
-                      checked={isSelected(item.id, choice.id)}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <LikertTable
+          items={model.items}
+          choices={model.choices}
+          isSelected={isSelected}
+          onSelect={onSelect}
+          disabled={isEvaluated(uiState)}
+          context={writerContext}
+        />
       </div>
       <GradedPointsConnected />
       <ResetButtonConnected
-        onReset={() =>
-          dispatch(
-            resetAction(
-              onResetActivity,
-              model.items.reduce((acc, item) => {
-                acc[item.id] = [''];
-                return acc;
-              }, {} as PartInputs),
-            ),
-          )
-        }
+        onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
       />
       <SubmitButtonConnected />
       <HintsDeliveryConnected partId={DEFAULT_PART_ID} />

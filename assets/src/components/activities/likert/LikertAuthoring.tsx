@@ -24,7 +24,6 @@ import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
-import { Heading } from 'components/misc/Heading';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
