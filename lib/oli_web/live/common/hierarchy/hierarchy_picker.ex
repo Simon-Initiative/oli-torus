@@ -290,7 +290,7 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
     end
   end
 
-  def sort_items(children, assigns) do
+  defp sort_items(children, assigns) do
     case assigns do
       %{sort_items_fn: sort_items_fn} when sort_items_fn != nil ->
         sort_items_fn.(children)
