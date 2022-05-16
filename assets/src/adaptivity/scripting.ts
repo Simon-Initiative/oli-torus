@@ -90,7 +90,7 @@ export const getExpressionStringForValue = (
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     const expressions = extractAllExpressionsFromText(val);
-    // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS.
+    // A expression will not have a ';' inside it.So if there is a ';' inside it, it is CSS.
     const isCSSString = expressions.filter((e) => e.includes(';'));
     if (isCSSString?.length) {
       actuallyAString = true;
