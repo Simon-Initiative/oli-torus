@@ -55,7 +55,7 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  image: (src?: string) => create<ImageBlock>({ type: 'img', src }),
+  image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
 
   imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 
