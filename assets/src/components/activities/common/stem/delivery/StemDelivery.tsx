@@ -7,7 +7,7 @@ import React from 'react';
 import './StemDelivery.scss';
 
 interface StemProps {
-  stem: HasContent; // So can use for anything that has content
+  stem: Stem;
   context: WriterContext;
   className?: string;
 }

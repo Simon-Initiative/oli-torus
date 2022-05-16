@@ -1,13 +1,13 @@
-import { LikertModelSchema } from './schema';
+import { LikertModelSchema, makeLikertChoice, makeLikertItem, LikertChoice } from './schema';
 import { makeStem, makeHint, makeChoice, makePart, Choice } from '../types';
 
 import { Responses } from 'data/activities/model/responses';
 
 export const defaultLikertModel: () => LikertModelSchema = () => {
-  const choiceA: Choice = makeChoice('Agree');
-  const choiceB: Choice = makeChoice('Neither Agree Nor Disagree');
-  const choiceC: Choice = makeChoice('Disagree');
-  const item1 = makeChoice('item 1');
+  const choiceA: LikertChoice = makeLikertChoice('Agree');
+  const choiceB: LikertChoice = makeLikertChoice('Neither Agree Nor Disagree');
+  const choiceC: LikertChoice = makeLikertChoice('Disagree');
+  const item1 = makeLikertItem('item 1');
   return {
     stem: makeStem('Prompt (optional)'),
     choices: [choiceA, choiceB, choiceC],
