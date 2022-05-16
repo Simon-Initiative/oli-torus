@@ -31,7 +31,7 @@ export class LikertItem implements Stem {
   content: RichText;
   // optional group id:
   group: Maybe<string> = Maybe.nothing();
-  required: boolean = false;
+  required = false;
 }
 
 export const makeLikertItem: (s: string) => LikertItem = (text) => {
