@@ -77,7 +77,7 @@ defmodule OliWeb.Sections.SectionsTableModel do
   end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :type}),
-    do: if(section.open_and_free, do: "Open", else: "LMS")
+    do: if section.open_and_free, do: "Open", else: "LMS"
 
   def custom_render(_assigns, section, %ColumnSpec{name: :requires_payment}) do
     if section.requires_payment do
@@ -90,12 +90,11 @@ defmodule OliWeb.Sections.SectionsTableModel do
     end
   end
 
-  def custom_render(_assigns, section, %ColumnSpec{name: :institution}),
-    do:
-      if(section.open_and_free or is_nil(section.institution),
-        do: "",
-        else: section.institution.name
-      )
+  def custom_render(_assigns, section, %ColumnSpec{name: :institution}) do
+    if section.open_and_free or is_nil(section.institution),
+      do: "",
+      else: section.institution.name
+  end
 
   def custom_render(_assigns, section, %ColumnSpec{name: :status}),
     do: Phoenix.Naming.humanize(section.status)
