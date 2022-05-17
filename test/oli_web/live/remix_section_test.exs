@@ -205,7 +205,7 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert section.display_curriculum_item_numbering == true
 
-      render_hook(view, "update_unit_numbers_visibility", %{
+      render_hook(view, "update_numbering_visibility", %{
         "section" => %{"display_curriculum_item_numbering" => "false"}
       })
 

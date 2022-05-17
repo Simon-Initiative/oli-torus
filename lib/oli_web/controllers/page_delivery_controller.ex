@@ -302,8 +302,6 @@ defmodule OliWeb.PageDeliveryController do
         container_link_url:
           &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
         resource_slug: revision.slug,
-        container_link_url:
-          &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
         display_curriculum_item_numbering: section.display_curriculum_item_numbering
       }
     )

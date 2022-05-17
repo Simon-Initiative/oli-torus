@@ -2,16 +2,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
   import Mox
-  import Oli.Factory
 
   alias Oli.Delivery.Sections
-  alias Oli.Publishing
-  alias Oli.Publishing.PublishedResource
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Repo
 
   describe "page_delivery_controller index" do
     setup [:setup_session]
