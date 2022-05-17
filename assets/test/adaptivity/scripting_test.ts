@@ -287,7 +287,7 @@ describe('Scripting Interface', () => {
       evalScript(script, environment);
       text = '{variables.UnknownBeaker}';
       result = templatizeText(text, environment, environment);
-      expect(result).toBe('1');
+      expect(result).toBe('"1"');
 
       text = 'The values is {variables.UnknownBeaker}';
       result = templatizeText(text, environment, environment);
