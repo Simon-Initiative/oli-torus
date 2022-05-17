@@ -80,7 +80,6 @@ const SettingsButton = (props: SettingsButtonProps) => (
               commandContext={props.commandContext}
               onDone={({ href }: Partial<ContentModel.Hyperlink>) => {
                 window.oliDispatch(modalActions.dismiss());
-                console.log(href);
                 props.onEdit({ href });
               }}
               onCancel={() => window.oliDispatch(modalActions.dismiss())}
