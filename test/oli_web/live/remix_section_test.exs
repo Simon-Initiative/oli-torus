@@ -149,6 +149,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       map: %{
         oaf_section_1: oaf_section_1,
         unit1_container: unit1_container,
+        latest1: latest1,
         latest2: latest2
       }
     } do
@@ -160,6 +161,10 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
         |> element(".curriculum-entries > div:nth-child(2)")
+        |> render() =~ "#{latest1.title}"
+
+      assert view
+        |> element(".curriculum-entries > div:nth-child(4)")
         |> render() =~ "#{latest2.title}"
 
       assert view
@@ -181,6 +186,10 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
         |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+        |> render() =~ "#{latest1.title}"
+
+      assert view
+        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
         |> render() =~ "#{latest2.title}"
     end
   end
