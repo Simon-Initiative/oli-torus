@@ -1,3 +1,4 @@
+import { ServerError } from 'data/persistence/common';
 import * as Persistence from 'data/persistence/resource';
 
 export type LinkablePages =
@@ -7,7 +8,8 @@ export type LinkablePages =
   | {
       type: 'Waiting';
     }
-  | Persistence.PagesReceived;
+  | Persistence.PagesReceived
+  | ServerError;
 
 export const internalLinkPrefix = '/course/link';
 
