@@ -635,4 +635,9 @@ defmodule OliWeb.Delivery.RemixSection do
     previous = Enum.at(breadcrumbs, length(breadcrumbs) - 2)
     previous.slug
   end
+
+  defp filter_items(children, dragging) do
+    Enum.with_index(children)
+    |> Enum.filter(fn {c, _i} -> c.uuid != dragging end)
+  end
 end
