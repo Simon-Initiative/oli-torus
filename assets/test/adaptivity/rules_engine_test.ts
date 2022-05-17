@@ -31,6 +31,7 @@ import {
 import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
+  complexExpressionRule,
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   defaultWrongRule,
@@ -73,6 +74,17 @@ describe('Rules Engine', () => {
     )) as CheckResult;
     expect(events.length).toEqual(2);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
+  });
+
+  it('should evaluate complex expressions', async () => {
+    const { results: events } = (await check(
+      mockState,
+      [complexExpressionRule, defaultWrongRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
+
+    expect(events.length).toEqual(1);
+    expect(events[0].type).toEqual(complexExpressionRule.event.type);
   });
 
   it('should not process disabled rules', async () => {

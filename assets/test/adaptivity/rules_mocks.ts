@@ -19,6 +19,9 @@ export const mockState = {
   'q:1555699921528:664|stage.imageChoice.selectedChoiceText': '',
   'q:1555699921528:664|stage.imageChoice.selectedChoices': [6],
   'q:1555699921528:664|stage.imageChoice.selectedChoicesText': [''],
+  'q:1500660404583:613|stage.DrinkVolume.value': 25,
+  'variables.UnknownBeaker': 0.00021,
+  'stage.DrinkVolume1.value': 11,
   'session.attemptNumber': 1,
   'session.currentQuestionScore': 0,
   'session.questionTimeExceeded': false,
@@ -85,6 +88,35 @@ export const defaultWrongRule = {
     type: '123456.defaultWrong',
     params: {
       actions: [{ type: 'feedback', params: { partsLayout: [] } }],
+    },
+  },
+};
+
+export const complexExpressionRule = {
+  id: 'ts:1476204198961:2069.Correct Expression',
+  name: 'Correct',
+  priority: 1,
+  disabled: false,
+  additionalScore: 0.0,
+  forceProgress: false,
+  default: false,
+  correct: true,
+  conditions: {
+    all: [
+      {
+        fact: 'stage.DrinkVolume1.value',
+        operator: 'equalWithTolerance',
+        value: [
+          '{17/1.5*{q:1500660404583:613|stage.DrinkVolume.value}*{variables.UnknownBeaker}*176.12}',
+          20,
+        ],
+      },
+    ],
+  },
+  event: {
+    type: 'ts:1476204198961:2069.Correct Expression',
+    params: {
+      actions: [{ type: 'navigation', params: { target: 'next' } }],
     },
   },
 };
