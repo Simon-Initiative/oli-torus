@@ -18,7 +18,7 @@ defmodule Oli.Repo.Migrations.DeleteInstRegDepl do
     # we need somewhere to put any orphaned registrations and deployments and sections
     # so we create a new institution, registration and deployment to associate with
     now = DateTime.utc_now()
-    today = Enum.join([now.year, now.month, now.day], "/")
+    today = Enum.join([now.month, now.day, now.year], "/")
 
     {_, [%{id: institution_id}]} =
       Repo.insert_all(
@@ -55,7 +55,9 @@ defmodule Oli.Repo.Migrations.DeleteInstRegDepl do
             updated_at: now
           }
         ],
-        returning: [:id]
+        returning: [:id],
+        conflict_target: [:issuer, :client_id],
+        on_conflict: {:replace, [:issuer, :client_id]}
       )
 
     {_, [%{id: deployment_id}]} =
