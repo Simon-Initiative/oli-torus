@@ -1,9 +1,10 @@
 import React from 'react';
-import { Choice, ChoiceId, PartId, contentToString } from 'components/activities/types';
+import { Choice, ChoiceId, PartId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import { LikertItem } from '../schema';
 import './LikertTable.scss';
+import { toSimpleText } from 'components/editing/slateUtils';
 
 interface Props {
   items: LikertItem[];
@@ -14,9 +15,9 @@ interface Props {
   context: WriterContext;
 }
 
-// include item column if more than one item or single item is non-blank
+// only include item column if more than one item or single item is non-blank
 const needItemColumn = (items: LikertItem[]) => {
-  return items.length > 1 || contentToString(items[0].content).trim() != '';
+  return items.length > 1 || toSimpleText(items[0].content).trim() != '';
 };
 
 export const LikertTable: React.FC<Props> = ({
