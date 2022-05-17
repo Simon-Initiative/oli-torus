@@ -1,17 +1,24 @@
 import React from 'react';
-import { Choice, ChoiceId, PartId } from 'components/activities/types';
+import { Choice, ChoiceId, PartId, contentToString } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
+import { LikertItem } from '../schema';
 import './LikertTable.scss';
 
 interface Props {
-  items: Choice[];
+  items: LikertItem[];
   choices: Choice[];
   isSelected: (itemId: PartId, choiceId: ChoiceId) => boolean;
   onSelect: (itemId: PartId, choiceId: ChoiceId) => void;
   disabled: boolean;
   context: WriterContext;
 }
+
+// include item column if more than one item or single item is non-blank
+const needItemColumn = (items: LikertItem[]) => {
+  return items.length > 1 || contentToString(items[0].content).trim() != '';
+};
+
 export const LikertTable: React.FC<Props> = ({
   items,
   choices,
@@ -24,7 +31,7 @@ export const LikertTable: React.FC<Props> = ({
     <table className="likertTable">
       <thead>
         <tr>
-          <th></th>
+          {needItemColumn(items) && <th></th>}
           {choices.map((choice) => (
             <th key={choice.id}>
               <HtmlContentModelRenderer content={choice.content} context={context} />
@@ -35,9 +42,11 @@ export const LikertTable: React.FC<Props> = ({
       <tbody>
         {items.map((item) => (
           <tr key={item.id}>
-            <td>
-              <HtmlContentModelRenderer content={item.content} context={context} />
-            </td>
+            {needItemColumn(items) && (
+              <td>
+                <HtmlContentModelRenderer content={item.content} context={context} />
+              </td>
+            )}
             {choices.map((choice, i) => (
               <td align="center" key={item.id + '-' + choice.id}>
                 <input

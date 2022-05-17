@@ -20,7 +20,7 @@ export function feedbackToString(feedback: Feedback): string {
   return contentToString(feedback.content);
 }
 
-function contentToString(content: any) {
+export function contentToString(content: any) {
   return content.reduce((acc: any, e: any) => {
     if (e.text !== undefined) {
       return acc + e.text;
