@@ -1,3 +1,4 @@
+import { isSpecialArrayString } from 'adaptivity/capi';
 import {
   isNumber,
   isString,
@@ -119,6 +120,20 @@ describe('common parseArray', () => {
       [3, 4],
     ];
     expect(parseArray(str)).toEqual(expected);
+  });
+
+  it('should check for array with special number formats and return boolean ', () => {
+    let str = '["0.000025","0.000015","0.000006","0.000008"]';
+    let expected = false;
+    expect(isSpecialArrayString(str)).toEqual(expected);
+
+    str = '["00.000025","00.000015","00.000006","00.000008"]';
+    expected = true;
+    expect(isSpecialArrayString(str)).toEqual(expected);
+
+    str = '[0.000025,0.000015,0.000006,0.000008]';
+    expected = false;
+    expect(isSpecialArrayString(str)).toEqual(false);
   });
 });
 
