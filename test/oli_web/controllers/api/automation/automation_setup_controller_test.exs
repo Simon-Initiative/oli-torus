@@ -1,8 +1,11 @@
 defmodule OliWeb.Api.AutomationSetupControllerTest do
   use OliWeb.ConnCase
   alias OliWeb.Api.AutomationSetupController
+  alias Oli.Resources.Revision
+  alias Oli.Repo
+  alias Oli.Resources.Resource
   import Oli.Utils
-  alias Oli.Seeder
+  import Ecto.Query, warn: false
 
   setup [:api_key_seed, :create_project]
 
@@ -11,6 +14,9 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       # Note: This can be slightly confusing because this is testing the AutomationSetupController, the purpose
       #       of which is to create automated test data for e2e integration tests (such as cypress), don't confuse
       #       this unit test data setup with the purpose of the controller.
+
+      revision_count_before = Repo.one(from r in Revision, select: count(r.id))
+      resource_count_before = Repo.one(from r in Resource, select: count(r.id))
 
       # Try setting up some test data
       setup_conn =
@@ -87,6 +93,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
         conn
         |> put_req_header("accept", "application/json")
         |> put_req_header("authorization", "Bearer #{api_key}")
+        |> Oli.Plugs.ValidateAPIKey.call(&Oli.Interop.validate_for_automation_setup/1)
         |> AutomationSetupController.teardown(%{
           "author_email" => author_email,
           "author_password" => author_pass,
@@ -112,25 +119,31 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
       user_config = OliWeb.Pow.PowHelpers.get_pow_config(:user)
       author_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
 
-      assert Pow.Operations.get_by([{:email, author_email}], author_config) == nil
-      assert Pow.Operations.get_by([{:email, learner_email}], user_config) == nil
-      assert Pow.Operations.get_by([{:email, educator_email}], user_config) == nil
+      refute Pow.Operations.get_by([{:email, author_email}], author_config)
+      refute Pow.Operations.get_by([{:email, learner_email}], user_config)
+      refute Pow.Operations.get_by([{:email, educator_email}], user_config)
 
-      assert Oli.Authoring.Course.get_project_by_slug(project_slug) == nil
+      refute Oli.Authoring.Course.get_project_by_slug(project_slug)
 
-      assert Oli.Delivery.Sections.get_section_by(slug: section_slug) == nil
+      refute Oli.Delivery.Sections.get_section_by(slug: section_slug)
+
+      # Make sure we cleaned up all the records
+      assert revision_count_before == Repo.one(from r in Revision, select: count(r.id))
+      assert resource_count_before == Repo.one(from r in Resource, select: count(r.id))
     end
 
     test "Can not tear down resources not created by automation api", %{
       conn: conn,
-      author: author,
       api_key: api_key,
       project: project
     } do
+      author = hd(project.authors)
+
       conn =
         conn
         |> put_req_header("accept", "application/json")
         |> put_req_header("authorization", "Bearer #{api_key}")
+        |> Oli.Plugs.ValidateAPIKey.call(&Oli.Interop.validate_for_automation_setup/1)
         |> AutomationSetupController.teardown(%{
           "author_email" => author.email,
           "author_password" => "unknown",
@@ -157,6 +170,29 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
     end
   end
 
+  test "Invalid API key doesn't work", %{
+    conn: conn,
+    project: project
+  } do
+    conn =
+      conn
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("authorization", "Bearer BAD-API-KEY")
+      |> Oli.Plugs.ValidateAPIKey.call(&Oli.Interop.validate_for_automation_setup/1)
+      |> AutomationSetupController.teardown(%{
+        "author_email" => nil,
+        "author_password" => nil,
+        "educator_email" => nil,
+        "educator_password" => nil,
+        "learner_email" => nil,
+        "learner_password" => nil,
+        "project_slug" => project.slug,
+        "section_slug" => nil
+      })
+
+    assert conn.status == 403
+  end
+
   defp validate_user(email, password, user_type) do
     config = OliWeb.Pow.PowHelpers.get_pow_config(user_type)
 
@@ -173,7 +209,10 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   end
 
   def create_project(_) do
-    Seeder.base_project_with_resource2()
+    {:ok,
+     %{
+       project: Repo.insert!(Oli.Factory.project_factory())
+     }}
   end
 
   def api_key_seed(%{conn: conn}) do

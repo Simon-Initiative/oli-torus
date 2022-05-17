@@ -8,6 +8,8 @@ defmodule OliWeb.Api.AutomationSetupController do
 
   alias OpenApiSpex.Schema
 
+  plug Oli.Plugs.ValidateAPIKey, &Oli.Interop.validate_for_automation_setup/1
+
   defmodule AutomationSetupResponse do
     require OpenApiSpex
 
@@ -210,33 +212,29 @@ defmodule OliWeb.Api.AutomationSetupController do
         "create_educator" => create_educator,
         "project_archive" => project_archive
       }) do
-    if is_valid_api_key?(conn, &Oli.Interop.validate_for_automation_setup/1) do
-      case setup_data(
-             project_archive,
-             create_learner,
-             create_educator,
-             create_author,
-             create_section
-           ) do
-        {:error, reason} ->
-          error(conn, 400, reason)
+    case setup_data(
+           project_archive,
+           create_learner,
+           create_educator,
+           create_author,
+           create_section
+         ) do
+      {:error, reason, _, _} ->
+        error(conn, 400, "Could not create #{Atom.to_string(reason)}")
 
-        {:ok, author, author_password, educator, educator_password, learner, learner_password,
-         project, section} ->
-          json(
-            conn,
-            %{
-              author: format_user(author, author_password),
-              educator: format_user(educator, educator_password),
-              learner: format_user(learner, learner_password),
-              project: format_project(project),
-              section: format_section(section),
-              success: true
-            }
-          )
-      end
-    else
-      error(conn, 403, "invalid api key")
+      {:ok, author, author_password, educator, educator_password, learner, learner_password,
+       project, section} ->
+        json(
+          conn,
+          %{
+            author: format_user(author, author_password),
+            educator: format_user(educator, educator_password),
+            learner: format_user(learner, learner_password),
+            project: format_project(project),
+            section: format_section(section),
+            success: true
+          }
+        )
     end
   end
 
@@ -260,24 +258,20 @@ defmodule OliWeb.Api.AutomationSetupController do
         "section_slug" => section_slug,
         "project_slug" => project_slug
       }) do
-    if is_valid_api_key?(conn, &Oli.Interop.validate_for_automation_setup/1) do
-      # The order these happen in matters
-      author_deleted = AutomationSetup.teardown_author(author_email, author_password)
-      educator_deleted = AutomationSetup.teardown_educator(educator_email, educator_password)
-      learner_deleted = AutomationSetup.teardown_learner(learner_email, learner_password)
-      section_deleted = AutomationSetup.teardown_section(section_slug)
-      project_deleted = AutomationSetup.teardown_project(project_slug)
+    # The order these happen in matters
+    author_deleted = AutomationSetup.teardown_author(author_email, author_password)
+    educator_deleted = AutomationSetup.teardown_educator(educator_email, educator_password)
+    learner_deleted = AutomationSetup.teardown_learner(learner_email, learner_password)
+    section_deleted = AutomationSetup.teardown_section(section_slug)
+    project_deleted = AutomationSetup.teardown_project(project_slug)
 
-      json(conn, %{
-        author_deleted: author_deleted,
-        educator_deleted: educator_deleted,
-        learner_deleted: learner_deleted,
-        section_deleted: section_deleted,
-        project_deleted: project_deleted
-      })
-    else
-      error(conn, 403, "invalid api key")
-    end
+    json(conn, %{
+      author_deleted: author_deleted,
+      educator_deleted: educator_deleted,
+      learner_deleted: learner_deleted,
+      section_deleted: section_deleted,
+      project_deleted: project_deleted
+    })
   end
 
   defp format_project(project) do

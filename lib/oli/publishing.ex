@@ -538,8 +538,6 @@ defmodule Oli.Publishing do
       {:error, %Ecto.Changeset{}}
   """
   def delete_publication(%Publication{} = publication) do
-    resources = get_published_resources_by_publication(publication.id)
-    Enum.each(resources, &delete_published_resource/1)
     Repo.delete(publication)
   end
 

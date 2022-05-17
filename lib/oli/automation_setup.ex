@@ -8,6 +8,9 @@ defmodule Oli.AutomationSetup do
   alias Oli.Repo
   alias Oli.Authoring.Course.Project
   alias Oli.Authoring.Course.ProjectResource
+  alias Oli.Resources.Resource
+
+  alias Ecto.Multi
 
   import Ecto.Query, warn: false
   require Logger
@@ -19,20 +22,140 @@ defmodule Oli.AutomationSetup do
         create_author?,
         create_section?
       ) do
-    with {:ok, author, author_password} <-
-           create_author(create_author? or project_archive != nil),
-         {:ok, project} <- create_project(project_archive, author),
-         {:ok, educator, educator_password} <-
-           create_educator(create_educator? or create_section?, author),
-         {:ok, publication} <- publish_project(project),
-         {:ok, section} <- create_section(create_section?, publication, project, educator),
-         {:ok, learner, learner_password} <- create_learner(create_learner?, section) do
-      {:ok, author, author_password, educator, educator_password, learner, learner_password,
-       project, section}
-    else
-      {:error, reason} -> {:error, reason}
-      _ -> {:error, "Unknown error"}
+    result =
+      Multi.new()
+      |> Multi.run(:author, fn _repo, _ ->
+        create_author(create_author? or project_archive != nil)
+      end)
+      |> Multi.run(:project, fn _repo, %{author: {author, _}} ->
+        create_project(project_archive, author)
+      end)
+      |> Multi.run(:educator, fn _repo, %{author: {author, _}} ->
+        create_educator(create_educator? or create_section?, author)
+      end)
+      |> Multi.run(:publication, fn _repo, %{project: project} -> publish_project(project) end)
+      |> Multi.run(:section, fn _repo,
+                                %{
+                                  project: project,
+                                  educator: {educator, _},
+                                  publication: publication
+                                } ->
+        create_section(create_section?, publication, project, educator)
+      end)
+      |> Multi.run(:learner, fn _repo, %{section: section} ->
+        create_learner(create_learner?, section)
+      end)
+      |> Repo.transaction()
+
+    case result do
+      {:ok,
+       %{
+         author: {author, author_password},
+         educator: {educator, educator_password},
+         learner: {learner, learner_password},
+         project: project,
+         section: section
+       }} ->
+        {:ok, author, author_password, educator, educator_password, learner, learner_password,
+         project, section}
+
+      error ->
+        error
     end
+  end
+
+  # Tears down a test project
+  # Deletes:
+  # project
+  #   -> publications
+  #       -> publication_resources
+  #   -> project_resources
+  #       -> resources
+  #          -> revisions
+  #
+  # Only works on automation-test projects
+  def teardown_project(slug) do
+    with {:ok, project} <-
+           Repo.one(
+             from p in Project,
+               where: p.slug == ^slug,
+               preload: [
+                 :authors,
+                 :resources,
+                 :family,
+                 :activity_registrations,
+                 :part_component_registrations,
+                 :communities,
+                 :publications
+               ]
+           )
+           |> has_project(),
+         # Only tear down projects where duplicates are not allowed
+         {:ok} <- no_duplicates(project),
+         # Only tear down projects with no authors
+         {:ok} <-
+           has_no_authors(project.authors) do
+      resource_ids = for r <- project.resources, do: r.id
+
+      result =
+        Multi.new()
+        # Delete all the publications for this project, this will also get the publication_resources
+        |> Multi.run(:publications, fn _, _ ->
+          {:ok, Enum.each(project.publications, &Oli.Publishing.delete_publication/1)}
+        end)
+        # Delete all the associations between this project and resources
+        |> Multi.delete_all(
+          :project_resources,
+          from(pr in ProjectResource, where: pr.project_id == ^project.id, select: pr)
+        )
+        # Delete the revisions that go along with the resources in this project.
+        |> Multi.delete_all(
+          :revisions,
+          from(r in Oli.Resources.Revision, where: r.resource_id in ^resource_ids)
+        )
+        # Delete the project resources
+        |> Multi.delete_all(:resources, from(r in Resource, where: r.id in ^resource_ids))
+        |> Multi.delete(:project, project)
+        |> Repo.transaction()
+
+      case result do
+        {:ok, _} ->
+          %{success: true}
+
+        _ ->
+          %{success: false}
+      end
+    else
+      {:error, message} -> %{success: false, message: message}
+      _ -> %{success: false, message: "Unknown Reason"}
+    end
+  end
+
+  def teardown_section(nil) do
+    %{success: false, message: "No section slug provided"}
+  end
+
+  def teardown_section(slug) do
+    with {:ok, section} <-
+           Oli.Delivery.Sections.get_section_by(slug: slug) |> can_delete_section(),
+         {:ok, _} <- Oli.Delivery.Sections.delete_section(section) do
+      %{success: true}
+    else
+      {:error, message} -> %{success: false, message: message}
+      _ -> %{success: false, message: "Unknown Reason"}
+    end
+  end
+
+  def teardown_educator(email, password) do
+    teardown_user(email, password, :user, "Test Educator")
+  end
+
+  def teardown_learner(email, password) do
+    teardown_user(email, password, :user, "Test Learner")
+  end
+
+  def teardown_author(email, password) do
+    teardown_user(email, password, :author, "Test Author")
   end
 
   defp publish_project(nil) do
@@ -109,31 +232,11 @@ defmodule Oli.AutomationSetup do
       ])
     end
 
-    {:ok, user, password}
+    {:ok, {user, password}}
   end
 
   defp create_educator(false, _) do
     {:ok, nil, nil}
-  end
-
-  defp create_educator(true, nil) do
-    password = random_password()
-
-    {:ok, user} =
-      Oli.Accounts.create_user(%{
-        email: generate_email("educator"),
-        given_name: "Test",
-        family_name: "Educator",
-        password: password,
-        password_confirmation: password,
-        age_verified: true,
-        email_verified: true,
-        email_confirmed_at: Timex.now(),
-        research_opt_out: true,
-        can_create_sections: true
-      })
-
-    {:ok, user, password}
   end
 
   defp create_educator(true, author) do
@@ -151,14 +254,14 @@ defmodule Oli.AutomationSetup do
         email_confirmed_at: Timex.now(),
         research_opt_out: true,
         can_create_sections: true,
-        author_id: author.id
+        author_id: if(is_nil(author), do: nil, else: author.id)
       })
 
-    {:ok, user, password}
+    {:ok, {user, password}}
   end
 
   defp create_author(false) do
-    {:ok, nil, nil}
+    {:ok, nil}
   end
 
   defp create_author(true) do
@@ -175,7 +278,7 @@ defmodule Oli.AutomationSetup do
         email_confirmed_at: Timex.now()
       })
 
-    {:ok, user, password}
+    {:ok, {user, password}}
   end
 
   defp has_project(nil) do
@@ -214,92 +317,12 @@ defmodule Oli.AutomationSetup do
           select: p
       )
 
-    if not project.allow_duplication and not child_project_exists do
+    unless project.allow_duplication or child_project_exists do
       {:ok}
     else
       # If we have child projects, or the project allows duplicates, don't let us delete it.
       {:error, "Project allows duplicates"}
     end
-  end
-
-  # Tears down a test project
-  # Deletes:
-  # project
-  #   -> publications
-  #       -> publication_resources
-  #   -> project_resources
-  #       -> resources
-  #          -> revisions
-  #
-  # Only works on automation-test projects
-  def teardown_project(slug) do
-    with {:ok, project} <-
-           Repo.one(
-             from p in Project,
-               where: p.slug == ^slug,
-               preload: [
-                 :authors,
-                 :family,
-                 :resources,
-                 :activity_registrations,
-                 :part_component_registrations,
-                 :communities,
-                 :publications
-               ]
-           )
-           |> has_project(),
-         # Only tear down projects where duplicates are not allowed
-         {:ok} <- no_duplicates(project),
-         # Only tear down projects with no authors
-         {:ok} <-
-           has_no_authors(project.authors) do
-      #
-      # Delete all the publications for this project, this will also get the publication_resources
-      Enum.each(project.publications, &Oli.Publishing.delete_publication/1)
-
-      # Delete all the associations between this project and resources
-      Repo.delete_all(from pr in ProjectResource, where: pr.project_id == ^project.id, select: pr)
-
-      # Delete the resources
-      for resource <- project.resources do
-        Repo.delete_all(from r in Oli.Resources.Revision, where: r.resource_id == ^resource.id)
-        Repo.delete(resource)
-      end
-
-      {:ok, _} = Repo.delete(project)
-
-      %{success: true}
-    else
-      {:error, message} -> %{success: false, message: message}
-      _ -> %{success: false, message: "Unknown Reason"}
-    end
-  end
-
-  def teardown_section(nil) do
-    %{success: false, message: "No section slug provided"}
-  end
-
-  def teardown_section(slug) do
-    with {:ok, section} <-
-           Oli.Delivery.Sections.get_section_by(slug: slug) |> can_delete_section(),
-         {:ok, _} <- Oli.Delivery.Sections.delete_section(section) do
-      %{success: true}
-    else
-      {:error, message} -> %{success: false, message: message}
-      _ -> %{success: false, message: "Unknown Reason"}
-    end
-  end
-
-  def teardown_educator(email, password) do
-    teardown_user(email, password, :user, "Test Educator")
-  end
-
-  def teardown_learner(email, password) do
-    teardown_user(email, password, :user, "Test Learner")
-  end
-
-  def teardown_author(email, password) do
-    teardown_user(email, password, :author, "Test Author")
   end
 
   defp teardown_user(nil, _, _, _),
