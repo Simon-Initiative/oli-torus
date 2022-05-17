@@ -1,6 +1,5 @@
 import { ConditionProperties } from 'json-rules-engine';
 import {
-  isSpecialArrayString,
   isStringArray,
   parseArray,
   parseArrayWithoutStringConversion,
@@ -18,6 +17,28 @@ export enum CapiVariableTypes {
   // TODO: Add OBJECT (janus-script can support)
   UNKNOWN = 99,
 }
+
+export const isSpecialArrayString = (value: string) => {
+  let isSpecialArryString = false;
+  const typeOfValue = typeof value;
+  if (typeOfValue === 'string' && value[0] == '[' && value[value.length - 1] == ']') {
+    const convertedValue = parseArray(value);
+    if (Array.isArray(convertedValue)) {
+      convertedValue.forEach((item: any) => {
+        if (!isNaN(Number(item)) && typeof item === 'string' && item.includes('.')) {
+          const spl = item.split('.');
+          if (spl.length > 1) {
+            //Also, making sure that we don't touch if the values are ["0.12"]
+            if (spl[0].length > 1 && Number(spl[0]) === 0) {
+              isSpecialArryString = true;
+            }
+          }
+        }
+      });
+    }
+  }
+  return isSpecialArryString;
+};
 
 export const getCapiType = (value: any, allowedValues?: string[]): CapiVariableTypes => {
   if (allowedValues) {

@@ -1,3 +1,4 @@
+import { isSpecialArrayString } from 'adaptivity/capi';
 import {
   isNumber,
   isString,
@@ -7,7 +8,6 @@ import {
   valueOr,
   zip,
   removeEmpty,
-  isSpecialArrayString,
 } from 'utils/common';
 
 describe('common valueOr', () => {
