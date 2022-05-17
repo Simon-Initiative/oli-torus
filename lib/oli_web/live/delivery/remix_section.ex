@@ -637,7 +637,8 @@ defmodule OliWeb.Delivery.RemixSection do
   end
 
   defp filter_items(children, dragging) do
-    Enum.with_index(children)
+    children
+    |> Enum.with_index()
     |> Enum.filter(fn {c, _i} -> c.uuid != dragging end)
   end
 end
