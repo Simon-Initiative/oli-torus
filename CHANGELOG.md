@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Fix an issue where paging in Activity Bank did not preserve filtered logic
+- Fix link editing
 
 ### Enhancements
 
