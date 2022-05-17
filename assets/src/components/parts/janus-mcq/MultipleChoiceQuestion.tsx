@@ -257,6 +257,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
   const [selectedChoices, setSelectedChoices] = useState<number[]>([]);
   const [selectedChoicesText, setSelectedChoicesText] = useState<string[]>([]);
 
+  // converts stringfied number array to number array
+  const convertToNumberArray = (arr: string[]) =>
+    arr.map((element) => parseInt(element.replace(/"/g, ''), 10));
+
   const initialize = useCallback(async (pModel) => {
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
@@ -342,11 +346,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     let hasDoneSelectedChoice = false;
 
     // this is for setting *multiple* choices being selected by the number value
-    const sSelectedChoices = currentStateSnapshot[`stage.${id}.selectedChoices`];
+    const sSelectedChoices: string[] = currentStateSnapshot[`stage.${id}.selectedChoices`];
     if (dMultipleSelection && sSelectedChoices !== undefined) {
       hasDoneMultiple = true;
       hasDoneSelectedChoice = true;
-      const selectedArray = parseArray(sSelectedChoices);
+      // convert stringfied number array to number array
+      const selectedArray = convertToNumberArray(sSelectedChoices);
+
       if (Array.isArray(selectedArray)) {
         const newSelectionArray = selectedArray.map((choice) => ({
           value: choice,
@@ -588,7 +594,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                const selectedArray = convertToNumberArray(sSelectedChoices);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,
@@ -667,7 +675,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (multipleSelection && sSelectedChoices !== undefined && sSelectedChoices.length) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
-                const selectedArray = parseArray(sSelectedChoices);
+                // convert stringfied number array to number array
+                const selectedArray = convertToNumberArray(sSelectedChoices);
+
                 if (Array.isArray(selectedArray)) {
                   const newSelectionArray = selectedArray.map((choice) => ({
                     value: choice,

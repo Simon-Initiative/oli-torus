@@ -272,6 +272,26 @@ describe('Scripting Interface', () => {
       text = 'Lets try with variables {variables.foo';
       result = templatizeText(text, environment);
       expect(result).toBe(text);
+
+      const script = getAssignScript(
+        {
+          x: {
+            key: 'variables.UnknownBeaker',
+            path: '',
+            value: [1],
+          },
+        },
+        environment,
+      );
+
+      evalScript(script, environment);
+      text = '{variables.UnknownBeaker}';
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('"1"');
+
+      text = 'The values is {variables.UnknownBeaker}';
+      result = templatizeText(text, environment, environment);
+      expect(result).toBe('The values is "1"');
     });
 
     it('should be able to templatizeText of math expressions', () => {

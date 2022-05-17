@@ -33,7 +33,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     onRequestMedia,
   };
 
-  function selectImage(_projectSlug: string, _model: ContentModel.Image): Promise<string> {
+  function selectImage(_projectSlug: string, _model: ContentModel.ImageBlock): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -53,8 +53,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
   function selectSpreadsheet(
     _projectSlug: string,
-    _model: ContentModel.Image,
-  ): Promise<ContentModel.Image> {
+    _model: ContentModel.ImageBlock,
+  ): Promise<ContentModel.ImageBlock> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',

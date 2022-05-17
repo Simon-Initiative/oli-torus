@@ -23,10 +23,9 @@ defmodule Oli.Delivery.Sections.Browse do
       else
         # allow to search by prefix
         search_term =
-          case String.replace(options.text_search, ~r/\W/u, "") do
-            "" -> ""
-            term -> term <> ":*"
-          end
+          String.split(options.text_search)
+          |> Enum.map(fn x -> x <> ":*" end)
+          |> Enum.join(" & ")
 
         dynamic(
           [s, _, i, proj, prod, u],
@@ -76,21 +75,26 @@ defmodule Oli.Delivery.Sections.Browse do
         else: dynamic([s, _], s.blueprint_id == ^options.blueprint_id)
 
     instructor_role_id = ContextRoles.get_role(:context_instructor).id
+
     instructor =
       from u in User,
-      join: e in Enrollment,
-      on: e.user_id == u.id,
-      join: ecr in "enrollments_context_roles",
-      on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id,
-      select: %{id: u.id, name: u.name, section_id: e.section_id},
-      order_by: [asc: e.inserted_at],
-      limit: 1
+        join: e in Enrollment,
+        on: e.user_id == u.id,
+        join: ecr in "enrollments_context_roles",
+        on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id,
+        select: %{
+          name: fragment("array_to_string((array_agg(?)), ',')", u.name),
+          section_id: e.section_id
+        },
+        group_by: [e.section_id]
 
     query =
       Section
       |> join(:left, [s], e in Enrollment, on: s.id == e.section_id)
       |> join(:left, [s, _], i in Oli.Institutions.Institution, on: s.institution_id == i.id)
-      |> join(:left, [s, _], proj in Oli.Authoring.Course.Project, on: s.base_project_id == proj.id)
+      |> join(:left, [s, _], proj in Oli.Authoring.Course.Project,
+        on: s.base_project_id == proj.id
+      )
       |> join(:left, [s, _], prod in Section, on: s.blueprint_id == prod.id)
       |> join(:left, [s, e], u in subquery(instructor), on: u.section_id == s.id)
       |> where([s, _], s.type == :enrollable)

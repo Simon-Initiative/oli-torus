@@ -32,6 +32,7 @@ import {
   selectLastCheckTriggered,
   selectLastMutateChanges,
   selectLastMutateTriggered,
+  selectProcessedCheckResults,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
@@ -310,6 +311,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
+  const processedCheckResult = useSelector(selectProcessedCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   useEffect(() => {
@@ -388,7 +390,28 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (!ref.current) {
       return;
     }
-    ref.current.notify(NotificationType.CHECK_COMPLETE, payload);
+    ref?.current?.notify(NotificationType.CHECK_COMPLETE, payload);
+  };
+  const hasNavigation = (events: any) => {
+    const actionsByType: any = {
+      feedback: [],
+      mutateState: [],
+      navigation: [],
+    };
+    events.results.forEach((evt: any) => {
+      const { actions } = evt.params;
+      actions.forEach((action: any) => {
+        actionsByType[action.type].push(action);
+      });
+    });
+    if (actionsByType.navigation.length > 0) {
+      const [firstNavAction] = actionsByType.navigation;
+      const navTarget = firstNavAction.params.target;
+      if (navTarget !== activity.id) {
+        return true;
+      }
+    }
+    return false;
   };
 
   useEffect(() => {
@@ -403,9 +426,13 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
           attempt: lastCheckResults.attempt,
         });
       }
-      notifyCheckComplete(lastCheckResults);
+
+      const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
+      if (!hasNavigationToDifferentActivity) {
+        notifyCheckComplete(lastCheckResults);
+      }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered, processedCheckResult]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.
@@ -460,6 +487,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       domain: adaptivityDomain,
       initStateBindToFacts,
     });
+
+    notifyCheckComplete(lastCheckResults);
   };
 
   useEffect(() => {

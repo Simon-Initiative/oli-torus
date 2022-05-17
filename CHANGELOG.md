@@ -1,10 +1,27 @@
 # Changelog
 
 ## Unreleased
+### Bug Fixes
+### Enhancements
+
+## 0.19.3 (2022-05-17)
 
 ### Bug Fixes
 
+- Fix an issue where paging in Activity Bank did not preserve filtered logic
+- Fix link editing
+- Fix an issue where delivery styles were not being applied correctly
+- Fix an issue where table editor options dropdown was hidden behind editor
+
 ### Enhancements
+
+- Add content groups and paging support
+
+## 0.19.2 (2022-05-13)
+
+### Bug Fixes
+
+- Fix an issue where get connected button on publish page doesn't work
 
 ## 0.19.1 (2022-05-03)
 

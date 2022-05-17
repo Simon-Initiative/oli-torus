@@ -3,13 +3,15 @@ defmodule Oli.Inventories.Publisher do
   import Ecto.Changeset
   import Oli.Utils
 
+  @derive {Jason.Encoder, only: [:id, :name, :email, :address, :main_contact, :website_url]}
+
   schema "publishers" do
     field :name, :string
     field :email, :string
     field :address, :string
     field :main_contact, :string
     field :website_url, :string
-    field :default, :boolean
+    field :default, :boolean, default: false
 
     has_many :products, Oli.Delivery.Sections.Section
     has_many :projects, Oli.Authoring.Course.Project

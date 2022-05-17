@@ -38,6 +38,30 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       assert has_element?(view, "p", "None exist")
     end
 
+    test "loads correctly when there are sections", %{conn: conn} do
+      project = insert(:project, authors: [])
+      institution = insert(:institution)
+
+      section =
+        insert(:section,
+          type: :enrollable,
+          base_project: project,
+          institution: institution
+        )
+
+      u1 = insert(:user)
+      u2 = insert(:user)
+      Sections.enroll(u1.id, section.id, [ContextRoles.get_role(:context_instructor)])
+      Sections.enroll(u2.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert has_element?(view, "td", section.title)
+      assert has_element?(view, "td", project.title)
+      assert has_element?(view, "td", institution.name)
+      assert has_element?(view, "td", "#{u1.name},#{u2.name}")
+    end
+
     test "applies filtering", %{conn: conn} do
       s1 = insert(:section,
         type: :enrollable,

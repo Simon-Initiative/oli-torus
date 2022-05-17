@@ -302,7 +302,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
           activity ->
             get_latest_revision(publication.id, activity.id)
-            |> maybe_create_new_revision(publication, activity, author.id, update)
+            |> maybe_create_new_revision(publication, project, activity, author.id, update)
             |> update_revision(update, project.slug)
         end
       end)
@@ -365,7 +365,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             # to resolve this activity via the historical slugs would fail.
             {:updated} ->
               get_latest_revision(publication.id, activity.id)
-              |> maybe_create_new_revision(publication, activity, author.id, update)
+              |> maybe_create_new_revision(publication, project, activity, author.id, update)
               |> update_revision(update, project.slug)
               |> possibly_release_lock(project, publication, resource, author, update)
 
@@ -470,10 +470,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # create a new revision only if the slug will change due to this update
-  defp maybe_create_new_revision(previous, publication, activity, author_id, update) do
+  defp maybe_create_new_revision(previous, publication, project, activity, author_id, update) do
     title = Map.get(update, "title", previous.title)
 
-    if title != previous.title do
+    needs_new_revision = Oli.Publishing.needs_new_revision_for_edit?(project.slug, previous.id)
+
+    if title != previous.title or needs_new_revision do
       create_new_revision(previous, publication, activity, author_id)
     else
       previous
@@ -717,6 +719,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
 
     AuthoringResolver.from_resource_id(project_slug, activity_ids)
+    |> Enum.filter(fn r -> !is_nil(r) end)
     |> Enum.map(fn r ->
       activity_type = Map.get(type_by_id, r.activity_type_id)
 
