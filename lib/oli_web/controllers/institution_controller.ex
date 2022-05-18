@@ -152,12 +152,21 @@ defmodule OliWeb.InstitutionController do
   end
 
   def delete(conn, %{"id" => id}) do
-    institution = Institutions.get_institution!(id)
-    {:ok, _institution} = Institutions.delete_institution(institution)
+    if Institutions.institution_has_deployments?(id) do
+      conn
+      |> put_flash(
+        :error,
+        "Institution with deployments cannot be deleted. Please move or delete all associated deployments and try again"
+      )
+      |> redirect(to: Routes.institution_path(conn, :show, id))
+    else
+      institution = Institutions.get_institution!(id)
+      {:ok, _institution} = Institutions.delete_institution(institution)
 
-    conn
-    |> put_flash(:info, "Institution deleted")
-    |> redirect(to: Routes.institution_path(conn, :index))
+      conn
+      |> put_flash(:info, "Institution deleted")
+      |> redirect(to: Routes.institution_path(conn, :index))
+    end
   end
 
   def approve_registration(
@@ -169,10 +178,11 @@ defmodule OliWeb.InstitutionController do
 
     # handle the case where deployment_id is nil in the html form, causing this attr
     # to be and empty string
-    deployment_id = case pending_registration_attrs["deployment_id"] do
-      "" -> nil
-      deployment_id -> deployment_id
-    end
+    deployment_id =
+      case pending_registration_attrs["deployment_id"] do
+        "" -> nil
+        deployment_id -> deployment_id
+      end
 
     case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->
