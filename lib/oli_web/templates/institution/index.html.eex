@@ -83,7 +83,6 @@
 
               <td class="text-nowrap">
                 <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary" %>
-                <%# <%= link "Remove", to: Routes.institution_path(@conn, :delete, institution), method: :delete, data: [confirm: "Are you sure you want to permanently remove the institution \"#{institution.name}\"?"], class: "btn btn-sm btn-outline-danger ml-2" %>
               </td>
             </tr>
         <% end %>

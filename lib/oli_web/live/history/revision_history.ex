@@ -62,6 +62,16 @@ defmodule OliWeb.RevisionHistory do
 
     selected = fetch_revision(hd(revisions).id)
 
+    resource_schema = case Oli.Resources.ResourceType.get_type_by_id(selected.resource_type_id) do
+      "page" -> SchemaResolver.schema("page-content.schema.json")
+      "activity" ->
+        case selected.activity_type_id do
+          1 -> SchemaResolver.schema("adaptive-activity-content.schema.json")
+          _ -> SchemaResolver.schema("activity-content.schema.json")
+        end
+      _ -> SchemaResolver.schema("page-content.schema.json")
+    end
+
     {:ok,
      socket
      |> assign(
@@ -85,7 +95,7 @@ defmodule OliWeb.RevisionHistory do
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
-       resource_schema: SchemaResolver.schema("page-content.schema.json")
+       resource_schema: resource_schema
      )
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end
