@@ -374,7 +374,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         value.indexOf('}') !== -1
           ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, true)
           : updatedValue;
-      acc[initObject.target] = evaluatedValue;
+      acc[initObject.target.trim()] = evaluatedValue;
       return acc;
     }, {});
     return finalInitSnapshot;
