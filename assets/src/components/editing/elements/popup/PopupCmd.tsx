@@ -1,9 +1,11 @@
-import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { Model } from 'data/content/model/elements/factories';
 import { Element, Transforms } from 'slate';
-import { isActive } from '../../utils';
+import { isActive } from '../../slateUtils';
+import { createButtonCommandDesc } from '../commands/commandFactories';
 
-const command: Command = {
+export const popupCmdDesc = createButtonCommandDesc({
+  icon: 'outbound',
+  description: 'Popup Content',
   execute: (_context, editor, _params) => {
     const selection = editor.selection;
     if (!selection) return;
@@ -16,15 +18,6 @@ const command: Command = {
 
     Transforms.wrapNodes(editor, Model.popup(), { split: true });
   },
-  precondition: (_editor) => {
-    return true;
-  },
-};
 
-export const popupCmdDesc: CommandDescription = {
-  type: 'CommandDesc',
-  icon: () => 'outbound',
-  description: () => 'Popup Content',
-  command,
   active: (e) => isActive(e, 'popup'),
-};
+});

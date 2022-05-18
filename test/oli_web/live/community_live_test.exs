@@ -909,7 +909,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => cv1.id})
 
       assert view
@@ -1033,7 +1033,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => project.id, "type" => "project"})
 
       assert view
@@ -1173,7 +1173,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div  > button")
       |> render_click(%{"id" => user.id})
 
       assert view

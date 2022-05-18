@@ -18,7 +18,7 @@ import { withInlines } from './overrides/inlines';
 import { withMarkdown } from './overrides/markdown';
 import { withTables } from './overrides/tables';
 import { withVoids } from './overrides/voids';
-import { EditorToolbar } from 'components/editing/toolbar/EditorToolbar';
+import { EditorToolbar } from 'components/editing/toolbar/editorToolbar/EditorToolbar';
 
 export type EditorProps = {
   // Callback when there has been any change to the editor
@@ -114,10 +114,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       >
         {props.children}
 
-        <EditorToolbar
-          context={props.commandContext}
-          toolbarInsertDescs={props.toolbarInsertDescs}
-        />
+        <EditorToolbar context={props.commandContext} insertOptions={props.toolbarInsertDescs} />
 
         <Editable
           style={props.style}
