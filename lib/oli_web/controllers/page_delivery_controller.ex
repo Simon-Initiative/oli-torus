@@ -429,7 +429,9 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
-        reviewMode: context.review_mode
+        reviewMode: context.review_mode,
+        overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
+        finalizeGradedURL: Routes.page_delivery_path(conn, :finalize_attempt, section.slug, context.page.slug, resource_attempt.attempt_guid)
       },
       activity_type_slug_mapping: %{},
       activity_types: activity_types,
