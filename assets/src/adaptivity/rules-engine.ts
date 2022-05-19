@@ -86,14 +86,19 @@ const evaluateValueExpression = (value: string, env: Environment) => {
       //adding more safety so that it does not break anything else.
       // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS. Ignore that
       const updatedVariables = expressions.filter((e) => !e.includes(';'));
+      const updatedValue = typeof value === 'string' ? value.trim() : value;
       if (
-        typeof value === 'string' &&
+        typeof updatedValue === 'string' &&
         updatedVariables?.length &&
-        value[0] === '{' &&
-        value[value.length - 1] === '}'
+        updatedValue[0] === '{' &&
+        updatedValue[updatedValue.length - 1] === '}'
       ) {
         try {
-          const evaluatedValue = evalScript(value.substring(1, value.length - 1), env);
+          const evaluatedValue = evalScript(
+            updatedValue.substring(1, updatedValue.length - 1),
+            env,
+          );
+
           const canEval = evaluatedValue?.result !== undefined && !evaluatedValue.result.message;
           if (canEval) {
             result = evaluatedValue.result;
