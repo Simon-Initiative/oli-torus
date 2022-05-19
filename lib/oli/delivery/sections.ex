@@ -1431,7 +1431,13 @@ defmodule Oli.Delivery.Sections do
         end
       end)
 
-    Map.merge(prs_by_non_uniq_slug, prs_by_uniq_slug)
+    unless Enum.empty?(prs_by_non_uniq_slug) do
+      throw(
+        "Cannot rebuild section curriculum. After several attempts it was not possible to generate unique slugs for new nonstructural section resources. See Oli.Delivery.Sections.create_nonstructural_section_resources/3 for details."
+      )
+    end
+
+    prs_by_uniq_slug
   end
 
   @doc """
