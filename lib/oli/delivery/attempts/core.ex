@@ -368,21 +368,27 @@ defmodule Oli.Delivery.Attempts.Core do
         on: snapshot.part_attempt_id == part_attempt.id,
         join: user in User,
         on: snapshot.user_id == user.id,
+        join: activity_attempt in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == activity_attempt.id,
+        join: resource_attempt in ResourceAttempt,
+        on: activity_attempt.resource_attempt_id == resource_attempt.id,
+        join: activity_revision in Revision,
+        on: activity_attempt.revision_id == activity_revision.id,
+
         # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
             part_attempt.lifecycle_state == :evaluated,
-        select: %{part_attempt: part_attempt, user: user}
+        select: %{
+          part_attempt: part_attempt,
+          user_email: user.email,
+          user_sub: user.sub,
+          activity_slug: activity_revision.slug,
+          hints_available: snapshot.hints_available,
+          activity_objectives: activity_revision.objectives,
+          resource_attempt_inserted_at: resource_attempt.inserted_id
+        }
       )
-    )
-    |> Enum.map(
-      &%{
-        user: &1.user,
-        part_attempt:
-          Repo.preload(&1.part_attempt,
-            activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]
-          )
-      }
     )
   end
 

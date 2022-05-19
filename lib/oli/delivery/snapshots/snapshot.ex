@@ -43,8 +43,9 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
     field(:score, :float)
     field(:out_of, :float)
 
-    # Count of the number of hints received during this attempt
+    # Count of the number of hints received and the content of all hints
     field(:hints, :integer)
+    field(:hints_content, {:array, :map})
 
     timestamps(type: :utc_datetime)
   end
@@ -70,7 +71,8 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
       :activity_type_id,
       :attempt_number,
       :correct,
-      :hints
+      :hints,
+      :hints_content
     ])
     |> validate_required([
       :resource_id,
@@ -87,7 +89,8 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
       :activity_type_id,
       :attempt_number,
       :correct,
-      :hints
+      :hints,
+      :hints_content
     ])
   end
 end

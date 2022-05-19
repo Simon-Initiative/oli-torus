@@ -54,46 +54,45 @@ defmodule Oli.Analytics.Datashop do
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
     dataset_name = Utils.make_dataset_name(project.slug)
 
+    # a map of resource ids to published revision
+    hierarchy_map =
+      Publishing.get_published_resources_by_publication(publication.id)
+      |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+      |> build_hierarchy_map(publication.root_resource_id)
+
     Attempts.get_part_attempts_and_users(project.id)
     |> group_part_attempts_by_user_and_part
-    |> Enum.map(fn {{email, sub, activity_slug, part_id}, part_attempts} ->
+    |> Enum.map(fn {{email, sub, activity_slug, part_id}, records} ->
       context = %{
-        date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
+        date: hd(records).resource_attempt_inserted_at,
         email: email,
         sub: sub,
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
         dataset_name: dataset_name,
-        part_attempt: hd(part_attempts),
+        part_attempt: hd(records).part_attempt,
         publication: publication,
-        # a map of resource ids to published revision
-        hierarchy_map:
-          Publishing.get_published_resources_by_publication(publication.id)
-          |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
-          |> build_hierarchy_map(publication.root_resource_id)
+        hierarchy_map: hierarchy_map
       }
 
       [
         Context.setup("START_PROBLEM", context)
-        | part_attempts
-          |> Enum.flat_map(fn part_attempt ->
+        | records
+          |> Enum.flat_map(fn record ->
             context =
               Map.merge(
                 context,
                 %{
                   transaction_id: Utils.make_unique_id(activity_slug, part_id),
-                  part_attempt: part_attempt,
-                  skill_ids:
-                    part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || [],
-                  total_hints_available:
-                    Utils.total_hints_available(get_part_from_attempt(part_attempt))
+                  part_attempt: record.part_attempt,
+                  skill_ids: record.activity_objectives[record.part_attempt.part_id] || [],
+                  total_hints_available: length(record.hints_content)
                 }
               )
 
             hint_message_pairs =
               create_hint_message_pairs(
-                part_attempt,
-                get_part_from_attempt(part_attempt),
+                record,
                 context
               )
 
@@ -112,12 +111,16 @@ defmodule Oli.Analytics.Datashop do
   end
 
   defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
-    part_attempts_and_users
-    |> Enum.group_by(
-      &{&1.user.email, &1.user.sub, &1.part_attempt.activity_attempt.revision.slug,
-       &1.part_attempt.part_id},
-      & &1.part_attempt
-    )
+    Enum.reduce(part_attempts_and_users, %{}, fn r, m ->
+      key = {r.user_email, r.user_sub, r.activity_slug, r.part_attempt.part_id}
+
+      case Map.get(m, key) do
+        nil -> Map.put(m, key, [r])
+        records -> Map.put(m, key, [r | records])
+      end
+    end)
+    |> Enum.reduce(%{}, fn {k, v}, m -> Map.put(m, k, Enum.reverse(v)) end)
+    |> Enum.map(fn {k, v} -> {k, v} end)
   end
 
   # Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
@@ -134,14 +137,17 @@ defmodule Oli.Analytics.Datashop do
     )
   end
 
-  defp create_hint_message_pairs(part_attempt, part, context) do
-    part_attempt.hints
+  defp create_hint_message_pairs(
+         %{hints_content: hints_content, part_attempt: part_attempt},
+         context
+       ) do
+    Enum.take(hints_content, length(part_attempt.hints))
     |> Enum.with_index()
-    |> Enum.flat_map(fn {hint_id, hint_index} ->
+    |> Enum.flat_map(fn {hint_content, hint_index} ->
       context =
         Map.merge(context, %{
           current_hint_number: hint_index + 1,
-          hint_text: Utils.hint_text(part, hint_id)
+          hint_text: Utils.hint_text(hint_content)
         })
 
       [
@@ -149,10 +155,5 @@ defmodule Oli.Analytics.Datashop do
         Tutor.setup("HINT_MSG", context)
       ]
     end)
-  end
-
-  defp get_part_from_attempt(part_attempt) do
-    Attempts.select_model(part_attempt.activity_attempt)["authoring"]["parts"]
-    |> Enum.find(%{}, &(&1["id"] == part_attempt.part_id))
   end
 end
