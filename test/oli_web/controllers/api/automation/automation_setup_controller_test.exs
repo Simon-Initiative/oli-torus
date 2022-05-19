@@ -5,6 +5,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   alias Oli.Repo
   alias Oli.Resources.Resource
   import Oli.Utils
+  import Oli.Factory
   import Ecto.Query, warn: false
 
   setup [:api_key_seed, :create_project]
@@ -211,7 +212,7 @@ defmodule OliWeb.Api.AutomationSetupControllerTest do
   def create_project(_) do
     {:ok,
      %{
-       project: Repo.insert!(Oli.Factory.project_factory())
+       project: insert(:project)
      }}
   end
 
