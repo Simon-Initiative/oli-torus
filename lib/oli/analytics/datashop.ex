@@ -102,8 +102,7 @@ defmodule Oli.Analytics.Datashop do
                   part_attempt: part_attempt,
                   skill_ids:
                     part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || [],
-                  total_hints_available:
-                    get_part_from_attempt(part_attempt) |> Map.get("hints") |> length
+                  total_hints_available: get_hints_for_part(part_attempt) |> length
                 }
               )
 
@@ -125,6 +124,22 @@ defmodule Oli.Analytics.Datashop do
           end)
       ]
     end)
+  end
+
+  # safely get the hints list from a part, returning an empty list if
+  # the part or the hints do not exist, or if hints is present but not a list
+  defp get_hints_for_part(part_attempt) do
+    case get_part_from_attempt(part_attempt) do
+      nil ->
+        []
+
+      map ->
+        case Map.get(map, "hints") do
+          nil -> []
+          hints when is_list(hints) -> hints
+          _ -> []
+        end
+    end
   end
 
   defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
@@ -175,7 +190,7 @@ defmodule Oli.Analytics.Datashop do
          part_attempt,
          context
        ) do
-    get_part_from_attempt(part_attempt)
+    get_hints_for_part(part_attempt)
     |> Enum.take(length(part_attempt.hints))
     |> Enum.with_index()
     |> Enum.flat_map(fn {hint_content, hint_index} ->
