@@ -3,22 +3,6 @@
 <div id="curriculum-container" class="container curriculum-editor">
   <h3><%= @section.title %></h3>
 
-  <div class="row border-bottom pb-2 my-4">
-    <div class="col-12">
-      <.form let={f} for={@changeset} phx-change="update_numbering_visibility" action="#">
-        <div class="form-group">
-          <div class="form-row">
-            <div class="custom-control custom-switch">
-              <%= checkbox f, :display_curriculum_item_numbering, class: "custom-control-input" %>
-              <%= label f, :display_curriculum_item_numbering, "Display item numbers", class: "custom-control-label" %>
-              <div class="text-muted">Enable students to see the curriculum's module and unit numbers</div>
-            </div>
-          </div>
-        </div>
-      </.form>
-    </div>
-  </div>
-
   <div class="row mt-3">
     <div class="col-12">
       <div class="mb-3 d-flex flex-row flex-nowrap">

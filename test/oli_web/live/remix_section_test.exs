@@ -193,26 +193,6 @@ defmodule OliWeb.RemixSectionLiveTest do
         |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
         |> render() =~ "#{latest1.title}"
     end
-
-    test "remix section toggle unit number visibility should update section record", %{
-      conn: conn,
-      map: %{
-        section_1: section
-      }
-    } do
-      {:ok, view, _html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
-
-      assert section.display_curriculum_item_numbering == true
-
-      render_hook(view, "update_numbering_visibility", %{
-        "section" => %{"display_curriculum_item_numbering" => "false"}
-      })
-
-      updated_section = Sections.get_section!(section.id)
-
-      refute updated_section.display_curriculum_item_numbering
-    end
   end
 
   describe "breadcrumbs" do

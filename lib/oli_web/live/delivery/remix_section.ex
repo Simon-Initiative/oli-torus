@@ -196,25 +196,6 @@ defmodule OliWeb.Delivery.RemixSection do
      )}
   end
 
-  def handle_event("update_numbering_visibility", %{"section" => section_params}, socket) do
-    socket = clear_flash(socket)
-
-    case Sections.update_section(socket.assigns.section, section_params) do
-      {:ok, updated_section} ->
-        {:noreply,
-         assign(socket,
-           section: updated_section,
-           changeset: Section.changeset(updated_section, %{})
-         )}
-
-      {:error, changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Error updating section")
-         |> assign(changeset: changeset)}
-    end
-  end
-
   # handle change of selection
   def handle_event("select", %{"uuid" => uuid}, socket) do
     %{active: active} = socket.assigns
