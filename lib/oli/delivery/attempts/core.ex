@@ -350,7 +350,21 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  @doc """
+  For a given project id, this retrieves part attempts and user information, for those part attempts
+  that are evaluated and that have snapshots defined. This is a key query for powering analytics
+  (mainly DataShop export), and thus is the reasoning why it is snapshot driven.
+
+  This impl is optimized so that it can be used even in very large datasets, where there might be
+  thousands or tens of thousands of part attempts.  One single massive query that attempted to
+  preload the activity attempt, the revision of the activity, the resource attempt and the
+  revision of the resource via a series of 'joins' would have an unnecessarily large payload due to the fact
+  that many attempts and certainly most revisions would be duplicates.   This approach here
+  makes a series of db requests, fetching the unique set of attempts and revisions necesarry to
+  then 'reconstruct' the preloaded attempt hierarchies.
+  """
   def get_part_attempts_and_users(project_id) do
+    # This is our base, reusable query designed to get the part attempts
     core =
       from project in Project,
         join: spp in SectionsProjectsPublications,
@@ -371,6 +385,8 @@ defmodule Oli.Delivery.Attempts.Core do
           project.id == ^project_id and
             part_attempt.lifecycle_state == :evaluated
 
+    # Now get the resource attempt revision for those part attempts, distinctly, and
+    # create a map of their ids to the attempts
     resource_attempt_revisions =
       from([part_attempt: part_attempt] in core,
         join: a in ActivityAttempt,
@@ -385,6 +401,8 @@ defmodule Oli.Delivery.Attempts.Core do
       |> Repo.all()
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
+    # Now get the resource attempts themselves, distincly, and create a map, while
+    # wiring into them the resource revisions fetched above
     resource_attempts =
       from([part_attempt: part_attempt] in core,
         join: a in ActivityAttempt,
@@ -396,10 +414,14 @@ defmodule Oli.Delivery.Attempts.Core do
       )
       |> Repo.all()
       |> Enum.reduce(%{}, fn r, m ->
+        # wire in the resource attempt revision, to simulate the preload
         r = Map.put(r, :revision, Map.get(resource_attempt_revisions, r.revision_id))
         Map.put(m, r.id, r)
       end)
 
+    # Get the activity attempt revisions, distinctly.  Getting them distinctly is a potentially
+    # huge optimization if we imagine a course where there might only be ten activities, but that
+    # are taken 10,000 times by students.
     activity_attempt_revisions =
       from([part_attempt: part_attempt] in core,
         join: a in ActivityAttempt,
@@ -412,6 +434,7 @@ defmodule Oli.Delivery.Attempts.Core do
       |> Repo.all()
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
+    # Get the attempts, and wire in the activity revision and the resource attempt
     activity_attempts =
       from([part_attempt: part_attempt] in core,
         join: a in ActivityAttempt,
@@ -428,6 +451,7 @@ defmodule Oli.Delivery.Attempts.Core do
         Map.put(m, r.id, r)
       end)
 
+    # Now get the part attempts with user
     from([snapshot: s, part_attempt: part_attempt] in core,
       join: user in User,
       on: s.user_id == user.id,
@@ -435,6 +459,7 @@ defmodule Oli.Delivery.Attempts.Core do
     )
     |> Repo.all()
     |> Enum.map(fn %{user: user, part_attempt: part_attempt} ->
+      # Wire in the activity attempt to each part attempt
       %{
         user: user,
         part_attempt:
