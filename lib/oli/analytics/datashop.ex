@@ -54,6 +54,9 @@ defmodule Oli.Analytics.Datashop do
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
     dataset_name = Utils.make_dataset_name(project.slug)
 
+    # Fetch context information such as hierarchy revisions, skill titles,
+    # registered activity slugs ahead of time and place them into the context
+
     # a map of resource ids to published revision
     hierarchy_map =
       Publishing.get_published_resources_by_publication(publication.id)
