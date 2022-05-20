@@ -1,7 +1,11 @@
 # Changelog
 
 ## Unreleased
+
 ### Bug Fixes
+
+- Improve performance of DataShop export
+
 ### Enhancements
 
 ## 0.19.3 (2022-05-17)

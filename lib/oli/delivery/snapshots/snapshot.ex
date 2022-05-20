@@ -43,7 +43,7 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
     field(:score, :float)
     field(:out_of, :float)
 
-    # Count of the number of hints received and the content of all hints
+    # Count of the number of hints received
     field(:hints, :integer)
 
     timestamps(type: :utc_datetime)
