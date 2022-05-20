@@ -82,7 +82,6 @@ export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =
   if (!conditionValue || !inputValue) {
     return false;
   }
-
   // the condition should always be an array, if it's a single value, it should be wrapped in an array
   const conditionArray = parseArray(conditionValue);
   if (looksLikeAnArray(inputValue)) {
