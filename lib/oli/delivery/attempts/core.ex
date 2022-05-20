@@ -351,9 +351,8 @@ defmodule Oli.Delivery.Attempts.Core do
   end
 
   def get_part_attempts_and_users(project_id) do
-    Repo.all(
-      from(
-        project in Project,
+    core =
+      from project in Project,
         join: spp in SectionsProjectsPublications,
         on: spp.project_id == project.id,
         join: section in Section,
@@ -361,35 +360,91 @@ defmodule Oli.Delivery.Attempts.Core do
         join: project_resource in ProjectResource,
         on: project_resource.project_id == ^project_id,
         join: snapshot in Snapshot,
+        as: :snapshot,
         on:
           snapshot.section_id == section.id and
             snapshot.resource_id == project_resource.resource_id,
         join: part_attempt in PartAttempt,
+        as: :part_attempt,
         on: snapshot.part_attempt_id == part_attempt.id,
-        join: user in User,
-        on: snapshot.user_id == user.id,
-        join: activity_attempt in ActivityAttempt,
-        on: part_attempt.activity_attempt_id == activity_attempt.id,
-        join: resource_attempt in ResourceAttempt,
-        on: activity_attempt.resource_attempt_id == resource_attempt.id,
-        join: activity_revision in Revision,
-        on: activity_attempt.revision_id == activity_revision.id,
-
-        # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
-            part_attempt.lifecycle_state == :evaluated,
-        select: %{
-          part_attempt: part_attempt,
-          user_email: user.email,
-          user_sub: user.sub,
-          activity_slug: activity_revision.slug,
-          hints_available: snapshot.hints_available,
-          activity_objectives: activity_revision.objectives,
-          resource_attempt_inserted_at: resource_attempt.inserted_id
-        }
+            part_attempt.lifecycle_state == :evaluated
+
+    resource_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        join: r in Revision,
+        on: ra.revision_id == r.id,
+        distinct: true,
+        select: r
       )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    resource_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        distinct: true,
+        select: ra
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        r = Map.put(r, :revision, Map.get(resource_attempt_revisions, r.revision_id))
+        Map.put(m, r.id, r)
+      end)
+
+    activity_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: r in Revision,
+        on: a.revision_id == r.id,
+        distinct: true,
+        select: r
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    activity_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        distinct: true,
+        select: a
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        r =
+          Map.put(r, :resource_attempt, Map.get(resource_attempts, r.resource_attempt_id))
+          |> Map.put(:revision, Map.get(activity_attempt_revisions, r.revision_id))
+
+        Map.put(m, r.id, r)
+      end)
+
+    from([snapshot: s, part_attempt: part_attempt] in core,
+      join: user in User,
+      on: s.user_id == user.id,
+      select: %{part_attempt: part_attempt, user: user}
     )
+    |> Repo.all()
+    |> Enum.map(fn %{user: user, part_attempt: part_attempt} ->
+      %{
+        user: user,
+        part_attempt:
+          Map.put(
+            part_attempt,
+            :activity_attempt,
+            Map.get(activity_attempts, part_attempt.activity_attempt_id)
+          )
+      }
+    end)
   end
 
   def has_any_active_attempts?(resource_attempts) do

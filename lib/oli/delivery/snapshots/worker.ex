@@ -6,7 +6,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Publishing.DeliveryResolver
   alias Oli.Resources.Revision
-  alias Oli.Delivery.Attempts.Core
 
   alias Oli.Delivery.Attempts.Core.{
     PartAttempt,
@@ -107,11 +106,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
 
     hints_taken_count = length(part_attempt.hints)
 
-    hints_content =
-      Core.select_model(activity_attempt)["authoring"]["parts"]
-      |> Enum.find(%{}, &(&1["id"] == part_attempt.part_id))
-      |> safely_get_hints()
-
     %{
       resource_id: resource_access.resource_id,
       user_id: resource_access.user_id,
@@ -127,7 +121,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
       score: part_attempt.score,
       out_of: part_attempt.out_of,
       hints: hints_taken_count,
-      hints_content: hints_content,
       part_attempt_number: part_attempt.attempt_number,
       part_attempt_id: part_attempt.id,
       objective_id: objective_id,
@@ -135,14 +128,5 @@ defmodule Oli.Delivery.Snapshots.Worker do
       inserted_at: now,
       updated_at: now
     }
-  end
-
-  def safely_get_hints(part) do
-    try do
-      part
-      |> Map.get("hints")
-    rescue
-      _e -> []
-    end
   end
 end
