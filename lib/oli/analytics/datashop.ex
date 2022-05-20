@@ -64,6 +64,10 @@ defmodule Oli.Analytics.Datashop do
       Oli.Activities.list_activity_registrations()
       |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
 
+    skill_titles =
+      Oli.Publishing.get_published_objective_details(publication.id)
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a.title) end)
+
     Attempts.get_part_attempts_and_users(project.id)
     |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, sub, activity_slug, part_id}, part_attempts} ->
@@ -80,8 +84,7 @@ defmodule Oli.Analytics.Datashop do
         project: Oli.Authoring.Course.get_project!(publication.project_id),
         hierarchy_map: hierarchy_map,
         activity_types: activity_types,
-        resource_attempt_resource_id:
-          hd(part_attempts).activity_attempt.resource_attempt.revision.resource_id
+        skill_titles: skill_titles
       }
 
       [

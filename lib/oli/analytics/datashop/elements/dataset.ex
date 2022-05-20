@@ -12,7 +12,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   """
   import XmlBuilder
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Authoring.Course
   require Logger
 
   def setup(
@@ -29,15 +28,14 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   defp create_problem_hierarchy(
          %{
            part_attempt: part_attempt,
-           problem_name: problem_name,
-           resource_attempt_resource_id: resource_attempt_resource_id
+           problem_name: problem_name
          } = context
        ) do
     case assemble_from_hierarchy_path(
            Map.put(
              context,
              :target,
-             resource_attempt_resource_id
+             part_attempt.activity_attempt.resource_attempt.revision.resource_id
            )
          ) do
       [] ->
