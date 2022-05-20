@@ -126,9 +126,7 @@ defmodule Oli.Analytics.Datashop do
 
   defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
     Enum.reduce(part_attempts_and_users, %{}, fn r, m ->
-      key =
-        {r.user.email, r.user.sub, r.part_attempt.activity_attempt.revision.slug,
-         r.part_attempt.part_id}
+      key = safely_build_key(r)
 
       case Map.get(m, key) do
         nil -> Map.put(m, key, [r.part_attempt])
@@ -137,6 +135,23 @@ defmodule Oli.Analytics.Datashop do
     end)
     |> Enum.reduce(%{}, fn {k, v}, m -> Map.put(m, k, Enum.reverse(v)) end)
     |> Enum.map(fn {k, v} -> {k, v} end)
+  end
+
+  defp safely_build_key(r) do
+    [
+      r.user.email,
+      r.user.sub,
+      r.part_attempt.activity_attempt.revision.slug,
+      r.part_attempt.part_id
+    ]
+    |> Enum.map(fn k ->
+      if is_nil(k) do
+        ""
+      else
+        k
+      end
+    end)
+    |> List.to_tuple()
   end
 
   # Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
