@@ -37,7 +37,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
     |> String.replace_suffix(":00", "")
   end
 
-  defp create_gating_condition(view, type, start_date, end_date) do
+  defp create_gating_condition_through_ui(view, type, start_date, end_date) do
     view
     |> element("button[phx-click=\"show-resource-picker\"]")
     |> render_click()
@@ -380,7 +380,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_new_route(section.slug)
         )
 
-      create_gating_condition(view, "schedule", "2022-01-12T13:48", "2022-01-10T13:48")
+      create_gating_condition_through_ui(view, "schedule", "2022-01-12T13:48", "2022-01-10T13:48")
 
       assert view
              |> element("div.alert.alert-danger")
@@ -401,7 +401,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert html =~
                "Your local timezone is not set in the browser. #{section.timezone} (section timezone) is used by default."
 
-      create_gating_condition(view, "schedule", "2022-01-12T13:48", "2022-01-13T13:48")
+      create_gating_condition_through_ui(view, "schedule", "2022-01-12T13:48", "2022-01-13T13:48")
 
       flash =
         assert_redirected(
@@ -426,7 +426,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       input_start_date = "2022-01-12T13:48"
       input_end_date = "2022-01-13T13:48"
 
-      create_gating_condition(view, "schedule", input_start_date, input_end_date)
+      create_gating_condition_through_ui(view, "schedule", input_start_date, input_end_date)
 
       created_gating_condition =
         Repo.one(
@@ -464,7 +464,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       input_start_date = "2022-01-12T13:48"
       input_end_date = "2022-01-13T13:48"
 
-      create_gating_condition(view, "schedule", input_start_date, input_end_date)
+      create_gating_condition_through_ui(view, "schedule", input_start_date, input_end_date)
 
       created_gating_condition =
         Repo.one(
