@@ -17,7 +17,7 @@ defmodule Oli.Analytics.Datashop.Elements.Skills do
   end
 
   defp make_skill_element(skill_titles, skill_id) do
-    case Map.get(skill_titles.id, skill_id) do
+    case Map.get(skill_titles, skill_id) do
       nil ->
         Logger.error("Error finding objective with resource id #{skill_id}")
 
