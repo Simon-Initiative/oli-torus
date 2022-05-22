@@ -1,10 +1,10 @@
 defmodule OliWeb.Products.Details.Content do
   use Surface.Component
-  alias Surface.Components.Link
-  alias OliWeb.Router.Helpers, as: Routes
 
   import Ecto.Changeset
-  alias Surface.Components.Form
+
+  alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.{Form, Link}
   alias Surface.Components.Form.{
     Field,
     Label,
@@ -14,7 +14,6 @@ defmodule OliWeb.Products.Details.Content do
   prop product, :any, required: true
   prop updates, :any, required: true
   prop changeset, :any, default: nil
-  prop button_text, :string, default: "Save"
   prop save, :event, required: true
 
   def render(assigns) do
@@ -52,7 +51,7 @@ defmodule OliWeb.Products.Details.Content do
           </p>
       </div>
 
-      <div class="row my-4">
+      <div class="row my-4" id="content-form">
         <div class="col-12">
           <Form for={@changeset} change={@save} class="d-flex">
             <div class="form-group">
@@ -62,7 +61,7 @@ defmodule OliWeb.Products.Details.Content do
                     <Checkbox class="custom-control-input" value={get_field(@changeset, :display_curriculum_item_numbering)}/>
                     <Label class="custom-control-label">Display curriculum item numbers</Label>
                     <p class="text-muted">Enable students to see the curriculum's module and unit numbers</p>
-                    </Field>
+                  </Field>
                 </div>
               </div>
             </div>

@@ -4,6 +4,7 @@ defmodule OliWeb.ProductsLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+
   alias Oli.Delivery.Sections
 
   defp live_view_details_route(product_slug) do
@@ -26,9 +27,11 @@ defmodule OliWeb.ProductsLiveTest do
         |> element("#section_display_curriculum_item_numbering")
         |> render() =~ "checked"
 
-      render_hook(view, "save", %{
-        "section" => %{"display_curriculum_item_numbering" => "false"}
-      })
+      view
+        |> element("#content-form form[phx-change=\"save\"")
+        |> render_change(%{
+          "section" => %{"display_curriculum_item_numbering" => "false"}
+        })
 
       updated_section = Sections.get_section!(product.id)
       refute updated_section.display_curriculum_item_numbering

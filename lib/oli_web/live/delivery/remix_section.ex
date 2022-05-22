@@ -25,7 +25,6 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
-  alias Oli.Delivery.Sections.Section
 
   def set_breadcrumbs(type, section) do
     type
@@ -180,7 +179,6 @@ defmodule OliWeb.Delivery.RemixSection do
      assign(socket,
        title: "Customize Content",
        section: section,
-       changeset: Section.changeset(section, %{}),
        pinned_project_publications: pinned_project_publications,
        previous_hierarchy: hierarchy,
        hierarchy: hierarchy,

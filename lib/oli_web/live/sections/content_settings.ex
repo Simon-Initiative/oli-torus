@@ -1,17 +1,17 @@
 defmodule OliWeb.Sections.ContentSettings do
   use Surface.Component
 
+  import Ecto.Changeset
+
   alias Surface.Components.Form.{
     Field,
     Label,
     Checkbox,
+    Submit
   }
-
-  alias OliWeb.Common.Properties.{Group}
-  import Ecto.Changeset
+  alias OliWeb.Common.Properties.Group
 
   prop changeset, :any, required: true
-  prop save, :string, default: "save"
 
   def render(assigns) do
     ~F"""
@@ -21,7 +21,7 @@ defmodule OliWeb.Sections.ContentSettings do
           <Label class="form-check-label">Display curriculum item numbers</Label>
         </Field>
       <div class="text-muted">Enable students to see the curriculum's module and unit numbers</div>
-      <button class="btn btn-primary mt-3" type="submit">Save</button>
+      <Submit class="btn btn-primary mt-3" label="Save"/>
     </Group>
     """
   end

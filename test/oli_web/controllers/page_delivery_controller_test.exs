@@ -2,6 +2,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
   import Mox
+  import Oli.Factory
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
@@ -593,7 +594,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project,
       publication: publication
     } do
-      user = user_fixture()
+      user = insert(:user)
 
       section = open_and_free_section(project, %{display_curriculum_item_numbering: false})
 
@@ -621,7 +622,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       project: project,
       publication: publication
     } do
-      user = user_fixture()
+      user = insert(:user)
 
       section = open_and_free_section(project, %{display_curriculum_item_numbering: true})
 
