@@ -355,6 +355,19 @@ defmodule Oli.SectionsTest do
       assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
+
+    test "get_existing_slugs/1 returns an empty list when passing no slugs" do
+      assert Sections.get_existing_slugs([]) == []
+    end
+
+    test "get_existing_slugs/1 returns the existing slugs from the input list" do
+      slugs =
+        insert_pair(:section_resource)
+        |> Enum.map(& &1.slug)
+        |> Enum.sort()
+
+      assert Sections.get_existing_slugs(["another_slug" | slugs]) |> Enum.sort() == slugs
+    end
   end
 
   describe "section updates" do
@@ -839,7 +852,8 @@ defmodule Oli.SectionsTest do
           destination_index
         )
 
-      hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
+      hierarchy =
+        Hierarchy.find_and_update_node(hierarchy, updated)
         |> Hierarchy.finalize()
 
       project_publications = Sections.get_pinned_project_publications(section.id)

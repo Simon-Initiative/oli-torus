@@ -589,15 +589,22 @@ defmodule Oli.Publishing do
       when is_list(publication_ids) do
     preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
 
-    from(pr in PublishedResource,
-      where: pr.publication_id in ^publication_ids,
-      preload: ^preload
-    )
+    PublishedResource
+    |> where([pr], pr.publication_id in ^publication_ids)
+    |> maybe_preload(preload)
     |> Repo.all()
   end
 
   def get_published_resources_by_publication(publication_id, opts) do
     get_published_resources_by_publication([publication_id], opts)
+  end
+
+  defp maybe_preload(query, preload) do
+    Enum.reduce(preload, query, fn rel_table, acc_query ->
+      acc_query
+      |> join(:left, [pr, ...], rel in assoc(pr, ^rel_table))
+      |> preload([pr, ..., rel], [{^rel_table, rel}])
+    end)
   end
 
   @doc """
