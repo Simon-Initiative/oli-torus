@@ -259,19 +259,31 @@ defmodule OliWeb.AdminLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
-      _user_1 = insert(:user, %{given_name: "Testing A"})
-      user_2 = insert(:user, %{given_name: "Testing B"})
+      _user_a = insert(:user, %{given_name: "Testing A", email: "eeee@example.com"})
+      user_b = insert(:user, %{given_name: "Testing B", email: "tttt@example.com"})
+      user_c = insert(:user, %{given_name: "Testing C", email: "cccc@example.com"})
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
+      # Sort by email asc
       view
       |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
-      |> render_click(%{sort_by: "name"})
+      |> render_click(%{sort_by: "email"})
 
       assert view
-             |> element("tr:first-child > td:first-child > div")
-             |> render() =~
-               user_2.given_name
+      |> element("tr:first-child > td:first-child > div")
+      |> render() =~
+        user_c.given_name
+
+      # Sort by email desc
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> render_click(%{sort_by: "email"})
+
+      assert view
+      |> element("tr:first-child > td:first-child > div")
+      |> render() =~
+        user_b.given_name
     end
 
     test "applies paging", %{conn: conn} do
