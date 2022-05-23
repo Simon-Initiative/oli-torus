@@ -96,6 +96,13 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       assert MapSet.size(duped) == MapSet.size(original)
     end
 
+    test "list/0 lists all the active products" do
+      active_product_id = insert(:section).id
+      insert(:section, status: :deleted)
+
+      assert [%Sections.Section{id: ^active_product_id}] = Blueprint.list()
+    end
+
     def get_resources(id) do
       query =
         from(

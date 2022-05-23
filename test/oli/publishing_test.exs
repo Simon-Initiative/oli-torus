@@ -740,5 +740,15 @@ defmodule Oli.PublishingTest do
       assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
                Publishing.retrieve_visible_sources(user, institution)
     end
+
+    test "retrieve_visible_sources/2 does not return deleted products/projects" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, status: :deleted)
+      insert(:publication, %{project: project})
+      insert(:section, %{base_project: project, status: :deleted})
+
+      assert [] == Publishing.retrieve_visible_sources(user, institution)
+    end
   end
 end
