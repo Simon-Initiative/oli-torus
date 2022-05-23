@@ -259,9 +259,8 @@ defmodule OliWeb.AdminLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
-      _user_a = insert(:user, %{given_name: "Testing A", email: "eeee@example.com"})
-      user_b = insert(:user, %{given_name: "Testing B", email: "tttt@example.com"})
-      user_c = insert(:user, %{given_name: "Testing C", email: "cccc@example.com"})
+      user_a = insert(:user, %{given_name: "Testing A", email: "tttt@example.com"})
+      user_b = insert(:user, %{given_name: "Testing B", email: "bbbb@example.com"})
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
@@ -273,7 +272,7 @@ defmodule OliWeb.AdminLiveTest do
       assert view
       |> element("tr:first-child > td:first-child > div")
       |> render() =~
-        user_c.given_name
+        user_b.given_name
 
       # Sort by email desc
       view
@@ -283,7 +282,7 @@ defmodule OliWeb.AdminLiveTest do
       assert view
       |> element("tr:first-child > td:first-child > div")
       |> render() =~
-        user_b.given_name
+        user_a.given_name
     end
 
     test "applies paging", %{conn: conn} do
