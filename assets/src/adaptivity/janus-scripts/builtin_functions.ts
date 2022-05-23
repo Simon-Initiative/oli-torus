@@ -13,7 +13,7 @@ export const janus_std = `
     let log = fn(value) { return number(Math.evaluate("log(" + string(value) + ")")); };
     let pow = fn(x, y) { return number(Math.evaluate("pow(" + string(x) + ", " + string(y) + ")")); };
     let sqrt = fn(value) { return number(Math.evaluate("sqrt(" + string(value) + ")")); };
-    let round = fn(value) { return number(Math.evaluate("round(" + string(value) + ")")); };
+    let round = fn(value,decimal) { if(decimal==undefined){ let decimal = 0;} return number(Math.evaluate("round(" + string(value) + ","+string(decimal)+")")); };
     let roundSF = fn(value, precision) { return Math.evaluate("format(" + string(value) + ", {notation: 'exponential', precision: " + string(precision) + "})"); };
     let det = fn(matrix) { return number(Math.evaluate("det(" + string(matrix) + ").toString()")); };
     let inv = fn(matrix) {
