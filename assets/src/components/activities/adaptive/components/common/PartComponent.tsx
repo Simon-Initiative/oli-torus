@@ -194,7 +194,7 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       const handler = wcEvents[e.type];
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
-        console.log(`${e.type} event handled [PC : ${props.id}]`, e);
+        // console.log(`${e.type} event handled [PC : ${props.id}]`, e);
         try {
           const result = await handler(payload);
           if (e.type === 'resize') {
