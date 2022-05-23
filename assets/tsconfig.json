@@ -2,7 +2,7 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "lib": ["es2019", "DOM"],
-    "module": "ES2022",
+    "module": "es2020",
     "target": "es6",
     "jsx": "preserve",
     "moduleResolution": "node",
@@ -19,22 +19,11 @@
     "outDir": "./dev",
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "src/*"
-      ]
+      "*": ["src/*"]
     },
-    "types": [
-      "node",
-      "jest",
-      "jquery"
-    ],
+    "types": ["node", "jest", "jquery"],
     "esModuleInterop": true
   },
-  "include": [
-    "src/**/*",
-    "test/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules"]
 }
