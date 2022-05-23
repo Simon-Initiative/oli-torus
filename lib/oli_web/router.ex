@@ -222,6 +222,13 @@ defmodule OliWeb.Router do
     pow_assent_authorization_post_callback_routes()
   end
 
+  scope "/", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    # keep a session active by periodically calling this endpoint
+    get("/keep-alive", StaticPageController, :keep_alive)
+  end
+
   # scope "/" do
   #   pipe_through([:delivery, :skip_csrf_protection])
   #   post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
@@ -294,6 +301,9 @@ defmodule OliWeb.Router do
   scope "/authoring", OliWeb do
     pipe_through([:browser, :authoring_protected, :workspace, :authoring])
 
+    # keep a session active by periodically calling this endpoint
+    get("/keep-alive", StaticPageController, :keep_alive, as: :author_keep_alive)
+
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
     live("/products/:product_id/payments", Products.PaymentsView)
@@ -305,9 +315,6 @@ defmodule OliWeb.Router do
     live("/account", Workspace.AccountDetailsLive)
 
     put("/account", WorkspaceController, :update_author)
-
-    # keep a session active by periodically calling this endpoint
-    get("/keep-alive", StaticPageController, :keep_alive)
 
     scope "/communities" do
       pipe_through([:community_admin])
