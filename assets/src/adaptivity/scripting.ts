@@ -582,14 +582,13 @@ export const templatizeText = (
         strValue = stateValue.map((v) => `"${v}"`).join(', ');
       } else if (typeof stateValue === 'object') {
         strValue = JSON.stringify(stateValue);
+      } else if (typeof stateValue === 'number') {
+        strValue = parseFloat(parseFloat(strValue).toFixed(4));
       }
     } else {
       if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
         strValue = JSON.stringify(stateValue);
       }
-    }
-    if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toFixed(4));
     }
     return strValue;
   });
