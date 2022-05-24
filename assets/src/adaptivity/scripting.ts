@@ -588,6 +588,9 @@ export const templatizeText = (
         strValue = JSON.stringify(stateValue);
       }
     }
+    if (typeof stateValue === 'number') {
+      strValue = parseFloat(parseFloat(strValue).toFixed(4));
+    }
     return strValue;
   });
 
