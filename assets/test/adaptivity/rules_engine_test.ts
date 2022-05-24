@@ -475,6 +475,8 @@ describe('Operators', () => {
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('1', '[11,12]')).toEqual(false);
+      expect(containsAnyOfOperator('11', '[11,12]')).toEqual(true);
     });
   });
 
