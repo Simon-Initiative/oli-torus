@@ -99,7 +99,7 @@ defmodule Oli.Factory do
   def project_factory() do
     %Project{
       description: "Example description",
-      title: "Example Course",
+      title: sequence("Example Course"),
       slug: sequence("examplecourse"),
       version: "1",
       family: insert(:family),
