@@ -486,6 +486,26 @@ defmodule Oli.PublishingTest do
       assert Publishing.available_publications(author3, institution) |> length == 2
       assert Publishing.available_publications(author2, institution) |> length == 2
     end
+
+    test "get_published_resources_by_publication/2 returns all the published resources of a given publication",
+         %{publication: publication} do
+      # mappings should be retained in the original published publication
+      mappings = Publishing.get_published_resources_by_publication(publication.id)
+
+      assert Enum.count(mappings) == 3
+      assert Enum.all?(mappings, &(&1.publication.id == publication.id))
+    end
+
+    test "get_published_resources_by_publication/2 only preloads the given assocations",
+         %{publication: publication} do
+      # mappings should be retained in the original published publication
+      mappings =
+        Publishing.get_published_resources_by_publication(publication.id, preload: [:resource])
+
+      assert Enum.all?(mappings, &Ecto.assoc_loaded?(&1.resource))
+      refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.publication))
+      refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.revision))
+    end
   end
 
   describe "publishing retrieve visible publications" do

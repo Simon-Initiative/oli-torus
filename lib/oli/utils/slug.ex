@@ -102,20 +102,14 @@ defmodule Oli.Utils.Slug do
   Generates a unique slug for the table using the title provided
   """
   def generate(table, title) do
-    suffixes = [
-      fn -> "" end,
-      fn -> str(5) end,
-      fn -> str(5) end,
-      fn -> str(5) end,
-      fn -> str(5) end,
-      fn -> str(10) end,
-      fn -> str(10) end,
-      fn -> str(10) end,
-      fn -> str(10) end,
-      fn -> str(10) end
-    ]
+    unique_slug(table, slugify(title), 0, 10)
+  end
 
-    unique_slug(table, slugify(title), suffixes)
+  @doc """
+  Given a title and an attempt number, generates a slug candidate that might not be unique.
+  """
+  def generate_nth(title, n) do
+    slugify(title) <> suffix(n)
   end
 
   def str(length) do
@@ -144,19 +138,16 @@ defmodule Oli.Utils.Slug do
     _unique_slug_helper(table, generate_candidate, 0)
   end
 
-  defp unique_slug(_table, "", _suffixes), do: ""
+  defp unique_slug(_table, "", _attempt, _max_attempts), do: ""
+  defp unique_slug(_table, _title, attempt, max_attempts) when attempt == max_attempts, do: ""
 
-  defp unique_slug(table, title, [suffix | remaining]) do
-    candidate = title <> suffix.()
+  defp unique_slug(table, title, attempt, max_attempts) do
+    candidate = title <> suffix(attempt)
 
     case check_unique_slug(table, candidate) do
       {:ok, slug} -> slug
-      :error -> unique_slug(table, title, remaining)
+      :error -> unique_slug(table, title, attempt + 1, max_attempts)
     end
-  end
-
-  defp unique_slug(_table, _, []) do
-    ""
   end
 
   defp _unique_slug_helper(table, generate_candidate, count) do
@@ -187,4 +178,8 @@ defmodule Oli.Utils.Slug do
   def alpha_numeric_only(str) do
     String.replace(str, ~r/[^A-Za-z0-9_]+/, "")
   end
+
+  defp suffix(0), do: ""
+  defp suffix(n) when n < 5, do: str(5)
+  defp suffix(_), do: str(10)
 end

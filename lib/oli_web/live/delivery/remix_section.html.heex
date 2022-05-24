@@ -28,7 +28,7 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {node, index} <- build_entries(@active.children, assigns, @dragging) do %>
+        <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
               index={index}
