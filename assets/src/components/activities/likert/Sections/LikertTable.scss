@@ -1,0 +1,22 @@
+.likertTable {
+  border: 1px solid black;
+}
+
+.likertTable th {
+  border: 1px solid black;
+  background: #b8c7cc;
+  padding: 0.8em;
+}
+
+.likertTable th p {
+  text-align: center;
+}
+
+.likertTable tbody tr:nth-child(even) {
+  background: #e6edf2;
+}
+
+.likertTable td {
+  border: 1px solid black;
+  padding: 0.8em;
+}

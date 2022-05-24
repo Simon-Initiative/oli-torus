@@ -21,7 +21,7 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Delivery.Hierarchy
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Delivery.Remix.{RemoveModal, AddMaterialsModal}
-  alias OliWeb.Common.Hierarchy.{HierarchyPicker, MoveModal}
+  alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
@@ -636,9 +636,9 @@ defmodule OliWeb.Delivery.RemixSection do
     previous.slug
   end
 
-  defp build_entries(items, assigns, selected) do
-    HierarchyPicker.sort_items(items, assigns)
+  defp filter_items(children, dragging) do
+    children
     |> Enum.with_index()
-    |> Enum.filter(fn {c, _i} -> c.uuid != selected end)
+    |> Enum.filter(fn {c, _i} -> c.uuid != dragging end)
   end
 end

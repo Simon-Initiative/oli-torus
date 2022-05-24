@@ -143,14 +143,14 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
     end
 
-    test "remix section items order is equal to shown in add materials", %{
+    test "remix section items and add materials items are ordered correctly", %{
       conn: conn,
       admin: admin,
       map: %{
         oaf_section_1: oaf_section_1,
         unit1_container: unit1_container,
         latest1: latest1,
-        latest2: latest2,
+        latest2: latest2
       }
     } do
       conn =
@@ -159,10 +159,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       {:ok, view, _html} = live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug))
 
-      # finding by two because we have a droptarget component between each entry
       assert view
         |> element(".curriculum-entries > div:nth-child(2)")
-        |> render() =~ "#{unit1_container.revision.title}"
+        |> render() =~ "#{latest1.title}"
 
       assert view
         |> element(".curriculum-entries > div:nth-child(4)")
@@ -170,9 +169,9 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
         |> element(".curriculum-entries > div:nth-child(6)")
-        |> render() =~ "#{latest1.title}"
+        |> render() =~ "#{unit1_container.revision.title}"
 
-      # click add materials and assert is listing in same order
+      # click add materials and assert is listing units first
       view
       |> element("button[phx-click=\"show_add_materials_modal\"]")
       |> render_click()
@@ -187,11 +186,11 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert view
         |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
-        |> render() =~ "#{latest2.title}"
+        |> render() =~ "#{latest1.title}"
 
       assert view
         |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
-        |> render() =~ "#{latest1.title}"
+        |> render() =~ "#{latest2.title}"
     end
   end
 

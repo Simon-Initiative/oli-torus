@@ -2,6 +2,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   use OliWeb.ConnCase
 
   import Mox
+  import Oli.Factory
 
   alias Oli.Delivery.Sections
   alias Oli.Seeder
@@ -582,6 +583,65 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Course Overview"
+    end
+  end
+
+  describe "displaying unit numbers" do
+    setup [:base_project_with_curriculum]
+
+    test "does not display unit numbers if setting is set to false", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      user = insert(:user)
+
+      section = open_and_free_section(project, %{display_curriculum_item_numbering: false})
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      response = html_response(conn, 200)
+
+      refute response =~ "Unit 1:"
+      assert response =~ "Unit: The first unit"
+    end
+
+    test "does display unit numbers if setting is set to true", %{
+      conn: conn,
+      project: project,
+      publication: publication
+    } do
+      user = insert(:user)
+
+      section = open_and_free_section(project, %{display_curriculum_item_numbering: true})
+
+      {:ok, section} = Sections.create_section_resources(section, publication)
+
+      enroll_user_to_section(user, section, :context_learner)
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Unit 1: The first unit"
     end
   end
 

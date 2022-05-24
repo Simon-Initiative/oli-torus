@@ -45,6 +45,7 @@ defmodule OliWeb.PageDeliveryController do
               description: section.description,
               section_slug: section_slug,
               hierarchy: hierarchy,
+              display_curriculum_item_numbering: section.display_curriculum_item_numbering,
               preview_mode: true,
               page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
               container_link_url:
@@ -79,6 +80,7 @@ defmodule OliWeb.PageDeliveryController do
             description: section.description,
             section_slug: section_slug,
             hierarchy: hierarchy,
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
             preview_mode: false,
             page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
             container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1)
@@ -154,7 +156,8 @@ defmodule OliWeb.PageDeliveryController do
             container_link_url: container_link_url,
             active_page: nil,
             revision: revision,
-            resource_slug: revision.slug
+            resource_slug: revision.slug,
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering
           )
 
         # Any attempt to render a valid revision that is not container or page gets an error
@@ -298,7 +301,8 @@ defmodule OliWeb.PageDeliveryController do
         page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
         container_link_url:
           &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
-        resource_slug: revision.slug
+        resource_slug: revision.slug,
+        display_curriculum_item_numbering: section.display_curriculum_item_numbering
       }
     )
   end
@@ -429,7 +433,9 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
-        reviewMode: context.review_mode
+        reviewMode: context.review_mode,
+        overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
+        finalizeGradedURL: Routes.page_delivery_path(conn, :finalize_attempt, section.slug, context.page.slug, resource_attempt.attempt_guid)
       },
       activity_type_slug_mapping: %{},
       activity_types: activity_types,

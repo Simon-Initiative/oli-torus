@@ -583,8 +583,7 @@ export const templatizeText = (
       } else if (typeof stateValue === 'object') {
         strValue = JSON.stringify(stateValue);
       } else if (typeof stateValue === 'number') {
-        const modifiedValue = formatNumber(strValue);
-        strValue = parseFloat(modifiedValue.toString());
+        strValue = parseFloat(parseFloat(strValue).toFixed(4));
       }
     } else {
       if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
@@ -598,7 +597,7 @@ export const templatizeText = (
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  // support nested {} like {{variables.foo} * 3}
+  // support nested {}  like {{variables.foo} * 3}
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 

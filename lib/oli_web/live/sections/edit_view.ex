@@ -6,7 +6,7 @@ defmodule OliWeb.Sections.EditView do
   alias OliWeb.Common.Breadcrumb
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Sections.{LtiSettings, MainDetails, Mount, OpenFreeSettings, PaywallSettings}
+  alias OliWeb.Sections.{LtiSettings, MainDetails, Mount, OpenFreeSettings, PaywallSettings, ContentSettings}
   alias Surface.Components.Form
 
   data breadcrumbs, :any
@@ -66,6 +66,7 @@ defmodule OliWeb.Sections.EditView do
           <LtiSettings section={@section}/>
         {/if}
         <PaywallSettings changeset={@changeset} disabled={!can_change_payment?(@section, @is_admin)}/>
+        <ContentSettings changeset={@changeset}/>
       </Groups>
     </Form>
     """
