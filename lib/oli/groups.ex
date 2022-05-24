@@ -8,6 +8,8 @@ defmodule Oli.Groups do
   alias Ecto.Multi
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.Section
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions
   alias Oli.Institutions.Institution
@@ -508,8 +510,10 @@ defmodule Oli.Groups do
       on: associated_communities.id == community.id,
       join: community_visibility in CommunityVisibility,
       on: community_visibility.community_id == community.id,
-      left_join: project in assoc(community_visibility, :project),
-      left_join: section in assoc(community_visibility, :section),
+      left_join: project in Project,
+      on: project.id == community_visibility.project_id and project.status == :active,
+      left_join: section in Section,
+      on: section.id == community_visibility.section_id and section.status == :active,
       join: last_publication in subquery(Publishing.last_publication_query()),
       on:
         last_publication.project_id == project.id or
