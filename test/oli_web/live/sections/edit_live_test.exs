@@ -141,5 +141,27 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> render() =~
                "#{brand.name}"
     end
+
+    test "save event updates curriculum numbering visibility", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+      assert section.display_curriculum_item_numbering
+
+      assert view
+             |> element("#section_display_curriculum_item_numbering")
+             |> render() =~ "checked"
+
+      view
+        |> element("form[phx-submit=\"save\"")
+        |> render_submit(%{
+          "section" => %{"display_curriculum_item_numbering" => "false"}
+        })
+
+      updated_section = Sections.get_section!(section.id)
+      refute updated_section.display_curriculum_item_numbering
+
+      refute view
+             |> element("#section_display_curriculum_item_numbering")
+             |> render() =~ "checked"
+    end
   end
 end

@@ -182,6 +182,24 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       ) {
         modifiedValue = `[${ogValue}]`;
       }
+
+      if (
+        condition?.type === CapiVariableTypes.ARRAY &&
+        (condition?.operator === 'containsAnyOf' || condition?.operator === 'notContainsAnyOf')
+      ) {
+        const targetValue = getValue(condition.fact, env);
+        if (targetValue.charAt(0) !== '[' && targetValue.slice(-1) !== ']') {
+          const modifiedTargetValue = `[${targetValue}]`;
+          const updateAttempt = [
+            {
+              target: `${condition.fact}`,
+              operator: '=',
+              value: modifiedTargetValue,
+            },
+          ];
+          bulkApplyState(updateAttempt, env);
+        }
+      }
       condition.value = modifiedValue;
     });
   });

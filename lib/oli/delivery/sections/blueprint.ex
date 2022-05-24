@@ -330,7 +330,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
     query =
       from(
         s in Section,
-        where: s.type == :blueprint,
+        where: s.type == :blueprint and s.status == :active,
         select: s,
         preload: [:base_project]
       )
