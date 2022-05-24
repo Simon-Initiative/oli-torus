@@ -3,8 +3,8 @@ defmodule Oli.Utils do
 
   import Ecto.Changeset
 
-  @urlRegex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
-  @emailRegex ~r/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/
+  @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
+  @email_regex ~r/^[\w-\.]+@([\w-]+\.)+[\w-]+$/
 
   @doc """
   Generates a random hex string of the given length
@@ -294,7 +294,7 @@ defmodule Oli.Utils do
   Detects all urls in a string and replaces them with hyperlinks.
   """
   def find_and_linkify_urls_in_string(string) do
-    Regex.replace(@urlRegex, string, fn _, url ->
+    Regex.replace(@url_regex, string, fn _, url ->
       absolute_url =
         if is_url_absolute(url) do
           url
@@ -309,5 +309,5 @@ defmodule Oli.Utils do
   @doc """
   Returns email regex
   """
-  def email_regex, do: @emailRegex
+  def email_regex, do: @email_regex
 end

@@ -435,7 +435,7 @@ defmodule Oli.Factory do
   def publisher_factory() do
     %Publisher{
       name: sequence("Publisher"),
-      email: "#{sequence("publisher")}@example.edu",
+      email: "#{sequence("publisher")}@example.education",
       address: "Publisher Address",
       main_contact: "Publisher Contact",
       website_url: "mypublisher.com",
