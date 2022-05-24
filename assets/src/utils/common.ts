@@ -56,8 +56,7 @@ export const parseBoolean = (input: string | boolean | number): boolean =>
 export const isStringArray = (s: unknown): boolean =>
   typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';
 
-export const looksLikeAnArray = (val: unknown): boolean =>
-  Array.isArray(val) || (isStringArray(val) && isString(val));
+export const looksLikeAnArray = (val: unknown): boolean => Array.isArray(val) || isStringArray(val);
 
 // this function is needed because of getting some values like
 // [some, thing, silly] vs ["some", "thing", "silly"]
