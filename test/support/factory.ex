@@ -2,7 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.{Author, User}
-  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
+  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Gating.GatingCondition
@@ -270,6 +270,13 @@ defmodule Oli.Factory do
 
   def resource_factory() do
     %Resource{}
+  end
+
+  def project_resource_factory() do
+    %ProjectResource{
+      project_id: insert(:project).id,
+      resource_id: insert(:resource).id
+    }
   end
 
   def gating_condition_factory() do
