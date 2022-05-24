@@ -114,7 +114,6 @@ const evaluateValueExpression = (value: string, env: Environment) => {
 };
 
 const processRules = (rules: JanusRuleProperties[], env: Environment) => {
-  const modifiedFacts: Record<string, any> = {};
   rules.forEach((rule, index) => {
     // tweak priority to match order
     rule.priority = index + 1;
@@ -185,8 +184,8 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
       }
 
       if (
-        (condition?.type === CapiVariableTypes.ARRAY && condition?.operator === 'containsAnyOf') ||
-        condition?.operator === 'notContainsAnyOf'
+        condition?.type === CapiVariableTypes.ARRAY &&
+        (condition?.operator === 'containsAnyOf' || condition?.operator === 'notContainsAnyOf')
       ) {
         const targetValue = getValue(condition.fact, env);
         if (targetValue.charAt(0) !== '[' && targetValue.slice(-1) !== ']') {
@@ -198,11 +197,7 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
               value: modifiedTargetValue,
             },
           ];
-          // doing this to avoid updating the same fact multiple times if it exists in multiple rules
-          if (modifiedFacts[condition.fact] === undefined) {
-            modifiedFacts[`${condition.fact}`] = targetValue;
-            bulkApplyState(updateAttempt, env);
-          }
+          bulkApplyState(updateAttempt, env);
         }
       }
       condition.value = modifiedValue;
