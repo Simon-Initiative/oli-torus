@@ -598,7 +598,7 @@ export const templatizeText = (
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  // support nested {} like {{variables.foo} * 3}
+  // support nested {}  like {{variables.foo} * 3}
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 
