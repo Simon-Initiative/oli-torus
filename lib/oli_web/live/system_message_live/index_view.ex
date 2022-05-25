@@ -5,7 +5,7 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
   alias Oli.Notifications
   alias Oli.Notifications.{PubSub, SystemMessage}
-  alias OliWeb.Common.{Breadcrumb, Confirm}
+  alias OliWeb.Common.{Breadcrumb, Confirm, FormatDateTime}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.SystemMessageLive.EditMessage
   alias Surface.Components.Form
@@ -116,8 +116,16 @@ defmodule OliWeb.SystemMessageLive.IndexView do
     new_message_attrs =
       attrs
       |> Oli.Utils.atomize_keys()
-      |> Map.update(:start, "", &datestring_to_utc_datetime(&1, socket.assigns.local_timezone))
-      |> Map.update(:end, "", &datestring_to_utc_datetime(&1, socket.assigns.local_timezone))
+      |> Map.update(
+        :start,
+        "",
+        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.local_timezone)
+      )
+      |> Map.update(
+        :end,
+        "",
+        &FormatDateTime.datestring_to_utc_datetime(&1, socket.assigns.local_timezone)
+      )
       |> Map.put(:active, active)
       |> Map.put(:id, id)
 
@@ -246,16 +254,6 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
   defp message_displayed?(%{active: active} = attrs) do
     active and message_in_date_range(attrs)
-  end
-
-  defp datestring_to_utc_datetime("", _), do: nil
-
-  defp datestring_to_utc_datetime(date_string, local_tz) do
-    date_string
-    |> Timex.parse!("{ISO:Extended}")
-    |> Timex.to_datetime(local_tz)
-    |> DateTime.shift_zone("Etc/UTC")
-    |> elem(1)
   end
 
   defp show_confirm_modal?(old_system_message, new_system_message) do
