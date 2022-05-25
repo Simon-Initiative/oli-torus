@@ -57,34 +57,28 @@ defmodule Oli.Rendering.Activity.Html do
     sequence_entries = Map.get(first, "children", [])
     Logger.debug("sequence_entries: #{sequence_entries |> Jason.encode!}")
     activity_lineage = get_activity_lineage(activity_id, sequence_entries)
-    Logger.debug("activity_lineage: #{activity_lineage |> Jason.encode!}")
+    Logger.debug("activity_lineage (#{Enum.count(activity_lineage)}): #{activity_lineage |> Jason.encode!}")
     # need to take each item from the lineage, get the model for it, and then
     # merge all partsLayout into the final model
-    activity_model = Enum.reduce(activity_lineage, fn lineage_entry, acc ->
+    activity_model = Enum.reduce(activity_lineage, %{}, fn lineage_entry, acc ->
       lineage_entry_activity_id = Map.get(lineage_entry, "activity_id")
       Logger.debug("lineage_entry_activity_id: #{lineage_entry_activity_id}")
       lineage_summary = activity_map[lineage_entry_activity_id]
       case lineage_summary do
         nil ->
           Logger.error("Could not find activity summary for lineage_entry_activity_id: #{lineage_entry_activity_id}")
-          nil
+          acc
         _ ->
-          model = lineage_summary.model
-          # if acc isn't defined yet, then the first iteration is the model
-          # otherwise, merge the partsLayout into the existing model
-          case acc do
-            nil -> model
-            _ ->
-              partsLayout = Map.get(model, "partsLayout", [])
-              currentPartsLayout = Map.get(acc, "partsLayout", [])
-              acc |> Map.put("partsLayout", currentPartsLayout |> List.insert_at(-1, partsLayout))
-          end
+          model = Poison.decode!(HtmlEntities.decode(lineage_summary.model))
+          partsLayout = Map.get(model, "partsLayout", [])
+          currentPartsLayout = Map.get(acc, "partsLayout", [])
+          merged_parts_layout = Enum.concat(currentPartsLayout, partsLayout)
+          model |> Map.put("partsLayout", merged_parts_layout)
       end
     end)
+    Logger.debug("activity_model AFTER REDUCE: #{activity_model |> Jason.encode!}")
 
-    [_head | sequence_entry] = activity_lineage
-    # activity_model needs to be parsed first
-    activity_model = Poison.decode!(HtmlEntities.decode(activity_model))
+    sequence_entry = List.last(activity_lineage)
     # the activity_model needs the "id" to be the "sequenceId" from the sequence_entry
     activity_model |> Map.put("id", Map.get(sequence_entry, "custom") |> Map.get("sequenceId"))
     # finally it needs to be stringified again
