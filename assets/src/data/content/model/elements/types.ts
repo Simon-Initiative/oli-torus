@@ -155,8 +155,6 @@ export interface CodeLine extends SlateElement<Text[]> {
 
 export interface Citation extends SlateElement<Text[]> {
   type: 'cite';
-  cite?: string;
-  slug: string;
   bibref: number;
 }
 

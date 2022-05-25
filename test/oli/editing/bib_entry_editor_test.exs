@@ -57,7 +57,7 @@ defmodule Oli.BibEntryEditorTest do
       assert Enum.at(revisions, 1).resource_id == second.revision.resource_id
     end
 
-    test "browse_entrys/3 lists paged bib_entrys", %{author: author, project: project, first: first, _second: second} do
+    test "browse_entrys/3 lists paged bib_entrys", %{author: author, project: project, first: first} do
       {:ok, revisions} = BibEntryEditor.retrieve(project.slug, author, %Paging{limit: 1, offset: 0})
 
       assert length(revisions.rows) == 1

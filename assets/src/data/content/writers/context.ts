@@ -3,6 +3,7 @@ import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
   sectionSlug?: string;
+  bibParams?: any;
   inputRefContext?: {
     onChange: (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
     toggleHints: (id: string) => void;

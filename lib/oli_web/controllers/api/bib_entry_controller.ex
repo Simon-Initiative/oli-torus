@@ -47,6 +47,7 @@ defmodule OliWeb.Api.BibEntryController do
 
   def retrieve(conn, %{"project" => project_slug, "paging" => %{"offset" => offset, "limit" => limit}}) do
     author = conn.assigns[:current_author]
+    IO.puts("retrieve bib called")
     case BibEntryEditor.retrieve(project_slug, author, %Paging{offset: offset, limit: limit}) do
       {:ok, %{rows: rows, total_count: total_count}} ->
         json(conn, %{

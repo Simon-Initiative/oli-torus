@@ -27,13 +27,12 @@ export function selectCitation(
     const mediaLibrary = (
       <Provider store={store}>
         <ModalSelection
-          title="Embed audio"
+          title="Select citation"
           onInsert={() => {
             dismiss();
             if (selected) resolve(selected);
           }}
           onCancel={() => dismiss()}
-          // disableInsert={true}
         >
           <CitationEditor
             commandContext={context}
@@ -55,10 +54,7 @@ const command: Command = {
     if (!selection) return;
 
     const at = editor.selection as any;
-    selectCitation(context).then((citation) =>
-      // Transforms.wrapNodes(editor, citation, { split: true }),
-      Transforms.insertNodes(editor, citation, { at }),
-    );
+    selectCitation(context).then((citation) => Transforms.insertNodes(editor, citation, { at }));
   },
   precondition: (editor) => {
     return !isActive(editor, ['code']);

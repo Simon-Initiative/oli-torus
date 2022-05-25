@@ -56,8 +56,8 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  cite: (text = '', bibref: number, slug = guid()) =>
-    create<Citation>({ type: 'cite', bibref: bibref, slug: slug, children: [{ text }] }),
+  cite: (text = '', bibref: number) =>
+    create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
 
   image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
 

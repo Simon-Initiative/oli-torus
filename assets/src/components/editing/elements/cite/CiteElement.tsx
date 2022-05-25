@@ -24,7 +24,6 @@ export const CiteEditor = (props: Props) => {
   const selected = useSelected();
   const isOpen = React.useCallback(() => selected, [selected]);
 
-  // const onEdit = onEditModel(props.model);
   const onEdit = (updated: Partial<ContentModel.Citation>) =>
     updateModel<ContentModel.Citation>(editor, props.model, updated);
 
@@ -47,10 +46,9 @@ export const CiteEditor = (props: Props) => {
         <Provider store={store}>
           <ModalSelection
             title="Bibliography"
-            // onInsert={(selected) => onDone()}
             onCancel={onCancel}
             onInsert={() => onDone({ ...selected })}
-            disableInsert={true}
+            disableInsert={false}
           >
             <CitationEditor
               commandContext={props.commandContext}

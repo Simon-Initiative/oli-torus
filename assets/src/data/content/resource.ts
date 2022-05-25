@@ -9,8 +9,13 @@ import { ActivitySlug, ActivityTypeSlug, ProjectSlug, ResourceId, ResourceSlug }
 import guid from 'utils/guid';
 import { ActivityEditContext } from './activity';
 
+export type BibPointer = {
+  type: any;
+  id: number;
+};
 export type PageContent = {
   model: ResourceContent[];
+  bibrefs?: BibPointer[];
   [key: string]: any;
 };
 

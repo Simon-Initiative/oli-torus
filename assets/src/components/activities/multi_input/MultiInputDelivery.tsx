@@ -32,6 +32,7 @@ export const MultiInputComponent: React.FC = () => {
     onResetActivity,
     model,
     sectionSlug,
+    bibParams,
   } = useDeliveryElementContext<MultiInputSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
@@ -111,6 +112,7 @@ export const MultiInputComponent: React.FC = () => {
 
   const writerContext = defaultWriterContext({
     sectionSlug,
+    bibParams,
     inputRefContext: {
       toggleHints,
       onChange,

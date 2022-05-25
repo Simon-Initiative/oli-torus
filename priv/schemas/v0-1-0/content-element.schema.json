@@ -71,6 +71,9 @@
           "$ref": "#/$defs/hyperlink"
         },
         {
+          "$ref": "#/$defs/citation"
+        },
+        {
           "$ref": "#/$defs/activity-link"
         },
         {
@@ -649,7 +652,10 @@
         "type": {
           "const": "cite"
         },
-        "idref": {
+        "bibref": {
+          "type": ["string", "number"]
+        },
+        "slug": {
           "type": "string"
         },
         "children": {
@@ -661,7 +667,7 @@
       },
       "required": [
         "type",
-        "idref",
+        "bibref",
         "children"
       ]
     },

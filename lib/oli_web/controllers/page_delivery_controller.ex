@@ -21,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
 
+  @spec index_preview(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     current_author = conn.assigns.current_author
@@ -259,7 +260,8 @@ defmodule OliWeb.PageDeliveryController do
           model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
           delivery_element: type.delivery_element,
           authoring_element: type.authoring_element,
-          graded: revision.graded
+          graded: revision.graded,
+          bib_refs: Map.get(rev.content, "bibrefs", [])
         }
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
@@ -379,7 +381,10 @@ defmodule OliWeb.PageDeliveryController do
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
-      resource_slug: context.page.slug
+      resource_slug: context.page.slug,
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      }
     })
   end
 
@@ -430,6 +435,9 @@ defmodule OliWeb.PageDeliveryController do
         nextPageURL: next_url,
         previewMode: preview_mode,
         reviewMode: context.review_mode
+      },
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
       },
       activity_type_slug_mapping: %{},
       activity_types: activity_types,
@@ -484,7 +492,8 @@ defmodule OliWeb.PageDeliveryController do
         else
           :delivery
         end,
-      activity_map: context.activities
+      activity_map: context.activities,
+      bib_app_params: context.bib_revisions
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -527,7 +536,10 @@ defmodule OliWeb.PageDeliveryController do
         page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
         container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
         revision: context.page,
-        resource_slug: context.page.slug
+        resource_slug: context.page.slug,
+        bib_app_params: %{
+          bibReferences: context.bib_revisions
+        },
       }
     )
   end
@@ -680,7 +692,10 @@ defmodule OliWeb.PageDeliveryController do
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
-      resource_slug: context.page.slug
+      resource_slug: context.page.slug,
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      }
     )
   end
 

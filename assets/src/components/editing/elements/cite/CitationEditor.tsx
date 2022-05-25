@@ -20,17 +20,20 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
     Immutable.OrderedMap<string, BibEntry>(),
   );
   const [loading, setLoading] = useState<boolean>(true);
+  const [selected, setSelected] = useState<Citation>(
+    props.model ? props.model : Model.cite('citation', -1),
+  );
 
   const onClick = (slug: string) => {
     const bibEntry = bibEntrys.get(slug);
-    if (bibEntry) {
-      console.log(JSON.stringify(bibEntry));
-      props.onSelectionChange(Model.cite('[citation]', bibEntry.id, slug));
+    if (bibEntry && bibEntry.id) {
+      const selection: Citation = Model.cite('[citation]', bibEntry.id);
+      props.onSelectionChange(selection);
+      setSelected(selection);
     }
   };
 
   const fetchBibEntrys = async () => {
-    console.log(props.commandContext.resourceSlug);
     setLoading(true);
     try {
       const result = await BibPersistence.fetch(props.commandContext.projectSlug);
@@ -58,14 +61,16 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
             lang: 'en-US',
           });
         };
+        const active = selected.bibref === bibEntry.id ? ' active' : '';
         return (
-          <div
+          <button
             key={bibEntry.slug}
-            className="d-flex justify-content-start mb-4"
+            className={`list-group-item list-group-item-action flex-column align-items-start${active}`}
             onClick={() => onClick(bibEntry.slug)}
           >
-            <div dangerouslySetInnerHTML={{ __html: bibOut() }}></div>;
-          </div>
+            <div dangerouslySetInnerHTML={{ __html: bibOut() }}></div>
+            <div>Something</div>
+          </button>
         );
       });
     }
@@ -83,7 +88,7 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
         e.stopPropagation();
       }}
     >
-      <div>{bibEditors}</div>
+      <div className="list-group">{bibEditors}</div>
     </div>
   );
 };

@@ -77,6 +77,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   }, []);
 
   const fetchBibEntrys = (paging: Paging) => {
+    console.log('fetching bib entries');
     BibPersistence.retrieve(props.projectSlug, paging).then((result) => {
       if (result.result === 'success') {
         console.log('fetching staff');
@@ -104,9 +105,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           style: 'csl',
           lang: 'en-US',
         });
-        const cslJson = JSON.parse(cslData);
-        // delete cslJson[0]['_graph'];
-        // console.log(JSON.stringify(cslJson));
+        const cslJson: any[] = JSON.parse(cslData);
 
         const valid = validate(cslJson);
         console.log(JSON.stringify(cslJson));
@@ -114,7 +113,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           throw validate.errors;
         }
 
-        BibPersistence.create(props.projectSlug, 'the title', JSON.stringify(cslJson));
+        BibPersistence.create(props.projectSlug, cslJson[0].title, JSON.stringify(cslJson));
         fetchBibEntrys(paging);
       } catch (error) {
         const message = createMessage({

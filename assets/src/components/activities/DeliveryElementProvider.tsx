@@ -1,5 +1,5 @@
 import { Maybe } from 'tsmonad';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
 
@@ -17,7 +17,10 @@ export function useDeliveryElementContext<T>() {
   );
 }
 export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
-  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+  const writerContext = defaultWriterContext({
+    sectionSlug: props.sectionSlug,
+    bibParams: props.bibParams,
+  });
 
   return (
     <DeliveryElementContext.Provider value={{ ...props, writerContext }}>

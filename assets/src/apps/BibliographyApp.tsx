@@ -1,4 +1,4 @@
 import Bibliography from './bibliography/Bibliography';
-import { defineApplication } from './app';
+import { registerApplication } from './app';
 
-defineApplication(Bibliography);
+registerApplication('Bibliography', Bibliography);

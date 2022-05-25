@@ -1,5 +1,5 @@
 import { ProjectSlug, ResourceSlug } from 'data/types';
-import { AttachedObjectives, PageContent } from '../content/resource';
+import { AttachedObjectives, BibPointer, PageContent } from '../content/resource';
 import { makeRequest } from './common';
 
 export type ResourceUpdate = {
@@ -19,6 +19,18 @@ export function edit(
   releaseLock: boolean,
 ) {
   const update = Object.assign({}, pendingUpdate, { releaseLock });
+
+  // Index "citation references" in the "content" and elevate them as top-level list
+  const citationRefs: BibPointer[] = [];
+  traverseContent(update.content.model, (key: string, value: any) => {
+    if (value.type === 'cite') {
+      citationRefs.push({ type: 'bibentry', id: value.bibref });
+    }
+    if (value.type === 'activity-reference') {
+      citationRefs.push({ type: 'activity', id: value.activitySlug });
+    }
+  });
+  update.content.bibrefs = citationRefs;
 
   const params = {
     method: 'PUT',
@@ -43,4 +55,13 @@ export function pages(project: ProjectSlug, current?: string) {
   };
 
   return makeRequest<PagesReceived>(params);
+}
+
+function traverseContent(o: any, func: any) {
+  for (const i in o) {
+    func.apply(this, [i, o[i]]);
+    if (o[i] !== null && typeof o[i] == 'object') {
+      traverseContent(o[i], func);
+    }
+  }
 }

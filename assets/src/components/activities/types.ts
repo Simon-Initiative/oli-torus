@@ -1,6 +1,6 @@
 import { ModelElement } from 'data/content/model/elements/types';
 import { ID, Identifiable } from 'data/content/model/other';
-import { ResourceContext } from 'data/content/resource';
+import { BibPointer, ResourceContext } from 'data/content/resource';
 import { ResourceId } from 'data/types';
 import guid from 'utils/guid';
 import { PathOperation } from 'utils/pathOperations';
@@ -202,6 +202,7 @@ export interface ActivityModelSchema {
   content?: any;
   activityType?: any;
   id?: string; // maybe slug
+  bibrefs?: BibPointer[];
 }
 
 /**

@@ -82,7 +82,10 @@ defmodule Oli.Plugs.MaybeGatedResource do
       resource_slug: revision.slug,
       details: details,
       page_link_url: &Routes.page_delivery_path(conn, :page, section.slug, &1),
-      container_link_url: &Routes.page_delivery_path(conn, :container, section.slug, &1)
+      container_link_url: &Routes.page_delivery_path(conn, :container, section.slug, &1),
+      bib_app_params: %{
+        bibReferences: []
+      }
     )
     |> halt()
   end

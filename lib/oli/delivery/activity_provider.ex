@@ -59,19 +59,40 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
-    bib_ids =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
-        type == "cite"
-      end)
-      |> Enum.map(fn %{"bibref" => id} -> id end)
-      |> MapSet.new()
+    IO.inspect(content, label: "the content")
 
-    IO.inspect(bib_ids, label: "good bibs advancedDelivery")
+    bib_ids = Map.get(content, "bibrefs", [])
 
+    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
+      if Map.get(x, "type") == "activity" do
+        revision = Enum.find(revisions, fn r -> r.resource_id == Map.get(x, "id") end)
+        if revision == nil do
+          acc
+        else
+          acc ++ Enum.reduce(Map.get(revision.content, "bibrefs", []), [], fn y, acx ->
+            acx ++ [Map.get(y, "id")]
+           end)
+        end
+      else
+        acc ++ [Map.get(x, "id")]
+      end
+    end)
+
+    # Remove duplicates
+    merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->
+      if Enum.any?(acc, fn i -> i == x end) do
+        acc
+      else
+        acc ++ [x]
+      end
+    end)
+
+    bib_revisions = resolver.from_resource_id(source.section_slug, merged_bib_ids)
 
     %ProviderResult{
       errors: [],
       revisions: revisions,
+      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end),
       transformed_content: content,
       unscored: unscored
     }
@@ -87,23 +108,38 @@ defmodule Oli.Delivery.ActivityProvider do
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
-    IO.inspect(Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
-      true
-    end))
+    bib_ids = Map.get(content, "bibrefs", [])
 
-    bib_ids =
-      Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
-        type == "cite"
-      end)
-      |> Enum.map(fn %{"bibref" => id} -> id end)
-      |> MapSet.new()
+    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
+      if Map.get(x, "type") == "activity" do
+        revision = Enum.find(only_revisions, fn r -> r.resource_id == Map.get(x, "id") end)
+        if revision == nil do
+          acc
+        else
+          acc ++ Enum.reduce(Map.get(revision.content, "bibrefs", []), [], fn y, acx ->
+            acx ++ [Map.get(y, "id")]
+           end)
+        end
+      else
+        acc ++ [Map.get(x, "id")]
+      end
+    end)
 
-    IO.inspect(bib_ids, label: "good bibs main")
+    # Remove duplicates
+    merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->
+      if Enum.any?(acc, fn i -> i == x end) do
+        acc
+      else
+        acc ++ [x]
+      end
+    end)
 
+    bib_revisions = resolver.from_resource_id(source.section_slug, merged_bib_ids)
 
     %ProviderResult{
       errors: errors,
       revisions: only_revisions,
+      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end),
       transformed_content: Map.put(content, "model", Enum.reverse(model)),
       unscored: MapSet.new()
     }
@@ -209,6 +245,17 @@ defmodule Oli.Delivery.ActivityProvider do
     %{
       source
       | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ ids
+    }
+  end
+
+  defp serialize_revision(%Oli.Resources.Revision{} = revision, merged_bib_ids) do
+    ordinal = Enum.find_index(merged_bib_ids, fn x -> x == revision.resource_id end) + 1
+    %{
+      title: revision.title,
+      id: revision.resource_id,
+      slug: revision.slug,
+      content: revision.content,
+      ordinal: ordinal
     }
   end
 end
