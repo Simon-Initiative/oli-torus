@@ -609,7 +609,23 @@ defmodule OliWeb.PageDeliveryControllerTest do
           OliWeb.Pow.PowHelpers.get_pow_config(:user)
         )
 
+      # Check visibility in the section overview
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      response = html_response(conn, 200)
+
+      refute response =~ "Unit 1:"
+      assert response =~ "Unit: The first unit"
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn = get(conn, Routes.page_delivery_path(conn, :container, section.slug, "first_unit"))
 
       response = html_response(conn, 200)
 
@@ -637,7 +653,22 @@ defmodule OliWeb.PageDeliveryControllerTest do
           OliWeb.Pow.PowHelpers.get_pow_config(:user)
         )
 
+      # Check visibility in the section overview
       conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      response = html_response(conn, 200)
+
+      assert response =~ "Unit 1: The first unit"
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(
+          user,
+          OliWeb.Pow.PowHelpers.get_pow_config(:user)
+        )
+
+      # Check visibility at the unit level
+      conn = get(conn, Routes.page_delivery_path(conn, :container, section.slug, "first_unit"))
 
       response = html_response(conn, 200)
 

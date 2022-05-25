@@ -24,7 +24,7 @@ defmodule Oli.Inventories.Publisher do
     publisher
     |> cast(attrs, [:name, :email, :address, :main_contact, :website_url, :default])
     |> validate_required([:name, :email, :default])
-    |> validate_format(:email, Oli.Utils.email_regex())
+    |> validate_format(:email, ~r/@/)
     |> unique_constraint(:name)
     |> unique_constraint_if([:default], &is_default?/1,
       name: :publisher_default_true_index,
