@@ -4,7 +4,6 @@ defmodule Oli.Utils do
   import Ecto.Changeset
 
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
-  @email_regex ~r/^[\w-\.]+@([\w-]+\.)+[\w-]+$/
 
   @doc """
   Generates a random hex string of the given length
@@ -305,9 +304,4 @@ defmodule Oli.Utils do
       "<a href=\"#{absolute_url}\" target=\"_blank\">#{url}</a>"
     end)
   end
-
-  @doc """
-  Returns email regex
-  """
-  def email_regex, do: @email_regex
 end
