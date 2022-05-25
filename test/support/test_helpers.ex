@@ -520,7 +520,8 @@ defmodule Oli.TestHelpers do
         content: %{"model" => []},
         deleted: false,
         title: "The first unit",
-        resource: unit_one_resource
+        resource: unit_one_resource,
+        slug: "first_unit"
       })
 
     # root container
