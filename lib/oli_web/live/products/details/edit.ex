@@ -112,7 +112,7 @@ defmodule OliWeb.Products.Details.Edit do
           </div>
 
           <div class="form-row float-right">
-            <%= if @is_admin and get_field(@changeset, :requires_payment) do %>
+            <%= if not get_field(@changeset, :open_and_free) and @is_admin and get_field(@changeset, :requires_payment) do %>
               <a class="btn btn-link action-button" href={Routes.discount_path(OliWeb.Endpoint, :product, @product.slug)}>Manage Discounts</a>
             <% end %>
           </div>
