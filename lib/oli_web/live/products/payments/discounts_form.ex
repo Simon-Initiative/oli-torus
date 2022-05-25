@@ -10,12 +10,13 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
   prop changeset, :changeset, required: true
   prop discount, :any, required: true
   prop save, :event, required: true
+  prop change, :event, required: true
   prop clear, :event, required: true
   prop institution_name, :string
 
   def render(assigns) do
     ~F"""
-      <Form for={@changeset} submit={@save}>
+      <Form for={@changeset} submit={@save} change={@change}>
         <ReadOnly label="Institution" value={@institution_name}/>
 
         <Field name={:type} class="form-group">
@@ -26,13 +27,13 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
 
         <Field name={:amount} class="form-group">
           <Label/>
-          <TextInput class="form-control"/>
+          <TextInput class="form-control" opts={disabled: get_field(@changeset, :type) == :percentage} />
           <ErrorTag/>
         </Field>
 
         <Field name={:percentage} class="form-group">
           <Label/>
-          <NumberInput class="form-control"/>
+          <NumberInput class="form-control" opts={disabled: get_field(@changeset, :type) == :fixed_amount} />
           <ErrorTag/>
         </Field>
 

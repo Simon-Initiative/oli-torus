@@ -488,7 +488,7 @@ defmodule Oli.Delivery.PaywallTest do
       assert {:ok, %Discount{} = discount} = Paywall.create_discount(params)
       assert discount.type == params.type
       assert discount.percentage == params.percentage
-      assert discount.amount == params.amount
+      refute discount.amount
     end
 
     test "create_discount/1 for existing product/institution returns error changeset" do
@@ -567,10 +567,18 @@ defmodule Oli.Delivery.PaywallTest do
     end
 
     test "update_discount/2 does not update the discount when there is an invalid field" do
-      discount = insert(:discount)
+      amount_discount = insert(:discount)
 
-      {:error, changeset} = Paywall.update_discount(discount, %{amount: nil})
+      {:error, changeset} = Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
       {error, _} = changeset.errors[:amount]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
+
+      percentage_discount = insert(:discount)
+
+      {:error, changeset} = Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+      {error, _} = changeset.errors[:percentage]
 
       refute changeset.valid?
       assert error =~ "can't be blank"
@@ -594,7 +602,7 @@ defmodule Oli.Delivery.PaywallTest do
       assert {:ok, %Discount{} = discount} = Paywall.create_or_update_discount(params)
       assert discount.type == params.type
       assert discount.percentage == params.percentage
-      assert discount.amount == params.amount
+      refute discount.amount
     end
 
     test "create_or_update_discount/1 updates an existing discount" do
@@ -602,12 +610,16 @@ defmodule Oli.Delivery.PaywallTest do
       params = %{
         institution_id: discount.institution_id,
         section_id: discount.section_id,
-        type: :fixed_amount
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
       }
 
       assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
       assert updated_discount.id == discount.id
       assert updated_discount.type == :fixed_amount
+      assert updated_discount.amount == Money.new(:USD, 25)
+      refute updated_discount.percentage
     end
 
     test "create_or_update_discount/1 updates an existing discount (only institution)" do
@@ -615,12 +627,16 @@ defmodule Oli.Delivery.PaywallTest do
       params = %{
         institution_id: discount.institution_id,
         section_id: nil,
-        type: :fixed_amount
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
       }
 
       assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
       assert updated_discount.id == discount.id
       assert updated_discount.type == :fixed_amount
+      assert updated_discount.amount == Money.new(:USD, 25)
+      refute updated_discount.percentage
     end
   end
 end

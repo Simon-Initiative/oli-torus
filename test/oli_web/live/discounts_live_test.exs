@@ -99,13 +99,20 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "h5", "Manage Discount")
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "input[value=\"#{deployment.institution.name}\"")
-      assert has_element?(view, "input[value=\"#{discount.amount}\"")
+      # type is percentage
+      assert has_element?(view, "input[name=\"discount[amount]\"][disabled=\"disabled\"]")
       assert has_element?(view, "input[value=\"#{discount.percentage}\"")
     end
 
     test "loads correctly with discount - institution", %{conn: conn} do
       institution = insert(:institution)
-      discount = insert(:discount, section: nil, institution: institution)
+      discount = insert(:discount,
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil,
+        section: nil,
+        institution: institution
+      )
 
       {:ok, view, _html} = live(conn, live_view_route(:institution, institution.id))
 
@@ -113,7 +120,8 @@ defmodule OliWeb.DiscountsLiveTest do
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "input[value=\"#{institution.name}\"")
       assert has_element?(view, "input[value=\"#{discount.amount}\"")
-      assert has_element?(view, "input[value=\"#{discount.percentage}\"")
+      # type is fixed_amount
+      assert has_element?(view, "input[name=\"discount[percentage]\"][disabled=\"disabled\"]")
     end
 
     test "displays error message when data is invalid - product", %{conn: conn} do

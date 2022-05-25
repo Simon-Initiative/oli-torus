@@ -193,7 +193,7 @@ defmodule Oli.Factory do
     %Discount{
       type: :percentage,
       percentage: 10,
-      amount: Money.new(:USD, 25),
+      amount: nil,
       section: insert(:section),
       institution: insert(:institution)
     }

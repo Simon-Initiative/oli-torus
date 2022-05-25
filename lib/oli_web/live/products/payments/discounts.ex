@@ -116,6 +116,7 @@ defmodule OliWeb.Products.Payments.Discounts do
           discount={@discount}
           changeset={@changeset}
           save="save"
+          change="change"
           clear="clear" />
       </FormContainer>
     """
@@ -164,6 +165,15 @@ defmodule OliWeb.Products.Payments.Discounts do
           |> put_flash(:error, "Discount couldn't be cleared.")
           |> assign(changeset: changeset)}
     end
+  end
+
+  def handle_event("change", %{"discount" => params}, socket) do
+    params =
+      params
+      |> Map.put("percentage", (if params["type"] == "percentage", do: params["percentage"], else: nil))
+      |> Map.put("amount", (if params["type"] == "fixed_amount", do: params["amount"], else: nil))
+
+    {:noreply, assign(socket, changeset: Paywall.change_discount(socket.assigns.changeset.data, params))}
   end
 
   defp get_rels_params(%{live_action: :product} = assigns) do
