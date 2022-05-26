@@ -8,6 +8,8 @@
 
 ### Enhancements
 
+- Add survey authoring support (behind feature flag)
+
 ## 0.19.3 (2022-05-17)
 
 ### Bug Fixes
