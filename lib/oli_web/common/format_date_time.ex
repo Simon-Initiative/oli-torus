@@ -182,6 +182,23 @@ defmodule OliWeb.Common.FormatDateTime do
     end
   end
 
+  @doc """
+  Converts a datestring to a UTC datetime, assuming the input date is in the given timezone.
+
+  ## Examples
+      iex> datestring_to_utc_datetime("2022-05-18T12:35", "US/Arizona")
+      ~U[2022-05-18 19:35:00Z]
+  """
+  def datestring_to_utc_datetime("", _), do: nil
+
+  def datestring_to_utc_datetime(date_string, local_tz) do
+    date_string
+    |> Timex.parse!("{ISO:Extended}")
+    |> Timex.to_datetime(local_tz)
+    |> DateTime.shift_zone("Etc/UTC")
+    |> elem(1)
+  end
+
   defp author_format_preference(nil), do: nil
 
   defp author_format_preference(author) do

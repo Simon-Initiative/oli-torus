@@ -104,6 +104,8 @@ defmodule Oli.Delivery.Snapshots.Worker do
       DateTime.utc_now()
       |> DateTime.truncate(:second)
 
+    hints_taken_count = length(part_attempt.hints)
+
     %{
       resource_id: resource_access.resource_id,
       user_id: resource_access.user_id,
@@ -118,7 +120,7 @@ defmodule Oli.Delivery.Snapshots.Worker do
       correct: part_attempt.score == part_attempt.out_of,
       score: part_attempt.score,
       out_of: part_attempt.out_of,
-      hints: length(part_attempt.hints),
+      hints: hints_taken_count,
       part_attempt_number: part_attempt.attempt_number,
       part_attempt_id: part_attempt.id,
       objective_id: objective_id,

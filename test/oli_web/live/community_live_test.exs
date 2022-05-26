@@ -78,15 +78,15 @@ defmodule OliWeb.CommunityLiveTest do
         live(conn, live_view_show_route(community.id))
     end
 
-    test "redirects to communities when accessing a community that is not an admin", %{
+    test "redirects to communities when accessing a community that is not an admin of", %{
       conn: conn,
       author: author
     } do
-      insert(:community)
+      non_admin_community_id = insert(:community).id
       insert(:community_account, %{author: author})
 
       {:error, {:redirect, %{to: "/authoring/communities"}}} =
-        live(conn, live_view_show_route(123))
+        live(conn, live_view_show_route(non_admin_community_id))
     end
   end
 
@@ -909,7 +909,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => cv1.id})
 
       assert view
@@ -972,7 +972,7 @@ defmodule OliWeb.CommunityLiveTest do
 
     test "applies paging", %{conn: conn, community: community} do
       [first_cv | tail] =
-        insert_list(21, :community_visibility, %{community: community}) |> Enum.sort()
+        insert_list(26, :community_visibility, %{community: community}) |> Enum.sort_by(& &1.project.title)
 
       last_cv = List.last(tail)
 
@@ -1011,10 +1011,14 @@ defmodule OliWeb.CommunityLiveTest do
       insert(:community_visibility, %{community: community, project: associated_project})
       insert(:community_visibility, %{community: community, section: associated_product})
 
-      project = insert(:project)
-      product = insert(:section)
+      project = insert(:project, title: "Test Project")
+      product = insert(:section, title: "Test Product")
 
       {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "title"})
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -1022,7 +1026,7 @@ defmodule OliWeb.CommunityLiveTest do
                project.title
 
       assert view
-             |> element("tr:last-child > td:first-child")
+             |> element("tr:nth-child(2) > td:first-child")
              |> render() =~
                product.title
     end
@@ -1033,7 +1037,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => project.id, "type" => "project"})
 
       assert view
@@ -1173,7 +1177,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div  > button")
       |> render_click(%{"id" => user.id})
 
       assert view

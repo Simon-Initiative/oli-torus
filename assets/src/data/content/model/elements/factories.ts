@@ -14,13 +14,14 @@ import {
   Popup,
   Table,
   YouTube,
-  Image,
+  ImageBlock,
   Audio,
   Blockquote,
   ModelElement,
   HeadingOne,
   HeadingTwo,
   Citation,
+  ImageInline,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -59,7 +60,9 @@ export const Model = {
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
 
-  image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
+  image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
+
+  imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 
   audio: (src?: string) => create<Audio>({ type: 'audio', src }),
 

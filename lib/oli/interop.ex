@@ -77,11 +77,17 @@ defmodule Oli.Interop do
     validate(code, :registration_enabled)
   end
 
+  def validate_for_automation_setup(code) do
+    validate(code, :automation_setup_enabled)
+  end
+
   defp validate(code, field) do
     hash = :crypto.hash(:md5, code) |> Base.encode16()
 
     case Repo.get_by(ApiKey, hash: hash) do
-      nil -> false
+      nil ->
+        false
+
       key ->
         Map.get(key, field) == true and key.status == :enabled
     end

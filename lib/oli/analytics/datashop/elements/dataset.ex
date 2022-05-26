@@ -12,7 +12,6 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   """
   import XmlBuilder
   alias Oli.Publishing.AuthoringResolver
-  alias Oli.Authoring.Course
   require Logger
 
   def setup(
@@ -27,7 +26,10 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
   end
 
   defp create_problem_hierarchy(
-         %{part_attempt: part_attempt, problem_name: problem_name} = context
+         %{
+           part_attempt: part_attempt,
+           problem_name: problem_name
+         } = context
        ) do
     case assemble_from_hierarchy_path(
            Map.put(
@@ -82,8 +84,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
 
     case Map.get(hierarchy_map, target) do
       nil ->
-        project = Course.get_project!(context.publication.project_id)
-        rev = AuthoringResolver.from_resource_id(project.slug, target)
+        rev = AuthoringResolver.from_resource_id(context.project.slug, target)
 
         # Deleted pages are removed from the container's children list, so they will not be found
         # in the hierarchy. Create a top-level page node for them.
@@ -91,7 +92,7 @@ defmodule Oli.Analytics.Datashop.Elements.Dataset do
           page_to_element.(rev)
         else
           Logger.error(
-            "Datashop - could not find path to resource_id #{target} in project #{project.slug}"
+            "Datashop - could not find path to resource_id #{target} in project #{context.project.slug}"
           )
 
           []

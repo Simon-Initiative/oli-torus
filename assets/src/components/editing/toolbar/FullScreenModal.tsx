@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 
-type Props = {
+type Props = PropsWithChildren<{
   children: JSX.Element;
   onDone: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
   onCancel: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
-};
-// eslint-disable-next-line
-export const FullScreenModal = React.memo((props: Props) => {
+}>;
+export const FullScreenModal = React.memo(function FullScreenModal(props: Props) {
   return (
     <div className="overlay full-screen">
       <button type="button" className="close">

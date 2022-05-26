@@ -688,7 +688,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           const looksLikeJSON = looksLikeJson(value);
           formatted[variable].value = looksLikeJSON
             ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
-            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true);
+            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true, false);
         } else if (typeof value === 'string' && isMathExpr) {
           if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
             // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing

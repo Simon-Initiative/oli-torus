@@ -21,6 +21,8 @@ export interface PageState {
   score: number;
   graded: boolean;
   activeEverapp: string;
+  overviewURL: string;
+  finalizeGradedURL: string;
 }
 
 const initialState: PageState = {
@@ -41,6 +43,8 @@ const initialState: PageState = {
   score: 0,
   graded: false,
   activeEverapp: '',
+  overviewURL: '',
+  finalizeGradedURL: '',
 };
 
 const pageSlice = createSlice({
@@ -65,6 +69,8 @@ const pageSlice = createSlice({
       state.previewMode = !!action.payload.previewMode;
       state.activityTypes = action.payload.activityTypes;
       state.graded = !!action.payload.graded;
+      state.overviewURL = action.payload.overviewURL;
+      state.finalizeGradedURL = action.payload.finalizeGradedURL;
 
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
@@ -119,6 +125,15 @@ export const selectActiveEverapp = createSelector(selectState, (state) => state.
 export const selectIsLegacyTheme = createSelector(
   selectState,
   (state) => !state.content?.custom?.themeId,
+);
+
+export const selectOverviewURL = createSelector(
+  selectState,
+  (state: PageState) => state.overviewURL,
+);
+export const selectFinalizeGradedURL = createSelector(
+  selectState,
+  (state: PageState) => state.finalizeGradedURL,
 );
 
 export default pageSlice.reducer;

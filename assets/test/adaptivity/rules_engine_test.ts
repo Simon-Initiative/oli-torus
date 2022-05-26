@@ -31,6 +31,7 @@ import {
 import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
+  complexExpressionRule,
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   defaultWrongRule,
@@ -73,6 +74,17 @@ describe('Rules Engine', () => {
     )) as CheckResult;
     expect(events.length).toEqual(2);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
+  });
+
+  it('should evaluate complex expressions', async () => {
+    const { results: events } = (await check(
+      mockState,
+      [complexExpressionRule, defaultWrongRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
+
+    expect(events.length).toEqual(1);
+    expect(events[0].type).toEqual(complexExpressionRule.event.type);
   });
 
   it('should not process disabled rules', async () => {
@@ -396,6 +408,42 @@ describe('Operators', () => {
       expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
 
       expect(notContainsAnyOfOperator('123A2', ['A2', 'B2'])).toEqual(false);
+
+      const conditionValue3 = [
+        'polar',
+        'dipole',
+        'nonpolar',
+        'charge',
+        'polarity',
+        'hydrophilic',
+        'hydrophobic',
+      ];
+      expect(
+        containsAnyOfOperator(
+          'An "expert" might say, the charged phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the non-polar parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(true);
+      expect(
+        containsAnyOfOperator(
+          'An "expert" might say, the phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(false);
+
+      expect(
+        notContainsAnyOfOperator(
+          'This does not , contains any value, from array.',
+          conditionValue3,
+        ),
+      ).toEqual(true);
+      expect(
+        notContainsAnyOfOperator(
+          'An "expert" might say, the charged phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the non-polar parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(false);
+
       expect(
         containsAnyOfOperator(
           'blah blah tree snow something whatever',
@@ -427,6 +475,8 @@ describe('Operators', () => {
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('1', '[11,12]')).toEqual(false);
+      expect(containsAnyOfOperator('11', '[11,12]')).toEqual(true);
     });
   });
 

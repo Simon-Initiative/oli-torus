@@ -79,6 +79,34 @@ const evaluateValueExpression = (value: string, env: Environment) => {
         result = evaluatedValue.result;
       }
     } catch (ex) {
+      // if it's and expression and it wasn't evaluated till this point then it means the equation is something like
+      //{17/1.5*{q:1500660404583:613|stage.DrinkVolume.value}*{q:1500660389923:565|variables.UnknownBeaker}*176.12} and script engine can't evaluate the expression if it
+      // starts with {} and the brackets does not begin with an actual variable. we need to send it as '17/1.5*{q:1500660404583:613|stage.DrinkVolume.value}*{q:1500660389923:565|variables.UnknownBeaker}*176.12'
+      const expressions = extractAllExpressionsFromText(value);
+      //adding more safety so that it does not break anything else.
+      // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS. Ignore that
+      const updatedVariables = expressions.filter((e) => !e.includes(';'));
+      const updatedValue = typeof value === 'string' ? value.trim() : value;
+      if (
+        typeof updatedValue === 'string' &&
+        updatedVariables?.length &&
+        updatedValue[0] === '{' &&
+        updatedValue[updatedValue.length - 1] === '}'
+      ) {
+        try {
+          const evaluatedValue = evalScript(
+            updatedValue.substring(1, updatedValue.length - 1),
+            env,
+          );
+
+          const canEval = evaluatedValue?.result !== undefined && !evaluatedValue.result.message;
+          if (canEval) {
+            result = evaluatedValue.result;
+          }
+        } catch (ex) {
+          return result;
+        }
+      }
       return result;
     }
   }
@@ -153,6 +181,24 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         ogValue.slice(-1) !== ']'
       ) {
         modifiedValue = `[${ogValue}]`;
+      }
+
+      if (
+        condition?.type === CapiVariableTypes.ARRAY &&
+        (condition?.operator === 'containsAnyOf' || condition?.operator === 'notContainsAnyOf')
+      ) {
+        const targetValue = getValue(condition.fact, env);
+        if (targetValue.charAt(0) !== '[' && targetValue.slice(-1) !== ']') {
+          const modifiedTargetValue = `[${targetValue}]`;
+          const updateAttempt = [
+            {
+              target: `${condition.fact}`,
+              operator: '=',
+              value: modifiedTargetValue,
+            },
+          ];
+          bulkApplyState(updateAttempt, env);
+        }
       }
       condition.value = modifiedValue;
     });

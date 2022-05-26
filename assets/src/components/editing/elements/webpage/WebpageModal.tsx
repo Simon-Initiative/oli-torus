@@ -9,7 +9,7 @@ interface ModalProps {
 }
 export const WebpageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [src, setSrc] = useState(model.src);
-  const [alt, setAlt] = useState(model.alt);
+  const [alt, setAlt] = useState(model.alt ?? '');
   const [width, setWidth] = useState(model.width);
 
   return (
@@ -29,23 +29,6 @@ export const WebpageModal = ({ onDone, onCancel, model }: ModalProps) => {
           </span>
         </div>
 
-        <h4 className="mb-2">Size</h4>
-        <p className="mb-2">
-          You can manually set the embed width here and the height will scale automatically.
-        </p>
-        <div className="mb-4">
-          <span>
-            Width:{' '}
-            <input
-              type="number"
-              value={width}
-              onChange={(e) => {
-                const width = parseInt(e.target.value);
-                !Number.isNaN(width) && setWidth(width);
-              }}
-            />
-          </span>
-        </div>
         <h4 className="mb-2">Alternative Text</h4>
         <p className="mb-4">
           Write a short description of this image for visitors who are unable to see it.

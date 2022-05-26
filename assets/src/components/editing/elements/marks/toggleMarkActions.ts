@@ -62,6 +62,5 @@ export const additionalFormattingOptions = [
   inlineCodeDesc,
   subscriptDesc,
   superscriptDesc,
-  popupCmdDesc,
   citationCmdDesc,
 ];

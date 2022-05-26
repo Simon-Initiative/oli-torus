@@ -90,7 +90,7 @@ export const getExpressionStringForValue = (
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     const expressions = extractAllExpressionsFromText(val);
-    // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS.
+    // A expression will not have a ';' inside it.So if there is a ';' inside it, it is CSS.
     const isCSSString = expressions.filter((e) => e.includes(';'));
     if (isCSSString?.length) {
       actuallyAString = true;
@@ -483,6 +483,7 @@ export const templatizeText = (
   locals: any,
   env?: Environment,
   isFromTrapStates = false,
+  useFormattedText = true,
 ): string => {
   let innerEnv = env; // TODO: this should be a child scope
   // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
@@ -576,15 +577,18 @@ export const templatizeText = (
       }
     }
     let strValue = stateValue;
-    /* console.log({ strValue, typeOD: typeof stateValue }); */
-
-    if (Array.isArray(stateValue)) {
-      strValue = stateValue.map((v) => `"${v}"`).join(', ');
-    } else if (typeof stateValue === 'object') {
-      strValue = JSON.stringify(stateValue);
-    } else if (typeof stateValue === 'number') {
-      const modifiedValue = formatNumber(strValue);
-      strValue = parseFloat(modifiedValue.toString());
+    if (useFormattedText) {
+      if (Array.isArray(stateValue)) {
+        strValue = stateValue.map((v) => `"${v}"`).join(', ');
+      } else if (typeof stateValue === 'object') {
+        strValue = JSON.stringify(stateValue);
+      } else if (typeof stateValue === 'number') {
+        strValue = parseFloat(parseFloat(strValue).toFixed(4));
+      }
+    } else {
+      if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
+        strValue = JSON.stringify(stateValue);
+      }
     }
     return strValue;
   });
@@ -593,7 +597,7 @@ export const templatizeText = (
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  // support nested {} like {{variables.foo} * 3}
+  // support nested {}  like {{variables.foo} * 3}
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
 };
 

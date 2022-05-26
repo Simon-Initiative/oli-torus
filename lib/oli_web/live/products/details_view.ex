@@ -81,7 +81,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-md-8">
-          <Content product={@product} updates={@updates}/>
+          <Content product={@product} changeset={@changeset} save="save" updates={@updates}/>
         </div>
       </div>
       <div class="row py-5">

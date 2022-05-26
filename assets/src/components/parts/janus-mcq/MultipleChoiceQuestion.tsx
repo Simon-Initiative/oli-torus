@@ -259,7 +259,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   // converts stringfied number array to number array
   const convertToNumberArray = (arr: string[]) =>
-    arr.map((element) => parseInt(element.replace(/"/g, ''), 10));
+    arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
     // set defaults from model

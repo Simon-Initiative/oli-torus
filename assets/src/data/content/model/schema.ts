@@ -1,8 +1,11 @@
-const toObj = (arr: string[]): Record<string, boolean> =>
-  arr.reduce((p, c) => {
+import { ModelElement } from 'data/content/model/elements/types';
+
+type ValidChildren = Partial<Record<keyof Schema, boolean>>;
+const toObj = (arr: (keyof Schema)[]): ValidChildren =>
+  arr.reduce((p: ValidChildren, c) => {
     p[c] = true;
     return p;
-  }, {} as Record<string, boolean>);
+  }, {});
 
 const header = {
   isVoid: false,
@@ -36,26 +39,17 @@ export interface SchemaConfig {
   isVoid: boolean;
   isBlock: boolean;
   isTopLevel: boolean;
-  validChildren: Record<string, boolean>;
+  validChildren: ValidChildren;
+  isSimpleText?: boolean;
 }
 
-interface Schema
-  extends Record<
-    string,
-    {
-      isVoid: boolean;
-      isBlock: boolean;
-      isTopLevel: boolean;
-      validChildren: Record<string, boolean>;
-      isSimpleText?: boolean;
-    }
-  > {}
+interface Schema extends Record<ModelElement['type'], SchemaConfig> {}
 export const schema: Schema = {
   p: {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
-    validChildren: toObj(['input_ref']),
+    validChildren: toObj(['input_ref', 'img']),
   },
   h1: header,
   h2: header,
@@ -64,6 +58,12 @@ export const schema: Schema = {
   h5: header,
   h6: header,
   img: media,
+  img_inline: {
+    isVoid: true,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
   youtube: media,
   audio: media,
   iframe: media,

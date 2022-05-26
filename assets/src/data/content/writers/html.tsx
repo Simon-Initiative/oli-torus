@@ -18,7 +18,8 @@ import {
   HeadingThree,
   HeadingTwo,
   Hyperlink,
-  Image,
+  ImageBlock,
+  ImageInline,
   InputRef,
   ListItem,
   Math,
@@ -80,8 +81,10 @@ export class HtmlParser implements WriterImpl {
         ? this.escapeXml(attrs.caption)
         : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
 
+    const width = attrs.width ? { width: this.escapeXml(String(attrs.width)) + 'px' } : {};
+
     return (
-      <div className="figure-wrapper">
+      <div className="figure-wrapper" style={width}>
         <figure className="figure embed-responsive text-center">
           {content}
           <figcaption className="figure-caption text-center">{caption}</figcaption>
@@ -110,7 +113,7 @@ export class HtmlParser implements WriterImpl {
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
     return <h6>{next()}</h6>;
   }
-  img(context: WriterContext, next: Next, attrs: Image) {
+  img(context: WriterContext, next: Next, attrs: ImageBlock) {
     if (!attrs.src) return <></>;
 
     return this.figure(
@@ -119,10 +122,20 @@ export class HtmlParser implements WriterImpl {
       <img
         className="figure-img img-fluid"
         alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
-        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
-        height={attrs.height ? this.escapeXml(String(attrs.height)) : undefined}
         src={this.escapeXml(attrs.src)}
       />,
+    );
+  }
+  img_inline(context: WriterContext, next: Next, attrs: ImageInline) {
+    if (!attrs.src) return <></>;
+
+    return (
+      <img
+        className="img-fluid"
+        alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
+        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
+        src={this.escapeXml(attrs.src)}
+      />
     );
   }
   youtube(context: WriterContext, next: Next, attrs: YouTube) {

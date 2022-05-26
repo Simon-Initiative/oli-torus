@@ -8,7 +8,7 @@ import { DeliveryElement, DeliveryElementProps } from 'components/activities/Del
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import {
   activityDeliverySlice,
   ActivityDeliveryState,

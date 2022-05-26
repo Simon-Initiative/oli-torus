@@ -16,8 +16,9 @@ import * as React from 'react';
 import { RenderElementProps } from 'slate-react';
 import { CiteEditor } from '../elements/cite/CiteElement';
 import { CommandContext } from '../elements/commands/interfaces';
-import { ImageEditor } from '../elements/image/ImageElement';
+import { ImageEditor } from '../elements/image/block/ImageElement';
 import { EditorProps } from '../elements/interfaces';
+import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -49,7 +50,9 @@ export function editorFor(
     case 'h6':
       return <h6 {...attributes}>{children}</h6>;
     case 'img':
-      return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
+      return <ImageEditor {...(editorProps as EditorProps<ContentModel.ImageBlock>)} />;
+    case 'img_inline':
+      return <ImageInlineEditor {...(editorProps as EditorProps<ContentModel.ImageInline>)} />;
     case 'ol':
       return <ol {...attributes}>{children}</ol>;
     case 'ul':

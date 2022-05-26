@@ -13,10 +13,10 @@ import { ActivityBankSelection } from './ActivityBankSelection';
 import { Tag } from 'data/content/tags';
 import { ActivityEditorMap } from 'data/content/editors';
 import { defaultActivityState } from 'data/activities/utils';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import { AddResource } from './AddResource';
 import { ContentBreak } from './ContentBreak';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 
 // content or referenced activities
 export const createEditor = (
@@ -70,7 +70,7 @@ export const createEditor = (
           onEdit={(c) => onEdit(c, contentItem.id)}
           projectSlug={projectSlug}
           resourceSlug={resourceSlug}
-          toolbarInsertDescs={getToolbarForContentType({
+          toolbarInsertDescs={blockInsertOptions({
             type: 'all',
             resourceContext,
             onAddItem,

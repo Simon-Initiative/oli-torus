@@ -23,6 +23,7 @@ defmodule Oli.Rendering.Content do
   @callback h5(%Context{}, next, %{}) :: [any()]
   @callback h6(%Context{}, next, %{}) :: [any()]
   @callback img(%Context{}, next, %{}) :: [any()]
+  @callback img_inline(%Context{}, next, %{}) :: [any()]
   @callback youtube(%Context{}, next, %{}) :: [any()]
   @callback iframe(%Context{}, next, %{}) :: [any()]
   @callback audio(%Context{}, next, %{}) :: [any()]
@@ -127,6 +128,9 @@ defmodule Oli.Rendering.Content do
 
       "img" ->
         writer.img(context, next, element)
+
+      "img_inline" ->
+        writer.img_inline(context, next, element)
 
       "youtube" ->
         writer.youtube(context, next, element)

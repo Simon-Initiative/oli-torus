@@ -19,16 +19,20 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
   alias Oli.Delivery.Attempts.Core.PartAttempt
   alias Oli.Delivery.Attempts.Core
 
-  def setup(type, %{problem_name: problem_name, part_attempt: part_attempt}) do
+  def setup(type, %{
+        problem_name: problem_name,
+        part_attempt: part_attempt,
+        activity_types: activity_types
+      }) do
     element(:event_descriptor, [
       element(:selection, problem_name),
-      element(:action, get_action(part_attempt)),
-      element(:input, get_input(type, part_attempt))
+      element(:action, get_action(part_attempt, activity_types)),
+      element(:input, get_input(type, part_attempt, activity_types))
     ])
   end
 
-  defp get_action(part_attempt) do
-    case activity_type(part_attempt) do
+  defp get_action(part_attempt, activity_types) do
+    case activity_type(part_attempt, activity_types) do
       "oli_short_answer" -> "Short answer submission"
       "oli_multiple_choice" -> "Multiple choice submission"
       "oli_check_all_that_apply" -> "Check all that apply submission"
@@ -40,7 +44,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     end
   end
 
-  defp get_input(type, part_attempt) do
+  defp get_input(type, part_attempt, activity_types) do
     try do
       case type do
         # Hints do not record student input
@@ -52,7 +56,7 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
 
         "ATTEMPT" ->
           part_attempt
-          |> handle_input_by_activity()
+          |> handle_input_by_activity(activity_types)
           # Datashop `<input>` elements have a maximum character count of 255
           |> String.slice(0..254)
           |> Utils.cdata()
@@ -78,10 +82,10 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     end
   end
 
-  def handle_input_by_activity(part_attempt) do
+  def handle_input_by_activity(part_attempt, activity_types) do
     input = part_attempt.response["input"]
 
-    case activity_type(part_attempt) do
+    case activity_type(part_attempt, activity_types) do
       "oli_short_answer" -> short_answer_input(part_attempt, input)
       "oli_multiple_choice" -> multiple_choice_input(part_attempt, input)
       "oli_check_all_that_apply" -> check_all_that_apply_input(part_attempt, input)
@@ -138,8 +142,11 @@ defmodule Oli.Analytics.Datashop.Elements.EventDescriptor do
     input
   end
 
-  defp activity_type(%PartAttempt{} = part_attempt) do
-    part_attempt.activity_attempt.revision.activity_type.slug
+  defp activity_type(%PartAttempt{} = part_attempt, activity_types) do
+    case Map.get(activity_types, part_attempt.activity_attempt.revision.activity_type_id) do
+      nil -> "unknown"
+      type -> type.slug
+    end
   end
 
   def choices_input(part_attempt, input) do
