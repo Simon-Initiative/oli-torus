@@ -142,7 +142,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     this.persistence = new DeferredPersistenceStrategy();
 
     this.update = this.update.bind(this);
-    this.onActivityEdit = this.onActivityEdit.bind(this);
+    this.onEditActivity = this.onEditActivity.bind(this);
     this.onPostUndoable = this.onPostUndoable.bind(this);
     this.onInvokeUndo = this.onInvokeUndo.bind(this);
   }
@@ -249,9 +249,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     );
   }
 
-  onActivityEdit(key: string, update: ActivityEditorUpdate): void {
+  onEditActivity(id: string, update: ActivityEditorUpdate): void {
     const model = this.adjustActivityForConstraints(
-      this.state.activityContexts.get(key)?.typeSlug,
+      this.state.activityContexts.get(id)?.typeSlug,
       update.content,
     );
     const withModel = {
@@ -261,8 +261,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       tags: update.tags,
     };
     // apply the edit
-    const merged = Object.assign({}, this.state.activityContexts.get(key), withModel);
-    const activityContexts = this.state.activityContexts.set(key, merged);
+    const merged = Object.assign({}, this.state.activityContexts.get(id), withModel);
+    const activityContexts = this.state.activityContexts.set(id, merged);
 
     this.setState({ activityContexts }, () => {
       const saveFn = (releaseLock: boolean) =>
@@ -274,7 +274,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           releaseLock,
         );
 
-      this.activityPersistence[key].save(saveFn);
+      this.activityPersistence[id].save(saveFn);
     });
   }
 
@@ -343,7 +343,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
           Operations.applyAll(model as any, item.undoable.operations);
 
           // Now save the change and push it down to the activity editor
-          this.onActivityEdit(item.contentKey, {
+          this.onEditActivity(item.contentKey, {
             content: model,
             title: context.title,
             objectives: context.objectives,
@@ -557,10 +557,8 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 onRegisterNewTag={onRegisterNewTag}
                 activityContexts={this.state.activityContexts}
                 onRemove={(key: string) => this.onRemove(key)}
-                onEdit={(c: any, key: string) =>
-                  onEdit(this.state.content.updateContentItem(key, c))
-                }
-                onActivityEdit={this.onActivityEdit}
+                onEdit={onEdit}
+                onEditActivity={this.onEditActivity}
                 onPostUndoable={this.onPostUndoable}
                 content={this.state.content}
                 onAddItem={onAddItem}

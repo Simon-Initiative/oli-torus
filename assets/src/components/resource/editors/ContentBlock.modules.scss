@@ -2,6 +2,7 @@
 
 .contentBlock,
 .groupBlock,
+.surveyBlock,
 .activityBlock {
   position: relative;
 
@@ -91,5 +92,20 @@
   padding: 1.3em max(calc(50% - 400px), 50px);
 }
 
-.activityBlock {
+.surveyBlock {
+  border: 1px solid authoring.$gray-500;
+  border-radius: 6px;
+  margin: 0 20px;
+  padding: 20px;
+
+  :global(i.las.la-poll) {
+    font-size: 32px;
+    margin-right: 6px;
+  }
+}
+
+.surveyBlockHeader {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
 }

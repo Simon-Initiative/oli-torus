@@ -1,13 +1,24 @@
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
-import { createDefaultSelection, createBreak } from 'data/content/resource';
+import {
+  createDefaultSelection,
+  createBreak,
+  createSurvey,
+  ResourceContent,
+} from 'data/content/resource';
 import React from 'react';
 
+// returns true if non of the parents are a survey element
+const canInsertSurvey = (parents: ResourceContent[]) => (
+  console.log(parents), parents.every((p) => p.type !== 'survey')
+);
+
 interface Props {
-  onAddItem: AddCallback;
   index: number[];
+  parents: ResourceContent[];
+  onAddItem: AddCallback;
 }
 
-export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
+export const AddOther: React.FC<Props> = ({ onAddItem, index, parents }) => {
   return (
     <>
       <div className="list-group">
@@ -34,6 +45,18 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
             Add a content break to split content across multiple pages
           </div>
         </button>
+        {canInsertSurvey(parents) && (
+          <button
+            key={'survey'}
+            className="list-group-item list-group-item-action d-flex flex-column align-items-start"
+            onClick={(_e) => addSurvey(onAddItem, index)}
+          >
+            <div className="type-label">Survey</div>
+            <div className="type-description">
+              A collection of content and activities used to collect ungraded feedback from students
+            </div>
+          </button>
+        )}
       </div>
     </>
   );
@@ -41,5 +64,10 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index }) => {
 
 const addPageBreak = (onAddItem: AddCallback, index: number[]) => {
   onAddItem(createBreak(), index);
+  document.body.click();
+};
+
+const addSurvey = (onAddItem: AddCallback, index: number[]) => {
+  onAddItem(createSurvey(), index);
   document.body.click();
 };

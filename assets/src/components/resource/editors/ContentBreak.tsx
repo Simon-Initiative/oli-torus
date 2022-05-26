@@ -1,14 +1,12 @@
 import * as React from 'react';
-import * as Immutable from 'immutable';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { ResourceContent, StructuredContent } from 'data/content/resource';
+import { Break } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBreak.modules.scss';
 
 interface ContentBreakProps {
   editMode: boolean;
-  content: Immutable.List<ResourceContent>;
-  contentItem: StructuredContent;
+  contentItem: Break;
   onRemove: (key: string) => void;
 }
 

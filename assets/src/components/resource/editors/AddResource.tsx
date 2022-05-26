@@ -6,20 +6,16 @@ import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
 import { ResourceContent, ResourceContext } from 'data/content/resource';
-import { ResourceId } from 'data/types';
-import * as Immutable from 'immutable';
 import React from 'react';
 
 export type AddResourceProps = {
   index: number[];
   isLast?: boolean;
-  level: number;
+  parents: ResourceContent[];
   editMode: boolean;
   editorMap: ActivityEditorMap;
   resourceContext: ResourceContext;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
-  objectives: Immutable.List<Objective>;
-  childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (objective: Objective) => void;
 };
 

@@ -4,6 +4,8 @@ import {
   createGroup,
   GroupContent,
   ResourceContent,
+  isNestableContainer,
+  NestableContainer,
 } from 'data/content/resource';
 import guid from 'utils/guid';
 
@@ -31,11 +33,11 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
 
   /**
    * Finds a content item
-   * @param key id of the item to find
+   * @param id id of the item to find
    * @returns found content item
    */
-  find(key: string) {
-    return findContentItem(this.model, key);
+  find(id: string) {
+    return findContentItem(this.model, id);
   }
 
   /**
@@ -49,12 +51,12 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
   }
 
   /**
-   * Returns a new instance of this Record type with the value for the specific key removed.
-   * @param key key of the item to remove
+   * Returns a new instance of this Record type with the value for the specific id removed.
+   * @param id id of the item to remove
    * @returns page editor content without the deleted item
    */
-  delete(key: string) {
-    return this.with({ model: filterContentItem(this.model, key) });
+  delete(id: string) {
+    return this.with({ model: filterContentItem(this.model, id) });
   }
 
   /**
@@ -74,13 +76,13 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
 
   /**
    *
-   * @param key Updates the content item with the given key
-   * @param key Key of the item to update
+   * Updates the content item with the given id
+   * @param id Identifier of the item to update
    * @param updated Updated content item
    * @returns updated page editor content
    */
-  updateContentItem(key: string, updated: ResourceContent) {
-    return this.with({ model: updateContentItem(this.model, key, updated) });
+  updateContentItem(id: string, updated: ResourceContent) {
+    return this.with({ model: updateContentItem(this.model, id, updated) });
   }
 
   /**
@@ -101,11 +103,12 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
   }
 
   /**
-   * @param key
+   * Find the index of an item from a flattened list of items
+   * @param id
    * @returns the index of the item from the flattened list of items
    */
-  flattenedIndex(key: string) {
-    return flatten(this.model).findIndex((c) => c.id === key);
+  flattenedIndex(id: string) {
+    return flatten(this.model).findIndex((c) => c.id === id);
   }
 
   /**
@@ -180,13 +183,15 @@ function withDefaultContent(
 
 function findContentItem(
   items: Immutable.List<ResourceContent>,
-  key: string,
+  id: string,
   acc: ResourceContent | undefined = undefined,
 ): ResourceContent | undefined {
   return items.reduce((acc, c) => {
-    if (c.id === key) return c;
+    if (c.id === id) return c;
 
-    return c.type === 'group' ? findContentItem(c.children, key, acc) : acc;
+    return isNestableContainer(c)
+      ? findContentItem((c as NestableContainer).children, id, acc)
+      : acc;
   }, acc);
 }
 
@@ -199,19 +204,21 @@ function findIndex(
   return items.reduce((acc, c, index) => {
     if (fn(c)) return [...parentIndices, index];
 
-    return c.type === 'group' ? findIndex(c.children, fn, [...parentIndices, index], acc) : acc;
+    return isNestableContainer(c)
+      ? findIndex((c as NestableContainer).children, fn, [...parentIndices, index], acc)
+      : acc;
   }, acc);
 }
 
 function filterContentItem(
   items: Immutable.List<ResourceContent>,
-  key: string,
+  id: string,
 ): Immutable.List<ResourceContent> {
   return items.reduce((acc, c) => {
-    if (c.id === key) return acc;
+    if (c.id === id) return acc;
 
-    if (c.type === 'group') {
-      c.children = filterContentItem(c.children, key);
+    if (isNestableContainer(c)) {
+      (c as NestableContainer).children = filterContentItem((c as NestableContainer).children, id);
     }
     return acc.push(c);
   }, Immutable.List<ResourceContent>());
@@ -223,7 +230,8 @@ function insertAt(
   toInsert: ResourceContent,
 ): Immutable.List<ResourceContent> {
   const currentIndex = index[0];
-  if (index.length > 1 && items.get(currentIndex)?.type === 'group') {
+  const currentItem = items.get(currentIndex);
+  if (index.length > 1 && currentItem && isNestableContainer(currentItem)) {
     return items.update(currentIndex, createGroup(), (item) => {
       (item as GroupContent).children = insertAt(
         (item as GroupContent).children,
@@ -239,16 +247,20 @@ function insertAt(
 
 function updateContentItem(
   items: Immutable.List<ResourceContent>,
-  key: string,
+  id: string,
   updated: ResourceContent,
 ): Immutable.List<ResourceContent> {
   return items.map((c) => {
-    if (c.id === key) {
+    if (c.id === id) {
       return updated;
     }
 
-    if (c.type === 'group') {
-      c.children = updateContentItem(c.children, key, updated);
+    if (isNestableContainer(c)) {
+      (c as NestableContainer).children = updateContentItem(
+        (c as NestableContainer).children,
+        id,
+        updated,
+      );
     }
 
     return c;
@@ -260,8 +272,8 @@ function updateAll(
   fn: (item: ResourceContent) => ResourceContent,
 ): Immutable.List<ResourceContent> {
   return items.map((i) => {
-    if (i.type === 'group') {
-      i.children = updateAll(i.children, fn);
+    if (isNestableContainer(i)) {
+      (i as NestableContainer).children = updateAll((i as NestableContainer).children, fn);
     }
 
     return fn(i);
@@ -272,8 +284,8 @@ function flatten(items: Immutable.List<ResourceContent>) {
   return items.reduce((acc, item) => {
     acc = acc.push(item);
 
-    if (item.type === 'group') {
-      acc = acc.concat(flatten(item.children));
+    if (isNestableContainer(item)) {
+      acc = acc.concat(flatten((item as NestableContainer).children));
     }
 
     return acc;
@@ -282,12 +294,11 @@ function flatten(items: Immutable.List<ResourceContent>) {
 
 function toPersistence(items: Immutable.List<ResourceContent>): any[] {
   return items.reduce((acc, val) => {
-    const children =
-      val.type === 'group'
-        ? toPersistence(val.children)
-        : val.type === 'break'
-        ? undefined
-        : val.children;
+    const children = isNestableContainer(val)
+      ? toPersistence((val as NestableContainer).children)
+      : val.type === 'break'
+      ? undefined
+      : val.children;
 
     return [...acc, { ...val, children }];
   }, []);
@@ -295,7 +306,7 @@ function toPersistence(items: Immutable.List<ResourceContent>): any[] {
 
 function fromPersistence(items: any[]): Immutable.List<ResourceContent> {
   return items.reduce((acc, val) => {
-    const children = val.type === 'group' ? fromPersistence(val.children) : val.children;
+    const children = isNestableContainer(val) ? fromPersistence(val.children) : val.children;
 
     return acc.push({ ...val, children });
   }, Immutable.List<ResourceContent>());

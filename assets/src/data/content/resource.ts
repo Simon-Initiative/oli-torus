@@ -18,14 +18,27 @@ export type AttachedObjectives = {
   attached: ResourceId[];
 };
 
-// The types of things that can be present as top level
-// entries in a resource content array
+// Items that can be present as elements in a resource content array
 export type ResourceContent =
-  | GroupContent
-  | Break
   | StructuredContent
   | ActivityReference
-  | ActivityBankSelection;
+  | ActivityBankSelection
+  | GroupContent
+  | SurveyContent
+  | Break;
+
+export type NestableContainer = GroupContent | SurveyContent;
+
+export const isNestableContainer = (content: ResourceContent) => {
+  switch (content.type) {
+    case 'group':
+      return true;
+    case 'survey':
+      return true;
+    default:
+      return false;
+  }
+};
 
 export const getResourceContentName = (content: ResourceContent) => {
   switch (content.type) {
@@ -87,7 +100,6 @@ export const createDefaultStructuredContent = (
   type: 'content',
   id: guid(),
   children,
-  purpose: 'none',
 });
 
 export const createGroup = (
@@ -98,6 +110,15 @@ export const createGroup = (
   children,
   layout: 'vertical',
   purpose: 'none',
+});
+
+export const createSurvey = (
+  children: Immutable.List<ResourceContent> = Immutable.List([createDefaultStructuredContent()]),
+): SurveyContent => ({
+  type: 'survey',
+  id: guid(),
+  title: undefined,
+  children,
 });
 
 export const createBreak = (): Break => ({
@@ -111,7 +132,6 @@ export const createDefaultSelection = () => {
     id: guid(),
     count: 1,
     logic: { conditions: null },
-    purpose: 'none',
   } as ActivityBankSelection;
 };
 
@@ -119,7 +139,6 @@ export interface StructuredContent {
   type: 'content';
   id: string;
   children: ModelElement[];
-  purpose: string;
 }
 
 export interface ActivityBankSelection {
@@ -127,7 +146,6 @@ export interface ActivityBankSelection {
   id: string;
   logic: Bank.Logic;
   count: number;
-  purpose: string;
   children: undefined;
 }
 
@@ -135,15 +153,23 @@ export interface ActivityReference {
   type: 'activity-reference';
   id: string;
   activitySlug: ActivitySlug;
-  purpose: string;
   children: [];
 }
+
+export type GroupLayout = 'vertical' | 'deck';
 
 export interface GroupContent {
   type: 'group';
   id: string;
-  layout: string; // TODO define layout types
+  layout: GroupLayout; // TODO define layout types
   purpose: string;
+  children: Immutable.List<ResourceContent>;
+}
+
+export interface SurveyContent {
+  type: 'survey';
+  id: string;
+  title: string | undefined;
   children: Immutable.List<ResourceContent>;
 }
 

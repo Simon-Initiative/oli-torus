@@ -1,63 +1,69 @@
-import * as React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { PurposeTypes, ResourceContent, StructuredContent } from 'data/content/resource';
+import { PurposeTypes, ResourceContent, GroupContent } from 'data/content/resource';
 import * as Immutable from 'immutable';
 import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
 
-type PurposeContainerProps = {
-  children?: JSX.Element | JSX.Element[];
-  contentItem: StructuredContent;
-};
-
-const maybeRenderDeliveryPurposeContainer = (props: PurposeContainerProps) => {
-  const purposeLabel = PurposeTypes.find((p) => p.value === props.contentItem.purpose)?.label;
-
-  if (props.contentItem.purpose === 'none') {
-    return props.children;
-  }
+interface GroupBlockProps {
+  editMode: boolean;
+  contentItem: GroupContent;
+  canRemove: boolean;
+  onEdit: (contentItem: GroupContent) => void;
+  onRemove: () => void;
+}
+export const GroupBlock = ({
+  editMode,
+  contentItem,
+  canRemove,
+  children,
+  onEdit,
+  onRemove,
+}: PropsWithChildren<GroupBlockProps>) => {
+  const onEditPurpose = (purpose: string) => {
+    onEdit(Object.assign(contentItem, { purpose }));
+  };
 
   return (
-    <div className={styles.purposeContainer}>
-      <div className={`content-purpose ${props.contentItem.purpose}`}>
-        <div className="content-purpose-label">{purposeLabel}</div>
-        <div className="content-purpose-content">{props.children}</div>
+    <div
+      id={`resource-editor-${contentItem.id}`}
+      className={classNames(styles.groupBlock, `purpose-${contentItem.purpose}`)}
+    >
+      <div className={styles.actions}>
+        <DeleteButton editMode={editMode && canRemove} onClick={onRemove} />
       </div>
+      <div className={styles.groupBlockHeader}>
+        <div className="flex-grow-1"></div>
+        <Purpose purpose={contentItem.purpose} editMode={editMode} onEdit={onEditPurpose} />
+      </div>
+      <MaybeDeliveryPurposeContainer contentItem={contentItem}>
+        {children}
+      </MaybeDeliveryPurposeContainer>
     </div>
   );
 };
 
-interface GroupBlockProps {
-  editMode: boolean;
-  children?: JSX.Element | JSX.Element[];
-  content: Immutable.List<ResourceContent>;
-  contentItem: StructuredContent;
-  canRemove: boolean;
-  onEditPurpose: (key: string, purpose: string) => void;
-  onRemove: (key: string) => void;
-}
-export const GroupBlock = (props: GroupBlockProps) => {
+type PurposeContainerProps = {
+  contentItem: GroupContent;
+};
+
+const MaybeDeliveryPurposeContainer = ({
+  contentItem,
+  children,
+}: PropsWithChildren<PurposeContainerProps>) => {
+  const purposeLabel = PurposeTypes.find((p) => p.value === contentItem.purpose)?.label;
+
+  if (contentItem.purpose === 'none') {
+    return <>{children}</>;
+  }
+
   return (
-    <div
-      id={`resource-editor-${props.contentItem.id}`}
-      className={classNames(styles.groupBlock, `purpose-${props.contentItem.purpose}`)}
-    >
-      <div className={styles.actions}>
-        <DeleteButton
-          editMode={props.editMode && props.canRemove}
-          onClick={() => props.onRemove(props.contentItem.id)}
-        />
+    <div className={styles.purposeContainer}>
+      <div className={`content-purpose ${contentItem.purpose}`}>
+        <div className="content-purpose-label">{purposeLabel}</div>
+        <div className="content-purpose-content">{children}</div>
       </div>
-      <div className={styles.groupBlockHeader}>
-        <div className="flex-grow-1"></div>
-        <Purpose
-          purpose={props.contentItem.purpose}
-          editMode={props.editMode}
-          onEdit={(p) => props.onEditPurpose(props.contentItem.id, p)}
-        />
-      </div>
-      <div>{maybeRenderDeliveryPurposeContainer(props)}</div>
     </div>
   );
 };

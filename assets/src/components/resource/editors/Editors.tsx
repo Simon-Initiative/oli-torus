@@ -12,16 +12,16 @@ import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
 import { Tag } from 'data/content/tags';
 import { EditorErrorBoundary } from './editor_error_boundary';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
 
 import './Editors.scss';
-import { PageEditorContent } from 'data/editor/PageEditorContent';
 
 export type EditorsProps = {
   className?: ClassName;
-  editMode: boolean; // Whether or not we can edit
-  content: PageEditorContent; // Content of the resource
-  onEdit: (content: ResourceContent, key: string) => void;
-  onRemove: (key: string) => void;
+  editMode: boolean;
+  content: PageEditorContent;
+  onEdit: (content: PageEditorContent) => void;
+  onRemove: (id: string) => void;
   onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
@@ -34,8 +34,8 @@ export type EditorsProps = {
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
-  onActivityEdit: (key: string, update: EditorUpdate) => void;
-  onPostUndoable: (key: string, undoable: Undoable) => void;
+  onEditActivity: (id: string, update: EditorUpdate) => void;
+  onPostUndoable: (id: string, undoable: Undoable) => void;
 };
 
 // The list of editors
@@ -54,53 +54,46 @@ export const Editors = (props: EditorsProps) => {
     projectSlug,
     resourceSlug,
     editorMap,
+    resourceContext,
     onAddItem,
-    onActivityEdit,
+    onEditActivity,
     onPostUndoable,
     onRegisterNewObjective,
+    onRegisterNewTag,
   } = props;
 
   const allObjectives = props.objectives.toArray();
   const allTags = props.allTags.toArray();
+  const canRemove = content.canDelete();
 
   const editors = content.model.map((contentItem, index) => {
-    const onEdit = props.onEdit;
-    const onEditPurpose = (contentKey: string, purpose: string) => {
-      props.onEdit(Object.assign(contentItem, { purpose }), contentKey);
-    };
+    const onEdit = (contentItem: ResourceContent) =>
+      props.onEdit(content.updateContentItem(contentItem.id, contentItem));
+    const onRemove = () => props.onRemove(contentItem.id);
 
-    const editorProps = {
-      editMode,
-      onEditPurpose,
-      content,
-      onRemove: props.onRemove,
-      canRemove: content.canDelete(),
-    };
-
-    const level = 0;
-
-    const editor = createEditor(
-      props.resourceContext,
+    const editor = createEditor({
+      resourceContext: resourceContext,
       contentItem,
-      [index],
-      level,
-      activityContexts,
+      index: [index],
+      parents: [],
+      activities: activityContexts,
       editMode,
       resourceSlug,
       projectSlug,
       graded,
       objectivesMap,
-      editorProps,
       allObjectives,
       allTags,
       editorMap,
+      canRemove,
       onEdit,
-      onActivityEdit,
+      onEditActivity,
       onPostUndoable,
       onRegisterNewObjective,
-      props.onRegisterNewTag,
+      onRegisterNewTag,
       onAddItem,
-    );
+      onRemove,
+    });
 
     return (
       <div
@@ -108,11 +101,9 @@ export const Editors = (props: EditorsProps) => {
         className={classNames('resource-block-editor-and-controls', contentItem.id)}
       >
         <AddResource
-          objectives={props.objectives}
-          childrenObjectives={props.childrenObjectives}
           onRegisterNewObjective={props.onRegisterNewObjective}
           index={[index]}
-          level={level}
+          parents={[]}
           editMode={editMode}
           editorMap={editorMap}
           resourceContext={props.resourceContext}
@@ -137,7 +128,7 @@ export const Editors = (props: EditorsProps) => {
 
       <AddResource
         {...props}
-        level={0}
+        parents={[]}
         onRegisterNewObjective={props.onRegisterNewObjective}
         isLast
         index={[content.model.size]}

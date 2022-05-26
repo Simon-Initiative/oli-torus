@@ -5,11 +5,11 @@ import { throttle } from 'lodash';
 import { classNames, ClassName } from 'utils/classNames';
 import styles from './ContentOutline.modules.scss';
 import {
-  StructuredContent,
   ActivityReference,
   ResourceContent,
   PurposeTypes,
-  GroupContent,
+  NestableContainer,
+  isNestableContainer,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ActivityEditContext } from 'data/content/activity';
@@ -30,14 +30,6 @@ import { getViewportHeight } from 'utils/browser';
 
 const getActivityDescription = (activity: ActivityEditContext) => {
   return activity.model.authoring?.previewText || <i>No content</i>;
-};
-
-const getContentTitle = (item: StructuredContent) => {
-  if (item.purpose === 'none') {
-    return 'Paragraph';
-  }
-
-  return PurposeTypes.find((p) => p.value === item.purpose)?.label;
 };
 
 const getActivitySelectionTitle = (_selection: ActivityBankSelection) => {
@@ -263,7 +255,9 @@ const OutlineItem = ({
   const dropIndex =
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
 
-  if (contentItem.type === 'group') {
+  if (isNestableContainer(contentItem)) {
+    const containerItem = contentItem as NestableContainer;
+
     return (
       <>
         {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
@@ -283,13 +277,13 @@ const OutlineItem = ({
           >
             <DragHandle style={{ margin: '10px 10px 10px 0' }} />
             <ExpandToggle expanded={true} />
-            <Description title={getGroupTitle(contentItem)}>
-              {contentItem.children.size} items
+            <Description title={getContainerTitle(containerItem)}>
+              {containerItem.children.size} items
             </Description>
           </div>
           <div className={styles.groupedOutline}>
-            {contentItem.children
-              .filter((contentItem: ResourceContent) => contentItem.id !== activeDragId)
+            {containerItem.children
+              .filter((containerItem: ResourceContent) => containerItem.id !== activeDragId)
               .map((c, i) => {
                 return (
                   <OutlineItem
@@ -318,7 +312,7 @@ const OutlineItem = ({
             {isReorderMode && (
               <DropTarget
                 id="last"
-                index={[...dropIndex, contentItem.children.size]}
+                index={[...dropIndex, containerItem.children.size]}
                 onDrop={onDropLast}
               />
             )}
@@ -398,7 +392,7 @@ const renderItem = (
       return (
         <>
           <Icon iconName="las la-paragraph" />
-          <Description title={getContentTitle(item)}>{getContentDescription(item)}</Description>
+          <Description title="Paragraph">{getContentDescription(item)}</Description>
         </>
       );
 
@@ -431,12 +425,16 @@ const renderItem = (
   }
 };
 
-function getGroupTitle(contentItem: GroupContent) {
-  switch (contentItem.purpose) {
-    case 'none':
-      return 'Group';
-    default:
-      return PurposeTypes.find(({ value }) => value === contentItem.purpose)?.label;
+function getContainerTitle(contentItem: NestableContainer) {
+  if (contentItem.type === 'group') {
+    switch (contentItem.purpose) {
+      case 'none':
+        return 'Group';
+      default:
+        return PurposeTypes.find(({ value }) => value === contentItem.purpose)?.label;
+    }
+  } else if (contentItem.type === 'survey') {
+    return contentItem.title ?? 'Survey';
   }
 }
 

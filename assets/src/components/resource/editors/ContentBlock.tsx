@@ -1,14 +1,12 @@
 import React, { PropsWithChildren } from 'react';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { ResourceContent, StructuredContent } from 'data/content/resource';
-import * as Immutable from 'immutable';
+import { StructuredContent, ActivityBankSelection } from 'data/content/resource';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
 
 interface ContentBlockProps {
   editMode: boolean;
-  content: Immutable.List<ResourceContent>;
-  contentItem: StructuredContent;
+  contentItem: StructuredContent | ActivityBankSelection;
   canRemove: boolean;
   onRemove: (key: string) => void;
 }
@@ -17,11 +15,7 @@ export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
   return (
     <div
       id={`resource-editor-${props.contentItem.id}`}
-      className={classNames(
-        styles.contentBlock,
-        'content-block',
-        `purpose-${props.contentItem.purpose}`,
-      )}
+      className={classNames(styles.contentBlock, 'content-block')}
     >
       <div className={styles.actions}>
         <DeleteButton

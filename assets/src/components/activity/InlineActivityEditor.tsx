@@ -11,15 +11,15 @@ import { valueOr } from 'utils/common';
 import { TitleBar } from '../content/TitleBar';
 
 export interface ActivityEditorProps extends ActivityEditContext {
-  onEdit: (state: EditorUpdate) => void;
-  onPostUndoable: (undoable: Undoable) => void;
-  onRegisterNewObjective: (o: Objective) => void;
-  onRegisterNewTag: (o: Tag) => void;
   editMode: boolean;
   projectSlug: string;
   allObjectives: Objective[];
   allTags: Tag[];
   banked: boolean;
+  onEdit: (state: EditorUpdate) => void;
+  onPostUndoable: (undoable: Undoable) => void;
+  onRegisterNewObjective: (o: Objective) => void;
+  onRegisterNewTag: (o: Tag) => void;
 }
 
 // This is the state of our activity editing that is undoable
