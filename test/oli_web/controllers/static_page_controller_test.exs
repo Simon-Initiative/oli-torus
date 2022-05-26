@@ -24,4 +24,20 @@ defmodule OliWeb.StaticPageControllerTest do
       assert get_session(conn, :dismissed_messages) == [1, 2]
     end
   end
+
+  describe "local timezone" do
+    test "loads timezone script when local timezone is not set", %{conn: conn} do
+      conn = get(conn, "/")
+
+      assert html_response(conn, 200) =~ "/js/timezone.js"
+    end
+
+    test "does not load timezone script when local timezone is set", context do
+      {:ok, conn: conn} = set_timezone(context)
+
+      conn = get(conn, "/")
+
+      refute html_response(conn, 200) =~ "/js/timezone.js"
+    end
+  end
 end

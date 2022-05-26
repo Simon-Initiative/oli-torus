@@ -273,7 +273,9 @@ defmodule Oli.Publishing do
     from(
       project in Project,
       left_join: section in Section,
-      on: project.id == section.base_project_id and section.type == :blueprint,
+      on:
+        project.id == section.base_project_id and section.type == :blueprint and
+          section.status == :active,
       join: last_publication in subquery(last_publication_query()),
       on:
         last_publication.project_id == project.id or

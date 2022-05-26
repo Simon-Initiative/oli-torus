@@ -259,9 +259,10 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
   // converts stringfied number array to number array
   const convertToNumberArray = (arr: string[]) =>
-    arr.map((element) => parseInt(element.replace(/"/g, ''), 10));
+    arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
+    /* console.log('MCQ INIT', { pModel }); */
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
@@ -658,6 +659,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           case NotificationType.CONTEXT_CHANGED:
             {
               const { snapshot: changes } = payload;
+
+              /* console.log('MCQ CONTEXT CHANGED', { changes }); */
+
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
@@ -672,7 +676,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
               // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (multipleSelection && sSelectedChoices !== undefined && sSelectedChoices.length) {
+              if (multipleSelection && sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
                 // convert stringfied number array to number array
@@ -693,7 +697,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (
                 multipleSelection &&
                 sSelectedChoicesText !== undefined &&
-                sSelectedChoicesText.length &&
                 !hasDoneSelectedChoice
               ) {
                 hasDoneMultiple = true;

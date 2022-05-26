@@ -14,6 +14,7 @@ defmodule Oli.TestHelpers do
   alias Oli.PartComponents
   alias Oli.Publishing
   alias OliWeb.Common.LtiSession
+  alias Lti_1p3.Tool.ContextRoles
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -459,6 +460,123 @@ defmodule Oli.TestHelpers do
       )
 
     section
+  end
+
+  @doc """
+    Creates an open and free section for a given project
+  """
+  def open_and_free_section(project, attrs) do
+    insert(
+      :section,
+      Map.merge(
+        %{
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          display_curriculum_item_numbering: attrs.display_curriculum_item_numbering
+        },
+        attrs
+      )
+    )
+  end
+
+  @doc """
+    Creates and publishes a project with a curriculum composed of a root container, a unit, and a nested page.
+  """
+  def base_project_with_curriculum(_) do
+    project = insert(:project)
+
+    nested_page_resource = insert(:resource)
+
+    nested_page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 1",
+        resource: nested_page_resource
+      })
+
+    # Associate nested page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource.id})
+
+    unit_one_resource = insert(:resource)
+
+    # Associate unit to the project
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [nested_page_resource.id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [unit_one_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: nested_page_resource,
+      revision: nested_page_revision
+    })
+
+    # Publish unit one resource
+    insert(
+      :published_resource,
+      %{
+        resource: unit_one_resource,
+        publication: publication,
+        revision: unit_one_revision
+      }
+    )
+
+    %{publication: publication, project: project}
+  end
+
+  def enroll_user_to_section(user, section, role) do
+    Sections.enroll(user.id, section.id, [
+      ContextRoles.get_role(role)
+    ])
   end
 
   def set_timezone(%{conn: conn}) do

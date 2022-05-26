@@ -2,7 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.{Author, User}
-  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility}
+  alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
   alias Oli.Delivery.Gating.GatingCondition
@@ -99,7 +99,7 @@ defmodule Oli.Factory do
   def project_factory() do
     %Project{
       description: "Example description",
-      title: "Example Course",
+      title: sequence("Example Course"),
       slug: sequence("examplecourse"),
       version: "1",
       family: insert(:family),
@@ -272,6 +272,13 @@ defmodule Oli.Factory do
     %Resource{}
   end
 
+  def project_resource_factory() do
+    %ProjectResource{
+      project_id: insert(:project).id,
+      resource_id: insert(:resource).id
+    }
+  end
+
   def gating_condition_factory() do
     {:ok, start_date, _timezone} = DateTime.from_iso8601("2019-05-22 20:30:00Z")
     {:ok, end_date, _timezone} = DateTime.from_iso8601("2019-06-24 20:30:00Z")
@@ -428,7 +435,7 @@ defmodule Oli.Factory do
   def publisher_factory() do
     %Publisher{
       name: sequence("Publisher"),
-      email: "#{sequence("publisher")}@example.edu",
+      email: "#{sequence("publisher")}@example.education",
       address: "Publisher Address",
       main_contact: "Publisher Contact",
       website_url: "mypublisher.com",
