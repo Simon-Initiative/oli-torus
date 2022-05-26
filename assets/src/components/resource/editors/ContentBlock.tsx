@@ -17,7 +17,8 @@ export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
       id={`resource-editor-${props.contentItem.id}`}
       className={classNames(styles.contentBlock, 'content-block')}
     >
-      <div className={styles.actions}>
+      <div className={styles.contentBlockHeader}>
+        <div className="flex-grow-1"></div>
         <DeleteButton
           editMode={props.editMode && props.canRemove}
           onClick={() => props.onRemove(props.contentItem.id)}

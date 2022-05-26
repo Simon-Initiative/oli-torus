@@ -545,6 +545,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
                 activityContexts={this.state.activityContexts}
                 editorMap={props.editorMap}
                 projectSlug={projectSlug}
+                resourceSlug={resourceSlug}
                 onEditContent={onEdit}
               />
               <Editors

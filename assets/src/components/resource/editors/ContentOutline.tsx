@@ -28,6 +28,7 @@ import { DropTarget } from './dragndrop/DropTarget';
 import { ActivityEditorMap } from 'data/content/editors';
 import { ProjectSlug } from 'data/types';
 import { getViewportHeight } from 'utils/browser';
+import { useStateFromLocalStorage } from 'utils/useStateFromLocalStorage';
 
 const getActivityDescription = (activity: ActivityEditContext) => {
   return activity.model.authoring?.previewText || <i>No content</i>;
@@ -49,9 +50,6 @@ const calculateOutlineHeight = (scrollOffset: number) => {
   return Math.max(getViewportHeight() - scrollCompensation, minHeight);
 };
 
-const EDITOR_SHOW_OUTLINE_KEY = 'editorShowOutline';
-const loadShowOutlineState = () => localStorage.getItem(EDITOR_SHOW_OUTLINE_KEY) === 'true';
-
 interface ContentOutlineProps {
   className?: ClassName;
   editMode: boolean;
@@ -59,6 +57,7 @@ interface ContentOutlineProps {
   activityContexts: Immutable.Map<string, ActivityEditContext>;
   editorMap: ActivityEditorMap;
   projectSlug: ProjectSlug;
+  resourceSlug: ProjectSlug;
   onEditContent: (content: PageEditorContent) => void;
 }
 
@@ -69,18 +68,18 @@ export const ContentOutline = ({
   activityContexts,
   editorMap,
   projectSlug,
+  resourceSlug,
   onEditContent,
 }: ContentOutlineProps) => {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [assistive, setAssistive] = useState('');
   const [scrollPos, setScrollPos] = useState(0);
   const [height, setHeight] = useState(calculateOutlineHeight(scrollPos));
-  const [showOutline, setShowOutlineState] = useState(loadShowOutlineState());
-
-  const setShowOutline = (show: boolean) => {
-    localStorage.setItem(EDITOR_SHOW_OUTLINE_KEY, show.toString());
-    setShowOutlineState(show);
-  };
+  const [showOutline, setShowOutline] = useStateFromLocalStorage(false, 'editorShowOutline');
+  const [collapsedGroupMap, setCollapsedGroupMap] = useStateFromLocalStorage(
+    Immutable.Map<string, boolean>(),
+    `editorCollapsedGroupMap-${resourceSlug}`,
+  );
 
   // adjust the height of the content outline when the window is resized
   useEffect(() => {
@@ -158,6 +157,8 @@ export const ContentOutline = ({
             parentDropIndex={[]}
             content={content}
             onEditContent={onEditContent}
+            collapsedGroupMap={collapsedGroupMap}
+            setCollapsedGroupMap={setCollapsedGroupMap}
           />
         );
       }),
@@ -216,10 +217,12 @@ type OutlineItemProps = {
   activeDragIndex: number[];
   parentDropIndex: number[];
   content: PageEditorContent;
+  collapsedGroupMap: Immutable.Map<string, boolean>;
   onEditContent: (content: PageEditorContent) => void;
   setActiveDragId: (id: string) => void;
   handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
   onFocus: (id: string) => void;
+  setCollapsedGroupMap: (map: Immutable.Map<string, boolean>) => void;
 };
 
 const OutlineItem = ({
@@ -238,10 +241,12 @@ const OutlineItem = ({
   isReorderMode,
   activeDragIndex,
   parentDropIndex,
+  collapsedGroupMap,
   onEditContent,
   setActiveDragId,
   handleKeyDown,
   onFocus,
+  setCollapsedGroupMap,
 }: OutlineItemProps) => {
   const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
   const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
@@ -263,11 +268,15 @@ const OutlineItem = ({
   if (isNestableContainer(contentItem)) {
     const containerItem = contentItem as NestableContainer;
 
+    const expanded = !collapsedGroupMap.get(id);
+    const toggleCollapsableGroup = (id: string) =>
+      setCollapsedGroupMap(collapsedGroupMap.set(id, expanded));
+
     const icon =
       contentItem.type === 'survey' ? (
-        <Icon iconName="las la-poll la-lg" />
+        <Icon iconName="las la-poll" />
       ) : (
-        <ExpandToggle expanded={true} />
+        <ExpandToggle expanded={expanded} onClick={() => toggleCollapsableGroup(id)} />
       );
 
     return (
@@ -276,8 +285,11 @@ const OutlineItem = ({
 
         <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
           <div
-            className={styles.groupLink}
-            onClick={() => scrollToResourceEditor(id)}
+            className={classNames(styles.groupLink, !expanded && 'mb-1')}
+            onClick={(e) =>
+              // only scroll to the resource editor if this event was not a expand toggle event
+              !(e as any).isExpandToggleEvent ? scrollToResourceEditor(id) : undefined
+            }
             role="button"
             draggable={editMode}
             tabIndex={0}
@@ -293,43 +305,47 @@ const OutlineItem = ({
               {containerItem.children.size} items
             </Description>
           </div>
-          <div className={styles.groupedOutline}>
-            {containerItem.children
-              .filter((containerItem: ResourceContent) => containerItem.id !== activeDragId)
-              .map((c, i) => {
-                return (
-                  <OutlineItem
-                    key={id}
-                    className={className}
-                    id={c.id}
-                    level={level + 1}
-                    index={i}
-                    parents={[...parents, containerItem]}
-                    editMode={editMode}
-                    projectSlug={projectSlug}
-                    activeDragId={activeDragId}
-                    setActiveDragId={setActiveDragId}
-                    handleKeyDown={handleKeyDown}
-                    onFocus={onFocus}
-                    assistive={assistive}
-                    contentItem={c}
-                    activityContexts={activityContexts}
-                    isReorderMode={isReorderMode}
-                    activeDragIndex={activeDragIndex}
-                    parentDropIndex={dropIndex}
-                    content={content}
-                    onEditContent={onEditContent}
-                  />
-                );
-              })}
-            {isReorderMode && canDrop(activeDragId, [...parents, containerItem], content) && (
-              <DropTarget
-                id="last"
-                index={[...dropIndex, containerItem.children.size]}
-                onDrop={onDropLast}
-              />
-            )}
-          </div>
+          {expanded && (
+            <div className={styles.groupedOutline}>
+              {containerItem.children
+                .filter((containerItem: ResourceContent) => containerItem.id !== activeDragId)
+                .map((c, i) => {
+                  return (
+                    <OutlineItem
+                      key={id}
+                      className={className}
+                      id={c.id}
+                      level={level + 1}
+                      index={i}
+                      parents={[...parents, containerItem]}
+                      editMode={editMode}
+                      projectSlug={projectSlug}
+                      activeDragId={activeDragId}
+                      setActiveDragId={setActiveDragId}
+                      handleKeyDown={handleKeyDown}
+                      onFocus={onFocus}
+                      assistive={assistive}
+                      contentItem={c}
+                      activityContexts={activityContexts}
+                      isReorderMode={isReorderMode}
+                      activeDragIndex={activeDragIndex}
+                      parentDropIndex={dropIndex}
+                      content={content}
+                      onEditContent={onEditContent}
+                      collapsedGroupMap={collapsedGroupMap}
+                      setCollapsedGroupMap={setCollapsedGroupMap}
+                    />
+                  );
+                })}
+              {isReorderMode && canDrop(activeDragId, [...parents, containerItem], content) && (
+                <DropTarget
+                  id="last"
+                  index={[...dropIndex, containerItem.children.size]}
+                  onDrop={onDropLast}
+                />
+              )}
+            </div>
+          )}
         </div>
       </>
     );
@@ -478,17 +494,24 @@ interface IconProps {
 
 const Icon = ({ iconName }: IconProps) => (
   <div className={styles.icon}>
-    <i className={iconName}></i>
+    <i className={classNames(iconName, 'la-lg')}></i>
   </div>
 );
 
 interface ExpandToggleProps {
   expanded: boolean;
+  onClick: () => void;
 }
 
-const ExpandToggle = ({ expanded }: ExpandToggleProps) => (
-  <div className={styles.expandToggle}>
-    <i className="las la-chevron-down"></i>
+const ExpandToggle = ({ expanded, onClick }: ExpandToggleProps) => (
+  <div
+    className={styles.expandToggle}
+    onClick={(e) => {
+      (e as any).isExpandToggleEvent = true;
+      onClick();
+    }}
+  >
+    {expanded ? <i className="las la-chevron-down"></i> : <i className="las la-chevron-right"></i>}
   </div>
 );
 

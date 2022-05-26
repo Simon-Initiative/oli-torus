@@ -17,7 +17,7 @@ export const ActivityBlock = ({ children, contentItem }: PropsWithChildren<Activ
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
-      <div className="p-2">{children}</div>
+      <div>{children}</div>
     </div>
   );
 };

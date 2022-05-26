@@ -27,22 +27,24 @@ export const SurveyBlock = ({
 
   return (
     <div id={`resource-editor-${contentItem.id}`} className={classNames(styles.surveyBlock)}>
-      <div className={styles.surveyBlockHeader}>
-        <div className="align-self-center">
-          <i className="las la-poll la-lg"></i>
+      <div className={styles.surveyBlockBorder}>
+        <div className={styles.surveyBlockHeader}>
+          <div className="align-self-center">
+            <i className="las la-poll la-lg"></i>
+          </div>
+          <TextEditor
+            label="Edit Survey Title"
+            onEdit={onEditTitle}
+            model={valueOr(contentItem.title, 'Survey')}
+            showAffordances={true}
+            allowEmptyContents={false}
+            editMode={editMode}
+          />
+          <div className="flex-grow-1"></div>
+          <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
         </div>
-        <TextEditor
-          label="Edit Survey Title"
-          onEdit={onEditTitle}
-          model={valueOr(contentItem.title, 'Survey')}
-          showAffordances={true}
-          allowEmptyContents={false}
-          editMode={editMode}
-        />
-        <div className="flex-grow-1"></div>
-        <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
+        <div>{children}</div>
       </div>
-      <div>{children}</div>
     </div>
   );
 };
