@@ -14,6 +14,7 @@ import { GroupEditor } from './GroupEditor';
 import { SurveyEditor } from './SurveyEditor';
 import { ContentBreak } from './ContentBreak';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
+import { FeatureFlags } from 'apps/page-editor/types';
 
 export type EditorProps = {
   resourceContext: ResourceContext;
@@ -30,6 +31,7 @@ export type EditorProps = {
   allObjectives: Objective[];
   allTags: Tag[];
   editorMap: ActivityEditorMap;
+  featureFlags: FeatureFlags;
   onEdit: (content: ResourceContent) => void;
   onRemove: () => void;
   onEditActivity: (key: string, update: EditorUpdate) => void;

@@ -37,7 +37,7 @@ import { loadPreferences } from 'state/preferences';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { registerUnload, unregisterUnload } from './listeners';
-import { empty, PageUndoable, Undoables } from './types';
+import { empty, PageUndoable, Undoables, FeatureFlags } from './types';
 import { ContentOutline } from 'components/resource/editors/ContentOutline';
 import { PageEditorContent } from '../../data/editor/PageEditorContent';
 import '../ResourceEditor.scss';
@@ -45,6 +45,7 @@ import '../ResourceEditor.scss';
 export interface PageEditorProps extends ResourceContext {
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   activities: ActivityMap;
+  featureFlags: FeatureFlags;
   onLoadPreferences: () => void;
 }
 

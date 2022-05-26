@@ -23,6 +23,7 @@ export const GroupEditor = ({
   editorMap,
   objectivesMap,
   graded,
+  featureFlags,
   onEdit,
   onEditActivity,
   onAddItem,
@@ -63,6 +64,7 @@ export const GroupEditor = ({
               editMode={editMode}
               editorMap={editorMap}
               resourceContext={resourceContext}
+              featureFlags={featureFlags}
               onAddItem={onAddItem}
               onRegisterNewObjective={onRegisterNewObjective}
             />
@@ -81,6 +83,7 @@ export const GroupEditor = ({
               allTags,
               editorMap,
               canRemove,
+              featureFlags,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemoveChild,
@@ -98,6 +101,7 @@ export const GroupEditor = ({
         editMode={editMode}
         editorMap={editorMap}
         resourceContext={resourceContext}
+        featureFlags={featureFlags}
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />

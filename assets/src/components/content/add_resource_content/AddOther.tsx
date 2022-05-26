@@ -1,3 +1,5 @@
+import React from 'react';
+import { FeatureFlags } from 'apps/page-editor/types';
 import { AddCallback } from 'components/content/add_resource_content/AddResourceContent';
 import {
   createDefaultSelection,
@@ -5,20 +7,19 @@ import {
   createSurvey,
   ResourceContent,
 } from 'data/content/resource';
-import React from 'react';
 
 // returns true if non of the parents are a survey element
-const canInsertSurvey = (parents: ResourceContent[]) => (
-  console.log(parents), parents.every((p) => p.type !== 'survey')
-);
+const canInsertSurvey = (parents: ResourceContent[], featureFlags: FeatureFlags) =>
+  featureFlags.survey && parents.every((p) => p.type !== 'survey');
 
 interface Props {
   index: number[];
   parents: ResourceContent[];
+  featureFlags: FeatureFlags;
   onAddItem: AddCallback;
 }
 
-export const AddOther: React.FC<Props> = ({ onAddItem, index, parents }) => {
+export const AddOther: React.FC<Props> = ({ onAddItem, index, parents, featureFlags }) => {
   return (
     <>
       <div className="list-group">
@@ -45,7 +46,7 @@ export const AddOther: React.FC<Props> = ({ onAddItem, index, parents }) => {
             Add a content break to split content across multiple pages
           </div>
         </button>
-        {canInsertSurvey(parents) && (
+        {canInsertSurvey(parents, featureFlags) && (
           <button
             key={'survey'}
             className="list-group-item list-group-item-action d-flex flex-column align-items-start"

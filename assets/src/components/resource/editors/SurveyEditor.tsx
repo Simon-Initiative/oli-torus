@@ -23,6 +23,7 @@ export const SurveyEditor = ({
   editorMap,
   objectivesMap,
   graded,
+  featureFlags,
   onEdit,
   onEditActivity,
   onAddItem,
@@ -63,6 +64,7 @@ export const SurveyEditor = ({
               editMode={editMode}
               editorMap={editorMap}
               resourceContext={resourceContext}
+              featureFlags={featureFlags}
               onAddItem={onAddItem}
             />
             {createEditor({
@@ -80,6 +82,7 @@ export const SurveyEditor = ({
               allTags,
               editorMap,
               canRemove,
+              featureFlags,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemoveChild,
@@ -97,6 +100,7 @@ export const SurveyEditor = ({
         editMode={editMode}
         editorMap={editorMap}
         resourceContext={resourceContext}
+        featureFlags={featureFlags}
         onAddItem={onAddItem}
         onRegisterNewObjective={onRegisterNewObjective}
       />

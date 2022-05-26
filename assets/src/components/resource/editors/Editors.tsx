@@ -10,6 +10,7 @@ import { AddResource } from './AddResource';
 import { createEditor } from './createEditor';
 import { EditorUpdate } from 'components/activity/InlineActivityEditor';
 import { Undoable } from 'components/activities/types';
+import { FeatureFlags } from 'apps/page-editor/types';
 import { Tag } from 'data/content/tags';
 import { EditorErrorBoundary } from './editor_error_boundary';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
@@ -20,9 +21,6 @@ export type EditorsProps = {
   className?: ClassName;
   editMode: boolean;
   content: PageEditorContent;
-  onEdit: (content: PageEditorContent) => void;
-  onRemove: (id: string) => void;
-  onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   editorMap: ActivityEditorMap; // Map of activity types to activity elements
   graded: boolean;
   activityContexts: Immutable.Map<string, ActivityEditContext>;
@@ -32,6 +30,10 @@ export type EditorsProps = {
   allTags: Immutable.List<Tag>;
   objectives: Immutable.List<Objective>;
   childrenObjectives: Immutable.Map<ResourceId, Immutable.List<Objective>>;
+  featureFlags: FeatureFlags;
+  onEdit: (content: PageEditorContent) => void;
+  onRemove: (id: string) => void;
+  onAddItem: (c: ResourceContent, index: number[], a?: ActivityEditContext) => void;
   onRegisterNewObjective: (o: Objective) => void;
   onRegisterNewTag: (o: Tag) => void;
   onEditActivity: (id: string, update: EditorUpdate) => void;
@@ -55,6 +57,7 @@ export const Editors = (props: EditorsProps) => {
     resourceSlug,
     editorMap,
     resourceContext,
+    featureFlags,
     onAddItem,
     onEditActivity,
     onPostUndoable,
@@ -86,6 +89,7 @@ export const Editors = (props: EditorsProps) => {
       allTags,
       editorMap,
       canRemove,
+      featureFlags,
       onEdit,
       onEditActivity,
       onPostUndoable,
@@ -101,13 +105,14 @@ export const Editors = (props: EditorsProps) => {
         className={classNames('resource-block-editor-and-controls', contentItem.id)}
       >
         <AddResource
-          onRegisterNewObjective={props.onRegisterNewObjective}
           index={[index]}
           parents={[]}
           editMode={editMode}
           editorMap={editorMap}
           resourceContext={props.resourceContext}
+          featureFlags={featureFlags}
           onAddItem={onAddItem}
+          onRegisterNewObjective={props.onRegisterNewObjective}
         />
 
         <div
@@ -127,15 +132,15 @@ export const Editors = (props: EditorsProps) => {
       {editors}
 
       <AddResource
-        {...props}
-        parents={[]}
-        onRegisterNewObjective={props.onRegisterNewObjective}
-        isLast
         index={[content.model.size]}
+        parents={[]}
         editMode={editMode}
+        isLast
         editorMap={editorMap}
         resourceContext={props.resourceContext}
+        featureFlags={featureFlags}
         onAddItem={onAddItem}
+        onRegisterNewObjective={props.onRegisterNewObjective}
       />
     </div>
   );
