@@ -48,7 +48,7 @@ export const isEqual = (factValue: any, value: any): boolean => {
   // for boolean values,  factValue comes as true and value comes as 'true'
   // and some factValue comes as 'true' and value comes as true
 
-  const stringifiedValue = value.toString().toLowerCase();
+  const stringifiedValue = value?.toString().toLowerCase();
   if (
     typeOfFactValue === 'boolean' &&
     (stringifiedValue === 'true' || stringifiedValue === 'false')
