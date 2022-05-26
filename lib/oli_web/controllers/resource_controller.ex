@@ -124,6 +124,7 @@ defmodule OliWeb.ResourceController do
       revision ->
         %Oli.Delivery.ActivityProvider.Result{
           revisions: activity_revisions,
+          bib_revisions: bib_references,
           transformed_content: transformed_content
         } =
           Oli.Delivery.ActivityProvider.provide(
@@ -150,9 +151,12 @@ defmodule OliWeb.ResourceController do
                 ),
               content_html:
                 PageEditor.render_page_html(project_slug, transformed_content, author,
-                  preview: true
+                  preview: true, bib_app_params: bib_references
                 ),
               context: context,
+              bib_app_params: %{
+                bibReferences: bib_references
+              },
               scripts: Activities.get_activity_scripts(),
               preview_mode: true,
               container:
