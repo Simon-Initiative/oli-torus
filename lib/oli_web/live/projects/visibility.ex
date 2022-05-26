@@ -43,7 +43,7 @@ defmodule OliWeb.Projects.VisibilityLive do
           </div>
         </form>
         <div class="alert alert-info mt-5" role="alert">
-          <strong>Note:</strong> Edits made to duplicates created by other users will not affect your course project in any way.
+          <strong>Note:</strong> Edits made to duplicates created by other users will not affect your project in any way.
         </div>
       </div>
     </div>
