@@ -43,6 +43,7 @@ export const GroupEditor = ({
     <GroupBlock
       editMode={editMode}
       contentItem={contentItem}
+      parents={parents}
       canRemove={canRemove}
       onRemove={onRemove}
       onEdit={onEdit}

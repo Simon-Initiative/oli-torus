@@ -1,7 +1,12 @@
 import React, { PropsWithChildren } from 'react';
 import { DeleteButton } from 'components/misc/DeleteButton';
-import { PurposeTypes, ResourceContent, GroupContent } from 'data/content/resource';
-import * as Immutable from 'immutable';
+import {
+  PurposeTypes,
+  GroupContent,
+  ResourceContent,
+  isGroupWithPurpose,
+  groupOrDescendantHasPurpose,
+} from 'data/content/resource';
 import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
@@ -9,6 +14,7 @@ import styles from './ContentBlock.modules.scss';
 interface GroupBlockProps {
   editMode: boolean;
   contentItem: GroupContent;
+  parents: ResourceContent[];
   canRemove: boolean;
   onEdit: (contentItem: GroupContent) => void;
   onRemove: () => void;
@@ -16,6 +22,7 @@ interface GroupBlockProps {
 export const GroupBlock = ({
   editMode,
   contentItem,
+  parents,
   canRemove,
   children,
   onEdit,
@@ -25,17 +32,25 @@ export const GroupBlock = ({
     onEdit(Object.assign(contentItem, { purpose }));
   };
 
+  // a purpose can only be set if no parents have a purpose or no children have purpose
+  const canEditPurpose =
+    parents.every((p) => !isGroupWithPurpose(p)) &&
+    !contentItem.children.some((c) => groupOrDescendantHasPurpose(c));
+
   return (
     <div
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.groupBlock, `purpose-${contentItem.purpose}`)}
     >
-      <div className={styles.actions}>
-        <DeleteButton editMode={editMode && canRemove} onClick={onRemove} />
-      </div>
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
-        <Purpose purpose={contentItem.purpose} editMode={editMode} onEdit={onEditPurpose} />
+        <Purpose
+          purpose={contentItem.purpose}
+          editMode={editMode}
+          canEditPurpose={canEditPurpose}
+          onEdit={onEditPurpose}
+        />
+        <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
       <MaybeDeliveryPurposeContainer contentItem={contentItem}>
         {children}

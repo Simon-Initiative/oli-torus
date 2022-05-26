@@ -1,9 +1,6 @@
 @use 'authoring/theme' as authoring;
 
-.contentBlock,
-.groupBlock,
-.surveyBlock,
-.activityBlock {
+.contentBlock {
   position: relative;
 
   &:hover > .actions {
@@ -95,7 +92,7 @@
 .surveyBlock {
   border: 1px solid authoring.$gray-500;
   border-radius: 6px;
-  margin: 0 20px;
+  margin: 20px;
   padding: 20px;
 
   :global(i.las.la-poll) {
@@ -106,6 +103,11 @@
 
 .surveyBlockHeader {
   margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+}
+
+.activityBlockHeader {
   display: flex;
   flex-direction: row;
 }

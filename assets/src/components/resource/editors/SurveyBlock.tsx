@@ -27,9 +27,6 @@ export const SurveyBlock = ({
 
   return (
     <div id={`resource-editor-${contentItem.id}`} className={classNames(styles.surveyBlock)}>
-      <div className={styles.actions}>
-        <DeleteButton editMode={editMode && canRemove} onClick={onRemove} />
-      </div>
       <div className={styles.surveyBlockHeader}>
         <div className="align-self-center">
           <i className="las la-poll la-lg"></i>
@@ -43,6 +40,7 @@ export const SurveyBlock = ({
           editMode={editMode}
         />
         <div className="flex-grow-1"></div>
+        <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
       </div>
       <div>{children}</div>
     </div>

@@ -11,21 +11,12 @@ interface ActivityBlockProps {
   onRemove: (key: string) => void;
 }
 
-export const ActivityBlock = ({
-  children,
-  editMode,
-  contentItem,
-  canRemove,
-  onRemove,
-}: PropsWithChildren<ActivityBlockProps>) => {
+export const ActivityBlock = ({ children, contentItem }: PropsWithChildren<ActivityBlockProps>) => {
   return (
     <div
       id={`resource-editor-${contentItem.id}`}
       className={classNames(styles.activityBlock, 'activity-block')}
     >
-      <div className={styles.actions}>
-        <DeleteButton editMode={editMode && canRemove} onClick={() => onRemove(contentItem.id)} />
-      </div>
       <div className="p-2">{children}</div>
     </div>
   );

@@ -72,7 +72,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const inputClass = `form-control ${validity} ${size} flex-fill`;
 
     return (
-      <div data-slate-editor className="d-flex">
+      <div data-slate-editor className="d-flex flex-grow-1">
         <input
           type="text"
           className={inputClass}

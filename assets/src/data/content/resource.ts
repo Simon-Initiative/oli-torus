@@ -40,7 +40,17 @@ export const isNestableContainer = (content: ResourceContent) => {
   }
 };
 
-export const getResourceContentName = (content: ResourceContent) => {
+interface NestableContainerCaseOf {
+  nestable: (nc: NestableContainer) => any;
+  other: (c: ResourceContent) => any;
+}
+
+export const maybeNestableContainer = <V>(content: ResourceContent) => ({
+  caseOf: ({ nestable, other }: NestableContainerCaseOf) =>
+    isNestableContainer(content) ? nestable(content as NestableContainer) : other(content),
+});
+
+export const getResourceContentName = (content: ResourceContent): string => {
   switch (content.type) {
     case 'activity-reference':
       return 'Activity';
@@ -48,11 +58,46 @@ export const getResourceContentName = (content: ResourceContent) => {
       return 'Content';
     case 'group':
       return 'Group';
+    case 'survey':
+      return 'Survey';
     case 'break':
       return 'Page Break';
     case 'selection':
       return 'Selection';
   }
+};
+
+export const canInsert = (content: ResourceContent, parents: ResourceContent[]): boolean => {
+  switch (content.type) {
+    case 'activity-reference':
+      return true;
+    case 'content':
+      return true;
+    case 'group':
+      return (
+        parents.every((p) => !isGroupWithPurpose(p)) &&
+        !content.children.some((c) => groupOrDescendantHasPurpose(c))
+      );
+    case 'survey':
+      return parents.every((p) => !isSurvey(p));
+    case 'break':
+      return true;
+    case 'selection':
+      return true;
+  }
+};
+
+export const isSurvey = (c: ResourceContent) => c.type === 'survey';
+export const isGroupWithPurpose = (c: ResourceContent) =>
+  c.type === 'group' && c.purpose !== 'none';
+export const groupOrDescendantHasPurpose = (c: ResourceContent): boolean => {
+  if (isGroupWithPurpose(c)) {
+    return true;
+  }
+
+  return isNestableContainer(c)
+    ? (c as NestableContainer).children.some(groupOrDescendantHasPurpose)
+    : false;
 };
 
 // The full context necessary to operate a resource editing session

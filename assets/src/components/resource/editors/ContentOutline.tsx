@@ -10,6 +10,7 @@ import {
   PurposeTypes,
   NestableContainer,
   isNestableContainer,
+  canInsert,
 } from 'data/content/resource';
 import { PageEditorContent } from 'data/editor/PageEditorContent';
 import { ActivityEditContext } from 'data/content/activity';
@@ -140,6 +141,7 @@ export const ContentOutline = ({
             key={contentItem.id}
             id={contentItem.id}
             index={index}
+            parents={[]}
             className={className}
             level={0}
             editMode={editMode}
@@ -203,12 +205,10 @@ type OutlineItemProps = {
   id: string;
   level: number;
   index: number;
+  parents: ResourceContent[];
   editMode: boolean;
   projectSlug: string;
   activeDragId: string | null;
-  setActiveDragId: (id: string) => void;
-  handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
-  onFocus: (id: string) => void;
   assistive: string;
   contentItem: ResourceContent;
   activityContexts: Immutable.Map<string, ActivityEditContext>;
@@ -217,6 +217,9 @@ type OutlineItemProps = {
   parentDropIndex: number[];
   content: PageEditorContent;
   onEditContent: (content: PageEditorContent) => void;
+  setActiveDragId: (id: string) => void;
+  handleKeyDown: (id: string) => React.KeyboardEventHandler<HTMLDivElement>;
+  onFocus: (id: string) => void;
 };
 
 const OutlineItem = ({
@@ -224,20 +227,21 @@ const OutlineItem = ({
   id,
   level,
   index,
+  parents,
   editMode,
   projectSlug,
   activeDragId,
-  setActiveDragId,
-  handleKeyDown,
-  onFocus,
   assistive,
   content,
-  onEditContent,
   contentItem,
   activityContexts,
   isReorderMode,
   activeDragIndex,
   parentDropIndex,
+  onEditContent,
+  setActiveDragId,
+  handleKeyDown,
+  onFocus,
 }: OutlineItemProps) => {
   const dragPayload = getDragPayload(contentItem, activityContexts, projectSlug);
   const onDragStart = dragStartHandler(dragPayload, contentItem, setActiveDragId);
@@ -254,13 +258,21 @@ const OutlineItem = ({
   // adjust for the fact that the item being dragged is filtered out of the rendered elements
   const dropIndex =
     index >= activeDragIndex[level] ? [...parentDropIndex, index + 1] : [...parentDropIndex, index];
+  const canDropHere = canDrop(activeDragId, parents, content);
 
   if (isNestableContainer(contentItem)) {
     const containerItem = contentItem as NestableContainer;
 
+    const icon =
+      contentItem.type === 'survey' ? (
+        <Icon iconName="las la-poll la-lg" />
+      ) : (
+        <ExpandToggle expanded={true} />
+      );
+
     return (
       <>
-        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+        {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
         <div id={`content-item-${id}`} className={classNames(styles.group, className)}>
           <div
@@ -276,7 +288,7 @@ const OutlineItem = ({
             aria-label={assistive}
           >
             <DragHandle style={{ margin: '10px 10px 10px 0' }} />
-            <ExpandToggle expanded={true} />
+            {icon}
             <Description title={getContainerTitle(containerItem)}>
               {containerItem.children.size} items
             </Description>
@@ -292,6 +304,7 @@ const OutlineItem = ({
                     id={c.id}
                     level={level + 1}
                     index={i}
+                    parents={[...parents, containerItem]}
                     editMode={editMode}
                     projectSlug={projectSlug}
                     activeDragId={activeDragId}
@@ -309,7 +322,7 @@ const OutlineItem = ({
                   />
                 );
               })}
-            {isReorderMode && (
+            {isReorderMode && canDrop(activeDragId, [...parents, containerItem], content) && (
               <DropTarget
                 id="last"
                 index={[...dropIndex, containerItem.children.size]}
@@ -325,7 +338,7 @@ const OutlineItem = ({
   if (contentItem.type === 'break') {
     return (
       <>
-        {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+        {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
         <div
           id={`content-item-${id}`}
@@ -355,7 +368,7 @@ const OutlineItem = ({
 
   return (
     <>
-      {isReorderMode && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
+      {isReorderMode && canDropHere && <DropTarget id={id} index={dropIndex} onDrop={onDrop} />}
 
       <div
         id={`content-item-${id}`}
@@ -436,6 +449,15 @@ function getContainerTitle(contentItem: NestableContainer) {
   } else if (contentItem.type === 'survey') {
     return contentItem.title ?? 'Survey';
   }
+}
+
+function canDrop(
+  activeDragId: string | null,
+  parents: ResourceContent[],
+  content: PageEditorContent,
+): boolean {
+  const activeDragItem = activeDragId && content.find(activeDragId);
+  return activeDragItem ? canInsert(activeDragItem, parents) : false;
 }
 
 interface ContentOutlineToolbarProps {
