@@ -227,7 +227,6 @@ describe('PageEditorContent', () => {
             },
           ],
           id: expect.any(String),
-          purpose: 'none',
           type: 'content',
         },
         {
@@ -254,7 +253,6 @@ describe('PageEditorContent', () => {
                 },
               ],
               id: expect.any(String),
-              purpose: 'none',
               type: 'content',
             },
           ],
