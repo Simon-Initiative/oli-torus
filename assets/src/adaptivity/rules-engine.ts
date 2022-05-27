@@ -325,11 +325,31 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
         }
       });
     }
+    if (Array.isArray(condition.value)) {
+      condition.value.forEach((subValue: any) => {
+        if (typeof subValue === 'string' && subValue.indexOf('|stage.') !== -1) {
+          // value could have more than one reference inside it
+          const exprs = extractAllExpressionsFromText(subValue);
+          exprs.forEach((expr: string) => {
+            if (expr.indexOf('|stage.') !== -1) {
+              const referencedSequenceId = expr.split('|stage.')[0];
+              referencedActivities.add(referencedSequenceId);
+            }
+          });
+        }
+      });
+    }
     if (condition.any || condition.all) {
       const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
       childRefs.forEach((ref) => referencedActivities.add(ref));
     }
   });
+  /* console.log(
+    'referencedActivities: ',
+    referencedActivities,
+    Array.from(referencedActivities).filter((ref) => ref.indexOf('{') !== -1),
+    conditions,
+  ); */
   return Array.from(referencedActivities);
 };
 
@@ -403,6 +423,20 @@ export const findReferencedActivitiesInActions = (actions: any) => {
             if (expr.indexOf('|stage.') !== -1) {
               const referencedSequenceId = expr.split('|stage.')[0];
               referencedActivities.add(referencedSequenceId);
+            }
+          });
+        }
+        if (Array.isArray(action.value)) {
+          action.value.forEach((subValue: any) => {
+            if (typeof subValue === 'string' && subValue.indexOf('|stage.') !== -1) {
+              // value could have more than one reference inside it
+              const exprs = extractAllExpressionsFromText(subValue);
+              exprs.forEach((expr: string) => {
+                if (expr.indexOf('|stage.') !== -1) {
+                  const referencedSequenceId = expr.split('|stage.')[0];
+                  referencedActivities.add(referencedSequenceId);
+                }
+              });
             }
           });
         }
