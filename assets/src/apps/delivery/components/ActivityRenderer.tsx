@@ -434,7 +434,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         notifyCheckComplete(lastCheckResults);
       }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered, processedCheckResult]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.
