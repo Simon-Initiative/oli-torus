@@ -56,12 +56,16 @@ defmodule OliWeb.Router do
   # Extend the base pipelines specific routes
 
   pipeline :authoring do
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_author_persistent_session")
+
     plug(Oli.Plugs.SetDefaultPow, :author)
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
   end
 
   pipeline :delivery do
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_user_persistent_session")
+
     plug(Oli.Plugs.SetDefaultPow, :user)
   end
 
@@ -96,6 +100,8 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_user_persistent_session")
+
     plug(Oli.Plugs.SetDefaultPow, :user)
 
     plug(PowAssent.Plug.Reauthorization,
@@ -131,6 +137,8 @@ defmodule OliWeb.Router do
   end
 
   pipeline :authoring_protected do
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_author_persistent_session")
+
     plug(Oli.Plugs.SetDefaultPow, :author)
 
     plug(PowAssent.Plug.Reauthorization,

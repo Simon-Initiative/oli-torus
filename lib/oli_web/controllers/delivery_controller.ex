@@ -232,8 +232,9 @@ defmodule OliWeb.DeliveryController do
     |> use_pow_config(:author)
     |> Pow.Plug.create_user(user_params)
     |> case do
-      {:ok, _user, conn} ->
+      {:ok, user, conn} ->
         conn
+        |> PowPersistentSession.Plug.create(user)
         |> put_flash(
           :info,
           Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).user_has_been_created(conn)
@@ -353,8 +354,7 @@ defmodule OliWeb.DeliveryController do
           )
 
           conn
-          |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-          |> Pow.Plug.create(user)
+          |> create_pow_user(:user, user)
           |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
         end
       else
