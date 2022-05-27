@@ -59,8 +59,6 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
-    IO.inspect(content, label: "the content")
-
     bib_ids = Map.get(content, "bibrefs", [])
 
     merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->

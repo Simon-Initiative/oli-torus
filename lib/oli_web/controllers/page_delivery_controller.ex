@@ -158,7 +158,10 @@ defmodule OliWeb.PageDeliveryController do
             active_page: nil,
             revision: revision,
             resource_slug: revision.slug,
-            display_curriculum_item_numbering: section.display_curriculum_item_numbering
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            bib_app_params: %{
+              bibReferences: []
+            }
           )
 
         # Any attempt to render a valid revision that is not container or page gets an error
@@ -269,6 +272,27 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
+    bib_ids = Map.get(revision.content, "bibrefs", [])
+
+    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
+      if Map.get(x, "type") == "activity" do
+        activity_summary = Map.get(activity_map, Map.get(x, "id"))
+        if activity_summary == nil do
+          acc
+        else
+          acc ++ Enum.reduce(activity_summary.bib_refs, [], fn y, acx ->
+            acx ++ [Map.get(y, "id")]
+            end)
+        end
+      else
+        acc ++ [Map.get(x, "id")]
+      end
+    end)
+
+    bib_revisions = Resolver.from_resource_id(section_slug, merged_bib_ids)
+
+    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+
     all_activities = Activities.list_activity_registrations()
 
     render_context = %Context{
@@ -277,7 +301,8 @@ defmodule OliWeb.PageDeliveryController do
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
-      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
+      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
+      bib_app_params: bib_entrys
     }
 
     html = Page.render(render_context, revision.content, Page.Html)
@@ -304,7 +329,10 @@ defmodule OliWeb.PageDeliveryController do
         container_link_url:
           &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
         resource_slug: revision.slug,
-        display_curriculum_item_numbering: section.display_curriculum_item_numbering
+        display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+        bib_app_params: %{
+          bibReferences: bib_entrys
+        }
       }
     )
   end
@@ -786,6 +814,17 @@ defmodule OliWeb.PageDeliveryController do
     fn datetime ->
       date(datetime, conn: conn, precision: :minutes)
     end
+  end
+
+  defp serialize_revision(%Oli.Resources.Revision{} = revision, merged_bib_ids) do
+    ordinal = Enum.find_index(merged_bib_ids, fn x -> x == revision.resource_id end) + 1
+    %{
+      title: revision.title,
+      id: revision.resource_id,
+      slug: revision.slug,
+      content: revision.content,
+      ordinal: ordinal
+    }
   end
 
   defp url_from_desc(_, _, nil), do: nil

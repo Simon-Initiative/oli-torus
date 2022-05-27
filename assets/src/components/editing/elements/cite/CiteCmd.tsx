@@ -4,7 +4,7 @@ import {
   CommandContext,
   CommandDescription,
 } from 'components/editing/elements/commands/interfaces';
-import { isActive } from '../../utils';
+import { isActive } from '../../slateUtils';
 import React from 'react';
 import { configureStore } from 'state/store';
 import { modalActions } from 'actions/modal';

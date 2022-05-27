@@ -32,8 +32,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
-  alias Phoenix.HTML
-
+  
   @doc """
   Creates the page context required to render a page for reviewing a historical
   attempt.
@@ -83,6 +82,8 @@ defmodule Oli.Delivery.Page.PageContext do
 
     bib_revisions = DeliveryResolver.from_resource_id(section_slug, merged_bib_ids)
 
+    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+
     %PageContext{
       review_mode: true,
       page: page_revision,
@@ -92,7 +93,7 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+      bib_revisions: bib_entrys
     }
   end
 
@@ -149,10 +150,6 @@ defmodule Oli.Delivery.Page.PageContext do
 
     bib_ids = Map.get(page_revision.content, "bibrefs", [])
 
-    # IO.inspect(bib_ids, label: "good bibs non delivery")
-
-    # IO.inspect(activities, label: "the main activities")
-
     merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
       if Map.get(x, "type") == "activity" do
         activity_summary = Map.get(activities, Map.get(x, "id"))
@@ -179,6 +176,8 @@ defmodule Oli.Delivery.Page.PageContext do
 
     bib_revisions = DeliveryResolver.from_resource_id(section_slug, merged_bib_ids)
 
+    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+
     %PageContext{
       review_mode: false,
       page: page_revision,
@@ -188,7 +187,7 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+      bib_revisions: bib_entrys
     }
   end
 

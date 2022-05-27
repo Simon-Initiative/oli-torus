@@ -15,7 +15,7 @@ import { createMessage, Message, Severity } from 'data/messages/messages';
 
 // eslint-disable-next-line
 const cslSchema = require('./csl-data-schema.json');
-const ajv = new Ajv({ removeAdditional: true });
+const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
 
 const Cite = (window as any).cite;
@@ -81,10 +81,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     BibPersistence.retrieve(props.projectSlug, paging).then((result) => {
       if (result.result === 'success') {
         console.log('fetching staff');
-        setTotalCount(result.queryResult.totalCount);
         setPaging(paging);
         const bibs = result.queryResult.rows.map((b) => [b.slug, b]);
         setBibEntrys(Immutable.OrderedMap<string, BibEntry>(bibs as any));
+        setTotalCount(result.queryResult.totalCount);
       }
     });
   };
@@ -125,6 +125,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
         addAsUnique(message);
       }
     }
+    setValue('');
   };
 
   const onPageChange = (paging: Paging) => {
