@@ -159,6 +159,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
           onActivityReady={handleEverappActivityReady}
           onRequestLatestState={handleRequestLatestState}
           adaptivityDomain="app"
+          isEverApp={true}
         />
       </div>
     </div>
