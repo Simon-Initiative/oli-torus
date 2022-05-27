@@ -2,7 +2,7 @@ defmodule OliWeb.PublisherLive.Form do
   use Surface.Component
 
   alias Surface.Components.Form
-  alias Surface.Components.Form.{ErrorTag, Field, Label, TextInput}
+  alias Surface.Components.Form.{EmailInput, ErrorTag, Field, Label, TextInput}
 
   prop(changeset, :changeset, required: true)
   prop(save, :event, required: true)
@@ -26,7 +26,7 @@ defmodule OliWeb.PublisherLive.Form do
         {#if @display_labels}
           <Label class="control-label">Publisher Email</Label>
         {/if}
-        <TextInput class="form-control" opts={placeholder: "Email", maxlength: "255"}/>
+        <EmailInput class="form-control" opts={placeholder: "Email", maxlength: "255"}/>
         <ErrorTag/>
       </Field>
 

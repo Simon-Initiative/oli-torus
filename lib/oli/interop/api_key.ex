@@ -23,6 +23,7 @@ defmodule Oli.Interop.ApiKey do
     field :products_enabled, :boolean, default: true
     field :registration_enabled, :boolean, default: false
     field :registration_namespace, :binary
+    field :automation_setup_enabled, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -37,7 +38,8 @@ defmodule Oli.Interop.ApiKey do
       :payments_enabled,
       :products_enabled,
       :registration_enabled,
-      :registration_namespace
+      :registration_namespace,
+      :automation_setup_enabled
     ])
     |> validate_required([
       :status,

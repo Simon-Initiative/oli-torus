@@ -12,9 +12,15 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   prop parent_gate, :struct, required: true
   prop count_exceptions, :integer, required: true
   prop create_or_update, :atom, default: :create
+  prop timezone, :string
 
   def render(assigns) do
     ~F"""
+    {#unless @timezone}
+      <div class="alert alert-info" role="alert">
+        Your local timezone is not set in the browser. {@section.timezone} (section timezone) is used by default.
+      </div>
+    {/unless}
     <div>
       {render_user_selection(assigns)}
       {render_resource_selection(assigns)}
@@ -186,9 +192,19 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   def policy_desc(:allows_nothing), do: "Allow no access at all to graded pages"
   def policy_desc(:allows_review), do: "Allow the review of previously completed attempts"
 
-  def render_condition_options(%{gating_condition: %{type: :schedule, data: data}} = assigns) do
-    initial_start_date = Map.get(data, :start_datetime)
-    initial_end_date = Map.get(data, :end_datetime)
+  def render_condition_options(
+        %{gating_condition: %{type: :schedule, data: data}, timezone: timezone, section: section} =
+          assigns
+      ) do
+    initial_start_date =
+      data
+      |> Map.get(:start_datetime)
+      |> convert_date(timezone || section.timezone)
+
+    initial_end_date =
+      data
+      |> Map.get(:end_datetime)
+      |> convert_date(timezone || section.timezone)
 
     ~F"""
     <div class="form-group">
@@ -272,4 +288,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Form do
   defp checked_from_min_score(%{minimum_percentage: _}), do: true
 
   defp checked_from_min_score(_), do: false
+
+  defp convert_date(nil, _timezone), do: nil
+  defp convert_date(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
 end
