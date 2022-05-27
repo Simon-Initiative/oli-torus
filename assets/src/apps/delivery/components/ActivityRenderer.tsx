@@ -428,11 +428,14 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
 
       const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
-      if (!hasNavigationToDifferentActivity) {
+      if (
+        !hasNavigationToDifferentActivity ||
+        activity.content.custom.customCssClass === 'everapp-activity'
+      ) {
         notifyCheckComplete(lastCheckResults);
       }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered, processedCheckResult]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.
