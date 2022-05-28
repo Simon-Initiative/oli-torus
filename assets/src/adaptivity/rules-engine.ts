@@ -188,7 +188,11 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         (condition?.operator === 'containsAnyOf' || condition?.operator === 'notContainsAnyOf')
       ) {
         const targetValue = getValue(condition.fact, env);
-        if (targetValue.charAt(0) !== '[' && targetValue.slice(-1) !== ']') {
+        if (
+          typeof targetValue === 'string' &&
+          targetValue.charAt(0) !== '[' &&
+          targetValue.slice(-1) !== ']'
+        ) {
           const modifiedTargetValue = `[${targetValue}]`;
           const updateAttempt = [
             {
