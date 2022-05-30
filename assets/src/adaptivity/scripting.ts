@@ -84,7 +84,20 @@ export const getExpressionStringForValue = (
       val = val.replace(/[[\]]+/g, '');
     }
     if (val.includes('},{') || val.includes('}, {')) {
-      val = JSON.stringify(val.split(',')).replace(/"/g, '');
+      const expressions = extractAllExpressionsFromText(val);
+      if (val[0] === '{' && val[val.length - 1] === '}' && expressions?.length === 1) {
+        try {
+          const modifiedValue = val.substring(1, val.length - 1);
+          const evaluatedValue = evalScript(modifiedValue, env).result;
+          if (evaluatedValue !== undefined) {
+            val = evaluatedValue;
+          }
+        } catch (ex) {
+          // failed for any reason
+        }
+      } else {
+        val = JSON.stringify(val.split(',')).replace(/"/g, '');
+      }
     }
 
     // it might be CSS string, which can be decieving
