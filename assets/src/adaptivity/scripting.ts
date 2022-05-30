@@ -93,7 +93,7 @@ export const getExpressionStringForValue = (
             val = evaluatedValue;
           }
         } catch (ex) {
-          // failed for any reason
+          val = JSON.stringify(val.split(',')).replace(/"/g, '');
         }
       } else {
         val = JSON.stringify(val.split(',')).replace(/"/g, '');
