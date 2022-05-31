@@ -20,6 +20,7 @@ defmodule OliWeb.Api.ProductView do
       title: product.title,
       status: product.status,
       requires_payment: product.requires_payment,
+      pay_by_institution: product.pay_by_institution,
       amount: amount(product.requires_payment, product.amount),
       has_grace_period: product.has_grace_period,
       grace_period_days: product.grace_period_days,

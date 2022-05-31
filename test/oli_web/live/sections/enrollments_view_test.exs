@@ -77,6 +77,7 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
 
       assert html =~ "Admin"
       assert html =~ "Enrollments"
+      assert html =~ "Download as .CSV"
     end
   end
 

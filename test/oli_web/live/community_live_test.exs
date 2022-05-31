@@ -1108,20 +1108,20 @@ defmodule OliWeb.CommunityLiveTest do
     end
 
     test "applies paging", %{conn: conn, community: %Community{id: id}} do
-      [first_project | _tail] = insert_list(19, :project)
-      section = insert(:section)
+      [first_p | tail] = insert_list(21, :project) |> Enum.sort_by(& &1.title)
+      last_p = List.last(tail)
 
       {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               first_project.title
+              first_p.title
 
       refute view
              |> element("tr:last-child > td:first-child")
              |> render() =~
-               section.title
+              last_p.title
 
       view
       |> element("a[phx-click=\"page_change\"]", "2")
@@ -1130,7 +1130,7 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               section.title
+              last_p.title
     end
   end
 
