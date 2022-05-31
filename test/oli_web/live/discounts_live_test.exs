@@ -59,13 +59,13 @@ defmodule OliWeb.DiscountsLiveTest do
 
     test "redirects to not found when not exists - product", %{conn: conn} do
       # section without lti deployment
-      product = insert(:section, type: :blueprint)
+      product = insert(:section, type: :blueprint, lti_1p3_deployment: nil)
 
       {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_route(:product, product.slug))
     end
 
     test "redirects to not found when not exists - institution", %{conn: conn} do
-      {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_route(:institution, 123))
+      {:error, {:redirect, %{to: "/not_found"}}} = live(conn, live_view_route(:institution, 000000123))
     end
 
     test "loads correctly with no discount - product", %{conn: conn} do
