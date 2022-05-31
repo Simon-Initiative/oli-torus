@@ -149,8 +149,8 @@ export const updateActivityRules = createAsyncThunk(
 
         if (
           !isEqual(
-            childActivityClone.authoring.activitiesRequiredForEvaluation,
-            referencedActivityIds,
+            (childActivityClone.authoring.activitiesRequiredForEvaluation || []).sort(),
+            referencedActivityIds.sort(), // order doesn't matter, don't rewrite just because order may have changed
           )
         ) {
           // console.log('RULE REFS: ', referencedActivityIds);
@@ -162,12 +162,17 @@ export const updateActivityRules = createAsyncThunk(
           activitiesToUpdate.push(childActivityClone);
         }
 
-        if (
-          !isEqual(
-            childActivityClone.authoring.variablesRequiredForEvaluation,
-            referencedVariableKeys,
-          )
-        ) {
+        childActivityClone.authoring.variablesRequiredForEvaluation =
+          childActivityClone.authoring.variablesRequiredForEvaluation || [];
+        const refVarLengthEqual =
+          childActivityClone.authoring.variablesRequiredForEvaluation.length ===
+          referencedVariableKeys.length;
+        const hasAllReferencedVariables =
+          refVarLengthEqual &&
+          referencedVariableKeys.every((rv) =>
+            childActivityClone.authoring.variablesRequiredForEvaluation.includes(rv),
+          );
+        if (!hasAllReferencedVariables) {
           childActivityClone.authoring.variablesRequiredForEvaluation = referencedVariableKeys;
           childActivityClone.authoring.variablesRequiredForEvaluation = uniq(
             flatten(childActivityClone.authoring.variablesRequiredForEvaluation),

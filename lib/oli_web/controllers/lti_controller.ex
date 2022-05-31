@@ -171,6 +171,10 @@ defmodule OliWeb.LtiController do
                 "message_type" => "LtiResourceLinkRequest",
                 "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
               },
+              %{
+                "placement" => "assignment_selection",
+                "message_type" => "LtiResourceLinkRequest"
+              },
               case Map.get(params, "course_navigation_default") do
                 "disabled" ->
                   %{
@@ -186,9 +190,13 @@ defmodule OliWeb.LtiController do
                   }
               end
               ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
+              # assignment_selection when we support deep linking
               # %{
               #   "placement" => "assignment_selection",
-              #   "message_type" => "LtiResourceLinkRequest"
+              #   "message_type" => "LtiDeepLinkingRequest",
+              #   "custom_fields" => %{
+              #     "assignment_id" => "$Canvas.assignment.id"
+              #   }
               # },
               # %{
               #   "placement" => "homework_submission",

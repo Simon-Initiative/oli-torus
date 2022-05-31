@@ -27,10 +27,6 @@ export const moveHandler =
     const item = content.find(key) as ResourceContent;
     const index = content.findIndex((c) => c.id === key);
 
-    // const prefix = content.delete(key).take(index + (up ? -1 : 1));
-    // const suffix = content.delete(key).skip(index + (up ? -1 : 1));
-
-    // const inserted = prefix.concat([[key, item]]).concat(suffix);
     const inserted = content.delete(key).insertAt(determineIndex(index, up), item);
 
     onEditContent(inserted);
@@ -41,5 +37,5 @@ export const moveHandler =
         ? 'Content'
         : getFriendlyName(item as ActivityReference, editorMap, activities);
 
-    setAssistive(`Listbox. ${newFlattenedIndex + 1} of ${content.size}. ${desc}.`);
+    setAssistive(`Listbox. ${newFlattenedIndex + 1} of ${content.count()}. ${desc}.`);
   };

@@ -38,6 +38,7 @@ defmodule OliWeb.Api.ProductController do
             "description" => "World Cultures is a great....",
             "status" => "active",
             "requires_payment" => true,
+            "pay_by_institution" => false,
             "amount" => "$100.00",
             "has_grace_period" => true,
             "grace_period_days" => 10,

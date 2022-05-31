@@ -425,10 +425,54 @@ defmodule OliWeb.LtiControllerTest do
                "https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly"
              ]
 
+      %{"extensions" => [%{"settings" => %{"placements" => placements}} | _]} =
+        json_response(conn, 200)
+
+      assert placements == [
+               %{
+                 "icon_url" => "https://localhost/images/torus-icon.png",
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "link_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "assignment_selection"
+               },
+               %{"message_type" => "LtiResourceLinkRequest", "placement" => "course_navigation"}
+             ]
+
       assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("kid") ==
                public_jwk["kid"]
 
       assert json_response(conn, 200) |> Map.get("public_jwk") |> Map.get("n") == public_jwk["n"]
+    end
+
+    test "returns developer key json with course navigation disabled", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          Routes.lti_path(conn, :developer_key_json, course_navigation_default: "disabled")
+        )
+
+      %{"extensions" => [%{"settings" => %{"placements" => placements}} | _]} =
+        json_response(conn, 200)
+
+      assert placements == [
+               %{
+                 "icon_url" => "https://localhost/images/torus-icon.png",
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "link_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "assignment_selection"
+               },
+               %{
+                 "message_type" => "LtiResourceLinkRequest",
+                 "placement" => "course_navigation",
+                 "default" => "disabled"
+               }
+             ]
     end
   end
 

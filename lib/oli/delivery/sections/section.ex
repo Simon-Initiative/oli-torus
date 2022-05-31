@@ -36,6 +36,7 @@ defmodule Oli.Delivery.Sections.Section do
 
     field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
     field(:requires_payment, :boolean, default: false)
+    field(:pay_by_institution, :boolean, default: false)
     field(:amount, Money.Ecto.Map.Type)
     field(:has_grace_period, :boolean, default: true)
     field(:grace_period_days, :integer)
@@ -118,6 +119,7 @@ defmodule Oli.Delivery.Sections.Section do
       :passcode,
       :visibility,
       :requires_payment,
+      :pay_by_institution,
       :amount,
       :has_grace_period,
       :grace_period_days,

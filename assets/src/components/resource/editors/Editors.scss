@@ -17,7 +17,6 @@ html.authoring {
     .activity,
     .activity-bank-selection,
     .activity-editor {
-      max-width: 768px;
       margin: 0px auto;
 
       .objectives {
@@ -32,7 +31,7 @@ html.authoring {
         }
 
         .structured-content {
-          padding: 1.3em max(calc(50% - 400px), 50px);
+          padding: 1.3em calc(50% - 400px);
         }
 
         // handle the special case when purpose type is none, apply the
@@ -46,7 +45,7 @@ html.authoring {
             padding: 1.3em 10px;
 
             &.structured-content {
-              padding: 1.3em max(calc(50% - 400px), 50px);
+              padding: 1.3em calc(50% - 400px);
             }
           }
         }
@@ -54,7 +53,7 @@ html.authoring {
 
       .activity-block {
         .test-mode-handler {
-          padding: 1.3em max(calc(50% - 400px), 50px);
+          padding: 1.3em calc(50% - 400px);
         }
       }
 

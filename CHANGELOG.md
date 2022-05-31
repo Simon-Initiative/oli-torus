@@ -5,8 +5,11 @@
 ### Bug Fixes
 
 - Improve performance of DataShop export
+- Fix an issue where multi-input activity inputs were being duplicated
 
 ### Enhancements
+
+- Add survey authoring support (behind feature flag)
 
 ## 0.19.3 (2022-05-17)
 
