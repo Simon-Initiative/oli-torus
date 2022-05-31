@@ -80,9 +80,20 @@ defmodule Oli.Rendering.Activity.Html do
 
     sequence_entry = List.last(activity_lineage)
     # the activity_model needs the "id" to be the "sequenceId" from the sequence_entry
-    activity_model |> Map.put("id", Map.get(sequence_entry, "custom") |> Map.get("sequenceId"))
+    activity_sequence_id = Map.get(sequence_entry, "custom") |> Map.get("sequenceId")
+    Logger.debug("activity_sequence_id: #{activity_sequence_id}")
+    activity_model = activity_model |> Map.put("id", activity_sequence_id)
     # finally it needs to be stringified again
     activity_model |> Poison.encode! |> HtmlEntities.encode
+  end
+
+  defp get_activity_html_id(activity_id, model_json) do
+    model = model_json |> HtmlEntities.decode |> Poison.decode!
+    activity_model_id = Map.get(model, "id")
+    case activity_model_id do
+      nil -> "activity_#{activity_id}"
+      _ -> activity_model_id
+    end
   end
 
   def activity(
@@ -129,8 +140,9 @@ defmodule Oli.Rendering.Activity.Html do
           _ -> activity_summary.model
         end
 
-
         section_slug = context.section_slug
+
+        activity_html_id = get_activity_html_id(activity_id, model_json)
 
         activity_html =
           case mode do
@@ -141,7 +153,7 @@ defmodule Oli.Rendering.Activity.Html do
 
             _ ->
               [
-                "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+                "<#{tag} id=\"#{activity_html_id}\" class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
               ]
           end
 
