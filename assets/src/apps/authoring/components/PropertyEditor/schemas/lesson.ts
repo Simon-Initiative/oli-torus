@@ -189,7 +189,7 @@ export const transformSchemaToModel = (schema: any) => {
   const additionalStylesheets = [
     schema.Properties.Appearance.theme,
     schema.Properties.Appearance.customCssUrl,
-  ];
+  ].filter((url) => url);
 
   let variables = [];
   try {
