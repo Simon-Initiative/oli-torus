@@ -39,7 +39,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-
 
-      - name: 💾 Restore the node cache
+      - name: 💾 Restore the Node.js cache
         id: yarn-cache
         uses: actions/cache@v3
         with:
