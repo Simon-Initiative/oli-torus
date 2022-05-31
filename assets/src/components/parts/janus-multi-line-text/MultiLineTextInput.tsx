@@ -143,12 +143,12 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(
+        /* console.log(
           `${notificationType.toString()} notification handled [%cMultiline text Input%c]`,
           'color: lime;',
           'color: black;',
           payload,
-        );
+        ); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
