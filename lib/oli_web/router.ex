@@ -868,7 +868,7 @@ defmodule OliWeb.Router do
     pipe_through([:browser, :authoring_protected, :admin])
 
     live_dashboard("/dashboard",
-      metrics: OliWeb.Telemetry,
+      metrics: {OliWeb.Telemetry, :non_distributed_metrics},
       ecto_repos: [Oli.Repo],
       session: {__MODULE__, :with_session, []}
     )
