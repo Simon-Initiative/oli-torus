@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Improve performance of DataShop export
+- Fix an issue where multi-input activity inputs were being duplicated
 
 ### Enhancements
 
