@@ -31,6 +31,11 @@ export const multiInputStem = (input: InputRef) => ({
   id: guid(),
   content: [
     {
+      type: 'iframe',
+      src: 'https://www.dhba.com/vlab/wrapper.html',
+      children: [{ text: '.' }],
+    } as Webpage,
+    {
       type: 'p',
       id: guid(),
       children: [{ text: 'Example question with a fill in the blank ' }, input, { text: '.' }],
