@@ -4,6 +4,7 @@
   .contentOutlineContainer {
     position: relative;
     width: 0px;
+    flex-shrink: 0;
     z-index: authoring.$z-content-1;
 
     transition: width 200ms ease-out;
@@ -48,6 +49,7 @@
 
   .contentOutline {
     position: sticky;
+    width: 100%;
     top: 80px;
     border-radius: 6px;
     border: 4px solid authoring.$gray-200;

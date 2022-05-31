@@ -26,6 +26,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
   alias Oli.Utils.SchemaResolver
+  alias Oli.Features
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -259,6 +260,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
          content: convert_to_activity_slugs(revision.content, publication.id),
          activities: activities,
          activityContexts: ActivityEditor.create_contexts(project_slug, activity_ids),
+         featureFlags:
+           Features.list_features_and_states()
+           |> Enum.reduce(%{}, fn {%Oli.Features.Feature{label: label}, value}, acc ->
+             Map.put(acc, label, value)
+           end),
          project: publication.project,
          previous_page: previous,
          next_page: next
