@@ -135,6 +135,9 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert has_element?(view, "input[value=\"#{section.slug}\"]")
       assert has_element?(view, "input[value=\"#{section.title}\"]")
       assert has_element?(view, "input[value=\"Direct Delivery\"]")
+
+      assert view |> element("a.form-control") |> render() =~
+               section.lti_1p3_deployment.institution.name
     end
 
     test "loads section instructors correctly", %{conn: conn, section: section} do
