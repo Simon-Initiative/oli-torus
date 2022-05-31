@@ -75,6 +75,8 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   def render(assigns) do
+    deployment = assigns.section.lti_1p3_deployment
+
     ~F"""
     {render_modal(assigns)}
     <Groups>
@@ -83,6 +85,9 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
         <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
+        {#unless is_nil(deployment)}
+          <ReadOnly label="Institution" type="link" link_label={deployment.institution.name} value={Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id)}/>
+        {/unless}
       </Group>
       <Group label="Instructors" description="Manage the users with instructor level access">
         <Instructors users={@instructors}/>
