@@ -4,7 +4,7 @@ defmodule Oli.Delivery.Paywall.AccessSummary do
 
   defstruct [
     :available, # Boolean indicating whether access is available
-    :reason, # For available, one of:     [:not_paywalled, :instructor, :paid, :within_grace_period]
+    :reason, # For available, one of:     [:not_paywalled, :instructor, :paid, :within_grace_period, :pay_by_institution]
              # For not-available, one of: [:not_enrolled, :not_paid]
     :grace_period_remaining
   ]
@@ -61,4 +61,11 @@ defmodule Oli.Delivery.Paywall.AccessSummary do
     grace_period_remaining / (60 * 60 * 24)
   end
 
+  def pay_by_institution() do
+    %AccessSummary{
+      available: true,
+      reason: :pay_by_institution,
+      grace_period_remaining: nil
+    }
+  end
 end

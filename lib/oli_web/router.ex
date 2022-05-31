@@ -90,8 +90,8 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.RequireSection)
   end
 
-  pipeline :enforce_paywall do
-    plug(Oli.Plugs.EnforcePaywall)
+  pipeline :enforce_enroll_and_paywall do
+    plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
   # Ensure that we have a logged in user
@@ -688,7 +688,7 @@ defmodule OliWeb.Router do
       :require_section,
       :delivery_protected,
       :maybe_gated_resource,
-      :enforce_paywall,
+      :enforce_enroll_and_paywall,
       :pow_email_layout
     ])
 
@@ -752,6 +752,7 @@ defmodule OliWeb.Router do
     live("/:section_slug/remix", Delivery.RemixSection)
     live("/:section_slug/remix/:section_resource_slug", Delivery.RemixSection)
     live("/:section_slug/enrollments", Sections.EnrollmentsView)
+    post("/:section_slug/enrollments/export", PageDeliveryController, :export_enrollments)
     live("/:section_slug/invitations", Sections.InviteView)
     live("/:section_slug/edit", Sections.EditView)
     live("/:section_slug/gating_and_scheduling", Sections.GatingAndScheduling)
@@ -852,6 +853,7 @@ defmodule OliWeb.Router do
     live("/features", Features.FeaturesLive)
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
+    live("/products/:product_id/discounts", Products.Payments.Discounts, :product, as: :discount)
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
@@ -861,6 +863,7 @@ defmodule OliWeb.Router do
 
     # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController)
+    live("/institutions/:institution_id/discounts", Products.Payments.Discounts, :institution, as: :discount)
 
     live("/registrations", Admin.RegistrationsView)
 

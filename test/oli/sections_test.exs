@@ -198,6 +198,7 @@ defmodule Oli.SectionsTest do
       assert section.start_date == ~U[2010-04-17 00:00:00Z]
       assert section.timezone == "some timezone"
       assert section.title == "some title"
+      refute section.pay_by_institution
     end
 
     test "list_sections/0 returns all sections", %{section: section} do

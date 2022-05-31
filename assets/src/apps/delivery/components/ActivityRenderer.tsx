@@ -52,6 +52,7 @@ interface ActivityRendererProps {
   onActivityReady?: any;
   onRequestLatestState?: any;
   adaptivityDomain?: string; // currently 'stage' or 'app'
+  isEverApp?: boolean;
 }
 
 const defaultHandler = async () => {
@@ -83,6 +84,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   onActivityReady = defaultHandler,
   onRequestLatestState = async () => ({ snapshot: {} }),
   adaptivityDomain = 'stage',
+  isEverApp = false,
 }) => {
   const isPreviewMode = useSelector(selectPreviewMode);
   const currentUserId = useSelector(selectUserId);
@@ -428,7 +430,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
 
       const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
-      if (!hasNavigationToDifferentActivity) {
+      if (!hasNavigationToDifferentActivity || isEverApp) {
         notifyCheckComplete(lastCheckResults);
       }
     }
