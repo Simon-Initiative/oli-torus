@@ -8,11 +8,11 @@ import * as Bank from 'data/content/bank';
 import { Objective } from 'data/content/objective';
 import { ActivityEditorMap } from 'data/content/editors';
 
-import './ActivityBankSelection.scss';
+import './ActivityBankSelectionEditor.scss';
 
-export type ActivityBankSelectionProps = {
-  selection: Selection;
-  onChange: (selection: Selection) => void;
+export type ActivityBankSelectionEditorProps = {
+  contentItem: Selection;
+  onEdit: (contentItem: Selection) => void;
   editMode: boolean;
   allObjectives: Immutable.List<Objective>;
   allTags: Immutable.List<Tag>;
@@ -22,10 +22,10 @@ export type ActivityBankSelectionProps = {
   editorMap: ActivityEditorMap;
 };
 
-export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
-  const { selection, onChange, editMode } = props;
+export const ActivityBankSelectionEditor = (props: ActivityBankSelectionEditorProps) => {
+  const { contentItem, onEdit, editMode } = props;
 
-  const onChangeCount = (countString: string) => {
+  const onEditCount = (countString: string) => {
     let count;
 
     try {
@@ -38,32 +38,33 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
       count = 1;
     }
 
-    const selection = Object.assign({}, props.selection, { count });
-    onChange(selection);
+    onEdit(Object.assign({}, contentItem, { count }));
   };
 
-  const onChangeLogic = (logic: Bank.Logic) => {
+  const onEditLogic = (logic: Bank.Logic) => {
     if (
       logic.conditions !== null &&
       (logic.conditions.operator === Bank.ClauseOperator.all ||
         logic.conditions.operator === Bank.ClauseOperator.any)
     ) {
       if (logic.conditions.children.length === 0) {
-        const selection = Object.assign({}, props.selection, { logic: { conditions: null } });
-        onChange(selection);
+        const selection = Object.assign({}, contentItem, { logic: { conditions: null } });
+        onEdit(selection);
         return;
       } else if (logic.conditions.children.length === 1) {
-        const selection = Object.assign({}, props.selection, {
+        const selection = Object.assign({}, contentItem, {
           logic: { conditions: logic.conditions.children[0] },
         });
-        onChange(selection);
+        onEdit(selection);
         return;
       }
     }
-    const selection = Object.assign({}, props.selection, {
-      logic,
-    });
-    onChange(selection);
+
+    onEdit(
+      Object.assign({}, contentItem, {
+        logic,
+      }),
+    );
   };
 
   // This add implementation allows only expressions to be added, but will implicitly
@@ -75,40 +76,40 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
       value: [],
     };
 
-    if (selection.logic.conditions === null) {
+    if (contentItem.logic.conditions === null) {
       const conditions = expression;
-      const logic = Object.assign({}, selection.logic, { conditions });
-      onChange(Object.assign({}, selection, { logic }));
+      const logic = Object.assign({}, contentItem.logic, { conditions });
+      onEdit(Object.assign({}, contentItem, { logic }));
     } else if (
-      selection.logic.conditions.operator === Bank.ClauseOperator.all ||
-      selection.logic.conditions.operator === Bank.ClauseOperator.any
+      contentItem.logic.conditions.operator === Bank.ClauseOperator.all ||
+      contentItem.logic.conditions.operator === Bank.ClauseOperator.any
     ) {
-      const conditions = Object.assign({}, selection.logic.conditions, {
-        children: [...selection.logic.conditions.children, expression],
+      const conditions = Object.assign({}, contentItem.logic.conditions, {
+        children: [...contentItem.logic.conditions.children, expression],
       });
-      const logic = Object.assign({}, selection.logic, { conditions });
-      onChange(Object.assign({}, selection, { logic }));
+      const logic = Object.assign({}, contentItem.logic, { conditions });
+      onEdit(Object.assign({}, contentItem, { logic }));
     } else {
       const conditions = {
         operator: Bank.ClauseOperator.all,
-        children: [selection.logic.conditions, expression],
+        children: [contentItem.logic.conditions, expression],
       };
-      const logic = Object.assign({}, selection.logic, { conditions });
-      onChange(Object.assign({}, selection, { logic }));
+      const logic = Object.assign({}, contentItem.logic, { conditions });
+      onEdit(Object.assign({}, contentItem, { logic }));
     }
   };
 
   return (
-    <div id={props.selection.id} className="activity-bank-selection">
+    <div id={contentItem.id} className="activity-bank-selection">
       <div className="label mb-3">Activity Bank Selection</div>
       <div className="d-flex justify-items-start mb-4">
         <div className="mr-3">Number to select:</div>
         <div className="count-input">
           <TextInput
-            onEdit={onChangeCount}
+            onEdit={onEditCount}
             type="number"
             editMode={editMode}
-            value={selection.count.toString()}
+            value={contentItem.count.toString()}
             label="Number of activities"
           />
         </div>
@@ -117,8 +118,8 @@ export const ActivityBankSelection = (props: ActivityBankSelectionProps) => {
       <LogicBuilder
         allowText={false}
         editMode={editMode}
-        logic={selection.logic}
-        onChange={onChangeLogic}
+        logic={contentItem.logic}
+        onChange={onEditLogic}
         onRegisterNewObjective={props.onRegisterNewObjective}
         onRegisterNewTag={props.onRegisterNewTag}
         allObjectives={props.allObjectives}

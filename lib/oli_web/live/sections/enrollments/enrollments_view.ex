@@ -2,6 +2,9 @@ defmodule OliWeb.Sections.EnrollmentsView do
   use OliWeb, :surface_view
   use OliWeb.Common.Modal
 
+  import OliWeb.DelegatedEvents
+  import OliWeb.Common.Params
+
   alias Oli.Repo.{Paging, Sorting}
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
   alias Oli.Delivery.Sections.{EnrollmentBrowseOptions}
@@ -9,10 +12,9 @@ defmodule OliWeb.Sections.EnrollmentsView do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Delivery.Sections.EnrollmentsTableModel
   alias Oli.Delivery.Sections
-  import OliWeb.DelegatedEvents
-  import OliWeb.Common.Params
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
+  alias Surface.Components.Link
 
   @limit 25
   @default_options %EnrollmentBrowseOptions{
@@ -64,6 +66,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
            changeset: Sections.change_section(section),
            delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
+           is_admin: type == :admin,
            section: section,
            total_count: total_count,
            table_model: table_model,
@@ -119,7 +122,17 @@ defmodule OliWeb.Sections.EnrollmentsView do
     ~F"""
     <div>
 
-      <TextSearch id="text-search"/>
+      <div class="d-flex justify-content-between">
+        <TextSearch id="text-search"/>
+
+        {#if @is_admin}
+          <Link
+            label="Download as .CSV"
+            to={Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, @section.slug)}
+            class="btn btn-outline-primary"
+            method={:post} />
+        {/if}
+      </div>
 
       <div class="mb-3"/>
 

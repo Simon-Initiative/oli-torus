@@ -6,6 +6,8 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
+  alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.Discount
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
@@ -17,9 +19,10 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Grading
   alias Oli.PartComponents
   alias Oli.Rendering.Activity.ActivitySummary
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
+
+  plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
@@ -699,24 +702,69 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def export_gradebook(conn, %{"section_slug" => section_slug}) do
-    user = conn.assigns.current_user
+    section = Sections.get_section_by(slug: section_slug)
 
-    if is_admin?(conn) or
-         ContextRoles.has_role?(user, section_slug, ContextRoles.get_role(:context_instructor)) do
-      section = Sections.get_section_by(slug: section_slug)
+    gradebook_csv = Grading.export_csv(section) |> Enum.join("")
 
-      gradebook_csv = Grading.export_csv(section) |> Enum.join("")
+    filename =
+      "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
-      filename =
-        "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+    conn
+    |> put_resp_content_type("text/csv")
+    |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+    |> send_resp(200, gradebook_csv)
+  end
 
-      conn
-      |> put_resp_content_type("text/csv")
-      |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
-      |> send_resp(200, gradebook_csv)
-    else
-      render(conn, "not_authorized.html")
+  def export_enrollments(conn, %{"section_slug" => section_slug}) do
+    section = Sections.get_section_by_slug(section_slug)
+
+    enrollments_csv_text = build_enrollments_text(Sections.list_enrollments(section.slug))
+    cost = case section do
+      %Section{requires_payment: true, amount: amount} ->
+        {:ok, m} = Money.to_string(amount)
+        m
+      _ -> "Free"
     end
+    discount =
+      case section do
+        %Section{open_and_free: false, blueprint_id: blueprint_id, lti_1p3_deployment: lti_1p3_deployment} ->
+          case Paywall.get_discount_by!(%{
+            section_id: blueprint_id,
+            institution_id: lti_1p3_deployment.institution.id
+          }) do
+            nil ->
+              case Paywall.get_institution_wide_discount!(lti_1p3_deployment.institution.id) do
+                nil -> "N/A"
+                discount -> "By Institution: #{get_discount_string(discount)}"
+              end
+            discount -> "By Product-Institution: #{get_discount_string(discount)}"
+          end
+        _ -> "N/A"
+      end
+
+    csv_text = "Cost: #{cost}\r\nDiscount #{discount}\r\n\r\n" <> enrollments_csv_text
+    filename = "Enrollments-#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+
+    conn
+    |> put_resp_content_type("text/csv")
+    |> put_resp_header("content-disposition", "attachment; filename=\"#{filename}\"")
+    |> send_resp(200, csv_text)
+  end
+
+  defp build_enrollments_text(enrollments) do
+    ([["Student name", "Student email", "Enrolled on"]] ++
+      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, record.inserted_at] end))
+    |> CSV.encode()
+    |> Enum.to_list()
+    |> to_string()
+  end
+
+  defp get_discount_string(%Discount{type: :percentage, percentage: percentage}),
+    do: "#{percentage}%"
+
+  defp get_discount_string(%Discount{type: :fixed_amount, amount: amount}) do
+    {:ok, m} = Money.to_string(amount)
+    m
   end
 
   def is_admin?(conn) do

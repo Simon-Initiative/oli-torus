@@ -17,7 +17,7 @@ defmodule Oli.Factory do
     SectionInvite
   }
 
-  alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Paywall.{Discount, Payment}
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
   alias Oli.Institutions.{Institution, SsoJwk}
   alias Oli.Inventories.Publisher
@@ -148,19 +148,22 @@ defmodule Oli.Factory do
   end
 
   def section_factory() do
+    deployment = insert(:lti_deployment)
+
     %Section{
       title: sequence("Section"),
       timezone: "America/New_York",
       registration_open: true,
       context_id: UUID.uuid4(),
-      institution: insert(:institution),
+      institution: deployment.institution,
       base_project: insert(:project),
       slug: sequence("examplesection"),
       type: :blueprint,
       open_and_free: false,
       description: "A description",
       brand: insert(:brand),
-      publisher: insert(:publisher)
+      publisher: insert(:publisher),
+      lti_1p3_deployment: deployment
     }
   end
 
@@ -185,6 +188,16 @@ defmodule Oli.Factory do
       logo: "www.logo.com",
       logo_dark: "www.logodark.com",
       favicons: "www.favicons.com",
+      institution: insert(:institution)
+    }
+  end
+
+  def discount_factory() do
+    %Discount{
+      type: :percentage,
+      percentage: 10,
+      amount: nil,
+      section: insert(:section),
       institution: insert(:institution)
     }
   end
