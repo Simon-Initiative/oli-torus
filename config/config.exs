@@ -164,10 +164,6 @@ if Mix.env() == :dev do
     clear: true
 end
 
-config :oli, :pow,
-  user: Oli.Accounts.User,
-  repo: Oli.Repo
-
 # Configure Mnesia directory (used by pow persistent sessions)
 config :mnesia,
   dir: to_charlist(System.get_env("MNESIA_DIR", ".mnesia")),
