@@ -116,7 +116,7 @@ defmodule OliWeb.Sections.OverviewLiveTest do
     end
   end
 
-  describe "overview live view" do
+  describe "overview live view as admin" do
     setup [:admin_conn, :create_section]
 
     test "returns 404 when section not exists", %{conn: conn} do
@@ -313,6 +313,30 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                "Section had student activity recently. It can now only be archived, please try again."
 
       assert %Section{status: :active} = Sections.get_section!(section.id)
+    end
+  end
+
+  describe "overview live view as instructor" do
+    setup [:instructor_conn, :create_section]
+
+    test "returns 404 when section not exists", %{conn: conn} do
+      conn = get(conn, live_view_overview_route("not_exists"))
+
+      assert response(conn, 404)
+    end
+
+    test "loads section data correctly", %{conn: conn, instructor: instructor} do
+      section = insert(:section, open_and_free: true, type: :enrollable)
+      enroll_user_to_section(instructor, section, :context_instructor)
+
+      {:ok, view, _html} = live(conn, live_view_overview_route(section.slug))
+
+      assert render(view) =~ "Overview"
+      assert render(view) =~ "Overview of this course section"
+      assert has_element?(view, "input[value=\"#{section.slug}\"]")
+      assert has_element?(view, "input[value=\"#{section.title}\"]")
+      assert has_element?(view, "input[value=\"Direct Delivery\"]")
+      assert has_element?(view, "input[value=\"#{section.lti_1p3_deployment.institution.name}\"]")
     end
   end
 end
