@@ -21,7 +21,6 @@ const sharedPromiseMap = new Map();
 const sharedAttemptStateMap = new Map();
 
 const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
-  console.log('Adaptive props', props);
   const [activityId, setActivityId] = useState<string>(props.model?.id || `unknown_activity`);
   const [mode, setMode] = useState<string>(props.mode);
 
@@ -209,6 +208,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
           console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
+            partId,
             scriptEnv,
             adaptivityDomain,
             props,
@@ -224,6 +224,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             initStateBindToFacts: {},
           };
           partsInitDeferred.resolve(context);
+          console.log('AD EMIT CONTEXT CHANGED', context);
           pusher.emit(NotificationType.CONTEXT_CHANGED, context);
         }
       }
@@ -296,6 +297,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     /* console.log('onPartSave', { id, responses }); */
     if (!responses || !responses.length) {
       // TODO: throw? no reason to save something with no response
+      console.warn(`[onPartSave: ${id}] called with no responses`);
       return;
     }
     const currentAttemptState = sharedAttemptStateMap.get(activityId);
@@ -329,7 +331,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         {},
       );
       const evalResult = evalAssignScript(responseMap, scriptEnv);
-      console.log('review mode save evalResult', evalResult);
+      console.log(`[${id}] review mode save evalResult`, evalResult);
       return {
         type: 'success',
         snapshot: getLocalizedStateSnapshot([activityId], scriptEnv),
