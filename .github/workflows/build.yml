@@ -28,6 +28,26 @@ jobs:
       - name: 🗄 Start test database
         run: docker-compose up -d postgres
 
+      - name: 💾 Restore the deps cache
+        id: mix-deps-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: 💾 Restore the Node.js cache
+        id: yarn-cache
+        uses: actions/cache@v3
+        with:
+          path: assets/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('assets/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
         with:
@@ -40,8 +60,12 @@ jobs:
       - name: 🔨 Build dependencies
         run: mix deps.compile
 
+      - name: 🧹 Clean on master
+        if: github.ref == 'refs/heads/master'
+        run: set -a;source oli.env && mix clean
+
       - name: 🔨 Build project
-        run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
+        run: set -a;source oli.env && mix compile --warnings-as-errors
 
       - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
