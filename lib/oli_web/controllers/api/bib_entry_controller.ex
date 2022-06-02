@@ -45,6 +45,24 @@ defmodule OliWeb.Api.BibEntryController do
     end
   end
 
+  def update(conn, %{"project" => project_slug, "title" => title, "content" => content, "entry" => entry_id}) do
+    author = conn.assigns[:current_author]
+
+    case BibEntryEditor.edit(project_slug, entry_id, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
+      {:ok, revision} ->
+        json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
+
+      {:error, {:not_found}} ->
+        error(conn, 404, "not found")
+
+      {:error, {:not_authorized}} ->
+        error(conn, 403, "unauthorized")
+
+      _ ->
+        error(conn, 500, "server error")
+    end
+  end
+
   def retrieve(conn, %{"project" => project_slug, "paging" => %{"offset" => offset, "limit" => limit}}) do
     author = conn.assigns[:current_author]
     IO.puts("retrieve bib called")

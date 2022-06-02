@@ -52,6 +52,16 @@ export function create(project: ProjectSlug, title: string, content: string) {
   return makeRequest<BibEntryCreation>(params);
 }
 
+export function update(project: ProjectSlug, title: string, content: string, entryId: number) {
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify({ title, content }),
+    url: `/bibs/project/${project}/entry/${entryId}`,
+  };
+
+  return makeRequest<BibEntryCreation>(params);
+}
+
 export function deleteEntry(project: ProjectSlug, entryId: number) {
   const params = {
     method: 'DELETE',

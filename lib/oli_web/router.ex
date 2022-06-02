@@ -506,6 +506,7 @@ defmodule OliWeb.Router do
     post("/", Api.BibEntryController, :new)
     get("/", Api.BibEntryController, :index)
     delete("/entry/:entry", Api.BibEntryController, :delete)
+    put("/entry/:entry", Api.BibEntryController, :update)
   end
 
   scope "/api/v1/products", OliWeb do
