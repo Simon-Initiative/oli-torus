@@ -252,6 +252,24 @@ defmodule OliWeb.DeliveryControllerTest do
 
       assert html_response(conn, 403) =~ "Section Has Not Started"
     end
+
+    test "renders product image in sections index", %{
+      conn: conn,
+      oaf_section_1: section
+    } do
+      user = user_fixture()
+      enroll_user_to_section(user, section, :context_learner)
+
+      cover_image = "https://example.com/some-image-url.png"
+      Sections.update_section(section, %{cover_image: cover_image})
+
+      conn =
+        Plug.Test.init_test_session(conn, lti_session: nil)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
+
+      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+    end
   end
 
   @moduletag :capture_log

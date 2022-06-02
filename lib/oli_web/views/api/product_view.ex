@@ -25,7 +25,8 @@ defmodule OliWeb.Api.ProductView do
       has_grace_period: product.has_grace_period,
       grace_period_days: product.grace_period_days,
       grace_period_strategy: product.grace_period_strategy,
-      publisher_id: product.publisher_id
+      publisher_id: product.publisher_id,
+      cover_image: product.cover_image
     }
   end
 

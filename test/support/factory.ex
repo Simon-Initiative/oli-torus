@@ -171,7 +171,8 @@ defmodule Oli.Factory do
       description: "A description",
       brand: insert(:brand),
       publisher: insert(:publisher),
-      lti_1p3_deployment: deployment
+      lti_1p3_deployment: deployment,
+      has_grace_period: false
     }
   end
 

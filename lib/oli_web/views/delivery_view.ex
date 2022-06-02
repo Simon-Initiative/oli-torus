@@ -2,11 +2,14 @@ defmodule OliWeb.DeliveryView do
   use OliWeb, :view
   use Phoenix.Component
 
+  import OliWeb.Common.SourceImage
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
+  alias OliWeb.Router.Helpers, as: Routes
 
   def source_id(source) do
     case Map.get(source, :type, nil) do
