@@ -4,7 +4,15 @@ defmodule Oli.Factory do
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
-  alias Oli.Delivery.Attempts.Core.{ActivityAttempt, PartAttempt, ResourceAccess, ResourceAttempt}
+
+  alias Oli.Delivery.Attempts.Core.{
+    ActivityAttempt,
+    LMSGradeUpdate,
+    PartAttempt,
+    ResourceAccess,
+    ResourceAttempt
+  }
+
   alias Oli.Delivery.Gating.GatingCondition
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Lti.LtiParams
@@ -453,6 +461,17 @@ defmodule Oli.Factory do
       main_contact: "Publisher Contact",
       website_url: "mypublisher.com",
       default: false
+    }
+  end
+
+  def lms_grade_update_factory() do
+    %LMSGradeUpdate{
+      score: Enum.random(0..100),
+      out_of: 100,
+      type: :inline,
+      result: :success,
+      attempt_number: 1,
+      resource_access: insert(:resource_access)
     }
   end
 end
