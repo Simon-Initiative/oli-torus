@@ -3,6 +3,13 @@ defmodule OliWeb.Grades.UpdatesTableModel do
   use Surface.LiveComponent
 
   def new(updates, context) do
+    inserted_at_spec = %ColumnSpec{
+      name: :inserted_at,
+      label: "Date/Time",
+      render_fn: &OliWeb.Common.Table.Common.render_date/3,
+      sort_fn: &OliWeb.Common.Table.Common.sort_date/2
+    }
+
     SortableTableModel.new(
       rows: updates,
       column_specs: [
@@ -32,15 +39,12 @@ defmodule OliWeb.Grades.UpdatesTableModel do
           name: :details,
           label: "Details"
         },
-        %ColumnSpec{
-          name: :inserted_at,
-          label: "Date/Time",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3,
-          sort_fn: &OliWeb.Common.Table.Common.sort_date/2
-        }
+        inserted_at_spec
       ],
       event_suffix: "",
-      id_field: [:index],
+      id_field: [:id],
+      sort_by_spec: inserted_at_spec,
+      sort_order: :desc,
       data: %{
         context: context
       }
