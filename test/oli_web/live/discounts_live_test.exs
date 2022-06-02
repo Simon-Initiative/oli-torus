@@ -126,13 +126,13 @@ defmodule OliWeb.DiscountsLiveTest do
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
-      |> render_click(%{sort_by: "percentage"})
+      |> render_click(%{sort_by: "value"})
 
       assert has_element?(view, "tbody tr:first-child.##{first_discount.id}")
 
       view
       |> element("th[phx-click=\"sort\"]:first-of-type")
-      |> render_click(%{sort_by: "percentage"})
+      |> render_click(%{sort_by: "value"})
 
       assert has_element?(view, "tbody tr:first-child.##{second_discount.id}")
     end
@@ -215,10 +215,8 @@ defmodule OliWeb.DiscountsLiveTest do
         discount: params
       })
 
-      assert view
-            |> element("div.alert.alert-info")
-            |> render() =~
-              "Discount successfully created/updated."
+      flash = assert_redirected(view, live_view_products_index_route(product.slug))
+      assert flash["info"] == "Discount successfully created/updated."
 
       %Discount{type: type, percentage: percentage} = Paywall.get_discount_by!(%{
         section_id: product.id,
@@ -265,7 +263,7 @@ defmodule OliWeb.DiscountsLiveTest do
     end
 
     test "saves discount when data is valid", %{conn: conn, product: product} do
-      params = params_for(:discount)
+      params = params_with_assocs(:discount)
 
       {:ok, view, _html} = live(conn, live_view_product_new_show_route(product.slug))
 
@@ -275,10 +273,8 @@ defmodule OliWeb.DiscountsLiveTest do
         discount: params
       })
 
-      assert view
-            |> element("div.alert.alert-info")
-            |> render() =~
-              "Discount successfully created/updated."
+      flash = assert_redirected(view, live_view_products_index_route(product.slug))
+      assert flash["info"] == "Discount successfully created/updated."
 
       [%Discount{type: type, percentage: percentage}] = Paywall.get_product_discounts(product.id)
       assert type == params.type
@@ -352,10 +348,8 @@ defmodule OliWeb.DiscountsLiveTest do
         discount: params
       })
 
-      assert view
-            |> element("div.alert.alert-info")
-            |> render() =~
-              "Discount successfully created/updated."
+      flash = assert_redirected(view, Routes.institution_path(OliWeb.Endpoint, :show, institution.id))
+      assert flash["info"] == "Discount successfully created/updated."
 
       %Discount{type: type, percentage: percentage} =
         Paywall.get_institution_wide_discount!(institution.id)

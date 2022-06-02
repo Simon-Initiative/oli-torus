@@ -20,12 +20,10 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
           render_fn: &__MODULE__.render_type_column/3
         },
         %ColumnSpec{
-          name: :percentage,
-          label: "Percentage"
-        },
-        %ColumnSpec{
-          name: :amount,
-          label: "Amount"
+          name: :value,
+          label: "Value",
+          render_fn: &__MODULE__.render_value_column/3,
+          sort_fn: &__MODULE__.sort_value_column/2
         },
         %ColumnSpec{
           name: :inserted_at,
@@ -46,6 +44,17 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   def render_institution_column(_assigns, item, _), do: item.institution.name
 
   def render_type_column(_assigns, item, _), do: Phoenix.Naming.humanize(item.type)
+
+  def render_value_column(_assigns, %{type: :percentage} = item, _), do: item.percentage
+  def render_value_column(_assigns, %{type: :fixed_amount} = item, _), do: item.amount
+
+  def sort_value_column(sort_order, sort_spec) do
+    {fn
+      %{type: :percentage} = item -> %{value: item.percentage}
+      %{type: :fixed_amount} = item -> %{value: item.amount}
+    end,
+    ColumnSpec.default_sort_fn(sort_order, sort_spec)}
+  end
 
   def render_actions_column(assigns, item, _) do
     ~F"""

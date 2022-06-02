@@ -73,21 +73,19 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
   defp mount_for(:product = live_action, %{"product_id" => product_slug, "discount_id" => discount_id}, socket) do
     case Sections.get_section_by_slug(product_slug) do
       %Section{type: :blueprint} = product ->
-        {discount, changeset} =
           case Paywall.get_discount_by!(%{id: discount_id}) do
             nil -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
-            discount -> {discount, Paywall.change_discount(discount)}
+            discount ->
+              {:ok, assign(socket,
+                breadcrumbs: set_breadcrumbs(live_action, product, discount.id),
+                institution: discount.institution,
+                institution_name: discount.institution.name,
+                product: product,
+                discount: discount,
+                changeset: Paywall.change_discount(discount),
+                live_action: live_action
+              )}
           end
-
-        {:ok, assign(socket,
-          breadcrumbs: set_breadcrumbs(live_action, product, discount.id),
-          institution: discount.institution,
-          institution_name: discount.institution.name,
-          product: product,
-          discount: discount,
-          changeset: changeset,
-          live_action: live_action
-        )}
 
       _ -> {:ok, Phoenix.LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
     end
@@ -151,11 +149,11 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
     }
 
     case Paywall.create_or_update_discount(attrs) do
-      {:ok, discount} ->
+      {:ok, _discount} ->
         {:noreply,
           socket
           |> put_flash(:info, "Discount successfully created/updated.")
-          |> assign(discount: discount, changeset: Paywall.change_discount(discount))}
+          |> push_redirect(to: index_view(socket.assigns))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -194,4 +192,10 @@ defmodule OliWeb.Products.Payments.Discounts.ShowView do
 
   defp get_institution_id(""), do: nil
   defp get_institution_id(id), do: id
+
+  defp index_view(%{live_action: :institution} = assigns),
+    do: Routes.institution_path(OliWeb.Endpoint, :show, assigns.institution.id)
+
+  defp index_view(assigns),
+    do: Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, assigns.product.slug)
 end

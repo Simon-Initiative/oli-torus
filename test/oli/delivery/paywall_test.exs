@@ -563,10 +563,10 @@ defmodule Oli.Delivery.PaywallTest do
 
     test "get_product_discounts/1 returns the discounts associated with one product" do
       %Discount{id: first_discount_id} = first_discount = insert(:discount)
-      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section)
+      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section, percentage: 90)
 
       assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}]
-        = Paywall.get_product_discounts(first_discount.section.id)
+        = Paywall.get_product_discounts(first_discount.section.id) |> Enum.sort_by(& &1.percentage)
     end
 
     test "update_discount/2 updates the discount successfully" do
