@@ -1,0 +1,25 @@
+.survey {
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border: 1px solid $content-survey-color;
+
+  .survey-label {
+    text-transform: uppercase;
+    padding: 4px;
+    background-color: $content-survey-color;
+    color: $white;
+
+    /** icon */
+    &::before {
+      font-family: 'Line Awesome Free';
+      font-weight: 900;
+      margin-left: 8px;
+      margin-right: 8px;
+      content: '\f681';
+    }
+  }
+
+  .survey-content {
+    padding: 20px;
+  }
+}

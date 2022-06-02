@@ -3,9 +3,11 @@ defmodule Oli.Rendering.Activity.Html do
   Implements the Html writer for activity rendering
   """
   import Oli.Utils
+  import Oli.Rendering.Activity.Common
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
+  alias Oli.Rendering.Activity.ActivitySummary
 
   @behaviour Oli.Rendering.Activity
 
@@ -14,7 +16,9 @@ defmodule Oli.Rendering.Activity.Html do
           activity_map: activity_map,
           render_opts: render_opts,
           mode: mode,
-          user: user
+          user: user,
+          group_id: group_id,
+          survey_id: survey_id,
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
@@ -34,28 +38,31 @@ defmodule Oli.Rendering.Activity.Html do
           []
         end
 
-      _ ->
+      %ActivitySummary{
+        authoring_element: authoring_element,
+        delivery_element: delivery_element,
+        state: state,
+        graded: graded,
+        model: model
+      } ->
         tag =
           case mode do
-            :instructor_preview -> activity_summary.authoring_element
-            _ -> activity_summary.delivery_element
+            :instructor_preview -> authoring_element
+            _ -> delivery_element
           end
 
-        state = activity_summary.state
-        graded = activity_summary.graded
-        model_json = activity_summary.model
         section_slug = context.section_slug
 
         activity_html =
           case mode do
             :instructor_preview ->
               [
-                "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+                ~s|<#{tag} model="#{model}" editmode="false" projectSlug="#{section_slug}"#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
 
             _ ->
               [
-                "<#{tag} class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+                ~s|<#{tag} class="activity-container" graded="#{graded}" state="#{state}" model="#{model}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}"#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
           end
 
@@ -69,9 +76,9 @@ defmodule Oli.Rendering.Activity.Html do
 
           purpose ->
             [
-              "<h4 class=\"activity-purpose ",
+              ~s|<h4 class="activity-purpose |,
               Oli.Utils.Slug.slugify(purpose),
-              "\">",
+              ~s|">|,
               Oli.Utils.Purposes.label_for(purpose),
               "</h4>",
               activity_html

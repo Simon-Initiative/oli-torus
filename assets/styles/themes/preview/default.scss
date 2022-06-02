@@ -248,16 +248,16 @@ html.preview.dark {
   $feedback-error-bg: lighten($orange, 42%);
   $feedback-error-color: $orange;
 
-  $content-purpose-checkpoint-color: lighten($blue, 20%);
-  $content-purpose-didigetthis-color: lighten($purple, 20%);
-  $content-purpose-example-color: lighten($blue, 30%);
-  $content-purpose-labactivity-color: lighten($teal, 30%);
-  $content-purpose-learnbydoing-color: lighten($green, 20%);
-  $content-purpose-learnmore-color: lighten($teal, 30%);
-  $content-purpose-manystudentswonder-color: lighten($cyan, 20%);
-  $content-purpose-quiz-color: lighten($cyan, 20%);
-  $content-purpose-simulation-color: lighten($cyan, 20%);
-  $content-purpose-walkthrough-color: lighten($cyan, 20%);
+  $content-purpose-checkpoint-color: rgba(#0984e3, 0.75) !default;
+  $content-purpose-didigetthis-color: rgba(#8e44ad, 0.75) !default;
+  $content-purpose-example-color: rgba(#74b9ff, 0.75) !default;
+  $content-purpose-labactivity-color: rgba(#fdcb6e, 0.75) !default;
+  $content-purpose-learnbydoing-color: rgba(#00b894, 0.75) !default;
+  $content-purpose-learnmore-color: rgba(#27ae60, 0.75) !default;
+  $content-purpose-manystudentswonder-color: rgba(#42729b, 0.75) !default;
+  $content-purpose-quiz-color: rgba(#3498db, 0.75) !default;
+  $content-purpose-simulation-color: rgba(#ff7675, 0.75) !default;
+  $content-survey-color: rgba(#22a6b3, 0.75) !default;
 
   // Auth providers buttons
 

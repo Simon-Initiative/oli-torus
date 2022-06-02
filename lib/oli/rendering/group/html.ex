@@ -10,9 +10,9 @@ defmodule Oli.Rendering.Group.Html do
 
   @behaviour Oli.Rendering.Group
 
-  def group(%Context{} = _context, next, %{"purpose" => purpose}) do
+  def group(%Context{} = _context, next, %{"id" => id, "purpose" => purpose}) do
     [
-      ~s|<div class="group content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div><div class="content-purpose-content">|,
+      ~s|<div id="#{id}" class="group content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div><div class="content-purpose-content">|,
       next.(),
       "</div></div>\n"
     ]

@@ -8,6 +8,7 @@ defmodule Oli.Rendering.Elements.Plaintext do
   alias Oli.Rendering.Content
   alias Oli.Rendering.Activity
   alias Oli.Rendering.Group
+  alias Oli.Rendering.Survey
   alias Oli.Rendering.Break
   alias Oli.Rendering.Error
 
@@ -21,6 +22,10 @@ defmodule Oli.Rendering.Elements.Plaintext do
 
   def group(%Context{} = context, element) do
     Group.render(context, element, Group.Plaintext)
+  end
+
+  def survey(%Context{} = context, element) do
+    Survey.render(context, element, Survey.Plaintext)
   end
 
   def break(%Context{} = context, element) do
