@@ -347,7 +347,7 @@ defmodule OliWeb.PageDeliveryController do
           )
 
         page.max_attempts == 0 ->
-          "You can take this assessment an unlimited number of times"
+          "You can take this scored page an unlimited number of times"
 
         true ->
           "You have #{attempts_remaining} attempt#{plural(attempts_remaining)} remaining out of #{page.max_attempts} total attempt#{plural(page.max_attempts)}."
@@ -438,7 +438,14 @@ defmodule OliWeb.PageDeliveryController do
         previewMode: preview_mode,
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
-        finalizeGradedURL: Routes.page_delivery_path(conn, :finalize_attempt, section.slug, context.page.slug, resource_attempt.attempt_guid)
+        finalizeGradedURL:
+          Routes.page_delivery_path(
+            conn,
+            :finalize_attempt,
+            section.slug,
+            context.page.slug,
+            resource_attempt.attempt_guid
+          )
       },
       activity_type_slug_mapping: %{},
       activity_types: activity_types,
@@ -706,8 +713,7 @@ defmodule OliWeb.PageDeliveryController do
 
     gradebook_csv = Grading.export_csv(section) |> Enum.join("")
 
-    filename =
-      "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+    filename = "#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
     conn
     |> put_resp_content_type("text/csv")
@@ -719,31 +725,46 @@ defmodule OliWeb.PageDeliveryController do
     section = Sections.get_section_by_slug(section_slug)
 
     enrollments_csv_text = build_enrollments_text(Sections.list_enrollments(section.slug))
-    cost = case section do
-      %Section{requires_payment: true, amount: amount} ->
-        {:ok, m} = Money.to_string(amount)
-        m
-      _ -> "Free"
-    end
+
+    cost =
+      case section do
+        %Section{requires_payment: true, amount: amount} ->
+          {:ok, m} = Money.to_string(amount)
+          m
+
+        _ ->
+          "Free"
+      end
+
     discount =
       case section do
-        %Section{open_and_free: false, blueprint_id: blueprint_id, lti_1p3_deployment: lti_1p3_deployment} ->
+        %Section{
+          open_and_free: false,
+          blueprint_id: blueprint_id,
+          lti_1p3_deployment: lti_1p3_deployment
+        } ->
           case Paywall.get_discount_by!(%{
-            section_id: blueprint_id,
-            institution_id: lti_1p3_deployment.institution.id
-          }) do
+                 section_id: blueprint_id,
+                 institution_id: lti_1p3_deployment.institution.id
+               }) do
             nil ->
               case Paywall.get_institution_wide_discount!(lti_1p3_deployment.institution.id) do
                 nil -> "N/A"
                 discount -> "By Institution: #{get_discount_string(discount)}"
               end
-            discount -> "By Product-Institution: #{get_discount_string(discount)}"
+
+            discount ->
+              "By Product-Institution: #{get_discount_string(discount)}"
           end
-        _ -> "N/A"
+
+        _ ->
+          "N/A"
       end
 
     csv_text = "Cost: #{cost}\r\nDiscount #{discount}\r\n\r\n" <> enrollments_csv_text
-    filename = "Enrollments-#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
+
+    filename =
+      "Enrollments-#{Slug.slugify(section.title)}-#{Timex.format!(Time.now(), "{YYYY}-{M}-{D}")}.csv"
 
     conn
     |> put_resp_content_type("text/csv")
@@ -753,7 +774,9 @@ defmodule OliWeb.PageDeliveryController do
 
   defp build_enrollments_text(enrollments) do
     ([["Student name", "Student email", "Enrolled on"]] ++
-      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, record.inserted_at] end))
+       Enum.map(enrollments, fn record ->
+         [record.user.name, record.user.email, record.inserted_at]
+       end))
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()

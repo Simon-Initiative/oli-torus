@@ -10,7 +10,9 @@
 
 ### Enhancements
 
+- Allow for broader range of number of attempts, including unlimited, for scored pages
 - Add survey authoring support (behind feature flag)
+- Add File Upload activity
 
 ## 0.19.3 (2022-05-17)
 

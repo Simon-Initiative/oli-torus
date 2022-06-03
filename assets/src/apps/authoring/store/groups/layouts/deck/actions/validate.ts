@@ -80,6 +80,11 @@ const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[
   });
 
 const validateTarget = (target: string, activity: any, parts: any[]) => {
+  const isExpression = target.match(/{([^{^}]+)}/g);
+  if (isExpression) {
+    return false;
+  }
+
   const targetNameIdx = target.search(/app|variables|stage|session/);
   const split = target.slice(targetNameIdx).split('.');
   const type = split[0] as string;
