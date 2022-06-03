@@ -1,4 +1,5 @@
 import { makeRequest } from '../common';
+import { encodeFile, getFileName } from 'data/persistence/media';
 
 export type BulkAttemptRetrieved = {
   result: 'success';
@@ -108,3 +109,34 @@ export const evalActivityAttempt = async (
   });
   return { result };
 };
+
+export type AttemptFileCreated = {
+  result: 'success';
+  url: string;
+  creationDate: number;
+  fileSize: number;
+};
+
+export function uploadActivityFile(
+  sectionSlug: string,
+  activityAttemptGuid: string,
+  partAttemptGuid: string,
+  file: File,
+) {
+  const fileName = getFileName(file);
+  const url = `/state/course/${sectionSlug}/activity_attempt/${activityAttemptGuid}/part_attempt/${partAttemptGuid}/upload`;
+
+  return encodeFile(file).then((encoding: string) => {
+    const body = {
+      file: encoding,
+      name: fileName,
+    };
+    const params = {
+      method: 'POST',
+      body: JSON.stringify(body),
+      url,
+    };
+
+    return makeRequest<AttemptFileCreated>(params);
+  });
+}
