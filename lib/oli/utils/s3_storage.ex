@@ -1,5 +1,4 @@
 defmodule Oli.Utils.S3Storage do
-  # require Logger
 
   alias ExAws.S3
   alias Oli.HTTP
@@ -21,7 +20,7 @@ defmodule Oli.Utils.S3Storage do
 
     case upload(bucket_name, upload_path, contents) do
       {:ok, %{status_code: 200}} -> {:ok, full_upload_path}
-      _ -> {:error, full_upload_path}
+      {_, payload} -> {:error, payload}
     end
 
   end

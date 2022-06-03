@@ -3,7 +3,7 @@ defmodule Oli.Repo.Migrations.UpdateSectionsAddCoverImage do
 
   def change do
     alter table(:sections) do
-      add :cover_image, :string, null: true
+      add :cover_image, :string, null: true, default: nil
     end
   end
 end

@@ -9,7 +9,6 @@ defmodule OliWeb.DeliveryView do
   alias Oli.Accounts.User
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
-  alias OliWeb.Router.Helpers, as: Routes
 
   def source_id(source) do
     case Map.get(source, :type, nil) do

@@ -678,42 +678,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~
         "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
     end
-
-    test "renders product's cover image in enrollment page", %{
-      conn: conn,
-      section: section
-    } do
-      user = user_fixture()
-
-      cover_image = "https://example.com/some-image-url.png"
-
-      Sections.update_section(section, %{cover_image: cover_image})
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
-
-      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
-    end
-
-    test "if no cover image is set, renders default image in enrollment page", %{
-      conn: conn,
-      section: section
-    } do
-      user = user_fixture()
-
-      cover_image = Routes.static_path(OliWeb.Endpoint, "/images/course_default.jpg")
-
-      conn =
-        Plug.Test.init_test_session(conn, lti_session: nil)
-        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
-
-      conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
-
-      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
-    end
   end
 
   describe "displaying unit numbers" do

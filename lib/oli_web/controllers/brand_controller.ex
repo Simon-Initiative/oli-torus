@@ -1,13 +1,11 @@
 defmodule OliWeb.BrandController do
   use OliWeb, :controller
 
-  require Logger
-
   alias Oli.Branding
   alias Oli.Branding.Brand
   alias Oli.Repo
   alias Oli.Institutions
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Utils.S3Storage
 
   defp set_breadcrumbs() do

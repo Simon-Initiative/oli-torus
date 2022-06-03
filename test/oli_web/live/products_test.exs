@@ -98,17 +98,17 @@ defmodule OliWeb.ProductsLiveTest do
   describe "product overview image upload" do
     setup [:admin_conn, :create_product]
 
-    test "displays the current image", %{conn: conn, product: product} do
-      Sections.update_section(product, %{cover_image: "https://example.com/some-image-url.png"})
+    test "displays the current image", %{conn: conn} do
+      product = insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
+
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       assert view
       |> element("#img-preview img")
       |> render() =~ "src=\"https://example.com/some-image-url.png\""
-
     end
 
-    test "submit button is not rendered if no file has been uploaded", %{conn: conn, product: product} do
+    test "submit button is disabled if no file has been uploaded", %{conn: conn, product: product} do
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 
       assert view
@@ -152,9 +152,9 @@ defmodule OliWeb.ProductsLiveTest do
       |> render() =~ "<img id=\"current-product-img\""
     end
 
-    test "canceling an upload restores previous rendered image", %{conn: conn, product: product} do
+    test "canceling an upload restores previous rendered image", %{conn: conn} do
       current_image = "https://example.com/some-image-url.png"
-      Sections.update_section(product, %{cover_image: current_image})
+      product = insert(:section, type: :blueprint, cover_image: current_image)
 
       {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
 

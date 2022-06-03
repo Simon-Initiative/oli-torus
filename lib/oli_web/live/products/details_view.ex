@@ -189,13 +189,18 @@ defmodule OliWeb.Products.DetailsView do
       end)
 
     with {:ok, uploaded_path} <- Enum.at(uploaded_files, 0),
-        {:ok, section} <- Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path})
-        do
-          socket = put_flash(socket, :info, "Product changes saved")
-          {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
-        else
-          _ ->
-          Logger.error("Error uploading product image to S3: #{Enum.at(uploaded_files, 0)}")
+      {:ok, section} <- Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path})
+      do
+        socket = put_flash(socket, :info, "Product changes saved")
+        {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
+      else
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          socket = put_flash(socket, :info, "Couldn't update product image")
+          {:noreply, assign(socket, changeset: changeset)}
+
+        {:error, payload} ->
+          Logger.error("Error uploading product image to S3: #{inspect(payload)}")
           socket = put_flash(socket, :info, "Couldn't update product image")
           {:noreply, socket}
     end

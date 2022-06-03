@@ -31,7 +31,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                 <div class="col-6 d-flex justify-content-center">
 
                   <div class="form-group input-file-form-group">
-                    <LiveFileInput upload={@uploads.cover_image} class="img-input-file" opts={[disaled: @uploads.cover_image.entries != []]}/>
+                    <LiveFileInput upload={@uploads.cover_image} class="img-input-file"/>
                     <label class="btn btn-dark btn-tertiary js-labelFile">
                       <i class={"#{if @uploads.cover_image.entries != [], do: "fa-check", else: "fa-upload"} icon fa"}></i>
                       <span class="js-fileName">
@@ -55,46 +55,44 @@ defmodule OliWeb.Products.Details.ImageUpload do
           </section>
 
             <section class="row mb-2" id="img-preview">
-            {#if @uploads.cover_image.entries != []}
-              {#for entry <- @uploads.cover_image.entries}
-                <article class="upload-entry col-12">
-                  {#if !entry_has_errors?(@uploads.cover_image, entry)}
-                  <figure>
-                    { live_img_preview entry, class: "img-fluid w-75"}
-                    <figcaption class="text-muted">{ entry.client_name }</figcaption>
-                  </figure>
+              {#if @uploads.cover_image.entries != []}
+                {#for entry <- @uploads.cover_image.entries}
+                  <article class="upload-entry col-12">
+                    {#if !entry_has_errors?(@uploads.cover_image, entry)}
+                      <figure>
+                        { live_img_preview entry, class: "img-fluid w-75"}
+                        <figcaption class="text-muted">{ entry.client_name }</figcaption>
+                      </figure>
 
-                  <div class="row d-flex">
-                    <div class="col-8 align-self-center h-100">
-                      <div class="progress">
-                        <div role="progressbar" class="progress-bar w-100" style={"width:#{entry.progress} !important"} value={entry.progress} max="100" aria-valuemin="0" aria-valuemax="100"> { entry.progress }% </div>
+                      <div class="row d-flex">
+                        <div class="col-8 align-self-center h-100">
+                          <div class="progress">
+                            <div role="progressbar" class="progress-bar w-100" style={"width:#{entry.progress} !important"} value={entry.progress} max="100" aria-valuemin="0" aria-valuemax="100"> { entry.progress }% </div>
+                          </div>
+                        </div>
+                        <div class="col-4 align-self-center h-100">
+                          <button class="btn btn-secondary btn-sm" phx-click="cancel_upload" phx-value-ref={entry.ref} aria-label="cancel">&times;</button>
+                        </div>
                       </div>
-                    </div>
-                    <div class="col-4 align-self-center h-100">
-                      <button class="btn btn-secondary btn-sm" phx-click="cancel_upload" phx-value-ref={entry.ref} aria-label="cancel">&times;</button>
-                    </div>
-                  </div>
+                    {/if}
 
-                  {/if}
+                    {#for err <- upload_errors(@uploads.cover_image, entry)}
+                      <div class="alert danger">{ upload_error(err) }</div>
+                    {/for}
 
-                  {#for err <- upload_errors(@uploads.cover_image, entry)}
-                    <div class="alert danger">{ upload_error(err) }</div>
-                  {/for}
-
-                </article>
-              {/for}
-            {#else}
+                  </article>
+                {/for}
+              {#else}
                 <article class="col-12">
-                    <img id="current-product-img" src={@product.cover_image} class="img-fluid w-75" />
+                  <img id="current-product-img" src={@product.cover_image} class="img-fluid w-75" />
                 </article>
-            {/if}
+              {/if}
             </section>
 
             <Submit class="btn btn-primary mt-3" label="Save" opts={ [disabled: !upload_has_entries?(@uploads.cover_image) or upload_has_errors?(@uploads.cover_image)] }/>
           </Form>
         </div>
       </div>
-
     </div>
 
     <script type="text/javascript">
@@ -125,4 +123,5 @@ defmodule OliWeb.Products.Details.ImageUpload do
   defp upload_error(:too_large), do: "Image too large, try again with a image lower than 5 MB."
   defp upload_error(:too_many_files), do: "Too many files, try again with a single file"
   defp upload_error(:not_accepted), do: "Unacceptable file type, try again with a .jpg .jpeg or .png file"
+  defp upload_error(error), do: Phoenix.Naming.humanize(error)
 end
