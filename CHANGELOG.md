@@ -9,6 +9,7 @@
 
 ### Enhancements
 
+- Allow for broader range of number of attempts, including unlimited, for scored pages
 - Add survey authoring support (behind feature flag)
 - Add File Upload activity
 
