@@ -593,10 +593,13 @@ export const check = async (
     const scorePerAttempt = maxScore / maxAttempt;
     score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
   }
-  score = Math.min(score, scoringContext.maxScore);
+  score = Math.min(score, scoringContext.maxScore || 0);
   if (!scoringContext.negativeScoreAllowed) {
     score = Math.max(0, score);
   }
+
+  // make sure that score is *always* a number
+  score = isNaN(Number(score)) ? 0 : Number(score);
 
   const finalResults = {
     correct: isCorrect,
