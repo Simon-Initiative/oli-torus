@@ -31,7 +31,7 @@
     </div>
     <div class="row">
       <div class="col-sm-3">Points:</div>
-      <div><%= resource_attempt.score %> out of <%= resource_attempt.out_of %> </div>
+      <div><%= :erlang.float_to_binary(resource_attempt.score, [:compact, {:decimals, 2}]) %> out of <%= :erlang.float_to_binary(resource_attempt.out_of, [:compact, {:decimals, 2}]) %> </div>
     </div>
   </div>
   <% end %>
