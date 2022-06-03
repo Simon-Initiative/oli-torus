@@ -134,6 +134,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
         query
       end
 
+    IO.inspect("HEREREREREREE")
+    IO.inspect(input)
+
     case Repo.update_all(
            query,
            set: [

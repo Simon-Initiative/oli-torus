@@ -7,7 +7,7 @@ export type MediaItemCreated = {
   url: string;
 };
 
-function getFileName(file: File) {
+export function getFileName(file: File) {
   const fileNameWithDot = file.name.slice(
     0,
     file.name.indexOf('.') !== -1 ? file.name.indexOf('.') + 1 : file.name.length,
@@ -18,7 +18,7 @@ function getFileName(file: File) {
   return fileNameWithDot + extension;
 }
 
-function encodeFile(file: File): Promise<string> {
+export function encodeFile(file: File): Promise<string> {
   const reader = new FileReader();
 
   if (file) {
