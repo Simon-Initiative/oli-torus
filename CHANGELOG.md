@@ -6,6 +6,7 @@
 
 - Improve performance of DataShop export
 - Fix an issue where multi-input activity inputs were being duplicated
+- Fix an issue where table caption rendering throws an internal server error
 
 ### Enhancements
 
