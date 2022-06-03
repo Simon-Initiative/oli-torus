@@ -649,7 +649,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       {:ok, {%{parts: [part_attempt]}, _}} =
         ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid, true)
 
-      assert part_attempt.response == %{"input" => "a"}
+      assert part_attempt.response == %{"input" => "a", "files" => nil}
     end
 
     # This test case ensures that the following scenario works correctly:
