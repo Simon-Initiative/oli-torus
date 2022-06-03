@@ -10,6 +10,7 @@
 ### Enhancements
 
 - Add survey authoring support (behind feature flag)
+- Add File Upload activity
 
 ## 0.19.3 (2022-05-17)
 

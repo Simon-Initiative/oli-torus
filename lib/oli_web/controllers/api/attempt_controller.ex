@@ -503,7 +503,10 @@ defmodule OliWeb.Api.AttemptController do
       }) do
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
-        %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
+        %{
+          attempt_guid: attempt_guid,
+          input: %StudentInput{files: Map.get(input, "files", []), input: Map.get(input, "input")}
+        }
       end)
 
     case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
@@ -589,6 +592,40 @@ defmodule OliWeb.Api.AttemptController do
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not reset activity", e)
         error(conn, 500, msg)
+    end
+  end
+
+  def file_upload(conn, %{
+        "section_slug" => section_slug,
+        "activity_attempt_guid" => activity_guid,
+        "part_attempt_guid" => part_guid,
+        "file" => file,
+        "name" => name
+      }) do
+    case Base.decode64(file) do
+      {:ok, contents} ->
+        case Oli.Delivery.Attempts.Artifact.upload(
+               section_slug,
+               activity_guid,
+               part_guid,
+               name,
+               contents
+             ) do
+          {:ok, url} ->
+            json(conn, %{
+              result: "success",
+              url: url,
+              fileSize: byte_size(contents),
+              creationDate: :os.system_time(:millisecond)
+            })
+
+          {:error, error} ->
+            {_id, err_msg} = Oli.Utils.log_error("failed to add artifact", error)
+            error(conn, 400, err_msg)
+        end
+
+      _ ->
+        error(conn, 400, "invalid encoded file")
     end
   end
 
