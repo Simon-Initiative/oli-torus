@@ -18,9 +18,9 @@
  */
 if (!window.keepAlive) {
   window.keepAlive = () => {
-    const scriptTag = document.getElementById('keep-alive')
+    const scriptTag = document.getElementById('keep-alive');
     const userType = scriptTag ? scriptTag.getAttribute('data-type') : 'user';
-    const keepAliveUrl = `${userType == 'author' ? '/authoring' : ''}/keep-alive`
+    const keepAliveUrl = `${userType == 'author' ? '/authoring' : ''}/keep-alive`;
 
     const wait = (ms: number) => {
       return () =>
@@ -29,7 +29,9 @@ if (!window.keepAlive) {
         });
     };
 
-    fetch(keepAliveUrl).then(wait(60 * 1000 /*ms*/)).then(window.keepAlive);
+    fetch(keepAliveUrl)
+      .then(wait(60 * 1000 /*ms*/))
+      .then(window.keepAlive);
   };
 
   window.keepAlive();
