@@ -23,10 +23,13 @@ export const defaultModel: () => FileUploadSchema = () => {
   };
 };
 
+export const defaultMaxFileSize = 1024 * 1000 * 10; // 10 MB
+
 export const createDefaultFileSpec: () => FileSpec = () =>
   ({
     maxCount: 1,
     accept: '',
+    maxSizeInBytes: defaultMaxFileSize,
   } as FileSpec);
 
 export function fileName(url: string) {

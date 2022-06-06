@@ -1,7 +1,19 @@
 import React from 'react';
 
 import { FileSpec as FileSpecType } from './schema';
+import { defaultMaxFileSize } from './utils';
 import { TextInput } from 'components/common/TextInput';
+import { Select } from 'components/common/Selection';
+import { getReadableFileSizeString } from './utils';
+
+const sizes = [
+  1024 * 100,
+  1024 * 500,
+  1024 * 1024 * 5,
+  1024 * 1024 * 10,
+  1024 * 1024 * 50,
+  1024 * 1024 * 100,
+];
 
 export type FileSpecConfigurationProps = {
   editMode: boolean;
@@ -10,6 +22,7 @@ export type FileSpecConfigurationProps = {
 };
 
 const commonAccepts = [
+  { label: 'Any', value: '' },
   { label: 'Audio', value: 'audio/*' },
   { label: 'Video', value: 'video/*' },
   { label: 'Image', value: 'image/*' },
@@ -26,6 +39,11 @@ const commonAccepts = [
 ];
 
 export const FileSpecConfiguration = (props: FileSpecConfigurationProps) => {
+  const maxSizeInBytes =
+    props.fileSpec.maxSizeInBytes === undefined
+      ? defaultMaxFileSize
+      : props.fileSpec.maxSizeInBytes;
+
   return (
     <div>
       <label>Maximum number of files student can upload</label>
@@ -39,6 +57,24 @@ export const FileSpecConfiguration = (props: FileSpecConfigurationProps) => {
           props.onEdit(Object.assign({}, props.fileSpec, { maxCount }));
         }}
       />
+
+      <label className="mt-4">Maximum size of any file</label>
+      <Select
+        editMode={props.editMode}
+        value={maxSizeInBytes.toString()}
+        onChange={(maxSizeInBytes) =>
+          props.onEdit(
+            Object.assign({}, props.fileSpec, { maxSizeInBytes: parseInt(maxSizeInBytes) }),
+          )
+        }
+      >
+        {sizes.map((s) => (
+          <option key={s} value={s}>
+            {getReadableFileSizeString(s)}
+          </option>
+        ))}
+      </Select>
+
       <label className="mt-4">Enter allowable file extension types (comma separated)</label>
       <TextInput
         editMode={props.editMode}
