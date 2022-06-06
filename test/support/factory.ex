@@ -51,7 +51,7 @@ defmodule Oli.Factory do
       given_name: sequence("User given name"),
       family_name: "User family name",
       sub: "#{sequence("usersub")}",
-      author: insert(:author),
+      author: fn -> build(:author) end,
       guest: false,
       independent_learner: true,
       can_create_sections: true,
@@ -72,8 +72,8 @@ defmodule Oli.Factory do
 
   def community_user_account_factory() do
     %CommunityAccount{
-      community: insert(:community),
-      user: insert(:user),
+      community: fn -> build(:community) end,
+      user: fn -> build(:user) end,
       is_admin: false
     }
   end
@@ -82,8 +82,8 @@ defmodule Oli.Factory do
 
   def community_admin_account_factory() do
     %CommunityAccount{
-      community: insert(:community),
-      author: insert(:author),
+      community: fn -> build(:community) end,
+      author: fn -> build(:author) end,
       is_admin: true
     }
   end
@@ -92,15 +92,15 @@ defmodule Oli.Factory do
 
   def community_project_visibility_factory() do
     %CommunityVisibility{
-      community: insert(:community),
-      project: insert(:project)
+      community: fn -> build(:community)end,
+      project: fn -> build(:project) end
     }
   end
 
   def community_product_visibility_factory() do
     %CommunityVisibility{
-      community: insert(:community),
-      section: insert(:section)
+      community: fn -> build(:community) end,
+      section: fn -> build(:section) end
     }
   end
 
@@ -110,10 +110,10 @@ defmodule Oli.Factory do
       title: sequence("Example Course"),
       slug: sequence("examplecourse"),
       version: "1",
-      family: insert(:family),
+      family: fn -> build(:family) end,
       visibility: :global,
-      authors: insert_list(2, :author),
-      publisher: insert(:publisher)
+      authors: fn -> build_list(2, :author) end,
+      publisher: fn -> build(:publisher) end
     }
   end
 
@@ -144,7 +144,7 @@ defmodule Oli.Factory do
 
     %Publication{
       published: date,
-      project: insert(:project)
+      project: fn -> build(:project) end
     }
   end
 
@@ -164,13 +164,13 @@ defmodule Oli.Factory do
       registration_open: true,
       context_id: UUID.uuid4(),
       institution: deployment.institution,
-      base_project: insert(:project),
+      base_project: fn -> build(:project) end,
       slug: sequence("examplesection"),
       type: :blueprint,
       open_and_free: false,
       description: "A description",
-      brand: insert(:brand),
-      publisher: insert(:publisher),
+      brand: fn -> build(:brand) end,
+      publisher: fn -> build(:publisher) end,
       lti_1p3_deployment: deployment,
       has_grace_period: false
     }
@@ -197,7 +197,7 @@ defmodule Oli.Factory do
       logo: "www.logo.com",
       logo_dark: "www.logodark.com",
       favicons: "www.favicons.com",
-      institution: insert(:institution)
+      institution: fn -> build(:institution) end
     }
   end
 
@@ -206,8 +206,8 @@ defmodule Oli.Factory do
       type: :percentage,
       percentage: 10,
       amount: nil,
-      section: insert(:section),
-      institution: insert(:institution)
+      section: fn -> build(:section) end,
+      institution: fn -> build(:institution) end
     }
   end
 
@@ -224,8 +224,8 @@ defmodule Oli.Factory do
   def lti_deployment_factory() do
     %Deployment{
       deployment_id: sequence("deployment_id"),
-      registration: insert(:lti_registration),
-      institution: insert(:institution)
+      registration: fn -> build(:lti_registration) end,
+      institution: fn -> build(:institution) end
     }
   end
 
@@ -243,40 +243,40 @@ defmodule Oli.Factory do
 
   def community_member_account_factory() do
     %CommunityAccount{
-      community: insert(:community),
-      user: insert(:user),
+      community: fn -> build(:community) end,
+      user: fn -> build(:user) end,
       is_admin: false
     }
   end
 
   def community_institution_factory() do
     %CommunityInstitution{
-      community: insert(:community),
-      institution: insert(:institution)
+      community: fn -> build(:community) end,
+      institution: fn -> build(:institution) end
     }
   end
 
   def published_resource_factory() do
     %PublishedResource{
-      resource: insert(:resource),
-      publication: insert(:publication),
-      revision: insert(:revision),
-      author: insert(:author)
+      resource: fn -> build(:resource) end,
+      publication: fn -> build(:publication) end,
+      revision: fn -> build(:revision) end,
+      author: fn -> build(:author) end
     }
   end
 
   def section_project_publication_factory() do
     %SectionsProjectsPublications{
-      project: insert(:project),
-      section: insert(:section),
-      publication: insert(:publication)
+      project: fn -> build(:project) end,
+      section: fn -> build(:section) end,
+      publication: fn -> build(:publication) end
     }
   end
 
   def section_resource_factory() do
     %SectionResource{
-      project: insert(:project),
-      section: insert(:section),
+      project: fn -> build(:project) end,
+      section: fn -> build(:section) end,
       resource_id: insert(:resource).id,
       slug: sequence("some_slug")
     }
@@ -286,7 +286,7 @@ defmodule Oli.Factory do
     %Revision{
       title: "Example revision",
       slug: "example_revision",
-      resource: insert(:resource)
+      resource: fn -> build(:resource) end
     }
   end
 
@@ -306,9 +306,9 @@ defmodule Oli.Factory do
     {:ok, end_date, _timezone} = DateTime.from_iso8601("2019-06-24 20:30:00Z")
 
     %GatingCondition{
-      user: insert(:user),
-      section: insert(:section),
-      resource: insert(:resource),
+      user: fn -> build(:user) end,
+      section: fn -> build(:section) end,
+      resource: fn -> build(:resource) end,
       type: :schedule,
       data: %{end_datetime: end_date, start_datetime: start_date}
     }
@@ -327,8 +327,8 @@ defmodule Oli.Factory do
 
   def enrollment_factory() do
     %Enrollment{
-      user: insert(:user),
-      section: insert(:section)
+      user: fn -> build(:user) end,
+      section: fn -> build(:section) end
     }
   end
 
@@ -337,8 +337,8 @@ defmodule Oli.Factory do
       type: :direct,
       amount: Money.new(:USD, 25),
       provider_type: :stripe,
-      section: insert(:section),
-      enrollment: insert(:enrollment)
+      section: fn -> build(:section) end,
+      enrollment: fn -> build(:enrollment) end
     }
   end
 
@@ -371,7 +371,7 @@ defmodule Oli.Factory do
     date_expires = DateTime.add(DateTime.utc_now(), 3600)
 
     %SectionInvite{
-      section: insert(:section),
+      section: fn -> build(:section) end,
       slug: sequence("exampleinvite"),
       date_expires: date_expires
     }
@@ -383,10 +383,10 @@ defmodule Oli.Factory do
     %Snapshot{
       resource: revision.resource,
       activity: revision.resource,
-      user: insert(:user),
-      section: insert(:section),
+      user: fn -> build(:user) end,
+      section: fn -> build(:section) end,
       #
-      part_attempt: insert(:part_attempt),
+      part_attempt: fn -> build(:part_attempt) end,
       revision: revision,
       part_id: sequence("part_id"),
       score: Enum.random(0..100),
@@ -405,7 +405,7 @@ defmodule Oli.Factory do
       attempt_guid: sequence("guid"),
       attempt_number: sequence("") |> Integer.parse() |> elem(0),
       part_id: sequence("part_id"),
-      activity_attempt: insert(:activity_attempt)
+      activity_attempt: fn -> build(:activity_attempt) end
     }
   end
 
@@ -417,7 +417,7 @@ defmodule Oli.Factory do
       attempt_number: sequence("") |> Integer.parse() |> elem(0),
       resource: revision.resource,
       revision: revision,
-      resource_attempt: insert(:resource_attempt)
+      resource_attempt: fn -> build(:resource_attempt) end
     }
   end
 
@@ -427,7 +427,7 @@ defmodule Oli.Factory do
     %ResourceAttempt{
       attempt_guid: sequence("guid"),
       attempt_number: sequence("") |> Integer.parse() |> elem(0),
-      resource_access: insert(:resource_access),
+      resource_access: fn -> build(:resource_access) end,
       revision: revision,
       content: %{}
     }
@@ -436,9 +436,9 @@ defmodule Oli.Factory do
   def resource_access_factory() do
     %ResourceAccess{
       access_count: sequence("") |> Integer.parse() |> elem(0),
-      user: insert(:user),
-      section: insert(:section),
-      resource: insert(:resource)
+      user: fn -> build(:user) end,
+      section: fn -> build(:section) end,
+      resource: fn -> build(:resource) end
     }
   end
 
@@ -472,7 +472,7 @@ defmodule Oli.Factory do
       type: :inline,
       result: :success,
       attempt_number: 1,
-      resource_access: insert(:resource_access)
+      resource_access: fn -> build(:resource_access) end
     }
   end
 end

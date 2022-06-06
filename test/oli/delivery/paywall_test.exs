@@ -483,7 +483,7 @@ defmodule Oli.Delivery.PaywallTest do
 
   describe "discount" do
     test "create_discount/1 with valid data creates a discount" do
-      params = params_for(:discount)
+      params = params_with_assocs(:discount)
 
       assert {:ok, %Discount{} = discount} = Paywall.create_discount(params)
       assert discount.type == params.type
@@ -597,7 +597,7 @@ defmodule Oli.Delivery.PaywallTest do
     end
 
     test "create_or_update_discount/1 creates a discount" do
-      params = params_for(:discount)
+      params = params_with_assocs(:discount)
 
       assert {:ok, %Discount{} = discount} = Paywall.create_or_update_discount(params)
       assert discount.type == params.type
