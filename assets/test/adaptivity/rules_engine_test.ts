@@ -255,6 +255,8 @@ describe('Operators', () => {
       expect(isEqual(0, false)).toEqual(true);
       expect(isEqual(1, false)).toEqual(false);
       expect(notEqual(9, 3)).toEqual(true);
+      expect(notEqual(undefined, 3)).toEqual(false);
+      expect(notEqual(3, undefined)).toEqual(false);
       expect(notEqual('a', 'c')).toEqual(true);
       expect(notEqual([3, 2], [1, 2])).toEqual(true);
     });
