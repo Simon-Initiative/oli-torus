@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
@@ -28,6 +28,7 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { getReadableFileSizeString, fileName } from './utils';
 import { RemoveButton } from '../common/authoring/removeButton/RemoveButton';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
+import { defaultMaxFileSize } from './utils';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');
@@ -110,19 +111,35 @@ const FileSubmission: React.FC<{
   onSavePart: (attemptGuid: string, partAttemptGuid: string, response: StudentResponse) => void;
 }> = ({ sectionSlug, model, state, onSavePart }) => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const [error, setError] = useState('');
+
+  const maxSizeInBytes =
+    model.fileSpec.maxSizeInBytes === undefined
+      ? defaultMaxFileSize
+      : model.fileSpec.maxSizeInBytes;
 
   const upload = (files: FileList) => {
-    uploadActivityFile(sectionSlug, state.attemptGuid, state.parts[0].attemptGuid, files[0]).then(
-      (result) => {
-        if (result.result === 'success') {
-          const newFiles = [
-            ...getFiles(uiState),
-            { url: result.url, creationDate: result.creationDate, fileSize: result.fileSize },
-          ];
-          onSavePart(state.attemptGuid, state.parts[0].attemptGuid, { files: newFiles, input: '' });
-        }
-      },
-    );
+    if (files[0].size > maxSizeInBytes) {
+      setError('This file exceeds the maximum allowed file size');
+    } else {
+      uploadActivityFile(sectionSlug, state.attemptGuid, state.parts[0].attemptGuid, files[0]).then(
+        (result) => {
+          if (result.result === 'success') {
+            setError('');
+            const newFiles = [
+              ...getFiles(uiState),
+              { url: result.url, creationDate: result.creationDate, fileSize: result.fileSize },
+            ];
+            onSavePart(state.attemptGuid, state.parts[0].attemptGuid, {
+              files: newFiles,
+              input: '',
+            });
+          } else {
+            setError('There was a problem encountered while uploading this file');
+          }
+        },
+      );
+    }
   };
 
   const files = getFiles(uiState).map((file: FileMetaData) => {
@@ -165,13 +182,25 @@ const FileSubmission: React.FC<{
             You can upload at most {model.fileSpec.maxCount - files.length} more file
             {model.fileSpec.maxCount - files.length === 1 ? '' : 's'}
           </p>
-          <button
-            className="btn btn-primary media-toolbar-item upload"
-            onClick={() => onUploadClick(`upload-${uiState.attemptState.attemptGuid}`)}
-          >
-            <i className="fa fa-upload" /> Upload
-          </button>
+          <div>
+            <button
+              className="btn btn-primary media-toolbar-item upload"
+              onClick={() => onUploadClick(`upload-${uiState.attemptState.attemptGuid}`)}
+            >
+              <i className="fa fa-upload" /> Upload
+            </button>
+            <div>
+              <small className="text-muted">
+                Max of {getReadableFileSizeString(maxSizeInBytes)}
+              </small>
+            </div>
+          </div>
         </div>
+        {error !== '' ? (
+          <div className="alert alert-danger" role="alert">
+            {error}
+          </div>
+        ) : null}
       </div>
     );
 
