@@ -548,6 +548,12 @@ defmodule OliWeb.Router do
       :new_part
     )
 
+    post(
+      "/:activity_attempt_guid/part_attempt/:part_attempt_guid/upload",
+      Api.AttemptController,
+      :file_upload
+    )
+
     put(
       "/:activity_attempt_guid/part_attempt/:part_attempt_guid",
       Api.AttemptController,
@@ -863,7 +869,10 @@ defmodule OliWeb.Router do
 
     # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController)
-    live("/institutions/:institution_id/discounts", Products.Payments.Discounts, :institution, as: :discount)
+
+    live("/institutions/:institution_id/discounts", Products.Payments.Discounts, :institution,
+      as: :discount
+    )
 
     live("/registrations", Admin.RegistrationsView)
 

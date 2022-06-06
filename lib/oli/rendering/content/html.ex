@@ -121,10 +121,10 @@ defmodule Oli.Rendering.Content.Html do
     missing_media_src(context, e)
   end
 
-  def table(%Context{} = _context, next, attrs) do
+  def table(%Context{} = context, next, attrs) do
     caption =
       case attrs do
-        %{"caption" => caption} -> "<caption>#{escape_xml!(caption)}</caption>"
+        %{"caption" => c} -> caption(context, c)
         _ -> ""
       end
 
