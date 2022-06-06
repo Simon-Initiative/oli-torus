@@ -21,7 +21,7 @@ defmodule OliWeb.ProjectController do
       Publishing.get_latest_published_publication_by_slug(project.slug)
 
     params = %{
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
       active: :overview,
       collaborators: Accounts.project_authors(project),
       activities_enabled: Activities.advanced_activities(project),
@@ -177,7 +177,7 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),
@@ -250,7 +250,7 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
           activities_enabled: Activities.advanced_activities(project),

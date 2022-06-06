@@ -14,7 +14,7 @@ defmodule OliWeb.Products.DetailsView do
   alias OliWeb.Sections.Mount
   alias OliWeb.Products.Details.{Actions, Edit, Content}
 
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Product"})]
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Product Overview"})]
   data product, :any, default: nil
   data show_confirm, :boolean, default: false
   prop author, :any
