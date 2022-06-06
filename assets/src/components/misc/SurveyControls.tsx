@@ -4,8 +4,15 @@ export interface SurveyControlsProps {
   id: string;
 }
 
+export interface SubmitSurveyEventDetails {
+  id: string;
+}
+
 export const SurveyControls = ({ id }: SurveyControlsProps) => {
-  const onSubmit = () => console.log('Submit Survey ' + id);
+  const onSubmit = () =>
+    document.dispatchEvent(
+      new CustomEvent<SubmitSurveyEventDetails>('oli-submit-survey', { detail: { id } }),
+    );
 
   return (
     <div className="d-flex">

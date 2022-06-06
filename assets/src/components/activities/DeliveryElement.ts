@@ -21,7 +21,7 @@ export interface EvaluationResponse extends Success {
 }
 
 /**
- * Reponse to a request for an additional hint.
+ * Response to a request for an additional hint.
  * Notice that the hint attribute here is optional.  If a
  * client requests a hint and there are no more, the platform
  * will return an instance of this interface with hasMoreHints set to false
@@ -78,6 +78,14 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
    */
   userId: number;
   /**
+   * Unique group id that the activity belongs to
+   */
+  groupId?: string;
+  /**
+   * Unique survey id that the activity belongs to
+   */
+  surveyId?: string;
+  /**
    * @ignore
    */
   notify?: EventEmitter;
@@ -97,7 +105,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   onWriteUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
 
   /**
-   * Initiaties saving of the student response for all parts.
+   * Initiates saving of the student response for all parts.
    */
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
 
@@ -162,8 +170,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
  * An abstract delivery web component, designed to delegate rendering
  * via the `render` method.  This delivery web component will re-render
  * when the 'model' attribute of the the web component changes.  It also provides
- * several callback function to allow the concrete implemenation to initiate
- * lifecylce events (e.g. request a hint, reset an attempt, etc).
+ * several callback function to allow the concrete implementation to initiate
+ * lifecycle events (e.g. request a hint, reset an attempt, etc).
  *
  * While the delegated implementation is a React component in the case of natively
  * implemented activities, this does not need to be the case.  This `DeliveryElement`
@@ -299,6 +307,8 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const mode = valueOr(this.getAttribute('mode'), 'delivery') as DeliveryMode;
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
     const userId = this.getAttribute('user_id') as any;
+    const groupId = valueOr(this.getAttribute('user_id'), undefined);
+    const surveyId = valueOr(this.getAttribute('user_id'), undefined);
 
     this.review = mode === 'review';
 
@@ -308,6 +318,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       state,
       mode,
       sectionSlug,
+      userId,
+      groupId,
+      surveyId,
+      notify: this._notify,
+      mountPoint: this.mountPoint,
       onWriteUserState: this.onSetData,
       onReadUserState: this.onGetData,
       onRequestHint: this.onRequestHint,
@@ -320,9 +335,6 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitEvaluations: this.onSubmitEvaluations,
       onReady: this.onReady,
       onResize: this.onResize,
-      userId,
-      notify: this._notify,
-      mountPoint: this.mountPoint,
     };
   }
 
