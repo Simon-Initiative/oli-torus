@@ -1,5 +1,5 @@
 import { BibEntry, Paging } from 'data/content/bibentry';
-import React, { ChangeEvent, CSSProperties, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import * as BibPersistence from 'data/persistence/bibentry';
@@ -15,14 +15,10 @@ import { createMessage, Message, Severity } from 'data/messages/messages';
 import { PlainEntryEditor } from './PlainEntryEditor';
 import { EditBibEntry } from './EditBibEntry';
 import { Maybe } from 'tsmonad';
-import { Select } from 'components/common/Selection';
 import { CitationModel, fromEntryType } from './citationModel';
 import { BibEntryEditor } from './BibEntryEditor';
 import { cslSchema, toFriendlyLabel } from './common';
-import guid from 'utils/guid';
 
-// // eslint-disable-next-line
-// const cslSchema = require('./csl-data-schema.json');
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
 
@@ -112,6 +108,8 @@ export function confirmUiBibEditor(
           create={true}
           onEdit={(content: CitationModel) => {
             bibContent = content;
+            // :TODO: remove empty fields
+            console.log('the model so far ' + JSON.stringify(bibContent));
           }}
         />
       </ModalSelection>
@@ -265,13 +263,12 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   };
 
   const createNewBibEntry = (bibType: string) => {
-    console.log('createNewBibEntry ' + bibType);
-    // const citeModel: CitationModel = { id: 'temp_id_' + guid(), type: bibType, title: 'testing' };
     const citeModel: CitationModel = fromEntryType(bibType);
-    console.log('------- ' + JSON.stringify(citeModel));
     confirmUiBibEditor(citeModel, false).then((value) => {
       value.caseOf({
-        just: (n) => console.log('--- new model' + JSON.stringify(n)),
+        just: (n) => {
+          handleCreateOrEdit(JSON.stringify(n));
+        },
         nothing: () => undefined,
       });
     });

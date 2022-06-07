@@ -1,13 +1,10 @@
 import * as React from 'react';
-import { BibEntry } from 'data/content/bibentry';
+import * as Immutable from 'immutable';
 import { useEffect, useState } from 'react';
-import { CitationModel, NameField } from './citationModel';
+import { CitationModel, DateField, isDateField, isNameField, NameField } from './citationModel';
 import { TextInput } from 'components/common/TextInput';
-import { Select } from 'components/common/Selection';
-import { camelizeKeys, cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
+import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
 
-// eslint-disable-next-line
-// const cslSchema = require('./csl-data-schema.json');
 export interface BibEntryEditorProps {
   citationModel: CitationModel;
   create: boolean;
@@ -15,12 +12,45 @@ export interface BibEntryEditorProps {
 }
 
 export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEditorProps) => {
-  const [model, setModel] = useState<CitationModel>(props.citationModel);
-  const [fields, setFields] = useState<string[]>(['title', 'issued']);
+  const [model, setModel] = useState<CitationModel>({ ...props.citationModel });
+  const [allFields, setAllFields] = useState<Immutable.List<string>>(
+    Immutable.List<string>(Object.keys(cslSchema.items.properties) as any),
+  );
+
+  useEffect(() => {}, []);
 
   const onEditString = (key: string, value: string) => {
-    setModel({ ...model, [camelizeKeys(key)]: value });
-    props.onEdit(model);
+    setModel({ ...model, [key]: value });
+    props.onEdit({ ...model });
+  };
+
+  const onEditNameEditor = (index: number, key: string, key2: string, value: string) => {
+    const updateModel = { ...model };
+    const entry = Object.entries(updateModel).find(([k, _v]) => k === key);
+    if (entry) {
+      let val = entry[1][index];
+      val = { ...val, [key2]: value };
+      entry[1].splice(index, 1, val);
+      setModel(updateModel);
+      props.onEdit({ ...model });
+    }
+  };
+
+  const onEditDateEditor = (index: number, key: string, key2: string, value: string) => {
+    let updateModel = { ...model };
+    const entry = Object.entries(updateModel).find(([k, _v]) => k === key);
+    if (entry) {
+      let val = entry[1];
+      if (index > -1) {
+        val = val[key2];
+        val[0].splice(index, 1, value);
+      } else {
+        val = { ...val, [key2]: value };
+        updateModel = { ...updateModel, [key]: val };
+      }
+      setModel(updateModel);
+      props.onEdit({ ...model });
+    }
   };
 
   const renderStringEditor = (key: string, value: string) => {
@@ -31,55 +61,119 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         value={value}
         label=""
         type="string"
-        onEdit={(value) => onEditString(key, value)}
+        onEdit={(v) => onEditString(key, v)}
       />
     );
   };
 
-  const renderAuthorEditor = (key: string, value: NameField[]) => {
-    // return (
-    //   <TextInput
-    //     editMode={true}
-    //     width="100%"
-    //     value={v}
-    //     label=""
-    //     type="string"
-    //     onEdit={this.onEditAuthorEditor.bind(this, k)}
-    //   />
-    // );
+  const renderDateEditor = (key: string, value: DateField) => {
+    return (
+      <div className="ml-4">
+        {Object.entries(value).map((e) => (
+          <div key={e[0]} className="form-row form-group">
+            <label className="control-label" htmlFor={e[0]}>
+              {renderLabel(e[0])}
+            </label>
+            <div className="col-sm-12">
+              {e[0] === 'date-parts' ? (
+                <div className="d-flex">
+                  <div className="col-sm-4">
+                    <TextInput
+                      editMode={true}
+                      width="100%"
+                      value={e[1][0][0]}
+                      label="Year"
+                      type="string"
+                      onEdit={(v) => {
+                        onEditDateEditor(0, key, e[0], v);
+                      }}
+                    />
+                  </div>
+                  <div className="col-sm-4">
+                    <TextInput
+                      editMode={true}
+                      width="100%"
+                      value={e[1][0].length > 1 ? e[1][0][1] : ''}
+                      label="Month"
+                      type="string"
+                      onEdit={(v) => {
+                        onEditDateEditor(1, key, e[0], v);
+                      }}
+                    />
+                  </div>
+                  <div className="col-sm-4">
+                    <TextInput
+                      editMode={true}
+                      width="100%"
+                      value={e[1][0].length > 2 ? e[1][0][2] : ''}
+                      label="Day"
+                      type="string"
+                      onEdit={(v) => {
+                        onEditDateEditor(2, key, e[0], v);
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <TextInput
+                  editMode={true}
+                  width="100%"
+                  value={e[1]}
+                  label=""
+                  type="string"
+                  onEdit={(v) => {
+                    onEditDateEditor(-1, key, e[0], v);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
-  const renderLabel = (key: string, value: any) => {
-    // if (key === 'authorEditor') {
-    //   return (
-    //     <Select
-    //       editMode={true}
-    //       value={value.has('author') ? 'author' : 'editor'}
-    //       onChange={(v) => this.onAuthorEditorSwitch(v)}
-    //     >
-    //       <option key="author" value="author">
-    //         Author
-    //       </option>
-    //       <option key="editor" value="editor">
-    //         Editor
-    //       </option>
-    //     </Select>
-    //   );
-    // }
-    // if (key === 'volumeNumber') {
-    //   let v = 'volume';
-    //   value.lift((m) => (v = m.has('number') ? 'number' : 'volume'));
-    //   return (
-    // <Select editMode={true} value={v} onChange={(v) => this.onVolumeNumberSwitch(v)}>
-    //   <option key="volume" value="volume">
-    //     Volume
-    //   </option>
-    //   <option key="number" value="number">
-    //     Number
-    //   </option>
-    // </Select>
-    //   );
-    // }
+  const renderNameField = (index: number, key: string, value: NameField) => {
+    return (
+      <div className="d-flex">
+        {Object.entries(value).map((e) => (
+          <div key={e[0]} className="col-sm-6">
+            <TextInput
+              editMode={true}
+              width="100%"
+              value={e[1]}
+              label={renderLabel(e[0])}
+              type="string"
+              onEdit={(v) => onEditNameEditor(index, key, e[0], v)}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderNameEditor = (key: string, values: NameField[]) => {
+    return (
+      <div className="ml-4">
+        {values.map((e, index) => (
+          <div key={index} className="form-horizontal">
+            {renderNameField(index, key, e)}
+          </div>
+        ))}
+        <button
+          type="button"
+          className="btn btn-link"
+          onClick={() => {
+            setModel({ ...model, [key]: [...values, { given: '', family: '' }] });
+          }}
+        >
+          <i className="las la-solid la-plus"></i> {'Add ' + toFriendlyLabel(key)}
+        </button>
+      </div>
+    );
+  };
+
+  const renderLabel = (key: string) => {
     return toFriendlyLabel(key);
   };
 
@@ -87,65 +181,58 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
     if (value === undefined) {
       return null;
     }
-    // if (key === 'authorEditor') {
-    //   return this.renderAuthorEditor(key, value);
-    // }
-    // if (key === 'volumeNumber') {
-    //   return this.renderVolumeNumber(key, value);
-    // }
     if (typeof value === 'string') {
       return renderStringEditor(key, value);
     }
-    // if (typeof value === 'object' && value.lift !== undefined) {
-    //   return this.renderMaybeStringEditor(key, value);
-    // }
+
+    if (isNameField(key)) {
+      return renderNameEditor(key, value);
+    }
+
+    if (isDateField(key)) {
+      return renderDateEditor(key, value);
+    }
   };
 
-  const renderPair = (key1: string, value1: any, key2: string, value2: any) => {
-    const labelStyle: React.CSSProperties = {
-      width: '125px',
-      textAlign: 'right',
-      paddingRight: '5px',
-    };
+  const initDefaultValue = (key: string) => {
+    if (isNameField(key)) {
+      return [{ given: '', family: '' }];
+    }
+    if (isDateField(key)) {
+      const c = new Date();
+      return { 'date-parts': [[c.getFullYear(), c.getMonth() + 1, c.getDate()]] };
+    }
+    return '';
+  };
 
+  const renderField = (key1: string, value1: any) => {
     return (
-      <tr>
-        <td style={labelStyle}>{renderLabel(key1, value1)}</td>
-        <td>{renderAttributeEditor(key1, value1)}</td>
-        <td style={labelStyle}>{renderLabel(key2, value2)}</td>
-        <td>{renderAttributeEditor(key2, value2)}</td>
-      </tr>
+      <div className="form-row form-group">
+        <label className="control-label" htmlFor={key1}>
+          {renderLabel(key1)}
+        </label>
+        <div className="col-sm-12">{renderAttributeEditor(key1, value1)}</div>
+      </div>
     );
   };
 
   const renderAttributeEditors = () => {
-    const padded = fields.length % 2 === 1 ? [...fields, ''] : fields;
-
     const editors = [];
-    for (let i = 0; i < padded.length / 2; i += 1) {
-      const left = camelizeKeys(padded[i]);
-      const right = camelizeKeys(padded[i + padded.length / 2]);
-      let valLeft;
-      let valRight;
-      for (const [key, value] of Object.entries(model)) {
-        if (key === left) {
-          valLeft = value;
-        }
-        if (key === right) {
-          valRight = value;
-        }
+
+    for (const [key, value] of Object.entries(model)) {
+      if (!Object.keys(ignoredAttributes).find((e) => e === key)) {
+        editors.push(renderField(key, value));
       }
-      if (!valLeft) valLeft = ' ';
-      if (!valRight && right !== '') valRight = ' ';
-      editors.push(renderPair(left, valLeft, right, valRight));
     }
 
     return editors;
   };
 
   const createEntryDropdown = () => {
-    const attrs = Object.keys(cslSchema.items.properties).filter(
-      (key: string) => !Object.keys(ignoredAttributes).find((el) => el === key),
+    const attrs = allFields.filter(
+      (key: string) =>
+        !Object.keys(ignoredAttributes).find((el) => el === key) &&
+        !Object.keys(model).find((el) => el === key),
     );
     return (
       <div className="form-inline">
@@ -165,8 +252,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
               {attrs.map((e: string) => (
                 <a
                   onClick={() => {
-                    console.log('kekeek');
-                    setFields([...fields, e]);
+                    setModel({ ...model, [e]: initDefaultValue(e) });
                   }}
                   className="dropdown-item"
                   href="#"
@@ -184,10 +270,10 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
 
   return (
     <div>
-      <div>{toFriendlyLabel(model.type).toUpperCase()}</div>
-      <table style={{ width: '100%' }}>
-        <tbody>{renderAttributeEditors()}</tbody>
-      </table>
+      <div className="text-info">{toFriendlyLabel(model.type).toUpperCase()}</div>
+      <div className="overflow-auto form-horizontal p-3 bg-light" style={{ maxHeight: '400px' }}>
+        {renderAttributeEditors()}
+      </div>
       {createEntryDropdown()}
     </div>
   );

@@ -88,7 +88,9 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
         e.stopPropagation();
       }}
     >
-      <div className="list-group">{bibEditors}</div>
+      <div className="overflow-auto list-group bg-light" style={{ maxHeight: '460px' }}>
+        {bibEditors}
+      </div>
     </div>
   );
 };
