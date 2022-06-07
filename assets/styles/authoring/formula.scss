@@ -1,0 +1,41 @@
+@import 'authoring/variables';
+
+.formula-editor {
+  min-width: 600px;
+  .split-editor {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .preview {
+      margin-top: 20px;
+      border: 1px solid $gray-100;
+    }
+
+    .editor {
+      .toolbar {
+        .buttons {
+          display: flex;
+          flex-direction: row;
+          gap: 15px;
+        }
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        text-align: left;
+        gap: 3px;
+        padding: 5px 15px 5px 5px;
+        background-color: $gray-100;
+
+        .language {
+          padding: 2px 10px;
+        }
+        .language-active {
+          border: 1px solid $blue;
+        }
+      }
+      text-align: left;
+      min-height: 30vh;
+    }
+  }
+}

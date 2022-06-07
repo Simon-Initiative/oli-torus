@@ -38,6 +38,14 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def callout(%Oli.Rendering.Context{} = _context, next, _) do
+    ["<span class=\"callout-block\">", next.(), "</span>\n"]
+  end
+
+  def callout_inline(%Oli.Rendering.Context{} = _context, next, _) do
+    ["<span class=\"callout-inline\">", next.(), "</span>\n"]
+  end
+
   def p(%Context{} = _context, next, _) do
     ["<p>", next.(), "</p>\n"]
   end
@@ -164,7 +172,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _next,
         %{"subtype" => "latex", "src" => src},
         true
       ) do
@@ -173,7 +181,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _next,
         %{"subtype" => "latex", "src" => src},
         false
       ) do
@@ -182,7 +190,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _next,
         %{"subtype" => "mathml", "src" => src},
         inline
       ) do
@@ -191,11 +199,6 @@ defmodule Oli.Rendering.Content.Html do
       Scrubber.scrub(src, MathMLSanitizer),
       "</span>\n"
     ]
-  end
-
-  def formula(%Oli.Rendering.Context{} = _context, next, _, inline) do
-    # The catch-all formula will handle anything with a children property, which should always be richtext
-    ["<span class=\"#{formula_class(inline)}\">", next.(), "</span>\n"]
   end
 
   def formula_inline(context, next, map) do
@@ -332,6 +335,7 @@ defmodule Oli.Rendering.Content.Html do
   def cite(%Context{} = context, next, a) do
     bib_references = Map.get(context, :bib_app_params, [])
     bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
+
     if bib_entry != nil do
       [~s|<cite><sup>
       [<a onclick="var d=document.getElementById('#{bib_entry.slug}'); if (d &amp;&amp; d.scrollIntoView) d.scrollIntoView();return false;" href="##{bib_entry.slug}" class="ref">#{bib_entry.ordinal}</a>]

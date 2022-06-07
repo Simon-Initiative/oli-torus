@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { sanitizeMathML } from '../../utils/mathmlSanitizer';
 
 /**
@@ -48,12 +48,21 @@ const useMathJax = (src: string) => {
 interface MathJaxFormulaProps {
   src: string;
   inline: boolean;
+  style?: Record<string, string>;
+  onClick?: () => void;
 }
 
-export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({ src, inline }) => {
+export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({
+  src,
+  inline,
+  style,
+  onClick,
+}) => {
   const ref = useMathJax(src);
   return (
     <span
+      onClick={onClick}
+      style={style}
       className={cssClass(inline)}
       ref={ref}
       dangerouslySetInnerHTML={{ __html: sanitizeMathML(src) }}
@@ -61,22 +70,33 @@ export const MathJaxMathMLFormula: React.FC<MathJaxFormulaProps> = ({ src, inlin
   );
 };
 
-export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({ src, inline }) => {
+MathJaxMathMLFormula.defaultProps = { style: {} };
+
+export const MathJaxLatexFormula: React.FC<MathJaxFormulaProps> = ({
+  src,
+  inline,
+  style,
+  onClick,
+}) => {
   const ref = useMathJax(src);
   const wrapped = inline ? `\\(${src}\\)` : `\\[${src}\\]`;
 
   return (
-    <span className={cssClass(inline)} ref={ref}>
+    <span onClick={onClick} style={style} className={cssClass(inline)} ref={ref}>
       {wrapped}
     </span>
   );
 };
 
+MathJaxLatexFormula.defaultProps = { style: {} };
+
 // Add some types to window to satisfy our minimal needs instead of loading the full mathjax type definitions.
 interface MathJaxMinimal {
   typesetPromise: (nodes: HTMLElement[]) => Promise<void>;
+  tex2mml: (tex: string) => string;
   startup: {
     promise: Promise<void>;
+    load?: () => void;
   };
 }
 
