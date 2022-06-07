@@ -134,12 +134,7 @@ export const elementsOfType = (content: ContentTypes, type: string): ModelElemen
     cb(content);
 
     if ((isContentItem(content) || Element.isElement(content)) && Array.isArray(content.children))
-      return contentBfs(
-        (content.children as Array<ModelElement>).filter(
-          (c: ModelElement) => c.type !== 'input_ref',
-        ),
-        cb,
-      );
+      return contentBfs(content.children as Array<ModelElement>, cb);
   };
 
   const elements: ModelElement[] = [];
