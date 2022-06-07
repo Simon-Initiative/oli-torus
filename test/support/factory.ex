@@ -477,9 +477,9 @@ defmodule Oli.Factory do
 
   # HELPERS
 
-  defp anonymous_build(entity_name),
-    do: fn -> build(entity_name) end
+  defp anonymous_build(entity_name, attrs \\ %{}),
+    do: fn -> build(entity_name, attrs) end
 
-  defp anonymous_build_list(count, entity_name),
-    do: fn -> build_list(count, entity_name) end
+  defp anonymous_build_list(count, entity_name, attrs \\ %{}),
+    do: fn -> build_list(count, entity_name, attrs) end
 end
