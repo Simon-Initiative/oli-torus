@@ -8,6 +8,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Common.FormatDateTime
   alias OliWeb.Router.Helpers, as: Routes
 
   describe "page_delivery_controller index" do
@@ -781,7 +782,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
 
       assert response(conn, 200) =~
-        "Cost: Free\r\nDiscount N/A\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+        "Cost: Free\r\nDiscount N/A\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
 
     test "export enrollments as csv with discount info - percentage", %{conn: conn} do
@@ -800,7 +801,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
 
       assert response(conn, 200) =~
-        "Cost: Free\r\nDiscount By Product-Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+        "Cost: Free\r\nDiscount By Product-Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
 
     test "export enrollments as csv with discount info - amount", %{conn: conn} do
@@ -819,7 +820,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
 
       assert response(conn, 200) =~
-        "Cost: Free\r\nDiscount By Product-Institution: $100.00\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+        "Cost: Free\r\nDiscount By Product-Institution: $100.00\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
 
     test "export enrollments as csv with discount info - institution wide", %{conn: conn} do
@@ -838,7 +839,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
 
       assert response(conn, 200) =~
-        "Cost: Free\r\nDiscount By Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},#{enrollment.inserted_at}\r\n"
+        "Cost: Free\r\nDiscount By Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
   end
 
