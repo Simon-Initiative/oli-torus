@@ -97,6 +97,18 @@ export const MultiInputComponent: React.FC = () => {
   const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const input = getByUnsafe(model.inputs, (x) => x.id === id);
     const value = e.target.value;
+    const selectedFlaskXML = document
+      .getElementsByClassName('embed-responsive-item')[0]
+      .contentWindow.getWorkbenchItems();
+    const parser = new DOMParser();
+    const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
+
+    console.log(
+      'selectedFlask volume:' +
+        selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('volume')[0]
+          .textContent,
+    );
+
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
         partId: input.partId,
