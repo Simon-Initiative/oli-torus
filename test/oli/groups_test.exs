@@ -8,7 +8,7 @@ defmodule Oli.GroupsTest do
 
   describe "community" do
     test "create_community/1 with valid data creates a community" do
-      params = params_for(:community)
+      params = params_with_assocs(:community)
       assert {:ok, %Community{} = community} = Groups.create_community(params)
 
       assert community.name == params.name
@@ -125,7 +125,7 @@ defmodule Oli.GroupsTest do
     end
 
     test "create_community_account/1 with valid data creates a community account" do
-      params = params_for(:community_account)
+      params = params_with_assocs(:community_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
                Groups.create_community_account(params)
@@ -146,7 +146,7 @@ defmodule Oli.GroupsTest do
 
     test "create_community_account_from_author_email/2 with valid data creates a community account" do
       author = insert(:author)
-      params = params_for(:community_account)
+      params = params_with_assocs(:community_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
                Groups.create_community_account_from_author_email(author.email, params)
@@ -157,7 +157,7 @@ defmodule Oli.GroupsTest do
     end
 
     test "create_community_account_from_author_email/2 for non existing author email returns author not found" do
-      params = params_for(:community_account)
+      params = params_with_assocs(:community_account)
 
       assert {:error, :author_not_found} =
                Groups.create_community_account_from_author_email("testing@email.com", params)
@@ -177,7 +177,7 @@ defmodule Oli.GroupsTest do
 
     test "create_community_account_from_user_email/2 with valid data creates a community account" do
       user = insert(:user)
-      params = params_for(:community_member_account)
+      params = params_with_assocs(:community_member_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
                Groups.create_community_account_from_user_email(user.email, params)
@@ -188,7 +188,7 @@ defmodule Oli.GroupsTest do
     end
 
     test "create_community_account_from_user_email/2 for non existing user email returns author not found" do
-      params = params_for(:community_account)
+      params = params_with_assocs(:community_account)
 
       assert {:error, :user_not_found} =
                Groups.create_community_account_from_user_email("testing@email.com", params)
@@ -208,7 +208,7 @@ defmodule Oli.GroupsTest do
 
     test "create_community_account_from_email/3 with valid data creates a community admin account" do
       author = insert(:author)
-      params = params_for(:community_admin_account)
+      params = params_with_assocs(:community_admin_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
                Groups.create_community_account_from_email("admin", author.email, params)
@@ -220,7 +220,7 @@ defmodule Oli.GroupsTest do
 
     test "create_community_account_from_email/3 with valid data creates a community member account" do
       user = insert(:user)
-      params = params_for(:community_member_account)
+      params = params_with_assocs(:community_member_account)
 
       assert {:ok, %CommunityAccount{} = community_account} =
                Groups.create_community_account_from_email("member", user.email, params)
@@ -233,7 +233,7 @@ defmodule Oli.GroupsTest do
     test "create_community_accounts_from_emails/3 with valid data creates community accounts" do
       users = insert_pair(:user)
       emails = Enum.map(users, & &1.email)
-      params = params_for(:community_member_account)
+      params = params_with_assocs(:community_member_account)
 
       assert {:ok, accounts} =
                Groups.create_community_accounts_from_emails("member", emails, params)
@@ -251,7 +251,7 @@ defmodule Oli.GroupsTest do
 
     test "create_community_accounts_from_emails/3 with partially invalid data returns error and creates valid accounts" do
       user = insert(:user)
-      params = params_for(:community_member_account)
+      params = params_with_assocs(:community_member_account)
 
       assert {:error, :user_not_found} =
                Groups.create_community_accounts_from_emails(
@@ -369,7 +369,7 @@ defmodule Oli.GroupsTest do
     alias Oli.Groups.CommunityVisibility
 
     test "create_community_visibility/1 with valid data creates a community account" do
-      params = params_for(:community_visibility)
+      params = params_with_assocs(:community_visibility)
 
       assert {:ok, %CommunityVisibility{} = community_visibility} =
                Groups.create_community_visibility(params)
@@ -453,7 +453,7 @@ defmodule Oli.GroupsTest do
     end
 
     test "create_community_institution/2 with valid data creates a community institution" do
-      params = params_for(:community_institution)
+      params = params_with_assocs(:community_institution)
 
       assert {:ok, %CommunityInstitution{} = community_institution} =
                Groups.create_community_institution(params)
