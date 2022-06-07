@@ -39,7 +39,8 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod1.slug,
                  "status" => Atom.to_string(prod1.status),
                  "title" => prod1.title,
-                 "publisher_id" => publisher_id
+                 "publisher_id" => publisher_id,
+                 "cover_image" => "https://someurl.com/some-image.png"
                }
              end)
 
@@ -56,7 +57,8 @@ defmodule OliWeb.ProductControllerTest do
                  "slug" => prod2.slug,
                  "status" => Atom.to_string(prod2.status),
                  "title" => prod2.title,
-                 "publisher_id" => publisher_id
+                 "publisher_id" => publisher_id,
+                 "cover_image" => nil
                }
              end)
     end
@@ -98,7 +100,8 @@ defmodule OliWeb.ProductControllerTest do
           title: "My 1st product",
           amount: Money.new(:USD, 100),
           requires_payment: true,
-          grace_period_days: 14
+          grace_period_days: 14,
+          cover_image: "https://someurl.com/some-image.png"
         },
         :prod1
       )
