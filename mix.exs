@@ -82,9 +82,9 @@ defmodule Oli.MixProject do
   end
 
   defp list_typedoc_files() do
-    Path.wildcard("assets/typedocs/interfaces/*.md")
-    ++ Path.wildcard("assets/typedocs/enums/*.md")
-    ++ Path.wildcard("assets/typedocs/classes/*.md")
+    Path.wildcard("assets/typedocs/interfaces/*.md") ++
+      Path.wildcard("assets/typedocs/enums/*.md") ++
+      Path.wildcard("assets/typedocs/classes/*.md")
   end
 
   defp groups_for_extras do
@@ -97,9 +97,9 @@ defmodule Oli.MixProject do
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/,
       "Client Side API": ~r/assets\/typedocs\/modules.md/,
-      "Interfaces": ~r/assets\/typedocs\/interfaces\/.?/,
-      "Enums": ~r/assets\/typedocs\/enums\/.?/,
-      "Classes": ~r/assets\/typedocs\/classes\/.?/,
+      Interfaces: ~r/assets\/typedocs\/interfaces\/.?/,
+      Enums: ~r/assets\/typedocs\/enums\/.?/,
+      Classes: ~r/assets\/typedocs\/classes\/.?/
     ]
   end
 
@@ -152,6 +152,7 @@ defmodule Oli.MixProject do
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:html_sanitize_ex, "~> 1.4"},
       {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.3"},
