@@ -557,6 +557,18 @@ defmodule Oli.Delivery.PaywallTest do
                   fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
     end
 
+    test "get_product_discounts/1 returns empty if a discount does not exist for the product" do
+      assert [] == Paywall.get_product_discounts(123)
+    end
+
+    test "get_product_discounts/1 returns the discounts associated with one product" do
+      %Discount{id: first_discount_id} = first_discount = insert(:discount)
+      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section, percentage: 90)
+
+      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}]
+        = Paywall.get_product_discounts(first_discount.section.id) |> Enum.sort_by(& &1.percentage)
+    end
+
     test "update_discount/2 updates the discount successfully" do
       discount = insert(:discount)
 
@@ -637,6 +649,22 @@ defmodule Oli.Delivery.PaywallTest do
       assert updated_discount.type == :fixed_amount
       assert updated_discount.amount == Money.new(:USD, 25)
       refute updated_discount.percentage
+    end
+
+    test "create_or_update_discount/1 returns error if no institution is specified" do
+      params = %{
+        institution_id: nil,
+        section_id: nil,
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
+      }
+
+      {:error, changeset} = Paywall.create_or_update_discount(params)
+      {error, _} = changeset.errors[:institution_id]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
     end
   end
 end
