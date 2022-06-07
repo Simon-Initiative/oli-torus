@@ -35,6 +35,16 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
       if (condition.fact && !condition.id) {
         condition.id = `c:${guid()}`;
       }
+      const presumedType = inferTypeFromOperatorAndValue(condition.operator, condition.value);
+      if (condition.type && presumedType !== condition.type) {
+        console.warn('updateNestedConditions: type mismatch, forcing presumed', {
+          type: condition.type,
+          presumedType,
+          operator: condition.operator,
+        });
+        // we should go ahead and change the type to the presumed type because type rarely matters compared to operator
+        condition.type = presumedType;
+      }
       if (condition.fact && !condition.type) {
         // because there might not be a type from an import, and the value might not actually be the type of the fact,
         // if the target is a component on the screen, we need to infer from the fact component type in the schema
@@ -56,6 +66,7 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
           }
         }
         if (inferredType === CapiVariableTypes.UNKNOWN) {
+          /* console.log('INFERRING 2', { condition, inferredType }); */
           // we need to get the type based on the operator AND the value intelligently
           inferredType = inferTypeFromOperatorAndValue(condition.operator, condition.value);
         }
