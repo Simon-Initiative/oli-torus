@@ -32,6 +32,7 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   return (
     // Need to set {{ left: 18, position: 'relative' }}. checked it in SS as well. This gets set for all the MCQ and external CSS override change it
     //depending upon their needs
+    //SS applies this on every MCQ. They override it with external CSS if in case this needs to be overridden.
     <div style={{ left: 18, position: 'relative', overflow: 'hidden' }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
