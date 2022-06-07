@@ -28,6 +28,7 @@ const operators = {
   notIsExactly: notExactlyMathOperator,
   isEquivalentOf: isEquivalentOfMathOperator,
   notIsEquivalentOf: notIsEquivalentOfMathOperator,
+  isNotEquivalentOf: notIsEquivalentOfMathOperator,
   hasSameTerms: hasSameTermsMathOperator,
   hasDifferentTerms: hasDifferentTermsMathOperator,
 };
