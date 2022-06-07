@@ -1,4 +1,4 @@
-defmodule OliWeb.Products.Payments.DiscountsForm do
+defmodule OliWeb.Products.Payments.Discounts.Form do
   use Surface.Component
 
   import Ecto.Changeset
@@ -11,13 +11,27 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
   prop discount, :any, required: true
   prop save, :event, required: true
   prop change, :event, required: true
-  prop clear, :event, required: true
+  prop clear, :event
   prop institution_name, :string
+  prop live_action, :atom
+  prop institutions, :list
 
   def render(assigns) do
     ~F"""
       <Form for={@changeset} submit={@save} change={@change}>
-        <ReadOnly label="Institution" value={@institution_name}/>
+        {#if @live_action != :product_new}
+          <ReadOnly label="Institution" value={@institution_name}/>
+        {#else}
+          <Field name={:institution_id} class="form-group">
+            <Label/>
+            <Select
+              prompt="Select institution"
+              class="form-control"
+              options={Enum.map(@institutions, &{&1.name, &1.id})}
+              selected={get_field(@changeset, :institution_id)}/>
+            <ErrorTag/>
+          </Field>
+        {/if}
 
         <Field name={:type} class="form-group">
           <Label />
@@ -40,7 +54,9 @@ defmodule OliWeb.Products.Payments.DiscountsForm do
         <button class="form-button btn btn-md btn-primary btn-block mt-3" type="submit">Save</button>
       </Form>
 
-      <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={is_nil(@discount)}>Clear</button>
+      {#if @live_action == :institution}
+        <button class="btn btn-md btn-outline-danger float-right mt-3" phx-click="clear" disabled={is_nil(@discount)}>Clear</button>
+      {/if}
     """
   end
 end
