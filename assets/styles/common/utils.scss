@@ -5,3 +5,11 @@
 .search-input {
   max-width: 500px;
 }
+
+.dropdown-select {
+  width: 15rem !important;
+
+  &:hover {
+    cursor: pointer;
+  }
+}

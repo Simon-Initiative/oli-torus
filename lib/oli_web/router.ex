@@ -276,6 +276,9 @@ defmodule OliWeb.Router do
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
     get("/not_found", StaticPageController, :not_found)
+
+    # update session timezone information
+    post("/update_timezone", StaticPageController, :update_timezone)
   end
 
   scope "/", OliWeb do
