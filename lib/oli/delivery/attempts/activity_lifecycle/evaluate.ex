@@ -43,8 +43,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
+        # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
 
         variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
+        # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
 
         # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
         evaluate_from_rules(
@@ -239,6 +241,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             Map.merge(acc, inputs)
         end
       end)
+
+    # Logger.debug("Extrinsic state: #{Jason.encode!(extrinsic_state)}")
+    # Logger.debug("Response state: #{Jason.encode!(response_state)}")
+    # Logger.debug("Input state: #{Jason.encode!(input_state)}")
 
     attempt_state = Map.merge(response_state, extrinsic_state)
     Map.merge(input_state, attempt_state)
