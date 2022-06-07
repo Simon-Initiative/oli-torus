@@ -24,6 +24,11 @@ export const createActivityAttempt = createAsyncThunk(
       attempt = JSON.parse(JSON.stringify(attempt)) as ActivityState;
       attempt.attemptNumber += 1;
       attempt.attemptGuid = `npreview_${guid()}`;
+      attempt.score = 0;
+      attempt.outOf = 0;
+      attempt.dateEvaluated = null;
+      attempt.dateSubmitted = null;
+      // keep the part responses
     } else {
       const seedResponses = true; // parameterize at function level?
       const new_attempt_result = await createNewActivityAttempt(

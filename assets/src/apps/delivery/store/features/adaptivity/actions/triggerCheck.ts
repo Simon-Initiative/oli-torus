@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
+import { clone } from 'utils/common';
 import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
 import {
   applyState,
@@ -17,6 +18,7 @@ import {
   selectAll as selectAllAttempts,
   selectExtrinsicState,
   updateExtrinsicState,
+  upsertActivityAttemptState,
 } from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
@@ -305,16 +307,23 @@ export const triggerCheck = createAsyncThunk(
     }
 
     // after the check is done, we need to update the activity attempt (in memory, on server it is already updated)
-    // BS HERE HERE HERE HERE
 
-    let attempt: any = currentAttempt;
+    let attempt: any = clone(currentAttempt);
+
+    attempt.score = score;
+    attempt.outOf = outOf;
+    attempt.dateSubmitted = Date.now();
+    attempt.dateEvaluated = Date.now();
+
+    await dispatch(upsertActivityAttemptState({ attempt }));
+
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
       const { payload: newAttempt } = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
-      const updateAttempt: ApplyStateOperation[] = [
+      const updateSessionAttempt: ApplyStateOperation[] = [
         {
           target: 'session.attemptNumber',
           operator: '=',
@@ -326,7 +335,7 @@ export const triggerCheck = createAsyncThunk(
           value: attempt.attemptNumber,
         },
       ];
-      bulkApplyState(updateAttempt, defaultGlobalEnv);
+      bulkApplyState(updateSessionAttempt, defaultGlobalEnv);
       // need to write attempt number to extrinsic state?
       // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }
