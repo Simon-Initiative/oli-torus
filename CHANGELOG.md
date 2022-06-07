@@ -8,6 +8,7 @@
 - Fix an issue where multi-input activity inputs were being duplicated
 - Fix an issue where table headers were misaligned in the insights view
 - Fix an issue where table caption rendering throws an internal server error
+- Allow deletion of objective to cascade through to banked activities
 
 ### Enhancements
 
