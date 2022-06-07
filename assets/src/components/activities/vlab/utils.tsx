@@ -32,7 +32,8 @@ export const multiInputStem = (input: InputRef) => ({
   content: [
     {
       type: 'iframe',
-      src: 'https://www.dhba.com/vlab/wrapper.html',
+      id: 'vlab',
+      src: '/vlab/index.html',
       children: [{ text: '.' }],
     } as Webpage,
     {
@@ -147,6 +148,8 @@ function ensureHasInput(model: MultiInputSchema) {
 
   model.inputs.push(input);
   model.authoring.parts.push(part);
+
+  console.log('New model:' + model);
 
   return model;
 }
