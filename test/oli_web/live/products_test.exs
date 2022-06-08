@@ -4,8 +4,10 @@ defmodule OliWeb.ProductsLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
+  import Mox
 
   alias Oli.Delivery.Sections
+  alias OliWeb.Router.Helpers, as: Routes
 
   defp live_view_details_route(product_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, product_slug)
@@ -13,7 +15,6 @@ defmodule OliWeb.ProductsLiveTest do
 
   defp create_product(_conn) do
     product = insert(:section, type: :blueprint, requires_payment: true, amount: Money.new(:USD, 10))
-
     [product: product]
   end
 
@@ -90,7 +91,95 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "The Product title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
       assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
-      assert has_element?(view, "a[href=\"#{Routes.discount_path(OliWeb.Endpoint, :product, product.slug)}\"]")
+      assert has_element?(view, "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]")
+    end
+  end
+
+  describe "product overview image upload" do
+    setup [:admin_conn, :create_product]
+
+    test "displays the current image", %{conn: conn} do
+      product = insert(:section, type: :blueprint, cover_image: "https://example.com/some-image-url.png")
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert view
+      |> element("#img-preview img")
+      |> render() =~ "src=\"https://example.com/some-image-url.png\""
+    end
+
+    test "submit button is disabled if no file has been uploaded", %{conn: conn, product: product} do
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      assert view
+      |> element("#img-upload-form button[type=\"submit\"]")
+      |> render() =~ "disabled"
+
+    end
+
+    test "file is uploaded", %{conn: conn, product: product} do
+      Oli.Test.MockAws
+      |> expect(:request, 1, fn %ExAws.Operation.S3{} ->
+        {:ok, %{status_code: 200}}
+      end)
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      path = "assets/static/images/course_default.jpg"
+
+      image = file_input(view, "#img-upload-form", :cover_image, [
+        %{
+          last_modified: 1_594_171_879_000,
+          name: "myfile.jpeg",
+          content: File.read!(path),
+          type: "image/jpeg"
+        }
+      ])
+
+      assert render_upload(image, "myfile.jpeg") =~ "100%"
+
+      # submit button is enabled if a file has been uploaded
+      refute view
+      |> element("#img-upload-form button[type=\"submit\"]")
+      |> render() =~ "disabled"
+
+      # submitting displays new image
+      assert view
+      |> element("#img-upload-form")
+      |> render_submit(%{})
+
+      assert view
+      |> render() =~ "<img id=\"current-product-img\""
+    end
+
+    test "canceling an upload restores previous rendered image", %{conn: conn} do
+      current_image = "https://example.com/some-image-url.png"
+      product = insert(:section, type: :blueprint, cover_image: current_image)
+
+      {:ok, view, _html} = live(conn, live_view_details_route(product.slug))
+
+      path = "assets/static/images/course_default.jpg"
+
+      image = file_input(view, "#img-upload-form", :cover_image, [
+        %{
+          last_modified: 1_594_171_879_000,
+          name: "myfile.jpeg",
+          content: File.read!(path),
+          type: "image/jpeg"
+        }
+      ])
+
+      assert render_upload(image, "myfile.jpeg") =~ "100%"
+
+      assert view
+      |> has_element?("#img-upload-form div[role=\"progressbar\"")
+
+      view
+      |> element("button[phx-click=\"cancel_upload\"]")
+      |> render_click()
+
+      assert view
+      |> render() =~ "<img id=\"current-product-img\" src=\"#{current_image}\""
     end
   end
 end
