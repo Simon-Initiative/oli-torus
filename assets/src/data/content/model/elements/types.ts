@@ -123,12 +123,14 @@ export interface CodeV1 extends SlateElement<CodeLine[]> {
   language: string;
   caption?: Caption;
 }
+
 export interface CodeV2 extends SlateElement<VoidChildren> {
   type: 'code';
   code: string;
   language: string;
   caption?: Caption;
 }
+
 export type Code = CodeV2;
 
 export interface Blockquote extends SlateElement<Paragraph[]> {

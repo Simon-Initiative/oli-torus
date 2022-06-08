@@ -78,7 +78,6 @@ export const Tags = (props: TagsProps) => {
           options={props.tags}
           allowNew={true}
           newSelectionPrefix="Create new tag: "
-          selectHintOnEnter={true}
           labelKey="title"
           selected={asTags}
           placeholder="Select tags..."
