@@ -340,10 +340,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (initObject.operator === 'bind to') {
         initStateBindToFacts[initObject.target] = snapshot[key] || '';
         return acc;
-      } else if (typeof value === 'string') {
+      } else if (typeOfOriginalValue === 'string') {
         if (
-          (typeof value === 'string' && value[0] === '{' && value[1] !== '"') ||
-          (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+          initObject.type !== CapiVariableTypes.MATH_EXPR &&
+          ((value[0] === '{' && value[1] !== '"') ||
+            (value.indexOf('{') !== -1 && value.indexOf('}') !== -1))
         ) {
           //this is a expression so we get the value from snapshot because this was already evaluated in deck.ts
           updatedValue = snapshot[key];
