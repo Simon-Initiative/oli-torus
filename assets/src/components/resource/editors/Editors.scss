@@ -4,6 +4,8 @@
 
 html.authoring {
   .editors {
+    flex: 1;
+    min-width: 0;
     border: 2px solid authoring.$gray-200;
     margin-top: 20px;
     padding: 20px 0px;
