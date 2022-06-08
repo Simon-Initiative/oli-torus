@@ -130,6 +130,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
 
     if (Array.isArray(pageContent?.custom?.variables)) {
       const allNames = pageContent.custom.variables.map((v: any) => v.name);
+      const lessonVariablesWithRoundApplied: string[] = [];
       // variables can and will ref previous ones
       // they will reference them "globally" so need to track the above
       // in order to prepend the "variables" namespace
@@ -143,11 +144,22 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
             const regex = new RegExp(`{${name}}`, 'g');
             expr = expr.replace(regex, `{variables.${name}}`);
           });
-
           const stmt = `let {variables.${v.name.trim()}} = ${expr};`;
+
+          const regex = expr.match(/^round|roundSF\((.*?)\)/g) || expr.match(/\((.*e.*)\)/g);
+          if (regex?.length) {
+            lessonVariablesWithRoundApplied.push(`{variables.${v.name.trim()}}`);
+          }
           return stmt;
         })
         .filter((s: any) => s);
+
+      if (lessonVariablesWithRoundApplied.length) {
+        const roundMeVariables = `let {lessonVariablesWithRoundApplied} = ${JSON.stringify(
+          lessonVariablesWithRoundApplied,
+        )};`;
+        evalScript(roundMeVariables, defaultGlobalEnv);
+      }
       // execute each sequentially in case there are errors (missing functions)
       statements.forEach((statement) => {
         try {

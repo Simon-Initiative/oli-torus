@@ -514,6 +514,7 @@ export const templatizeText = (
   /* console.log('templatizeText call: ', { text, vars, locals, env }); */
   //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
 
+  const lessonVariablesWithRoundApplied = getValue('lessonVariablesWithRoundApplied', env);
   const isCSSString = totalVariablesLength !== vars.length;
   if (!vars || isCSSString) {
     return text;
@@ -596,7 +597,16 @@ export const templatizeText = (
       } else if (typeof stateValue === 'object') {
         strValue = JSON.stringify(stateValue);
       } else if (typeof stateValue === 'number') {
-        strValue = parseFloat(parseFloat(strValue).toFixed(4));
+        if (
+          lessonVariablesWithRoundApplied &&
+          Array.isArray(lessonVariablesWithRoundApplied) &&
+          lessonVariablesWithRoundApplied.length &&
+          lessonVariablesWithRoundApplied.includes(`{${v}}`)
+        ) {
+          strValue = parseFloat(strValue);
+        } else {
+          strValue = parseFloat(parseFloat(strValue).toFixed(4));
+        }
       }
     } else {
       if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
