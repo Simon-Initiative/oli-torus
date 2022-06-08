@@ -41,7 +41,6 @@ export const ActivityTypeSelection = (props: ActivityTypeSelectionProps) => {
       }}
       options={activities}
       allowNew={true}
-      selectHintOnEnter={true}
       labelKey="label"
       selected={asActivities}
       placeholder="Select activity types..."
