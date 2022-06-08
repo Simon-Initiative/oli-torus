@@ -96,18 +96,19 @@ export const MultiInputComponent: React.FC = () => {
 
   const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const input = getByUnsafe(model.inputs, (x) => x.id === id);
-    const value = e.target.value;
+    //const value = e.target.value;
+
+    // Force the input value to the vlab selected flask volume on change.
     const selectedFlaskXML = document
       .getElementsByClassName('embed-responsive-item')[0]
-      .contentWindow.getWorkbenchItems();
+      .contentWindow.getSelectedItem();
     const parser = new DOMParser();
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
-
-    console.log(
-      'selectedFlask volume:' +
-        selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('volume')[0]
-          .textContent,
-    );
+    const value = selectedFlask.querySelector('parsererror')
+      ? null
+      : selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('volume')[0]
+          .textContent;
+    console.log('selectedFlask volume = ' + value + 'L.');
 
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
