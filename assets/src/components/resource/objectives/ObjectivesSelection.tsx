@@ -81,7 +81,6 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         options={props.objectives}
         allowNew={true}
         newSelectionPrefix="Create new objective: "
-        selectHintOnEnter={true}
         labelKey="title"
         selected={asObjectives}
         placeholder="Attach learning objectives..."
