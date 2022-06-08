@@ -8,7 +8,6 @@ import { Tag } from 'data/content/tags';
 import { ResourceId } from 'data/types';
 import React from 'react';
 import { valueOr } from 'utils/common';
-import { TitleBar } from '../content/TitleBar';
 import { TextEditor } from 'components/TextEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
 
