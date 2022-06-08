@@ -8,6 +8,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias Oli.Seeder
   alias Oli.Delivery.Attempts.Core.{ResourceAttempt, PartAttempt, ResourceAccess}
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Common.FormatDateTime
   alias OliWeb.Router.Helpers, as: Routes
 
   describe "page_delivery_controller index" do
@@ -76,6 +77,47 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> get(Routes.page_delivery_path(conn, :index, section.slug))
 
       assert html_response(conn, 200) =~ "Not authorized"
+    end
+
+    test "handles student access who is not enrolled when section requires enrollment", %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Not authorized"
+    end
+
+    test "handles student access who is enrolled but has not paid", %{conn: conn, user: user, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
+    end
+
+    test "handles student access who is enrolled, has not paid but is pay by institution", %{conn: conn, user: user, section: section} do
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        pay_by_institution: true
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = get(conn, Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
     end
 
     test "shows the prologue page on an assessment", %{
@@ -584,6 +626,59 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       assert html_response(conn, 200) =~ "Course Overview"
     end
+
+    test "handles student access who has not paid when section not requires enrollment", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false
+      })
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
+    end
+
+    test "handles student access who is not enrolled and has not paid when section requires enrollment", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Not authorized"
+    end
+
+    test "handles student access who is enrolled but has not paid", %{conn: conn, section: section} do
+      user = insert(:user)
+      {:ok, section} = Sections.update_section(section, %{
+        requires_payment: true,
+        amount: Money.new(:USD, 100),
+        has_grace_period: false,
+        requires_enrollment: true
+      })
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"#{Routes.payment_path(conn, :guard, section.slug)}\">redirected"
+    end
   end
 
   describe "displaying unit numbers" do
@@ -673,6 +768,78 @@ defmodule OliWeb.PageDeliveryControllerTest do
       response = html_response(conn, 200)
 
       assert response =~ "Unit 1: The first unit"
+    end
+  end
+
+  describe "export" do
+    setup [:admin_conn]
+
+    test "export enrollments as csv", %{conn: conn} do
+      user = insert(:user)
+      section = insert(:section, open_and_free: true)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount N/A\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
+    end
+
+    test "export enrollments as csv with discount info - percentage", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, section: product, institution: institution)
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Product-Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
+    end
+
+    test "export enrollments as csv with discount info - amount", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, section: product, institution: institution, type: :fixed_amount, amount: Money.new(:USD, 100))
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Product-Institution: $100.00\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
+    end
+
+    test "export enrollments as csv with discount info - institution wide", %{conn: conn} do
+      institution = insert(:institution)
+      product = insert(:section, %{type: :blueprint, institution: institution, requires_payment: true, amount: Money.new(:USD, 100)})
+      insert(:discount, institution: institution, section: nil)
+
+      tool_jwk = jwk_fixture()
+      registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+      deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+      section = insert(:section, blueprint: product, lti_1p3_deployment: deployment)
+
+      user = insert(:user)
+      {:ok, enrollment} = Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn = post(conn, Routes.page_delivery_path(OliWeb.Endpoint, :export_enrollments, section.slug))
+
+      assert response(conn, 200) =~
+        "Cost: Free\r\nDiscount By Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
   end
 

@@ -34,9 +34,12 @@ defmodule Oli.Delivery.Paywall do
     else
       enrollment = Sections.get_enrollment(slug, id)
 
-      case is_nil(enrollment) do
-        true -> AccessSummary.not_enrolled()
-        _ ->
+      if is_nil(enrollment) and section.requires_enrollment do
+        AccessSummary.not_enrolled()
+      else
+        if section.pay_by_institution do
+          AccessSummary.pay_by_institution()
+        else
           case has_paid?(enrollment) do
             true -> AccessSummary.paid()
             _ ->
@@ -45,10 +48,12 @@ defmodule Oli.Delivery.Paywall do
                 _ -> AccessSummary.not_paid()
               end
           end
+        end
       end
     end
-
   end
+
+  defp has_paid?(nil), do: false
 
   defp has_paid?(%Enrollment{id: id}) do
     query =
@@ -64,6 +69,8 @@ defmodule Oli.Delivery.Paywall do
       _ -> true
     end
   end
+
+  defp within_grace_period?(nil, _), do: false
 
   defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
 
@@ -413,6 +420,9 @@ defmodule Oli.Delivery.Paywall do
     |> Repo.update()
   end
 
+  # ------------------------------------------
+  # Discounts
+
   @doc """
   Creates a discount.
   ## Examples
@@ -425,5 +435,120 @@ defmodule Oli.Delivery.Paywall do
     %Discount{}
     |> Discount.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking discount changes.
+  ## Examples
+      iex> change_discount(discount)
+      %Ecto.Changeset{data: %Discount{}}
+  """
+  def change_discount(%Discount{} = discount, attrs \\ %{}),
+    do: Discount.changeset(discount, attrs)
+
+  @doc """
+  Deletes a discount.
+  ## Examples
+      iex> delete_discount(discount)
+      {:ok, %Discount{}}
+      iex> delete_discount(discount)
+      {:error, changeset}
+  """
+  def delete_discount(%Discount{} = discount),
+    do: Repo.delete(discount)
+
+  @doc """
+  Gets a discount by clauses. Will raise an error if
+  more than one matches the criteria.
+  ## Examples
+      iex> get_discount_by!(%{section_id: 1})
+      %Discount{}
+      iex> get_discount_by!(%{section_id: 123})
+      nil
+      iex> get_discount_by!(%{section_id: 2, u})
+      Ecto.MultipleResultsError
+  """
+  def get_discount_by!(clauses),
+    do: Repo.get_by(Discount, clauses) |> Repo.preload([:institution])
+
+  @doc """
+  Gets the discounts of a product
+  ## Examples
+      iex> get_product_discounts!(1)
+      [%Discount{}, %Discount{}, ...]
+      iex> get_product_discounts!(123)
+      []
+  """
+  def get_product_discounts(product_id) do
+    Repo.all(from(
+      d in Discount,
+      where: d.section_id == ^product_id,
+      select: d,
+      preload: [:institution, :section]
+    ))
+  end
+
+  @doc """
+  Gets a discount by institution id and section_id == nil
+  ## Examples
+      iex> get_institution_wide_discount!(1)
+      %Discount{}
+      iex> get_institution_wide_discount!(123)
+      nil
+      iex> get_institution_wide_discount!(2)
+      Ecto.MultipleResultsError
+  """
+  def get_institution_wide_discount!(institution_id) do
+    Repo.one(from(
+      d in Discount,
+      where: d.institution_id == ^institution_id and is_nil(d.section_id),
+      select: d
+    ))
+  end
+
+  @doc """
+  Updates a discount.
+  ## Examples
+      iex> update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_discount(%Discount{} = discount, attrs) do
+    discount
+    |> Discount.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Create or update (if exists) a discount.
+  ## Examples
+      iex> create_or_update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> create_or_update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_or_update_discount(%{institution_id: nil} = attrs),
+    do: {:error, Ecto.Changeset.add_error(Discount.changeset(%Discount{}, attrs), :institution, "can't be blank")}
+
+  def create_or_update_discount(%{section_id: nil} = attrs) do
+    case get_institution_wide_discount!(attrs.institution_id) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
+  end
+
+  def create_or_update_discount(attrs) do
+    case get_discount_by!(%{
+      section_id: attrs.section_id,
+      institution_id: attrs.institution_id
+    }) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
   end
 end

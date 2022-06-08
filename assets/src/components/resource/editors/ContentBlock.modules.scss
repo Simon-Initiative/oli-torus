@@ -1,20 +1,19 @@
 @use 'authoring/theme' as authoring;
 
-.contentBlock,
-.groupBlock,
-.activityBlock {
-  position: relative;
-
-  &:hover > .actions {
-    opacity: 100;
-  }
-}
-
 .contentBlock {
   width: 100%;
+  padding: 0 20px;
+}
+
+.contentBlockHeader {
+  display: flex;
+  flex-direction: row;
+  padding: 0 calc(50% - 400px);
 }
 
 .groupBlock {
+  margin: 20px;
+
   // handle the special case when purpose type is none, apply the
   // padding styles to slate editor itself. this allows slate to utilize
   // the entire surrounding padding for cursor events and allow for easier
@@ -26,7 +25,7 @@
       padding: 1.3em 10px;
 
       &.structured-content {
-        padding: 1.3em max(calc(50% - 400px), 50px);
+        padding: 1.3em calc(50% - 400px);
       }
     }
   }
@@ -65,31 +64,44 @@
 }
 
 .groupBlockHeader {
-  padding: 0 max(50% - 400px, 50px);
+  padding: 0 calc(50% - 400px);
   margin: 0 auto;
   display: flex;
   flex-direction: row;
 }
 
-.actions {
-  position: absolute;
-  top: -6px;
-  right: 6px;
-  opacity: 0;
-  padding: 4px 6px;
-  background: authoring.$body-bg;
-  z-index: authoring.$z-content-3;
-  border-radius: 4px;
-  -webkit-box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
-  -moz-box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
-  box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
-
-  transition: opacity 200ms ease-in;
-}
-
 .purposeContainer {
-  padding: 1.3em max(calc(50% - 400px), 50px);
+  padding: 20px calc(50% - 400px);
 }
 
 .activityBlock {
+  margin: 20px;
+  padding: 0 calc(50% - 400px);
+}
+
+.activityBlockHeader {
+  display: flex;
+  flex-direction: row;
+}
+
+.surveyBlock {
+  margin: 20px;
+  padding: 0 calc(50% - 400px);
+
+  :global(i.las.la-poll) {
+    font-size: 32px;
+    margin-right: 6px;
+  }
+}
+
+.surveyBlockHeader {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+}
+
+.surveyBlockBorder {
+  border: 1px solid authoring.$gray-500;
+  border-radius: 6px;
+  padding: 20px;
 }

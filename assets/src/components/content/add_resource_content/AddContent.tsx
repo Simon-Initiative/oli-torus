@@ -3,11 +3,11 @@ import { createDefaultStructuredContent, createGroup } from 'data/content/resour
 import React from 'react';
 
 interface Props {
-  onAddItem: AddCallback;
   index: number[];
-  level: number;
+  onAddItem: AddCallback;
 }
-export const AddContent: React.FC<Props> = ({ onAddItem, index, level }) => {
+
+export const AddContent: React.FC<Props> = ({ onAddItem, index }) => {
   return (
     <>
       <div className="list-group">
@@ -19,21 +19,17 @@ export const AddContent: React.FC<Props> = ({ onAddItem, index, level }) => {
           <div className="type-label">Paragraph</div>
           <div className="type-description">Text, tables, images, video</div>
         </button>
-        {level === 0 ? (
-          <button
-            key={'content_group'}
-            className="list-group-item list-group-item-action d-flex flex-column align-items-start"
-            onClick={(_e) => addGroup(onAddItem, index)}
-          >
-            <div className="type-label">Group</div>
-            <div className="type-description">
-              A group for content with the same purpose such as a Checkpoint, Example, Learn by
-              doing...{' '}
-            </div>
-          </button>
-        ) : (
-          <></>
-        )}
+        <button
+          key={'content_group'}
+          className="list-group-item list-group-item-action d-flex flex-column align-items-start"
+          onClick={(_e) => addGroup(onAddItem, index)}
+        >
+          <div className="type-label">Group</div>
+          <div className="type-description">
+            A collection of content and activities with a particular layout or similar instructional
+            purpose such as a Checkpoint, Example, Learn by doing, etc...{' '}
+          </div>
+        </button>
       </div>
     </>
   );

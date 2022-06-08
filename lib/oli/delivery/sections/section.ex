@@ -33,9 +33,11 @@ defmodule Oli.Delivery.Sections.Section do
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)
+    field(:cover_image, :string)
 
     field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
     field(:requires_payment, :boolean, default: false)
+    field(:pay_by_institution, :boolean, default: false)
     field(:amount, Money.Ecto.Map.Type)
     field(:has_grace_period, :boolean, default: true)
     field(:grace_period_days, :integer)
@@ -116,8 +118,10 @@ defmodule Oli.Delivery.Sections.Section do
       :status,
       :invite_token,
       :passcode,
+      :cover_image,
       :visibility,
       :requires_payment,
+      :pay_by_institution,
       :amount,
       :has_grace_period,
       :grace_period_days,

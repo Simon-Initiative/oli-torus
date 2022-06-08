@@ -37,6 +37,12 @@ defmodule OliWeb.Sections.PaywallSettings do
         <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
         <TextInput class="form-control" opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
       </Field>
+      {#unless get_field(@changeset, :open_and_free)}
+        <Field name={:pay_by_institution} class="form-check">
+          <Checkbox class="form-check-input" value={get_field(@changeset, :pay_by_institution)} opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
+          <Label class="form-check-label"/>
+        </Field>
+      {/unless}
       <Field name={:has_grace_period} class="form-check mt-4">
         <Checkbox class="form-check-input" value={get_field(@changeset, :has_grace_period)} opts={disabled: @disabled or !get_field(@changeset, :requires_payment)}/>
         <Label class="form-check-label"/>

@@ -20,6 +20,8 @@ export const dropHandler =
   (e: React.DragEvent<HTMLDivElement>, index: number[]) => {
     onDragEnd();
 
+    console.log('onDragEnd');
+
     if (editMode) {
       const data = e.dataTransfer.getData('application/x-oli-resource-content');
 
