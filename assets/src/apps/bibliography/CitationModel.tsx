@@ -126,19 +126,52 @@ export interface CitationModel {
   custom?: any;
 }
 
-export const toPersistence = (citationModel: CitationModel) => {
-  const attrs = Object.entries(citationModel);
-};
-
 export const fromEntryType = (entryType: string): CitationModel => {
+  let model: CitationModel = {
+    id: 'temp_id_' + guid(),
+    type: entryType,
+    author: [{ given: '', family: '' }],
+    title: '',
+    'container-title': '',
+    publisher: '',
+    'original-title': '',
+  };
+
   switch (entryType) {
     case 'article':
-      break;
     case 'article-journal':
+      model = {
+        id: 'temp_id_' + guid(),
+        type: entryType,
+        author: [{ given: '', family: '' }],
+        title: '',
+        'container-title': '',
+        issued: { 'date-parts': [[new Date().getFullYear()]] },
+        volume: '',
+        number: '',
+        page: '',
+      };
       break;
     case 'article-newspaper':
       break;
     case 'book':
+      model = {
+        id: 'temp_id_' + guid(),
+        type: entryType,
+        author: [{ given: '', family: '' }],
+        editor: [{ given: '', family: '' }],
+        title: '',
+        publisher: '',
+        issued: { 'date-parts': [[new Date().getFullYear()]] },
+        volume: '',
+        number: '',
+        page: '',
+        note: '',
+        doi: '',
+        issn: '',
+        isbn: '',
+        url: '',
+      };
       break;
     case 'chapter':
       break;
@@ -153,15 +186,7 @@ export const fromEntryType = (entryType: string): CitationModel => {
     default:
       break;
   }
-  return {
-    id: 'temp_id_' + guid(),
-    type: entryType,
-    author: [{ given: '', family: '' }],
-    title: '',
-    'container-title': '',
-    publisher: '',
-    'original-title': '',
-  };
+  return model;
 };
 
 export function isNameField(val: string): boolean {

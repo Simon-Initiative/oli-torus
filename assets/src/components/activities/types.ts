@@ -138,6 +138,7 @@ export function makeContent(text: string, id?: string): { id: string; content: R
  */
 export interface StudentResponse {
   input: any;
+  files?: any;
 }
 
 export type ModeSpecification = {

@@ -2222,6 +2222,13 @@
   dependencies:
     dequal "^2.0.2"
 
+"@restart/hooks@^0.4.7":
+  version "0.4.7"
+  resolved "https://registry.yarnpkg.com/@restart/hooks/-/hooks-0.4.7.tgz#d79ca6472c01ce04389fc73d4a79af1b5e33cd39"
+  integrity sha512-ZbjlEHcG+FQtpDPHd7i4FzNNvJf2enAwZfJbpM8CW7BhmOAbsHpZe3tsHwfQUrBuyrxWqPYp2x5UMnilWcY22A==
+  dependencies:
+    dequal "^2.0.2"
+
 "@rjsf/bootstrap-4@^3.0.0":
   version "3.0.0"
   resolved "https://registry.npmjs.org/@rjsf/bootstrap-4/-/bootstrap-4-3.0.0.tgz"
@@ -7989,14 +7996,14 @@ react-bootstrap-typeahead@^5.1.4:
     scroll-into-view-if-needed "^2.2.20"
     warning "^4.0.1"
 
-react-bootstrap@^1.6.1:
-  version "1.6.1"
-  resolved "https://registry.npmjs.org/react-bootstrap/-/react-bootstrap-1.6.1.tgz"
-  integrity sha512-ojEPQ6OtyIMdLg0Smofk+85PKN6MLKQX3bU0Vwmok/4yNa8DQ2vCGhO2IgHJvT+ERQZ4X+gAQcdn6msAHSwLBg==
+react-bootstrap@^1.6.5:
+  version "1.6.5"
+  resolved "https://registry.yarnpkg.com/react-bootstrap/-/react-bootstrap-1.6.5.tgz#1e5e953a8efc4dc70897f61a6985bfa40f7c55cc"
+  integrity sha512-l2rm5LtDI7JMtdGrzaxNl4OJwH0fMIJDlvwQ2TMvs9h9d0E4ELLpG3J45Pox6xUkpuFfXdWUiGazZXyIuv/OKA==
   dependencies:
     "@babel/runtime" "^7.14.0"
     "@restart/context" "^2.1.4"
-    "@restart/hooks" "^0.3.26"
+    "@restart/hooks" "^0.4.7"
     "@types/invariant" "^2.2.33"
     "@types/prop-types" "^15.7.3"
     "@types/react" ">=16.14.8"
@@ -8007,7 +8014,7 @@ react-bootstrap@^1.6.1:
     invariant "^2.2.4"
     prop-types "^15.7.2"
     prop-types-extra "^1.1.0"
-    react-overlays "^5.0.1"
+    react-overlays "^5.1.2"
     react-transition-group "^4.4.1"
     uncontrollable "^7.2.1"
     warning "^4.0.3"
@@ -8118,14 +8125,14 @@ react-overlays@^4.1.1:
     uncontrollable "^7.0.0"
     warning "^4.0.3"
 
-react-overlays@^5.0.1:
-  version "5.1.0"
-  resolved "https://registry.npmjs.org/react-overlays/-/react-overlays-5.1.0.tgz"
-  integrity sha512-Qp8dqDIIYgQoHxOGVKHwvQUkDe70/Ja/6dn8iCQAXyPvvpks3+T8scLTZLK8MPBBu+X8ustas6y4U6M6zdmCjA==
+react-overlays@^5.1.2:
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/react-overlays/-/react-overlays-5.1.2.tgz#dbbe8ac8c63133a36e057c317135eadeee9b783e"
+  integrity sha512-kLCq0ngBtuVnp0eMx8gISD9FaCkifUZoOdHReTJGfnDikvvOjZpi/OduTgXEf6rGYm24WJbHFJFDaKD+ylQ03g==
   dependencies:
     "@babel/runtime" "^7.13.8"
     "@popperjs/core" "^2.8.6"
-    "@restart/hooks" "^0.3.26"
+    "@restart/hooks" "^0.4.7"
     "@types/warning" "^3.0.0"
     dom-helpers "^5.2.0"
     prop-types "^15.7.2"
@@ -8148,10 +8155,10 @@ react-popper@^1.0.0:
     typed-styles "^0.0.7"
     warning "^4.0.2"
 
-react-popper@^2.2.5:
-  version "2.2.5"
-  resolved "https://registry.npmjs.org/react-popper/-/react-popper-2.2.5.tgz"
-  integrity sha512-kxGkS80eQGtLl18+uig1UIf9MKixFSyPxglsgLBxlYnyDf65BiY9B3nZSc6C9XUNDgStROB0fMQlTEz1KxGddw==
+react-popper@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/react-popper/-/react-popper-2.3.0.tgz#17891c620e1320dce318bad9fede46a5f71c70ba"
+  integrity sha512-e1hj8lL3uM+sgSR4Lxzn5h1GxBlpa4CQz0XLF8kx4MDrDRWY0Ena4c97PUeSX9i5W3UAfDP0z0FXCTQkoXUl3Q==
   dependencies:
     react-fast-compare "^3.0.1"
     warning "^4.0.2"

@@ -242,6 +242,12 @@ describe('Rules Engine', () => {
 describe('Operators', () => {
   describe('Equality Operators', () => {
     it('should be able to test basic equality', () => {
+      expect(isEqual(false, 'NULL')).toEqual(false);
+      expect(isEqual(false, null)).toEqual(false);
+      expect(isEqual(false, 'false')).toEqual(true);
+      expect(isEqual(true, 'true')).toEqual(true);
+      expect(isEqual(false, 'true')).toEqual(false);
+      expect(isEqual(true, 'false')).toEqual(false);
       expect(isEqual('a', 'a')).toEqual(true);
       expect(isEqual(9, 9)).toEqual(true);
       expect(isEqual([1, 2], [1, 2])).toEqual(true);
@@ -249,6 +255,8 @@ describe('Operators', () => {
       expect(isEqual(0, false)).toEqual(true);
       expect(isEqual(1, false)).toEqual(false);
       expect(notEqual(9, 3)).toEqual(true);
+      expect(notEqual(undefined, 3)).toEqual(false);
+      expect(notEqual(3, undefined)).toEqual(false);
       expect(notEqual('a', 'c')).toEqual(true);
       expect(notEqual([3, 2], [1, 2])).toEqual(true);
     });

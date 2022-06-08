@@ -32,7 +32,8 @@ const MCQItemContent: React.FC<any> = ({ nodes, state }) => {
   return (
     // Need to set {{ left: 18, position: 'relative' }}. checked it in SS as well. This gets set for all the MCQ and external CSS override change it
     //depending upon their needs
-    <div style={{ left: 18, position: 'relative' }}>
+    //SS applies this on every MCQ. They override it with external CSS if in case this needs to be overridden.
+    <div style={{ left: 18, position: 'relative', overflow: 'hidden' }}>
       {nodes.map((subtree: any) => {
         const style: any = {};
         if (subtree.tag === 'p') {
@@ -262,6 +263,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     arr.map((element) => parseInt(element.toString().replace(/"/g, ''), 10));
 
   const initialize = useCallback(async (pModel) => {
+    /* console.log('MCQ INIT', { pModel }); */
     // set defaults from model
     const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
     setEnabled(dEnabled);
@@ -658,6 +660,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
           case NotificationType.CONTEXT_CHANGED:
             {
               const { snapshot: changes } = payload;
+
+              /* console.log('MCQ CONTEXT CHANGED', { changes }); */
+
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(sEnabled);
@@ -672,7 +677,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
 
               // this is for setting *multiple* choices being selected by the number value
               const sSelectedChoices = changes[`stage.${id}.selectedChoices`];
-              if (multipleSelection && sSelectedChoices !== undefined && sSelectedChoices.length) {
+              if (multipleSelection && sSelectedChoices !== undefined) {
                 hasDoneMultiple = true;
                 hasDoneSelectedChoice = true;
                 // convert stringfied number array to number array
@@ -693,7 +698,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
               if (
                 multipleSelection &&
                 sSelectedChoicesText !== undefined &&
-                sSelectedChoicesText.length &&
                 !hasDoneSelectedChoice
               ) {
                 hasDoneMultiple = true;

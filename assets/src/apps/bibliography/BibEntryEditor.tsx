@@ -13,8 +13,9 @@ export interface BibEntryEditorProps {
 
 export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEditorProps) => {
   const [model, setModel] = useState<CitationModel>({ ...props.citationModel });
-  const [allFields, setAllFields] = useState<Immutable.List<string>>(
-    Immutable.List<string>(Object.keys(cslSchema.items.properties) as any),
+
+  const allFields: Immutable.List<string> = Immutable.List<string>(
+    Object.keys(cslSchema.items.properties) as any,
   );
 
   useEffect(() => {}, []);

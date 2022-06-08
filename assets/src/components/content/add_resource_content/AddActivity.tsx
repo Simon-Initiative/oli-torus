@@ -36,7 +36,6 @@ export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, edito
 
   return (
     <>
-      <div className="header">Activities...</div>
       <div className="list-group">{activityEntries}</div>
     </>
   );
@@ -62,7 +61,6 @@ const addActivity = (
         type: 'activity-reference',
         id: guid(),
         activitySlug: result.revisionSlug,
-        purpose: 'none',
         children: [],
       };
 

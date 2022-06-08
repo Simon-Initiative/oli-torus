@@ -27,3 +27,9 @@ export type Undoables = Immutable.OrderedMap<string, UndoAction>;
 export function empty() {
   return Immutable.OrderedMap<string, UndoAction>();
 }
+
+export interface FeatureFlags {
+  adaptivity: boolean;
+  equity: boolean;
+  survey: boolean;
+}

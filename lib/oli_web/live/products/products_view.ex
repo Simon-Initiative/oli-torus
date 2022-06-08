@@ -15,7 +15,7 @@ defmodule OliWeb.Products.ProductsView do
   prop project, :any
   prop author, :any
   data breadcrumbs, :any
-  data title, :string, default: "Course Products"
+  data title, :string, default: "Products"
 
   data creation_title, :string, default: ""
   data products, :list, default: []
@@ -68,7 +68,7 @@ defmodule OliWeb.Products.ProductsView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Course Products",
+          full_title: "Products",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]

@@ -146,6 +146,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "end_date" => now,
             "title" => title,
             "requires_payment" => false,
+            "pay_by_institution" => false,
             "registration_open" => false,
             "timezone" => "America/New_York",
             "grace_period_days" => 1,

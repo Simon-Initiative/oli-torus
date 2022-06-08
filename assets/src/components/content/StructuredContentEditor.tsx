@@ -9,7 +9,7 @@ import { slateFixer } from './SlateFixer';
 
 export type StructuredContentEditor = {
   editMode: boolean; // Whether or not we can edit
-  content: StructuredContent; // Content to edit
+  contentItem: StructuredContent; // Content to edit
   onEdit: (content: StructuredContent) => void; // Edit handler
   toolbarInsertDescs: CommandDescription[]; // Content insertion options
   projectSlug: ProjectSlug;
@@ -17,25 +17,32 @@ export type StructuredContentEditor = {
 };
 
 // The resource editor for content
-export const StructuredContentEditor = (props: StructuredContentEditor) => {
-  const onEdit = React.useCallback(
+export const StructuredContentEditor = ({
+  editMode,
+  projectSlug,
+  resourceSlug,
+  contentItem,
+  toolbarInsertDescs,
+  onEdit,
+}: StructuredContentEditor) => {
+  const onSlateEdit = React.useCallback(
     (children: Descendant[]) => {
-      props.onEdit(Object.assign({}, props.content, { children }));
+      onEdit(Object.assign({}, contentItem, { children }));
     },
-    [props.content, props.onEdit],
+    [contentItem, onEdit],
   );
 
-  const [value, setValue] = React.useState(slateFixer(props.content));
+  const [value] = React.useState(slateFixer(contentItem));
 
   return (
     <ErrorBoundary>
       <Editor
         className="structured-content"
-        commandContext={{ projectSlug: props.projectSlug, resourceSlug: props.resourceSlug }}
-        editMode={props.editMode}
+        commandContext={{ projectSlug: projectSlug, resourceSlug: resourceSlug }}
+        editMode={editMode}
         value={value.children}
-        onEdit={onEdit}
-        toolbarInsertDescs={props.toolbarInsertDescs}
+        onEdit={onSlateEdit}
+        toolbarInsertDescs={toolbarInsertDescs}
       />
     </ErrorBoundary>
   );

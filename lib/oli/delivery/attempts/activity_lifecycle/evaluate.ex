@@ -339,9 +339,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             map -> Map.get(map, "input")
           end
 
+        files =
+          case p.response do
+            nil -> nil
+            map -> Map.get(map, "files", [])
+          end
+
         %{
           attempt_guid: p.attempt_guid,
-          input: %StudentInput{input: input}
+          input: %StudentInput{input: input, files: files}
         }
       end)
 
@@ -540,7 +546,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, %Model{parts: parts}} = Model.parse(activity_model)
 
     evaluations =
-
       case Model.parse(activity_model) do
         {:ok, %Model{rules: []}} ->
           # We need to tie the attempt_guid from the part_inputs to the attempt_guid
