@@ -538,7 +538,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         }
         return insertList;
       }),
-    [getElementValueByKey],
+    [getElementValueByKey, showHints],
   );
 
   return (
