@@ -532,36 +532,52 @@ export const templatizeText = (
   const vals = vars.map((v) => {
     let stateValue = locals[v];
     if (!stateValue || typeof stateValue === 'object') {
+      // first need to just try to evaluate it whatever it might be
       try {
-        if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
-          // if the expression is just a variable, then if it has a colon
-          // it is most likely targetting another screen, and needs to be wrapped
-          // for evaluation; same with if it has a space in it TODO: detect that;
-          // also note this will break hash expression support but no one uses that
-          // currently (TODO #2)
-          v = `{${v}}`;
-        }
-        try {
-          const result = evalScript(v, innerEnv);
-          // it is very possible here that result.result is undefined simply because the variable has not been defined
-          // in the scripting env, so really we should just return undefined or an empty string here in that case.
+        const result = evalScript(v, innerEnv);
+        if (result?.result !== undefined && !result?.result?.message) {
+          // if we were successful, then we should actually set the env to the result
+          // in case it was an assignment script
           innerEnv = result.env;
-          if (!result?.result?.message) {
-            stateValue = result.result;
+          stateValue = result.result;
+        }
+      } catch (ex) {
+        // do nothing, not giving up yet
+        /* console.warn('[templatizeText] error evaluating expression', { ex, v, innerEnv }); */
+      }
+      // still that first shot didnt work, try again checking for other variable conditions
+      if (!stateValue) {
+        try {
+          if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
+            // if the expression is just a variable, then if it has a colon
+            // it is most likely targetting another screen, and needs to be wrapped
+            // for evaluation; same with if it has a space in it TODO: detect that;
+            // also note this will break hash expression support but no one uses that
+            // currently (TODO #2)
+            v = `{${v}}`;
           }
-        } catch (ex) {
-          if (v[0] === '{' && v[v.length - 1] === '}') {
-            //lets evaluat everything if first and last char are {}
-            const functionExpression = v.substring(1, v.length - 1);
-            const result = evalScript(functionExpression, innerEnv);
-            if (result?.result !== undefined && !result?.result?.message) {
+          try {
+            const result = evalScript(v, innerEnv);
+            // it is very possible here that result.result is undefined simply because the variable has not been defined
+            // in the scripting env, so really we should just return undefined or an empty string here in that case.
+            innerEnv = result.env;
+            if (!result?.result?.message) {
               stateValue = result.result;
             }
+          } catch (ex) {
+            if (v[0] === '{' && v[v.length - 1] === '}') {
+              //lets evaluat everything if first and last char are {}
+              const functionExpression = v.substring(1, v.length - 1);
+              const result = evalScript(functionExpression, innerEnv);
+              if (result?.result !== undefined && !result?.result?.message) {
+                stateValue = result.result;
+              }
+            }
           }
+        } catch (e) {
+          // ignore?
+          console.warn('error evaluating text', { v, e });
         }
-      } catch (e) {
-        // ignore?
-        console.warn('error evaluating text', { v, e });
       }
     }
     if (stateValue === undefined) {
@@ -595,8 +611,6 @@ export const templatizeText = (
         strValue = stateValue.map((v) => `"${v}"`).join(', ');
       } else if (typeof stateValue === 'object') {
         strValue = JSON.stringify(stateValue);
-      } else if (typeof stateValue === 'number') {
-        strValue = parseFloat(parseFloat(strValue).toFixed(4));
       }
     } else {
       if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
