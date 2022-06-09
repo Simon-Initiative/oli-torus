@@ -539,9 +539,6 @@
     "formula-src": {
       "type": "object",
       "properties": {
-        "type": {
-          "const": "formula"
-        },
         "subtype": {
           "enum": ["mathml", "latex"]
         },
@@ -555,9 +552,6 @@
     "formula-children": {
       "type": "object",
       "properties": {
-        "type": {
-          "const": "formula"
-        },
         "subtype": {
           "const": "richtext"
         },
@@ -570,12 +564,6 @@
               },
               {
                 "$ref": "#/$defs/hyperlink"
-              },
-              {
-                "$ref": "#/$defs/activity-link"
-              },
-              {
-                "$ref": "#/$defs/popup"
               },
               {
                 "$ref": "#/$defs/input-ref"
@@ -594,11 +582,24 @@
       "oneOf": [
         { "$ref": "#/$defs/formula-src" },
         { "$ref": "#/$defs/formula-children" }
-      ]
+      ],
+      "properties": {
+        "type": {
+          "const": "formula"
+        }
+      }
     },
 
     "formula-inline": {
-      "$ref": "#/$defs/formula"
+      "oneOf": [
+        { "$ref": "#/$defs/formula-src" },
+        { "$ref": "#/$defs/formula-children" }
+      ],
+      "properties": {
+        "type": {
+          "const": "formula_inline"
+        }
+      }
     },
 
     "math": {

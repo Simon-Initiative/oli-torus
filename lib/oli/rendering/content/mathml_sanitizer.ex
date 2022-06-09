@@ -7,6 +7,9 @@ defmodule Oli.Rendering.Content.MathMLSanitizer do
 
   List of tags & attributes retrieved from https://developer.mozilla.org/en-US/docs/Web/MathML/Element
 
+
+  !!! IF YOU CHANGE THIS FILE, YOU SHOULD UPDATE assets/src/utils/mathmlSanitizer.ts AS WELL !!!
+
   """
 
   require HtmlSanitizeEx.Scrubber.Meta

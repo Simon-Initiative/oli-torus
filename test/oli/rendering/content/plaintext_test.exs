@@ -1,10 +1,8 @@
-defmodule Oli.Content.Content.HtmlTest do
+defmodule Oli.Content.Content.PlaintextTest do
   use Oli.DataCase
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Content
-
-  import ExUnit.CaptureLog
 
   describe "plaintext content renderer" do
     setup do

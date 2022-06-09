@@ -116,7 +116,7 @@ defmodule Oli.Rendering.Content do
 
   def render(
         %Context{} = context,
-        %{"type" => "formula-inline", "children" => children} = element,
+        %{"type" => "formula_inline", "children" => children} = element,
         writer
       ) do
     writer.formula_inline(context, fn -> render(context, children, writer) end, element)
@@ -124,7 +124,7 @@ defmodule Oli.Rendering.Content do
 
   def render(
         %Context{} = context,
-        %{"type" => "formula-inline"} = element,
+        %{"type" => "formula_inline"} = element,
         writer
       ) do
     writer.formula_inline(context, nil, element)

@@ -443,17 +443,17 @@
       "type": "p",
       "children": [
         {
-          "type": "formula-inline",
+          "type": "formula_inline",
           "subtype": "richtext",
           "children": [{ "text": "a richtext formula" }]
         },
         {
-          "type": "formula-inline",
+          "type": "formula_inline",
           "subtype": "mathml",
           "src": "<mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>"
         },
         {
-          "type": "formula-inline",
+          "type": "formula_inline",
           "subtype": "latex",
           "src": "x^2 + y^2 = z^2"
         }

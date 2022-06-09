@@ -168,8 +168,7 @@ defmodule Oli.Rendering.Content.Html do
         %{"subtype" => "latex", "src" => src},
         inline
       ) do
-    # TODO: There's a XSS attack waiting here
-    ["<span class=\"#{formula_class(inline)}\">\\[", src, "\\]</span>\n"]
+    ["<span class=\"#{formula_class(inline)}\">\\[", escape_xml!(src), "\\]</span>\n"]
   end
 
   def formula(
