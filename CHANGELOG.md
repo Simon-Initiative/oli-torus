@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.19.4 (2022-06-09)
+
+### Bug Fixes
+
 - Improve performance of DataShop export
 - Fix an issue where multi-input activity inputs were being duplicated
 - Fix an issue where table headers were misaligned in the insights view
