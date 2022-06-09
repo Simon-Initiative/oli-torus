@@ -15,7 +15,7 @@
     <link id="authoring-theme" rel="stylesheet" href="/css/authoring_default.css" />
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
-    <%= if Mix.env() == :dev do %>
+    <%= if dev_mode?() do %>
       <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
       <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
     <% else %>

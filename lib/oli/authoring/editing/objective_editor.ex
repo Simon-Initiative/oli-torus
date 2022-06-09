@@ -182,7 +182,12 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
       %{attachments: {[], []}} ->
         []
 
-      %{attachments: {pages, activities}, locked_by: locked_by, parent_pages: parent_pages} ->
+      %{
+        attachments: {pages, activities},
+        locked_by: locked_by,
+        parent_pages: parent_pages,
+        locked_banked_activities: locked_banked_activities
+      } ->
         # detach from all non-locked pages
         Enum.filter(pages, fn %{resource_id: resource_id} ->
           !Map.has_key?(locked_by, resource_id)
@@ -191,9 +196,10 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
           detach_from_page(objective_id, slug, project.slug, author)
         end)
 
-        # detach from all non-locked activities. Locked activities are those activities
+        # detach from all non-locked embedded activities. Locked activities are those activities
         # whose parent page is locked
-        Enum.filter(activities, fn %{resource_id: resource_id} ->
+        Enum.filter(activities, fn %{scope: scope} -> scope == "embedded" end)
+        |> Enum.filter(fn %{resource_id: resource_id} ->
           !Map.has_key?(locked_by, Map.get(parent_pages, resource_id).id)
         end)
         |> Enum.each(fn activity ->
@@ -204,6 +210,16 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             )
 
           detach_from_activity(objective_id, page, activity, project.slug, author)
+        end)
+
+        # detach from all non-locked banked activities. Locked banked activities are those activities
+        # that have a direct lock on them
+        Enum.filter(activities, fn %{scope: scope} -> scope == "banked" end)
+        |> Enum.filter(fn %{resource_id: resource_id} ->
+          !Map.has_key?(locked_banked_activities, resource_id)
+        end)
+        |> Enum.each(fn activity ->
+          detach_from_banked_activity(objective_id, activity, project.slug, author)
         end)
     end
   end
@@ -266,6 +282,29 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end
   end
 
+  # Detach an objective from all parts of an activity, using the `ActivityEditor` logic.
+  defp detach_from_banked_activity(
+         objective_id,
+         %{slug: activity_slug, resource_id: activity_id},
+         project_slug,
+         author
+       ) do
+    case PageEditor.acquire_lock(project_slug, activity_slug, author.email) do
+      {:acquired} ->
+        objectives = AuthoringResolver.from_resource_id(project_slug, activity_id).objectives
+
+        update = %{
+          "objectives" =>
+            Enum.reduce(objectives, %{}, fn {p, a}, m ->
+              Map.put(m, p, Enum.filter(a, fn s -> s != objective_id end))
+            end)
+        }
+
+        ActivityEditor.edit(project_slug, activity_id, activity_id, author.email, update)
+        PageEditor.release_lock(project_slug, activity_slug, author.email)
+    end
+  end
+
   @doc """
   Previews an objective detachment, returning back references to the pages and
   activities that the objective is attached to (if any).  These references are in
@@ -301,7 +340,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     case Publishing.find_objective_attachments(resource_id, publication.id) do
       # if no attachments
       [] ->
-        %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
+        %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}, locked_banked_activities: %{}}
 
       # otherwise we need to see which attachments are currently locked for edit
       attachments ->
@@ -337,10 +376,27 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             end
           end)
 
+        locked_banked_activities =
+          case Enum.filter(distinct_activities, fn a -> a.scope == "banked" end) do
+            [] ->
+              %{}
+
+            activities ->
+              Enum.map(activities, fn a -> a.resource_id end)
+              |> Publishing.retrieve_lock_info(publication.id)
+              |> Enum.reduce(%{}, fn mapping, m ->
+                case Oli.Authoring.Locks.expired_or_empty?(mapping) do
+                  true -> m
+                  false -> Map.put(m, mapping.resource_id, mapping)
+                end
+              end)
+          end
+
         %{
           attachments: {pages, distinct_activities},
           locked_by: locked_by,
-          parent_pages: parent_pages
+          parent_pages: parent_pages,
+          locked_banked_activities: locked_banked_activities
         }
     end
   end

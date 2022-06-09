@@ -984,6 +984,7 @@ defmodule Oli.Publishing do
     title: the title of the resource
     slug: the slug of the revision
     part: the part name, or "attached" if pertaining to a page
+    scope: the scope of the activity
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
@@ -992,7 +993,7 @@ defmodule Oli.Publishing do
 
     sql = """
     select
-      revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+      revisions.scope, revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
     FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
     WHERE
       revisions.id IN (SELECT revision_id
@@ -1008,13 +1009,14 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     results
-    |> Enum.map(fn [id, resource_id, title, slug, part] ->
+    |> Enum.map(fn [scope, id, resource_id, title, slug, part] ->
       %{
         id: id,
         resource_id: resource_id,
         title: title,
         slug: slug,
-        part: part
+        part: part,
+        scope: scope
       }
     end)
   end
