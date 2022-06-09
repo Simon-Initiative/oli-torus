@@ -462,13 +462,13 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       .sort((a, b) => a.value - b.value)
       .map((item) => item.value);
 
-    const newSelectedChoice = newSelectedChoices[0];
+    const newSelectedChoice = newSelectedChoices.length ? newSelectedChoices[0] : -1;
 
     const newSelectedChoicesText = modifiedSelections
       .sort((a, b) => a.value - b.value)
       .map((item) => item.textValue);
 
-    const newSelectedChoiceText = newSelectedChoicesText[0];
+    const newSelectedChoiceText = newSelectedChoicesText.length ? newSelectedChoicesText[0] : '';
 
     setNumberOfSelectedChoices(newCount);
     setSelectedChoice(newSelectedChoice);
