@@ -212,6 +212,27 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         <label className="control-label" htmlFor={key1}>
           {renderLabel(key1)}
         </label>
+        <button
+          onClick={() => {
+            let m: CitationModel = { id: '', type: '' };
+            m = Object.entries(model).reduce(function (obj, entry) {
+              if (entry[0] != key1) {
+                obj = { ...obj, [entry[0]]: entry[1] };
+              }
+              return obj;
+            }, m);
+
+            setModel(m);
+          }}
+          type="button"
+          className="btn btn-link p-0"
+          data-toggle="tooltip"
+          data-placement="top"
+          title="Delete this field"
+          aria-pressed="false"
+        >
+          <i className="las la-trash-alt"></i>
+        </button>
         <div className="col-sm-12">{renderAttributeEditor(key1, value1)}</div>
       </div>
     );
@@ -219,13 +240,11 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
 
   const renderAttributeEditors = () => {
     const editors = [];
-
     for (const [key, value] of Object.entries(model)) {
       if (!Object.keys(ignoredAttributes).find((e) => e === key)) {
         editors.push(renderField(key, value));
       }
     }
-
     return editors;
   };
 

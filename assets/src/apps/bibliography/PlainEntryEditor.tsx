@@ -11,7 +11,6 @@ export interface PlainEntryEditorProps {
 }
 
 export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEntryEditorProps) => {
-  const [create, setCreate] = useState<boolean>(props.bibEntry ? true : false);
   const [value, setValue] = useState<string>('');
 
   const textAreaStyle: CSSProperties = {
@@ -20,8 +19,6 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
 
   useEffect(() => {
     if (props.bibEntry) {
-      const dataModel: CitationModel = props.bibEntry?.content.data[0];
-      console.log(JSON.stringify(dataModel));
       const data = new Cite(JSON.stringify(props.bibEntry?.content.data[0]));
 
       const cslData = data.get({
@@ -43,6 +40,11 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
   return (
     <div>
       <div>Supports the following text formats @bibjson, @bibtex, @csl, @doi, @ris, @wikidata.</div>
+      <div>
+        For ISBN first use https://www.bibtex.com/c/isbn-to-bibtex-converter/ or any other online
+        ISBN converter to transform ISBN entries into @bibtex then copy and paste the outcome of
+        that convertion in the text area below
+      </div>
       <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
     </div>
   );

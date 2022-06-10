@@ -132,14 +132,17 @@ export const fromEntryType = (entryType: string): CitationModel => {
     type: entryType,
     author: [{ given: '', family: '' }],
     title: '',
-    'container-title': '',
+    issued: { 'date-parts': [[new Date().getFullYear()]] },
     publisher: '',
-    'original-title': '',
+    version: '',
+    shortTitle: '',
+    doi: '',
   };
 
   switch (entryType) {
     case 'article':
     case 'article-journal':
+    case 'article-newspaper':
       model = {
         id: 'temp_id_' + guid(),
         type: entryType,
@@ -150,9 +153,10 @@ export const fromEntryType = (entryType: string): CitationModel => {
         volume: '',
         number: '',
         page: '',
+        note: '',
+        doi: '',
+        issn: '',
       };
-      break;
-    case 'article-newspaper':
       break;
     case 'book':
       model = {
@@ -173,16 +177,16 @@ export const fromEntryType = (entryType: string): CitationModel => {
         url: '',
       };
       break;
-    case 'chapter':
-      break;
-    case 'motion_picture':
-      break;
-    case 'paper-conference':
-      break;
-    case 'thesis':
-      break;
-    case 'webpage':
-      break;
+    // case 'chapter':
+    //   break;
+    // case 'motion_picture':
+    //   break;
+    // case 'paper-conference':
+    //   break;
+    // case 'thesis':
+    //   break;
+    // case 'webpage':
+    //   break;
     default:
       break;
   }

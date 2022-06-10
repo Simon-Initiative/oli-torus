@@ -6,6 +6,7 @@ defmodule OliWeb.Api.BibEntryController do
   alias Oli.Authoring.Editing.BibEntryEditor
   import OliWeb.Api.Helpers
   alias Oli.Repo.{Paging}
+  alias Oli.Repo
 
   use OliWeb, :controller
 
@@ -49,8 +50,9 @@ defmodule OliWeb.Api.BibEntryController do
     author = conn.assigns[:current_author]
 
     case BibEntryEditor.edit(project_slug, entry_id, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
-      {:ok, revision} ->
-        json(conn, %{"result" => "success", "bibentry" => serialize_revision(revision)})
+      {:ok, resource} ->
+        IO.inspect(resource)
+        json(conn, %{"result" => "success", "bibentry" => serialize_revision(Repo.preload(resource, :revision).revision)})
 
       {:error, {:not_found}} ->
         error(conn, 404, "not found")
@@ -65,7 +67,6 @@ defmodule OliWeb.Api.BibEntryController do
 
   def retrieve(conn, %{"project" => project_slug, "paging" => %{"offset" => offset, "limit" => limit}}) do
     author = conn.assigns[:current_author]
-    IO.puts("retrieve bib called")
     case BibEntryEditor.retrieve(project_slug, author, %Paging{offset: offset, limit: limit}) do
       {:ok, %{rows: rows, total_count: total_count}} ->
         json(conn, %{

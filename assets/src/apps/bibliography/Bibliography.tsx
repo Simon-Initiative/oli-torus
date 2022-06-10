@@ -108,8 +108,6 @@ export function confirmUiBibEditor(
           create={true}
           onEdit={(content: CitationModel) => {
             bibContent = content;
-            // :TODO: remove empty fields
-            console.log('the model so far ' + JSON.stringify(bibContent));
           }}
         />
       </ModalSelection>
@@ -252,9 +250,9 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
             <div className="mb-1">
               <EditBibEntry onEdit={onEdit} />
             </div>
-            <div>
+            {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />
-            </div>
+            </div> */}
           </div>
           <BibEntryView key={key} bibEntry={bibEntry} />
         </div>
@@ -267,6 +265,8 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     confirmUiBibEditor(citeModel, false).then((value) => {
       value.caseOf({
         just: (n) => {
+          // :TODO: remove empty fields
+          console.log('the model so far ' + JSON.stringify(n));
           handleCreateOrEdit(JSON.stringify(n));
         },
         nothing: () => undefined,
@@ -294,7 +294,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           aria-haspopup="true"
           aria-expanded="false"
         >
-          Add Entry (UI Editor)
+          Add Entry (Manual Editor)
         </button>
         <div className="dropdown-menu" aria-labelledby="createButton">
           <div className="overflow-auto bg-light" style={{ maxHeight: '300px' }}>
@@ -326,10 +326,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
           messages={messages}
         />
         <div className="d-flex justify-content-start">
-          {createEntryDropdown}
           <button type="button" className="btn btn-link" onClick={() => onPlainCreateOrEdit()}>
-            <i className="las la-solid la-plus"></i> Add Entry (Text Editor)
+            <i className="las la-solid la-plus"></i> Add Entry
           </button>
+          {createEntryDropdown}
         </div>
         <hr className="mb-4" />
 
