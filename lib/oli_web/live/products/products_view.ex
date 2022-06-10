@@ -1,10 +1,8 @@
 defmodule OliWeb.Products.ProductsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.Products.Create
-  alias OliWeb.Common.Filter
-  alias OliWeb.Common.Listing
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
@@ -74,7 +72,7 @@ defmodule OliWeb.Products.ProductsView do
       ]
   end
 
-  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
+  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
     products = Blueprint.list_for_project(project)
@@ -86,21 +84,23 @@ defmodule OliWeb.Products.ProductsView do
       project,
       breadcrumb([]),
       "Products | " <> project.title,
-      socket
+      socket,
+      session
     )
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
     products = Blueprint.list()
-    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket)
+    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket, session)
   end
 
-  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket) do
+  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
     total_count = length(products)
 
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products)
+    context = SessionContext.init(session)
+    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, context)
 
     {:ok,
      assign(socket,

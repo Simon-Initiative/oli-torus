@@ -2,7 +2,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
   use Surface.LiveComponent
 
   alias Oli.Groups.CommunityVisibility
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
   def get_field(field, association) do
@@ -13,7 +13,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
     end
   end
 
-  def new(associations, id_field \\ :unique_id, action \\ "select") do
+  def new(associations, context, id_field \\ :unique_id, action \\ "select") do
     action =
       case action do
         "select" -> &__MODULE__.render_select_column/3
@@ -37,7 +37,7 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &Common.render_date/3
         },
         %ColumnSpec{
           name: :action,
@@ -46,7 +46,10 @@ defmodule OliWeb.CommunityLive.Associated.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [id_field]
+      id_field: [id_field],
+      data: %{
+        context: context
+      }
     )
   end
 

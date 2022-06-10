@@ -5,7 +5,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
-  def new(discounts) do
+  def new(discounts, context) do
     SortableTableModel.new(
       rows: discounts,
       column_specs: [
@@ -37,7 +37,10 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 

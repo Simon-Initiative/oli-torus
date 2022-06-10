@@ -4,7 +4,7 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   alias Oli.Accounts
   alias Oli.Groups
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.CommunityLive.{NewView, TableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Form
@@ -52,7 +52,7 @@ defmodule OliWeb.CommunityLive.IndexView do
 
   def mount(
         _,
-        %{"is_system_admin" => is_system_admin, "current_author_id" => author_id},
+        %{"is_system_admin" => is_system_admin, "current_author_id" => author_id} = session,
         socket
       ) do
     communities =
@@ -62,7 +62,9 @@ defmodule OliWeb.CommunityLive.IndexView do
         Accounts.list_admin_communities(author_id)
       end
 
-    {:ok, table_model} = TableModel.new(communities)
+    context = SessionContext.init(session)
+
+    {:ok, table_model} = TableModel.new(communities, context)
 
     {:ok,
      assign(socket,

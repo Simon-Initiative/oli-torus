@@ -1,4 +1,6 @@
 defmodule OliWeb.Common.Utils do
+  import OliWeb.Common.FormatDateTime
+
   alias Oli.Accounts.{User, Author}
 
   def name(%User{} = user) do
@@ -16,6 +18,16 @@ defmodule OliWeb.Common.Utils do
       {true, _, _} -> name
       _ -> "Unknown"
     end
+  end
+
+  def render_date(item, attr_name, context) do
+    opts = [context: context, show_timezone: false]
+    date(Map.get(item, attr_name), opts)
+  end
+
+  def render_precise_date(item, attr_name, context) do
+    opts = [context: context, precision: :minutes]
+    date(Map.get(item, attr_name), opts)
   end
 
   defp has_value(v) do

@@ -145,8 +145,7 @@ defmodule OliWeb.Common.FormatDateTime do
   def format_datetime(nil, _opts), do: ""
 
   def format_datetime({:localized, %DateTime{} = datetime}, opts) do
-    # default to showing no timezone if the datetime has been localized
-    format_datetime(datetime, Keyword.put_new(opts, :show_timezone, false))
+    format_datetime(datetime, opts)
   end
 
   def format_datetime(%DateTime{} = datetime, opts) do
