@@ -121,7 +121,7 @@
 
   .formula-inline {
     display: inline-block;
-    background-color: $gray-800;
+    background-color: darken($body-bg, 5%);
     margin: 0px 0.5em;
     padding: 2px 0.5em;
     vertical-align: middle;
@@ -132,7 +132,7 @@
 
   .formula {
     display: block;
-    background-color: $gray-800;
+    background-color: darken($body-bg, 5%);
     text-align: center;
     margin: 8px;
     padding: 12px;
