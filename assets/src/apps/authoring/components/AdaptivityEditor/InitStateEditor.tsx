@@ -90,7 +90,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           onBlur={(e) => handleTargetChange(e.target.value)}
-          title={target}
+          title={target.toString()}
           tabIndex={0}
         />
       </div>
@@ -157,7 +157,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           placeholder="Value"
           onChange={(e) => setValue(e.target.value)}
           onBlur={(e) => onChange(state.id, 'value', e.target.value)}
-          title={state.value}
+          title={state.value.toString()}
           tabIndex={0}
         />
       </div>
