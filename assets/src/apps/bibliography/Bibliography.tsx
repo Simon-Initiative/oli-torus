@@ -173,11 +173,12 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
             cslJson[0].title,
             JSON.stringify(cslJson),
             entry.id,
-          );
+          ).then((_s) => fetchBibEntrys(paging));
         } else {
-          BibPersistence.create(props.projectSlug, cslJson[0].title, JSON.stringify(cslJson));
+          BibPersistence.create(props.projectSlug, cslJson[0].title, JSON.stringify(cslJson)).then(
+            (_s) => fetchBibEntrys(paging),
+          );
         }
-        fetchBibEntrys(paging);
       } catch (error) {
         const message = createMessage({
           guid: 'bib-entry-error',

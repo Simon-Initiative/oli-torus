@@ -70,23 +70,23 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
   const renderDateEditor = (key: string, value: DateField) => {
     return (
       <div className="ml-4">
-        {Object.entries(value).map((e) => (
-          <div key={e[0]} className="form-row form-group">
-            <label className="control-label" htmlFor={e[0]}>
-              {renderLabel(e[0])}
+        {Object.entries(value).map(([k, val]) => (
+          <div key={k} className="form-row form-group">
+            <label className="control-label" htmlFor={k}>
+              {renderLabel(k)}
             </label>
             <div className="col-sm-12">
-              {e[0] === 'date-parts' ? (
+              {k === 'date-parts' ? (
                 <div className="d-flex">
                   <div className="col-sm-4">
                     <TextInput
                       editMode={true}
                       width="100%"
-                      value={e[1][0][0]}
+                      value={val[0][0]}
                       label="Year"
                       type="string"
                       onEdit={(v) => {
-                        onEditDateEditor(0, key, e[0], v);
+                        onEditDateEditor(0, key, k, v);
                       }}
                     />
                   </div>
@@ -94,11 +94,11 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                     <TextInput
                       editMode={true}
                       width="100%"
-                      value={e[1][0].length > 1 ? e[1][0][1] : ''}
+                      value={val[0].length > 1 ? val[0][1] : ''}
                       label="Month"
                       type="string"
                       onEdit={(v) => {
-                        onEditDateEditor(1, key, e[0], v);
+                        onEditDateEditor(1, key, k, v);
                       }}
                     />
                   </div>
@@ -106,11 +106,11 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                     <TextInput
                       editMode={true}
                       width="100%"
-                      value={e[1][0].length > 2 ? e[1][0][2] : ''}
+                      value={val[0].length > 2 ? val[0][2] : ''}
                       label="Day"
                       type="string"
                       onEdit={(v) => {
-                        onEditDateEditor(2, key, e[0], v);
+                        onEditDateEditor(2, key, k, v);
                       }}
                     />
                   </div>
@@ -119,11 +119,11 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
                 <TextInput
                   editMode={true}
                   width="100%"
-                  value={e[1]}
+                  value={val}
                   label=""
                   type="string"
                   onEdit={(v) => {
-                    onEditDateEditor(-1, key, e[0], v);
+                    onEditDateEditor(-1, key, k, v);
                   }}
                 />
               )}
@@ -137,15 +137,15 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
   const renderNameField = (index: number, key: string, value: NameField) => {
     return (
       <div className="d-flex">
-        {Object.entries(value).map((e) => (
-          <div key={e[0]} className="col-sm-6">
+        {Object.entries(value).map(([k, val]) => (
+          <div key={k} className="col-sm-6">
             <TextInput
               editMode={true}
               width="100%"
-              value={e[1]}
-              label={renderLabel(e[0])}
+              value={val}
+              label={renderLabel(k)}
               type="string"
-              onEdit={(v) => onEditNameEditor(index, key, e[0], v)}
+              onEdit={(v) => onEditNameEditor(index, key, k, v)}
             />
           </div>
         ))}
