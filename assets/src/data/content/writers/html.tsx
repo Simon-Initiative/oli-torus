@@ -231,7 +231,12 @@ export class HtmlParser implements WriterImpl {
     );
   }
   codeLine(context: WriterContext, next: Next, _x: CodeLine) {
-    return next();
+    return (
+      <>
+        {next()}
+        {'\n'}
+      </>
+    );
   }
   blockquote(context: WriterContext, next: Next, _x: Blockquote) {
     return <blockquote>{next()}</blockquote>;

@@ -9,7 +9,6 @@ import {
   Webpage,
   Hyperlink,
   Paragraph,
-  Code,
   InputRef,
   Popup,
   Table,
@@ -22,6 +21,7 @@ import {
   HeadingTwo,
   Citation,
   ImageInline,
+  CodeV2,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -77,10 +77,10 @@ export const Model = {
       type: 'blockquote',
     }),
 
-  code: (children = '') =>
-    create<Code>({
+  code: (code = '') =>
+    create<CodeV2>({
       type: 'code',
-      code: children,
+      code,
       language: 'Text',
     }),
 

@@ -816,9 +816,7 @@ defmodule OliWeb.PageDeliveryController do
 
   defp build_enrollments_text(enrollments) do
     ([["Student name", "Student email", "Enrolled on"]] ++
-       Enum.map(enrollments, fn record ->
-         [record.user.name, record.user.email, record.inserted_at]
-       end))
+      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, date(record.inserted_at)] end))
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()

@@ -91,7 +91,7 @@ defmodule OliWeb.ProductsLiveTest do
       assert render(view) =~ "The Product title and description"
       assert has_element?(view, "input[value=\"#{product.title}\"]")
       assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
-      assert has_element?(view, "a[href=\"#{Routes.discount_path(OliWeb.Endpoint, :product, product.slug)}\"]")
+      assert has_element?(view, "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, product.slug)}\"]")
     end
   end
 
