@@ -1,5 +1,5 @@
 import * as BibPersistence from 'data/persistence/bibentry';
-import React, { useEffect, useState } from 'react';
+import React, { createRef, useEffect, useRef, useState } from 'react';
 import { Citation } from 'data/content/model/elements/types';
 import { BibEntry } from 'data/content/bibentry';
 import { CommandContext } from '../commands/interfaces';
@@ -16,16 +16,15 @@ type ExistingCiteEditorProps = {
 };
 
 export const CitationEditor = (props: ExistingCiteEditorProps) => {
-  const [bibEntrys, setBibEntrys] = useState<Immutable.OrderedMap<string, BibEntry>>(
-    Immutable.OrderedMap<string, BibEntry>(),
-  );
+  const inputEl = createRef<HTMLButtonElement>();
+  const [bibEntrys, setBibEntrys] = useState<Immutable.List<BibEntry>>(Immutable.List<BibEntry>());
   const [loading, setLoading] = useState<boolean>(true);
   const [selected, setSelected] = useState<Citation>(
     props.model ? props.model : Model.cite('citation', -1),
   );
 
   const onClick = (slug: string) => {
-    const bibEntry = bibEntrys.get(slug);
+    const bibEntry = bibEntrys.find((e) => e.slug === slug);
     if (bibEntry && bibEntry.id) {
       const selection: Citation = Model.cite('[citation]', bibEntry.id);
       props.onSelectionChange(selection);
@@ -38,8 +37,7 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
     try {
       const result = await BibPersistence.fetch(props.commandContext.projectSlug);
       if (result.result === 'success') {
-        const bibs = result.rows.map((b) => [b.slug, b]);
-        return setBibEntrys(Immutable.OrderedMap<string, BibEntry>(bibs as any));
+        return setBibEntrys(Immutable.List<BibEntry>(result.rows));
       }
     } finally {
       setLoading(false);
@@ -49,6 +47,12 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
   useEffect(() => {
     fetchBibEntrys();
   }, []);
+
+  useEffect(() => {
+    if (inputEl.current) {
+      inputEl.current.scrollIntoView();
+    }
+  });
 
   const createBibEntryEditors = () => {
     if (!bibEntrys.isEmpty()) {
@@ -61,11 +65,16 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
             lang: 'en-US',
           });
         };
-        const active = selected.bibref === bibEntry.id ? ' active' : '';
+        let r = {};
+        const active = selected.bibref === bibEntry.id ? 'active' : '';
+        if (active === 'active') {
+          r = { ref: inputEl };
+        }
         return (
           <button
+            {...r}
             key={bibEntry.slug}
-            className={`list-group-item list-group-item-action flex-column align-items-start${active}`}
+            className={`list-group-item list-group-item-action flex-column align-items-start ${active}`}
             onClick={() => onClick(bibEntry.slug)}
           >
             <div dangerouslySetInnerHTML={{ __html: bibOut() }}></div>
