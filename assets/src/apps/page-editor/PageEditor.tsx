@@ -8,6 +8,7 @@ import { Banner } from 'components/messages/Banner';
 import { Editors } from 'components/resource/editors/Editors';
 import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
+import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
@@ -135,7 +136,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       objectives: Immutable.List<ResourceId>(objectives.attached),
       content: PageEditorContent.fromPersistence(content),
       persistence: 'idle',
-      allObjectives: Immutable.List<Objective>(allObjectives),
+      allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
       undoables: empty(),
     };

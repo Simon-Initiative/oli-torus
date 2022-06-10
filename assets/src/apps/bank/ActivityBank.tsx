@@ -39,6 +39,7 @@ import { LogicFilter } from './LogicFilter';
 import { Paging } from './Paging';
 
 import '../ResourceEditor.scss';
+import { arrangeObjectives } from 'components/resource/objectives/sort';
 
 const PAGE_SIZE = 5;
 
@@ -193,7 +194,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(),
       messages: [],
       persistence: 'idle',
-      allObjectives: Immutable.List<Objective>(props.allObjectives),
+      allObjectives: arrangeObjectives(props.allObjectives),
       allTags: Immutable.List<Tag>(props.allTags),
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
@@ -492,6 +493,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             onRegisterNewObjective={this.onRegisterNewObjective}
             onRegisterNewTag={this.onRegisterNewTag}
             banked={true}
+            canRemove={false}
+            onRemove={() => {}}
             {...context}
           />
         </div>
