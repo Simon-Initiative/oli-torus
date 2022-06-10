@@ -79,6 +79,13 @@ export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) 
   </span>
 );
 
+export const InvalidOwner: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    Invalid owner in variable in (<strong>{problem?.item?.fact?.value}</strong>
+    <strong>{problem?.item?.rule?.name}</strong>).
+  </span>
+);
+
 export const DiagnosticMessage: React.FC<Message> = (props) => {
   const { problem } = props;
   const { type = DiagnosticTypes.DEFAULT } = problem;
@@ -110,6 +117,9 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
       break;
     case DiagnosticTypes.INVALID_EXPRESSION:
       action = <InvalidPartExpressionValue {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_OWNER:
+      action = <InvalidOwner {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

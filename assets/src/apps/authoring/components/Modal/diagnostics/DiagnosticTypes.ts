@@ -9,6 +9,7 @@ export enum DiagnosticTypes {
   INVALID_TARGET_COND = 'invalid_target_cond',
   INVALID_EXPRESSION_VALUE = 'invalid_expression_value',
   INVALID_EXPRESSION = 'invalid_expression',
+  INVALID_OWNER = 'invalid_owner',
   DEFAULT = '',
 }
 
@@ -19,4 +20,5 @@ export const DiagnosticRuleTypes = [
   DiagnosticTypes.INVALID_VALUE,
   DiagnosticTypes.INVALID_EXPRESSION_VALUE,
   DiagnosticTypes.INVALID_EXPRESSION,
+  DiagnosticTypes.INVALID_OWNER,
 ];

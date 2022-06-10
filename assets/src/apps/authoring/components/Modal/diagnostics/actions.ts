@@ -150,6 +150,7 @@ const updaters: any = {
   [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_EXPRESSION]: updatePartsWithCorrectExpression,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
+  [DiagnosticTypes.INVALID_OWNER]: updateId,
   [DiagnosticTypes.DEFAULT]: () => {},
 };
 
