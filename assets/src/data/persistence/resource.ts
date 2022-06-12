@@ -21,8 +21,13 @@ export function edit(
   const update = Object.assign({}, pendingUpdate, { releaseLock });
 
   // Index "citation references" in the "content" and elevate them as top-level list
+  console.log(JSON.stringify(update.content.model));
   const citationRefs: BibPointer[] = [];
   traverseContent(update.content.model, (key: string, value: any) => {
+    console.log('key ' + key + ' value ' + value);
+    if (!value) {
+      return;
+    }
     if (value.type === 'cite') {
       citationRefs.push({ type: 'bibentry', id: value.bibref });
     }
@@ -58,10 +63,16 @@ export function pages(project: ProjectSlug, current?: string) {
 }
 
 function traverseContent(o: any, func: any) {
-  for (const i in o) {
-    func.apply(this, [i, o[i]]);
-    if (o[i] !== null && typeof o[i] == 'object') {
-      traverseContent(o[i], func);
+  Object.entries(o).forEach((e) => {
+    func.apply(this, [e[0], e[1]]);
+    if (e[1] !== null && typeof e[1] == 'object') {
+      traverseContent(e[1], func);
     }
-  }
+  });
+  // for (const i in o) {
+  //   func.apply(this, [i, o[i]]);
+  //   if (o[i] !== null && typeof o[i] == 'object') {
+  //     traverseContent(o[i], func);
+  //   }
+  // }
 }
