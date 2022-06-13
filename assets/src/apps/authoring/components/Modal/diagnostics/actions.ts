@@ -65,7 +65,6 @@ export const updatePath =
     const action = actions?.find((a: any) => a.type === t);
     const actionsClone =
       item && item.event && item.event.params ? [...item.event.params.actions] : [];
-    console.log(action, item, actions);
 
     const a = {
       ...action,
