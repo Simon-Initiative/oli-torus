@@ -156,6 +156,19 @@ defmodule Oli.Utils do
     end
   end
 
+  def validate_number_if(changeset, field, condition, greater_than_or_equal_to, less_than_or_equal_to) do
+    if condition.(changeset) do
+      Ecto.Changeset.validate_number(
+        changeset,
+        field,
+        greater_than_or_equal_to: greater_than_or_equal_to,
+        less_than_or_equal_to: less_than_or_equal_to
+      )
+    else
+      changeset
+    end
+  end
+
   def validate_acceptance_if(changeset, field, condition, message \\ "must be accepted") do
     if condition.(changeset) do
       Ecto.Changeset.validate_acceptance(changeset, field, message: message)

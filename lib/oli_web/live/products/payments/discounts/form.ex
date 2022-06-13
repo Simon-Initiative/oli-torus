@@ -47,7 +47,7 @@ defmodule OliWeb.Products.Payments.Discounts.Form do
 
         <Field name={:percentage} class="form-group">
           <Label/>
-          <NumberInput class="form-control" opts={disabled: get_field(@changeset, :type) == :fixed_amount} />
+          <NumberInput class="form-control" opts={min: 0, max: 100, step: 0.1, disabled: get_field(@changeset, :type) == :fixed_amount} />
           <ErrorTag/>
         </Field>
 
