@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import { useEffect, useState } from 'react';
-import { CitationModel, DateField, isDateField, isNameField, NameField } from './citationModel';
+import { CitationModel, DateField, isDateField, isNameField, NameField } from './citation_model';
 import { TextInput } from 'components/common/TextInput';
 import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
 

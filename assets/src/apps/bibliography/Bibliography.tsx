@@ -5,7 +5,7 @@ import { configureStore } from 'state/store';
 import * as BibPersistence from 'data/persistence/bibentry';
 import { Pages } from './Pages';
 import * as Immutable from 'immutable';
-import { DeleteBibEntry } from './DeleteBibEntry';
+// import { DeleteBibEntry } from './DeleteBibEntry';
 import { BibEntryView } from './BibEntryView';
 import { modalActions } from 'actions/modal';
 import ModalSelection from 'components/modal/ModalSelection';
@@ -15,7 +15,7 @@ import { createMessage, Message, Severity } from 'data/messages/messages';
 import { PlainEntryEditor } from './PlainEntryEditor';
 import { EditBibEntry } from './EditBibEntry';
 import { Maybe } from 'tsmonad';
-import { CitationModel, fromEntryType } from './citationModel';
+import { CitationModel, fromEntryType } from './citation_model';
 import { BibEntryEditor } from './BibEntryEditor';
 import { cslSchema, toFriendlyLabel } from './common';
 

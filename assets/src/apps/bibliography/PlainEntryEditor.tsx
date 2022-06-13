@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { BibEntry } from 'data/content/bibentry';
 import { ChangeEvent, CSSProperties, useEffect, useState } from 'react';
-import { CitationModel } from './citationModel';
+import { CitationModel } from './citation_model';
 
 const Cite = (window as any).cite;
 
