@@ -1,8 +1,7 @@
-import { withHtml } from 'components/editing/editor/overrides/html';
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { createEditor, Descendant, Editor as SlateEditor, Operation, Transforms } from 'slate';
+import { createEditor, Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { withHistory } from 'slate-history';
 import { Editable, RenderElementProps, RenderLeafProps, Slate, withReact } from 'slate-react';
 import { classNames } from 'utils/classNames';
@@ -60,7 +59,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
   const editor = useMemo(
     () =>
       withMarkdown(props.commandContext)(
-        withHtml(withReact(withHistory(withTables(withInlines(withVoids(createEditor())))))),
+        withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
       ),
     [],
   );
@@ -125,21 +124,6 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           placeholder={props.placeholder ?? 'Type here or use + to begin...'}
           onKeyDown={onKeyDown}
           onFocus={emptyOnFocus}
-          onPaste={(e) => {
-            if (props.onPaste) return props.onPaste(e);
-
-            const pastedText = e.clipboardData?.getData('text')?.trim();
-            const youtubeRegex =
-              /^(?:(?:https?:)?\/\/)?(?:(?:www|m)\.)?(?:(?:youtube\.com|youtu.be))(?:\/(?:[\w-]+\?v=|embed\/|v\/)?)([\w-]+)(?:\S+)?$/;
-            const matches = pastedText.match(youtubeRegex);
-            if (matches != null) {
-              // matches[0] === the entire url
-              // matches[1] === video id
-              const [, videoId] = matches;
-              e.preventDefault();
-              Transforms.insertNodes(editor, [Model.youtube(videoId)]);
-            }
-          }}
         />
       </Slate>
     </React.Fragment>
