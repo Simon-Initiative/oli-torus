@@ -152,6 +152,7 @@ const validateValue = (condition: JanusConditionProperties, rule: any, owner: an
 
 const validateOwner = (value: string, activityList: any[], sequence: any[]) => {
   const { id, screen } = parseTarget(value);
+  console.log(value);
   if (screen) {
     const act = getOwnerByScreenId(screen, activityList || [], sequence);
     const isValidPart = act?.content.partsLayout.find((part: Part) => part.id === id);
@@ -444,18 +445,46 @@ export const validators: Validator[] = [
       const brokenConditionValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
-        const brokenConditionValuesList: any[] = [];
         forEachCondition(conditions, (condition: JanusConditionProperties) => {
-          const fix = validateOwner(condition.value, activityList || [], sequence);
-          brokenConditionValues.push({
-            condition,
-            rule,
-            owner,
-            ...fix,
-          });
+          let val = Array.isArray(condition.value)
+            ? condition.value[0].toString()
+            : condition.value.toString();
+          const expr = val.match(/{([^{^}]+)}/g);
+          if (expr && expr.length > 0) {
+            val = expr[0];
+          }
+          if (typeof val === 'string') {
+            const fix = validateOwner(val, activityList || [], sequence);
+            if (fix) {
+              const error = {
+                condition,
+                owner,
+                rule,
+                ...fix,
+              };
+              broken = [...broken, error];
+            }
+          } else if (Array.isArray(val)) {
+            val.forEach((v) => {
+              if (typeof v === 'string') {
+                const fix = validateOwner(v, activityList || [], sequence);
+                if (fix) {
+                  broken = [
+                    ...broken,
+                    {
+                      condition,
+                      rule,
+                      owner,
+                      ...fix,
+                    },
+                  ];
+                }
+              }
+            });
+          }
         });
 
-        return [...broken, ...brokenConditionValuesList];
+        return broken;
       }, []);
 
       /* -- */

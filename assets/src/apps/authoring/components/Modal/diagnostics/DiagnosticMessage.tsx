@@ -81,7 +81,7 @@ export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) 
 
 export const InvalidOwner: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    Invalid owner in variable in (<strong>{problem?.item?.fact?.value}</strong>
+    Invalid owner targetted in (<strong>{problem?.item?.fact?.value}</strong>
     <strong>{problem?.item?.rule?.name}</strong>).
   </span>
 );
