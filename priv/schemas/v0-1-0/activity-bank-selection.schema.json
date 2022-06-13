@@ -18,21 +18,10 @@
       "type": "integer"
     },
     "purpose": {
-      "enum": [
-        "none",
-        "checkpoint",
-        "didigetthis",
-        "learnbydoing"
-      ]
+      "enum": ["none", "checkpoint", "didigetthis", "learnbydoing"]
     }
   },
-  "required": [
-    "type",
-    "id",
-    "logic",
-    "count",
-    "purpose"
-  ],
+  "required": ["type", "id", "logic", "count"],
   "$defs": {
     "logic": {
       "type": "object",
@@ -56,39 +45,22 @@
       "type": "object",
       "properties": {
         "fact": {
-          "enum": [
-            "objectives",
-            "tags",
-            "text",
-            "type"
-          ]
+          "enum": ["objectives", "tags", "text", "type"]
         },
         "operator": {
-          "enum": [
-            "contains",
-            "does_not_contain",
-            "equals",
-            "does_not_equal"
-          ]
+          "enum": ["contains", "does_not_contain", "equals", "does_not_equal"]
         },
         "value": {
           "$ref": "#/$defs/value"
         }
       },
-      "required": [
-        "fact",
-        "operator",
-        "value"
-      ]
+      "required": ["fact", "operator", "value"]
     },
     "clause": {
       "type": "object",
       "properties": {
         "operator": {
-          "enum": [
-            "all",
-            "any"
-          ]
+          "enum": ["all", "any"]
         },
         "children": {
           "oneOf": [
@@ -107,10 +79,7 @@
           ]
         }
       },
-      "required": [
-        "operator",
-        "children"
-      ]
+      "required": ["operator", "children"]
     },
     "value": {
       "anyOf": [
