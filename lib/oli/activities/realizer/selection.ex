@@ -23,9 +23,11 @@ defmodule Oli.Activities.Realizer.Selection do
           type: String.t()
         }
 
-  def parse(%{"count" => count, "id" => id, "logic" => logic, "purpose" => purpose}) do
+  def parse(%{"count" => count, "id" => id, "logic" => logic} = json) do
     case Logic.parse(logic) do
       {:ok, logic} ->
+        purpose = Map.get(json, "purpose", "none")
+
         {:ok, %Selection{id: id, count: count, logic: logic, purpose: purpose, type: "selection"}}
 
       e ->
