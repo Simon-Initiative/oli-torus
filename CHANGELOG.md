@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Restore ability to edit title of basic pages
+
 ### Enhancements
 
 ## 0.19.4 (2022-06-09)
