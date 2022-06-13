@@ -3,8 +3,9 @@ import { shuffleAnswerChoiceSetting } from 'components/activities/common/authori
 import { MultiInputSchema } from 'components/activities/vlab/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
-import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
-import { QuestionTab } from 'components/activities/multi_input/sections/QuestionTab';
+// import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
+import { VlabStem } from 'components/activities/vlab/sections/VlabStem';
+import { QuestionTab } from 'components/activities/vlab/sections/QuestionTab';
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/utils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -47,7 +48,7 @@ export const MultiInputComponent = () => {
 
   return (
     <>
-      <MultiInputStem
+      <VlabStem
         selectedInputRef={selectedInputRef}
         setSelectedInputRef={setSelectedInputRef}
         setEditor={setEditor}

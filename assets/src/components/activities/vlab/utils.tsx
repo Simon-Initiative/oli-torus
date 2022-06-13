@@ -1,9 +1,9 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
 import {
-  MultiInput,
-  MultiInputSchema,
-  MultiInputType,
+  VlabInput,
+  VlabSchema,
+  VlabInputType,
 } from 'components/activities/multi_input/schema';
 import {
   makeChoice,
@@ -23,7 +23,7 @@ import { clone } from 'utils/common';
 import guid from 'utils/guid';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
-  { value: 'numeric', displayValue: 'Number' },
+  { value: 'numeric', displayValue: 'Nomber' },
   { value: 'text', displayValue: 'Text' },
 ];
 
@@ -44,13 +44,13 @@ export const multiInputStem = (input: InputRef) => ({
   ],
 });
 
-export const defaultModel = (): MultiInputSchema => {
+export const defaultModel = (): VlabSchema => {
   const input = Model.inputRef();
 
   return {
     stem: multiInputStem(input),
     choices: [],
-    inputs: [{ inputType: 'text', id: input.id, partId: DEFAULT_PART_ID }],
+    inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
     authoring: {
       parts: [makePart(Responses.forTextInput(), [makeHint('')], DEFAULT_PART_ID)],
       targeted: [],
@@ -60,21 +60,27 @@ export const defaultModel = (): MultiInputSchema => {
   };
 };
 
-export const friendlyType = (type: MultiInputType) => {
-  if (type === 'dropdown') {
-    return 'Dropdown';
+export const friendlyType = (type: VlabInputType) => {
+  switch (type) {
+    case 'dropdown':
+      return 'Dropdown';
+    case 'vlabvalue':
+      return 'Vlab Value';
+    case 'numeric':
+      return 'Number';
+    default:
+      return 'Text';
   }
-  return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
 };
 
-export const partTitle = (input: MultiInput, index: number) => (
+export const partTitle = (input: VlabInput, index: number) => (
   <div>
     {`Part ${index + 1}: `}
     <span className="text-muted">{friendlyType(input.inputType)}</span>
   </div>
 );
 
-export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInputSchema {
+export function guaranteeMultiInputValidity(model: VlabSchema): VlabSchema {
   // Check whether model is valid first to save unnecessarily cloning the model
   if (isValidModel(model)) {
     return model;
@@ -86,7 +92,7 @@ export function guaranteeMultiInputValidity(model: MultiInputSchema): MultiInput
   );
 }
 
-function inputsMatchInputRefs(model: MultiInputSchema) {
+function inputsMatchInputRefs(model: VlabSchema) {
   const inputRefs = elementsOfType(model.stem.content, 'input_ref');
   const union = setUnion(
     inputRefs.map(({ id }) => id),
@@ -95,7 +101,7 @@ function inputsMatchInputRefs(model: MultiInputSchema) {
   return union.length === inputRefs.length && union.length === model.inputs.length;
 }
 
-function inputsMatchParts(model: MultiInputSchema) {
+function inputsMatchParts(model: VlabSchema) {
   const parts = model.authoring.parts;
   const union = setUnion(
     model.inputs.map(({ partId }) => partId),
@@ -104,7 +110,7 @@ function inputsMatchParts(model: MultiInputSchema) {
   return union.length === model.inputs.length && union.length === parts.length;
 }
 
-function inputsMatchChoices(model: MultiInputSchema) {
+function inputsMatchChoices(model: VlabSchema) {
   const inputChoiceIds = model.inputs.reduce(
     (acc, curr) => (curr.inputType === 'dropdown' ? acc.concat(curr.choiceIds) : acc),
     [] as string[],
@@ -116,11 +122,11 @@ function inputsMatchChoices(model: MultiInputSchema) {
   return union.length === model.choices.length && union.length === inputChoiceIds.length;
 }
 
-function hasAnInput(model: MultiInputSchema) {
+function hasAnInput(model: VlabSchema) {
   return model.inputs.length > 0;
 }
 
-function isValidModel(model: MultiInputSchema): boolean {
+function isValidModel(model: VlabSchema): boolean {
   return (
     hasAnInput(model) &&
     inputsMatchInputRefs(model) &&
@@ -129,7 +135,7 @@ function isValidModel(model: MultiInputSchema): boolean {
   );
 }
 
-function ensureHasInput(model: MultiInputSchema) {
+function ensureHasInput(model: VlabSchema) {
   if (hasAnInput(model)) {
     return model;
   }
@@ -154,7 +160,7 @@ function ensureHasInput(model: MultiInputSchema) {
   return model;
 }
 
-function matchInputsToChoices(model: MultiInputSchema) {
+function matchInputsToChoices(model: VlabSchema) {
   if (inputsMatchChoices(model)) {
     return model;
   }
@@ -180,7 +186,7 @@ function matchInputsToChoices(model: MultiInputSchema) {
   return model;
 }
 
-function matchInputsToParts(model: MultiInputSchema) {
+function matchInputsToParts(model: VlabSchema) {
   if (inputsMatchParts(model)) {
     return model;
   }
@@ -196,7 +202,7 @@ function matchInputsToParts(model: MultiInputSchema) {
     model.authoring.parts.find((part) => part.id === id),
   );
 
-  unmatchedInputs.forEach((input: MultiInput) => {
+  unmatchedInputs.forEach((input: VlabInput) => {
     const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
     const part = makePart(
       input.inputType === 'dropdown'
@@ -230,7 +236,7 @@ function matchInputsToParts(model: MultiInputSchema) {
   return model;
 }
 
-function matchInputsToInputRefs(model: MultiInputSchema) {
+function matchInputsToInputRefs(model: VlabSchema) {
   if (inputsMatchInputRefs(model)) {
     return model;
   }
@@ -246,7 +252,7 @@ function matchInputsToInputRefs(model: MultiInputSchema) {
     (id) => ({ id, type: 'input_ref' } as InputRef),
   );
 
-  unmatchedInputs.forEach((input: MultiInput) => {
+  unmatchedInputs.forEach((input: VlabInput) => {
     // add inputRef to end of first paragraph in stem
     const firstParagraph = model.stem.content.find((e) => e.type === 'p') as Paragraph | undefined;
     firstParagraph?.children.push({ ...Model.inputRef(), id: input.id });
