@@ -283,7 +283,6 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def cite(%Context{} = context, next, a) do
-    IO.inspect(Process.info(self(), :current_stacktrace), label: "STACKTRACE")
     bib_references = Map.get(context, :bib_app_params, [])
     bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
     if bib_entry != nil do

@@ -51,7 +51,6 @@ defmodule OliWeb.Api.BibEntryController do
 
     case BibEntryEditor.edit(project_slug, entry_id, author, %{"title" => title, "author_id" => author.id, "content" => %{data: Poison.decode!(content)}}) do
       {:ok, resource} ->
-        IO.inspect(resource)
         json(conn, %{"result" => "success", "bibentry" => serialize_revision(Repo.preload(resource, :revision).revision)})
 
       {:error, {:not_found}} ->
