@@ -6,15 +6,6 @@ defmodule OliWeb.Objectives.Actions do
     ~L"""
       <div class="objective-actions p-2">
 
-        <%= if !@has_children and @depth < 2 do %>
-          <button
-            class="ml-1 btn btn-sm btn-light"
-            phx-click="show_breakdown_modal"
-            phx-value-slug="<%= @slug %>">
-            <i class="las la-sitemap"></i> Break down
-          </button>
-        <% end %>
-
         <button
           class="ml-1 btn btn-sm btn-light"
           phx-click="modify"
