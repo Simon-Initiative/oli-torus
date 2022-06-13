@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Immutable from 'immutable';
-import { Typeahead } from 'react-bootstrap-typeahead';
+import {
+  Typeahead,
+  TypeaheadResult,
+  TypeaheadMenuProps,
+  AllTypeaheadOwnAndInjectedProps,
+} from 'react-bootstrap-typeahead';
 import { Objective, ResourceId } from 'data/content/objective';
 import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
@@ -18,12 +23,84 @@ export type ObjectivesProps = {
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
+const MAX_LENGTH = 40;
+
+const withEllipse = (label: string) => {
+  return label.length > MAX_LENGTH ? (
+    <span data-toggle="tooltip" data-placement="top" title={label}>
+      {label.substring(0, MAX_LENGTH - 3) + '...'}
+    </span>
+  ) : (
+    <span>{label}</span>
+  );
+};
+
+// Custom filterBy function for the Typeahead. This allows searches to
+// pick up child objectives for text that matches the parent
+function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
+  if (option.title.indexOf(props.text) > -1) {
+    return true;
+  }
+
+  if (option.parentId !== null) {
+    return byId[option.parentId].title.indexOf(props.text) > -1;
+  }
+
+  return false;
+}
+
+function createMapById(objectives: Objective[]) {
+  return objectives.reduce((m: any, o: any) => {
+    m[o.id] = o;
+    return m;
+  }, {});
+}
+
 export const ObjectivesSelection = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
 
   // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
+  const [byId, setById] = useState(createMapById(objectives));
+
+  const allSelected = selected.reduce((m: any, id: any) => {
+    m[id] = true;
+    return m;
+  }, {});
+
+  useEffect(() => {
+    setById(createMapById(objectives));
+  }, [objectives]);
+
+  // Custom menu item renderer fn for the Typeahead, so that we can render
+  // a checkbox indicating selected state and the parent label for child objectives
+  const renderMenuItemChildren = (
+    option: TypeaheadResult<Objective>,
+    _props: TypeaheadMenuProps<Objective>,
+    _index: number,
+  ) => {
+    const buildCombinedTitle = (parent: string, child: string) => {
+      return (
+        <>
+          {withEllipse(parent)}
+          <span className="ml-2 mr-2">
+            <strong>/</strong>
+          </span>
+          {withEllipse(child)}
+        </>
+      );
+    };
+
+    return (
+      <div>
+        <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
+        {option.parentId === null
+          ? option.title
+          : buildCombinedTitle(byId[option.parentId].title, option.title)}
+      </div>
+    );
+  };
 
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
@@ -34,6 +111,8 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
         id={id}
+        filterBy={filterBy.bind(this, byId)}
+        renderMenuItemChildren={renderMenuItemChildren}
         multiple={true}
         disabled={!editMode}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
@@ -73,8 +152,16 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
             if (updated.length !== selected.length) {
-              const updatedObjectives = updated.map((o) => o.id);
-              onEdit(updatedObjectives);
+              const updatedObjectives = updated
+                .map((o) => o.id)
+                .reduce((m: any, i) => {
+                  m[i] = true;
+                  return m;
+                }, {});
+
+              const ids = Object.keys(updatedObjectives).map((str) => parseInt(str));
+
+              onEdit(ids);
             }
           }
         }}
