@@ -46,8 +46,7 @@ defmodule OliWeb.OpenAndFreeController do
   def index(conn, _params) do
     render(conn, "index.html",
       sections: Sections.list_open_and_free_sections(),
-      breadcrumbs: set_breadcrumbs(),
-      user: conn.assigns.current_user
+      breadcrumbs: set_breadcrumbs()
     )
   end
 
