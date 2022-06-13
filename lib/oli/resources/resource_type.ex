@@ -43,7 +43,7 @@ defmodule Oli.Resources.ResourceType do
   def is_objective(revision), do: is_type(revision, "objective")
   def is_secondary(revision), do: is_type(revision, "secondary")
   def is_tag(revision), do: is_type(revision, "tag")
-  def is_tag(revision), do: is_type(revision, "bibentry")
+  def is_bibentry(revision), do: is_type(revision, "bibentry")
 
   schema "resource_types" do
     field :type, :string

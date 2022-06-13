@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { BibEntry } from 'data/content/bibentry';
 import { ChangeEvent, CSSProperties, useEffect, useState } from 'react';
-import { CitationModel } from './citation_model';
 
 const Cite = (window as any).cite;
 
@@ -41,9 +40,9 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
     <div>
       <div>Supports the following text formats @bibjson, @bibtex, @csl, @doi, @ris, @wikidata.</div>
       <div>
-        For ISBN first use https://www.bibtex.com/c/isbn-to-bibtex-converter/ or any other online
-        ISBN converter to transform ISBN entries into @bibtex then copy and paste the outcome of
-        that convertion in the text area below
+        For ISBN you may first use https://www.bibtex.com/c/isbn-to-bibtex-converter/ or any other
+        online ISBN converter to transform ISBN entries into @bibtex then copy and paste the outcome
+        of that convertion in the text area below
       </div>
       <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
     </div>

@@ -12,7 +12,7 @@ defmodule Oli.Authoring.Editing.BibliographyEditor do
   Creates the context necessary to power a client side bibliography editor.
   """
   def create_context(project_slug, author) do
-    with {:ok, publication} <-
+    with {:ok, _publication} <-
            Publishing.project_working_publication(project_slug)
            |> trap_nil(),
          {:ok, bib_entries} <- Oli.Authoring.Editing.BibEntryEditor.list(project_slug, author)
