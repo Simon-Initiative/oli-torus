@@ -644,7 +644,7 @@ defmodule OliWeb.PageDeliveryController do
         }
       ) do
     user = conn.assigns.current_user
-    author = conn.assigns.current_author
+    author = conn.assigns[:current_author]
 
     section = conn.assigns.section
 
@@ -831,7 +831,7 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def is_admin?(conn) do
-    case conn.assigns.current_author do
+    case conn.assigns[:current_author] do
       nil -> false
       author -> Oli.Accounts.is_admin?(author)
     end
