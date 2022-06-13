@@ -23,6 +23,7 @@ const populateEntries = () => {
     stripeclient: ['./src/payment/stripe/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
+    keepalive: ['./src/phoenix/keep-alive.ts'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});

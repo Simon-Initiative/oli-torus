@@ -112,5 +112,6 @@ declare global {
       onReady: typeof onReady;
       CreateAccountPopup: (node: any, props: any) => void;
     };
+    keepAlive: () => void;
   }
 }

@@ -345,7 +345,7 @@ defmodule OliWeb.Api.ActivityController do
 
   defp has_access?(conn, user, section_slug, is_preview_mode) do
     if is_preview_mode do
-      is_admin? = Oli.Accounts.is_admin?(conn.assigns.current_author)
+      is_admin? = Oli.Accounts.is_admin?(conn.assigns[:current_author])
       Sections.is_instructor?(user, section_slug) or is_admin?
     else
       Sections.is_enrolled?(user.id, section_slug)
