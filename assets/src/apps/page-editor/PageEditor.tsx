@@ -445,7 +445,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.model.toJS() },
+      content: this.state.content.toPersistence(),
       releaseLock: false,
     };
 
