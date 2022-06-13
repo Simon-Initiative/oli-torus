@@ -195,27 +195,27 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     fetchBibEntrys(paging);
   };
 
-  const onDelete = (key: string) => {
-    confirmDelete().then((confirmed) => {
-      if (confirmed) {
-        const context = bibEntrys.get(key);
-        if (context) {
-          try {
-            BibPersistence.deleteEntry(props.projectSlug, context.id);
-            fetchBibEntrys(paging);
-          } catch (error) {
-            const message = createMessage({
-              guid: 'bib-delete-error',
-              canUserDismiss: true,
-              content: JSON.stringify(error),
-              severity: Severity.Error,
-            });
-            addAsUnique(message);
-          }
-        }
-      }
-    });
-  };
+  // const onDelete = (key: string) => {
+  //   confirmDelete().then((confirmed) => {
+  //     if (confirmed) {
+  //       const context = bibEntrys.get(key);
+  //       if (context) {
+  //         try {
+  //           BibPersistence.deleteEntry(props.projectSlug, context.id);
+  //           fetchBibEntrys(paging);
+  //         } catch (error) {
+  //           const message = createMessage({
+  //             guid: 'bib-delete-error',
+  //             canUserDismiss: true,
+  //             content: JSON.stringify(error),
+  //             severity: Severity.Error,
+  //           });
+  //           addAsUnique(message);
+  //         }
+  //       }
+  //     }
+  //   });
+  // };
 
   const onPlainCreateOrEdit = (key?: string) => {
     let context: BibEntry | undefined;
@@ -235,10 +235,10 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     return bibEntrys.toArray().map((item) => {
       const [key, bibEntry] = item;
 
-      const onDeleted = () => {
-        const thisKey = key;
-        onDelete(thisKey);
-      };
+      // const onDeleted = () => {
+      //   const thisKey = key;
+      //   onDelete(thisKey);
+      // };
 
       const onEdit = () => {
         const thisKey = key;
@@ -267,7 +267,6 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
       value.caseOf({
         just: (n) => {
           // :TODO: remove empty fields
-          console.log('the model so far ' + JSON.stringify(n));
           handleCreateOrEdit(JSON.stringify(n));
         },
         nothing: () => undefined,

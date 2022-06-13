@@ -183,7 +183,7 @@ export const fromEntryType = (entryType: string): CitationModel => {
 };
 
 export function isNameField(val: string): boolean {
-  if (
+  return (
     val === 'author' ||
     val === 'chair' ||
     val === 'collection-editor' ||
@@ -210,22 +210,16 @@ export function isNameField(val: string): boolean {
     val === 'script-writer' ||
     val === 'series-creator' ||
     val === 'translator'
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 
 export function isDateField(val: string): boolean {
-  if (
+  return (
     val === 'accessed' ||
     val === 'available-date' ||
     val === 'event-date' ||
     val === 'issued' ||
     val === 'original-date' ||
     val === 'submitted'
-  ) {
-    return true;
-  }
-  return false;
+  );
 }

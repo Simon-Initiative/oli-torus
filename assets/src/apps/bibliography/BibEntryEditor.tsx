@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { CitationModel, DateField, isDateField, isNameField, NameField } from './citation_model';
 import { TextInput } from 'components/common/TextInput';
 import { cslSchema, ignoredAttributes, toFriendlyLabel } from './common';
@@ -17,8 +17,6 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
   const allFields: Immutable.List<string> = Immutable.List<string>(
     Object.keys(cslSchema.items.properties) as any,
   );
-
-  useEffect(() => {}, []);
 
   const onEditString = (key: string, value: string) => {
     setModel({ ...model, [key]: value });

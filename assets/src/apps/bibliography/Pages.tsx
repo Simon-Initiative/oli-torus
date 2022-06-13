@@ -77,7 +77,7 @@ export const Pages: React.FC<PagingProps> = (props: PagingProps) => {
   return (
     <div className="d-flex justify-content-between">
       <div>{label}</div>
-      <nav aria-label="Activity Bank Paging">
+      <nav aria-label="Bibliography Paging">
         <ul className="pagination">
           <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
             <a className="page-link" onClick={() => onPageChange(previousPage)}>

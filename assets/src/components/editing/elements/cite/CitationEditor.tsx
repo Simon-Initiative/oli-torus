@@ -1,5 +1,5 @@
 import * as BibPersistence from 'data/persistence/bibentry';
-import React, { createRef, useEffect, useRef, useState } from 'react';
+import React, { createRef, useEffect, useState } from 'react';
 import { Citation } from 'data/content/model/elements/types';
 import { BibEntry } from 'data/content/bibentry';
 import { CommandContext } from '../commands/interfaces';
@@ -78,7 +78,6 @@ export const CitationEditor = (props: ExistingCiteEditorProps) => {
             onClick={() => onClick(bibEntry.slug)}
           >
             <div dangerouslySetInnerHTML={{ __html: bibOut() }}></div>
-            <div>Something</div>
           </button>
         );
       });

@@ -1,5 +1,5 @@
 import { BibEntry } from 'data/content/bibentry';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import * as Immutable from 'immutable';
 import { BibEntryView } from './BibEntryView';
 
@@ -8,11 +8,9 @@ export interface ReferencesProps {
 }
 
 export const References: React.FC<ReferencesProps> = (props: ReferencesProps) => {
-  const [bibEntrys, setBibEntrys] = useState<Immutable.OrderedMap<string, BibEntry>>(
+  const [bibEntrys] = useState<Immutable.OrderedMap<string, BibEntry>>(
     Immutable.OrderedMap<string, BibEntry>(props.bibReferences.map((b) => [b.slug, b])),
   );
-
-  useEffect(() => {}, []);
 
   const createBibEntryEditors = () => {
     return bibEntrys.toArray().map((item) => {
