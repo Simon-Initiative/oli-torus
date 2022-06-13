@@ -80,18 +80,6 @@ const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
     onApplyFix();
   };
 
-  const getCurrentRule = (problem: any) => {
-    switch (problem.type) {
-      case DiagnosticTypes.INVALID_TARGET_INIT:
-        return 'initState';
-      case DiagnosticTypes.INVALID_TARGET_COND:
-      case DiagnosticTypes.INVALID_VALUE:
-        return problem.item.rule;
-      case DiagnosticTypes.INVALID_TARGET_MUTATE:
-        return problem.item;
-    }
-  };
-
   const handleProblemClick = async (problem: any) => {
     await dispatch(setCurrentActivityFromSequence(error.activity.custom.sequenceId));
     setTimeout(() => {

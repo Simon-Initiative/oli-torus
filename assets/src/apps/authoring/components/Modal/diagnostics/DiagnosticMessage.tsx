@@ -79,10 +79,22 @@ export const InvalidInitStateTarget: React.FC<Message> = ({ problem }: Message) 
   </span>
 );
 
-export const InvalidOwner: React.FC<Message> = ({ problem }: Message) => (
+export const InvalidOwnerInitState: React.FC<Message> = ({ problem }: Message) => (
   <span>
-    Invalid owner targetted in (<strong>{problem?.item?.fact?.value}</strong>
-    <strong>{problem?.item?.rule?.name}</strong>).
+    Invalid init state: problem with owner target (<strong>{problem?.item?.fact?.value}</strong>).
+  </span>
+);
+
+export const InvalidOwnerCondition: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    Invalid condition: problem with owner target in (<strong>{problem?.item?.rule?.name}</strong>).
+  </span>
+);
+
+export const InvalidOwnerMutateState: React.FC<Message> = ({ problem }: Message) => (
+  <span>
+    Invalid mutate state: problem with owner target in (<strong>{problem?.item?.rule?.name}</strong>
+    ).
   </span>
 );
 
@@ -118,8 +130,14 @@ export const DiagnosticMessage: React.FC<Message> = (props) => {
     case DiagnosticTypes.INVALID_EXPRESSION:
       action = <InvalidPartExpressionValue {...props} />;
       break;
-    case DiagnosticTypes.INVALID_OWNER:
-      action = <InvalidOwner {...props} />;
+    case DiagnosticTypes.INVALID_OWNER_INIT:
+      action = <InvalidOwnerInitState {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_OWNER_CONDITION:
+      action = <InvalidOwnerCondition {...props} />;
+      break;
+    case DiagnosticTypes.INVALID_OWNER_MUTATE:
+      action = <InvalidOwnerMutateState {...props} />;
       break;
     default:
       action = <Fragment>No fix defined.</Fragment>;

@@ -152,7 +152,6 @@ const validateValue = (condition: JanusConditionProperties, rule: any, owner: an
 
 const validateOwner = (value: string, activityList: any[], sequence: any[]) => {
   const { id, screen } = parseTarget(value);
-  console.log(value);
   if (screen) {
     const act = getOwnerByScreenId(screen, activityList || [], sequence);
     const isValidPart = act?.content.partsLayout.find((part: Part) => part.id === id);
@@ -171,6 +170,16 @@ const getOwnerByScreenId = (screen: string, activityList: any[], sequence: any[]
     const seqItem = sequence.find((s) => s.resourceId === activity.id);
     return seqItem?.custom.sequenceId === screen;
   });
+};
+
+const getExpressionTarget = (value: any) => {
+  let val = Array.isArray(value) ? value[0].toString() : value.toString();
+  const expr = val.match(/{([^{^}]+)}/g);
+  if (expr && expr.length > 0) {
+    val = expr[0];
+  }
+
+  return val;
 };
 
 export const validators: Validator[] = [
@@ -407,7 +416,7 @@ export const validators: Validator[] = [
     },
   },
   {
-    type: DiagnosticTypes.INVALID_OWNER,
+    type: DiagnosticTypes.INVALID_OWNER_INIT,
     validate: (activity, sequence, parts, activityList) => {
       if (!sequence) {
         throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
@@ -417,12 +426,12 @@ export const validators: Validator[] = [
       }
       const owner = sequence.find((s) => s.resourceId === activity.id);
 
-      /* -- */
+      /* Init State Facts */
 
       const initStateFacts = activity.content?.custom?.facts;
       const brokenFactConditionValues: any[] = [];
       const brokenFacts = initStateFacts.reduce((broken: any[], fact: any) => {
-        const val = fact.value.toString();
+        const val = getExpressionTarget(fact.value);
         const fix = validateOwner(val, activityList || [], sequence);
         if (fix) {
           const error = {
@@ -442,17 +451,28 @@ export const validators: Validator[] = [
         }
       }
 
+      return [...brokenFactConditionValues];
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_OWNER_CONDITION,
+    validate: (activity, sequence, parts, activityList) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+
+      /* Conditions */
+
       const brokenConditionValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
         const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
 
         forEachCondition(conditions, (condition: JanusConditionProperties) => {
-          let val = Array.isArray(condition.value)
-            ? condition.value[0].toString()
-            : condition.value.toString();
-          const expr = val.match(/{([^{^}]+)}/g);
-          if (expr && expr.length > 0) {
-            val = expr[0];
-          }
+          const val = getExpressionTarget(condition.value);
+
           if (typeof val === 'string') {
             const fix = validateOwner(val, activityList || [], sequence);
             if (fix) {
@@ -487,9 +507,63 @@ export const validators: Validator[] = [
         return broken;
       }, []);
 
-      /* -- */
+      return [...brokenConditionValues];
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_OWNER_MUTATE,
+    validate: (activity, sequence, parts, activityList) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
 
-      return [...brokenConditionValues, ...brokenFactConditionValues];
+      /* Mutate Actions */
+
+      const brokenMutateValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const brokenActions = rule.event.params.actions.map((action: any) => {
+          if (action.type === 'mutateState') {
+            const val = getExpressionTarget(action.params.value);
+
+            if (typeof val === 'string') {
+              const fix = validateOwner(val, activityList || [], sequence);
+              if (fix) {
+                const error = {
+                  action,
+                  owner,
+                  ...rule,
+                  ...fix,
+                };
+                broken = [...broken, error];
+              }
+            } else if (Array.isArray(val)) {
+              val.forEach((v) => {
+                if (typeof v === 'string') {
+                  const fix = validateOwner(v, activityList || [], sequence);
+                  if (fix) {
+                    broken = [
+                      ...broken,
+                      {
+                        action,
+                        rule,
+                        owner,
+                        ...fix,
+                      },
+                    ];
+                  }
+                }
+              });
+            }
+          }
+          return null;
+        });
+        return [...broken, ...brokenActions];
+      }, []);
+
+      return [...brokenMutateValues];
     },
   },
 ];
