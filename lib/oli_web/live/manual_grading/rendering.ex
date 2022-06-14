@@ -5,8 +5,6 @@ defmodule OliWeb.ManualGrading.Rendering do
   alias Oli.Rendering.Activity.Html
   alias OliWeb.Router.Helpers, as: Routes
 
-  require Logger
-
   def create_rendering_context(attempt, part_attempts, activity_types_map, %Section{slug: section_slug}) do
 
     part_attempts_map = Enum.reduce(part_attempts, %{}, fn pa, m -> Map.put(m, pa.part_id, pa) end)
@@ -27,27 +25,15 @@ defmodule OliWeb.ManualGrading.Rendering do
   end
 
   def render(%Context{} = context, mode) do
-    # Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => Map.keys(context.activity_map) |> hd})
-    activity_id = Map.keys(context.activity_map) |> hd
+    activity_id = context.activity_map |> Map.keys() |> hd
     activity_summary = context.activity_map[activity_id]
 
-    case activity_summary.delivery_element do
-      "oli-adaptive-delivery" ->
-        # somewhere around here or before here I need to get the sequenceId from the page and map it to the activity model
-        case mode do
-          :instructor_preview ->
-            # should this go straight to the page instead of section overview?
-            preview_url = Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, context.section_slug)
-            ["<a target=_blank href=#{preview_url}>Preview Course Content</a>"]
-          _ ->
-            # ["<pre>#{context.page_id}</pre>"]
-            Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => activity_id})
-        end
-
-      _ ->
-        Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => activity_id})
+    with "oli-adaptive-delivery" <- activity_summary.delivery_element,
+          :instructor_preview <- mode do
+      preview_url = Routes.page_delivery_path(OliWeb.Endpoint, :page_preview, context.section_slug, context.revision_slug)
+      ["<button target=_blank href=#{preview_url} class=\"btn btn-outline-primary mr-2\" disabled>Preview Course Content</button><span class=\"badge badge-info\">Coming Soon</span>"]
+    else
+      _ -> Html.activity(%{context | mode: mode}, %{"purpose" => "none", "activity_id" => activity_id})
     end
-
   end
-
 end

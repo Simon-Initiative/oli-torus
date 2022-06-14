@@ -34,7 +34,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
         custom = Map.get(delivery, "custom", %{})
 
-        isManuallyGraded = Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
+        is_manually_graded = Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
         # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
         # TODO
 
@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
           negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
           currentAttemptNumber: attempt_number,
-          isManuallyGraded: isManuallyGraded
+          isManuallyGraded: is_manually_graded
         }
 
         activitiesRequiredForEvaluation =
@@ -112,26 +112,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         client_evaluations = to_client_results(score, out_of, part_inputs)
 
-        case scoringContext.isManuallyGraded do
-          true ->
-            # TODO: update part attempts?
-            {:ok, decodedResults}
+        if scoringContext.isManuallyGraded do
+          # TODO: update part attempts?
+          {:ok, decodedResults}
+        else
+          case apply_client_evaluation(
+                  section_slug,
+                  activity_attempt_guid,
+                  client_evaluations,
+                  :do_not_normalize
+                ) do
+            {:ok, _} ->
+              {:ok, decodedResults}
 
-          false ->
-            case apply_client_evaluation(
-                    section_slug,
-                    activity_attempt_guid,
-                    client_evaluations,
-                    :do_not_normalize
-                  ) do
-              {:ok, _} ->
-                {:ok, decodedResults}
+            {:error, err} ->
+              Logger.error("Error in apply client results! #{err}")
 
-              {:error, err} ->
-                Logger.error("Error in apply client results! #{err}")
-
-                {:error, err}
-            end
+              {:error, err}
+          end
         end
 
       {:error, err} ->
