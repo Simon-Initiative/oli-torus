@@ -56,7 +56,8 @@ export const updateRule = (rule: any, problem: any, activities: any) => {
 };
 
 export const updatePath =
-  (t: 'navigation' | 'mutateState') => (problem: any, fixed: string, activities: any) => {
+  (t: 'navigation' | 'mutateState', side: 'target' | 'value' = 'target') =>
+  (problem: any, fixed: string, activities: any) => {
     const { item } = problem;
 
     const ruleClone = cloneDeep(problem.item);
@@ -69,7 +70,7 @@ export const updatePath =
       ...action,
       params: {
         ...action.params,
-        target: fixed,
+        [side]: fixed,
       },
     };
     actionsClone[actions.indexOf(action)] = a;
@@ -98,58 +99,53 @@ export const updateConditionProperty =
 
       return updateRule(ruleClone, problem, activities);
     } else {
-      return updateInitComponentPath(problem, fixed, activities, true);
+      return updateInitComponentPath('value')(problem, fixed, activities);
     }
   };
 
-export const updateInitComponentPath = (
-  problem: any,
-  fixed: string,
-  activities: any,
-  isInitExpression?: boolean,
-) => {
-  const { item, owner } = problem;
-  const { fact } = item;
+export const updateInitComponentPath =
+  (t: 'value' | 'target') => (problem: any, fixed: string, activities: any) => {
+    const { item, owner } = problem;
+    const { fact } = item;
 
-  const factClone = clone(fact);
-  if (isInitExpression) {
-    factClone.value = fixed;
-  } else {
-    factClone.target = fixed;
-  }
-  const activity = activities.find((a: any) => a.id === owner.resourceId);
-  const existing = activity?.content.custom.facts.find((r: any) => r.id === fact.id);
+    const factClone = clone(fact);
+    factClone[t] = fixed;
+    const activity = activities.find((a: any) => a.id === owner.resourceId);
+    const existing = activity?.content.custom.facts.find((r: any) => r.id === fact.id);
 
-  const diff = JSON.stringify(factClone) !== JSON.stringify(existing);
-  /*console.log('RULE CHANGE: ', {
-    fact,
-    existing,
-    diff,
-  });*/
-  if (!existing) {
-    console.warn("rule not found, shouldn't happen!!!");
-    return;
-  }
+    const diff = JSON.stringify(factClone) !== JSON.stringify(existing);
+    /*console.log('RULE CHANGE: ', {
+      fact,
+      existing,
+      diff,
+    });*/
+    if (!existing) {
+      console.warn("rule not found, shouldn't happen!!!");
+      return;
+    }
 
-  if (diff) {
-    const activityClone = clone(activity);
-    const factsClone = activity ? [...activity.content.custom.facts] : [];
-    factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
-    activityClone.content.custom.facts = factsClone;
-    return saveActivity({ activity: activityClone, undoable: true });
-  }
-};
+    if (diff) {
+      const activityClone = clone(activity);
+      const factsClone = activity ? [...activity.content.custom.facts] : [];
+      factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
+      activityClone.content.custom.facts = factsClone;
+      return saveActivity({ activity: activityClone, undoable: true });
+    }
+  };
 
 const updaters: any = {
   [DiagnosticTypes.DUPLICATE]: updateId,
   [DiagnosticTypes.PATTERN]: updateId,
   [DiagnosticTypes.BROKEN]: updatePath('navigation'),
-  [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath,
+  [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath('target'),
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
   [DiagnosticTypes.INVALID_EXPRESSION]: updatePartsWithCorrectExpression,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
+  [DiagnosticTypes.INVALID_OWNER_INIT]: updateInitComponentPath('value'),
+  [DiagnosticTypes.INVALID_OWNER_CONDITION]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_OWNER_MUTATE]: updatePath('mutateState', 'value'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };
 
