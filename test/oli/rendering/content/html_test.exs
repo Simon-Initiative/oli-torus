@@ -65,7 +65,7 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~
                "<span class=\"formula-inline\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></span>"
 
-      assert rendered_html_string =~ "<span class=\"formula-inline\">\\[x^2 + y^2 = z^2\\]</span>"
+      assert rendered_html_string =~ "<span class=\"formula-inline\">\\(x^2 + y^2 = z^2\\)</span>"
     end
 
     test "renders malformed content gracefully", %{author: author} do
