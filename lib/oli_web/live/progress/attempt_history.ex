@@ -4,12 +4,13 @@ defmodule OliWeb.Progress.AttemptHistory do
 
   prop resource_attempts, :list, required: true
   prop section, :struct, required: true
+  prop context, :struct, required: true
 
   def render(assigns) do
     ~F"""
     <div class="list-group">
       {#for attempt <- @resource_attempts}
-        <PageAttemptSummary id={attempt.id} attempt={attempt} section={@section}/>
+        <PageAttemptSummary id={attempt.id} attempt={attempt} section={@section} {=@context}/>
       {/for}
     </div>
     """

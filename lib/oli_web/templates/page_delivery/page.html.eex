@@ -14,7 +14,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     <div class="mb-2">
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= date(@resource_attempt.inserted_at, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :inserted_at, @session_context) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
@@ -35,7 +35,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     <h3>Awaiting Instructor Grading</h3>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= date(@resource_attempt.inserted_at, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :inserted_at, @session_context) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>

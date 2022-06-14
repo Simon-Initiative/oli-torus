@@ -1,8 +1,11 @@
 defmodule OliWeb.Progress.PageAttemptSummary do
   use OliWeb, :surface_component
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.Common.Utils
+
   prop attempt, :struct, required: true
   prop section, :struct, required: true
+  prop context, :struct, required: true
 
   @spec render(
           atom
@@ -20,7 +23,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
         <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
         <span>Not Submitted Yet</span>
       </div>
-      <p class="mb-1">Started: {date(@attempt.inserted_at)}</p>
+      <p class="mb-1">Started: {Utils.render_date(@attempt, :inserted_at, @context)}</p>
       <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.</small>
     </li>
     """

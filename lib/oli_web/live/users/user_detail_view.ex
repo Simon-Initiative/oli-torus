@@ -16,7 +16,7 @@ defmodule OliWeb.Users.UsersDetailView do
     ConfirmEmailModal
   }
 
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias OliWeb.Pow.UserContext
   alias OliWeb.Router.Helpers, as: Routes
@@ -50,9 +50,10 @@ defmodule OliWeb.Users.UsersDetailView do
 
   def mount(
         %{"user_id" => user_id},
-        %{"csrf_token" => csrf_token},
+        %{"csrf_token" => csrf_token} = session,
         socket
       ) do
+    context = SessionContext.init(session)
     user = user_with_platform_roles(user_id)
 
     case user do
@@ -62,6 +63,7 @@ defmodule OliWeb.Users.UsersDetailView do
       user ->
         {:ok,
          assign(socket,
+           context: context,
            breadcrumbs: set_breadcrumbs(user),
            user: user,
            csrf_token: csrf_token,
@@ -107,8 +109,8 @@ defmodule OliWeb.Users.UsersDetailView do
             </section>
             <ReadOnly label="Research Opt Out" value={boolean(@user.research_opt_out)}/>
             <ReadOnly label="Email Confirmed" value={date(@user.email_confirmed_at)}/>
-            <ReadOnly label="Created" value={date(@user.inserted_at)}/>
-            <ReadOnly label="Last Updated" value={date(@user.updated_at)}/>
+            <ReadOnly label="Created" value={render_date(@user, :inserted_at, @context)}/>
+            <ReadOnly label="Last Updated" value={render_date(@user, :updated_at, @context)}/>
             <Submit class="float-right btn btn-md btn-primary mt-2">Save</Submit>
           </Form>
         </Group>
@@ -119,7 +121,7 @@ defmodule OliWeb.Users.UsersDetailView do
                 <li class="list-group-item">
                   <div class="d-flex pb-2 mb-2 border-bottom">
                     <div class="flex-grow-1">{lti_params.issuer}</div>
-                    <div>Last Updated: {date(lti_params.updated_at)}</div>
+                    <div>Last Updated: {render_date(lti_params, :updated_at, @context)}</div>
                   </div>
                   <div style="max-height: 400px; overflow: scroll;">
                     <pre> <code
