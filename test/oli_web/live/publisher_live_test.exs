@@ -323,7 +323,7 @@ defmodule OliWeb.PublisherLiveTest do
     test "redirects to index view and displays error message when publisher does not exist", %{
       conn: conn
     } do
-      conn = get(conn, live_view_show_route(1000))
+      conn = get(conn, live_view_show_route(-1))
 
       assert conn.private.plug_session["phoenix_flash"]["info"] ==
                "That publisher does not exist or it was deleted."
