@@ -9,6 +9,9 @@ export enum DiagnosticTypes {
   INVALID_TARGET_COND = 'invalid_target_cond',
   INVALID_EXPRESSION_VALUE = 'invalid_expression_value',
   INVALID_EXPRESSION = 'invalid_expression',
+  INVALID_OWNER_INIT = 'invalid_owner_init',
+  INVALID_OWNER_CONDITION = 'invalid_owner_condition',
+  INVALID_OWNER_MUTATE = 'invalid_owner_mutate',
   DEFAULT = '',
 }
 
@@ -19,4 +22,7 @@ export const DiagnosticRuleTypes = [
   DiagnosticTypes.INVALID_VALUE,
   DiagnosticTypes.INVALID_EXPRESSION_VALUE,
   DiagnosticTypes.INVALID_EXPRESSION,
+  DiagnosticTypes.INVALID_OWNER_INIT,
+  DiagnosticTypes.INVALID_OWNER_CONDITION,
+  DiagnosticTypes.INVALID_OWNER_MUTATE,
 ];
