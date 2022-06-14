@@ -152,6 +152,7 @@ defmodule Oli.MixProject do
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:html_sanitize_ex, "~> 1.4"},
       {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.3"},

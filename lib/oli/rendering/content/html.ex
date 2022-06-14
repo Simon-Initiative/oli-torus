@@ -8,6 +8,8 @@ defmodule Oli.Rendering.Content.Html do
 
   alias Oli.Rendering.Context
   alias Phoenix.HTML
+  alias Oli.Rendering.Content.MathMLSanitizer
+  alias HtmlSanitizeEx.Scrubber
   import Oli.Rendering.Utils
 
   @behaviour Oli.Rendering.Content
@@ -153,6 +155,51 @@ defmodule Oli.Rendering.Content.Html do
 
   def li(%Context{} = _context, next, _) do
     ["<li>", next.(), "</li>\n"]
+  end
+
+  def formula_class(false), do: "formula"
+  def formula_class(true), do: "formula-inline"
+
+  def formula(context, next, properties, inline \\ false)
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "latex", "src" => src},
+        true
+      ) do
+    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "latex", "src" => src},
+        false
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(src), "\\]</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "mathml", "src" => src},
+        inline
+      ) do
+    [
+      "<span class=\"#{formula_class(inline)}\">",
+      Scrubber.scrub(src, MathMLSanitizer),
+      "</span>\n"
+    ]
+  end
+
+  def formula(%Oli.Rendering.Context{} = _context, next, _, inline) do
+    # The catch-all formula will handle anything with a children property, which should always be richtext
+    ["<span class=\"#{formula_class(inline)}\">", next.(), "</span>\n"]
+  end
+
+  def formula_inline(context, next, map) do
+    formula(context, next, map, true)
   end
 
   def math(%Context{} = _context, next, _) do
