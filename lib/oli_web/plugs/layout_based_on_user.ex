@@ -10,7 +10,7 @@ defmodule Oli.Plugs.LayoutBasedOnUser do
 
     # If someone is logged in as a system admin, prioritize that (although they
     # might be logged in as instructor) and set the root layout to be workspace.
-    case {conn.assigns.current_author, conn.assigns.current_user} do
+    case {conn.assigns[:current_author], conn.assigns[:current_user]} do
       {%Author{system_role_id: ^admin_role_id}, _} ->
         Controller.put_root_layout(conn, {OliWeb.LayoutView, "workspace.html"})
 

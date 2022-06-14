@@ -32,6 +32,7 @@ defmodule OliWeb.EnsureUserNotLockedPlug do
   defp maybe_halt(true, conn) do
     conn
     |> Plug.delete()
+    |> PowPersistentSession.Plug.delete()
     |> Controller.put_flash(:error, "Sorry, your account is locked. Please contact support.")
     |> then(fn conn ->
       if conn.private.pow_config |> Keyword.get(:user) == Oli.Accounts.Author do

@@ -99,12 +99,8 @@ defmodule OliWeb.DeliveryController do
 
   def link_account(conn, _params) do
     # sign out current author account
-    conn =
-      conn
-      |> use_pow_config(:author)
-      |> Pow.Plug.delete()
-
     conn
+    |> delete_pow_user(:author)
     |> render_link_account_form()
   end
 
@@ -218,12 +214,8 @@ defmodule OliWeb.DeliveryController do
 
   def create_and_link_account(conn, _params) do
     # sign out current author account
-    conn =
-      conn
-      |> use_pow_config(:author)
-      |> Pow.Plug.delete()
-
     conn
+    |> delete_pow_user(:author)
     |> render_create_and_link_form()
   end
 
@@ -232,8 +224,9 @@ defmodule OliWeb.DeliveryController do
     |> use_pow_config(:author)
     |> Pow.Plug.create_user(user_params)
     |> case do
-      {:ok, _user, conn} ->
+      {:ok, user, conn} ->
         conn
+        |> PowPersistentSession.Plug.create(user)
         |> put_flash(
           :info,
           Pow.Phoenix.Controller.messages(conn, Pow.Phoenix.Messages).user_has_been_created(conn)
@@ -300,15 +293,13 @@ defmodule OliWeb.DeliveryController do
 
   def signin(conn, %{"section" => section}) do
     conn
-    |> use_pow_config(:user)
-    |> Pow.Plug.delete()
+    |> delete_pow_user(:user)
     |> redirect(to: Routes.pow_session_path(conn, :new, section: section))
   end
 
   def create_account(conn, %{"section" => section}) do
     conn
-    |> use_pow_config(:user)
-    |> Pow.Plug.delete()
+    |> delete_pow_user(:user)
     |> redirect(to: Routes.pow_registration_path(conn, :new, section: section))
   end
 
@@ -353,8 +344,7 @@ defmodule OliWeb.DeliveryController do
           )
 
           conn
-          |> OliWeb.Pow.PowHelpers.use_pow_config(:user)
-          |> Pow.Plug.create(user)
+          |> create_pow_user(:user, user)
           |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
         end
       else

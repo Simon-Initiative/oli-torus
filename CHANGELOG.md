@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Restore ability to edit title of basic pages
+
 ### Enhancements
 
 ## 0.19.4 (2022-06-09)
@@ -21,6 +23,7 @@
 - Allow for broader range of number of attempts, including unlimited, for scored pages
 - Add survey authoring support (behind feature flag)
 - Add File Upload activity
+- Simplify objective creation, improve attachment UX
 
 ## 0.19.3 (2022-05-17)
 

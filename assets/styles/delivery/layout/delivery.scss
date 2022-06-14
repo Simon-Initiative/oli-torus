@@ -14,13 +14,18 @@ body {
 
   .card-title {
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow: auto;
     white-space: nowrap;
   }
 
   .fade-text {
-    height: 4em;
-    overflow: scroll;
+    overflow: auto;
+    max-height: 10vh;
+    text-overflow: ellipsis;
+    color: $body-color;
+    .card-text {
+      overflow: auto;
+    }
   }
 
   .small-date {
