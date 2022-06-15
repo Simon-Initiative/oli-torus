@@ -468,7 +468,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
   defp convert_to_activity_ids(%{"content" => content} = update) do
-    content = convert_bib_slugs_to_ids(content)
     found_activities =
       Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
         type == "activity-reference"
@@ -509,30 +508,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp convert_to_activity_ids(update) do
     {:ok, update}
   end
-
-  defp convert_bib_slugs_to_ids (content) do
-    bibrefs = Map.get(content, "bibrefs", [])
-    bib_slugs = Enum.filter(bibrefs, fn x -> Map.get(x, "type") == "activity" end)
-    |> Enum.map(fn x -> Map.get(x, "id") end)
-    bibrefs = if length(bib_slugs) > 0 do
-      bib_slug_to_id = Oli.Resources.map_resource_ids_from_slugs(bib_slugs)
-          |> Enum.reduce(%{}, fn e, m ->
-            Map.put(m, Map.get(e, :slug), Map.get(e, :resource_id))
-          end)
-      Enum.map(bibrefs, fn x ->
-        if(Map.get(x, "type") == "activity") do
-          Map.merge(x, %{"id" => Map.get(bib_slug_to_id, Map.get(x, "id"))})
-        else
-          x
-        end
-      end)
-    else
-      bibrefs
-    end
-
-    Map.replace(content, "bibrefs", bibrefs)
-  end
-
 
   # For the activity ids found in content, convert them to activity revision slugs
   defp convert_to_activity_slugs(content, publication_id) do

@@ -274,26 +274,7 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    bib_ids = Map.get(revision.content, "bibrefs", [])
-
-    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
-      if Map.get(x, "type") == "activity" do
-        activity_summary = Map.get(activity_map, Map.get(x, "id"))
-        if activity_summary == nil do
-          acc
-        else
-          acc ++ Enum.reduce(activity_summary.bib_refs, [], fn y, acx ->
-            acx ++ [Map.get(y, "id")]
-            end)
-        end
-      else
-        acc ++ [Map.get(x, "id")]
-      end
-    end)
-
-    bib_revisions = Resolver.from_resource_id(section_slug, merged_bib_ids)
-
-    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+    bib_entrys = PageContext.assemble_bib_entrys(revision.content, activity_map, section_slug)
 
     all_activities = Activities.list_activity_registrations()
 
@@ -882,17 +863,6 @@ defmodule OliWeb.PageDeliveryController do
     fn datetime ->
       date(datetime, conn: conn, precision: :minutes)
     end
-  end
-
-  defp serialize_revision(%Oli.Resources.Revision{} = revision, merged_bib_ids) do
-    ordinal = Enum.find_index(merged_bib_ids, fn x -> x == revision.resource_id end) + 1
-    %{
-      title: revision.title,
-      id: revision.resource_id,
-      slug: revision.slug,
-      content: revision.content,
-      ordinal: ordinal
-    }
   end
 
   defp url_from_desc(_, _, nil), do: nil

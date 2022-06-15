@@ -29,9 +29,6 @@ export function edit(
     if (value.type === 'cite') {
       citationRefs.push({ type: 'bibentry', id: value.bibref });
     }
-    if (value.type === 'activity-reference') {
-      citationRefs.push({ type: 'activity', id: value.activitySlug });
-    }
   });
   update.content.bibrefs = citationRefs;
 

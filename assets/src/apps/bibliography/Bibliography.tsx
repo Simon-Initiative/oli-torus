@@ -1,9 +1,9 @@
-import { BibEntry, Paging } from 'data/content/bibentry';
+import { BibEntry } from 'data/content/bibentry';
 import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import * as BibPersistence from 'data/persistence/bibentry';
-import { Pages } from './Pages';
+
 import * as Immutable from 'immutable';
 // import { DeleteBibEntry } from './DeleteBibEntry';
 import { BibEntryView } from './BibEntryView';
@@ -18,6 +18,7 @@ import { Maybe } from 'tsmonad';
 import { CitationModel, fromEntryType } from './citation_model';
 import { BibEntryEditor } from './BibEntryEditor';
 import { cslSchema, toFriendlyLabel } from './common';
+import { Page, Paging } from 'components/misc/Paging';
 
 const ajv = new Ajv({ removeAdditional: true, allowUnionTypes: true });
 const validate = ajv.compile(cslSchema);
@@ -128,7 +129,7 @@ export interface BibliographyProps {
 
 const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => {
   const [totalCount, setTotalCount] = useState<number>(props.totalCount);
-  const [paging, setPaging] = useState<Paging>(defaultPaging());
+  const [paging, setPaging] = useState<Page>(defaultPaging());
   const [bibEntrys, setBibEntrys] = useState<Immutable.OrderedMap<string, BibEntry>>(
     Immutable.OrderedMap<string, BibEntry>(),
   );
@@ -138,7 +139,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     fetchBibEntrys(defaultPaging());
   }, []);
 
-  const fetchBibEntrys = (paging: Paging) => {
+  const fetchBibEntrys = (paging: Page) => {
     BibPersistence.retrieve(props.projectSlug, paging).then((result) => {
       if (result.result === 'success') {
         setPaging(paging);
@@ -191,7 +192,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     }
   };
 
-  const onPageChange = (paging: Paging) => {
+  const onPageChange = (paging: Page) => {
     fetchBibEntrys(paging);
   };
 
@@ -280,7 +281,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     totalCount === 0 ? (
       'No results'
     ) : (
-      <Pages totalResults={totalCount} page={paging} onPageChange={onPageChange} />
+      <Paging totalResults={totalCount} page={paging} onPageChange={onPageChange} />
     );
 
   const createEntryDropdown = (
@@ -319,7 +320,6 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
   return (
     <div className="resource-editor row">
       <div className="col-12">
-        <h1>Bibliography Editor</h1>
         <Banner
           dismissMessage={(msg) => setMessages(messages.filter((m) => msg.guid !== m.guid))}
           executeAction={(message, action) => action.execute(message)}

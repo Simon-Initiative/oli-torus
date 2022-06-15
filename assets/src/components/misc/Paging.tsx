@@ -1,10 +1,14 @@
 import * as React from 'react';
-import * as Bank from 'data/content/bank';
+
+export interface Page {
+  offset: number;
+  limit: number;
+}
 
 export interface PagingProps {
   totalResults: number;
-  page: Bank.Paging;
-  onPageChange: (page: Bank.Paging) => void;
+  page: Page;
+  onPageChange: (page: Page) => void;
   children?: (item: any, index: number) => React.ReactNode;
 }
 
@@ -56,7 +60,7 @@ export const Paging: React.FC<PagingProps> = (props: PagingProps) => {
 
   for (let i = 0; i < renderedPages; i++) {
     pages.push(
-      <li className={`page-item ${start + i === currentPage ? 'active' : ''}`}>
+      <li key={i} className={`page-item ${start + i === currentPage ? 'active' : ''}`}>
         <a
           className="page-link"
           onClick={() => onPageChange({ offset: (start + i) * page.limit, limit: page.limit })}

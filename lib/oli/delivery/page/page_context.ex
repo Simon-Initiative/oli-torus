@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
-  
+
   @doc """
   Creates the page context required to render a page for reviewing a historical
   attempt.
@@ -63,27 +63,6 @@ defmodule Oli.Delivery.Page.PageContext do
 
     page_revision = hd(resource_attempts).revision
 
-    bib_ids = Map.get(page_revision.content, "bibrefs", [])
-
-    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
-      if Map.get(x, "type") == "activity" do
-        activity_summary = Map.get(activities, Map.get(x, "id"))
-        if activity_summary == nil do
-          acc
-        else
-          acc ++ Enum.reduce(activity_summary.bib_refs, [], fn y, acx ->
-            acx ++ [Map.get(y, "id")]
-           end)
-        end
-      else
-        acc ++ [Map.get(x, "id")]
-      end
-    end)
-
-    bib_revisions = DeliveryResolver.from_resource_id(section_slug, merged_bib_ids)
-
-    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
-
     %PageContext{
       review_mode: true,
       page: page_revision,
@@ -93,7 +72,7 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: bib_entrys
+      bib_revisions: assemble_bib_entrys(page_revision.content, activities, section_slug)
     }
   end
 
@@ -148,21 +127,32 @@ defmodule Oli.Delivery.Page.PageContext do
         page_revision
       end
 
-    bib_ids = Map.get(page_revision.content, "bibrefs", [])
+    %PageContext{
+      review_mode: false,
+      page: page_revision,
+      progress_state: progress_state,
+      resource_attempts: resource_attempts,
+      activities: activities,
+      objectives:
+        rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
+      latest_attempts: latest_attempts,
+      bib_revisions: assemble_bib_entrys(page_revision.content, activities, section_slug)
+    }
+  end
 
-    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
+  def assemble_bib_entrys(page_content, activity_summaries, section_slug) do
+    bib_ids = Map.get(page_content, "bibrefs", []) |> Enum.reduce([], fn x, acc ->
       if Map.get(x, "type") == "activity" do
-        activity_summary = Map.get(activities, Map.get(x, "id"))
-        if activity_summary == nil do
-          acc
-        else
-          acc ++ Enum.reduce(activity_summary.bib_refs, [], fn y, acx ->
-            acx ++ [Map.get(y, "id")]
-           end)
-        end
+        acc
       else
         acc ++ [Map.get(x, "id")]
       end
+    end)
+
+    merged_bib_ids = Enum.reduce(Map.values(activity_summaries), bib_ids, fn x, acc ->
+      acc ++ Enum.reduce(x.bib_refs, [], fn y, acx ->
+        acx ++ [Map.get(y, "id")]
+      end)
     end)
 
     # Remove duplicates
@@ -176,19 +166,7 @@ defmodule Oli.Delivery.Page.PageContext do
 
     bib_revisions = DeliveryResolver.from_resource_id(section_slug, merged_bib_ids)
 
-    bib_entrys = Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
-
-    %PageContext{
-      review_mode: false,
-      page: page_revision,
-      progress_state: progress_state,
-      resource_attempts: resource_attempts,
-      activities: activities,
-      objectives:
-        rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
-      latest_attempts: latest_attempts,
-      bib_revisions: bib_entrys
-    }
+    Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
   end
 
   defp assemble_final_context(state, resource_attempt, latest_attempts, %{

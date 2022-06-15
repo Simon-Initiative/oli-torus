@@ -59,38 +59,10 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
-    bib_ids = Map.get(content, "bibrefs", [])
-
-    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
-      if Map.get(x, "type") == "activity" do
-        revision = Enum.find(revisions, fn r -> r.resource_id == Map.get(x, "id") end)
-        if revision == nil do
-          acc
-        else
-          acc ++ Enum.reduce(Map.get(revision.content, "bibrefs", []), [], fn y, acx ->
-            acx ++ [Map.get(y, "id")]
-           end)
-        end
-      else
-        acc ++ [Map.get(x, "id")]
-      end
-    end)
-
-    # Remove duplicates
-    merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->
-      if Enum.any?(acc, fn i -> i == x end) do
-        acc
-      else
-        acc ++ [x]
-      end
-    end)
-
-    bib_revisions = resolver.from_resource_id(source.section_slug, merged_bib_ids)
-
     %ProviderResult{
       errors: [],
       revisions: revisions,
-      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end),
+      bib_revisions: assemble_bib_entries(content, revisions, source.section_slug, resolver),
       transformed_content: content,
       unscored: unscored
     }
@@ -106,21 +78,29 @@ defmodule Oli.Delivery.ActivityProvider do
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
-    bib_ids = Map.get(content, "bibrefs", [])
 
-    merged_bib_ids = Enum.reduce(bib_ids, [], fn x, acc ->
+    %ProviderResult{
+      errors: errors,
+      revisions: only_revisions,
+      bib_revisions: assemble_bib_entries(content, only_revisions, source.section_slug, resolver),
+      transformed_content: Map.put(content, "model", Enum.reverse(model)),
+      unscored: MapSet.new()
+    }
+  end
+
+  defp assemble_bib_entries(content, only_revisions, section_slug, resolver) do
+    bib_ids = Map.get(content, "bibrefs", []) |> Enum.reduce([], fn x, acc ->
       if Map.get(x, "type") == "activity" do
-        revision = Enum.find(only_revisions, fn r -> r.resource_id == Map.get(x, "id") end)
-        if revision == nil do
-          acc
-        else
-          acc ++ Enum.reduce(Map.get(revision.content, "bibrefs", []), [], fn y, acx ->
-            acx ++ [Map.get(y, "id")]
-           end)
-        end
+        acc
       else
         acc ++ [Map.get(x, "id")]
       end
+    end)
+
+    merged_bib_ids = Enum.reduce(only_revisions, bib_ids, fn x, acc ->
+      acc ++ Enum.reduce(Map.get(x.content, "bibrefs", []), [], fn y, acx ->
+        acx ++ [Map.get(y, "id")]
+      end)
     end)
 
     # Remove duplicates
@@ -132,15 +112,10 @@ defmodule Oli.Delivery.ActivityProvider do
       end
     end)
 
-    bib_revisions = resolver.from_resource_id(source.section_slug, merged_bib_ids)
+    bib_revisions = resolver.from_resource_id(section_slug, merged_bib_ids)
 
-    %ProviderResult{
-      errors: errors,
-      revisions: only_revisions,
-      bib_revisions: Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end),
-      transformed_content: Map.put(content, "model", Enum.reverse(model)),
-      unscored: MapSet.new()
-    }
+    Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
+
   end
 
   # Make a pass through the revision content model to gather all statically referenced activity ids
