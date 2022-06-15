@@ -119,6 +119,25 @@
     @extend .embed-responsive-item;
   }
 
+  .formula-inline {
+    display: inline-block;
+    background-color: darken($body-bg, 5%);
+    margin: 0px 0.5em;
+    padding: 2px 0.5em;
+    vertical-align: middle;
+    mjx-container[display='true'] {
+      margin: 0px !important;
+    }
+  }
+
+  .formula {
+    display: block;
+    background-color: darken($body-bg, 5%);
+    text-align: center;
+    margin: 8px;
+    padding: 12px;
+  }
+
   .figure-wrapper {
     display: flex;
     justify-content: center;

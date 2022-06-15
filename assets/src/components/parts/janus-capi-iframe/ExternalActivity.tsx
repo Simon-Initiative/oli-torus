@@ -735,7 +735,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         value = JSON.stringify(val);
       }
       response.values.responseType = 'success';
-      response.values.value = value?.length ? value : '{}';
+      response.values.value = value?.length ? value : '[]';
       response.values.exists = exists;
     } catch (err) {
       response.values.responseType = 'error';

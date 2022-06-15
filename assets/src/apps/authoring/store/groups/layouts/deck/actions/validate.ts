@@ -20,6 +20,7 @@ import {
   SequenceEntryType,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
+import { Part } from 'components/activities';
 import { Environment } from 'janus-script';
 import has from 'lodash/has';
 import uniqBy from 'lodash/uniqBy';
@@ -45,6 +46,7 @@ export interface Validator {
     activity: IActivity,
     sequence?: SequenceEntry<SequenceEntryType>[],
     parts?: any[],
+    allActivities?: any[],
   ) => DiagnosticProblem[];
 }
 
@@ -63,6 +65,26 @@ const generateSuggestion = (id: string, dupBlacklist: string[] = []): string => 
     return generateSuggestion(newId, dupBlacklist);
   }
   return newId;
+};
+
+const parseTarget = (target: string) => {
+  let screen: string | undefined;
+  if (target.indexOf('|') > -1) {
+    const screenSplit = target.split('|');
+    screen = screenSplit[0].replace('{', '');
+    screen = screen.replace('(', '');
+  }
+
+  const targetNameIdx = target.search(/app|variables|stage|session/);
+  const split = target.slice(targetNameIdx).split('.');
+  const type = split[0] as string;
+  const id = split[1] as string;
+
+  return {
+    type,
+    id,
+    screen,
+  };
 };
 
 const mapErrorProblems = (list: any[], type: string, seq: any[], blackList: any[]) =>
@@ -85,25 +107,23 @@ const validateTarget = (target: string, activity: any, parts: any[]) => {
     return false;
   }
 
-  const targetNameIdx = target.search(/app|variables|stage|session/);
-  const split = target.slice(targetNameIdx).split('.');
-  const type = split[0] as string;
-  const targetId = split[1] as string;
-  if (!targetId) {
+  const { id, type } = parseTarget(target);
+  if (!id) {
     return false;
   }
   switch (type) {
     case 'app':
-      return targetId === 'active' || parts.some((p: any) => p.id === targetId);
+      return id === 'active' || parts.some((p: any) => p.id === id);
     case 'variables':
     case 'stage':
-      return parts.some((p: any) => p.id === targetId);
+      return parts.some((p: any) => p.id === id);
     case 'session':
-      return !!targetId;
+      return !!id;
     default:
       return false;
   }
 };
+
 const validateValueExpression = (condition: JanusConditionProperties, rule: any, owner: any) => {
   if (typeof condition.value === 'string') {
     const evaluatedExp = checkExpressionsWithWrongBrackets(condition.value);
@@ -128,6 +148,38 @@ const validateValue = (condition: JanusConditionProperties, rule: any, owner: an
         suggestedFix: ``,
       }
     : null;
+};
+
+const validateOwner = (value: string, activityList: any[], sequence: any[]) => {
+  const { id, screen } = parseTarget(value);
+  if (screen) {
+    const act = getOwnerByScreenId(screen, activityList || [], sequence);
+    const isValidPart = act?.content.partsLayout.find((part: Part) => part.id === id);
+
+    if (!isValidPart) {
+      return {
+        suggestedFix: value,
+      };
+    }
+  }
+  return null;
+};
+
+const getOwnerByScreenId = (screen: string, activityList: any[], sequence: any[]) => {
+  return activityList?.find((activity) => {
+    const seqItem = sequence.find((s) => s.resourceId === activity.id);
+    return seqItem?.custom.sequenceId === screen;
+  });
+};
+
+const getExpressionTarget = (value: any) => {
+  let val = Array.isArray(value) ? value[0].toString() : value.toString();
+  const expr = val.match(/{([^{^}]+)}/g);
+  if (expr && expr.length > 0) {
+    val = expr[0];
+  }
+
+  return val;
 };
 
 export const validators: Validator[] = [
@@ -363,11 +415,162 @@ export const validators: Validator[] = [
       return [...brokenConditionValues, ...brokenFactConditionValues];
     },
   },
+  {
+    type: DiagnosticTypes.INVALID_OWNER_INIT,
+    validate: (activity, sequence, parts, activityList) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+
+      /* Init State Facts */
+
+      const initStateFacts = activity.content?.custom?.facts;
+      const brokenFactConditionValues: any[] = [];
+      const brokenFacts = initStateFacts.reduce((broken: any[], fact: any) => {
+        const val = getExpressionTarget(fact.value);
+        const fix = validateOwner(val, activityList || [], sequence);
+        if (fix) {
+          const error = {
+            fact,
+            owner,
+            ...fix,
+          };
+          broken = [...broken, error];
+        }
+        return broken;
+      }, []);
+
+      if (brokenFacts?.length) {
+        const updatedFacts = brokenFacts?.filter((fact: any) => fact);
+        if (updatedFacts) {
+          brokenFactConditionValues.push(...updatedFacts);
+        }
+      }
+
+      return [...brokenFactConditionValues];
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_OWNER_CONDITION,
+    validate: (activity, sequence, parts, activityList) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+
+      /* Conditions */
+
+      const brokenConditionValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const conditions = [...(rule.conditions.all || []), ...(rule.conditions.any || [])];
+
+        forEachCondition(conditions, (condition: JanusConditionProperties) => {
+          const val = getExpressionTarget(condition.value);
+
+          if (typeof val === 'string') {
+            const fix = validateOwner(val, activityList || [], sequence);
+            if (fix) {
+              const error = {
+                condition,
+                owner,
+                rule,
+                ...fix,
+              };
+              broken = [...broken, error];
+            }
+          } else if (Array.isArray(val)) {
+            val.forEach((v) => {
+              if (typeof v === 'string') {
+                const fix = validateOwner(v, activityList || [], sequence);
+                if (fix) {
+                  broken = [
+                    ...broken,
+                    {
+                      condition,
+                      rule,
+                      owner,
+                      ...fix,
+                    },
+                  ];
+                }
+              }
+            });
+          }
+        });
+
+        return broken;
+      }, []);
+
+      return [...brokenConditionValues];
+    },
+  },
+  {
+    type: DiagnosticTypes.INVALID_OWNER_MUTATE,
+    validate: (activity, sequence, parts, activityList) => {
+      if (!sequence) {
+        throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
+      }
+      if (!activity.content?.partsLayout) {
+        throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
+      }
+      const owner = sequence.find((s) => s.resourceId === activity.id);
+
+      /* Mutate Actions */
+
+      const brokenMutateValues = activity.authoring.rules.reduce((broken: any[], rule: any) => {
+        const brokenActions = rule.event.params.actions.map((action: any) => {
+          if (action.type === 'mutateState') {
+            const val = getExpressionTarget(action.params.value);
+
+            if (typeof val === 'string') {
+              const fix = validateOwner(val, activityList || [], sequence);
+              if (fix) {
+                const error = {
+                  action,
+                  owner,
+                  ...rule,
+                  ...fix,
+                };
+                broken = [...broken, error];
+              }
+            } else if (Array.isArray(val)) {
+              val.forEach((v) => {
+                if (typeof v === 'string') {
+                  const fix = validateOwner(v, activityList || [], sequence);
+                  if (fix) {
+                    broken = [
+                      ...broken,
+                      {
+                        action,
+                        rule,
+                        owner,
+                        ...fix,
+                      },
+                    ];
+                  }
+                }
+              });
+            }
+          }
+          return null;
+        });
+        return [...broken, ...brokenActions];
+      }, []);
+
+      return [...brokenMutateValues];
+    },
+  },
 ];
 
 export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) => {
   const hierarchy = getHierarchy(sequence);
-  console.log('diagnosePage', { page, allActivities, hierarchy, sequence });
+  //console.log('diagnosePage', { page, allActivities, hierarchy, sequence });
   const errors: DiagnosticError[] = [];
 
   const partsList = allActivities.reduce(
@@ -388,7 +591,9 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
     const foundProblems = validators.reduce(
       (probs: any, validator: any) => ({
         ...probs,
-        [validator.type]: validator.validate(activity, sequence, parts).filter((e: any) => !!e),
+        [validator.type]: validator
+          .validate(activity, sequence, parts, allActivities)
+          .filter((e: any) => !!e),
       }),
       {},
     );
