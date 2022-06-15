@@ -31,7 +31,8 @@ defmodule OliWeb.ProjectController do
           Project.changeset(project)
         ),
       latest_published_publication: latest_published_publication,
-      publishers: Inventories.list_publishers()
+      publishers: Inventories.list_publishers(),
+      title: "Overview | " <> project.title
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -124,7 +125,8 @@ defmodule OliWeb.ProjectController do
       tool_url: tool_url,
       initiate_login_url: initiate_login_url,
       public_keyset_url: public_keyset_url,
-      redirect_uris: redirect_uris
+      redirect_uris: redirect_uris,
+      title: "Publish | " <> project.title
     )
   end
 
@@ -184,7 +186,8 @@ defmodule OliWeb.ProjectController do
           changeset: changeset,
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),
-          publishers: Inventories.list_publishers()
+          publishers: Inventories.list_publishers(),
+          title: "Overview | " <> project.title
         }
 
         conn
@@ -257,7 +260,8 @@ defmodule OliWeb.ProjectController do
           changeset: changeset,
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),
-          publishers: Inventories.list_publishers()
+          publishers: Inventories.list_publishers(),
+          title: "Overview | " <> project.title
         }
 
         conn

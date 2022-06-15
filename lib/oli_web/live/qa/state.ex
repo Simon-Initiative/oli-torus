@@ -60,7 +60,8 @@ defmodule OliWeb.Qa.State do
         [
           project: project,
           author: author,
-          context: context
+          context: context,
+          title: "Review | " <> project.title
         ],
         new_review_ran(@default_state, initial_review)
       )
