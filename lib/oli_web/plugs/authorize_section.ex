@@ -29,5 +29,5 @@ defmodule Oli.Plugs.AuthorizeSection do
   end
 
   defp is_instructor?(conn),
-    do: ContextRoles.has_role?(conn.assigns[:current_user], conn.path_params.section_slug, ContextRoles.get_role(:context_instructor))
+    do: ContextRoles.has_role?(conn.assigns[:current_user], conn.path_params["section_slug"], ContextRoles.get_role(:context_instructor))
 end
