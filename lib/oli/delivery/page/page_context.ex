@@ -149,11 +149,20 @@ defmodule Oli.Delivery.Page.PageContext do
       end
     end)
 
-    merged_bib_ids = Enum.reduce(Map.values(activity_summaries), bib_ids, fn x, acc ->
-      acc ++ Enum.reduce(x.bib_refs, [], fn y, acx ->
-        acx ++ [Map.get(y, "id")]
-      end)
-    end)
+    merged_bib_ids =
+      if activity_summaries != nil do
+        Enum.reduce(Map.values(activity_summaries), bib_ids, fn x, acc ->
+          if Map.has_key?(x, :bib_refs) do
+            acc ++ Enum.reduce(x.bib_refs, [], fn y, acx ->
+              acx ++ [Map.get(y, "id")]
+            end)
+          else
+            acc
+          end
+        end)
+      else
+        bib_ids
+      end
 
     # Remove duplicates
     merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->

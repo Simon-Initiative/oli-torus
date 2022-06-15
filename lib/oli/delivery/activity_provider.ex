@@ -88,7 +88,7 @@ defmodule Oli.Delivery.ActivityProvider do
     }
   end
 
-  defp assemble_bib_entries(content, only_revisions, section_slug, resolver) do
+  defp assemble_bib_entries(content, activity_revisions, section_slug, resolver) do
     bib_ids = Map.get(content, "bibrefs", []) |> Enum.reduce([], fn x, acc ->
       if Map.get(x, "type") == "activity" do
         acc
@@ -97,11 +97,16 @@ defmodule Oli.Delivery.ActivityProvider do
       end
     end)
 
-    merged_bib_ids = Enum.reduce(only_revisions, bib_ids, fn x, acc ->
-      acc ++ Enum.reduce(Map.get(x.content, "bibrefs", []), [], fn y, acx ->
-        acx ++ [Map.get(y, "id")]
-      end)
-    end)
+    merged_bib_ids =
+      if activity_revisions != nil do
+        Enum.reduce(activity_revisions, bib_ids, fn x, acc ->
+          acc ++ Enum.reduce(Map.get(x.content, "bibrefs", []), [], fn y, acx ->
+            acx ++ [Map.get(y, "id")]
+          end)
+        end)
+      else
+        bib_ids
+      end
 
     # Remove duplicates
     merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->
