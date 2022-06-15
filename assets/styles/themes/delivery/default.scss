@@ -41,6 +41,9 @@ html.authoring .content-block .delivery {
   $body-bg: $white;
   $body-color: $gray-900;
 
+  $objectives-text: black;
+  $objectives-background: hsl(178, 70%, 79%);
+
   // Auth providers buttons
 
   $google-button-background-color: $white;
@@ -262,6 +265,9 @@ html.authoring.dark .content-block .delivery {
 
   $hints-color: $gray-200;
   $hints-bg: $gray-700;
+
+  $objectives-text: white;
+  $objectives-background: hsl(178, 64%, 27%);
 
   // Auth providers buttons
 
