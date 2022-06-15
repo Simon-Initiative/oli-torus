@@ -50,6 +50,36 @@ defmodule OliWeb.ActivityManageController do
     end
   end
 
+  def make_globally_visible(conn, %{"activity_slug" => activity_slug}) do
+    case Activities.set_global_visibility(activity_slug, true) do
+      {:ok, _} ->
+        redirect(conn, to: Routes.activity_manage_path(conn, :index))
+
+      {:error, message} ->
+        conn
+        |> put_flash(
+          :error,
+          "We couldn't switch registered activity to globally visible. #{message}"
+        )
+        |> redirect(to: Routes.activity_manage_path(conn, :index))
+    end
+  end
+
+  def make_admin_visible(conn, %{"activity_slug" => activity_slug}) do
+    case Activities.set_global_visibility(activity_slug, false) do
+      {:ok, _} ->
+        redirect(conn, to: Routes.activity_manage_path(conn, :index))
+
+      {:error, message} ->
+        conn
+        |> put_flash(
+          :error,
+          "We couldn't switch registered activity to admin only visible. #{message}"
+        )
+        |> redirect(to: Routes.activity_manage_path(conn, :index))
+    end
+  end
+
   def root_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb() ++
       [

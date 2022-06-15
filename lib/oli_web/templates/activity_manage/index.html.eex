@@ -8,8 +8,21 @@
             <th>Title</th>
             <th>Slug</th>
             <th>Description</th>
-            <th>Eval Method</th>
-            <th>Global</th>
+            <th>
+              <span data-toggle="tooltip" data-placement="top" title="Where this activity performs attempt evaluation. This is configurable only within the activity implementation.">
+                Eval Method
+              </span>
+            </th>
+            <th>
+              <span data-toggle="tooltip" data-placement="top" title="Determines whether the activity type is automatically available to all projects or whether an author must opt-in to having access to it">
+                Availability
+              </span>
+            </th>
+            <th>
+              <span data-toggle="tooltip" data-placement="top" title="Determines which users the activity type is visible to as a choice in a project">
+                Visibiilty
+              </span>
+            </th>
             <th></th>
           </tr>
         </thead>
@@ -20,13 +33,31 @@
               <td><%= "#{activity.slug}"%></td>
               <td><%= "#{activity.description}"%></td>
               <td><%= "#{if activity.allow_client_evaluation do "Client" else "Server" end}"%></td>
-              <td><%= "#{activity.globally_available}"%></td>
+              <td><%= "#{if activity.globally_available do "Global" else "Opt-In" end}"%></td>
+              <td><%= "#{if activity.globally_visible do "All Users" else "Admins only" end}"%></td>
               <td>
-                <%= if activity.globally_available do %>
-                  <%= link "Make Private", to: Routes.activity_manage_path(@conn, :make_private, activity.slug), method: :put, class: "text-danger" %>
-                <% else %>
-                  <%= link "Make Global", to: Routes.activity_manage_path(@conn, :make_global,activity.slug), method: :put, class: "text-success" %>
-                <% end %>
+                <div class="btn-group">
+                  <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Actions
+                  </button>
+                  <div class="dropdown-menu">
+                    <h6 class="dropdown-header">Change Availability</h6>
+                    <%= if activity.globally_available do %>
+                      <%= link "Change to 'Opt-In'", class: "dropdown-item", to: Routes.activity_manage_path(@conn, :make_private, activity.slug), method: :put, class: "text-danger" %>
+                    <% else %>
+                      <%= link "Change to 'Global'", class: "dropdown-item", to: Routes.activity_manage_path(@conn, :make_global, activity.slug), method: :put, class: "text-success" %>
+                    <% end %>
+
+                    <div class="dropdown-divider"></div>
+
+                    <h6 class="dropdown-header">Change Visibility</h6>
+                    <%= if activity.globally_visible do %>
+                      <%= link "Change to 'Admins Only'", class: "dropdown-item", to: Routes.activity_manage_path(@conn, :make_admin_visible, activity.slug), method: :put, class: "text-danger" %>
+                    <% else %>
+                      <%= link "Change to 'All Users'", class: "dropdown-item", to: Routes.activity_manage_path(@conn, :make_globally_visible, activity.slug), method: :put, class: "text-success" %>
+                    <% end %>
+                  </div>
+                </div>
               </td>
             </tr>
           <% end %>
