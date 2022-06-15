@@ -21,7 +21,7 @@ type TopLevel =
   | Blockquote
   | FormulaBlock;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
-type Inline = Hyperlink | Popup | InputRef | ImageInline | FormulaInline;
+type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
