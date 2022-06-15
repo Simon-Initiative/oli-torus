@@ -11,91 +11,6 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
-  # TODO: move these adaptive sequence methods somewhere appropriate
-  defp find_sequence_entry_by_activity_id(activity_id, entries) do
-    entry = entries
-      |> Enum.find(fn(%{"activity_id" => ref_activity_id}) -> ref_activity_id == activity_id end)
-
-    case entry do
-      nil -> Logger.error("Could not find sequence entry for activity_id: #{activity_id}")
-      _ -> entry
-    end
-  end
-
-  defp find_sequence_entry_by_sequence_id(sequence_id, entries) do
-    entry = entries
-      |> Enum.find(fn e ->
-        custom = Map.get(e, "custom")
-        ref_sequence_id = Map.get(custom, "sequenceId")
-        ref_sequence_id == sequence_id
-      end)
-
-    case entry do
-      nil -> Logger.error("Could not find sequence entry for sequence_id: #{sequence_id}")
-      _ -> entry
-    end
-  end
-
-  defp get_activity_lineage(activity_id, entries) do
-    entry = find_sequence_entry_by_activity_id(activity_id, entries)
-    lineage = [entry]
-    custom = Map.get(entry, "custom")
-    parent_sequence_id = Map.get(custom, "layerRef", nil)
-    case parent_sequence_id do
-      nil -> lineage
-      _ ->
-        %{"activity_id" => parent_activity_id} = find_sequence_entry_by_sequence_id(parent_sequence_id, entries)
-        parent_lineage = get_activity_lineage(parent_activity_id, entries)
-        parent_lineage |> List.insert_at(0, entry)
-    end
-  end
-
-  defp get_flattened_activity_model(page_content, activity_id, activity_map) do
-    Logger.debug("get_flattened_activity_model: #{activity_id}")
-    # TODO: should check that this item is type of "group" rather than assuming
-    [first | _tail] = page_content
-    sequence_entries = Map.get(first, "children", [])
-    Logger.debug("sequence_entries: #{sequence_entries |> Jason.encode!}")
-    activity_lineage = get_activity_lineage(activity_id, sequence_entries)
-    Logger.debug("activity_lineage (#{Enum.count(activity_lineage)}): #{activity_lineage |> Jason.encode!}")
-    # need to take each item from the lineage, get the model for it, and then
-    # merge all partsLayout into the final model
-    activity_model = Enum.reduce(activity_lineage, %{}, fn lineage_entry, acc ->
-      lineage_entry_activity_id = Map.get(lineage_entry, "activity_id")
-      Logger.debug("lineage_entry_activity_id: #{lineage_entry_activity_id}")
-      lineage_summary = activity_map[lineage_entry_activity_id]
-      case lineage_summary do
-        nil ->
-          Logger.error("Could not find activity summary for lineage_entry_activity_id: #{lineage_entry_activity_id}")
-          acc
-        _ ->
-          model = Poison.decode!(HtmlEntities.decode(lineage_summary.model))
-          partsLayout = Map.get(model, "partsLayout", [])
-          currentPartsLayout = Map.get(acc, "partsLayout", [])
-          merged_parts_layout = Enum.concat(currentPartsLayout, partsLayout)
-          model |> Map.put("partsLayout", merged_parts_layout)
-      end
-    end)
-    Logger.debug("activity_model AFTER REDUCE: #{activity_model |> Jason.encode!}")
-
-    sequence_entry = List.last(activity_lineage)
-    # the activity_model needs the "id" to be the "sequenceId" from the sequence_entry
-    activity_sequence_id = Map.get(sequence_entry, "custom") |> Map.get("sequenceId")
-    Logger.debug("activity_sequence_id: #{activity_sequence_id}")
-    activity_model = activity_model |> Map.put("id", activity_sequence_id)
-    # finally it needs to be stringified again
-    activity_model |> Poison.encode! |> HtmlEntities.encode
-  end
-
-  defp get_activity_html_id(activity_id, model_json) do
-    model = model_json |> HtmlEntities.decode |> Poison.decode!
-    activity_model_id = Map.get(model, "id")
-    case activity_model_id do
-      nil -> "activity_#{activity_id}"
-      _ -> activity_model_id
-    end
-  end
-
   def activity(
         %Context{
           activity_map: activity_map,
@@ -180,5 +95,87 @@ defmodule Oli.Rendering.Activity.Html do
 
   def error(%Context{} = context, element, error) do
     Error.render(context, element, error, Error.Html)
+  end
+
+  # ---------------
+  # HELPERS
+
+  defp get_activity_html_id(activity_id, model_json) do
+    model_json
+    |> HtmlEntities.decode
+    |> Poison.decode!
+    |> Map.get("id", "activity_#{activity_id}")
+  end
+
+  defp get_flattened_activity_model(page_content, activity_id, activity_map) do
+    Logger.debug("get_flattened_activity_model: #{activity_id}")
+
+    sequence_entries = page_content |> List.first(%{}) |> Map.get("children", [])
+    Logger.debug("sequence_entries: #{sequence_entries |> Jason.encode!}")
+
+    activity_lineage = get_activity_lineage(activity_id, sequence_entries)
+    Logger.debug("activity_lineage (#{Enum.count(activity_lineage)}): #{activity_lineage |> Jason.encode!}")
+
+    # need to take each item from the lineage, get the model for it, and then
+    # merge all partsLayout into the final model
+    activity_model = Enum.reduce(activity_lineage, %{}, fn lineage_entry, acc ->
+      lineage_entry_activity_id = Map.get(lineage_entry, "activity_id")
+      Logger.debug("lineage_entry_activity_id: #{lineage_entry_activity_id}")
+
+      case activity_map[lineage_entry_activity_id] do
+        nil ->
+          Logger.error("Could not find activity summary for lineage_entry_activity_id: #{lineage_entry_activity_id}")
+          acc
+        lineage_summary ->
+          model = lineage_summary.model |> HtmlEntities.decode() |> Poison.decode!()
+          parts_layout = Map.get(model, "partsLayout", [])
+          current_parts_layout = Map.get(acc, "partsLayout", [])
+
+          Map.put(model, "partsLayout", Enum.concat(parts_layout, current_parts_layout))
+      end
+    end)
+    Logger.debug("activity_model AFTER REDUCE: #{activity_model |> Jason.encode!}")
+
+    # the activity_model needs the "id" to be the "sequenceId" from the sequence_entry
+    sequence_entry = List.last(activity_lineage)
+    activity_sequence_id = sequence_entry |> Map.get("custom", %{}) |> Map.get("sequenceId")
+    Logger.debug("activity_sequence_id: #{activity_sequence_id}")
+
+    activity_model = Map.put(activity_model, "id", activity_sequence_id)
+
+    # finally it needs to be stringified again
+    activity_model |> Poison.encode! |> HtmlEntities.encode
+  end
+
+  defp get_activity_lineage(activity_id, entries) do
+    entry = find_sequence_entry_by_activity_id(activity_id, entries)
+    parent_sequence_id = entry |> Map.get("custom", %{}) |> Map.get("layerRef", nil)
+
+    case parent_sequence_id do
+      nil -> [entry]
+      _ ->
+        %{"activity_id" => parent_activity_id} = find_sequence_entry_by_sequence_id(parent_sequence_id, entries)
+        parent_lineage = get_activity_lineage(parent_activity_id, entries)
+
+        List.insert_at(parent_lineage, 0, entry)
+    end
+  end
+
+  defp find_sequence_entry_by_activity_id(activity_id, entries) do
+    entry = Enum.find(entries, fn %{"activity_id" => ref_activity_id} -> ref_activity_id == activity_id end)
+
+    case entry do
+      nil -> Logger.error("Could not find sequence entry for activity_id: #{activity_id}")
+      _ -> entry
+    end
+  end
+
+  defp find_sequence_entry_by_sequence_id(sequence_id, entries) do
+    entry = Enum.find(entries, fn e -> e |> Map.get("custom", %{}) |> Map.get("sequenceId") == sequence_id end)
+
+    case entry do
+      nil -> Logger.error("Could not find sequence entry for sequence_id: #{sequence_id}")
+      _ -> entry
+    end
   end
 end
