@@ -115,6 +115,18 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[List item]: ", next.(), " "]
   end
 
+  def formula(%Oli.Rendering.Context{} = _context, nil, %{"src" => src}) do
+    ["[Formula]: ", src, " "]
+  end
+
+  def formula(%Oli.Rendering.Context{} = _context, next, _) do
+    ["[Formula]: ", next.(), " "]
+  end
+
+  def formula_inline(context, next, content) do
+    formula(context, next, content)
+  end
+
   def math(%Context{} = _context, next, _) do
     ["[Math]: ", next.(), " "]
   end
