@@ -22,10 +22,12 @@ defmodule Oli.Plugs.AuthorizeSection do
   end
 
   defp is_admin?(conn) do
-    %{system_role_id: system_role_id} = conn.assigns[:current_author]
-    system_role_id == @admin_role_id
+    case conn.assigns[:current_author] do
+      %{system_role_id: system_role_id} -> system_role_id == @admin_role_id
+      _ -> false
+    end
   end
 
   defp is_instructor?(conn),
-    do: ContextRoles.has_role?(conn.assigns.current_user, conn.path_params.section_slug, ContextRoles.get_role(:context_instructor))
+    do: ContextRoles.has_role?(conn.assigns[:current_user], conn.path_params["section_slug"], ContextRoles.get_role(:context_instructor))
 end

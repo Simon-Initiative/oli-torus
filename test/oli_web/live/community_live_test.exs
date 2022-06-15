@@ -339,7 +339,7 @@ defmodule OliWeb.CommunityLiveTest do
     test "redirects to index view and displays error message when community does not exist", %{
       conn: conn
     } do
-      conn = get(conn, live_view_show_route(1000))
+      conn = get(conn, live_view_show_route(-1))
 
       assert conn.private.plug_session["phoenix_flash"]["info"] ==
                "That community does not exist or it was deleted."

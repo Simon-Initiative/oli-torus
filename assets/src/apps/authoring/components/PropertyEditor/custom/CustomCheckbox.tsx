@@ -13,7 +13,7 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = (props) => {
         type="checkbox"
         className="my-auto"
         id={props.id}
-        checked={props.value}
+        defaultChecked={props.value}
         onClick={() => props.onChange(!props.value)}
       />
     </div>
