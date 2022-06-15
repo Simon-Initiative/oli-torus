@@ -17,7 +17,7 @@ interface SettingsProps {
 }
 export const ImageSettings = (props: SettingsProps) => {
   return (
-    <Toolbar context={props.commandContext}>
+    <Toolbar context={props.commandContext} orientation="horizontal">
       <Toolbar.Group>
         <SelectImageButton model={props.model} onEdit={props.onEdit} />
       </Toolbar.Group>

@@ -27,7 +27,10 @@ export const BlockSettings = (_props: BlockSettingProps) => {
     'Code (Block)': CodeBlock,
   };
 
-  return <Toolbar.Group>{component[type]}</Toolbar.Group>;
+  if (component[type] !== undefined) {
+    return <Toolbar.VerticalGroup>{(component[type] as any)()}</Toolbar.VerticalGroup>;
+  }
+  return null;
 };
 
 function List() {

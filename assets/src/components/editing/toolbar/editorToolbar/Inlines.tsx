@@ -24,20 +24,20 @@ export const Inlines = (_props: Props) => {
   const moreInlineOptions = additionalFormattingOptions.concat(inlineInsertions);
 
   const seeMoreInlineOptions = createButtonCommandDesc({
-    icon: 'expand_more',
+    icon: 'more_horiz',
     description: 'More',
     execute: () => {},
     active: (e) => moreInlineOptions.some(({ active }) => active?.(e)),
   });
 
   return (
-    <Toolbar.Group>
+    <Toolbar.VerticalGroup>
       {basicFormattingOptions}
       <DropdownButton description={seeMoreInlineOptions}>
         {moreInlineOptions.map((desc, i) => (
           <DescriptiveButton key={i} description={desc} />
         ))}
       </DropdownButton>
-    </Toolbar.Group>
+    </Toolbar.VerticalGroup>
   );
 };

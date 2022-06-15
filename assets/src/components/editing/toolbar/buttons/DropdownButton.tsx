@@ -30,7 +30,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       onClickOutside={toolbar.closeSubmenus}
       isOpen={isOpen}
       padding={8}
-      positions={['bottom']}
+      positions={['right']}
       reposition={true}
       align={'start'}
       content={<div className="editorToolbar__dropdownGroup">{props.children}</div>}
