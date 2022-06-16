@@ -406,12 +406,21 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const hasNavigation = (events: any) => {
+    if (!currentActivityTree || !currentActivityTree?.length) {
+      return false;
+    }
+    let eventsToProcess = events.results;
     const actionsByType: any = {
       feedback: [],
       mutateState: [],
       navigation: [],
     };
-    events.results.forEach((evt: any) => {
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const combineFeedback = !!currentActivity?.content?.custom?.combineFeedback;
+    if (!combineFeedback) {
+      eventsToProcess = [eventsToProcess[0]];
+    }
+    eventsToProcess.forEach((evt: any) => {
       const { actions } = evt.params;
       actions.forEach((action: any) => {
         actionsByType[action.type].push(action);
