@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic(
           [s, _, i, proj, prod, u],
           fragment(
-            "to_tsvector('english', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery(?)",
+            "to_tsvector('simple', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery('simple', ?)",
             s.title,
             i.name,
             proj.title,
