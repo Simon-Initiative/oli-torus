@@ -31,6 +31,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
   alias Oli.Utils.Slug
+  alias OliWeb.Common.FormatDateTime
 
   require Logger
 
@@ -1483,60 +1484,15 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Parses a ISO 8601 formatted local timestamps to DateTimes if they are not empty or nil.
-
-  Returns a tuple containing the start and end datetimes in UTC: {utc_start_date, utc_end_date}
-  """
-  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
-    section_timezone = Timex.Timezone.get(from_timezone)
-    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
-
-    utc_start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
-          start_date
-
-        start_date ->
-          start_date
-          |> Timex.parse!("{ISO:Extended}")
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    utc_end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
-          end_date
-
-        end_date ->
-          end_date
-          |> Timex.parse!("{ISO:Extended}")
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
-
-    {utc_start_date, utc_end_date}
-  end
-
-  @doc """
-  Converts a section's start_date and end_date to the gievn timezone's local datetimes
+  Converts a section's start_date and end_date to the given timezone's local datetimes
   """
   def localize_section_start_end_datetimes(
-        %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+        %Section{start_date: start_date, end_date: end_date} = section,
+        context
       ) do
-    timezone = Timex.Timezone.get(timezone, Timex.now())
 
-    start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" -> start_date
-        start_date -> Timex.Timezone.convert(start_date, timezone)
-      end
-
-    end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" -> end_date
-        end_date -> Timex.Timezone.convert(end_date, timezone)
-      end
+    start_date = FormatDateTime.convert_datetime(start_date, context)
+    end_date = FormatDateTime.convert_datetime(end_date, context)
 
     section
     |> Map.put(:start_date, start_date)

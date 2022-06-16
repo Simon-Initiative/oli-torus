@@ -26,22 +26,20 @@
       <tr>
         <td><strong>Start Date:</strong></td>
         <td>
-          <%= case @section.start_date do %>
-            <% nil -> %>
-              <span class="text-secondary font-italic">None</span>
-            <% start_date -> %>
-              <%= date(start_date, show_timezone: true) %>
+          <%= if is_nil(@section.start_date) do %>
+            <span class="text-secondary font-italic">None</span>
+          <% else %>
+            <%= Utils.render_precise_date(@section, :start_date, @context) %>
           <% end %>
         </td>
       </tr>
       <tr>
         <td><strong>End Date:</strong></td>
         <td>
-          <%= case @section.end_date do %>
-            <% nil -> %>
-              <span class="text-secondary font-italic">None</span>
-            <% end_date -> %>
-              <%= date(end_date, show_timezone: true) %>
+          <%= if is_nil(@section.end_date) do %>
+            <span class="text-secondary font-italic">None</span>
+          <% else %>
+            <%= Utils.render_precise_date(@section, :end_date, @context) %>
           <% end %>
         </td>
       </tr>

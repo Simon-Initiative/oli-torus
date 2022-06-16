@@ -188,7 +188,7 @@ defmodule OliWeb.Common.FormatDateTime do
       iex> datestring_to_utc_datetime("2022-05-18T12:35", "US/Arizona")
       ~U[2022-05-18 19:35:00Z]
   """
-  def datestring_to_utc_datetime("", _), do: nil
+  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date), do: nil
 
   def datestring_to_utc_datetime(date_string, %SessionContext{local_tz: local_tz}) do
     datestring_to_utc_datetime(date_string, local_tz)
@@ -202,7 +202,7 @@ defmodule OliWeb.Common.FormatDateTime do
     |> elem(1)
   end
 
-  def convert_datetime(nil, _timezone), do: nil
+  def convert_datetime(date, _) when is_nil(date) or date == "", do: nil
   def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
   def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
 

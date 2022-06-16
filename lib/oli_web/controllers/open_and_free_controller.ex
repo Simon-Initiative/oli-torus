@@ -5,7 +5,7 @@ defmodule OliWeb.OpenAndFreeController do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, FormatDateTime, SessionContext}
   alias Lti_1p3.Tool.ContextRoles
 
   alias OliWeb.Router.Helpers, as: Routes
@@ -74,8 +74,10 @@ defmodule OliWeb.OpenAndFreeController do
          } <-
            section_params,
          blueprint <- Sections.get_section_by_slug(product_slug) do
-      {utc_start_date, utc_end_date} =
-        Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+      context = SessionContext.init(conn)
+
+      utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
+      utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
       section_params =
         to_atom_keys(section_params)
@@ -148,8 +150,11 @@ defmodule OliWeb.OpenAndFreeController do
            section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
          publication <- Publishing.get_latest_published_publication_by_slug(project_slug) do
-      {utc_start_date, utc_end_date} =
-        Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+
+      context = SessionContext.init(conn)
+
+      utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
+      utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
       section_params =
         section_params
@@ -206,11 +211,14 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def show(conn, %{"id" => id}) do
+    context = SessionContext.init(conn)
+
     section =
       Sections.get_section_preloaded!(id)
-      |> Sections.localize_section_start_end_datetimes()
+      |> Sections.localize_section_start_end_datetimes(context)
 
     render(conn, "show.html",
+      context: context,
       section: section,
       updates: Sections.check_for_available_publication_updates(section),
       breadcrumbs: set_breadcrumbs() |> show_breadcrumb()
@@ -218,9 +226,11 @@ defmodule OliWeb.OpenAndFreeController do
   end
 
   def edit(conn, %{"id" => id}) do
+    context = SessionContext.init(conn)
+
     section =
       Sections.get_section_preloaded!(id)
-      |> Sections.localize_section_start_end_datetimes()
+      |> Sections.localize_section_start_end_datetimes(context)
 
     render(conn, "edit.html",
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
@@ -239,8 +249,10 @@ defmodule OliWeb.OpenAndFreeController do
       }) do
     section = Sections.get_section_preloaded!(id)
 
-    {utc_start_date, utc_end_date} =
-      Sections.parse_and_convert_start_end_dates_to_utc(start_date, end_date, timezone)
+    context = SessionContext.init(conn)
+
+    utc_start_date = FormatDateTime.datestring_to_utc_datetime(start_date, context)
+    utc_end_date = FormatDateTime.datestring_to_utc_datetime(end_date, context)
 
     section_params =
       section_params
