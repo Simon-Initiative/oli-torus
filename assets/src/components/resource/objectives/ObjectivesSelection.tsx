@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Immutable from 'immutable';
 import {
+  Token,
   Typeahead,
   TypeaheadResult,
   TypeaheadMenuProps,
@@ -73,31 +74,16 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
     setById(createMapById(objectives));
   }, [objectives]);
 
-  // Custom menu item renderer fn for the Typeahead, so that we can render
-  // a checkbox indicating selected state and the parent label for child objectives
   const renderMenuItemChildren = (
     option: TypeaheadResult<Objective>,
     _props: TypeaheadMenuProps<Objective>,
     _index: number,
   ) => {
-    const buildCombinedTitle = (parent: string, child: string) => {
-      return (
-        <>
-          {withEllipse(parent)}
-          <span className="ml-2 mr-2">
-            <strong>/</strong>
-          </span>
-          {withEllipse(child)}
-        </>
-      );
-    };
-
     return (
       <div>
+        {option.parentId !== null ? <span className="ml-3">&nbsp;</span> : null}
         <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
-        {option.parentId === null
-          ? option.title
-          : buildCombinedTitle(byId[option.parentId].title, option.title)}
+        {option.title}
       </div>
     );
   };
