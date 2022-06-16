@@ -7,7 +7,6 @@ import {
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
-// import { BibPointer } from 'data/content/resource';
 
 export type ActivityUpdate = {
   title: string;
