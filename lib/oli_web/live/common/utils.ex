@@ -25,6 +25,11 @@ defmodule OliWeb.Common.Utils do
     date(Map.get(item, attr_name), opts)
   end
 
+  def render_relative_date(item, attr_name, context) do
+    opts = [context: context, precision: :relative]
+    date(Map.get(item, attr_name), opts)
+  end
+
   def render_precise_date(item, attr_name, context) do
     opts = [context: context, precision: :minutes]
     date(Map.get(item, attr_name), opts)

@@ -18,7 +18,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= date(@resource_attempt.date_evaluated, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :date_evaluated, @session_context) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
@@ -39,7 +39,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= date(@resource_attempt.date_submitted, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :date_submitted, @session_context) %></div>
     </div>
     </div>
   <% end %>

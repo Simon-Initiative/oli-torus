@@ -3,11 +3,10 @@ defmodule OliWeb.Sections.InviteView do
 
   import Oli.Utils.Time
 
-  alias OliWeb.Common.{Breadcrumb}
   alias Oli.Delivery.Sections.SectionInvites
   alias OliWeb.Sections.Invites.Invitation
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.Confirm
+  alias OliWeb.Common.{Breadcrumb, Confirm, SessionContext}
   alias OliWeb.Sections.Mount
 
   data breadcrumbs, :any
@@ -39,6 +38,7 @@ defmodule OliWeb.Sections.InviteView do
       {type, _, section} ->
         {:ok,
          assign(socket,
+           context: SessionContext.init(session),
            delivery_breadcrumb: true,
            breadcrumbs: set_breadcrumbs(type, section),
            section: section,
@@ -65,7 +65,7 @@ defmodule OliWeb.Sections.InviteView do
     {#if length(@invitations) > 0}
       <div class="list-group">
       {#for invitation <- @invitations}
-        <Invitation id={invitation.id} invitation={invitation} delete="request_delete"/>
+        <Invitation id={invitation.id} invitation={invitation} delete="request_delete" {=@context}/>
       {/for}
       </div>
     {/if}

@@ -190,6 +190,10 @@ defmodule OliWeb.Common.FormatDateTime do
   """
   def datestring_to_utc_datetime("", _), do: nil
 
+  def datestring_to_utc_datetime(date_string, %SessionContext{local_tz: local_tz}) do
+    datestring_to_utc_datetime(date_string, local_tz)
+  end
+
   def datestring_to_utc_datetime(date_string, local_tz) do
     date_string
     |> Timex.parse!("{ISO:Extended}")
@@ -197,6 +201,10 @@ defmodule OliWeb.Common.FormatDateTime do
     |> DateTime.shift_zone("Etc/UTC")
     |> elem(1)
   end
+
+  def convert_datetime(nil, _timezone), do: nil
+  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
+  def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
 
   defp author_format_preference(nil), do: nil
 
