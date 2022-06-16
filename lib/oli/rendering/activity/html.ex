@@ -19,6 +19,7 @@ defmodule Oli.Rendering.Activity.Html do
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
+       
     activity_summary = activity_map[activity_id]
 
     bib_params = Enum.reduce(bib_app_params, [], fn x, acc ->

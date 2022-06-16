@@ -7,7 +7,7 @@ import {
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
-import { BibPointer } from 'data/content/resource';
+// import { BibPointer } from 'data/content/resource';
 
 export type ActivityUpdate = {
   title: string;
@@ -179,7 +179,7 @@ export function bulkEdit(
 ) {
   // Index "citation references" in the "content and authoring" and elevate them as top-level list
   updates.forEach((u) => {
-    const citationRefs: BibPointer[] = [];
+    const citationRefs: string[] = [];
     indexBibrefs(u.content, citationRefs);
     if (u.authoring) {
       indexBibrefs(u.authoring, citationRefs);
@@ -196,10 +196,11 @@ export function bulkEdit(
   return makeRequest<Updated>(params);
 }
 
-function indexBibrefs(update: any, citationRefs: BibPointer[]) {
+function indexBibrefs(update: any, citationRefs: string[]) {
   traverseContent(update, (key: string, value: any) => {
     if (value && value.type === 'cite') {
-      citationRefs.push({ id: value.bibref, type: 'bibref' });
+      // citationRefs.push({ id: value.bibref, type: 'bibref' });
+      citationRefs.push(value.bibref);
     }
   });
 }
@@ -222,7 +223,7 @@ export function edit(
   }
 
   // Index "citation references" in the "content and authoring" and elevate them as top-level list
-  const citationRefs: BibPointer[] = [];
+  const citationRefs: string[] = [];
   indexBibrefs(update.content, citationRefs);
   if (update.authoring) {
     indexBibrefs(update.authoring, citationRefs);

@@ -32,6 +32,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
+  alias Oli.Utils.BibUtils
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -63,6 +64,18 @@ defmodule Oli.Delivery.Page.PageContext do
 
     page_revision = hd(resource_attempts).revision
 
+    summaries = if activities != nil, do: Map.values(activities), else: []
+    bib_revisions =
+      BibUtils.assemble_bib_entries(
+        page_revision.content,
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        DeliveryResolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
+
     %PageContext{
       review_mode: true,
       page: page_revision,
@@ -72,7 +85,7 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: assemble_bib_entrys(page_revision.content, activities, section_slug)
+      bib_revisions: bib_revisions
     }
   end
 
@@ -126,6 +139,17 @@ defmodule Oli.Delivery.Page.PageContext do
       else
         page_revision
       end
+      summaries = if activities != nil, do: Map.values(activities), else: []
+      bib_revisions =
+        BibUtils.assemble_bib_entries(
+          page_revision.content,
+          summaries,
+          fn r -> Map.get(r, :bib_refs, []) end,
+          section_slug,
+          DeliveryResolver
+        )
+        |> Enum.with_index(1)
+        |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     %PageContext{
       review_mode: false,
@@ -136,46 +160,8 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: assemble_bib_entrys(page_revision.content, activities, section_slug)
+      bib_revisions: bib_revisions
     }
-  end
-
-  def assemble_bib_entrys(page_content, activity_summaries, section_slug) do
-    bib_ids = Map.get(page_content, "bibrefs", []) |> Enum.reduce([], fn x, acc ->
-      if Map.get(x, "type") == "activity" do
-        acc
-      else
-        acc ++ [Map.get(x, "id")]
-      end
-    end)
-
-    merged_bib_ids =
-      if activity_summaries != nil do
-        Enum.reduce(Map.values(activity_summaries), bib_ids, fn x, acc ->
-          if Map.has_key?(x, :bib_refs) do
-            acc ++ Enum.reduce(x.bib_refs, [], fn y, acx ->
-              acx ++ [Map.get(y, "id")]
-            end)
-          else
-            acc
-          end
-        end)
-      else
-        bib_ids
-      end
-
-    # Remove duplicates
-    merged_bib_ids = Enum.reduce(merged_bib_ids, [],  fn x, acc ->
-      if Enum.any?(acc, fn i -> i == x end) do
-        acc
-      else
-        acc ++ [x]
-      end
-    end)
-
-    bib_revisions = DeliveryResolver.from_resource_id(section_slug, merged_bib_ids)
-
-    Enum.map(bib_revisions, fn x -> serialize_revision(x, merged_bib_ids) end)
   end
 
   defp assemble_final_context(state, resource_attempt, latest_attempts, %{
@@ -203,14 +189,4 @@ defmodule Oli.Delivery.Page.PageContext do
     ObjectivesRollup.rollup_objectives(page_rev, activity_revisions, resolver, section_slug)
   end
 
-  defp serialize_revision(%Oli.Resources.Revision{} = revision, merged_bib_ids) do
-    ordinal = Enum.find_index(merged_bib_ids, fn x -> x == revision.resource_id end) + 1
-    %{
-      title: revision.title,
-      id: revision.resource_id,
-      slug: revision.slug,
-      content: revision.content,
-      ordinal: ordinal
-    }
-  end
 end

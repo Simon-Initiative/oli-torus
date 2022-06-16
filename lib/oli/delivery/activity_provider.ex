@@ -5,7 +5,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
-  alias Oli.Authoring.Editing.Utils
+  alias Oli.Utils.BibUtils
 
   @doc """
   Realizes and resolves activities in a page.
@@ -61,7 +61,7 @@ defmodule Oli.Delivery.ActivityProvider do
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
     bib_revisions =
-      Utils.assemble_bib_entries(
+      BibUtils.assemble_bib_entries(
         content,
         revisions,
         fn r -> Map.get(r.content, "bibrefs", []) end,
@@ -69,7 +69,7 @@ defmodule Oli.Delivery.ActivityProvider do
         resolver
       )
       |> Enum.with_index(1)
-      |> Enum.map(fn {revision, ordinal} -> serialize_revision(revision, ordinal) end)
+      |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
     %ProviderResult{
       errors: [],
@@ -91,7 +91,7 @@ defmodule Oli.Delivery.ActivityProvider do
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
     bib_revisions =
-      Utils.assemble_bib_entries(
+      BibUtils.assemble_bib_entries(
         content,
         only_revisions,
         fn r -> Map.get(r.content, "bibrefs", []) end,
@@ -99,7 +99,7 @@ defmodule Oli.Delivery.ActivityProvider do
         resolver
       )
       |> Enum.with_index(1)
-      |> Enum.map(fn {revision, ordinal} -> serialize_revision(revision, ordinal) end)
+      |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
     %ProviderResult{
       errors: errors,
@@ -213,13 +213,4 @@ defmodule Oli.Delivery.ActivityProvider do
     }
   end
 
-  defp serialize_revision(%Oli.Resources.Revision{} = revision, ordinal) do
-    %{
-      title: revision.title,
-      id: revision.resource_id,
-      slug: revision.slug,
-      content: revision.content,
-      ordinal: ordinal
-    }
-  end
 end

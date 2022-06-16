@@ -21,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
+  alias Oli.Utils.BibUtils
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -274,7 +275,17 @@ defmodule OliWeb.PageDeliveryController do
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
-    bib_entrys = PageContext.assemble_bib_entrys(revision.content, activity_map, section_slug)
+    summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+    bib_entrys =
+      BibUtils.assemble_bib_entries(
+        revision.content,
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        Resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     all_activities = Activities.list_activity_registrations()
 
@@ -578,7 +589,7 @@ defmodule OliWeb.PageDeliveryController do
       # We must check gating conditions here to account for gates that activated after
       # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
       # hitting this endpoint.
-      revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
+      revision = Resolver.from_revision_slug(section_slug, revision_slug)
 
       case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
         [] ->
