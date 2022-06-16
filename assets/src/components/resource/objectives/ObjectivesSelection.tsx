@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Immutable from 'immutable';
 import {
-  Token,
   Typeahead,
   TypeaheadResult,
   TypeaheadMenuProps,
@@ -22,18 +21,6 @@ export type ObjectivesProps = {
   projectSlug: ProjectSlug;
   onEdit: (objectives: ResourceId[]) => void;
   onRegisterNewObjective: (objective: Objective) => void;
-};
-
-const MAX_LENGTH = 40;
-
-const withEllipse = (label: string) => {
-  return label.length > MAX_LENGTH ? (
-    <span data-toggle="tooltip" data-placement="top" title={label}>
-      {label.substring(0, MAX_LENGTH - 3) + '...'}
-    </span>
-  ) : (
-    <span>{label}</span>
-  );
 };
 
 // Custom filterBy function for the Typeahead. This allows searches to
