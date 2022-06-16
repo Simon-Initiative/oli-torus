@@ -62,11 +62,7 @@ const defaultHandler = async () => {
 // because of events and function references, we need to store state outside of the function
 const sharedAttemptStateMap = new Map();
 
-const AllAttemptStateList: {
-  activityId: string | undefined;
-  attemptGuid: string;
-  attempt: unknown;
-}[] = [];
+const AllAttemptStateList: Map<string, any> = new Map();
 // the activity renderer should be capable of handling *any* activity type, not just adaptive
 // most events should be simply bubbled up to the layout renderer for handling
 const ActivityRenderer: React.FC<ActivityRendererProps> = ({
@@ -255,6 +251,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const [model, setModel] = useState('');
   const [state, setState] = useState('');
 
+  const currentActivityTree = useSelector(selectCurrentActivityTree);
+
   useEffect(() => {
     // listen at the document level for events coming from activities
     // because using a ref to listen to the specific activity gets messed up
@@ -264,12 +262,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       let isForMe = false;
 
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
-      const currentActivityAllAttempt = AllAttemptStateList.filter(
-        (activityAttempt) =>
-          activityAttempt.activityId === activity.id && activityAttempt.attemptGuid === attemptGuid,
-      );
+      const currentActivityAllAttempt = AllAttemptStateList.get(attemptGuid);
 
-      if (attemptGuid === currentAttempt.attemptGuid || currentActivityAllAttempt?.length) {
+      if (
+        attemptGuid === currentAttempt.attemptGuid ||
+        currentActivityAllAttempt?.currentActivityId === currentAttempt.currentActivityId
+      ) {
         /* console.log('EVENT FOR ME', { e, activity, attempt, currentAttempt }); */
         isForMe = true;
       }
@@ -290,13 +288,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     // because we need at least read only access to cross activity values and extrinsic
     // *maybe* better to have a onInit callback and send it as a response?
     // because this is BIG
-    /* const envSnapshot = getEnvState(defaultGlobalEnv);
-    const fullState = { ...attempt, snapshot: envSnapshot }; */
-    setState(JSON.stringify(attempt));
-    sharedAttemptStateMap.set(activity.id, attempt);
-
-    setModel(JSON.stringify(activity));
-
     setIsReady(true);
 
     return () => {
@@ -304,9 +295,29 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         document.removeEventListener(eventName, wcEventHandler);
       });
       setIsReady(false);
-      sharedAttemptStateMap.delete(activity.id);
     };
   }, []);
+
+  useEffect(() => {
+    // send a state snapshot of everything in with the attempt
+    // because we need at least read only access to cross activity values and extrinsic
+    // *maybe* better to have a onInit callback and send it as a response?
+    // because this is BIG
+    /* const envSnapshot = getEnvState(defaultGlobalEnv);
+    const fullState = { ...attempt, snapshot: envSnapshot }; */
+    const currentActivity =
+      currentActivityTree && currentActivityTree.length > 0
+        ? currentActivityTree[currentActivityTree.length - 1]
+        : null;
+    if (currentActivity) {
+      setState(JSON.stringify({ ...attempt, currentActivityId: currentActivity?.resourceId }));
+      sharedAttemptStateMap.set(activity.id, attempt);
+      setModel(JSON.stringify(activity));
+    }
+    return () => {
+      sharedAttemptStateMap.delete(activity.id);
+    };
+  }, [currentActivityTree]);
 
   const ref = useRef<any>(null);
 
@@ -443,12 +454,8 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
-        AllAttemptStateList.push({
-          activityId: activity?.id,
-          attemptGuid: lastCheckResults.attempt.attemptGuid,
-          attempt: lastCheckResults.attempt,
-        });
       }
+      AllAttemptStateList.set(lastCheckResults.attempt.attemptGuid, lastCheckResults.attempt);
 
       const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
       if (!hasNavigationToDifferentActivity || isEverApp) {
@@ -463,7 +470,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   const currentActivityId = useSelector(selectCurrentActivityId);
   const initPhaseComplete = useSelector(selectInitPhaseComplete);
   const initStateBindToFacts: any = {};
-  const currentActivityTree = useSelector(selectCurrentActivityTree);
 
   // update all init state facts that target everApps using the app.
   const updateGlobalState = async (snapshot: any, initStates: any[]) => {
@@ -602,7 +608,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   // don't render until we're already listening!
-  if (!isReady) {
+  if (!isReady || !state || !model) {
     return null;
   }
   return React.createElement(activity.activityType?.delivery_element, elementProps, null);
