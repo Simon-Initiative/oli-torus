@@ -2,14 +2,17 @@ defmodule Oli.PublishingTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Ecto.Query
 
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.{Course, Locks}
   alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
+  alias Oli.Activities
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing
   alias Oli.Publishing.{Publication, PublishedResource}
   alias Oli.Resources
+  alias Oli.Seeder
 
   def create_activity(parts, author, project, page_revision) do
     # Create a two part activity where each part is tied to one of the objectives above
@@ -359,6 +362,16 @@ defmodule Oli.PublishingTest do
 
       published_revision = Resources.get_revision!(published_resource.revision_id)
       assert published_revision.content == revision_with_activity.content
+    end
+
+    test "publish_project/1  refreshes part_mapping materialized view with published information" do
+      %{activity: %{revision: revision}, project: project} = project_with_activity()
+
+      Publishing.publish_project(project, "Some description")
+
+      assert Repo.all(from pm in "part_mapping",
+          where: pm.revision_id == ^revision.id,
+          select: pm.grading_approach) == ["manual"]
     end
 
     test "broadcasting the new publication works when publishing", %{project: project} do
@@ -770,5 +783,59 @@ defmodule Oli.PublishingTest do
 
       assert [] == Publishing.retrieve_visible_sources(user, institution)
     end
+  end
+
+  defp project_with_activity() do
+    content = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "manual",
+            "responses" => [
+              %{
+                "rule" => "input like {a}",
+                "score" => 10,
+                "id" => "r1",
+                "feedback" => %{"id" => "1", "content" => "yes"}
+              },
+              %{
+                "rule" => "input like {b}",
+                "score" => 11,
+                "id" => "r2",
+                "feedback" => %{"id" => "2", "content" => "almost"}
+              },
+              %{
+                "rule" => "input like {c}",
+                "score" => 0,
+                "id" => "r3",
+                "feedback" => %{"id" => "3", "content" => "no"}
+              }
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    Seeder.base_project_with_resource2()
+    |> Seeder.create_section()
+    |> Seeder.add_user(%{}, :user1)
+    |> Seeder.add_user(%{}, :user2)
+    |> Seeder.add_activity(
+      %{
+        title: "Some activity",
+        activity_type_id: Activities.get_registration_by_slug("oli_short_answer").id,
+        content: content
+      },
+      :publication,
+      :project,
+      :author,
+      :activity
+    )
+    |> Seeder.add_page(%{graded: true}, :graded_page)
+    |> Seeder.create_section_resources()
   end
 end

@@ -18,6 +18,8 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
 
+  require Logger
+
   @doc """
   Returns true if editing this revision requires the creation of a new revision first.
 
@@ -525,8 +527,9 @@ defmodule Oli.Publishing do
   """
   def update_publication(%Publication{} = publication, attrs) do
     publication
-    |> Publication.changeset(attrs)
-    |> Repo.update()
+      |> Publication.changeset(attrs)
+      |> Repo.update()
+      |> maybe_spawn_view_refresh()
   end
 
   @doc """
@@ -539,6 +542,7 @@ defmodule Oli.Publishing do
   """
   def delete_publication(%Publication{} = publication) do
     Repo.delete(publication)
+      |> maybe_spawn_view_refresh()
   end
 
   def get_published_objective_details(publication_id) do
@@ -1125,5 +1129,17 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
+
+  defp maybe_spawn_view_refresh({:ok, _} = result) do
+    spawn(fn -> refresh_part_mapping() end)
+    result
+  end
+
+  defp maybe_spawn_view_refresh(result), do: result
+
+  defp refresh_part_mapping() do
+    Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
+    Logger.info("Refreshed part_mapping view")
   end
 end
