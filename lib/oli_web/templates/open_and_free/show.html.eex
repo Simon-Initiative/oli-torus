@@ -44,10 +44,6 @@
         </td>
       </tr>
       <tr>
-        <td><strong>Timezone:</strong></td>
-        <td><%= @section.timezone %></td>
-      </tr>
-      <tr>
         <td><strong>Registration:</strong></td>
         <td>
           <%= if @section.registration_open do %>

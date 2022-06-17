@@ -191,7 +191,6 @@ defmodule Oli.AutomationSetup do
         context_id: UUID.uuid4(),
         start_date: Timex.now(),
         end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
-        timezone: "US/Eastern",
         base_project_id: project.id,
         open_and_free: true
       })

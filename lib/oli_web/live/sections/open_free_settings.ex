@@ -41,11 +41,6 @@ defmodule OliWeb.Sections.OpenFreeSettings do
         <Label class="form-check-label">Omit student email verification</Label>
       </Field>
 
-      <Field name={:timezone} class="mt-2">
-        <Label/>
-        <Select class="form-control" form="section" field="timezone" options={Predefined.timezones()} selected={get_field(@changeset, :timezone)}/>
-      </Field>
-
       <div class="form-row mt-4">
         <Field name={:start_date} class="mr-3 form-label-group">
           <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
@@ -55,6 +50,11 @@ defmodule OliWeb.Sections.OpenFreeSettings do
           <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
           <DateTimeLocalInput class="form-control" value={end_date} opts={disabled: @disabled}/>
         </Field>
+      </div>
+      <div class="form-row">
+        <small class="text-nowrap form-text text-muted">
+          Timezone: {@context.local_tz}
+        </small>
       </div>
 
       <button class="btn btn-primary mt-3" type="submit">Save</button>

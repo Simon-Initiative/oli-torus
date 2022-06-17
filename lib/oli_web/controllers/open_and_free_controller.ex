@@ -54,14 +54,14 @@ defmodule OliWeb.OpenAndFreeController do
     {source, source_label, source_param_name} = source_info(source_id)
 
     render(conn, "new.html",
+      context: SessionContext.init(conn),
       breadcrumbs: set_breadcrumbs() |> new_breadcrumb(),
       changeset: Sections.change_independent_learner_section(%Section{registration_open: true}),
       source_id: source_id,
       source: source,
       source_label: source_label,
       source_param_name: source_param_name,
-      available_brands: available_brands(),
-      timezones: Predefined.timezones()
+      available_brands: available_brands()
     )
   end
 
@@ -69,8 +69,7 @@ defmodule OliWeb.OpenAndFreeController do
     with %{
            "product_slug" => product_slug,
            "start_date" => start_date,
-           "end_date" => end_date,
-           "timezone" => timezone
+           "end_date" => end_date
          } <-
            section_params,
          blueprint <- Sections.get_section_by_slug(product_slug) do
@@ -87,8 +86,7 @@ defmodule OliWeb.OpenAndFreeController do
           open_and_free: true,
           context_id: UUID.uuid4(),
           start_date: utc_start_date,
-          end_date: utc_end_date,
-          timezone: timezone
+          end_date: utc_end_date
         })
 
       case create_from_product(conn, blueprint, section_params) do
@@ -114,8 +112,7 @@ defmodule OliWeb.OpenAndFreeController do
             source: source,
             source_label: source_label,
             source_param_name: source_param_name,
-            available_brands: available_brands(),
-            timezones: Predefined.timezones()
+            available_brands: available_brands()
           )
       end
     else
@@ -134,8 +131,7 @@ defmodule OliWeb.OpenAndFreeController do
           source: source,
           source_label: source_label,
           source_param_name: source_param_name,
-          available_brands: available_brands(),
-          timezones: Predefined.timezones()
+          available_brands: available_brands()
         )
     end
   end
@@ -144,8 +140,7 @@ defmodule OliWeb.OpenAndFreeController do
     with %{
            "project_slug" => project_slug,
            "start_date" => start_date,
-           "end_date" => end_date,
-           "timezone" => timezone
+           "end_date" => end_date
          } <-
            section_params,
          %{id: project_id} <- Course.get_project_by_slug(project_slug),
@@ -184,8 +179,7 @@ defmodule OliWeb.OpenAndFreeController do
             source: source,
             source_label: source_label,
             source_param_name: source_param_name,
-            available_brands: available_brands(),
-            timezones: Predefined.timezones()
+            available_brands: available_brands()
           )
       end
     else
@@ -204,8 +198,7 @@ defmodule OliWeb.OpenAndFreeController do
           source: source,
           source_label: source_label,
           source_param_name: source_param_name,
-          available_brands: available_brands(),
-          timezones: Predefined.timezones()
+          available_brands: available_brands()
         )
     end
   end
@@ -233,18 +226,18 @@ defmodule OliWeb.OpenAndFreeController do
       |> Sections.localize_section_start_end_datetimes(context)
 
     render(conn, "edit.html",
+      context: context,
       breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
       section: section,
       changeset: Sections.change_section(section),
-      available_brands: available_brands(),
-      timezones: Predefined.timezones()
+      available_brands: available_brands()
     )
   end
 
   def update(conn, %{
         "id" => id,
         "section" =>
-          %{"start_date" => start_date, "end_date" => end_date, "timezone" => timezone} =
+          %{"start_date" => start_date, "end_date" => end_date} =
             section_params
       }) do
     section = Sections.get_section_preloaded!(id)
@@ -270,8 +263,7 @@ defmodule OliWeb.OpenAndFreeController do
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
-          available_brands: available_brands(),
-          timezones: Predefined.timezones()
+          available_brands: available_brands()
         )
     end
   end
