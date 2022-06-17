@@ -87,13 +87,13 @@ export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
 
 export function confirmUiBibEditor(
   model: CitationModel,
-  create: boolean,
+  bibEntry?: BibEntry,
 ): Promise<Maybe<CitationModel>> {
   return new Promise((resolve, _reject) => {
     let bibContent = model;
     const modelOpen = (
       <ModalSelection
-        title={create ? 'Edit Entry' : 'Create Entry'}
+        title={bibEntry ? 'Edit Entry' : 'Create Entry'}
         onInsert={() => {
           dismiss();
           resolve(Maybe.just(bibContent));
@@ -102,7 +102,7 @@ export function confirmUiBibEditor(
           dismiss();
           resolve(Maybe.nothing());
         }}
-        okLabel={create ? 'Update' : 'Create'}
+        okLabel={bibEntry ? 'Update' : 'Create'}
       >
         <BibEntryEditor
           citationModel={model}
@@ -246,11 +246,22 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
         onPlainCreateOrEdit(thisKey);
       };
 
+      const onManualEdit = () => {
+        const bibEntry: BibEntry | undefined = bibEntrys.get(key);
+        if (bibEntry) {
+          const citeModel: CitationModel = bibEntry.content.data[0];
+          onManualCreateOrEdit(citeModel, bibEntry);
+        }
+      };
+
       return (
         <div key={key} className="d-flex justify-content-start mb-4">
           <div className="mr-2">
             <div className="mb-1">
-              <EditBibEntry onEdit={onEdit} />
+              <EditBibEntry icon="las la-edit" onEdit={onEdit} />
+            </div>
+            <div className="mb-1">
+              <EditBibEntry icon="las la-user-edit" onEdit={onManualEdit} />
             </div>
             {/* <div>
               <DeleteBibEntry onDelete={onDeleted} />
@@ -262,13 +273,12 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
     });
   };
 
-  const createNewBibEntry = (bibType: string) => {
-    const citeModel: CitationModel = fromEntryType(bibType);
-    confirmUiBibEditor(citeModel, false).then((value) => {
+  const onManualCreateOrEdit = (citeModel: CitationModel, bibEntry?: BibEntry) => {
+    confirmUiBibEditor(citeModel, bibEntry).then((value) => {
       value.caseOf({
         just: (n) => {
           // :TODO: remove empty fields
-          handleCreateOrEdit(JSON.stringify(n));
+          handleCreateOrEdit(JSON.stringify(n), bibEntry);
         },
         nothing: () => undefined,
       });
@@ -302,7 +312,7 @@ const Bibliography: React.FC<BibliographyProps> = (props: BibliographyProps) => 
             {cslSchema.items.properties['type'].enum.map((e: string) => (
               <a
                 onClick={() => {
-                  createNewBibEntry(e);
+                  onManualCreateOrEdit(fromEntryType(e));
                 }}
                 className="dropdown-item"
                 href="#"

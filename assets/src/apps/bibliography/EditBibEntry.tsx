@@ -2,6 +2,7 @@ import React from 'react';
 
 export type EditBibEntryProps = {
   onEdit: () => void;
+  icon: string;
 };
 
 export const EditBibEntry = (props: EditBibEntryProps) => {
@@ -16,7 +17,7 @@ export const EditBibEntry = (props: EditBibEntryProps) => {
       title="Edit this entry"
       aria-pressed="false"
     >
-      <i className="las la-edit"></i>
+      <i className={props.icon}></i>
     </button>
   );
 };

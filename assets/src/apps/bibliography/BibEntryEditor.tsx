@@ -206,7 +206,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
 
   const renderField = (key1: string, value1: any) => {
     return (
-      <div className="form-row form-group">
+      <div key={key1} className="form-row form-group">
         <label className="control-label" htmlFor={key1}>
           {renderLabel(key1)}
         </label>
@@ -286,9 +286,42 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
     );
   };
 
+  const createEntryTypeDropdown = (
+    <div className="form-inline">
+      <div className="dropdown">
+        <button
+          type="button"
+          id="createButton"
+          className="btn btn-link dropdown-toggle btn-purpose"
+          data-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
+          {toFriendlyLabel(model.type).toUpperCase()}
+        </button>
+        <div className="dropdown-menu" aria-labelledby="createButton">
+          <div className="overflow-auto bg-light" style={{ maxHeight: '300px' }}>
+            {cslSchema.items.properties['type'].enum.map((e: string) => (
+              <a
+                onClick={() => {
+                  onEditString('type', e);
+                }}
+                className="dropdown-item"
+                href="#"
+                key={e}
+              >
+                {toFriendlyLabel(e)}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
-      <div className="text-info">{toFriendlyLabel(model.type).toUpperCase()}</div>
+      <div>{createEntryTypeDropdown}</div>
       <div className="overflow-auto form-horizontal p-3 bg-light" style={{ maxHeight: '400px' }}>
         {renderAttributeEditors()}
       </div>
