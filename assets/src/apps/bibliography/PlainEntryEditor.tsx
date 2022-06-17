@@ -38,12 +38,18 @@ export const PlainEntryEditor: React.FC<PlainEntryEditorProps> = (props: PlainEn
 
   return (
     <div>
-      <div>Supports the following text formats @bibjson, @bibtex, @csl, @doi, @ris, @wikidata.</div>
-      <div>
-        For ISBN you may first use https://www.bibtex.com/c/isbn-to-bibtex-converter/ or any other
-        online ISBN converter to transform ISBN entries into @bibtex then copy and paste the outcome
-        of that convertion in the text area below
-      </div>
+      {props.bibEntry ? null : (
+        <>
+          <div>
+            Supports the following text formats @bibjson, @bibtex, @csl, @doi, @ris, @wikidata.
+          </div>
+          <div>
+            For ISBN you may first use https://www.bibtex.com/c/isbn-to-bibtex-converter/ or any
+            other online ISBN converter to transform ISBN entries into @bibtex then copy and paste
+            the outcome of that convertion in the text area below
+          </div>
+        </>
+      )}
       <textarea style={textAreaStyle} rows={20} onChange={handleOnChange} value={value} />
     </div>
   );
