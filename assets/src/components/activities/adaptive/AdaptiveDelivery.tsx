@@ -58,7 +58,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           // if that is the case then the activity and all its parts need to update their guid references
           const attempt = e.attempt;
           const currentAttempt = sharedAttemptStateMap.get(props.model.id);
-          /* console.log('AD CHECK COMPLETE: ', {attempt, currentAttempt, props}); */
+          /* console.log('AD CHECK COMPLETE: ', { attempt, currentAttempt, props }); */
           if (
             attempt &&
             currentAttempt &&
