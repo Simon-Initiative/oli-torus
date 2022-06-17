@@ -19,8 +19,9 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
   );
 
   const onEditString = (key: string, value: string) => {
-    setModel({ ...model, [key]: value });
-    props.onEdit({ ...model });
+    const newModel = { ...model, [key]: value };
+    setModel(newModel);
+    props.onEdit({ ...newModel });
   };
 
   const onEditNameEditor = (index: number, key: string, key2: string, value: string) => {
@@ -31,7 +32,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
       val = { ...val, [key2]: value };
       entry[1].splice(index, 1, val);
       setModel(updateModel);
-      props.onEdit({ ...model });
+      props.onEdit({ ...updateModel });
     }
   };
 
@@ -48,7 +49,7 @@ export const BibEntryEditor: React.FC<BibEntryEditorProps> = (props: BibEntryEdi
         updateModel = { ...updateModel, [key]: val };
       }
       setModel(updateModel);
-      props.onEdit({ ...model });
+      props.onEdit({ ...updateModel });
     }
   };
 
