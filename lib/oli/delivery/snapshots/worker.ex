@@ -80,29 +80,28 @@ defmodule Oli.Delivery.Snapshots.Worker do
     # Return the value of the result of the transaction as the Oban worker return value. The
     # transaction call will return  either {:ok, _} or {:error, _}. In the case of the {:ok, _} Oban
     # marks the job as completed.  In the case of an error, it scheduled it for a retry.
-    result =
-      Repo.transaction(fn ->
-        Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
-          # Look at the attached objectives for that part for that revision
-          attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
+    Repo.transaction(fn ->
+      Enum.each(results, fn {part_attempt, _, _, _, _, activity_revision} = result ->
+        # Look at the attached objectives for that part for that revision
+        attached_objectives = Map.get(activity_revision.objectives, part_attempt.part_id, [])
 
-          case attached_objectives do
-            # If there are no attached objectives, create one record recoring nils for the objectives
-            [] ->
-              to_attrs(result, nil, nil, project_id)
-              |> create_snapshot()
+        case attached_objectives do
+          # If there are no attached objectives, create one record recoring nils for the objectives
+          [] ->
+            to_attrs(result, nil, nil, project_id)
+            |> create_snapshot()
 
-            # Otherwise create one record for each objective
-            objective_ids ->
-              attrs_list =
-                Enum.map(objective_ids, fn id ->
-                  to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
-                end)
+          # Otherwise create one record for each objective
+          objective_ids ->
+            attrs_list =
+              Enum.map(objective_ids, fn id ->
+                to_attrs(result, id, Map.get(objective_revisions_by_id, id), project_id)
+              end)
 
-              Repo.insert_all(Snapshot, attrs_list)
-          end
-        end)
+            Repo.insert_all(Snapshot, attrs_list)
+        end
       end)
+    end)
   end
 
   def to_attrs(
