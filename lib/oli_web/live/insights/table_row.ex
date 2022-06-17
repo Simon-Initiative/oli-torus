@@ -14,11 +14,14 @@ defmodule OliWeb.Insights.TableRow do
     } = assigns.row
 
     ~L"""
-    <tr>
+    <tr class="<%= if Map.has_key?(assigns.row, :child_rows) do "table-light" else "" end %>">
       <th scope="row">
+        <%= if Map.get(assigns.row, :is_child, false) do %>
+          <span class="ml-3">&nbsp;</span>
+        <% end %>
         <%= Links.resource_link(slice, assigns.parent_pages, assigns.project) %>
       </th>
-      <%= if @selected == :by_objective || @selected == :by_page do %>
+      <%= if @selected == :by_page do %>
         <td>
           <%= if !is_nil(Map.get(@row, :activity)) do @row.activity.title end %>
         </td>

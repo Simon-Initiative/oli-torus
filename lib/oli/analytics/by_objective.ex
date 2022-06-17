@@ -12,11 +12,10 @@ defmodule Oli.Analytics.ByObjective do
         where: project.slug == ^project_slug,
         join: snapshot in Snapshot,
         on: snapshot.project_id == project.id,
-        group_by: [snapshot.activity_id, snapshot.objective_id],
+        group_by: [snapshot.objective_id],
         select: %{
-          activity_id: snapshot.activity_id,
           objective_id: snapshot.objective_id,
-          number_of_attempts: count(snapshot.part_attempt_id, :distinct)
+          number_of_attempts: count(snapshot.id)
         }
       )
 
@@ -27,16 +26,10 @@ defmodule Oli.Analytics.ByObjective do
         ),
         left_join: pairing in subquery(activity_objectives),
         on: objective.resource_id == pairing.objective_id,
-        left_join:
-          activity in subquery(
-            Publishing.query_unpublished_revisions_by_type(project_slug, "activity")
-          ),
-        on: pairing.activity_id == activity.resource_id,
-        left_join: analytics in subquery(Common.analytics_by_activity(project_slug)),
-        on: pairing.activity_id == analytics.activity_id,
+        left_join: analytics in subquery(Common.analytics_by_objective(project_slug)),
+        on: pairing.objective_id == analytics.objective_id,
         select: %{
           slice: objective,
-          activity: activity,
           eventually_correct: analytics.eventually_correct,
           first_try_correct: analytics.first_try_correct,
           number_of_attempts: pairing.number_of_attempts,

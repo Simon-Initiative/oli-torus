@@ -103,10 +103,6 @@ defmodule Oli.Delivery.Snapshots.Worker do
           end
         end)
       end)
-
-    IO.inspect(result)
-
-    result
   end
 
   def to_attrs(

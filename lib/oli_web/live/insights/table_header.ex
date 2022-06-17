@@ -40,7 +40,7 @@ defmodule OliWeb.Insights.TableHeader do
           end %>
           <%= sort_order_icon("title", @sort_by, @sort_order) %>
         </th>
-        <%= if @selected == :by_objective || @selected == :by_page do %>
+        <%= if @selected == :by_page do %>
           <th>Activity</th>
         <% end %>
         <%= th(assigns,
