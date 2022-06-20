@@ -1133,7 +1133,7 @@ defmodule Oli.Publishing do
 
   @doc """
     Refreshes the part_mapping materialized view.
-    Since this operation is expensive, do not use perform it synchrnously unless neccesary.
+    Since this operation is expensive, do not use perform it synchronously unless neccesary.
   """
   def refresh_part_mapping() do
     Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
