@@ -92,7 +92,7 @@ export const triggerCheck = createAsyncThunk(
     // update redux first because we need to get the latest full extrnisic state to write to the server
     await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
-    const extrinsicState = selectExtrinsicState(getState() as RootState);
+    const extrnisicState = selectExtrinsicState(getState() as RootState);
     if (!isPreviewMode) {
       // update the server with the latest changes to extrinsic state
 
@@ -101,7 +101,7 @@ export const triggerCheck = createAsyncThunk(
         resourceAttemptGuid,
         extrnisicState,
       }); */
-      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrinsicState);
+      await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
     }
 
     let checkResult;
@@ -225,7 +225,7 @@ export const triggerCheck = createAsyncThunk(
           return acc;
         }, {});
 
-        let checkSnapshot = { ...extrinsicState, ...otherActivityState, ...partResponseState };
+        let checkSnapshot = { ...extrnisicState, ...otherActivityState, ...partResponseState };
 
         // filter the keys of the snapshot to only include the ones that are required
         checkSnapshot = Object.keys(checkSnapshot).reduce((acc: any, key) => {
@@ -237,7 +237,7 @@ export const triggerCheck = createAsyncThunk(
 
         console.log('PRE CHECK RESULT (PREVIEW)', {
           sectionSlug,
-          extrinsicState,
+          extrnisicState,
           partResponses,
           partResponseState,
           otherActivityState,
