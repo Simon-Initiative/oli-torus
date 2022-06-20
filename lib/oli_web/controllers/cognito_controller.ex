@@ -21,8 +21,7 @@ defmodule OliWeb.CognitoController do
     case Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       {:ok, user} ->
         conn
-        |> use_pow_config(:user)
-        |> Pow.Plug.create(user)
+        |> create_pow_user(:user, user)
         |> redirect(to: Routes.delivery_path(conn, :open_and_free_index))
 
       {:error, %Ecto.Changeset{}} ->
@@ -45,8 +44,7 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, user} <- Accounts.setup_sso_user(conn.assigns.claims, community_id) do
       conn
-      |> use_pow_config(:user)
-      |> Pow.Plug.create(user)
+      |> create_pow_user(:user, user)
       |> create_or_prompt(user, anchor)
     else
       nil ->
@@ -72,8 +70,7 @@ defmodule OliWeb.CognitoController do
     with anchor when not is_nil(anchor) <- fetch_product_or_project(params),
          {:ok, author} <- Accounts.setup_sso_author(conn.assigns.claims, community_id) do
       conn
-      |> use_pow_config(:author)
-      |> Pow.Plug.create(author)
+      |> create_pow_user(:author, author)
       |> clone_or_prompt(author, anchor, get_error_url(params))
     else
       nil ->

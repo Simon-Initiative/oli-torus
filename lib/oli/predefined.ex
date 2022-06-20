@@ -370,6 +370,14 @@ defmodule Oli.Predefined do
         auth_token_path: "/mod/lti/token.php",
         auth_login_path: "/mod/lti/auth.php",
         auth_server_path: "/"
+      },
+      %{
+        product_family_code: "desire2learn",
+        name: "D2L (Desire2Learn)",
+        key_set_path: "/d2l/.well-known/jwks",
+        auth_token_path: "/core/connect/token",
+        auth_login_path: "/d2l/lti/authenticate",
+        auth_server_path: "/auth/token"
       }
     ]
 

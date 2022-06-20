@@ -33,9 +33,9 @@ defmodule OliWeb.InstitutionControllerTest do
     timezone: nil
   }
 
-  describe "index" do
-    setup [:create_institution]
+  setup [:create_institution]
 
+  describe "index" do
     test "lists all institutions", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :index))
       assert html_response(conn, 200) =~ "some name"
@@ -43,8 +43,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "new institution" do
-    setup [:create_institution]
-
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :new))
       assert html_response(conn, 200) =~ "Register Institution"
@@ -52,8 +50,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "create institution" do
-    setup [:create_institution]
-
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
@@ -67,12 +63,12 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "show institution" do
-    setup [:create_institution]
-
     test "renders institution details", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some name"
-      assert html_response(conn, 200) =~ "href=\"#{Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)}\""
+
+      assert html_response(conn, 200) =~
+               "href=\"#{Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)}\""
     end
 
     test "renders institution registration details", %{conn: conn, institution: institution} do
@@ -89,8 +85,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "edit institution" do
-    setup [:create_institution]
-
     test "renders form for editing chosen institution", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :edit, institution))
       assert html_response(conn, 200) =~ "Edit Institution"
@@ -98,8 +92,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "update institution" do
-    setup [:create_institution]
-
     test "redirects when data is valid", %{conn: conn, author: author, institution: institution} do
       conn =
         put(conn, Routes.institution_path(conn, :update, institution), institution: @update_attrs)
@@ -123,8 +115,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "delete institution" do
-    setup [:create_institution]
-
     test "deletes chosen institution", %{conn: conn, author: author, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
@@ -140,8 +130,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "approve registration" do
-    setup [:create_institution]
-
     test "approves the chosen registration", %{conn: conn} do
       pending_registration = pending_registration_fixture()
 

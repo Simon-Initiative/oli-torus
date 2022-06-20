@@ -8,6 +8,9 @@ defmodule OliWeb.Router do
 
   import Phoenix.LiveDashboard.Router
 
+  @user_persistent_session_cookie_key "oli_user_persistent_session"
+  @author_persistent_session_cookie_key "oli_author_persistent_session"
+
   ### BASE PIPELINES ###
   # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
   # All of the other pipelines are to be used as additions onto one of these four base pipelines
@@ -19,7 +22,6 @@ defmodule OliWeb.Router do
     plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "default.html"})
     plug(:put_layout, {OliWeb.LayoutView, "app.html"})
-    plug(Oli.Plugs.SetCurrentUser)
     plug(:put_secure_browser_headers)
     plug(Oli.Plugs.LoadTestingCSRFBypass)
     plug(:protect_from_forgery)
@@ -57,15 +59,16 @@ defmodule OliWeb.Router do
 
   pipeline :authoring do
     plug(Oli.Plugs.SetDefaultPow, :author)
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: @author_persistent_session_cookie_key)
+    plug(Oli.Plugs.SetCurrentUser)
+
     # Disable caching of resources in authoring
     plug(Oli.Plugs.NoCache)
   end
 
   pipeline :delivery do
     plug(Oli.Plugs.SetDefaultPow, :user)
-  end
-
-  pipeline :with_current_user do
+    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: @user_persistent_session_cookie_key)
     plug(Oli.Plugs.SetCurrentUser)
   end
 
@@ -96,7 +99,7 @@ defmodule OliWeb.Router do
 
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
-    plug(Oli.Plugs.SetDefaultPow, :user)
+    plug :delivery
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -109,10 +112,13 @@ defmodule OliWeb.Router do
     plug(OliWeb.EnsureUserNotLockedPlug)
 
     plug(Oli.Plugs.RemoveXFrameOptions)
-    plug(:put_root_layout, {OliWeb.LayoutView, "delivery.html"})
+
+    plug :delivery_layout
   end
 
   pipeline :delivery_and_admin do
+    plug :delivery
+    plug :authoring
     plug(Oli.Plugs.GiveAdminPriority)
 
     plug(PowAssent.Plug.Reauthorization,
@@ -131,7 +137,7 @@ defmodule OliWeb.Router do
   end
 
   pipeline :authoring_protected do
-    plug(Oli.Plugs.SetDefaultPow, :author)
+    plug :authoring
 
     plug(PowAssent.Plug.Reauthorization,
       handler: PowAssent.Phoenix.ReauthorizationPlugHandler
@@ -209,7 +215,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/" do
-    pipe_through([:delivery, :skip_csrf_protection])
+    pipe_through([:skip_csrf_protection, :delivery])
     post("/jcourse/superactivity/server", OliWeb.LegacySuperactivityController, :process)
 
     get(
@@ -222,11 +228,12 @@ defmodule OliWeb.Router do
     pow_assent_authorization_post_callback_routes()
   end
 
-  # scope "/" do
-  #   pipe_through([:delivery, :skip_csrf_protection])
-  #   post("/jcourse/dashboard/log/server", OliWeb.LegacyLogsController, :process)
-  #   pow_assent_authorization_post_callback_routes()
-  # end
+  scope "/", OliWeb do
+    pipe_through([:browser, :delivery_protected])
+
+    # keep a session active by periodically calling this endpoint
+    get("/keep-alive", StaticPageController, :keep_alive)
+  end
 
   scope "/authoring", as: :authoring do
     pipe_through([:browser, :authoring, :registration_captcha, :pow_email_layout])
@@ -243,7 +250,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/authoring" do
-    pipe_through([:authoring, :skip_csrf_protection])
+    pipe_through([:skip_csrf_protection, :authoring])
 
     pow_assent_authorization_post_callback_routes()
   end
@@ -256,7 +263,7 @@ defmodule OliWeb.Router do
 
   # open access routes
   scope "/", OliWeb do
-    pipe_through([:browser])
+    pipe_through([:browser, :delivery, :authoring])
 
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
@@ -265,6 +272,7 @@ defmodule OliWeb.Router do
 
   scope "/", OliWeb do
     pipe_through([:api])
+
     get("/api/v1/legacy_support", LegacySupportController, :index)
     post("/access_tokens", LtiController, :access_tokens)
 
@@ -292,7 +300,10 @@ defmodule OliWeb.Router do
 
   # authorization protected routes
   scope "/authoring", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authoring])
+    pipe_through([:browser, :authoring_protected, :workspace])
+
+    # keep a session active by periodically calling this endpoint
+    get("/keep-alive", StaticPageController, :keep_alive, as: :author_keep_alive)
 
     live("/projects", Projects.ProjectsLive)
     live("/products/:product_id", Products.DetailsView)
@@ -305,9 +316,6 @@ defmodule OliWeb.Router do
     live("/account", Workspace.AccountDetailsLive)
 
     put("/account", WorkspaceController, :update_author)
-
-    # keep a session active by periodically calling this endpoint
-    get("/keep-alive", StaticPageController, :keep_alive)
 
     scope "/communities" do
       pipe_through([:community_admin])
@@ -329,12 +337,12 @@ defmodule OliWeb.Router do
   end
 
   scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authoring])
+    pipe_through([:browser, :authoring_protected, :workspace])
     post("/", ProjectController, :create)
   end
 
   scope "/authoring/project", OliWeb do
-    pipe_through([:browser, :authoring_protected, :workspace, :authoring, :authorize_project])
+    pipe_through([:browser, :authoring_protected, :workspace, :authorize_project])
 
     # Project display pages
     get("/:project_id", ProjectController, :overview)
@@ -523,7 +531,7 @@ defmodule OliWeb.Router do
   end
 
   scope "/api/v1/payments", OliWeb do
-    pipe_through([:api, :delivery_protected, :with_current_user])
+    pipe_through([:api, :delivery_protected])
 
     # String payment intent creation
     post("/s/create-payment-intent", PaymentProviders.StripeController, :init_intent)
@@ -634,7 +642,6 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :delivery_protected,
       :pow_email_layout
     ])
@@ -647,7 +654,6 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :require_section,
       :delivery_protected,
       :pow_email_layout
@@ -660,10 +666,8 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :delivery_protected,
-      :require_independent_instructor,
-      :delivery_layout
+      :require_independent_instructor
     ])
 
     live("/independent/create", Delivery.SelectSource, :independent_learner, as: :select_source)
@@ -674,7 +678,6 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :require_section,
       :delivery_protected,
       :pow_email_layout
@@ -690,7 +693,6 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :require_section,
       :delivery_protected,
       :maybe_gated_resource,
@@ -721,7 +723,6 @@ defmodule OliWeb.Router do
   scope "/sections/:section_slug/preview/", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :require_section,
       :delivery_and_admin,
       :pow_email_layout
@@ -738,7 +739,6 @@ defmodule OliWeb.Router do
   scope "/sections", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :require_section,
       :delivery_and_admin,
       :pow_email_layout
@@ -789,6 +789,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
+      :delivery,
       :delivery_layout,
       :pow_email_layout
     ])
@@ -849,7 +850,6 @@ defmodule OliWeb.Router do
       :browser,
       :authoring_protected,
       :workspace,
-      :authoring,
       :admin,
       :pow_email_layout
     ])
@@ -933,7 +933,6 @@ defmodule OliWeb.Router do
       :browser,
       :authoring_protected,
       :workspace,
-      :authoring,
       :authorize_project,
       :admin
     ])
@@ -966,8 +965,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :authoring_protected,
-      :workspace,
-      :authoring
+      :workspace
     ])
 
     get("/prompt_clone/projects/:project_slug", CognitoController, :prompt_clone,
@@ -980,10 +978,8 @@ defmodule OliWeb.Router do
   scope "/cognito", OliWeb do
     pipe_through([
       :browser,
-      :delivery,
       :delivery_protected,
-      :require_independent_instructor,
-      :delivery_layout
+      :require_independent_instructor
     ])
 
     get("/prompt_create/projects/:project_slug", CognitoController, :prompt_create,

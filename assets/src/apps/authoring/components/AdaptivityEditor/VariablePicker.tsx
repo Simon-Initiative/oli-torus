@@ -149,7 +149,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
 
   const getPartTypeTemplate = useCallback(
     (part: Record<string, string>, index: number) => {
-      const adaptivitySchema: any = partAdaptivityMap[part.type];
+      const adaptivitySchema: any = partAdaptivityMap[part.id];
       if (adaptivitySchema) {
         return (
           <>
@@ -226,12 +226,12 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
           }
         }
       }
-      return { adaptivitySchema, type: part.type };
+      return { adaptivitySchema, type: part.type, id: part.id };
     });
     const mapItems = await Promise.all(getMapPromises);
     const adaptivityMap: Record<string, string> = mapItems.reduce(
       (acc: any, typeToAdaptivitySchemaMap: any) => {
-        acc[typeToAdaptivitySchemaMap.type] = typeToAdaptivitySchemaMap.adaptivitySchema;
+        acc[typeToAdaptivitySchemaMap.id] = typeToAdaptivitySchemaMap.adaptivitySchema;
         return acc;
       },
       {},

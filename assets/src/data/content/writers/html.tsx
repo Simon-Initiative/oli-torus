@@ -10,6 +10,8 @@ import {
   CodeLine,
   CodeV1,
   CodeV2,
+  FormulaBlock,
+  FormulaInline,
   HeadingFive,
   HeadingFour,
   HeadingOne,
@@ -41,6 +43,10 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
+import {
+  MathJaxLatexFormula,
+  MathJaxMathMLFormula,
+} from '../../../components/common/MathJaxFormula';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
 
@@ -91,6 +97,7 @@ export class HtmlParser implements WriterImpl {
       </div>
     );
   }
+
   p(context: WriterContext, next: Next, _x: Paragraph) {
     return <p>{next()}</p>;
   }
@@ -112,6 +119,26 @@ export class HtmlParser implements WriterImpl {
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
     return <h6>{next()}</h6>;
   }
+
+  formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+    switch (element.subtype) {
+      case 'latex':
+        return <MathJaxLatexFormula src={element.src} inline={element.type === 'formula_inline'} />;
+      case 'mathml':
+        return (
+          <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
+        );
+      case 'richtext':
+        return <span className={element.type}>{next()}</span>;
+      default:
+        return <span className="formula">Unknown formula type</span>;
+    }
+  }
+
+  formulaInline(ctx: WriterContext, next: Next, element: FormulaInline) {
+    return this.formula(ctx, next, element);
+  }
+
   img(context: WriterContext, next: Next, attrs: ImageBlock) {
     if (!attrs.src) return <></>;
 

@@ -375,7 +375,7 @@ defmodule OliWeb.AdminLiveTest do
       conn: conn
     } do
       assert {:error, {:redirect, %{to: "/not_found"}}} =
-               live(conn, live_view_user_detail_route(1000))
+               live(conn, live_view_user_detail_route(-1))
     end
 
     test "displays a confirm modal before deleting a user", %{
@@ -642,7 +642,7 @@ defmodule OliWeb.AdminLiveTest do
       conn: conn
     } do
       assert {:error, {:redirect, %{to: "/not_found"}}} =
-               live(conn, live_view_author_detail_route(1000))
+               live(conn, live_view_author_detail_route(-1))
     end
 
     test "displays a confirm modal before deleting a author", %{

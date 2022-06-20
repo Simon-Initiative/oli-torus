@@ -40,4 +40,34 @@ defmodule OliWeb.StaticPageControllerTest do
       refute html_response(conn, 200) =~ "/js/timezone.js"
     end
   end
+
+  describe "keep alive" do
+    test "redirects when user is not logged in", %{conn: conn} do
+      conn = get(conn, Routes.static_page_path(conn, :keep_alive))
+
+      assert html_response(conn, 302)
+        =~ "You are being <a href=\"/session/new?request_path=%2Fkeep-alive\">redirected"
+    end
+
+    test "returns ok when user is logged in", conn do
+      {:ok, conn: conn, user: _} = user_conn(conn)
+      conn = get(conn, Routes.static_page_path(conn, :keep_alive))
+
+      assert response(conn, 200) =~ "Ok"
+    end
+
+    test "redirects when author is not logged in", %{conn: conn} do
+      conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
+
+      assert html_response(conn, 302)
+        =~ "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fkeep-alive\">redirected"
+    end
+
+    test "returns ok when author is logged in", conn do
+      {:ok, conn: conn, author: _} = author_conn(conn)
+      conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
+
+      assert response(conn, 200) =~ "Ok"
+    end
+  end
 end
