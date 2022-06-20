@@ -3,6 +3,7 @@ defmodule Oli.PublishingTest do
 
   import Oli.Factory
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.{Course, Locks}
@@ -293,7 +294,7 @@ defmodule Oli.PublishingTest do
 
       # mappings should now be replaced with new mappings in the new publication
       assert unpublished_mappings !=
-               Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
+        Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
     end
 
     test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",
@@ -364,14 +365,16 @@ defmodule Oli.PublishingTest do
       assert published_revision.content == revision_with_activity.content
     end
 
-    test "publish_project/1  refreshes part_mapping materialized view with published information" do
+    test "publish_project/1 refreshes part_mapping materialized view with published information" do
       %{activity: %{revision: revision}, project: project} = project_with_activity()
 
-      Publishing.publish_project(project, "Some description")
+      capture_log(fn ->
+        Publishing.publish_project(project, "Some description")
+      end) =~ "Refreshed part_mapping view"
 
       assert Repo.all(from pm in "part_mapping",
-          where: pm.revision_id == ^revision.id,
-          select: pm.grading_approach) == ["manual"]
+      where: pm.revision_id == ^revision.id,
+      select: pm.grading_approach) == ["manual"]
     end
 
     test "broadcasting the new publication works when publishing", %{project: project} do

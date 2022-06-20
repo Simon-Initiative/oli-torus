@@ -109,6 +109,9 @@ config :oli, OliWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
+# Config adapter for refreshing part_mapping
+config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
+
 # Watch static and templates for browser reloading.
 config :oli, OliWeb.Endpoint,
   live_reload: [

@@ -9,7 +9,7 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.{Revision, ResourceType}
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.{Publication, PublishedResource, PartMappingRefreshAdapter, PartMappingRefreshAsync}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
   alias Oli.Publishing
@@ -529,7 +529,7 @@ defmodule Oli.Publishing do
     publication
       |> Publication.changeset(attrs)
       |> Repo.update()
-      |> maybe_spawn_view_refresh()
+      |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -542,7 +542,7 @@ defmodule Oli.Publishing do
   """
   def delete_publication(%Publication{} = publication) do
     Repo.delete(publication)
-      |> maybe_spawn_view_refresh()
+      |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -1131,15 +1131,18 @@ defmodule Oli.Publishing do
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
   end
 
-  defp maybe_spawn_view_refresh({:ok, _} = result) do
-    spawn(fn -> refresh_part_mapping() end)
-    result
-  end
-
-  defp maybe_spawn_view_refresh(result), do: result
-
-  defp refresh_part_mapping() do
+  @doc """
+    Refreshes the part_mapping materialized view.
+    Since this operation is expensive, do not use perform it synchrnously unless neccesary.
+  """
+  def refresh_part_mapping() do
     Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
     Logger.info("Refreshed part_mapping view")
+  end
+
+  @spec refresh_adapter() :: PartMappingRefreshAdapter
+  defp refresh_adapter() do
+    Application.get_env(:oli, Oli.Publishing)
+      |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end
