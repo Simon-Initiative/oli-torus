@@ -3,6 +3,7 @@ import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
+import guid from 'utils/guid';
 import {
   NotificationType,
   subscribeToNotification,
@@ -405,7 +406,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     handshake: {
       // should be of type CapiHandshake
       requestToken: '',
-      authToken: props.id,
+      authToken: `${props.id}_${guid()}`,
       config: {},
     },
     init: false, // initial setup complete; this might be init state?
@@ -1094,10 +1095,14 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       }
     });
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
     if (!simLife.init) {
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       handleBindToSim();
       simLife.init = true;
+    } else {
+      simLife.handshake.requestToken = `${props.id}_${guid()}`;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, {});
     }
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
