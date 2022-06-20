@@ -97,6 +97,9 @@ defmodule OliWeb.Common.FormatDateTime do
   def maybe_localized_datetime(%NaiveDateTime{} = naive_date, nil),
     do: Timex.to_datetime(naive_date, "Etc/UTC")
 
+  def maybe_localized_datetime(%NaiveDateTime{} = naive_date, %SessionContext{local_tz: local_tz}),
+    do: Timex.to_datetime(naive_date, "Etc/UTC") |> maybe_localized_datetime(local_tz)
+
   def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
 
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),

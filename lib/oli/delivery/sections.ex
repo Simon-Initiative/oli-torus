@@ -15,6 +15,7 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
+  alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
@@ -89,7 +90,7 @@ defmodule Oli.Delivery.Sections do
     query =
       Enrollment
       |> join(:left, [e], u in User, on: u.id == e.user_id)
-      |> join(:left, [e, _], p in "payments", on: p.enrollment_id == e.id)
+      |> join(:left, [e, _], p in Payment, on: p.enrollment_id == e.id)
       |> where(^filter_by_text)
       |> where(^filter_by_role)
       |> where([e, _], e.section_id == ^section_id)

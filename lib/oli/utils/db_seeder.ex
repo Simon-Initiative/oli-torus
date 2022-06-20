@@ -52,7 +52,8 @@ defmodule Oli.Seeder do
         name: "Example Institution",
         country_code: "US",
         institution_email: author.email,
-        institution_url: "example.edu"
+        institution_url: "example.edu",
+        timezone: "America/New_York"
       })
       |> Repo.insert()
 
@@ -168,6 +169,7 @@ defmodule Oli.Seeder do
         country_code: "some country_code",
         institution_email: "some institution_email",
         institution_url: "some institution_url",
+        timezone: "America/New_York",
         author_id: author.id
       })
       |> Repo.insert()

@@ -13,6 +13,8 @@ defmodule OliWeb.Common.SessionContext do
     :user
   ]
 
+  @default_timezone "Etc/UTC"
+
   defstruct [
     :local_tz,
     :author,
@@ -34,7 +36,7 @@ defmodule OliWeb.Common.SessionContext do
   end
 
   def init(%Plug.Conn{assigns: assigns} = conn) do
-    local_tz = Plug.Conn.get_session(conn, "local_tz")
+    local_tz = Plug.Conn.get_session(conn, "local_tz") || @default_timezone
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
 
@@ -46,7 +48,7 @@ defmodule OliWeb.Common.SessionContext do
   end
 
   def init(%{} = session) do
-    local_tz = Map.get(session, "local_tz")
+    local_tz = Map.get(session, "local_tz", @default_timezone)
 
     author =
       case Map.get(session, "current_author_id") do

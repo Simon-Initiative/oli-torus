@@ -321,7 +321,7 @@ defmodule OliWeb.AdminLiveTest do
     setup [:admin_conn, :create_user]
 
     test "loads correctly with user data", %{conn: conn, user: user} do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(user.id))
+      {:ok, view, _} = live(conn, live_view_user_detail_route(user.id))
 
       assert has_element?(view, "input[value=\"#{user.sub}\"]")
       assert has_element?(view, "input[value=\"#{user.name}\"]")
@@ -332,9 +332,9 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "#user_independent_learner")
       assert has_element?(view, "#user_can_create_sections")
       assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
-      assert has_element?(view, "input[value=\"#{user.email_confirmed_at}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.inserted_at)}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.updated_at)}\"]")
+      assert has_element?(view, "input[value=\"#{date(user.email_confirmed_at, precision: :relative)}\"]")
+      assert has_element?(view, "input[value=\"#{date(user.inserted_at, precision: :relative)}\"]")
+      assert has_element?(view, "input[value=\"#{date(user.updated_at, precision: :relative)}\"]")
     end
 
     test "displays error message when submit fails", %{

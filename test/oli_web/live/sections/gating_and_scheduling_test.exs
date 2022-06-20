@@ -123,7 +123,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
   describe "gating and scheduling edit live test" do
     setup [:setup_admin_session, :create_gating_condition]
 
-    test "displays gating condition info correctly using the section timezone when local timezone is not set",
+    test "displays gating condition info correctly using UTC when local timezone is not set",
          %{
            conn: conn,
            section_1: section,
@@ -136,7 +136,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      timezone = section.timezone
+      timezone = "Etc/UTC"
 
       assert html =~ "Edit Gating Condition"
       assert has_element?(view, "input[value=\"#{revision.title}\"]")
@@ -153,9 +153,6 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
              |> element("#end_date")
              |> render() =~
                utc_datetime_to_localized_datestring(gating_condition.data.end_datetime, timezone)
-
-      assert html =~
-               "Your local timezone is not set in the browser. #{timezone} (section timezone) is used by default."
     end
 
     test "displays gating condition dates correctly using the local timezone when it is set", %{
@@ -293,7 +290,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert flash["info"] == "Gating condition successfully updated."
     end
 
-    test "shifts input datestring to utc using the section timezone when local timezone is not set",
+    test "shifts input datestring to utc when local timezone is not set",
          %{
            conn: conn,
            section_1: section,
@@ -319,12 +316,12 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       assert utc_datetime_to_localized_datestring(
                updated_gating_condition.data.start_datetime,
-               section.timezone
+               "Etc/UTC"
              ) == input_start_date
 
       assert utc_datetime_to_localized_datestring(
                updated_gating_condition.data.end_datetime,
-               section.timezone
+               "Etc/UTC"
              ) == input_end_date
     end
 
@@ -392,14 +389,11 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       conn: conn,
       section_1: section
     } do
-      {:ok, view, html} =
+      {:ok, view, _html} =
         live(
           conn,
           gating_condition_new_route(section.slug)
         )
-
-      assert html =~
-               "Your local timezone is not set in the browser. #{section.timezone} (section timezone) is used by default."
 
       create_gating_condition_through_ui(view, "schedule", "2022-01-12T13:48", "2022-01-13T13:48")
 
@@ -412,7 +406,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       assert flash["info"] == "Gating condition successfully created."
     end
 
-    test "shifts input datestring to utc using the section timezone when local timezone is not set",
+    test "shifts input datestring to utc when local timezone is not set",
          %{
            conn: conn,
            section_1: section
@@ -438,12 +432,12 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
 
       assert utc_datetime_to_localized_datestring(
                created_gating_condition.data.start_datetime,
-               section.timezone
+               "Etc/UTC"
              ) == input_start_date
 
       assert utc_datetime_to_localized_datestring(
                created_gating_condition.data.end_datetime,
-               section.timezone
+               "Etc/UTC"
              ) == input_end_date
     end
 

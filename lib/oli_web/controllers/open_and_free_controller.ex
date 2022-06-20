@@ -1,7 +1,7 @@
 defmodule OliWeb.OpenAndFreeController do
   use OliWeb, :controller
 
-  alias Oli.{Repo, Predefined, Publishing, Branding}
+  alias Oli.{Repo, Publishing, Branding}
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course
@@ -260,6 +260,7 @@ defmodule OliWeb.OpenAndFreeController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "edit.html",
+          context: context,
           breadcrumbs: set_breadcrumbs() |> edit_breadcrumb(),
           section: section,
           changeset: changeset,
