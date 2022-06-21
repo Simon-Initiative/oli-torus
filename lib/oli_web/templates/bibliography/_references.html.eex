@@ -1,0 +1,3 @@
+<div class="content">
+<%= ReactPhoenix.ClientSide.react_component("Components.References", @bib_app_params) %>
+</div>

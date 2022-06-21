@@ -21,6 +21,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
+  alias Oli.Utils.BibUtils
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -160,7 +161,10 @@ defmodule OliWeb.PageDeliveryController do
             active_page: nil,
             revision: revision,
             resource_slug: revision.slug,
-            display_curriculum_item_numbering: section.display_curriculum_item_numbering
+            display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+            bib_app_params: %{
+              bibReferences: []
+            }
           )
 
         # Any attempt to render a valid revision that is not container or page gets an error
@@ -265,10 +269,23 @@ defmodule OliWeb.PageDeliveryController do
           model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
           delivery_element: type.delivery_element,
           authoring_element: type.authoring_element,
-          graded: revision.graded
+          graded: revision.graded,
+          bib_refs: Map.get(rev.content, "bibrefs", [])
         }
       end)
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+    bib_entrys =
+      BibUtils.assemble_bib_entries(
+        revision.content,
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        Resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     all_activities = Activities.list_activity_registrations()
 
@@ -278,7 +295,8 @@ defmodule OliWeb.PageDeliveryController do
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
-      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
+      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
+      bib_app_params: bib_entrys
     }
 
     html = Page.render(render_context, revision.content, Page.Html)
@@ -305,7 +323,10 @@ defmodule OliWeb.PageDeliveryController do
         container_link_url:
           &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
         resource_slug: revision.slug,
-        display_curriculum_item_numbering: section.display_curriculum_item_numbering
+        display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+        bib_app_params: %{
+          bibReferences: bib_entrys
+        }
       }
     )
   end
@@ -386,7 +407,10 @@ defmodule OliWeb.PageDeliveryController do
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
-      resource_slug: context.page.slug
+      resource_slug: context.page.slug,
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      }
     })
   end
 
@@ -447,6 +471,9 @@ defmodule OliWeb.PageDeliveryController do
             resource_attempt.attempt_guid
           )
       },
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      },
       activity_type_slug_mapping: %{},
       activity_types: activity_types,
       additional_stylesheets: Map.get(context.page.content, "additionalStylesheets", []),
@@ -500,7 +527,8 @@ defmodule OliWeb.PageDeliveryController do
         else
           :delivery
         end,
-      activity_map: context.activities
+      activity_map: context.activities,
+      bib_app_params: context.bib_revisions
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -543,7 +571,10 @@ defmodule OliWeb.PageDeliveryController do
         page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
         container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
         revision: context.page,
-        resource_slug: context.page.slug
+        resource_slug: context.page.slug,
+        bib_app_params: %{
+          bibReferences: context.bib_revisions
+        },
       }
     )
   end
@@ -558,7 +589,7 @@ defmodule OliWeb.PageDeliveryController do
       # We must check gating conditions here to account for gates that activated after
       # the prologue page was rendered, and for malicous/deliberate attempts to start an attempt via
       # hitting this endpoint.
-      revision = Oli.Publishing.DeliveryResolver.from_revision_slug(section_slug, revision_slug)
+      revision = Resolver.from_revision_slug(section_slug, revision_slug)
 
       case Oli.Delivery.Gating.blocked_by(section, user, revision.resource_id) do
         [] ->
@@ -696,7 +727,10 @@ defmodule OliWeb.PageDeliveryController do
       page_link_url: &Routes.page_delivery_path(conn, :page, section_slug, &1),
       container_link_url: &Routes.page_delivery_path(conn, :container, section_slug, &1),
       revision: context.page,
-      resource_slug: context.page.slug
+      resource_slug: context.page.slug,
+      bib_app_params: %{
+        bibReferences: context.bib_revisions
+      }
     )
   end
 
