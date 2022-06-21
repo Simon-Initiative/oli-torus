@@ -17,7 +17,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     DropTarget,
     EntryLive,
     OptionsModal,
-    DeleteModal
+    DeleteModal,
+    NotEmptyModal
   }
 
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -246,18 +247,13 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project, author: author} = socket.assigns
 
-    assigns = %{
-      id: "delete_#{slug}",
-      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
-      container: container,
-      project: project,
-      author: author
-    }
+    case Enum.find(socket.assigns.children, fn r -> r.slug == slug end) do
+      %{children: []} = item ->
+        proceed_with_deletion_warning(socket, container, project, author, item)
 
-    {:noreply,
-     assign(socket,
-       modal: %{component: DeleteModal, assigns: assigns}
-     )}
+      item ->
+        notify_not_empty(socket, container, project, author, item)
+    end
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
@@ -297,6 +293,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("dismiss", _, socket) do
     {:noreply, socket}
   end
 
@@ -490,6 +490,36 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.container.slug,
            %{view: view}
          )
+     )}
+  end
+
+  defp proceed_with_deletion_warning(socket, container, project, author, item) do
+    assigns = %{
+      id: "delete_#{item.slug}",
+      revision: item,
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DeleteModal, assigns: assigns}
+     )}
+  end
+
+  defp notify_not_empty(socket, container, project, author, item) do
+    assigns = %{
+      id: "not_empty_#{item.slug}",
+      revision: item,
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: NotEmptyModal, assigns: assigns}
      )}
   end
 
