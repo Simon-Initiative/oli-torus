@@ -76,7 +76,7 @@ export const CiteEditor = (props: Props) => {
         position="bottom"
         align="start"
         content={
-          <Toolbar context={props.commandContext}>
+          <Toolbar context={props.commandContext} orientation={'horizontal'}>
             <Toolbar.Group>
               <CommandButton
                 description={createButtonCommandDesc({
