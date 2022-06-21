@@ -32,6 +32,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
   const typeRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => setTarget(action.params.target), [action.params.target]);
+  useEffect(() => setValue(action.params.value), [action.params.value]);
 
   const handleTargetChange = (val: any) => {
     setTarget(val);
