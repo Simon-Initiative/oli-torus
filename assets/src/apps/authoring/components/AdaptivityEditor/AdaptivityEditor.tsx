@@ -141,7 +141,23 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
         activityClone.authoring.activitiesRequiredForEvaluation = [];
       }
 
-      const resourceIds = [...actionsRefs, ...conditionRefs]
+      // finally need to add to the required activities any variables that are required but inherited from the sequence
+      const treeRefs = activityClone.authoring.variablesRequiredForEvaluation
+        .map((key: string) => {
+          // find the key in the authoring.parts
+          if (key.indexOf('stage.') === 0) {
+            const [, componentId] = key.split('.');
+            const partDef = activityClone.authoring.parts.find(
+              (part: any) => part.id === componentId,
+            );
+            if (partDef && partDef.inherited) {
+              return partDef.owner;
+            }
+          }
+        })
+        .filter((key: string) => key);
+
+      const resourceIds = [...actionsRefs, ...conditionRefs, ...treeRefs]
         .map((ref: any) => {
           const sequenceItem = findInSequence(sequence, ref);
           if (sequenceItem) {
