@@ -96,7 +96,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
            modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
            numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
-           dragging: nil
+           dragging: nil,
+           page_title: "Curriculum | " <> project.title
          )}
     end
   end
@@ -151,7 +152,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Curriculum")
+    |> assign(:page_title, "Curriculum | " <> socket.assigns.project.title)
     |> assign(:revision, nil)
   end
 
