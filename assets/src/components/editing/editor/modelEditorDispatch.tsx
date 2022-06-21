@@ -14,6 +14,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import * as React from 'react';
 import { RenderElementProps } from 'slate-react';
+import { CiteEditor } from '../elements/cite/CiteElement';
 import { CommandContext } from '../elements/commands/interfaces';
 import { ImageEditor } from '../elements/image/block/ImageElement';
 import { EditorProps } from '../elements/interfaces';
@@ -66,6 +67,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'cite':
+      return <CiteEditor {...(editorProps as EditorProps<ContentModel.Citation>)} />;
     case 'popup':
       return <PopupEditor {...(editorProps as EditorProps<ContentModel.Popup>)} />;
     case 'audio':
