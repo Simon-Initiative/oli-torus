@@ -18,11 +18,12 @@ defmodule OliWeb.Insights do
     {:ok,
      assign(socket,
        project: project,
-       by_page_rows: Oli.Analytics.ByPage.query_against_project_slug(project_slug),
+       by_page_rows: nil,
        by_activity_rows: by_activity_rows,
-       by_objective_rows: Oli.Analytics.ByObjective.query_against_project_slug(project_slug),
+       by_objective_rows: nil,
        parent_pages: parent_pages,
        selected: :by_activity,
+       active_rows: apply_filter_sort(:by_activity, by_activity_rows, "", "title", :asc),
        query: "",
        sort_by: "title",
        sort_order: :asc,
@@ -35,6 +36,31 @@ defmodule OliWeb.Insights do
     Oli.Publishing.determine_parent_pages(resource_ids, publication.id)
   end
 
+  defp arrange_rows_into_objective_hierarchy(rows) do
+    by_id = Enum.reduce(rows, %{}, fn r, m -> Map.put(m, r.slice.resource_id, r) end)
+
+    parents =
+      Enum.reduce(rows, %{}, fn r, m ->
+        Enum.reduce(r.slice.children, m, fn id, m -> Map.put(m, id, r.slice.resource_id) end)
+      end)
+
+    Enum.filter(rows, fn r -> !Map.has_key?(parents, r.slice.resource_id) end)
+    |> Enum.map(fn parent ->
+      child_rows =
+        Enum.map(parent.slice.children, fn c -> Map.get(by_id, c) |> Map.put(:is_child, true) end)
+
+      Map.put(parent, :child_rows, child_rows)
+    end)
+  end
+
+  defp get_active_original(assigns) do
+    case assigns.selected do
+      :by_page -> assigns.by_page_rows
+      :by_activity -> assigns.by_activity_rows
+      _ -> assigns.by_objective_rows
+    end
+  end
+
   def render(assigns) do
     ~L"""
     <ul class="nav nav-pills">
@@ -42,13 +68,23 @@ defmodule OliWeb.Insights do
         <button <%= is_disabled(@selected, :by_activity) %> class="btn btn-primary" phx-click="by-activity">By Activity</button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">By Page</button>
+        <button <%= is_disabled(@selected, :by_page) %> class="btn btn-primary" phx-click="by-page">
+          <%= if is_loading?(assigns) and @selected == :by_page do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
+          By Page
+        </button>
       </li>
       <li class="nav-item my-2 mr-2">
-        <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">By Objective</button>
+        <button <%= is_disabled(@selected, :by_objective) %> class="btn btn-primary" phx-click="by-objective">
+          <%= if is_loading?(assigns) and @selected == :by_objective do %>
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          <% end %>
+          By Objective
+        </button>
       </li>
     </ul>
-    <div class="card text-center">
+    <div class="card">
       <div class="card-header">
         <form phx-change="search">
           <input type="text" class="form-control" name="query" value="<%= @query %>" placeholder="Search by title..." />
@@ -62,28 +98,39 @@ defmodule OliWeb.Insights do
           :by_objective -> "objective"
           _ -> "activity"
         end %></h5>
-        <table class="table">
-          <%= live_component TableHeader, assigns %>
-          <tbody>
-            <%= for row <- active_rows(assigns) do %>
-              <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project, selected: @selected %>
-            <% end %>
-          </tbody>
-        </table>
+
+        <%= if !is_loading?(assigns) do %>
+          <table class="table table-sm">
+            <%= live_component TableHeader, assigns %>
+            <tbody>
+              <%= for row <- @active_rows do %>
+                <%= live_component TableRow, row: row, parent_pages: assigns.parent_pages, project: assigns.project, selected: @selected %>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
+
       </div>
     </div>
     """
   end
 
-  defp active_rows(assigns) do
-    case assigns.selected do
-      :by_page -> assigns.by_page_rows
-      :by_activity -> assigns.by_activity_rows
-      :by_objective -> assigns.by_objective_rows
-      _ -> assigns.by_activity_rows
-    end
-    |> filter(assigns.query)
-    |> sort(assigns.sort_by, assigns.sort_order)
+  defp is_loading?(assigns) do
+    is_nil(assigns.active_rows)
+  end
+
+  defp apply_filter_sort(:by_objective, rows, query, sort_by, sort_order) do
+    filter(rows, query)
+    |> sort(sort_by, sort_order)
+    |> Enum.reduce([], fn p, all ->
+      p.child_rows ++ [p] ++ all
+    end)
+    |> Enum.reverse()
+  end
+
+  defp apply_filter_sort(_, rows, query, sort_by, sort_order) do
+    filter(rows, query)
+    |> sort(sort_by, sort_order)
   end
 
   defp filter(rows, query) do
@@ -92,20 +139,66 @@ defmodule OliWeb.Insights do
 
   # data splits
   def handle_event("by-activity", _event, socket) do
-    {:noreply, assign(socket, :selected, :by_activity)}
+    active_rows =
+      apply_filter_sort(
+        :by_activity,
+        socket.assigns.by_activity_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, selected: :by_activity, active_rows: active_rows)}
   end
 
   def handle_event("by-page", _event, socket) do
-    {:noreply, assign(socket, :selected, :by_page)}
+    active_rows =
+      if is_nil(socket.assigns.by_page_rows) do
+        send(self(), :init_by_page)
+        nil
+      else
+        apply_filter_sort(
+          :by_page,
+          socket.assigns.by_page_rows,
+          socket.assigns.query,
+          socket.assigns.sort_by,
+          socket.assigns.sort_order
+        )
+      end
+
+    {:noreply, assign(socket, selected: :by_page, active_rows: active_rows)}
   end
 
   def handle_event("by-objective", _event, socket) do
-    {:noreply, assign(socket, :selected, :by_objective)}
+    active_rows =
+      if is_nil(socket.assigns.by_objective_rows) do
+        send(self(), :init_by_objective)
+        nil
+      else
+        apply_filter_sort(
+          :by_objective,
+          socket.assigns.by_objective_rows,
+          socket.assigns.query,
+          socket.assigns.sort_by,
+          socket.assigns.sort_order
+        )
+      end
+
+    {:noreply, assign(socket, selected: :by_objective, active_rows: active_rows)}
   end
 
   # search
   def handle_event("search", %{"query" => query}, socket) do
-    {:noreply, assign(socket, query: query)}
+    active_rows =
+      apply_filter_sort(
+        socket.assigns.selected,
+        get_active_original(socket.assigns),
+        query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, query: query, active_rows: active_rows)}
   end
 
   # sorting
@@ -119,7 +212,16 @@ defmodule OliWeb.Insights do
       when column == sort_by do
     {:noreply,
      if click_or_enter_key?(event) do
-       assign(socket, sort_by: sort_by, sort_order: :desc)
+       active_rows =
+         apply_filter_sort(
+           socket.assigns.selected,
+           get_active_original(socket.assigns),
+           socket.assigns.query,
+           socket.assigns.sort_by,
+           :desc
+         )
+
+       assign(socket, sort_by: sort_by, sort_order: :desc, active_rows: active_rows)
      else
        socket
      end}
@@ -133,7 +235,16 @@ defmodule OliWeb.Insights do
       when column == sort_by do
     {:noreply,
      if click_or_enter_key?(event) do
-       assign(socket, sort_by: sort_by, sort_order: :asc)
+       active_rows =
+         apply_filter_sort(
+           socket.assigns.selected,
+           get_active_original(socket.assigns),
+           socket.assigns.query,
+           socket.assigns.sort_by,
+           :asc
+         )
+
+       assign(socket, sort_by: sort_by, sort_order: :asc, active_rows: active_rows)
      else
        socket
      end}
@@ -143,10 +254,51 @@ defmodule OliWeb.Insights do
   def handle_event("sort", %{"sort-by" => column} = event, socket) do
     {:noreply,
      if click_or_enter_key?(event) do
-       assign(socket, sort_by: column)
+       active_rows =
+         apply_filter_sort(
+           socket.assigns.selected,
+           get_active_original(socket.assigns),
+           socket.assigns.query,
+           column,
+           socket.assigns.sort_order
+         )
+
+       assign(socket, sort_by: column, active_rows: active_rows)
      else
        socket
      end}
+  end
+
+  def handle_info(:init_by_page, socket) do
+    by_page_rows = Oli.Analytics.ByPage.query_against_project_slug(socket.assigns.project.slug)
+
+    active_rows =
+      apply_filter_sort(
+        :by_page,
+        by_page_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, by_page_rows: by_page_rows, active_rows: active_rows)}
+  end
+
+  def handle_info(:init_by_objective, socket) do
+    by_objective_rows =
+      Oli.Analytics.ByObjective.query_against_project_slug(socket.assigns.project.slug)
+      |> arrange_rows_into_objective_hierarchy()
+
+    active_rows =
+      apply_filter_sort(
+        :by_objective,
+        by_objective_rows,
+        socket.assigns.query,
+        socket.assigns.sort_by,
+        socket.assigns.sort_order
+      )
+
+    {:noreply, assign(socket, by_objective_rows: by_objective_rows, active_rows: active_rows)}
   end
 
   defp click_or_enter_key?(event) do
@@ -155,8 +307,16 @@ defmodule OliWeb.Insights do
 
   defp sort(rows, "title", :asc), do: rows |> Enum.sort(&(&1.slice.title > &2.slice.title))
   defp sort(rows, "title", :desc), do: rows |> Enum.sort(&(&1.slice.title <= &2.slice.title))
-  defp sort(rows, sort_by, :asc), do: rows |> Enum.sort(&(&1[sort_by] > &2[sort_by]))
-  defp sort(rows, sort_by, :desc), do: rows |> Enum.sort(&(&1[sort_by] <= &2[sort_by]))
+
+  defp sort(rows, sort_by, :asc) do
+    sort_by_as_atom = String.to_existing_atom(sort_by)
+    Enum.sort(rows, &(&1[sort_by_as_atom] > &2[sort_by_as_atom]))
+  end
+
+  defp sort(rows, sort_by, :desc) do
+    sort_by_as_atom = String.to_existing_atom(sort_by)
+    Enum.sort(rows, &(&1[sort_by_as_atom] <= &2[sort_by_as_atom]))
+  end
 
   defp is_disabled(selected, title) do
     if selected == title do
