@@ -15,6 +15,7 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
     index,
     editMode,
     projectSlug,
+    resourceSlug,
     resourceContext,
     editorMap,
     onEdit,
@@ -28,6 +29,7 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
         contentItem={contentItem}
         onEdit={onEdit}
         projectSlug={projectSlug}
+        resourceSlug={resourceSlug}
         toolbarInsertDescs={blockInsertOptions({
           type: 'all',
           resourceContext,

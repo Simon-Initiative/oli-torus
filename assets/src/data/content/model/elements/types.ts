@@ -21,7 +21,7 @@ type TopLevel =
   | Blockquote
   | FormulaBlock;
 type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
-type Inline = Hyperlink | Popup | InputRef | ImageInline | FormulaInline;
+type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
@@ -185,6 +185,11 @@ export interface MathLine extends SlateElement<Text[]> {
 
 export interface CodeLine extends SlateElement<Text[]> {
   type: 'code_line';
+}
+
+export interface Citation extends SlateElement<Text[]> {
+  type: 'cite';
+  bibref: number;
 }
 
 export interface Hyperlink extends SlateElement<Text[]> {

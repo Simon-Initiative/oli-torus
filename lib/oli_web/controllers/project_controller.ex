@@ -17,6 +17,9 @@ defmodule OliWeb.ProjectController do
   def overview(conn, project_params) do
     project = conn.assigns.project
 
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
 
@@ -24,7 +27,7 @@ defmodule OliWeb.ProjectController do
       breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
       active: :overview,
       collaborators: Accounts.project_authors(project),
-      activities_enabled: Activities.advanced_activities(project),
+      activities_enabled: Activities.advanced_activities(project, is_admin?),
       changeset:
         Utils.value_or(
           Map.get(project_params, :changeset),
@@ -171,6 +174,9 @@ defmodule OliWeb.ProjectController do
   def update(conn, %{"project" => project_params}) do
     project = conn.assigns.project
 
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     case Course.update_project(project, project_params) do
       {:ok, project} ->
         conn
@@ -182,7 +188,7 @@ defmodule OliWeb.ProjectController do
           breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.advanced_activities(project),
+          activities_enabled: Activities.advanced_activities(project, is_admin?),
           changeset: changeset,
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),
@@ -246,6 +252,9 @@ defmodule OliWeb.ProjectController do
   end
 
   defp delete_project(conn, project) do
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         conn
@@ -256,7 +265,7 @@ defmodule OliWeb.ProjectController do
           breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.advanced_activities(project),
+          activities_enabled: Activities.advanced_activities(project, is_admin?),
           changeset: changeset,
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),

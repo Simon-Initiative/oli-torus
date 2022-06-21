@@ -153,6 +153,20 @@ export const updateActivityRules = createAsyncThunk(
         // ensure referencedVariableKeys are unique
         referencedVariableKeys = [...new Set(referencedVariableKeys)];
 
+        // finally need to add to the required activities any variables that are required but inherited from the sequence
+        referencedVariableKeys.forEach((key) => {
+          // find the key in the authoring.parts
+          if (key.indexOf('stage.') === 0) {
+            const [, componentId] = key.split('.');
+            const partDef = childActivity.authoring.parts.find(
+              (part: any) => part.id === componentId,
+            );
+            if (partDef && partDef.inherited) {
+              referencedSequenceIds.push(partDef.owner);
+            }
+          }
+        });
+
         const childActivityClone = clone(childActivity);
         const referencedActivityIds: number[] = Array.from(new Set(referencedSequenceIds))
           .map((id) => {

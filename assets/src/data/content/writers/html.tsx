@@ -7,6 +7,7 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import {
   Audio,
   Blockquote,
+  Citation,
   CodeLine,
   CodeV1,
   CodeV2,
@@ -353,6 +354,37 @@ export class HtmlParser implements WriterImpl {
           {anchorNext()}
         </span>
       </OverlayTrigger>
+    );
+  }
+
+  private executeScroll(slug: string) {
+    const d = document.getElementById(slug);
+    if (d && d.scrollIntoView) {
+      d.scrollIntoView();
+    }
+  }
+
+  cite(context: WriterContext, next: Next, x: Citation) {
+    if (context.bibParams) {
+      const bibEntry = context.bibParams.find((el: any) => el.id === x.bibref);
+      if (bibEntry) {
+        return (
+          <cite>
+            <sup>
+              [
+              <a onClick={() => this.executeScroll(bibEntry.slug)} href={`#${bibEntry.slug}`}>
+                {bibEntry.ordinal}
+              </a>
+              ]
+            </sup>
+          </cite>
+        );
+      }
+    }
+    return (
+      <cite>
+        <sup>{next()}</sup>
+      </cite>
     );
   }
 

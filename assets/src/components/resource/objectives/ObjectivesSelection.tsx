@@ -23,18 +23,6 @@ export type ObjectivesProps = {
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
-const MAX_LENGTH = 40;
-
-const withEllipse = (label: string) => {
-  return label.length > MAX_LENGTH ? (
-    <span data-toggle="tooltip" data-placement="top" title={label}>
-      {label.substring(0, MAX_LENGTH - 3) + '...'}
-    </span>
-  ) : (
-    <span>{label}</span>
-  );
-};
-
 // Custom filterBy function for the Typeahead. This allows searches to
 // pick up child objectives for text that matches the parent
 function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
@@ -73,31 +61,16 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
     setById(createMapById(objectives));
   }, [objectives]);
 
-  // Custom menu item renderer fn for the Typeahead, so that we can render
-  // a checkbox indicating selected state and the parent label for child objectives
   const renderMenuItemChildren = (
     option: TypeaheadResult<Objective>,
     _props: TypeaheadMenuProps<Objective>,
     _index: number,
   ) => {
-    const buildCombinedTitle = (parent: string, child: string) => {
-      return (
-        <>
-          {withEllipse(parent)}
-          <span className="ml-2 mr-2">
-            <strong>/</strong>
-          </span>
-          {withEllipse(child)}
-        </>
-      );
-    };
-
     return (
       <div>
+        {option.parentId !== null ? <span className="ml-3">&nbsp;</span> : null}
         <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
-        {option.parentId === null
-          ? option.title
-          : buildCombinedTitle(byId[option.parentId].title, option.title)}
+        {option.title}
       </div>
     );
   };

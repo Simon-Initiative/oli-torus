@@ -46,6 +46,7 @@ defmodule Oli.Rendering.Content do
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
+  @callback cite(%Context{}, next, %{}) :: [any()]
 
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
@@ -214,6 +215,9 @@ defmodule Oli.Rendering.Content do
 
       "a" ->
         writer.a(context, next, element)
+
+      "cite" ->
+        writer.cite(context, next, element)
 
       "popup" ->
         writer.popup(context, next, element)

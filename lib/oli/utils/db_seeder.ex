@@ -1043,6 +1043,32 @@ defmodule Oli.Seeder do
     Map.put(map, tag, %{resource: resource, revision: revision})
   end
 
+  def create_bib_entry(map, tag, title, content) do
+    {:ok, resource} =
+      Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
+
+    attrs = %{
+      author_id: Map.get(map, :author).id,
+      title: title,
+      content: content,
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("bibentry"),
+      resource_id: resource.id
+    }
+
+    {:ok, revision} = Oli.Resources.create_revision(attrs)
+
+    {:ok, _} =
+      Oli.Authoring.Course.ProjectResource.changeset(%Oli.Authoring.Course.ProjectResource{}, %{
+        project_id: Map.get(map, :project).id,
+        resource_id: resource.id
+      })
+      |> Repo.insert()
+
+    create_published_resource(Map.get(map, :publication), resource, revision)
+
+    Map.put(map, tag, %{resource: resource, revision: revision})
+  end
+
   def create_activity(attrs, publication, project, author) do
     {:ok, resource} =
       Oli.Resources.Resource.changeset(%Oli.Resources.Resource{}, %{}) |> Repo.insert()
