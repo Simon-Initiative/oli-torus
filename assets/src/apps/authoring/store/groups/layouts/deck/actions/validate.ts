@@ -221,7 +221,7 @@ export const validators: Validator[] = [
   },
   {
     type: DiagnosticTypes.DUPLICATE,
-    validate: (activity, sequence) => {
+    validate: (activity, sequence, allParts, allActivities) => {
       if (!sequence) {
         throw new Error('DUPLICATE VALIDATION: sequence is undefined!');
       }
@@ -229,10 +229,27 @@ export const validators: Validator[] = [
         throw new Error('DUPLICATE VALIDATION: activity.content.partsLayout is undefined!');
       }
       const owner = sequence.find((s) => s.resourceId === activity.id);
+      if (!owner) {
+        throw new Error(`DUPLICATE VALIDATION: activity ${activity.id} not found in sequence!`);
+      }
+      const lineage = getSequenceLineage(sequence, owner.custom.sequenceId);
+      // remove self from lineage
+      lineage.pop();
+      // need to make sure there are no duplicates in the lineage
+      const lineageBlacklist = lineage
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .map((s) => allActivities!.find((a) => a.id === s.resourceId))
+        .map((a) => (a?.content?.partsLayout || []).map((ref: any) => ref.id))
+        .reduce((acc, cur) => acc.concat(cur), []);
       const partList = activity.content.partsLayout;
-      return partList
+      const selfDupes = partList
         .filter((ref: any) => partList.filter((ref2: any) => ref2.id === ref.id).length > 1)
         .map((ref: any) => ({ ...ref, owner }));
+      const lineageDupes = partList
+        .filter((ref: any) => lineageBlacklist.includes(ref.id))
+        .map((ref: any) => ({ ...ref, owner }));
+      const dupes = [...selfDupes, ...lineageDupes];
+      return dupes;
     },
   },
   {
@@ -616,7 +633,6 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
         .map((s) => allActivities.find((a) => a.id === s.resourceId))
         .map((a) => (a?.content?.partsLayout || []).map((ref: any) => ref.id))
         .reduce((acc, cur) => acc.concat(cur), []);
-      //console.log('blacklists: ', { lineageBlacklist, childrenBlackList });
       const testBlackList = Array.from(new Set([...lineageBlacklist, ...childrenBlackList]));
 
       const problems = Object.keys(foundProblems).reduce(
@@ -626,6 +642,8 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
         ],
         [],
       );
+
+      console.log('blacklists: ', { lineageBlacklist, childrenBlackList, foundProblems, problems });
 
       errors.push({
         activity: activitySequence,
