@@ -191,6 +191,13 @@ defmodule Oli.Utils do
     end)
   end
 
+  @spec read_json_file(
+          binary
+          | maybe_improper_list(
+              binary | maybe_improper_list(any, binary | []) | char,
+              binary | []
+            )
+        ) :: {:error, atom} | {:ok, false | nil | true | binary | list | number | map}
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
