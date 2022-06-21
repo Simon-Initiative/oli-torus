@@ -4,10 +4,10 @@ defmodule OliWeb.AdminLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
-  import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias OliWeb.Common.Utils
 
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
@@ -270,9 +270,9 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click(%{sort_by: "email"})
 
       assert view
-      |> element("tr:first-child > td:first-child > div")
-      |> render() =~
-        user_b.given_name
+             |> element("tr:first-child > td:first-child > div")
+             |> render() =~
+               user_b.given_name
 
       # Sort by email desc
       view
@@ -280,9 +280,9 @@ defmodule OliWeb.AdminLiveTest do
       |> render_click(%{sort_by: "email"})
 
       assert view
-      |> element("tr:first-child > td:first-child > div")
-      |> render() =~
-        user_a.given_name
+             |> element("tr:first-child > td:first-child > div")
+             |> render() =~
+               user_a.given_name
     end
 
     test "applies paging", %{conn: conn} do
@@ -315,12 +315,25 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~
                last_user.given_name
     end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      user = insert(:user, email_confirmed_at: DateTime.utc_now())
+
+      {:ok, view, _html} = live(conn, @live_view_users_route)
+
+      assert view
+             |> element("tr##{user.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_precise_date(user, :email_confirmed_at, session_context)
+    end
   end
 
   describe "user detail" do
     setup [:admin_conn, :create_user]
 
-    test "loads correctly with user data", %{conn: conn, user: user} do
+    test "loads correctly with user data", %{user: user} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
       {:ok, view, _} = live(conn, live_view_user_detail_route(user.id))
 
       assert has_element?(view, "input[value=\"#{user.sub}\"]")
@@ -332,9 +345,21 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "#user_independent_learner")
       assert has_element?(view, "#user_can_create_sections")
       assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.email_confirmed_at, precision: :relative)}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.inserted_at, precision: :relative)}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.updated_at, precision: :relative)}\"]")
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :email_confirmed_at, session_context)}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :inserted_at, session_context)}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :updated_at, session_context)}\"]"
+             )
     end
 
     test "displays error message when submit fails", %{
@@ -622,6 +647,23 @@ defmodule OliWeb.AdminLiveTest do
                "##{accepted_and_confirmed_with_different_email_author.id} span[data-toggle=\"tooltip\""
              )
              |> render() =~ "Email Confirmed"
+    end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      author = insert(:author, email_confirmed_at: DateTime.utc_now())
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("tr##{author.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_precise_date(
+                 author,
+                 :email_confirmed_at,
+                 session_context
+               )
     end
   end
 

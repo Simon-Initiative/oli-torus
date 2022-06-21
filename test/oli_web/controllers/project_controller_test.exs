@@ -68,6 +68,18 @@ defmodule OliWeb.ProjectControllerTest do
       conn = get(conn, Routes.project_path(conn, :publish, project.slug))
       assert html_response(conn, 200) =~ "Publish"
     end
+
+    test "displays the published date", %{project: project} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, publication} = Oli.Publishing.publish_project(project, "New publication")
+
+      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
+      assert html_response(conn, 200) =~ "Publish"
+
+      assert html_response(conn, 200) =~
+               "Last published <strong>" <>
+                 OliWeb.Common.Utils.render_date(publication, :published, session_context)
+    end
   end
 
   describe "insights" do

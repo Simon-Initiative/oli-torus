@@ -29,14 +29,6 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
         section_slug
       )
 
-  defp utc_datetime_to_localized_datestring(utc_datetime, timezone) do
-    utc_datetime
-    |> Timex.to_datetime(timezone)
-    |> DateTime.to_naive()
-    |> NaiveDateTime.to_iso8601()
-    |> String.replace_suffix(":00", "")
-  end
-
   defp create_gating_condition_through_ui(view, type, start_date, end_date) do
     view
     |> element("button[phx-click=\"show-resource-picker\"]")
@@ -160,7 +152,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       section_1: section,
       gating_condition: gating_condition
     } do
-      {:ok, conn: conn} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
 
       {:ok, view, html} =
         live(
@@ -330,7 +322,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       section_1: section,
       gating_condition: gating_condition
     } do
-      {:ok, conn: conn} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
 
       {:ok, view, _html} =
         live(
@@ -445,7 +437,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
       conn: conn,
       section_1: section
     } do
-      {:ok, conn: conn} = set_timezone(%{conn: conn})
+      {:ok, conn: conn, context: _} = set_timezone(%{conn: conn})
 
       {:ok, view, _html} =
         live(
