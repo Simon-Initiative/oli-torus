@@ -18,8 +18,6 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
 
-  require Logger
-
   @doc """
   Returns true if editing this revision requires the creation of a new revision first.
 
@@ -541,7 +539,8 @@ defmodule Oli.Publishing do
       {:error, %Ecto.Changeset{}}
   """
   def delete_publication(%Publication{} = publication) do
-    Repo.delete(publication)
+    publication
+      |> Repo.delete()
       |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
@@ -1137,12 +1136,12 @@ defmodule Oli.Publishing do
   """
   def refresh_part_mapping() do
     Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
-    Logger.info("Refreshed part_mapping view")
   end
 
   @spec refresh_adapter() :: PartMappingRefreshAdapter
   defp refresh_adapter() do
-    Application.get_env(:oli, Oli.Publishing)
+    :oli
+      |> Application.get_env(Oli.Publishing)
       |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

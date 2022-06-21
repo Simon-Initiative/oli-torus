@@ -3,7 +3,6 @@ defmodule Oli.PublishingTest do
 
   import Oli.Factory
   import Ecto.Query
-  import ExUnit.CaptureLog
 
   alias Oli.Accounts.{SystemRole, Author}
   alias Oli.Authoring.{Course, Locks}
@@ -368,9 +367,7 @@ defmodule Oli.PublishingTest do
     test "publish_project/1 refreshes part_mapping materialized view with published information" do
       %{activity: %{revision: revision}, project: project} = project_with_activity()
 
-      capture_log(fn ->
-        Publishing.publish_project(project, "Some description")
-      end) =~ "Refreshed part_mapping view"
+      Publishing.publish_project(project, "Some description")
 
       assert Repo.all(from pm in "part_mapping",
       where: pm.revision_id == ^revision.id,
