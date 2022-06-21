@@ -34,7 +34,6 @@ defmodule Oli.Activities do
     end
   end
 
-
   def register_from_bundle(file, expected_namespace) do
     case :zip.unzip(to_charlist(file), [:memory]) do
       {:ok, entries} ->
@@ -46,9 +45,11 @@ defmodule Oli.Activities do
               Logger.warn("Invalid namespace")
               {:error, :invalid_namespace}
             end
+
           e ->
             e
         end
+
       _ ->
         Logger.warn("Invalid archive")
         {:error, :invalid_archive}
@@ -60,12 +61,11 @@ defmodule Oli.Activities do
   end
 
   defp locate_manifest(entries) do
-    case Enum.find(entries, fn {name, _} ->  List.to_string(name) == "manifest.json" end) do
+    case Enum.find(entries, fn {name, _} -> List.to_string(name) == "manifest.json" end) do
       nil -> {nil, %{}}
       manifest -> manifest
     end
   end
-
 
   defp parse_manifest({nil, _}) do
     Logger.warn("Missing manifest")
@@ -74,7 +74,9 @@ defmodule Oli.Activities do
 
   defp parse_manifest({_, content}) do
     case Poison.decode(content) do
-      {:ok, json} -> Manifest.parse(json)
+      {:ok, json} ->
+        Manifest.parse(json)
+
       e ->
         Logger.warn("Could not parse manifest")
         e
@@ -82,22 +84,27 @@ defmodule Oli.Activities do
   end
 
   defp process_register_from_bundle(%Manifest{} = manifest, entries) do
-    result = case make_dir(manifest) do
-      :ok ->
-        Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
-          filename = List.to_string(file)
-          case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
-            :ok -> {:cont, {:ok}}
-            e -> {:halt, e}
-          end
-        end)
-      e ->
-        Logger.warn("Error encountered creating directory")
-        e
-    end
+    result =
+      case make_dir(manifest) do
+        :ok ->
+          Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
+            filename = List.to_string(file)
+
+            case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
+              :ok -> {:cont, {:ok}}
+              e -> {:halt, e}
+            end
+          end)
+
+        e ->
+          Logger.warn("Error encountered creating directory")
+          e
+      end
 
     case result do
-      {:ok} -> register_activity(manifest, "#{manifest.id}/")
+      {:ok} ->
+        register_activity(manifest, "#{manifest.id}/")
+
       e ->
         Logger.warn("Error encountered writing bundle files")
         e
@@ -208,14 +215,16 @@ defmodule Oli.Activities do
     end
   end
 
-  def activities_for_project(project) do
+  def activities_for_project(project, is_admin? \\ true) do
     project = project |> Repo.preload([:activity_registrations])
 
     project_activities =
       Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
-      Enum.reduce(list_activity_registrations(), [], fn a, m ->
+      list_activity_registrations()
+      |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
+      |> Enum.reduce([], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
 
@@ -238,10 +247,9 @@ defmodule Oli.Activities do
     Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
-  def advanced_activities(project) do
-    project
-    |> activities_for_project()
-    |> Enum.filter(& !&1.global)
+  def advanced_activities(project, is_admin? \\ true) do
+    activities_for_project(project, is_admin?)
+    |> Enum.filter(&(!&1.global))
     |> Enum.sort_by(& &1.title)
   end
 
@@ -257,7 +265,7 @@ defmodule Oli.Activities do
             delivery_element: a.delivery_element,
             delivery_script: a.delivery_script,
             slug: a.slug,
-            title: a.title,
+            title: a.title
           }
         ]
     end)
@@ -268,6 +276,22 @@ defmodule Oli.Activities do
            get_registration_by_slug(activity_slug)
            |> trap_nil("An activity with that slug was not found.") do
       update_registration(activity_registration, %{globally_available: status})
+    else
+      {:error, {message}} -> {:error, message}
+    end
+  end
+
+  @doc """
+  Sets the globally_visible state of a registered activity.  If an activity type
+  is globally visible, all authors will see it appear in the list of
+  activities within their project.  If an activity type is *not* globally visible,
+  it will only appear in that list if the author is also an admin.
+  """
+  def set_global_visibility(activity_slug, status) do
+    with {:ok, activity_registration} <-
+           get_registration_by_slug(activity_slug)
+           |> trap_nil("An activity with that slug was not found.") do
+      update_registration(activity_registration, %{globally_visible: status})
     else
       {:error, {message}} -> {:error, message}
     end
