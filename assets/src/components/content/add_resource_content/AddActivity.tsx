@@ -30,6 +30,7 @@ export const AddActivity: React.FC<Props> = ({
 
       return enabled ? (
         <ResourceChoice
+          key={editorDesc.id}
           onClick={() => {
             addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
             document.body.click();

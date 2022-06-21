@@ -87,7 +87,7 @@ export const NonActivities: React.FC<Props> = ({
           label="Survey"
           onHoverStart={() => onSetTip('Collect student feedback via no-stakes activities')}
           onHoverEnd={() => onResetTip()}
-          key={'static_html_content'}
+          key={'survey'}
           disabled={!canInsertSurvey(parents, featureFlags)}
           onClick={() => addSurvey(onAddItem, index)}
         />

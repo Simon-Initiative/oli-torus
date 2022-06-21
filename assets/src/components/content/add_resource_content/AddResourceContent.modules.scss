@@ -96,6 +96,7 @@
   width: fit-content;
   z-index: 500;
   border-radius: 6px;
+  border-color: authoring.$light !important;
 
   &:global(.popover) {
     max-width: unset !important;
@@ -111,6 +112,8 @@
   flex-direction: column;
   border-radius: 2px;
   overflow: hidden;
+  background-color: authoring.$body-bg;
+  border-color: authoring.$light;
 
   :global(.header) {
     padding-left: 6px;
@@ -141,7 +144,8 @@
     min-height: 50px;
     max-width: 70px;
     min-width: 70px;
-    background-color: white;
+    background-color: authoring.$body-bg;
+    color: authoring.$body-color;
 
     &:hover {
       color: authoring.$primary;
@@ -149,6 +153,22 @@
     &:active {
       transform: translateY(4px);
     }
+  }
+
+  :global(.resource-choice-icon) {
+    font-size: 24px;
+  }
+
+  :global(.resource-choices-divider) {
+    border-left-color: authoring.$light;
+    border-left-width: 1px;
+    border-left-style: solid;
+    max-height: 170px;
+  }
+
+  :global(.resource-choices-tip) {
+    font-size: 0.8em;
+    color: authoring.$body-color;
   }
 
   :global(.resource-choices) {

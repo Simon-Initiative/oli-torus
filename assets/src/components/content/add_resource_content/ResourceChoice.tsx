@@ -24,7 +24,7 @@ export const ResourceChoice: React.FC<Props> = ({
       disabled={disabled}
       onClick={(_e) => onClick()}
     >
-      <i style={{ fontSize: '24px' }} className={`las la-${icon}`}></i>
+      <i className={`resource-choice-icon las la-${icon}`}></i>
       <div className="type-label">{label}</div>
     </button>
   );
