@@ -2,6 +2,7 @@ import { evaluateJsonObject, looksLikeJson, templatizeText } from 'adaptivity/sc
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import guid from 'utils/guid';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -405,7 +406,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     handshake: {
       // should be of type CapiHandshake
       requestToken: '',
-      authToken: props.id,
+      authToken: `${guid()}_${props.id}`,
       config: {},
     },
     init: false, // initial setup complete; this might be init state?
@@ -1094,14 +1095,22 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       }
     });
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
     if (!simLife.init) {
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       handleBindToSim();
       simLife.init = true;
+    } else {
+      // not sure what the purpose of this is, but SS does it and it fixes some things (for now)
+      simLife.handshake.requestToken = `${props.id}_${guid()}`;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, {});
     }
+
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
+
   const scrolling = allowScrolling ? 'yes' : 'no';
+
   return initStateReceived ? (
     <iframe
       data-janus-type={tagName}
