@@ -8,10 +8,17 @@ defmodule Oli.RegistrarTest do
       registrations = Activities.list_activity_registrations()
       assert length(registrations) > 5
 
-      catas = registrations |> Enum.filter(&match?(%{
-        slug: "oli_check_all_that_apply",
-        title: "Check All That Apply"
-      }, &1))
+      catas =
+        registrations
+        |> Enum.filter(
+          &match?(
+            %{
+              slug: "oli_check_all_that_apply",
+              title: "Check All That Apply"
+            },
+            &1
+          )
+        )
 
       assert catas |> length == 1
 
@@ -20,7 +27,7 @@ defmodule Oli.RegistrarTest do
       assert r.title == "Check All That Apply"
 
       assert r.description ==
-               "A traditional check all that apply question with one correct answer"
+               "Choice-based question that allows multiple selections"
 
       assert r.authoring_script == "oli_check_all_that_apply_authoring.js"
       assert r.delivery_script == "oli_check_all_that_apply_delivery.js"
@@ -39,7 +46,7 @@ defmodule Oli.RegistrarTest do
       assert r.slug == "oli_check_all_that_apply"
 
       assert r.description ==
-               "A traditional check all that apply question with one correct answer"
+               "Choice-based question that allows multiple selections"
 
       assert r.friendlyName == "Check All That Apply"
       assert r.authoringElement == "oli-check-all-that-apply-authoring"

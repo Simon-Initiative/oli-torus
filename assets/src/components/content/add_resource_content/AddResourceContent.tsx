@@ -61,27 +61,6 @@ export const AddResourceContent: React.FC<AddResourceContentProps> = ({
           )}
         </div>
       </OverlayTrigger>
-
-      {isLast && (
-        <OverlayTrigger
-          trigger="click"
-          placement="top"
-          rootClose={true}
-          overlay={
-            <Popover id="last-content-add-button" className={styles.addResourcePopover}>
-              <Popover.Content className={styles.addResourcePopoverContent}>
-                {children}
-              </Popover.Content>
-            </Popover>
-          }
-        >
-          <div className={classNames(styles.insertLabel, 'my-4 text-center')}>
-            <button disabled={!editMode} className="btn btn-sm btn-light">
-              Add Content or Activity
-            </button>
-          </div>
-        </OverlayTrigger>
-      )}
     </>
   );
 };

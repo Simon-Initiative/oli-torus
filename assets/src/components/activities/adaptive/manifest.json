@@ -2,7 +2,9 @@
   "id": "oli_adaptive",
   "allowClientEvaluation": true,
   "friendlyName": "Adaptive Activity",
+  "petiteLabel": "Adaptive",
   "description": "Adaptive Activity",
+  "icon": "question-circle",
   "delivery": {
     "element": "oli-adaptive-delivery",
     "entry": "./delivery-entry.ts"

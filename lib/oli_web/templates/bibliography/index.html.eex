@@ -1,0 +1,9 @@
+<script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/bibliography.js") %>"></script>
+
+<%= for script <- @scripts do %>
+  <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
+<% end %>
+
+<div id="editor" class="container">
+  <%= react_component("Components.Bibliography", @context) %>
+</div>

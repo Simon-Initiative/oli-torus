@@ -46,7 +46,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   const isEvaluated = attemptState.score !== null;
 
-  const writerContext = defaultWriterContext({ sectionSlug: props.sectionSlug });
+  const writerContext = defaultWriterContext({
+    sectionSlug: props.sectionSlug,
+    bibParams: props.bibParams,
+  });
 
   // tslint:disable-next-line:prefer-array-literal
   const resourceRefs = useRef<(HTMLImageElement | string)[]>(new Array(resourceURLs.length));
