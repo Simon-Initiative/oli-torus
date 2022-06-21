@@ -11,6 +11,7 @@ import { ActivityEditContext } from './activity';
 
 export type PageContent = {
   model: ResourceContent[];
+  bibrefs?: string[];
   [key: string]: any;
 };
 
