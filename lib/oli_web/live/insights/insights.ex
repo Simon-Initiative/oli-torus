@@ -26,7 +26,8 @@ defmodule OliWeb.Insights do
        active_rows: apply_filter_sort(:by_activity, by_activity_rows, "", "title", :asc),
        query: "",
        sort_by: "title",
-       sort_order: :asc
+       sort_order: :asc,
+       title: "Insights | " <> project.title
      )}
   end
 

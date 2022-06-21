@@ -47,4 +47,22 @@ defmodule Oli.Authoring.Editing.Utils do
         MapSet.new([])
     end
   end
+
+  @doc """
+  Returns a MapSet of all bib_entry_id ids found in the page content hierarchy.
+  """
+  def citation_references(content) do
+    case content do
+      %{"model" => _} ->
+        Oli.Resources.PageContent.flat_filter(content, fn %{"type" => type} ->
+          type == "cite"
+        end)
+        |> Enum.map(fn %{"bib_entry_id" => id} -> id end)
+        |> MapSet.new()
+
+      _ ->
+        MapSet.new([])
+    end
+  end
+
 end
