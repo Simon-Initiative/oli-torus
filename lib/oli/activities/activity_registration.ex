@@ -11,6 +11,7 @@ defmodule Oli.Activities.ActivityRegistration do
     field :delivery_element, :string
     field :icon, :string
     field :title, :string
+    field :petite_label, :string
     field :allow_client_evaluation, :boolean, default: false
     field :globally_available, :boolean, default: false
 
@@ -26,6 +27,7 @@ defmodule Oli.Activities.ActivityRegistration do
     |> cast(attrs, [
       :slug,
       :title,
+      :petite_label,
       :icon,
       :description,
       :delivery_element,
@@ -38,6 +40,7 @@ defmodule Oli.Activities.ActivityRegistration do
     |> validate_required([
       :slug,
       :title,
+      :petite_label,
       :icon,
       :description,
       :delivery_element,

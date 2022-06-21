@@ -24,7 +24,8 @@ defmodule Oli.Activities do
       globally_available: manifest.global,
       description: manifest.description,
       title: manifest.friendlyName,
-      icon: "nothing",
+      petite_label: manifest.petiteLabel,
+      icon: manifest.icon,
       slug: manifest.id
     }
 
@@ -33,7 +34,6 @@ defmodule Oli.Activities do
       registration -> update_registration(registration, attrs)
     end
   end
-
 
   def register_from_bundle(file, expected_namespace) do
     case :zip.unzip(to_charlist(file), [:memory]) do
@@ -46,9 +46,11 @@ defmodule Oli.Activities do
               Logger.warn("Invalid namespace")
               {:error, :invalid_namespace}
             end
+
           e ->
             e
         end
+
       _ ->
         Logger.warn("Invalid archive")
         {:error, :invalid_archive}
@@ -60,12 +62,11 @@ defmodule Oli.Activities do
   end
 
   defp locate_manifest(entries) do
-    case Enum.find(entries, fn {name, _} ->  List.to_string(name) == "manifest.json" end) do
+    case Enum.find(entries, fn {name, _} -> List.to_string(name) == "manifest.json" end) do
       nil -> {nil, %{}}
       manifest -> manifest
     end
   end
-
 
   defp parse_manifest({nil, _}) do
     Logger.warn("Missing manifest")
@@ -74,7 +75,9 @@ defmodule Oli.Activities do
 
   defp parse_manifest({_, content}) do
     case Poison.decode(content) do
-      {:ok, json} -> Manifest.parse(json)
+      {:ok, json} ->
+        Manifest.parse(json)
+
       e ->
         Logger.warn("Could not parse manifest")
         e
@@ -82,22 +85,27 @@ defmodule Oli.Activities do
   end
 
   defp process_register_from_bundle(%Manifest{} = manifest, entries) do
-    result = case make_dir(manifest) do
-      :ok ->
-        Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
-          filename = List.to_string(file)
-          case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
-            :ok -> {:cont, {:ok}}
-            e -> {:halt, e}
-          end
-        end)
-      e ->
-        Logger.warn("Error encountered creating directory")
-        e
-    end
+    result =
+      case make_dir(manifest) do
+        :ok ->
+          Enum.reduce_while(entries, {:ok}, fn {file, content}, _ ->
+            filename = List.to_string(file)
+
+            case build_path("priv/static/js/#{manifest.id}/#{filename}") |> File.write(content) do
+              :ok -> {:cont, {:ok}}
+              e -> {:halt, e}
+            end
+          end)
+
+        e ->
+          Logger.warn("Error encountered creating directory")
+          e
+      end
 
     case result do
-      {:ok} -> register_activity(manifest, "#{manifest.id}/")
+      {:ok} ->
+        register_activity(manifest, "#{manifest.id}/")
+
       e ->
         Logger.warn("Error encountered writing bundle files")
         e
@@ -230,6 +238,7 @@ defmodule Oli.Activities do
               slug: a.slug,
               title: a.title,
               global: a.globally_available,
+              petite_label: a.petite_label,
               enabled: enabled_for_project
             }
           ]
@@ -241,7 +250,7 @@ defmodule Oli.Activities do
   def advanced_activities(project) do
     project
     |> activities_for_project()
-    |> Enum.filter(& !&1.global)
+    |> Enum.filter(&(!&1.global))
     |> Enum.sort_by(& &1.title)
   end
 
@@ -258,6 +267,7 @@ defmodule Oli.Activities do
             delivery_script: a.delivery_script,
             slug: a.slug,
             title: a.title,
+            petite_label: a.petite_label
           }
         ]
     end)

@@ -1,8 +1,9 @@
 {
   "id": "oli_multiple_choice",
   "friendlyName": "Multiple Choice",
-  "description": "A traditional multiple choice question with one correct answer",
-  "icon": "radio_button_checked",
+  "petiteLabel": "MCQ",
+  "description": "Choice-based question type with single choice selection",
+  "icon": "list-ul",
   "delivery": {
     "element": "oli-multiple-choice-delivery",
     "entry": "./delivery-entry.ts"

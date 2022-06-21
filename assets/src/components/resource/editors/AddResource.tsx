@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AddActivity } from 'components/content/add_resource_content/AddActivity';
-import { AddContent } from 'components/content/add_resource_content/AddContent';
-import { AddOther } from 'components/content/add_resource_content/AddOther';
 import { AddResourceContent } from 'components/content/add_resource_content/AddResourceContent';
 import { ActivityEditContext } from 'data/content/activity';
 import { ActivityEditorMap } from 'data/content/editors';
 import { Objective } from 'data/content/objective';
 import { ResourceContent, ResourceContext } from 'data/content/resource';
 import { FeatureFlags } from 'apps/page-editor/types';
+import { NonActivities } from 'components/content/add_resource_content/NonActivities';
 
 export type AddResourceProps = {
   index: number[];
@@ -21,12 +20,39 @@ export type AddResourceProps = {
   onRegisterNewObjective: (objective: Objective) => void;
 };
 
+const DEFAULT_TIP = 'Insert a content item or an interactive, scorable question';
+
 export const AddResource = (props: AddResourceProps) => {
+  const [tip, setTip] = useState(DEFAULT_TIP);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const onResetTip = () => {
+    setTip('');
+    if (timer !== null) {
+      clearTimeout(timer);
+    }
+    const handle = setTimeout(() => setTip(DEFAULT_TIP), 5000);
+    setTimer(handle);
+  };
+
+  const onChangeTip = (tip: string) => {
+    setTip(tip);
+    if (timer !== null) {
+      setTimer(null);
+      clearTimeout(timer);
+    }
+  };
+
   return (
     <AddResourceContent {...props}>
-      <AddContent {...props} />
-      <AddActivity {...props} />
-      <AddOther {...props} />
+      <div className="d-flex flex-row">
+        <NonActivities {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
+        <div style={{ borderLeft: '1px solid lightgray', maxHeight: 170 }} />
+        <AddActivity {...props} onSetTip={onChangeTip} onResetTip={onResetTip} />
+      </div>
+      <div className="mt-2 ml-2" style={{ lineHeight: 0.8 }}>
+        <small className="text-muted">{tip}</small>
+      </div>
     </AddResourceContent>
   );
 };

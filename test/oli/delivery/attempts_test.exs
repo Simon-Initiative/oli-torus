@@ -493,6 +493,8 @@ defmodule Oli.Delivery.AttemptsTest do
           friendlyName: "Test Client Eval",
           description: "A test activity that allows client evaluation",
           delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
+          icon: "nothing",
+          petiteLabel: "test",
           authoring: %ModeSpecification{
             element: "test-client-eval",
             entry: "./authoring-entry.ts"
@@ -598,6 +600,8 @@ defmodule Oli.Delivery.AttemptsTest do
           friendlyName: "Test Client Eval",
           description: "A test activity that allows client evaluation",
           delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
+          icon: "nothing",
+          petiteLabel: "test",
           authoring: %ModeSpecification{
             element: "test-client-eval",
             entry: "./authoring-entry.ts"
