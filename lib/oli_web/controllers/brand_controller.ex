@@ -1,15 +1,12 @@
 defmodule OliWeb.BrandController do
   use OliWeb, :controller
 
-  require Logger
-
   alias Oli.Branding
   alias Oli.Branding.Brand
   alias Oli.Repo
-  alias ExAws.S3
-  alias Oli.HTTP
   alias Oli.Institutions
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.Breadcrumb
+  alias Oli.Utils.S3Storage
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -136,13 +133,14 @@ defmodule OliWeb.BrandController do
 
   defp upload_brand_assets(brand, brand_params) do
     brand_path = "brands/#{brand.slug}"
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
 
     case brand_params["logo"] do
       nil ->
         nil
 
       logo ->
-        upload("#{brand_path}/#{logo.filename}", logo)
+        S3Storage.upload_file(bucket_name, "#{brand_path}/#{logo.filename}", logo)
     end
 
     valid_favicon_names = [
@@ -164,7 +162,7 @@ defmodule OliWeb.BrandController do
           Regex.replace(~r/\.[^.]+$/, f.filename, "") in valid_favicon_names
         end)
         |> Enum.each(fn f ->
-          upload("#{brand_path}/favicons/#{f.filename}", f)
+          S3Storage.upload_file(bucket_name, "#{brand_path}/favicons/#{f.filename}", f)
         end)
     end
 
@@ -174,26 +172,7 @@ defmodule OliWeb.BrandController do
         nil
 
       logo_dark ->
-        upload("#{brand_path}/#{logo_dark.filename}", logo_dark)
+        S3Storage.upload_file(bucket_name, "#{brand_path}/#{logo_dark.filename}", logo_dark)
     end
-  end
-
-  defp upload(path, file) do
-    contents = File.read!(file.path)
-
-    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
-
-    case upload_file(bucket_name, path, contents) do
-      {:ok, %{status_code: 200}} ->
-        nil
-
-      _ ->
-        Logger.error("Failed to upload file to S3 '#{path}'", file)
-    end
-  end
-
-  defp upload_file(bucket, path, contents) do
-    S3.put_object(bucket, path, contents, [{:acl, :public_read}])
-    |> HTTP.aws().request()
   end
 end

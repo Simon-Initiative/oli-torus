@@ -12,6 +12,7 @@ import {
   PartId,
   PartResponse,
   PartState,
+  StudentResponse,
   Success,
 } from 'components/activities/types';
 import { studentInputToString } from 'data/activities/utils';
@@ -171,6 +172,11 @@ export const activityDeliverySlice = createSlice({
         partState.hintsShown.push(action.payload.hint),
       );
     },
+    updatePartState(state, action: PayloadAction<{ partId: PartId; response: any }>) {
+      Maybe.maybe(state.partState[action.payload.partId]).lift(
+        (partState) => (partState.studentInput = action.payload.response),
+      );
+    },
     setHasMoreHintsForPart(
       state,
       action: PayloadAction<{ partId: PartId; hasMoreHints: boolean }>,
@@ -188,6 +194,27 @@ export const activityDeliverySlice = createSlice({
   },
 });
 const slice = activityDeliverySlice;
+
+export const savePart =
+  (
+    partId: PartId,
+    response: any,
+    onSave: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      payload: StudentResponse,
+    ) => Promise<Success>,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    const attemptGuid = getState().attemptState.parts.find(
+      (part) => String(part.partId) === partId,
+    )?.attemptGuid;
+    if (!attemptGuid) return;
+
+    const r = await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
+    const files = (response as any).files;
+    dispatch(slice.actions.updatePartState({ partId, response: files }));
+  };
 
 export const requestHint =
   (
@@ -251,6 +278,28 @@ export const submit =
           input: studentInputToString(
             Maybe.maybe(getState().partState[String(partState.partId)]?.studentInput).valueOr(['']),
           ),
+        },
+      })),
+    );
+    dispatch(slice.actions.activitySubmissionReceived(response));
+  };
+
+export const submitFiles =
+  (
+    onSubmitActivity: (
+      attemptGuid: string,
+      partResponses: PartResponse[],
+    ) => Promise<EvaluationResponse>,
+    files: any,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    const response = await onSubmitActivity(
+      getState().attemptState.attemptGuid,
+      getState().attemptState.parts.map((partState) => ({
+        attemptGuid: partState.attemptGuid,
+        response: {
+          files,
+          input: [''],
         },
       })),
     );

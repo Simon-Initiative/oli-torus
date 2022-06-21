@@ -154,9 +154,16 @@ export const notEqualWithToleranceOperator = (factValue: any, value: any) => {
 
 export const notEqual = (factValue: any, value: any) => {
   const typeOfValue = typeof value;
+  const typeOfFactValue = typeof factValue;
   //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
   //so `is not 32.06` should not fire true if the number is a NaN.
-  if (typeOfValue === 'number' && Number.isNaN(factValue)) {
+  if (
+    (typeOfValue === 'number' || typeOfFactValue === 'number') &&
+    (factValue === undefined ||
+      value === undefined ||
+      Number.isNaN(factValue) ||
+      Number.isNaN(value))
+  ) {
     return false;
   }
   return !isEqual(factValue, value);

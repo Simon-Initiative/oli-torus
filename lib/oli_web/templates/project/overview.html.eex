@@ -12,15 +12,15 @@
     <div class="col-md-8">
       <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
       <div class="form-label-group mb-3">
-        <%= label f, :title, "Course Project ID", class: "control-label" %>
+        <%= label f, :title, "Project ID", class: "control-label" %>
         <%= text_input f, :slug, class: "form-control", disabled: true %>
       </div>
       <div class="form-label-group mb-3">
-        <%= label f, :title, "Course Title", class: "control-label" %>
+        <%= label f, :title, "Project Title", class: "control-label" %>
         <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
       </div>
       <div class="form-label-group mb-3">
-        <%= label f, :description, "Course Description", class: "control-label" %>
+        <%= label f, :description, "Project Description", class: "control-label" %>
         <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
       </div>
       <div class="form-label-group mb-3">
@@ -33,7 +33,7 @@
         <% end %>
       </div>
       <div class="form-label-group mb-3">
-        <%= label f, :publisher_id, "Course Publisher", class: "control-label" %>
+        <%= label f, :publisher_id, "Project Publisher", class: "control-label" %>
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
@@ -121,7 +121,7 @@
     </div>
     <div class="d-flex align-items-center">
       <button type="button" class="btn btn-link text-danger action-button" onclick="OLI.showModal('delete-package-modal')">Delete</button>
-      <span>Permanently delete this course project.</span>
+      <span>Permanently delete this project.</span>
     </div>
   </div>
 </div>

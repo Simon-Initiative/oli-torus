@@ -53,7 +53,7 @@ defmodule OliWeb.Products.Details.Edit do
           </div>
 
           <div class="form-group">
-            <%= label f, :publisher_id, "Course Publisher" %>
+            <%= label f, :publisher_id, "Product Publisher" %>
             <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}),
               class: "form-control " <> error_class(f, :publisher_id, "is-invalid"),
               autofocus: focusHelper(f, :publisher_id), required: true %>
@@ -76,13 +76,11 @@ defmodule OliWeb.Products.Details.Edit do
               <div><%= error_tag f, :amount %></div>
             </div>
 
-            <%= unless get_field(@changeset, :open_and_free) do %>
-              <div class="custom-control custom-switch fixed-width">
-                <%= checkbox f, :pay_by_institution, disabled: !@is_admin or !get_field(@changeset, :requires_payment), class: "custom-control-input" <> error_class(f, :pay_by_institution, "is-invalid"), autofocus: focusHelper(f, :pay_by_institution) %>
-                <%= label f, :pay_by_institution, "Pay by institution", class: "custom-control-label" %>
-                <%= error_tag f, :pay_by_institution %>
-              </div>
-            <% end %>
+            <div class="custom-control custom-switch fixed-width">
+              <%= checkbox f, :pay_by_institution, disabled: !@is_admin or !get_field(@changeset, :requires_payment), class: "custom-control-input" <> error_class(f, :pay_by_institution, "is-invalid"), autofocus: focusHelper(f, :pay_by_institution) %>
+              <%= label f, :pay_by_institution, "Pay by institution", class: "custom-control-label" %>
+              <%= error_tag f, :pay_by_institution %>
+            </div>
           </div>
 
           <div class="form-row">
@@ -112,8 +110,8 @@ defmodule OliWeb.Products.Details.Edit do
           </div>
 
           <div class="form-row float-right">
-            <%= if not get_field(@changeset, :open_and_free) and @is_admin and get_field(@changeset, :requires_payment) do %>
-              <a class="btn btn-link action-button" href={Routes.discount_path(OliWeb.Endpoint, :product, @product.slug)}>Manage Discounts</a>
+            <%= if @is_admin and get_field(@changeset, :requires_payment) do %>
+              <a class="btn btn-link action-button" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Products.Payments.Discounts.ProductsIndexView, @product.slug)}>Manage Discounts</a>
             <% end %>
           </div>
 

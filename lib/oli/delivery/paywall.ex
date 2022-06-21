@@ -469,7 +469,24 @@ defmodule Oli.Delivery.Paywall do
       Ecto.MultipleResultsError
   """
   def get_discount_by!(clauses),
-    do: Repo.get_by(Discount, clauses)
+    do: Repo.get_by(Discount, clauses) |> Repo.preload([:institution])
+
+  @doc """
+  Gets the discounts of a product
+  ## Examples
+      iex> get_product_discounts!(1)
+      [%Discount{}, %Discount{}, ...]
+      iex> get_product_discounts!(123)
+      []
+  """
+  def get_product_discounts(product_id) do
+    Repo.all(from(
+      d in Discount,
+      where: d.section_id == ^product_id,
+      select: d,
+      preload: [:institution, :section]
+    ))
+  end
 
   @doc """
   Gets a discount by institution id and section_id == nil
@@ -511,6 +528,9 @@ defmodule Oli.Delivery.Paywall do
       iex> create_or_update_discount(discount, %{name: bad_value})
       {:error, %Ecto.Changeset{}}
   """
+  def create_or_update_discount(%{institution_id: nil} = attrs),
+    do: {:error, Ecto.Changeset.add_error(Discount.changeset(%Discount{}, attrs), :institution, "can't be blank")}
+
   def create_or_update_discount(%{section_id: nil} = attrs) do
     case get_institution_wide_discount!(attrs.institution_id) do
       nil -> %Discount{}

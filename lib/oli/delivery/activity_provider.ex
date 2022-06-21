@@ -5,6 +5,7 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
+  alias Oli.Utils.BibUtils
 
   @doc """
   Realizes and resolves activities in a page.
@@ -59,9 +60,21 @@ defmodule Oli.Delivery.ActivityProvider do
 
     revisions = resolver.from_resource_id(source.section_slug, activity_ids)
 
+    bib_revisions =
+      BibUtils.assemble_bib_entries(
+        content,
+        revisions,
+        fn r -> Map.get(r.content, "bibrefs", []) end,
+        source.section_slug,
+        resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
+
     %ProviderResult{
       errors: [],
       revisions: revisions,
+      bib_revisions: bib_revisions,
       transformed_content: content,
       unscored: unscored
     }
@@ -77,9 +90,21 @@ defmodule Oli.Delivery.ActivityProvider do
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
 
+    bib_revisions =
+      BibUtils.assemble_bib_entries(
+        content,
+        only_revisions,
+        fn r -> Map.get(r.content, "bibrefs", []) end,
+        source.section_slug,
+        resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
+
     %ProviderResult{
       errors: errors,
       revisions: only_revisions,
+      bib_revisions: bib_revisions,
       transformed_content: Map.put(content, "model", Enum.reverse(model)),
       unscored: MapSet.new()
     }
@@ -193,4 +218,5 @@ defmodule Oli.Delivery.ActivityProvider do
       | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ ids
     }
   end
+
 end

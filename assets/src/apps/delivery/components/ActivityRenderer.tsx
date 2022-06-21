@@ -32,7 +32,6 @@ import {
   selectLastCheckTriggered,
   selectLastMutateChanges,
   selectLastMutateTriggered,
-  selectProcessedCheckResults,
 } from '../store/features/adaptivity/slice';
 import { selectCurrentActivityTree } from '../store/features/groups/selectors/deck';
 import { selectPageSlug, selectPreviewMode, selectUserId } from '../store/features/page/slice';
@@ -313,7 +312,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const lastCheckTriggered = useSelector(selectLastCheckTriggered);
   const lastCheckResults = useSelector(selectLastCheckResults);
-  const processedCheckResult = useSelector(selectProcessedCheckResults);
   const [checkInProgress, setCheckInProgress] = useState(false);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   useEffect(() => {
@@ -342,10 +340,11 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       if (initObject.operator === 'bind to') {
         initStateBindToFacts[initObject.target] = snapshot[key] || '';
         return acc;
-      } else if (typeof value === 'string') {
+      } else if (typeOfOriginalValue === 'string') {
         if (
-          (typeof value === 'string' && value[0] === '{' && value[1] !== '"') ||
-          (value.indexOf('{') !== -1 && value.indexOf('}') !== -1)
+          initObject.type !== CapiVariableTypes.MATH_EXPR &&
+          ((value[0] === '{' && value[1] !== '"') ||
+            (value.indexOf('{') !== -1 && value.indexOf('}') !== -1))
         ) {
           //this is a expression so we get the value from snapshot because this was already evaluated in deck.ts
           updatedValue = snapshot[key];
@@ -394,13 +393,23 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     ref?.current?.notify(NotificationType.CHECK_COMPLETE, payload);
   };
+
   const hasNavigation = (events: any) => {
+    if (!currentActivityTree || !currentActivityTree?.length) {
+      return false;
+    }
+    let eventsToProcess = events.results;
     const actionsByType: any = {
       feedback: [],
       mutateState: [],
       navigation: [],
     };
-    events.results.forEach((evt: any) => {
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const combineFeedback = !!currentActivity?.content?.custom?.combineFeedback;
+    if (!combineFeedback) {
+      eventsToProcess = [eventsToProcess[0]];
+    }
+    eventsToProcess.forEach((evt: any) => {
       const { actions } = evt.params;
       actions.forEach((action: any) => {
         actionsByType[action.type].push(action);
@@ -409,16 +418,28 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     if (actionsByType.navigation.length > 0) {
       const [firstNavAction] = actionsByType.navigation;
       const navTarget = firstNavAction.params.target;
-      if (navTarget !== activity.id) {
+      // check current activity id, not *this* one because it could be a layer
+      if (navTarget !== currentActivityId) {
         return true;
       }
     }
     return false;
   };
 
+  const [lastCheckHandledTimestamp, setLastCheckHandledTimestamp] = useState(0);
+
   useEffect(() => {
+    if (lastCheckTriggered === lastCheckHandledTimestamp) {
+      return;
+    }
     if (checkInProgress && lastCheckResults && lastCheckResults.timestamp === lastCheckTriggered) {
-      /* console.log('AR Check Effect', { lastCheckTriggered, lastCheckResults }); */
+      /* console.log('*********AR Check Effect', {
+        lastCheckTriggered,
+        lastCheckHandledTimestamp,
+        lastCheckResults,
+        hasNav: hasNavigation(lastCheckResults),
+      }); */
+      setLastCheckHandledTimestamp(lastCheckTriggered);
       const currentAttempt = sharedAttemptStateMap.get(activity.id);
       if (currentAttempt.activityId === lastCheckResults.attempt.activityId) {
         sharedAttemptStateMap.set(activity.id, lastCheckResults.attempt);
@@ -429,12 +450,12 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         });
       }
 
-      const hasNavigationToDifferentActivity = hasNavigation(processedCheckResult);
+      const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
       if (!hasNavigationToDifferentActivity || isEverApp) {
         notifyCheckComplete(lastCheckResults);
       }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered, processedCheckResult]);
+  }, [checkInProgress, lastCheckResults, lastCheckTriggered, lastCheckHandledTimestamp]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.

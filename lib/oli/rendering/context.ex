@@ -16,5 +16,6 @@ defmodule Oli.Rendering.Context do
             project_slug: nil,
             activity_types_map: %{},
             group_id: nil,
-            survey_id: nil
+            survey_id: nil,
+            bib_app_params: []
 end

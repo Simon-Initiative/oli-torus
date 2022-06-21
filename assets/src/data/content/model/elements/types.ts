@@ -11,9 +11,17 @@ export type ModelElement = TopLevel | Block | Inline;
 // All allows all SlateElement types. Small disallows full-width items like tables, webpages. Inline is only formatted text and inline elements like links.
 export type ContentModelMode = 'all' | 'small' | 'inline';
 
-type TopLevel = TextBlock | List | MediaBlock | Table | Math | (CodeV1 | CodeV2) | Blockquote;
-type Block = TableRow | TableCell | ListItem | MathLine | CodeLine;
-type Inline = Hyperlink | Popup | InputRef | ImageInline;
+type TopLevel =
+  | TextBlock
+  | List
+  | MediaBlock
+  | Table
+  | Math
+  | (CodeV1 | CodeV2)
+  | Blockquote
+  | FormulaBlock;
+type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
+type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
@@ -78,6 +86,23 @@ export interface ImageInline extends BaseImage {
   type: 'img_inline';
 }
 
+interface FormulaChildren<typeIdentifier>
+  extends SlateElement<(ImageInline | Hyperlink | Popup | InputRef)[]> {
+  type: typeIdentifier;
+  subtype: 'richtext';
+  src: never;
+}
+
+interface FormulaSrc<typeIdentifier> extends SlateElement<VoidChildren> {
+  type: typeIdentifier;
+  subtype: 'mathml' | 'latex';
+  src: string;
+  children: never;
+}
+
+export type FormulaBlock = FormulaSrc<'formula'> | FormulaChildren<'formula'>;
+export type FormulaInline = FormulaSrc<'formula_inline'> | FormulaChildren<'formula_inline'>;
+
 export interface YouTube extends SlateElement<VoidChildren> {
   type: 'youtube';
   src?: string;
@@ -123,12 +148,14 @@ export interface CodeV1 extends SlateElement<CodeLine[]> {
   language: string;
   caption?: Caption;
 }
+
 export interface CodeV2 extends SlateElement<VoidChildren> {
   type: 'code';
   code: string;
   language: string;
   caption?: Caption;
 }
+
 export type Code = CodeV2;
 
 export interface Blockquote extends SlateElement<Paragraph[]> {
@@ -158,6 +185,11 @@ export interface MathLine extends SlateElement<Text[]> {
 
 export interface CodeLine extends SlateElement<Text[]> {
   type: 'code_line';
+}
+
+export interface Citation extends SlateElement<Text[]> {
+  type: 'cite';
+  bibref: number;
 }
 
 export interface Hyperlink extends SlateElement<Text[]> {

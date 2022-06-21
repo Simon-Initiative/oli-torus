@@ -98,7 +98,7 @@ interface SettingsProps {
 }
 const Settings = (props: SettingsProps) => {
   return (
-    <Toolbar context={props.commandContext}>
+    <Toolbar context={props.commandContext} orientation="horizontal">
       <Toolbar.Group>
         <CommandButton
           description={createButtonCommandDesc({

@@ -299,7 +299,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            user: author,
            mode: mode,
            activity_map: activities,
-           project_slug: project_slug
+           project_slug: project_slug,
+           bib_app_params: Keyword.get(options, :bib_app_params, [])
          } do
       Rendering.Page.render(render_context, content, Rendering.Page.Html)
     else
@@ -354,7 +355,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            delivery_element: type.delivery_element,
            authoring_element: type.authoring_element,
            script: type.delivery_script,
-           graded: graded
+           graded: graded,
+           bib_refs: Map.get(content, "bibrefs", [])
          }
        end)
        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)}

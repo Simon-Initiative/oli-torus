@@ -8,6 +8,7 @@ import { Banner } from 'components/messages/Banner';
 import { Editors } from 'components/resource/editors/Editors';
 import { Objectives } from 'components/resource/objectives/Objectives';
 import { ObjectivesSelection } from 'components/resource/objectives/ObjectivesSelection';
+import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import { guaranteeValididty } from 'data/content/bank';
@@ -135,7 +136,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
       objectives: Immutable.List<ResourceId>(objectives.attached),
       content: PageEditorContent.fromPersistence(content),
       persistence: 'idle',
-      allObjectives: Immutable.List<Objective>(allObjectives),
+      allObjectives: arrangeObjectives(allObjectives),
       childrenObjectives: mapChildrenObjectives(allObjectives),
       undoables: empty(),
     };
@@ -251,6 +252,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   onEditActivity(id: string, update: ActivityEditorUpdate): void {
+    // only update if editMode is active
+    if (!this.state.editMode) return;
+
     const model = this.adjustActivityForConstraints(
       this.state.activityContexts.get(id)?.typeSlug,
       update.content,
@@ -280,6 +284,9 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   onRemove(key: string) {
+    // only update if editMode is active
+    if (!this.state.editMode) return;
+
     const item = this.state.content.find(key);
     const index = this.state.content.findIndex((c) => c.id === key);
 
@@ -373,11 +380,17 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
   }
 
   update(update: Partial<EditorUpdate>) {
+    // only update if editMode is active
+    if (!this.state.editMode) return;
+
     const mergedState = Object.assign({}, this.state, update);
     this.setState(mergedState, () => this.save());
   }
 
   updateImmediate(update: Partial<EditorUpdate>) {
+    // only update if editMode is active
+    if (!this.state.editMode) return;
+
     const mergedState = Object.assign({}, this.state, update);
     this.setState(mergedState, () => this.saveImmediate());
   }
@@ -433,7 +446,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
     const toSave: Persistence.ResourceUpdate = {
       objectives: { attached: this.state.objectives.toArray() },
       title: this.state.title,
-      content: { model: this.state.content.model.toJS() },
+      content: this.state.content.toPersistence(),
       releaseLock: false,
     };
 
@@ -446,9 +459,7 @@ export class PageEditor extends React.Component<PageEditorProps, PageEditorState
 
     const { projectSlug, resourceSlug } = this.props;
 
-    const onEdit = (content: PageEditorContent) => {
-      this.update({ content });
-    };
+    const onEdit = (content: PageEditorContent) => this.update({ content });
 
     const onTitleEdit = (title: string) => {
       this.updateImmediate({ title });

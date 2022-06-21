@@ -265,7 +265,7 @@ defmodule Oli.TestHelpers do
       |> Plug.Test.init_test_session(lti_session: nil)
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
-    {:ok, conn: conn}
+    {:ok, conn: conn, instructor: instructor}
   end
 
   def lms_instructor_conn(%{conn: conn}) do

@@ -79,6 +79,26 @@ const VariableArrayItem: React.FC<any> = (props) => {
   return (
     <div className={`mt-2 border-bottom`}>
       <div className="mb-2 d-flex flex-row align-items-start">
+        <div className="align-self-end mb-3">
+          <Button
+            disabled={!props.hasMoveUp || props.readonly || props.disabled}
+            variant="link"
+            size="sm"
+            onClick={props.onReorderClick(props.index, props.index - 1)}
+          >
+            <i className="fa fa-arrow-circle-up fa-2x" />
+            <span className="sr-only">Move Up</span>
+          </Button>
+          <Button
+            disabled={!props.hasMoveDown || props.readonly || props.disabled}
+            variant="link"
+            size="sm"
+            onClick={props.onReorderClick(props.index, props.index + 1)}
+          >
+            <i className="fa fa-arrow-circle-down fa-2x" />
+            <span className="sr-only">Move Down</span>
+          </Button>
+        </div>
         <div className="flex-grow-1">{props.children}</div>
         <div className="align-self-end mb-3">
           <Button
@@ -145,7 +165,9 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
         </Modal.Header>
         <Modal.Body>
           <div>{results}</div>
-          {props.items.map((element: any) => VariableArrayItem(element))}
+          {props.items.map((element: any, idx: number) => (
+            <VariableArrayItem key={idx} {...element} />
+          ))}
           {props.canAdd && (
             <button className="btn btn-primary mt-2" type="button" onClick={props.onAddClick}>
               <i className="fa fa-plus"></i>

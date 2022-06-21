@@ -62,6 +62,20 @@ defmodule OliWeb.Pow.PowHelpers do
     |> Keyword.get(:user)
   end
 
+  def delete_pow_user(conn, type) do
+    conn
+    |> use_pow_config(type)
+    |> Pow.Plug.delete()
+    |> PowPersistentSession.Plug.delete()
+  end
+
+  def create_pow_user(conn, type, account) do
+    conn
+    |> use_pow_config(type)
+    |> Pow.Plug.create(account)
+    |> PowPersistentSession.Plug.create(account)
+  end
+
   ## provider_links forked from original pow_assent codebase to support custom styling for providers ##
   # https://github.com/pow-auth/pow_assent/blob/master/lib/pow_assent/phoenix/views/view_helpers.ex
 

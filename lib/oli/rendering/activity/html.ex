@@ -19,10 +19,18 @@ defmodule Oli.Rendering.Activity.Html do
           user: user,
           group_id: group_id,
           survey_id: survey_id,
+          bib_app_params: bib_app_params
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
     activity_summary = activity_map[activity_id]
+
+    bib_params =
+      Enum.reduce(bib_app_params, [], fn x, acc ->
+        acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
+      end)
+
+    {:ok, bib_params_json} = Jason.encode(bib_params)
 
     case activity_summary do
       nil ->
@@ -57,12 +65,12 @@ defmodule Oli.Rendering.Activity.Html do
           case mode do
             :instructor_preview ->
               [
-                ~s|<#{tag} model="#{model}" editmode="false" projectSlug="#{section_slug}"#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
+                ~s|<#{tag} model="#{model}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
 
             _ ->
               [
-                ~s|<#{tag} class="activity-container" graded="#{graded}" state="#{state}" model="#{model}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}"#{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
+                ~s|<#{tag} class="activity-container" graded="#{graded}" state="#{state}" model="#{model}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
           end
 

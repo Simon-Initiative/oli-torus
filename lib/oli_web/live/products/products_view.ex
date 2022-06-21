@@ -15,7 +15,7 @@ defmodule OliWeb.Products.ProductsView do
   prop project, :any
   prop author, :any
   data breadcrumbs, :any
-  data title, :string, default: "Course Products"
+  data title, :string, default: "Products"
 
   data creation_title, :string, default: ""
   data products, :list, default: []
@@ -68,7 +68,7 @@ defmodule OliWeb.Products.ProductsView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Course Products",
+          full_title: "Products",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
@@ -79,17 +79,25 @@ defmodule OliWeb.Products.ProductsView do
     project = Course.get_project_by_slug(project_slug)
     products = Blueprint.list_for_project(project)
 
-    mount_as(author, false, products, project, breadcrumb([]), socket)
+    mount_as(
+      author,
+      false,
+      products,
+      project,
+      breadcrumb([]),
+      "Products | " <> project.title,
+      socket
+    )
   end
 
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
     products = Blueprint.list()
-    mount_as(author, true, products, nil, admin_breadcrumbs(), socket)
+    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket)
   end
 
-  defp mount_as(author, is_admin_view, products, project, breadcrumbs, socket) do
+  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket) do
     total_count = length(products)
 
     {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products)
@@ -102,7 +110,8 @@ defmodule OliWeb.Products.ProductsView do
        project: project,
        products: products,
        total_count: total_count,
-       table_model: table_model
+       table_model: table_model,
+       title: title
      )}
   end
 
@@ -140,9 +149,9 @@ defmodule OliWeb.Products.ProductsView do
     case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
       {:ok, blueprint} ->
         {:noreply,
-          socket
-          |> put_flash(:info, "Product successfully created.")
-          |> redirect(to: Routes.live_path(socket, OliWeb.Products.DetailsView, blueprint.slug))}
+         socket
+         |> put_flash(:info, "Product successfully created.")
+         |> redirect(to: Routes.live_path(socket, OliWeb.Products.DetailsView, blueprint.slug))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}

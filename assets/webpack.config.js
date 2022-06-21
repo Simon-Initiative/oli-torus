@@ -18,11 +18,13 @@ const populateEntries = () => {
     components: ['./src/apps/Components.tsx'],
     pageeditor: ['./src/apps/PageEditorApp.tsx'],
     activitybank: ['./src/apps/ActivityBankApp.tsx'],
+    bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
     dark: ['./src/phoenix/dark.ts'],
+    keepalive: ['./src/phoenix/keep-alive.ts'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});

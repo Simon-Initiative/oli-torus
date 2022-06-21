@@ -21,6 +21,95 @@
       ]
     },
     {
+      "caption": [
+        {
+          "children": [
+            {
+              "text": "sample table"
+            }
+          ],
+          "id": "540144016",
+          "type": "p"
+        }
+      ],
+      "children": [
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "table"
+                    }
+                  ],
+                  "id": "1786276003",
+                  "type": "p"
+                }
+              ],
+              "id": "2472685940",
+              "type": "td"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "sample"
+                    }
+                  ],
+                  "id": "2803247573",
+                  "type": "p"
+                }
+              ],
+              "id": "2644924984",
+              "type": "td"
+            }
+          ],
+          "id": "309803507",
+          "type": "tr"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "sample"
+                    }
+                  ],
+                  "id": "2154695715",
+                  "type": "p"
+                }
+              ],
+              "id": "4047592048",
+              "type": "td"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "table"
+                    }
+                  ],
+                  "id": "332341714",
+                  "type": "p"
+                }
+              ],
+              "id": "3231662655",
+              "type": "td"
+            }
+          ],
+          "id": "4237041410",
+          "type": "tr"
+        }
+      ],
+      "id": "1013436953",
+      "type": "table"
+    },
+    {
       "type": "p",
       "id": 2652513352,
       "children": [
@@ -334,6 +423,41 @@
         }
       ],
       "id": 169365459
+    },
+    {
+      "type": "formula",
+      "subtype": "richtext",
+      "children": [{ "text": "a richtext formula" }]
+    },
+    {
+      "type": "formula",
+      "subtype": "mathml",
+      "src": "<mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>"
+    },
+    {
+      "type": "formula",
+      "subtype": "latex",
+      "src": "x^2 + y^2 = z^2"
+    },
+    {
+      "type": "p",
+      "children": [
+        {
+          "type": "formula_inline",
+          "subtype": "richtext",
+          "children": [{ "text": "a richtext formula" }]
+        },
+        {
+          "type": "formula_inline",
+          "subtype": "mathml",
+          "src": "<mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>"
+        },
+        {
+          "type": "formula_inline",
+          "subtype": "latex",
+          "src": "x^2 + y^2 = z^2"
+        }
+      ]
     }
   ]
 }

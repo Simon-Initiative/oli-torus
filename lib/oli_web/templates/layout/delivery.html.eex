@@ -14,8 +14,13 @@
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
-    <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <%= if dev_mode?() do %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
+    <% else %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.0.slim.min.js" integrity="sha256-MlusDLJIP1GRgLrOflUQtshyP0TwT/RHXsI1wWGnQhs=" crossorigin="anonymous"></script>
@@ -40,6 +45,12 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js" integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+    <script>
+      window.cite = require('citation-js')
+    </script>
+
     <script>
     window.MathJax = window.MathJax || {
       tex: {
@@ -66,6 +77,7 @@
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
+    <script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(@conn, "/js/keepalive.js") %>" data-type="user"></script>
   </head>
   <body>
 

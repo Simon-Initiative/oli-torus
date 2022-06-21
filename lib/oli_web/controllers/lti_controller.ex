@@ -431,16 +431,14 @@ defmodule OliWeb.LtiController do
 
                     # sign into authoring account using Pow
                     conn
-                    |> use_pow_config(:author)
-                    |> Pow.Plug.create(author)
+                    |> create_pow_user(:author, author)
                   else
                     conn
                   end
 
                 # sign current user in and redirect to home page
                 conn
-                |> use_pow_config(:user)
-                |> Pow.Plug.create(user)
+                |> create_pow_user(:user, user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end
 

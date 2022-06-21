@@ -5,39 +5,51 @@ import { ActivityReference, ResourceContext } from 'data/content/resource';
 import React from 'react';
 import guid from 'utils/guid';
 import * as Persistence from 'data/persistence/activity';
+import { ResourceChoice } from './ResourceChoice';
 
 interface Props {
+  onSetTip: (tip: string) => void;
+  onResetTip: () => void;
   resourceContext: ResourceContext;
   onAddItem: AddCallback;
   editorMap: ActivityEditorMap;
   index: number[];
 }
-export const AddActivity: React.FC<Props> = ({ resourceContext, onAddItem, editorMap, index }) => {
+export const AddActivity: React.FC<Props> = ({
+  onSetTip,
+  onResetTip,
+  resourceContext,
+  onAddItem,
+  editorMap,
+  index,
+}) => {
   const activityEntries = Object.keys(editorMap)
     .map((k: string) => {
       const editorDesc: EditorDesc = editorMap[k];
       const enabled = editorDesc.globallyAvailable || editorDesc.enabledForProject;
 
       return enabled ? (
-        <button
-          key={editorDesc.slug}
-          className="list-group-item list-group-item-action flex-column align-items-start"
-          onClick={(_e) => {
+        <ResourceChoice
+          key={editorDesc.id}
+          onClick={() => {
             addActivity(editorDesc, resourceContext, onAddItem, editorMap, index);
             document.body.click();
           }}
-        >
-          <div className="type-label"> {editorDesc.friendlyName}</div>
-          <div className="type-description"> {editorDesc.description}</div>
-        </button>
+          onHoverStart={() => onSetTip(editorDesc.description)}
+          onHoverEnd={() => onResetTip()}
+          disabled={false}
+          icon={editorDesc.icon}
+          label={editorDesc.petiteLabel}
+        />
       ) : null;
     })
     .filter((e) => e !== null);
 
   return (
-    <>
-      <div className="list-group">{activityEntries}</div>
-    </>
+    <div className="d-flex flex-column">
+      <div className="resource-choice-header ml-3">Question types</div>
+      <div className="resource-choices activities">{activityEntries}</div>
+    </div>
   );
 };
 

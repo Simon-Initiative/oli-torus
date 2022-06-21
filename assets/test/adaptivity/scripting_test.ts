@@ -1,4 +1,5 @@
 import { CapiVariable, CapiVariableTypes } from 'adaptivity/capi';
+import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import {
   applyState,
   ApplyStateOperation,
@@ -292,6 +293,37 @@ describe('Scripting Interface', () => {
       text = 'The values is {variables.UnknownBeaker}';
       result = templatizeText(text, environment, environment);
       expect(result).toBe('The values is "1"');
+    });
+
+    it('should be able to templatizeText with any expression in the string', () => {
+      const environment = new Environment();
+      // load the built in functions
+      evalScript(janus_std, environment);
+
+      const populateScript = getAssignScript(
+        {
+          x: {
+            key: 'variables.star_flux1',
+            path: '',
+            value: 1000000,
+          },
+        },
+        environment,
+      );
+
+      evalScript(populateScript, environment);
+
+      let text = '{roundSF(variables.star_flux1, 1)}';
+      let result = templatizeText(text, {}, environment);
+      expect(result).toBe('1e+6');
+
+      text = '{min(10, 20)}';
+      result = templatizeText(text, {}, environment);
+      expect(result).toBe('10');
+
+      text = '{max(10, 20) + 1}';
+      result = templatizeText(text, {}, environment);
+      expect(result).toBe('21');
     });
 
     it('should be able to templatizeText of math expressions', () => {

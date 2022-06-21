@@ -32,7 +32,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
             </div>
           </div>
 
-        <% Enum.count(@children) > 0 -> %>
+        <% @depth < 2 -> %>
           <% # this objective has one or more children, it is a container objective and more sub-objectives can be created %>
           <div class="row create-sub-objective py-1">
             <div class="col-12 pb-2">
@@ -48,8 +48,8 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
               </div>
             </div>
           </div>
-
         <% true -> %>
+
       <% end %>
     """
   end

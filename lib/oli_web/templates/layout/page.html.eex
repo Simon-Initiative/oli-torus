@@ -25,6 +25,8 @@
 
         <%= @inner_content %>
 
+        <%= render OliWeb.BibliographyView, "_references.html", conn: @conn, bib_app_params: @bib_app_params %>
+
       </div>
 
       <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",

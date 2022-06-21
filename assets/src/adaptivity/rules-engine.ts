@@ -328,6 +328,16 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
           referencedActivities.add(referencedSequenceId);
         }
       });
+
+      const expressions = condition.value.match(/{([^{^}]+)}/g) || [];
+      expressions.forEach((expr: string) => {
+        if (expr.indexOf('|stage.') !== -1) {
+          //need to remove the {} and then get the referencedSequenceId
+          const actualExp = expr.substring(1, expr.length - 1);
+          const referencedSequenceId = actualExp.split('|stage.')[0];
+          referencedActivities.add(referencedSequenceId);
+        }
+      });
     }
     if (Array.isArray(condition.value)) {
       condition.value.forEach((subValue: any) => {
@@ -337,6 +347,16 @@ export const findReferencedActivitiesInConditions = (conditions: any) => {
           exprs.forEach((expr: string) => {
             if (expr.indexOf('|stage.') !== -1) {
               const referencedSequenceId = expr.split('|stage.')[0];
+              referencedActivities.add(referencedSequenceId);
+            }
+          });
+
+          const expressions = subValue.match(/{([^{^}]+)}/g) || [];
+          expressions.forEach((expr: string) => {
+            if (expr.indexOf('|stage.') !== -1) {
+              //need to remove the {} and then get the referencedSequenceId
+              const actualExp = expr.substring(1, expr.length - 1);
+              const referencedSequenceId = actualExp.split('|stage.')[0];
               referencedActivities.add(referencedSequenceId);
             }
           });
@@ -593,10 +613,13 @@ export const check = async (
     const scorePerAttempt = maxScore / maxAttempt;
     score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
   }
-  score = Math.min(score, scoringContext.maxScore);
+  score = Math.min(score, scoringContext.maxScore || 0);
   if (!scoringContext.negativeScoreAllowed) {
     score = Math.max(0, score);
   }
+
+  // make sure that score is *always* a number
+  score = isNaN(Number(score)) ? 0 : Number(score);
 
   const finalResults = {
     correct: isCorrect,

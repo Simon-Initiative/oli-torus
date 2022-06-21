@@ -64,6 +64,18 @@ export const schema: Schema = {
     isTopLevel: false,
     validChildren: {},
   },
+  formula: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(['input_ref', 'img']),
+  },
+  formula_inline: {
+    isVoid: true,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: toObj(['input_ref', 'img']),
+  },
   youtube: media,
   audio: media,
   iframe: media,
@@ -122,6 +134,12 @@ export const schema: Schema = {
     validChildren: toObj(['p']),
   },
   a: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
+  cite: {
     isVoid: false,
     isBlock: false,
     isTopLevel: false,

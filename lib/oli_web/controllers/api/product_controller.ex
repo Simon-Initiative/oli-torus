@@ -43,7 +43,8 @@ defmodule OliWeb.Api.ProductController do
             "has_grace_period" => true,
             "grace_period_days" => 10,
             "grace_period_strategy" => "relative_to_student",
-            "publisher_id" => 10
+            "publisher_id" => 10,
+            "cover_image" => "https://www.someurl.com/some-image.png"
           }
         ]
       }

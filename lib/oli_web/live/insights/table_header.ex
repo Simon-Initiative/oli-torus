@@ -25,16 +25,6 @@ defmodule OliWeb.Insights.TableHeader do
     ~L"""
     <thead>
       <tr>
-        <%= th(assigns,
-          "title",
-          case @selected do
-            :by_page -> "Page Title"
-            :by_activity -> "Activity Title"
-            :by_objective -> "Objective"
-            _ -> "Objective"
-          end,
-          false)
-        %>
         <th
           tabindex="0"
           style="cursor: pointer"
@@ -50,8 +40,8 @@ defmodule OliWeb.Insights.TableHeader do
           end %>
           <%= sort_order_icon("title", @sort_by, @sort_order) %>
         </th>
-        <%= if @selected == :by_page || @selected == :by_objective do %>
-          <th scope="col">Activity Title</th>
+        <%= if @selected == :by_page do %>
+          <th>Activity</th>
         <% end %>
         <%= th(assigns,
           "number_of_attempts",

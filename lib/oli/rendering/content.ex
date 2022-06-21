@@ -34,6 +34,10 @@ defmodule Oli.Rendering.Content do
   @callback ol(%Context{}, next, %{}) :: [any()]
   @callback ul(%Context{}, next, %{}) :: [any()]
   @callback li(%Context{}, next, %{}) :: [any()]
+
+  @callback formula(%Context{}, next, %{}) :: [any()]
+  @callback formula_inline(%Context{}, next, %{}) :: [any()]
+
   @callback math(%Context{}, next, %{}) :: [any()]
   @callback math_line(%Context{}, next, %{}) :: [any()]
   @callback code(%Context{}, next, %{}) :: [any()]
@@ -42,6 +46,7 @@ defmodule Oli.Rendering.Content do
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
+  @callback cite(%Context{}, next, %{}) :: [any()]
 
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
@@ -92,6 +97,38 @@ defmodule Oli.Rendering.Content do
   # Renders content children
   def render(%Context{} = context, children, writer) when is_list(children) do
     Enum.map(children, fn child -> render(context, child, writer) end)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula", "children" => children} = element,
+        writer
+      ) do
+    writer.formula(context, fn -> render(context, children, writer) end, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula"} = element,
+        writer
+      ) do
+    writer.formula(context, nil, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula_inline", "children" => children} = element,
+        writer
+      ) do
+    writer.formula_inline(context, fn -> render(context, children, writer) end, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula_inline"} = element,
+        writer
+      ) do
+    writer.formula_inline(context, nil, element)
   end
 
   # Renders a content element by calling the provided writer implementation on a
@@ -178,6 +215,9 @@ defmodule Oli.Rendering.Content do
 
       "a" ->
         writer.a(context, next, element)
+
+      "cite" ->
+        writer.cite(context, next, element)
 
       "popup" ->
         writer.popup(context, next, element)

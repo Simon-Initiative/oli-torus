@@ -1,4 +1,3 @@
-import { withHtml } from 'components/editing/editor/overrides/html';
 import { Model } from 'data/content/model/elements/factories';
 import { Mark, Marks } from 'data/content/model/text';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -60,7 +59,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
   const editor = useMemo(
     () =>
       withMarkdown(props.commandContext)(
-        withHtml(withReact(withHistory(withTables(withInlines(withVoids(createEditor())))))),
+        withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
       ),
     [],
   );
@@ -114,7 +113,11 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       >
         {props.children}
 
-        <EditorToolbar context={props.commandContext} insertOptions={props.toolbarInsertDescs} />
+        <EditorToolbar
+          orientation="vertical"
+          context={props.commandContext}
+          insertOptions={props.toolbarInsertDescs}
+        />
 
         <Editable
           style={props.style}

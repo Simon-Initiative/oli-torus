@@ -33,6 +33,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:status, Ecto.Enum, values: [:active, :deleted, :archived], default: :active)
     field(:invite_token, :string)
     field(:passcode, :string)
+    field(:cover_image, :string)
 
     field(:visibility, Ecto.Enum, values: [:selected, :global], default: :global)
     field(:requires_payment, :boolean, default: false)
@@ -117,6 +118,7 @@ defmodule Oli.Delivery.Sections.Section do
       :status,
       :invite_token,
       :passcode,
+      :cover_image,
       :visibility,
       :requires_payment,
       :pay_by_institution,

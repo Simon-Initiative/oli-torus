@@ -138,6 +138,7 @@ export function makeContent(text: string, id?: string): { id: string; content: R
  */
 export interface StudentResponse {
   input: any;
+  files?: any;
 }
 
 export type ModeSpecification = {
@@ -202,6 +203,7 @@ export interface ActivityModelSchema {
   content?: any;
   activityType?: any;
   id?: string; // maybe slug
+  bibrefs?: string[];
 }
 
 /**

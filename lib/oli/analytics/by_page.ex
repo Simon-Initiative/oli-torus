@@ -5,16 +5,13 @@ defmodule Oli.Analytics.ByPage do
   alias Oli.Analytics.Common
   alias Oli.Publishing
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Section
 
   def query_against_project_slug(project_slug) do
     activity_pages =
       from(project in Project,
         where: project.slug == ^project_slug,
-        join: section in Section,
-        on: section.base_project_id == project.id,
         join: snapshot in Snapshot,
-        on: snapshot.section_id == section.id,
+        on: snapshot.project_id == project.id,
         group_by: [snapshot.activity_id, snapshot.resource_id],
         select: %{
           activity_id: snapshot.activity_id,

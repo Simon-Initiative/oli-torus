@@ -36,9 +36,9 @@ import { CreateActivity } from './CreateActivity';
 import { DeleteActivity } from './DeleteActivity';
 import { EditingLock } from './EditingLock';
 import { LogicFilter } from './LogicFilter';
-import { Paging } from './Paging';
-
 import '../ResourceEditor.scss';
+import { arrangeObjectives } from 'components/resource/objectives/sort';
+import { Page, Paging } from 'components/misc/Paging';
 
 const PAGE_SIZE = 5;
 
@@ -58,7 +58,7 @@ type ActivityBankState = {
   persistence: 'idle' | 'pending' | 'inflight';
   metaModifier: boolean;
   undoables: ActivityUndoables;
-  paging: BankTypes.Paging;
+  paging: Page;
   logic: BankTypes.Logic;
   totalCount: number;
   totalInBank: number;
@@ -193,7 +193,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
       activityContexts: Immutable.OrderedMap<string, ActivityEditContext>(),
       messages: [],
       persistence: 'idle',
-      allObjectives: Immutable.List<Objective>(props.allObjectives),
+      allObjectives: arrangeObjectives(props.allObjectives),
       allTags: Immutable.List<Tag>(props.allTags),
       metaModifier: false,
       undoables: Immutable.OrderedMap<string, ActivityUndoAction>(),
@@ -382,7 +382,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     });
   }
 
-  onPageChange(page: BankTypes.Paging) {
+  onPageChange(page: Page) {
     this.persistence.lift((p) => p.destroy());
     this.state.editedSlug.lift((slug) => this.onChangeEditing(slug, false));
     this.setState({ undoables: Immutable.OrderedMap<string, ActivityUndoAction>() });
@@ -492,6 +492,8 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             onRegisterNewObjective={this.onRegisterNewObjective}
             onRegisterNewTag={this.onRegisterNewTag}
             banked={true}
+            canRemove={false}
+            onRemove={() => {}}
             {...context}
           />
         </div>
@@ -499,7 +501,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
     });
   }
 
-  fetchActivities(logic: BankTypes.Logic, paging: BankTypes.Paging) {
+  fetchActivities(logic: BankTypes.Logic, paging: Page) {
     BankPersistence.retrieve(this.props.projectSlug, logic, paging).then((result) => {
       if (result.result === 'success') {
         const contexts = result.queryResult.rows

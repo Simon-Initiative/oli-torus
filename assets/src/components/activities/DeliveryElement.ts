@@ -73,6 +73,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
    * The unique id of the course section.
    */
   sectionSlug?: string;
+
+  bibParams?: any;
   /**
    * The unique id of the student user.
    */
@@ -309,6 +311,10 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const userId = this.getAttribute('user_id') as any;
     const groupId = valueOr(this.getAttribute('user_id'), undefined);
     const surveyId = valueOr(this.getAttribute('user_id'), undefined);
+    let bibParams = valueOr(this.getAttribute('bib_params'), undefined);
+    if (bibParams) {
+      bibParams = JSON.parse(atob(bibParams));
+    }
 
     this.review = mode === 'review';
 
@@ -323,6 +329,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       surveyId,
       notify: this._notify,
       mountPoint: this.mountPoint,
+      bibParams,
       onWriteUserState: this.onSetData,
       onReadUserState: this.onGetData,
       onRequestHint: this.onRequestHint,
