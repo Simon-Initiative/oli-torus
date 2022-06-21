@@ -24,7 +24,8 @@ defmodule Oli.Activities do
       globally_available: manifest.global,
       description: manifest.description,
       title: manifest.friendlyName,
-      icon: "nothing",
+      petite_label: manifest.petiteLabel,
+      icon: manifest.icon,
       slug: manifest.id
     }
 
@@ -239,6 +240,7 @@ defmodule Oli.Activities do
               slug: a.slug,
               title: a.title,
               global: a.globally_available,
+              petite_label: a.petite_label,
               enabled: enabled_for_project
             }
           ]
@@ -265,7 +267,8 @@ defmodule Oli.Activities do
             delivery_element: a.delivery_element,
             delivery_script: a.delivery_script,
             slug: a.slug,
-            title: a.title
+            title: a.title,
+            petite_label: a.petite_label
           }
         ]
     end)
