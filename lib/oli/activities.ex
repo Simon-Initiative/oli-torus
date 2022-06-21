@@ -216,14 +216,16 @@ defmodule Oli.Activities do
     end
   end
 
-  def activities_for_project(project) do
+  def activities_for_project(project, is_admin? \\ true) do
     project = project |> Repo.preload([:activity_registrations])
 
     project_activities =
       Enum.reduce(project.activity_registrations, MapSet.new(), fn a, m -> MapSet.put(m, a.id) end)
 
     activities_enabled =
-      Enum.reduce(list_activity_registrations(), [], fn a, m ->
+      list_activity_registrations()
+      |> Enum.filter(fn a -> a.globally_visible || is_admin? end)
+      |> Enum.reduce([], fn a, m ->
         enabled_for_project =
           a.globally_available === true or MapSet.member?(project_activities, a.id)
 
@@ -247,9 +249,8 @@ defmodule Oli.Activities do
     Enum.sort_by(activities_enabled, & &1.global, :desc)
   end
 
-  def advanced_activities(project) do
-    project
-    |> activities_for_project()
+  def advanced_activities(project, is_admin? \\ true) do
+    activities_for_project(project, is_admin?)
     |> Enum.filter(&(!&1.global))
     |> Enum.sort_by(& &1.title)
   end
@@ -278,6 +279,22 @@ defmodule Oli.Activities do
            get_registration_by_slug(activity_slug)
            |> trap_nil("An activity with that slug was not found.") do
       update_registration(activity_registration, %{globally_available: status})
+    else
+      {:error, {message}} -> {:error, message}
+    end
+  end
+
+  @doc """
+  Sets the globally_visible state of a registered activity.  If an activity type
+  is globally visible, all authors will see it appear in the list of
+  activities within their project.  If an activity type is *not* globally visible,
+  it will only appear in that list if the author is also an admin.
+  """
+  def set_global_visibility(activity_slug, status) do
+    with {:ok, activity_registration} <-
+           get_registration_by_slug(activity_slug)
+           |> trap_nil("An activity with that slug was not found.") do
+      update_registration(activity_registration, %{globally_visible: status})
     else
       {:error, {message}} -> {:error, message}
     end

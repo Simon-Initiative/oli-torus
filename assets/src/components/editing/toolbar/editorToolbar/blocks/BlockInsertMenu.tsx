@@ -21,7 +21,7 @@ export const BlockInsertMenu = ({ blockInsertOptions }: Props) => {
   if (blockInsertOptions.length === 0) return null;
 
   return (
-    <Toolbar.Group>
+    <Toolbar.VerticalGroup>
       <DropdownButton description={insertItemDropdown}>
         {blockInsertOptions
           .filter((desc) => desc.command.precondition(editor))
@@ -29,6 +29,6 @@ export const BlockInsertMenu = ({ blockInsertOptions }: Props) => {
             <DescriptiveButton key={i} description={desc} />
           ))}
       </DropdownButton>
-    </Toolbar.Group>
+    </Toolbar.VerticalGroup>
   );
 };
