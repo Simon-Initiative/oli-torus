@@ -3,10 +3,23 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.19.5 (2022-06-21)
+
+### Bug Fixes
 
 - Restore ability to edit title of basic pages
+- Fix an issue where formatting toolbar covers content
+- Prevent deletion of non-empty curriculum containers
+- Fix an issue where analytics weren't properly including remixed sections
 
 ### Enhancements
+
+- Provide more context in the brower tab
+- Improve the learning objective selection dropdown
+- Improve authoring improvement insights UI
+- Improve content and activity insertion menu
 
 ## 0.19.4 (2022-06-09)
 
