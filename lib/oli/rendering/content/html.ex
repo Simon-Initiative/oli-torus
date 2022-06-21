@@ -329,6 +329,18 @@ defmodule Oli.Rendering.Content.Html do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
   end
 
+  def cite(%Context{} = context, next, a) do
+    bib_references = Map.get(context, :bib_app_params, [])
+    bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
+    if bib_entry != nil do
+      [~s|<cite><sup>
+      [<a onclick="var d=document.getElementById('#{bib_entry.slug}'); if (d &amp;&amp; d.scrollIntoView) d.scrollIntoView();return false;" href="##{bib_entry.slug}" class="ref">#{bib_entry.ordinal}</a>]
+      </sup></cite>\n|]
+    else
+      ["<cite><sup>", next.(), "</sup></cite>\n"]
+    end
+  end
+
   def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
     trigger =
       if escape_xml!(trigger) == "hover" do

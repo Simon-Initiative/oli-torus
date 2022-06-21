@@ -30,6 +30,7 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :delivery_element,
     :authoring_element,
     # whether or not the activity is rendering in a graded context
-    :graded
+    :graded,
+    :bib_refs
   ]
 end
