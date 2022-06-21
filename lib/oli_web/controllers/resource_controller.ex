@@ -78,7 +78,8 @@ defmodule OliWeb.ResourceController do
       revision_slug: revision_slug,
       activity_types: Activities.activities_for_project(project),
       part_component_types: PartComponents.part_components_for_project(project),
-      graded: context.graded
+      graded: context.graded,
+      title: "Edit | " <> context.title
     )
   end
 

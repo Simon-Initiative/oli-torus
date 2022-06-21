@@ -25,7 +25,8 @@ defmodule OliWeb.Insights do
        selected: :by_activity,
        query: "",
        sort_by: "title",
-       sort_order: :asc
+       sort_order: :asc,
+       title: "Insights | " <> project.title
      )}
   end
 

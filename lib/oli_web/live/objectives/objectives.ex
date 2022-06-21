@@ -53,7 +53,8 @@ defmodule OliWeb.Objectives.Objectives do
        author: author,
        force_render: 0,
        can_delete?: true,
-       edit: :none
+       edit: :none,
+       title: "Objectives | " <> project.title
      )}
   end
 
