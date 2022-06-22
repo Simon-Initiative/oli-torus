@@ -7,6 +7,7 @@ export type EditorDesc = {
   icon: string;
   description: string;
   friendlyName: string;
+  petiteLabel: string;
   globallyAvailable: boolean;
   enabledForProject: boolean;
   id: number;

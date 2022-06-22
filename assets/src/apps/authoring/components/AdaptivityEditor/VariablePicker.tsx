@@ -236,7 +236,7 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
       },
       {},
     );
-    setPartAdaptivityMap(adaptivityMap);
+    return Promise.resolve(adaptivityMap);
   }, [allParts, currentActivityTree, specificActivityTree]);
 
   const sessionVisits: Record<string, unknown>[] = [];
@@ -373,7 +373,15 @@ export const VariablePicker: React.FC<VariablePickerProps> = ({
     });
 
   useEffect(() => {
-    getAdaptivePartTypes();
+    let isMounted = true;
+    getAdaptivePartTypes().then((map) => {
+      if (isMounted) {
+        setPartAdaptivityMap(map);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
   }, [allParts, currentActivityTree, specificActivityTree]);
 
   useEffect(() => {

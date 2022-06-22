@@ -91,11 +91,12 @@
 }
 
 .addResourcePopover {
-  max-width: 500px;
-  overflow-x: auto;
+  max-width: 375px;
+  overflow: hidden;
   width: fit-content;
   z-index: 500;
   border-radius: 6px;
+  border-color: authoring.$light !important;
 
   &:global(.popover) {
     max-width: unset !important;
@@ -103,23 +104,16 @@
 }
 
 .addResourcePopoverContent {
-  height: 400px;
-  width: 500px;
+  height: 215px;
+  width: 375px;
+  padding: 4px 2px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background-color: authoring.$body-bg;
   border-radius: 2px;
-
-  :global(.list-group) {
-    padding-left: 6px;
-    padding-right: 6px;
-    border-bottom: 0;
-  }
-
-  :global(.list-group:not(:last-of-type)) {
-    margin-bottom: 1em;
-  }
+  overflow: hidden;
+  background-color: authoring.$body-bg;
+  border-color: authoring.$light;
 
   :global(.header) {
     padding-left: 6px;
@@ -134,17 +128,66 @@
 
   :global(.type-label) {
     color: authoring.$body-color;
-    font-size: 1.1em;
-    font-weight: 600;
+    font-size: 0.8em;
+    font-weight: 300;
   }
-
-  :global(.list-group a) {
-    border: 0 none;
-    padding: 4px 6px;
-  }
-
-  :global(.type-description) {
+  :global(.resource-choice-header) {
     color: authoring.$body-color;
     font-size: 0.9em;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  :global(.resource-choice) {
+    border: none;
+    max-height: 50px;
+    min-height: 50px;
+    max-width: 70px;
+    min-width: 70px;
+    background-color: authoring.$body-bg;
+    color: authoring.$body-color;
+
+    &:hover {
+      color: authoring.$primary;
+    }
+    &:active {
+      transform: translateY(4px);
+    }
+  }
+
+  :global(.resource-choice-icon) {
+    font-size: 24px;
+  }
+
+  :global(.resource-choices-divider) {
+    border-left-color: authoring.$light;
+    border-left-width: 1px;
+    border-left-style: solid;
+    max-height: 170px;
+  }
+
+  :global(.resource-choices-tip) {
+    font-size: 0.8em;
+    color: authoring.$body-color;
+  }
+
+  :global(.resource-choices) {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+
+  :global(.non-activities) {
+    max-width: 140px;
+    max-height: 170px;
+  }
+  :global(.activities) {
+    max-width: 210px;
+    max-height: 170px;
+  }
+  :global(.type-description) {
+    color: authoring.$body-color;
+    font-size: 0.8em;
   }
 }

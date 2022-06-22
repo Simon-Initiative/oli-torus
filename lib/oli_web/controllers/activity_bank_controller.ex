@@ -25,7 +25,8 @@ defmodule OliWeb.ActivityBankController do
           breadcrumbs: [Breadcrumb.new(%{full_title: "Activity Bank"})],
           project_slug: project_slug,
           is_admin?: is_admin?,
-          scripts: Oli.Activities.get_activity_scripts()
+          scripts: Oli.Activities.get_activity_scripts(),
+          title: "Activity Bank | " <> conn.assigns.project.title
         )
 
       _ ->

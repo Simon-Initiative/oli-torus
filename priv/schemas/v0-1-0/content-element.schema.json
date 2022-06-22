@@ -74,6 +74,9 @@
           "$ref": "#/$defs/hyperlink"
         },
         {
+          "$ref": "#/$defs/citation"
+        },
+        {
           "$ref": "#/$defs/activity-link"
         },
         {
@@ -742,6 +745,31 @@
         }
       },
       "required": ["type", "idref", "children"]
+    },
+    "citation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "cite"
+        },
+        "bibref": {
+          "type": ["string", "number"]
+        },
+        "slug": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "bibref",
+        "children"
+      ]
     },
     "popup": {
       "type": "object",

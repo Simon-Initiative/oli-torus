@@ -1,4 +1,5 @@
 import { normalizeHref } from './utils';
+
 import {
   TableData,
   TableRow,
@@ -18,6 +19,7 @@ import {
   ModelElement,
   HeadingOne,
   HeadingTwo,
+  Citation,
   ImageInline,
   CodeV2,
 } from 'data/content/model/elements/types';
@@ -54,6 +56,9 @@ export const Model = {
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+
+  cite: (text = '', bibref: number) =>
+    create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
 
   image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
 

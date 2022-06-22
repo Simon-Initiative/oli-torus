@@ -155,6 +155,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[link with missing href ", next.(), " "]
   end
 
+  def cite(%Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
   def popup(%Context{} = _context, next, _) do
     ["[popup with text ", next.(), "]"]
   end

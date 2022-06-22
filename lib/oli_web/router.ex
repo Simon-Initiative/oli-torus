@@ -59,7 +59,11 @@ defmodule OliWeb.Router do
 
   pipeline :authoring do
     plug(Oli.Plugs.SetDefaultPow, :author)
-    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: @author_persistent_session_cookie_key)
+
+    plug(PowPersistentSession.Plug.Cookie,
+      persistent_session_cookie_key: @author_persistent_session_cookie_key
+    )
+
     plug(Oli.Plugs.SetCurrentUser)
 
     # Disable caching of resources in authoring
@@ -68,7 +72,11 @@ defmodule OliWeb.Router do
 
   pipeline :delivery do
     plug(Oli.Plugs.SetDefaultPow, :user)
-    plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: @user_persistent_session_cookie_key)
+
+    plug(PowPersistentSession.Plug.Cookie,
+      persistent_session_cookie_key: @user_persistent_session_cookie_key
+    )
+
     plug(Oli.Plugs.SetCurrentUser)
   end
 
@@ -361,6 +369,9 @@ defmodule OliWeb.Router do
     # Activity Bank
     get("/:project_id/bank", ActivityBankController, :index)
 
+    # Bibliography
+    get("/:project_id/bibliography", BibliographyController, :index)
+
     # Objectives
     live("/:project_id/objectives", Objectives.Objectives)
 
@@ -500,6 +511,18 @@ defmodule OliWeb.Router do
 
     post("/", Api.TagController, :new)
     get("/", Api.TagController, :index)
+  end
+
+  # Bibliography Service
+  scope "/api/v1/bibs/project/:project", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+
+    post("/retrieve", Api.BibEntryController, :retrieve)
+    post("/", Api.BibEntryController, :new)
+    get("/", Api.BibEntryController, :index)
+    delete("/entry/:entry", Api.BibEntryController, :delete)
+    put("/entry/:entry", Api.BibEntryController, :update)
   end
 
   scope "/api/v1/products", OliWeb do
@@ -860,8 +883,20 @@ defmodule OliWeb.Router do
     live("/api_keys", ApiKeys.ApiKeysLive)
     live("/products", Products.ProductsView)
     live("/products/:product_id/discounts", Products.Payments.Discounts.ProductsIndexView)
-    live("/products/:product_id/discounts/new", Products.Payments.Discounts.ShowView, :product_new, as: :discount)
-    live("/products/:product_id/discounts/:discount_id", Products.Payments.Discounts.ShowView, :product, as: :discount)
+
+    live(
+      "/products/:product_id/discounts/new",
+      Products.Payments.Discounts.ShowView,
+      :product_new,
+      as: :discount
+    )
+
+    live(
+      "/products/:product_id/discounts/:discount_id",
+      Products.Payments.Discounts.ShowView,
+      :product,
+      as: :discount
+    )
 
     # Section Management (+ Open and Free)
     live("/sections", Sections.SectionsView)
@@ -871,7 +906,13 @@ defmodule OliWeb.Router do
 
     # Institutions, LTI Registrations and Deployments
     resources("/institutions", InstitutionController)
-    live("/institutions/:institution_id/discount", Products.Payments.Discounts.ShowView, :institution, as: :discount)
+
+    live(
+      "/institutions/:institution_id/discount",
+      Products.Payments.Discounts.ShowView,
+      :institution,
+      as: :discount
+    )
 
     live("/registrations", Admin.RegistrationsView)
 
@@ -900,6 +941,18 @@ defmodule OliWeb.Router do
     get("/manage_activities", ActivityManageController, :index)
     put("/manage_activities/make_global/:activity_slug", ActivityManageController, :make_global)
     put("/manage_activities/make_private/:activity_slug", ActivityManageController, :make_private)
+
+    put(
+      "/manage_activities/make_globally_visible/:activity_slug",
+      ActivityManageController,
+      :make_globally_visible
+    )
+
+    put(
+      "/manage_activities/make_admin_visible/:activity_slug",
+      ActivityManageController,
+      :make_admin_visible
+    )
 
     # Branding
     resources("/brands", BrandController)

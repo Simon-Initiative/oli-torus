@@ -41,6 +41,11 @@ export const saveActivity = createAsyncThunk(
           owner: 'self', // should be sequenceId, but not sure it's needed here
         },
       ];
+    } else if (activity.authoring.parts.length > 1) {
+      // don't need the default part if another has been added
+      activity.authoring.parts = activity.authoring.parts.filter(
+        (part: any) => part.id !== '__default',
+      );
     }
 
     const changeData: ActivityUpdate = {

@@ -139,6 +139,12 @@ export const schema: Schema = {
     isTopLevel: false,
     validChildren: {},
   },
+  cite: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
   popup: {
     isVoid: false,
     isBlock: false,

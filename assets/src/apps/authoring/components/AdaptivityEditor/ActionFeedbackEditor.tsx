@@ -93,7 +93,7 @@ const ActionFeedbackEditor: React.FC<ActionFeedbackEditorProps> = ({
           placeholder="Enter feedback"
           disabled={false}
           onClick={handleShowFeedbackClick}
-          value={fakeFeedback}
+          defaultValue={fakeFeedback}
           // onChange={(e) => setFakeFeedback(e.target.value)}
           // onBlur={(e) => handleTargetChange(e)}
           title={fakeFeedback}

@@ -1,8 +1,9 @@
 {
   "id": "oli_short_answer",
   "friendlyName": "Single Response",
-  "description": "A question with a single response input following the stem",
-  "icon": "question_answer",
+  "petiteLabel": "Input",
+  "description": "A question type with a single response input following the question stem",
+  "icon": "check",
   "delivery": {
     "element": "oli-short-answer-delivery",
     "entry": "./delivery-entry.ts"
