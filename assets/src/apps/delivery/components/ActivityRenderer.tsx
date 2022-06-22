@@ -18,7 +18,7 @@ import {
 } from 'components/activities/types';
 import * as Extrinsic from 'data/persistence/extrinsic';
 import { Environment } from 'janus-script';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { contexts } from '../../../types/applicationContext';
@@ -487,7 +487,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   };
 
-  const notifyContextChanged = async () => {
+  const notifyContextChanged = useCallback(async () => {
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
@@ -511,8 +511,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       initStateBindToFacts,
     });
 
-    notifyCheckComplete(lastCheckResults);
-  };
+    /* console.log('notifyContextChanged', { lastCheckResults }); */
+    if (lastCheckResults.timestamp > 0) {
+      notifyCheckComplete(lastCheckResults);
+    }
+  }, [
+    currentActivityId,
+    currentLessonId,
+    historyModeNavigation,
+    adaptivityDomain,
+    lastCheckResults,
+  ]);
 
   useEffect(() => {
     if (!initPhaseComplete || !ref.current) {

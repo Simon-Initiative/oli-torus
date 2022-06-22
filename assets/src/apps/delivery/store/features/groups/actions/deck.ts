@@ -512,8 +512,8 @@ export const loadActivities = createAsyncThunk(
       .map((a) => a?.state)
       .filter((s) => s !== undefined) as ActivityState[];
 
-    thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
-    thunkApi.dispatch(setActivities({ activities: models }));
+    await thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
+    await thunkApi.dispatch(setActivities({ activities: models }));
 
     // update the scripting environment with the latest activity state
     states.forEach((state) => {

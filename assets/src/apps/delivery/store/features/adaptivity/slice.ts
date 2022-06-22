@@ -1,6 +1,7 @@
 import { createSelector, createSlice, PayloadAction, Slice } from '@reduxjs/toolkit';
 import { RootState } from '../../rootReducer';
 import AdaptivitySlice from './name';
+import { setCurrentActivityId } from '../activities/slice';
 
 export interface CheckResults {
   timestamp: number;
@@ -21,7 +22,7 @@ export interface AdaptivityState {
   lessonEnded?: boolean;
   lastMutateTriggered: any; // timestamp
   lastMutateChanges: any;
-  initPhaseComplete: any; // timestamp
+  initPhaseComplete: boolean;
   historyModeNavigation: boolean;
 }
 
@@ -43,7 +44,7 @@ const initialState: AdaptivityState = {
   lessonEnded: false,
   lastMutateTriggered: null,
   lastMutateChanges: null,
-  initPhaseComplete: null,
+  initPhaseComplete: false,
   historyModeNavigation: false,
 };
 
@@ -83,9 +84,14 @@ const slice: Slice<AdaptivityState> = createSlice({
     ) {
       state.historyModeNavigation = action.payload.historyModeNavigation;
     },
-    setInitPhaseComplete(state) {
-      state.initPhaseComplete = Date.now();
+    setInitPhaseComplete(state, action: PayloadAction<{ complete: boolean }>) {
+      state.initPhaseComplete = action.payload.complete;
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(setCurrentActivityId, (state) => {
+      state.initPhaseComplete = false;
+    });
   },
 });
 
