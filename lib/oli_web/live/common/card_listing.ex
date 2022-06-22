@@ -3,7 +3,6 @@ defmodule OliWeb.Common.CardListing do
 
   import OliWeb.Common.SourceImage
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Utils
   alias OliWeb.Delivery.SelectSource.TableModel
 

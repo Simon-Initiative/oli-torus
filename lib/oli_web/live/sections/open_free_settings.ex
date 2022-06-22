@@ -1,11 +1,10 @@
 defmodule OliWeb.Sections.OpenFreeSettings do
   use OliWeb, :surface_component
 
-  alias Surface.Components.{Field, Select}
-  alias Surface.Components.Form.{Field, Label, DateTimeLocalInput, Select, Checkbox, ErrorTag}
+  alias Surface.Components.Field
+  alias Surface.Components.Form.{Field, Label, DateTimeLocalInput, Checkbox, ErrorTag}
   alias OliWeb.Common.FormatDateTime
   alias OliWeb.Common.Properties.Group
-  alias Oli.Predefined
   import Ecto.Changeset
 
   prop changeset, :any, required: true

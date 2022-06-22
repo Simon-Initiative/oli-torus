@@ -8,10 +8,18 @@ defmodule OliWeb.Common.SelectTimezone do
 
   def render(assigns) do
     ~H"""
-      <%= form_for @conn, Routes.static_page_path(@conn, :update_timezone), fn f -> %>
-        <%= hidden_input f, :redirect_to, value: @conn.request_path %>
+      <script>
+        function submitForm(){
+          const relativePath = window.location.pathname+window.location.search;
+          $('#hidden-redirect-to').val(relativePath);
+          $('#timezone-form').submit()
+        }
+      </script>
+
+      <%= form_for @conn, Routes.static_page_path(@conn, :update_timezone), [id: "timezone-form"], fn f -> %>
+        <%= hidden_input f, :redirect_to, id: "hidden-redirect-to" %>
         <div class="form-label-group">
-          <%= select f, :timezone, Predefined.timezones(), onchange: "this.form.submit()", selected: @selected || "Etc/Greenwich", prompt: "Select Timezone", class: "form-control dropdown-select", required: true %>
+          <%= select f, :timezone, Predefined.timezones(), onchange: "submitForm()", selected: @selected || "Etc/Greenwich", prompt: "Select Timezone", class: "form-control dropdown-select", required: true %>
         </div>
       <% end %>
     """
