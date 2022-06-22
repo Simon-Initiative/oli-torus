@@ -71,13 +71,21 @@ const HistoryNavigation: React.FC = () => {
       };
     })
     .sort(sortByTimestamp);
-  /* console.log('HISTORY ITEMS', { historyItems, globalSnapshot }); */
 
   const currentHistoryActivityIndex = historyItems.findIndex(
     (item: any) => item.id === currentActivityId,
   );
   const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
   const isLast = currentHistoryActivityIndex === 0;
+
+  /* console.log('HISTORY ITEMS', {
+    historyItems,
+    globalSnapshot,
+    currentActivityId,
+    isFirst,
+    isLast,
+    isHistoryMode,
+  }); */
 
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];
