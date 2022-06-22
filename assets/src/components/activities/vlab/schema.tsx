@@ -16,8 +16,7 @@ import { assertNever } from 'utils/common';
 export type VlabInput = Dropdown | FillInTheBlank | VlabValue;
 export type VlabInputDelivery =
   | { id: string; inputType: 'dropdown'; options: SelectOption[] }
-  | { id: string; inputType: 'text' | 'numeric' };
-//  | { id: string; inputType: 'vlabvalue' };
+  | { id: string; inputType: 'text' | 'numeric' | 'vlabvalue' };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
@@ -33,17 +32,17 @@ export interface VlabValue extends Identifiable {
   inputType: 'numeric';
   partId: string;
   species?: string;
-  parameter: string;
+  parameter?: string;
 }
 
 export type VlabInputType = 'dropdown' | 'text' | 'numeric' | 'vlabvalue';
-export const valbInputTypes: VlabInputType[] = ['dropdown', 'text', 'numeric', 'vlabvalue'];
+export const vlabInputTypes: VlabInputType[] = ['dropdown', 'text', 'numeric', 'vlabvalue'];
 
 export const VlabInputTypeFriendly = (type: VlabInputType): string =>
   Maybe.maybe(
     {
       dropdown: 'Dropdown',
-      numeric: 'Nomber',
+      numeric: 'Number',
       text: 'Text',
       vlabvalue: 'Vlab Value',
     }[type],

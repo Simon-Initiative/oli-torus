@@ -1,10 +1,6 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
-import {
-  VlabInput,
-  VlabSchema,
-  VlabInputType,
-} from 'components/activities/multi_input/schema';
+import { VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
 import {
   makeChoice,
   makeHint,
@@ -52,7 +48,7 @@ export const defaultModel = (): VlabSchema => {
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
     authoring: {
-      parts: [makePart(Responses.forTextInput(), [makeHint('')], DEFAULT_PART_ID)],
+      parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: 'Example question with a fill in the blank',
@@ -66,10 +62,8 @@ export const friendlyType = (type: VlabInputType) => {
       return 'Dropdown';
     case 'vlabvalue':
       return 'Vlab Value';
-    case 'numeric':
-      return 'Number';
     default:
-      return 'Text';
+      return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
   }
 };
 

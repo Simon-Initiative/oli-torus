@@ -94,22 +94,40 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
-  const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const input = getByUnsafe(model.inputs, (x) => x.id === id);
-    //const value = e.target.value;
-
-    // Force the input value to the vlab selected flask volume on change.
+  const onVlabChange = () => {
+    // Get the selected flask XML and parse.
+    console.log('Vlab Changed!');
     const selectedFlaskXML = document
       .getElementsByClassName('embed-responsive-item')[0]
       .contentWindow.getSelectedItem();
     const parser = new DOMParser();
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
-    const value = selectedFlask.querySelector('parsererror')
-      ? null
-      : selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('volume')[0]
-          .textContent;
-    console.log('selectedFlask volume = ' + value + 'L.');
 
+    // Loop over the inputs, if an input is type vlabInput, update it's value.
+    model.inputs.forEach((input) => {
+      console.log(input.inputType);
+      if (input.type === 'vlabvalue') {
+        if (!selectedFlask.querySelector('parsererror')) {
+          const value = selectedFlask
+            .getElementsByTagName('flask')[0]
+            .getElementsByTagName('volume')[0].textContent;
+          console.log('SelectedFlask volume = ' + value + 'L.');
+        } else {
+          console.log('Nothing selected on the workbench.');
+        }
+        dispatch(
+          activityDeliverySlice.actions.setStudentInputForPart({
+            partId: input.partId,
+            studentInput: [value],
+          }),
+        );
+      }
+    });
+  };
+
+  const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    const value = e.target.value;
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
         partId: input.partId,

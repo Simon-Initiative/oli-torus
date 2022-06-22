@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { MultiInputActions } from 'components/activities/multi_input/actions';
+import { MultiInputActions } from 'components/activities/vlab/actions';
 import { VlabSchema } from 'components/activities/vlab/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
