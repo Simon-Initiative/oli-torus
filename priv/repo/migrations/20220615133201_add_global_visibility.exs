@@ -6,7 +6,7 @@ defmodule Oli.Repo.Migrations.AddGlobalVisibility do
       add :globally_visible, :boolean, null: false, default: true
     end
 
-    if direction == :up do
+    if direction() == :up do
       flush()
 
       execute "UPDATE activity_registrations SET globally_visible = true;"

@@ -6,7 +6,7 @@ defmodule Oli.Repo.Migrations.AddProjectToSnapshots do
       add :project_id, references(:projects, on_delete: :nothing)
     end
 
-    if direction == :up do
+    if direction() == :up do
       flush()
 
       execute """
