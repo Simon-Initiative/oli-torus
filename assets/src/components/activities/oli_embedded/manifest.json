@@ -1,8 +1,9 @@
 {
   "id": "oli_embedded",
   "friendlyName": "OLI Embedded",
+  "petiteLabel": "Embed",
   "description": "OLI Embedded activity",
-  "icon": "integration_instructions",
+  "icon": "question-circle",
   "allowClientEvaluation": true,
   "delivery": {
     "element": "oli-embedded-delivery",

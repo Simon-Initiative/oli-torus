@@ -21,7 +21,8 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
     content: { custom: config, partsLayout },
   } = props.model;
 
-  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(50));
+  const MAX_LISTENERS = 250;
+  const [pusher, setPusher] = useState(new EventEmitter().setMaxListeners(MAX_LISTENERS));
 
   // TODO: this type should be Environment | undefined; this is a local script env for each activity
   // should be provided by the parent as a child env, possibly default to having its own instead

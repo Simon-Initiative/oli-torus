@@ -1,8 +1,9 @@
 {
   "id": "oli_image_coding",
   "friendlyName": "Image Coding",
+  "petiteLabel": "Coding",
   "description": "KTH Image Coding exercise",
-  "icon": "integration_instructions",
+  "icon": "image",
   "allowClientEvaluation": true,
   "delivery": {
     "element": "oli-image-coding-delivery",

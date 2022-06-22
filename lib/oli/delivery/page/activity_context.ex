@@ -42,7 +42,8 @@ defmodule Oli.Delivery.Page.ActivityContext do
          delivery_element: type.delivery_element,
          authoring_element: type.authoring_element,
          script: type.delivery_script,
-         graded: graded
+         graded: graded,
+         bib_refs: Map.get(model, "bibrefs", [])
        }}
     end)
     |> Map.new()

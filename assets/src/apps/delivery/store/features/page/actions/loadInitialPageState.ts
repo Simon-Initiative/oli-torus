@@ -6,8 +6,10 @@ import {
   defaultGlobalEnv,
   evalScript,
   getAssignScript,
+  getEnvState,
 } from '../../../../../../adaptivity/scripting';
 import { RootState } from '../../../rootReducer';
+import { setHistoryNavigationTriggered } from '../../adaptivity/slice';
 import { setExtrinsicState, setResourceAttemptGuid } from '../../attempt/slice';
 import {
   loadActivities,
@@ -16,8 +18,8 @@ import {
 } from '../../groups/actions/deck';
 import { selectSequence } from '../../groups/selectors/deck';
 import { LayoutType, selectCurrentGroup, setGroups } from '../../groups/slice';
-import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
 import PageSlice from '../name';
+import { loadPageState, PageState, selectResourceAttemptGuid } from '../slice';
 
 export const loadInitialPageState = createAsyncThunk(
   `${PageSlice}/loadInitialPageState`,
@@ -112,10 +114,20 @@ export const loadInitialPageState = createAsyncThunk(
 
       const shouldResume = attempts.some((attempt: any) => attempt.dateEvaluated !== null);
       if (shouldResume) {
+        // state should be all up to date by now
+        const snapshot = getEnvState(defaultGlobalEnv);
+        const visitHistory = Object.keys(snapshot)
+          .filter((key: string) => key.indexOf('session.visitTimestamps.') === 0)
+          .map((entry) => ({ id: entry.split('.')[2], ts: snapshot[entry] }))
+          .sort((a, b) => b.ts - a.ts);
+        const resumeId = snapshot['session.resume'];
+
+        /* console.log('VISIT HISTORY', { visitHistory, resumeId, snapshot }); */
+
         let resumeSequenceId = sequence[0].custom.sequenceId;
-        if (params.resourceAttemptState && params.resourceAttemptState['session.resume']) {
+        if (resumeId) {
           // resume from a previous attempt
-          resumeSequenceId = params.resourceAttemptState['session.resume'];
+          resumeSequenceId = resumeId;
         } else {
           // find the spot in the sequence that we should start from
           const resumeTarget = sequence.reduce((target, entry, index) => {
@@ -131,6 +143,13 @@ export const loadInitialPageState = createAsyncThunk(
           }, 0);
           resumeSequenceId = sequence[resumeTarget].custom.sequenceId;
         }
+        // need to check the visitHistory to see if the resumeSequenceId is in there and is NOT the latest, then we need to set history mode to true
+        const resumeHistoryIndex = visitHistory.findIndex((entry) => entry.id === resumeSequenceId);
+        if (resumeHistoryIndex > 0) {
+          /* console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
+          dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
+        }
+        /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
         dispatch(navigateToActivity(resumeSequenceId));
       } else {
         dispatch(navigateToFirstActivity());

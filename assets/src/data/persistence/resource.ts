@@ -20,6 +20,18 @@ export function edit(
 ) {
   const update = Object.assign({}, pendingUpdate, { releaseLock });
 
+  // Index "citation references" in the "content" and elevate them as top-level list
+  const citationRefs: string[] = [];
+  traverseContent(update.content.model, (key: string, value: any) => {
+    if (!value) {
+      return;
+    }
+    if (value.type === 'cite') {
+      citationRefs.push(value.bibref);
+    }
+  });
+  update.content.bibrefs = citationRefs;
+
   const params = {
     method: 'PUT',
     body: JSON.stringify({ update }),
@@ -43,4 +55,13 @@ export function pages(project: ProjectSlug, current?: string) {
   };
 
   return makeRequest<PagesReceived>(params);
+}
+
+function traverseContent(o: any, func: any) {
+  for (const i in o) {
+    func.apply(this, [i, o[i]]);
+    if (o[i] !== null && typeof o[i] == 'object') {
+      traverseContent(o[i], func);
+    }
+  }
 }
