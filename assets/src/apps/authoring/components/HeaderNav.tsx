@@ -13,7 +13,7 @@ import {
 import AddComponentToolbar from './ComponentToolbar/AddComponentToolbar';
 import ComponentSearchContextMenu from './ComponentToolbar/ComponentSearchContextMenu';
 import UndoRedoToolbar from './ComponentToolbar/UndoRedoToolbar';
-
+import { DiagnosticsTrigger } from '../components/Modal/DiagnosticsWindow';
 interface HeaderNavProps {
   panelState: any;
   isVisible: boolean;
@@ -100,24 +100,7 @@ const HeaderNav: React.FC<HeaderNavProps> = (props: HeaderNavProps) => {
                 </button>
               </span>
             </OverlayTrigger>
-            <OverlayTrigger
-              placement="bottom"
-              delay={{ show: 150, hide: 150 }}
-              overlay={
-                <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
-                  Diagnostics
-                </Tooltip>
-              }
-            >
-              <span>
-                <button className="px-2 btn btn-link" onClick={handleDiagnosticsClick}>
-                  <i
-                    className="fa fa-wrench"
-                    style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
-                  />
-                </button>
-              </span>
-            </OverlayTrigger>
+            <DiagnosticsTrigger onClick={handleDiagnosticsClick} />
             {isAdmin && (
               <OverlayTrigger
                 placement="bottom"
