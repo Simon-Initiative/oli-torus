@@ -15,7 +15,7 @@ export const insertCallout = createButtonCommandDesc({
     const at = editor.selection;
     if (!at) return;
 
-    Transforms.insertNodes(editor, Model.callout(), { at });
+    Transforms.insertNodes(editor, Model.callout(), { at, select: true });
   },
 });
 
