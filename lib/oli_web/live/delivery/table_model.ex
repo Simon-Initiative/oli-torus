@@ -100,7 +100,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   end
 
   def render_type_column(_, item, _),
-    do: if is_product?(item), do: "Product", else: "Course Project"
+    do: if is_product?(item), do: "Product", else: "Project"
 
   def render(assigns) do
     ~F"""
