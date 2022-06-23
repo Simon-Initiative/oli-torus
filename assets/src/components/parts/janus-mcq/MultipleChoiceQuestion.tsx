@@ -740,6 +740,9 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
                   }
                 }
               }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
+              }
             }
             break;
         }

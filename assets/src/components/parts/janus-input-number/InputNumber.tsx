@@ -124,6 +124,9 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
               }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
+              }
             }
             break;
         }
