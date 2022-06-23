@@ -147,8 +147,8 @@ export const loadInitialPageState = createAsyncThunk(
         const resumeHistoryIndex = visitHistory.findIndex(
           (entry) => entry.id === resumeSequenceId && entry.ts > 0,
         );
-        if (resumeHistoryIndex >= 0) {
-          /* console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
+        if (resumeHistoryIndex > 0) {
+          /*  console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
           dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
         }
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
