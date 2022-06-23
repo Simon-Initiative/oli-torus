@@ -1,4 +1,8 @@
-import { selectReadOnly, setShowDiagnosticsWindow } from 'apps/authoring/store/app/slice';
+import {
+  selectReadOnly,
+  selectShowDiagnosticsWindow,
+  setShowDiagnosticsWindow,
+} from 'apps/authoring/store/app/slice';
 import { setCurrentActivityFromSequence } from 'apps/authoring/store/groups/layouts/deck/actions/setCurrentActivityFromSequence';
 import {
   validatePartIds,
@@ -8,14 +12,15 @@ import DiagnosticMessage from './diagnostics/DiagnosticMessage';
 import { DiagnosticTypes, DiagnosticRuleTypes } from './diagnostics/DiagnosticTypes';
 
 import { setCurrentSelection } from 'apps/authoring/store/parts/slice';
-import React, { Fragment, useState } from 'react';
-import { ListGroup, Modal } from 'react-bootstrap';
+import React, { Fragment, useCallback, useState, useEffect } from 'react';
+import { ListGroup, Modal, Tooltip, OverlayTrigger, Badge } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { createUpdater } from './diagnostics/actions';
 import { DiagnosticSolution } from './diagnostics/DiagnosticSolution';
 import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { setCurrentRule } from '../../store/app/slice';
 import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
+import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 
 const ActivityPartError: React.FC<{ error: any; onApplyFix: () => void }> = ({
   error,
@@ -249,6 +254,83 @@ const DiagnosticsWindow: React.FC<DiagnosticsWindowProps> = ({ onClose }) => {
         </Modal.Body>
       </Modal>
     </Fragment>
+  );
+};
+
+interface DiagnosticsTriggerProps {
+  onClick?: () => void;
+}
+
+export const DiagnosticsTrigger: React.FC<DiagnosticsTriggerProps> = ({ onClick }) => {
+  const [results, setResults] = useState<number>(0);
+  const [lessonResultsCount, setLessonResultsCount] = useState<number>(0);
+  const [variableResultsCount, setVariableResultsCount] = useState<number>(0);
+  const dispatch = useDispatch();
+  const showDiagnosticsWindow = useSelector(selectShowDiagnosticsWindow);
+  const sequence = useSelector(selectSequence);
+
+  const checkInvalidLessons = async () => {
+    const result = await dispatch(validatePartIds({}));
+    if ((result as any).meta.requestStatus === 'fulfilled') {
+      const errors = (result as any).payload.errors;
+      setLessonResultsCount(errors.length);
+    }
+  };
+
+  const checkInvalidVariables = async () => {
+    const result = await dispatch(validateVariables({}));
+    if ((result as any).meta.requestStatus === 'fulfilled') {
+      const errors = (result as any).payload.errors;
+      setVariableResultsCount(errors.length);
+    }
+  };
+
+  useEffect(() => {
+    if (sequence) {
+      checkInvalidLessons();
+      checkInvalidVariables();
+    }
+  }, [sequence]);
+
+  useEffect(() => {
+    if (!showDiagnosticsWindow) {
+      checkInvalidLessons();
+      checkInvalidVariables();
+    }
+  }, [showDiagnosticsWindow]);
+
+  useEffect(() => {
+    setResults(lessonResultsCount + variableResultsCount);
+  }, [lessonResultsCount, variableResultsCount]);
+
+  return (
+    <OverlayTrigger
+      placement="bottom"
+      delay={{ show: 150, hide: 150 }}
+      overlay={
+        <Tooltip id="button-tooltip" style={{ fontSize: '12px' }}>
+          Diagnostics
+        </Tooltip>
+      }
+    >
+      <span>
+        <button className="px-2 btn btn-link" onClick={onClick} style={{ position: 'relative' }}>
+          <i
+            className="fa fa-wrench"
+            style={{ fontSize: 32, color: '#333', verticalAlign: 'middle' }}
+          />
+          {results > 0 && (
+            <Badge
+              pill
+              variant="danger"
+              style={{ right: '0px', position: 'absolute', fontSize: '0.9rem' }}
+            >
+              {results}
+            </Badge>
+          )}
+        </button>
+      </span>
+    </OverlayTrigger>
   );
 };
 
