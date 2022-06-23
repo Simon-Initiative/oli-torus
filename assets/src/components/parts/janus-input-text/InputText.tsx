@@ -146,6 +146,9 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
               }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
+              }
             }
             break;
         }

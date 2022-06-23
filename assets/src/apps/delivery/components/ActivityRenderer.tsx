@@ -510,8 +510,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       domain: adaptivityDomain,
       initStateBindToFacts,
     });
-
-    notifyCheckComplete(lastCheckResults);
+    if (lastCheckResults.timestamp > 0) {
+      notifyCheckComplete(lastCheckResults);
+    }
   };
 
   useEffect(() => {
