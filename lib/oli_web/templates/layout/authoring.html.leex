@@ -15,8 +15,13 @@
     <link id="authoring-theme" rel="stylesheet" href="/css/authoring_default.css" />
     <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
-    <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <%= if dev_mode?() do %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
+    <% else %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.0.slim.min.js" integrity="sha256-MlusDLJIP1GRgLrOflUQtshyP0TwT/RHXsI1wWGnQhs=" crossorigin="anonymous"></script>
@@ -44,6 +49,11 @@
 
     <!-- Bootstrap typeahead https://github.com/bassjobsen/Bootstrap-3-Typeahead -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha512-HWlJyU4ut5HkEj0QsK/IxBCY55n5ZpskyjVlAoV9Z7XQwwkqXoYdCIC93/htL3Gu5H3R4an/S0h2NXfbZk3g7w==" crossorigin="anonymous"></script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+    <script>
+      window.cite = require('citation-js')
+    </script>
 
     <script>
     window.MathJax = {
@@ -75,6 +85,7 @@
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
+    <script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(@conn, "/js/keepalive.js") %>" data-type="author"></script>
   </head>
   <body>
 

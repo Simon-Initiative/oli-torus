@@ -30,7 +30,7 @@ defmodule Oli.Delivery.Sections.Browse do
         dynamic(
           [s, _, i, proj, prod, u],
           fragment(
-            "to_tsvector('english', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery(?)",
+            "to_tsvector('simple', ? || ' ' || coalesce(?, ' ') || ' ' || ? || ' ' || coalesce(?, ' ') || ' ' || coalesce(?, ' ')) @@ to_tsquery('simple', ?)",
             s.title,
             i.name,
             proj.title,
@@ -83,7 +83,7 @@ defmodule Oli.Delivery.Sections.Browse do
         join: ecr in "enrollments_context_roles",
         on: ecr.enrollment_id == e.id and ecr.context_role_id == ^instructor_role_id,
         select: %{
-          name: fragment("array_to_string((array_agg(?)), ',')", u.name),
+          name: fragment("array_to_string((array_agg(?)), ', ')", u.name),
           section_id: e.section_id
         },
         group_by: [e.section_id]
@@ -120,8 +120,8 @@ defmodule Oli.Delivery.Sections.Browse do
       case field do
         :enrollments_count -> order_by(query, [_, e], {^direction, count(e.id)})
         :institution -> order_by(query, [_, _, i], {^direction, i.name})
-        :instructor -> order_by(query, [_, _, _, _, _, u], {^direction, u.name})
-        :requires_payment -> order_by(query, [s, _, _], {^direction, s.amount})
+        :instructor -> order_by(query, [_, _, _, _, _, u], {^direction, fragment("coalesce(?, '')", u.name)})
+        :requires_payment -> order_by(query, [s, _, _], [{^direction, s.requires_payment}, {^direction, s.amount}])
         :type -> order_by(query, [s, _, _], {^direction, s.open_and_free})
         :base -> order_by(query, [_, _, _, proj, prod], [{^direction, prod.title}, {^direction, proj.title}])
         _ -> order_by(query, [p, _], {^direction, field(p, ^field)})

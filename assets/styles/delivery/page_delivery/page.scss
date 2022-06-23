@@ -104,9 +104,14 @@ h1.title {
 .rolled-up-objectives {
   margin: 10px;
   margin-top: 20px;
+  padding: 10px;
+  background-color: $objectives-background;
+  color: $objectives-text;
+  border-radius: 3px;
 
   .label {
     font-size: 1.2em;
+    font-weight: 600;
   }
   .title {
     font-size: 1.1em;

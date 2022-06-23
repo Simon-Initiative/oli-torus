@@ -1,8 +1,9 @@
 {
   "id": "oli_check_all_that_apply",
   "friendlyName": "Check All That Apply",
-  "description": "A traditional check all that apply question with one correct answer",
-  "icon": "check_box",
+  "petiteLabel": "CATA",
+  "description": "Choice-based question that allows multiple selections",
+  "icon": "list-alt",
   "delivery": {
     "element": "oli-check-all-that-apply-delivery",
     "entry": "./delivery-entry.ts"

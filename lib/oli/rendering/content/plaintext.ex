@@ -115,6 +115,18 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[List item]: ", next.(), " "]
   end
 
+  def formula(%Oli.Rendering.Context{} = _context, nil, %{"src" => src}) do
+    ["[Formula]: ", src, " "]
+  end
+
+  def formula(%Oli.Rendering.Context{} = _context, next, _) do
+    ["[Formula]: ", next.(), " "]
+  end
+
+  def formula_inline(context, next, content) do
+    formula(context, next, content)
+  end
+
   def math(%Context{} = _context, next, _) do
     ["[Math]: ", next.(), " "]
   end
@@ -141,6 +153,10 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def a(%Context{} = _context, next, _) do
     ["[link with missing href ", next.(), " "]
+  end
+
+  def cite(%Context{} = _context, next, _) do
+    [next.(), " "]
   end
 
   def popup(%Context{} = _context, next, _) do

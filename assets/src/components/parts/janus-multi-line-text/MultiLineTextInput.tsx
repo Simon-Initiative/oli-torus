@@ -206,6 +206,9 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
               }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
+              }
             }
             break;
         }

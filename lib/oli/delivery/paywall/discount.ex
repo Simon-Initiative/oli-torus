@@ -30,6 +30,7 @@ defmodule Oli.Delivery.Paywall.Discount do
     |> validate_required([:type, :institution_id])
     |> validate_required_if([:percentage], &is_percentage_type?/1)
     |> validate_required_if([:amount], &is_amount_type?/1)
+    |> validate_number_if(:percentage, &is_percentage_type?/1, 0, 100)
     |> unique_constraint([:section_id, :institution_id], name: :index_discount_section_institution)
     |> foreign_key_constraint(:institution_id)
   end

@@ -1,8 +1,9 @@
 {
   "id": "oli_multi_input",
   "friendlyName": "Multi Input",
-  "description": "A question with a multiple inline inputs in the stem",
-  "icon": "input",
+  "petiteLabel": "Multi",
+  "description": "A question type with a multiple inline inputs in the question stem",
+  "icon": "check-double",
   "delivery": {
     "element": "oli-multi-input-delivery",
     "entry": "./delivery-entry.ts"
@@ -13,8 +14,6 @@
   },
   "schemaPruning": {
     "type": "keys",
-    "keys": [
-      "feedback"
-    ]
+    "keys": ["feedback"]
   }
 }

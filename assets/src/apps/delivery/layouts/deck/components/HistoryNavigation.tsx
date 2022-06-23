@@ -52,7 +52,12 @@ const HistoryNavigation: React.FC = () => {
     .map((entry) => entry.split('.')[2]);
 
   const sortByTimestamp = (a: HistoryEntry, b: HistoryEntry) => {
-    if (a.timestamp && b.timestamp) {
+    if (a.timestamp !== undefined && b.timestamp !== undefined) {
+      if (a.timestamp == 0) {
+        return b.timestamp - Date.now();
+      } else if (b.timestamp == 0) {
+        return Date.now() - b.timestamp;
+      }
       return b.timestamp - a.timestamp;
     }
     return 0;
@@ -71,13 +76,21 @@ const HistoryNavigation: React.FC = () => {
       };
     })
     .sort(sortByTimestamp);
-  /* console.log('HISTORY ITEMS', { historyItems, globalSnapshot }); */
 
   const currentHistoryActivityIndex = historyItems.findIndex(
     (item: any) => item.id === currentActivityId,
   );
   const isFirst = currentHistoryActivityIndex === historyItems.length - 1;
   const isLast = currentHistoryActivityIndex === 0;
+
+  /* console.log('HISTORY ITEMS', {
+    historyItems,
+    globalSnapshot,
+    currentActivityId,
+    isFirst,
+    isLast,
+    isHistoryMode,
+  }); */
 
   const nextHandler = () => {
     const prevActivity = historyItems[currentHistoryActivityIndex - 1];

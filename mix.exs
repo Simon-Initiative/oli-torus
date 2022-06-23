@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.19.3",
+      version: "0.19.5",
       elixir: "~> 1.13.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -82,9 +82,9 @@ defmodule Oli.MixProject do
   end
 
   defp list_typedoc_files() do
-    Path.wildcard("assets/typedocs/interfaces/*.md")
-    ++ Path.wildcard("assets/typedocs/enums/*.md")
-    ++ Path.wildcard("assets/typedocs/classes/*.md")
+    Path.wildcard("assets/typedocs/interfaces/*.md") ++
+      Path.wildcard("assets/typedocs/enums/*.md") ++
+      Path.wildcard("assets/typedocs/classes/*.md")
   end
 
   defp groups_for_extras do
@@ -97,9 +97,9 @@ defmodule Oli.MixProject do
       "LTI 1.3": ~r/guides\/lti\/.?/,
       "Content ingestion": ~r/guides\/ingest\/.?/,
       "Client Side API": ~r/assets\/typedocs\/modules.md/,
-      "Interfaces": ~r/assets\/typedocs\/interfaces\/.?/,
-      "Enums": ~r/assets\/typedocs\/enums\/.?/,
-      "Classes": ~r/assets\/typedocs\/classes\/.?/,
+      Interfaces: ~r/assets\/typedocs\/interfaces\/.?/,
+      Enums: ~r/assets\/typedocs\/enums\/.?/,
+      Classes: ~r/assets\/typedocs\/classes\/.?/
     ]
   end
 
@@ -152,12 +152,13 @@ defmodule Oli.MixProject do
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:html_sanitize_ex, "~> 1.4"},
       {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.4.1"},
+      {:lti_1p3, "~> 0.4.2"},
       {:lti_1p3_ecto_provider, "~> 0.3.1"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},

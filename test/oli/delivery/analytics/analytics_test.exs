@@ -84,7 +84,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       objective_query: objective_query
     } do
       assert length(activity_query) == 4
-      assert length(objective_query) == 4
+      assert length(objective_query) == 2
       assert length(page_query) == 5
     end
   end
@@ -293,7 +293,7 @@ defmodule Oli.Delivery.Analytics.AnalyticsTest do
       seeds: %{duplicated: duplicated}
     } do
       # Parent course should still have analytics after duplicating project
-      assert Enum.count(objective_query) == 4
+      assert Enum.count(objective_query) == 2
       assert Enum.count(activity_query) == 4
       assert Enum.count(page_query) == 5
 

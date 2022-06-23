@@ -932,7 +932,8 @@ defmodule Oli.Delivery.Sections do
 
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
-        hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+        hierarchy =
+          Hierarchy.purge_duplicate_resources(hierarchy)
           |> Hierarchy.finalize()
 
         # generate a new set of section resources based on the hierarchy
@@ -1026,7 +1027,9 @@ defmodule Oli.Delivery.Sections do
         section_resources
       end)
     else
-      throw "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
+      throw(
+        "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
+      )
     end
   end
 
@@ -1279,6 +1282,20 @@ defmodule Oli.Delivery.Sections do
       %{resource_id: new_hierarchy_parent_resource_id} ->
         hierarchy_node(current_hierarchy, new_hierarchy_parent_resource_id)
     end
+  end
+
+  @doc """
+  For a given section and resource, determine which project this
+  resource originally belongs to.
+  """
+  def determine_which_project_id(section_id, resource_id) do
+    Repo.one(
+      from(
+        sr in SectionResource,
+        where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
+        select: sr.project_id
+      )
+    )
   end
 
   # finds the parent node of the given resource id

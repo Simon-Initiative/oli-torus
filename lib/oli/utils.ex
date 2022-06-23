@@ -156,6 +156,19 @@ defmodule Oli.Utils do
     end
   end
 
+  def validate_number_if(changeset, field, condition, greater_than_or_equal_to, less_than_or_equal_to) do
+    if condition.(changeset) do
+      Ecto.Changeset.validate_number(
+        changeset,
+        field,
+        greater_than_or_equal_to: greater_than_or_equal_to,
+        less_than_or_equal_to: less_than_or_equal_to
+      )
+    else
+      changeset
+    end
+  end
+
   def validate_acceptance_if(changeset, field, condition, message \\ "must be accepted") do
     if condition.(changeset) do
       Ecto.Changeset.validate_acceptance(changeset, field, message: message)
@@ -191,6 +204,13 @@ defmodule Oli.Utils do
     end)
   end
 
+  @spec read_json_file(
+          binary
+          | maybe_improper_list(
+              binary | maybe_improper_list(any, binary | []) | char,
+              binary | []
+            )
+        ) :: {:error, atom} | {:ok, false | nil | true | binary | list | number | map}
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end

@@ -166,6 +166,9 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
               }
+              if (payload.mode === contexts.REVIEW) {
+                setIsSliderEnabled(false);
+              }
             }
             break;
         }

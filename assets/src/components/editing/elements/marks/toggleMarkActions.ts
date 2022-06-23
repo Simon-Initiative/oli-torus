@@ -1,8 +1,10 @@
+import { popupCmdDesc } from 'components/editing/elements/popup/PopupCmd';
 import { isActive, isMarkActive } from 'components/editing/slateUtils';
 import { Command } from 'components/editing/elements/commands/interfaces';
 import { Mark } from 'data/content/model/text';
 import { Editor } from 'slate';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { citationCmdDesc } from 'components/editing/elements/cite/CiteCmd';
 
 export function toggleMark(editor: Editor, mark: Mark) {
   if (isMarkActive(editor, mark)) Editor.removeMark(editor, mark);
@@ -60,4 +62,5 @@ export const additionalFormattingOptions = [
   inlineCodeDesc,
   subscriptDesc,
   superscriptDesc,
+  citationCmdDesc,
 ];

@@ -444,26 +444,28 @@ defmodule Oli.Delivery.PaywallTest do
            paid: paid,
            institution: institution
          } do
+      # amount from paid is #Money<:USD, 100>
+
       {:ok, _} =
         Paywall.create_discount(%{
           institution_id: institution.id,
           section_id: nil,
           type: :percentage,
-          percentage: 0.5,
+          percentage: 50,
           amount: Money.new(:USD, 90)
         })
 
-      assert {:ok, Money.new(:USD, "50.0")} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 50)} == Paywall.calculate_product_cost(paid, institution)
 
       Paywall.create_discount(%{
         institution_id: institution.id,
         section_id: paid.id,
         type: :percentage,
-        percentage: 0.2,
+        percentage: 20,
         amount: Money.new(:USD, 80)
       })
 
-      assert {:ok, Money.new(:USD, "20.0")} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 20)} == Paywall.calculate_product_cost(paid, institution)
     end
 
     test "calculate_product_cost/2 correctly works when no institution present", %{
@@ -489,6 +491,27 @@ defmodule Oli.Delivery.PaywallTest do
       assert discount.type == params.type
       assert discount.percentage == params.percentage
       refute discount.amount
+    end
+
+    test "create_discount/1 with invalid percentage returns error changeset" do
+      institution = insert(:institution)
+      params = %{
+        institution_id: institution.id,
+        section_id: nil,
+        type: :percentage,
+        amount: nil,
+        percentage: 120.0
+      }
+
+      assert {:error, changeset} = Paywall.create_discount(params)
+      {error, _} = changeset.errors[:percentage]
+      refute changeset.valid?
+      assert error =~ "must be less than or equal to %{number}"
+
+      assert {:error, changeset} = Paywall.create_discount(Map.merge(params, %{percentage: -1}))
+      {error, _} = changeset.errors[:percentage]
+      refute changeset.valid?
+      assert error =~ "must be greater than or equal to %{number}"
     end
 
     test "create_discount/1 for existing product/institution returns error changeset" do

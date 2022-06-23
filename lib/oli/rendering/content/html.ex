@@ -8,6 +8,8 @@ defmodule Oli.Rendering.Content.Html do
 
   alias Oli.Rendering.Context
   alias Phoenix.HTML
+  alias Oli.Rendering.Content.MathMLSanitizer
+  alias HtmlSanitizeEx.Scrubber
   import Oli.Rendering.Utils
 
   @behaviour Oli.Rendering.Content
@@ -155,6 +157,51 @@ defmodule Oli.Rendering.Content.Html do
     ["<li>", next.(), "</li>\n"]
   end
 
+  def formula_class(false), do: "formula"
+  def formula_class(true), do: "formula-inline"
+
+  def formula(context, next, properties, inline \\ false)
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "latex", "src" => src},
+        true
+      ) do
+    ["<span class=\"#{formula_class(true)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "latex", "src" => src},
+        false
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\[", escape_xml!(src), "\\]</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        nil,
+        %{"subtype" => "mathml", "src" => src},
+        inline
+      ) do
+    [
+      "<span class=\"#{formula_class(inline)}\">",
+      Scrubber.scrub(src, MathMLSanitizer),
+      "</span>\n"
+    ]
+  end
+
+  def formula(%Oli.Rendering.Context{} = _context, next, _, inline) do
+    # The catch-all formula will handle anything with a children property, which should always be richtext
+    ["<span class=\"#{formula_class(inline)}\">", next.(), "</span>\n"]
+  end
+
+  def formula_inline(context, next, map) do
+    formula(context, next, map, true)
+  end
+
   def math(%Context{} = _context, next, _) do
     ["<div>\\[", next.(), "\\]</div>\n"]
   end
@@ -280,6 +327,18 @@ defmodule Oli.Rendering.Content.Html do
 
   defp external_link(%Context{} = _context, next, href) do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+  end
+
+  def cite(%Context{} = context, next, a) do
+    bib_references = Map.get(context, :bib_app_params, [])
+    bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
+    if bib_entry != nil do
+      [~s|<cite><sup>
+      [<a onclick="var d=document.getElementById('#{bib_entry.slug}'); if (d &amp;&amp; d.scrollIntoView) d.scrollIntoView();return false;" href="##{bib_entry.slug}" class="ref">#{bib_entry.ordinal}</a>]
+      </sup></cite>\n|]
+    else
+      ["<cite><sup>", next.(), "</sup></cite>\n"]
+    end
   end
 
   def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do

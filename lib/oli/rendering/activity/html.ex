@@ -17,12 +17,19 @@ defmodule Oli.Rendering.Activity.Html do
           render_opts: render_opts,
           mode: mode,
           user: user,
-          resource_attempt: resource_attempt
+          resource_attempt: resource_attempt,
+          bib_app_params: bib_app_params
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
+
     activity_summary = activity_map[activity_id]
 
+    bib_params = Enum.reduce(bib_app_params, [], fn x, acc ->
+      acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
+    end)
+
+    {:ok, bib_params_json} = Jason.encode(bib_params)
     case activity_summary do
       nil ->
         {error_id, error_msg} =
@@ -63,12 +70,12 @@ defmodule Oli.Rendering.Activity.Html do
           case mode do
             :instructor_preview ->
               [
-                "<#{tag} model=\"#{model_json}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+                "<#{tag} model=\"#{model_json}\" bib_params=\"#{Base.encode64(bib_params_json)}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
               ]
 
             _ ->
               [
-                "<#{tag} id=\"#{activity_html_id}\" class=\"activity-container\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+                "<#{tag} id=\"#{activity_html_id}\" class=\"activity-container\"  bib_params=\"#{Base.encode64(bib_params_json)}\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
               ]
           end
 

@@ -17,13 +17,13 @@ export const ThreeStateToggle = ({
 interface ToggleOptionProps {
   id: string;
   checked?: boolean;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  onChange?: () => void;
 }
 export const ToggleOption = ({
   id,
   checked,
   children,
-  onClick,
+  onChange,
 }: PropsWithChildren<ToggleOptionProps>) => {
   return (
     <>
@@ -32,7 +32,7 @@ export const ToggleOption = ({
         id={id}
         className={styles.input}
         name="state"
-        onClick={onClick}
+        onChange={onChange}
         checked={checked}
       />
       <label htmlFor={id} className={styles.label}>

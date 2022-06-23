@@ -3,17 +3,40 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.19.5 (2022-06-21)
+
+### Bug Fixes
+
+- Restore ability to edit title of basic pages
+- Fix an issue where formatting toolbar covers content
+- Prevent deletion of non-empty curriculum containers
+- Fix an issue where analytics weren't properly including remixed sections
+
+### Enhancements
+
+- Provide more context in the brower tab
+- Improve the learning objective selection dropdown
+- Improve authoring improvement insights UI
+- Improve content and activity insertion menu
+
+## 0.19.4 (2022-06-09)
+
+### Bug Fixes
 
 - Improve performance of DataShop export
 - Fix an issue where multi-input activity inputs were being duplicated
 - Fix an issue where table headers were misaligned in the insights view
 - Fix an issue where table caption rendering throws an internal server error
+- Allow deletion of objective to cascade through to banked activities
 
 ### Enhancements
 
 - Allow for broader range of number of attempts, including unlimited, for scored pages
 - Add survey authoring support (behind feature flag)
 - Add File Upload activity
+- Simplify objective creation, improve attachment UX
 
 ## 0.19.3 (2022-05-17)
 

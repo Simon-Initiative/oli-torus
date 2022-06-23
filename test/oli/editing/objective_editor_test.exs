@@ -177,6 +177,76 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
       assert updated_activity.objectives == %{"1" => []}
     end
 
+    test "detach_objective/3 removes an objective from a banked activity", %{
+      author: author,
+      project: project
+    } do
+      {:ok, %{revision: objective}} =
+        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+
+      # attach it to a page and release the lock
+      content = %{"stem" => "one"}
+
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [], :banked)
+
+      PageEditor.acquire_lock(project.slug, slug, author.email)
+
+      attachment = %{
+        "objectives" => %{"1" => [objective.resource_id]},
+        "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
+      }
+
+      ActivityEditor.edit(
+        project.slug,
+        activity_id,
+        activity_id,
+        author.email,
+        attachment
+      )
+
+      PageEditor.release_lock(project.slug, slug, author.email)
+
+      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+
+      updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      assert updated_activity.objectives == %{"1" => []}
+    end
+
+    test "detach_objective/3 does not remove an objective from a locked banked activity", %{
+      author: author,
+      project: project
+    } do
+      {:ok, %{revision: objective}} =
+        ObjectiveEditor.add_new(%{title: "Test Objective"}, author, project)
+
+      # attach it to a page and release the lock
+      content = %{"stem" => "one"}
+
+      {:ok, {%{slug: slug, resource_id: activity_id}, _}} =
+        ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [], :banked)
+
+      PageEditor.acquire_lock(project.slug, slug, author.email)
+
+      attachment = %{
+        "objectives" => %{"1" => [objective.resource_id]},
+        "content" => %{"authoring" => %{"parts" => [%{"id" => "1"}]}}
+      }
+
+      ActivityEditor.edit(
+        project.slug,
+        activity_id,
+        activity_id,
+        author.email,
+        attachment
+      )
+
+      ObjectiveEditor.detach_objective(objective.resource_id, project, author)
+
+      updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
+      refute updated_activity.objectives == %{"1" => []}
+    end
+
     test "detach_objective/3 does not remove an objective from an activity that is locked", %{
       author: author,
       project: project,

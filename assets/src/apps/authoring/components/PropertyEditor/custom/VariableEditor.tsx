@@ -165,7 +165,9 @@ const VariableEditor: React.FC<CustomFieldProps> = (props) => {
         </Modal.Header>
         <Modal.Body>
           <div>{results}</div>
-          {props.items.map((element: any) => VariableArrayItem(element))}
+          {props.items.map((element: any, idx: number) => (
+            <VariableArrayItem key={idx} {...element} />
+          ))}
           {props.canAdd && (
             <button className="btn btn-primary mt-2" type="button" onClick={props.onAddClick}>
               <i className="fa fa-plus"></i>

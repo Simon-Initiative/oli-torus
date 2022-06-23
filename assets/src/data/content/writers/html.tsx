@@ -7,9 +7,12 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import {
   Audio,
   Blockquote,
+  Citation,
   CodeLine,
   CodeV1,
   CodeV2,
+  FormulaBlock,
+  FormulaInline,
   HeadingFive,
   HeadingFour,
   HeadingOne,
@@ -41,6 +44,10 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
+import {
+  MathJaxLatexFormula,
+  MathJaxMathMLFormula,
+} from '../../../components/common/MathJaxFormula';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
 
@@ -91,6 +98,7 @@ export class HtmlParser implements WriterImpl {
       </div>
     );
   }
+
   p(context: WriterContext, next: Next, _x: Paragraph) {
     return <p>{next()}</p>;
   }
@@ -112,6 +120,26 @@ export class HtmlParser implements WriterImpl {
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
     return <h6>{next()}</h6>;
   }
+
+  formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+    switch (element.subtype) {
+      case 'latex':
+        return <MathJaxLatexFormula src={element.src} inline={element.type === 'formula_inline'} />;
+      case 'mathml':
+        return (
+          <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
+        );
+      case 'richtext':
+        return <span className={element.type}>{next()}</span>;
+      default:
+        return <span className="formula">Unknown formula type</span>;
+    }
+  }
+
+  formulaInline(ctx: WriterContext, next: Next, element: FormulaInline) {
+    return this.formula(ctx, next, element);
+  }
+
   img(context: WriterContext, next: Next, attrs: ImageBlock) {
     if (!attrs.src) return <></>;
 
@@ -230,7 +258,12 @@ export class HtmlParser implements WriterImpl {
     );
   }
   codeLine(context: WriterContext, next: Next, _x: CodeLine) {
-    return next();
+    return (
+      <>
+        {next()}
+        {'\n'}
+      </>
+    );
   }
   blockquote(context: WriterContext, next: Next, _x: Blockquote) {
     return <blockquote>{next()}</blockquote>;
@@ -321,6 +354,37 @@ export class HtmlParser implements WriterImpl {
           {anchorNext()}
         </span>
       </OverlayTrigger>
+    );
+  }
+
+  private executeScroll(slug: string) {
+    const d = document.getElementById(slug);
+    if (d && d.scrollIntoView) {
+      d.scrollIntoView();
+    }
+  }
+
+  cite(context: WriterContext, next: Next, x: Citation) {
+    if (context.bibParams) {
+      const bibEntry = context.bibParams.find((el: any) => el.id === x.bibref);
+      if (bibEntry) {
+        return (
+          <cite>
+            <sup>
+              [
+              <a onClick={() => this.executeScroll(bibEntry.slug)} href={`#${bibEntry.slug}`}>
+                {bibEntry.ordinal}
+              </a>
+              ]
+            </sup>
+          </cite>
+        );
+      }
+    }
+    return (
+      <cite>
+        <sup>{next()}</sup>
+      </cite>
     );
   }
 

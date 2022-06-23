@@ -9,7 +9,7 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.{Revision, ResourceType}
-  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Publishing.{Publication, PublishedResource, PartMappingRefreshAdapter, PartMappingRefreshAsync}
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
   alias Oli.Publishing
@@ -525,8 +525,9 @@ defmodule Oli.Publishing do
   """
   def update_publication(%Publication{} = publication, attrs) do
     publication
-    |> Publication.changeset(attrs)
-    |> Repo.update()
+      |> Publication.changeset(attrs)
+      |> Repo.update()
+      |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -538,7 +539,9 @@ defmodule Oli.Publishing do
       {:error, %Ecto.Changeset{}}
   """
   def delete_publication(%Publication{} = publication) do
-    Repo.delete(publication)
+    publication
+      |> Repo.delete()
+      |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -984,6 +987,7 @@ defmodule Oli.Publishing do
     title: the title of the resource
     slug: the slug of the revision
     part: the part name, or "attached" if pertaining to a page
+    scope: the scope of the activity
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
@@ -992,7 +996,7 @@ defmodule Oli.Publishing do
 
     sql = """
     select
-      revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+      revisions.scope, revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
     FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
     WHERE
       revisions.id IN (SELECT revision_id
@@ -1008,13 +1012,14 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     results
-    |> Enum.map(fn [id, resource_id, title, slug, part] ->
+    |> Enum.map(fn [scope, id, resource_id, title, slug, part] ->
       %{
         id: id,
         resource_id: resource_id,
         title: title,
         slug: slug,
-        part: part
+        part: part,
+        scope: scope
       }
     end)
   end
@@ -1123,5 +1128,20 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
+
+  @doc """
+    Refreshes the part_mapping materialized view.
+    Since this operation is expensive, do not use perform it synchronously unless neccesary.
+  """
+  def refresh_part_mapping() do
+    Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
+  end
+
+  @spec refresh_adapter() :: PartMappingRefreshAdapter
+  defp refresh_adapter() do
+    :oli
+      |> Application.get_env(Oli.Publishing)
+      |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

@@ -35,9 +35,8 @@
     <%= raw(@content_html) %>
   </div>
   <script>
-    MathJax?.startup?.defaultReady?.();
     OLI.initPreviewActivityBridge('eventIntercept');
   </script>
 <% end %>
-
+<%= render OliWeb.BibliographyView, "_references.html", conn: @conn, context: @context, bib_app_params: @bib_app_params, action: :preview %>
 <%= render OliWeb.ResourceView, "_preview_previous_next_nav.html", conn: @conn, context: @context, action: :preview %>

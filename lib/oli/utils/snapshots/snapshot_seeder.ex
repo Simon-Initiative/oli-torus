@@ -122,6 +122,7 @@ defmodule Oli.Snapshots.SnapshotSeeder do
       map
       |> Seeder.add_activity_snapshot(
         Map.merge(snapshot, %{
+          project_id: map.project.id,
           resource_id: map[resource_tag].resource.id,
           activity_id: map[activity_tag].resource.id,
           part_attempt_id: map[part_attempt_tag].id,

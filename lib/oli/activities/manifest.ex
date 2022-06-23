@@ -4,10 +4,12 @@ defmodule Oli.Activities.Manifest do
   defstruct [
     :id,
     :friendlyName,
+    :petiteLabel,
     :description,
     :delivery,
     :authoring,
     :allowClientEvaluation,
+    :icon,
     :global
   ]
 
@@ -15,20 +17,24 @@ defmodule Oli.Activities.Manifest do
         %{
           "id" => id,
           "friendlyName" => friendlyName,
+          "petiteLabel" => petiteLabel,
           "description" => description,
           "delivery" => delivery,
           "authoring" => authoring
         } = json
       ) do
-    {:ok, %Oli.Activities.Manifest{
-      id: id,
-      friendlyName: friendlyName,
-      description: description,
-      delivery: Oli.Activities.ModeSpecification.parse(delivery),
-      authoring: Oli.Activities.ModeSpecification.parse(authoring),
-      allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
-      global: false
-    }}
+    {:ok,
+     %Oli.Activities.Manifest{
+       id: id,
+       friendlyName: friendlyName,
+       petiteLabel: petiteLabel,
+       description: description,
+       icon: Map.get(json, "icon", "question-circle"),
+       delivery: Oli.Activities.ModeSpecification.parse(delivery),
+       authoring: Oli.Activities.ModeSpecification.parse(authoring),
+       allowClientEvaluation: value_or(json["allowClientEvaluation"], false),
+       global: false
+     }}
   end
 
   def parse(_json) do

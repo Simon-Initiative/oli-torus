@@ -16,5 +16,6 @@ defmodule Oli.Rendering.Context do
             section_slug: nil,
             project_slug: nil,
             activity_types_map: %{},
-            resource_attempt: nil
+            resource_attempt: nil,
+            bib_app_params: []
 end
