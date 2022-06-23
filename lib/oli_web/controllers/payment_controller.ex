@@ -71,7 +71,7 @@ defmodule OliWeb.PaymentController do
       end
 
       if allow_payment do
-        case determine_cost(section) do
+        case determine_enrollable_cost(section) do
           {:ok, amount} ->
             get_provider_module()
             |> apply(:show, [conn, section, user, amount])
@@ -90,18 +90,9 @@ defmodule OliWeb.PaymentController do
     # after already paying.  This will simply redirect them to their course.
   end
 
-  defp determine_product(section) do
-    if is_nil(section.blueprint_id) do
-      section
-    else
-      section.blueprint
-    end
-  end
-
-  defp determine_cost(section) do
-    section = Oli.Repo.preload(section, [:institution, :blueprint])
-    product = determine_product(section)
-    Oli.Delivery.Paywall.calculate_product_cost(product, section.institution)
+  defp determine_enrollable_cost(section) do
+    section = Oli.Repo.preload(section, [:institution])
+    Oli.Delivery.Paywall.calculate_product_cost(section, section.institution)
   end
 
   @doc """
