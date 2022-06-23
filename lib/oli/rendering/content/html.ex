@@ -164,7 +164,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _,
         %{"subtype" => "latex", "src" => src},
         true
       ) do
@@ -173,7 +173,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _,
         %{"subtype" => "latex", "src" => src},
         false
       ) do
@@ -182,7 +182,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def formula(
         %Oli.Rendering.Context{} = _context,
-        nil,
+        _,
         %{"subtype" => "mathml", "src" => src},
         inline
       ) do
@@ -332,6 +332,7 @@ defmodule Oli.Rendering.Content.Html do
   def cite(%Context{} = context, next, a) do
     bib_references = Map.get(context, :bib_app_params, [])
     bib_entry = Enum.find(bib_references, fn x -> x.id == Map.get(a, "bibref") end)
+
     if bib_entry != nil do
       [~s|<cite><sup>
       [<a onclick="var d=document.getElementById('#{bib_entry.slug}'); if (d &amp;&amp; d.scrollIntoView) d.scrollIntoView();return false;" href="##{bib_entry.slug}" class="ref">#{bib_entry.ordinal}</a>]
