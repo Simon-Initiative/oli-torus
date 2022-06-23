@@ -43,7 +43,7 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~
-               "<oli-multiple-choice-delivery class=\"activity-container\" bib_params=\"W10=\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
+               "<oli-multiple-choice-delivery id=\"4_097_071_352\" class=\"activity-container\" bib_params=\"W10=\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
     end
 
     test "renders malformed activity gracefully", %{author: author} do
