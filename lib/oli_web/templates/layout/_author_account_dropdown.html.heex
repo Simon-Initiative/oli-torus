@@ -15,7 +15,7 @@
         <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
       </div>
       <div class="dropdown-item no-hover">
-        Update timezone
+        Timezone
         <br>
         <OliWeb.Common.SelectTimezone.render selected={Plug.Conn.get_session(@conn, "local_tz")} conn={@conn}/>
       </div>

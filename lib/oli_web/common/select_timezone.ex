@@ -19,7 +19,7 @@ defmodule OliWeb.Common.SelectTimezone do
       <%= form_for @conn, Routes.static_page_path(@conn, :update_timezone), [id: "timezone-form"], fn f -> %>
         <%= hidden_input f, :redirect_to, id: "hidden-redirect-to" %>
         <div class="form-label-group">
-          <%= select f, :timezone, Predefined.timezones(), onchange: "submitForm()", selected: @selected || "Etc/Greenwich", prompt: "Select Timezone", class: "form-control dropdown-select", required: true %>
+          <%= select f, :timezone, Predefined.timezones(), onchange: "submitForm()", selected: @selected || "Etc/Greenwich", class: "form-control dropdown-select", required: true %>
         </div>
       <% end %>
     """

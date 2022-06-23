@@ -4,6 +4,8 @@ defmodule OliWeb.Common.FormatDateTime do
 
   import Oli.Utils, only: [value_or: 2]
 
+  @utc_timezone "Etc/UTC"
+
   @doc """
   Returns a human readable formatted duration
   """
@@ -93,18 +95,20 @@ defmodule OliWeb.Common.FormatDateTime do
   If NaiveDateTime is given it is assumed to be utc
   """
   def maybe_localized_datetime(%NaiveDateTime{} = naive_date, nil),
-    do: Timex.to_datetime(naive_date, "Etc/UTC")
+    do: {:not_localized, Timex.to_datetime(naive_date, @utc_timezone)}
 
   def maybe_localized_datetime(%NaiveDateTime{} = naive_date, %SessionContext{local_tz: local_tz}) do
     naive_date
-    |> Timex.to_datetime("Etc/UTC")
+    |> Timex.to_datetime(@utc_timezone)
     |> maybe_localized_datetime(local_tz)
   end
 
-  def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
+  def maybe_localized_datetime(%DateTime{} = datetime, nil), do: {:not_localized, datetime}
 
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),
     do: maybe_localized_datetime(datetime, local_tz)
+
+  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone, do: {:not_localized, datetime}
 
   def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
     # ensure timezone is a valid
@@ -123,7 +127,10 @@ defmodule OliWeb.Common.FormatDateTime do
 
   ## Examples
       iex> format_datetime(datetime)
-      "December 31, 2021 at 11:59 PM UTC"
+      "December 31, 2021 at 11:59 PM MST"
+
+      iex> format_datetime({:not_localized, datetime})
+      "December 31, 2021 at 5:59 AM UTC"
 
       iex> format_datetime(datetime, show_timezone: false)
       "December 31, 2021 at 11:59 PM"
@@ -144,6 +151,11 @@ defmodule OliWeb.Common.FormatDateTime do
   def format_datetime(maybe_localized_datetime, opts \\ [])
 
   def format_datetime(nil, _opts), do: ""
+
+  def format_datetime({:not_localized, %DateTime{} = datetime}, opts) do
+    opts = Keyword.put(opts, :show_timezone, true)
+    format_datetime(datetime, opts)
+  end
 
   def format_datetime(%DateTime{} = datetime, opts) do
     author = Keyword.get(opts, :author)
@@ -194,7 +206,7 @@ defmodule OliWeb.Common.FormatDateTime do
     date_string
     |> Timex.parse!("{ISO:Extended}")
     |> Timex.to_datetime(local_tz)
-    |> DateTime.shift_zone("Etc/UTC")
+    |> DateTime.shift_zone(@utc_timezone)
     |> elem(1)
   end
 
@@ -211,6 +223,11 @@ defmodule OliWeb.Common.FormatDateTime do
   def convert_datetime(date, _) when is_nil(date) or date == "", do: nil
   def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
   def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
+
+  @doc """
+  Returns the UTC timezone.
+  """
+  def default_timezone, do: @utc_timezone
 
   defp author_format_preference(nil), do: nil
 
