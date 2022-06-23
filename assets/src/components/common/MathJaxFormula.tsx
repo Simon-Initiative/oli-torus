@@ -93,7 +93,6 @@ MathJaxLatexFormula.defaultProps = { style: {} };
 // Add some types to window to satisfy our minimal needs instead of loading the full mathjax type definitions.
 interface MathJaxMinimal {
   typesetPromise: (nodes: HTMLElement[]) => Promise<void>;
-  tex2mml: (tex: string) => string;
   startup: {
     promise: Promise<void>;
     load?: () => void;
