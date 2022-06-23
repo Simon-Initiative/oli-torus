@@ -109,14 +109,6 @@ export const triggerCheck = createAsyncThunk(
     let score = 0;
     let outOf = 0;
 
-    const scoringContext: ScoringContext = {
-      currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-      maxAttempt: currentActivity.content.custom.maxAttempt || 0,
-      maxScore: currentActivity.content.custom.maxScore || 0,
-      trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
-      negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
-    };
-
     // prepare state to send to the rules engine
     {
       // these were previously declared, but after above async calls they might have been updated, lets get them again
@@ -234,6 +226,17 @@ export const triggerCheck = createAsyncThunk(
           }
           return acc;
         }, {});
+
+        const scoringContext: ScoringContext = {
+          currentAttemptNumber: currentAttempt?.attemptNumber || 1,
+          maxAttempt: currentActivity.content.custom.maxAttempt || 0,
+          maxScore: currentActivity.content.custom.maxScore || 0,
+          trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
+          negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
+          isManuallyGraded: currentActivity.authoring?.parts.some(
+            (p: any) => p.gradingApproach === 'manual',
+          ),
+        };
 
         console.log('PRE CHECK RESULT (PREVIEW)', {
           sectionSlug,
