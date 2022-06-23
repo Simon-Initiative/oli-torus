@@ -56,6 +56,9 @@ config :oli, OliWeb.Endpoint,
   http: [port: 4002],
   server: false
 
+# Config adapter for refreshing part_mapping
+config :oli, Oli.Publishing, refresh_adapter: Oli.PublishingTest.PartMappingMockAdapter
+
 # Print only warnings and errors during test
 config :logger, level: :warn
 
