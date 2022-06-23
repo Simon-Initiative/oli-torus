@@ -17,6 +17,8 @@ export interface WriterImpl {
   h6: ElementWriter;
   formula: ElementWriter;
   formulaInline: ElementWriter;
+  callout: ElementWriter;
+  calloutInline: ElementWriter;
   img: ElementWriter;
   img_inline: ElementWriter;
   youtube: ElementWriter;
@@ -107,6 +109,10 @@ export class ContentWriter {
         return impl.formula(context, next, content);
       case 'formula_inline':
         return impl.formulaInline(context, next, content);
+      case 'callout':
+        return impl.callout(context, next, content);
+      case 'callout_inline':
+        return impl.calloutInline(context, next, content);
       case 'img':
         return impl.img(context, next, content);
       case 'img_inline':

@@ -25,7 +25,7 @@ const tableCell = {
   isVoid: false,
   isBlock: true,
   isTopLevel: false,
-  validChildren: toObj(['p', 'img', 'youtube', 'audio', 'math']),
+  validChildren: toObj(['p', 'img', 'youtube', 'audio', 'math', 'formula_inline', 'formula']),
 };
 
 const list = {
@@ -49,7 +49,7 @@ export const schema: Schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
-    validChildren: toObj(['input_ref', 'img']),
+    validChildren: toObj(['input_ref', 'img', 'formula_inline', 'callout_inline']),
   },
   h1: header,
   h2: header,
@@ -63,6 +63,34 @@ export const schema: Schema = {
     isBlock: false,
     isTopLevel: false,
     validChildren: {},
+  },
+  callout: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj([
+      'p',
+      'img',
+      'youtube',
+      'audio',
+      'code',
+      'blockquote',
+      'iframe',
+      'ol',
+      'ul',
+      'h1',
+      'h2',
+      'h3',
+      'h4',
+      'h5',
+      'h6',
+    ]),
+  },
+  callout_inline: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: true,
+    validChildren: toObj([]),
   },
   formula: {
     isVoid: true,

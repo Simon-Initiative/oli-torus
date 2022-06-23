@@ -22,6 +22,11 @@ import {
   Citation,
   ImageInline,
   CodeV2,
+  FormulaBlock,
+  FormulaInline,
+  FormulaSubTypes,
+  Callout,
+  CalloutInline,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -52,6 +57,16 @@ export const Model = {
   ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
 
   youtube: (src?: string) => create<YouTube>({ type: 'youtube', src }),
+
+  callout: (text = '') => create<Callout>({ type: 'callout', children: [Model.p(text)] }),
+  calloutInline: (text = '') =>
+    create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
+
+  formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
+    create<FormulaBlock>({ type: 'formula', src, subtype }),
+
+  formulaInline: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
+    create<FormulaInline>({ type: 'formula_inline', src, subtype }),
 
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 

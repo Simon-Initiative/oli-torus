@@ -129,8 +129,6 @@ export class HtmlParser implements WriterImpl {
         return (
           <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
         );
-      case 'richtext':
-        return <span className={element.type}>{next()}</span>;
       default:
         return <span className="formula">Unknown formula type</span>;
     }
@@ -209,6 +207,14 @@ export class HtmlParser implements WriterImpl {
       </table>
     );
   }
+  callout(context: WriterContext, next: Next) {
+    return <div className="callout-block">{next()}</div>;
+  }
+
+  calloutInline(context: WriterContext, next: Next) {
+    return <span className="callout-inline">{next()}</span>;
+  }
+
   tr(context: WriterContext, next: Next, _x: TableRow) {
     return <tr>{next()}</tr>;
   }
