@@ -23,7 +23,7 @@ defmodule OliWeb.Common.CardListing do
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
                 <div class="badge badge-success mr-5">{TableModel.render_payment_column(assigns, item, nil)}</div>
-                <div class="small-date text-muted">{render_date(item, with_data(assigns, @model.data))}</div>
+                <div class="small-date text-muted">{render_date(item, Map.merge(assigns, @model.data))}</div>
               </div>
             </div>
           </a>
@@ -53,9 +53,5 @@ defmodule OliWeb.Common.CardListing do
     if TableModel.is_product?(item),
       do: "product:#{item.id}",
       else: "publication:#{item.id}"
-  end
-
-  defp with_data(assigns, data) do
-    Map.merge(assigns, data)
   end
 end
