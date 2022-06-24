@@ -16,11 +16,21 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
   }
 
   prop system_message, :struct, required: true
-  prop timezone, :string, required: true
+  prop context, :struct, required: true
   prop save, :event, required: true
 
   def render(assigns) do
     changeset = Notifications.change_system_message(assigns.system_message)
+
+    start_date =
+      changeset
+      |> Ecto.Changeset.get_field(:start)
+      |> FormatDateTime.convert_datetime(assigns.context)
+
+    end_date =
+      changeset
+      |> Ecto.Changeset.get_field(:end)
+      |> FormatDateTime.convert_datetime(assigns.context)
 
     ~F"""
       <Form for={changeset} submit={@save} class="d-flex align-items-center">
@@ -38,12 +48,12 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
         <div class="flex-grow-1 py-2 px-3">
           <Field name={:start} class="form-group d-flex align-items-center">
             <Label class="control-label pr-4 flex-basis-20" text="Start"/>
-            <DateTimeLocalInput class="form-control w-75" value={timezone_localized_datetime(Ecto.Changeset.get_field(changeset, :start), @timezone)}/>
+            <DateTimeLocalInput class="form-control w-75" value={start_date}/>
             <ErrorTag/>
           </Field>
           <Field name={:end} class="form-group d-flex align-items-center">
             <Label class="control-label pr-4 flex-basis-20" text="End"/>
-            <DateTimeLocalInput class="form-control w-75" value={timezone_localized_datetime(Ecto.Changeset.get_field(changeset, :end), @timezone)}/>
+            <DateTimeLocalInput class="form-control w-75" value={end_date}/>
             <ErrorTag/>
           </Field>
         </div>
@@ -59,17 +69,5 @@ defmodule OliWeb.SystemMessageLive.EditMessage do
         </div>
       </Form>
     """
-  end
-
-  defp timezone_localized_datetime(nil, _timezone), do: nil
-
-  defp timezone_localized_datetime(datetime, timezone) do
-    case FormatDateTime.maybe_localized_datetime(datetime, timezone) do
-      {:localized, datetime} ->
-        datetime
-
-      datetime ->
-        datetime
-    end
   end
 end

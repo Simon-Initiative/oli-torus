@@ -441,11 +441,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: %{data: data} = gating_condition,
-      context: %{local_tz: local_tz},
-      section: section
+      context: context
     } = socket.assigns
 
-    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, local_tz || section.timezone)
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
     data = Map.put(data, :start_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}
@@ -458,11 +457,10 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       ) do
     %{
       gating_condition: %{data: data} = gating_condition,
-      context: %{local_tz: local_tz},
-      section: section
+      context: context
     } = socket.assigns
 
-    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, local_tz || section.timezone)
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
     data = Map.put(data, :end_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}

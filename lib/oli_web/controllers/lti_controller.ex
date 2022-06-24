@@ -2,7 +2,6 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
   import Oli.Utils
-  import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
@@ -11,7 +10,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.LtiSession
+  alias OliWeb.Common.{LtiSession, SessionContext, Utils}
   alias Oli.Lti.LtiParams
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -251,6 +250,7 @@ defmodule OliWeb.LtiController do
       ) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
+        context = SessionContext.init(conn)
         # send a Slack notification regarding the new registration request
         Slack.send(%{
           "username" => "Torus Bot",
@@ -286,7 +286,7 @@ defmodule OliWeb.LtiController do
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" => "*Date:*\n#{pending_registration.inserted_at |> date()}"
+                  "text" => "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, context)}"
                 }
               ]
             },

@@ -57,4 +57,16 @@ defmodule OliWeb.StaticPageController do
     |> put_session(:dismissed_messages, [id | dismissed_messages])
     |> send_resp(200, "Ok")
   end
+
+  def update_timezone(conn, %{"timezone" => timezone, "redirect_to" => redirect_to}) do
+    redirect_to = validate_path(conn, redirect_to)
+
+    conn
+    |> put_session("local_tz", timezone)
+    |> put_flash(:info, "Timezone updated successfully.")
+    |> redirect(to: redirect_to)
+  end
+
+  defp validate_path(_, "/" <> _ = path), do: path
+  defp validate_path(conn, _), do: Routes.static_page_path(conn, :index)
 end

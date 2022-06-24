@@ -1,9 +1,9 @@
 defmodule OliWeb.Progress.StudentResourceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Surface.Components.{Form}
+  alias Surface.Components.Form
   alias Surface.Components.Form.{Field, Label, NumberInput, ErrorTag}
   alias OliWeb.Progress.AttemptHistory
   alias OliWeb.Sections.Mount
@@ -52,6 +52,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
+            context = SessionContext.init(session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =
@@ -62,6 +63,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             {:ok,
              assign(socket,
+               context: context,
                changeset: changeset,
                breadcrumbs: set_breadcrumbs(type, section, user_id),
                delivery_breadcrumb: true,
@@ -156,7 +158,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts}/>
+        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
       </Group>
     </Groups>
     """
