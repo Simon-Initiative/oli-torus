@@ -19,7 +19,7 @@ import { clone } from 'utils/common';
 import guid from 'utils/guid';
 
 export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
-  { value: 'numeric', displayValue: 'Nomber' },
+  { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Text' },
 ];
 

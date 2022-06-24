@@ -96,6 +96,7 @@ export const MultiInputComponent: React.FC = () => {
 
   const onVlabChange = () => {
     // Get the selected flask XML and parse.
+    // Vlab emits a 'message' event (for logging) with almost every action
     console.log('Vlab Changed!');
     const selectedFlaskXML = document
       .getElementsByClassName('embed-responsive-item')[0]

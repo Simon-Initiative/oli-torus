@@ -2,6 +2,7 @@
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
@@ -261,6 +262,8 @@ export class HtmlParser implements WriterImpl {
         return withHints(<NumericInput {...shared} />);
       case 'text':
         return withHints(<TextInput {...shared} />);
+      case 'vlabvalue':
+        return withHints(<VlabInput {...shared} />);
       case 'dropdown':
         return withHints(
           <DropdownInput
