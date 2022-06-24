@@ -917,6 +917,8 @@ defmodule OliWeb.Router do
       as: :discount
     )
 
+    live("/institutions/:institution_id/research_consent", Admin.Institutions.ResearchConsentView, as: :institution)
+
     live("/registrations", Admin.RegistrationsView)
 
     resources("/registrations", RegistrationController, except: [:index]) do
