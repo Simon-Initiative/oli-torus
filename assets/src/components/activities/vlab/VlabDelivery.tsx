@@ -41,6 +41,36 @@ export const MultiInputComponent: React.FC = () => {
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
 
+  const onVlabChange = () => {
+    // Get the selected flask XML and parse.
+    // Vlab emits a 'message' event (for logging) with almost every action
+    console.log('Vlab Changed!');
+    const selectedFlaskXML = document.getElementById('vlab').contentWindow.getSelectedItem();
+    const parser = new DOMParser();
+    const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
+
+    // Loop over the inputs, if an input is type vlabInput, update it's value.
+    model.inputs.forEach((input) => {
+      console.log(input.inputType);
+      if (input.type === 'vlabvalue') {
+        if (!selectedFlask.querySelector('parsererror')) {
+          const value = selectedFlask
+            .getElementsByTagName('flask')[0]
+            .getElementsByTagName('volume')[0].textContent;
+          console.log('SelectedFlask volume = ' + value + 'L.');
+        } else {
+          console.log('Nothing selected on the workbench.');
+        }
+        dispatch(
+          activityDeliverySlice.actions.setStudentInputForPart({
+            partId: input.partId,
+            studentInput: [value],
+          }),
+        );
+      }
+    });
+  };
+
   useEffect(() => {
     dispatch(
       initializeState(
@@ -55,6 +85,10 @@ export const MultiInputComponent: React.FC = () => {
         }),
       ),
     );
+    window.addEventListener('message', onVlabChange);
+    return () => {
+      window.removeEventListener('message', onVlabChange);
+    };
   }, []);
 
   // First render initializes state
@@ -94,38 +128,6 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
-  const onVlabChange = () => {
-    // Get the selected flask XML and parse.
-    // Vlab emits a 'message' event (for logging) with almost every action
-    console.log('Vlab Changed!');
-    const selectedFlaskXML = document
-      .getElementsByClassName('embed-responsive-item')[0]
-      .contentWindow.getSelectedItem();
-    const parser = new DOMParser();
-    const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
-
-    // Loop over the inputs, if an input is type vlabInput, update it's value.
-    model.inputs.forEach((input) => {
-      console.log(input.inputType);
-      if (input.type === 'vlabvalue') {
-        if (!selectedFlask.querySelector('parsererror')) {
-          const value = selectedFlask
-            .getElementsByTagName('flask')[0]
-            .getElementsByTagName('volume')[0].textContent;
-          console.log('SelectedFlask volume = ' + value + 'L.');
-        } else {
-          console.log('Nothing selected on the workbench.');
-        }
-        dispatch(
-          activityDeliverySlice.actions.setStudentInputForPart({
-            partId: input.partId,
-            studentInput: [value],
-          }),
-        );
-      }
-    });
-  };
-
   const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const input = getByUnsafe(model.inputs, (x) => x.id === id);
     const value = e.target.value;
@@ -158,6 +160,7 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
+        <iframe id="vlab" src="/vlab/index.html" width="100%" height="400px" />
         <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
         <GradedPointsConnected />
         <ResetButtonConnected

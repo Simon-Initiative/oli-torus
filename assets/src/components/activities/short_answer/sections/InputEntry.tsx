@@ -33,7 +33,7 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
     setState: onEditRule,
   };
 
-  if (inputType === 'numeric') {
+  if (inputType === 'numeric' || inputType === 'vlabvalue') {
     return <NumericInput {...shared} />;
   }
   return <TextInput {...shared} />;
