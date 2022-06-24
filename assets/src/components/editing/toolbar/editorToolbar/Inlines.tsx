@@ -11,6 +11,8 @@ import React from 'react';
 import { commandDesc as linkCmd } from 'components/editing/elements/link/LinkCmd';
 import { popupCmdDesc as insertPopup } from 'components/editing/elements/popup/PopupCmd';
 import { insertImageInline } from 'components/editing/elements/image/imageActions';
+import { insertInlineFormula } from '../../elements/formula/formulaActions';
+import { insertInlineCallout } from '../../elements/callout/calloutActions';
 
 interface Props {}
 export const Inlines = (_props: Props) => {
@@ -20,7 +22,12 @@ export const Inlines = (_props: Props) => {
     linkCmd,
   ].map((desc, i) => <CommandButton key={i} description={desc} />);
 
-  const inlineInsertions = [insertPopup, insertImageInline];
+  const inlineInsertions = [
+    insertPopup,
+    insertImageInline,
+    insertInlineFormula,
+    insertInlineCallout,
+  ];
   const moreInlineOptions = additionalFormattingOptions.concat(inlineInsertions);
 
   const seeMoreInlineOptions = createButtonCommandDesc({

@@ -359,6 +359,9 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               if (sEnabled !== undefined) {
                 setEnabled(parseBool(sEnabled));
               }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
+              }
             }
             break;
         }

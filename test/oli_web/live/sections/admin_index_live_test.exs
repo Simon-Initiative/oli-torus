@@ -59,7 +59,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
       assert has_element?(view, "td", section.title)
       assert has_element?(view, "td", project.title)
       assert has_element?(view, "td", institution.name)
-      assert has_element?(view, "td", "#{u1.name},#{u2.name}")
+      assert has_element?(view, "td", "#{u1.name}, #{u2.name}")
     end
 
     test "applies filtering", %{conn: conn} do
@@ -225,7 +225,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       assert view
       |> element("tr:first-child > td:first-child")
-      |> render() =~ s1.title
+      |> render() =~ s2.title
 
       view
       |> element("th[phx-click=\"paged_table_sort\"]", "Instructor")
@@ -233,7 +233,7 @@ defmodule OliWeb.Sections.AdminIndexLiveTest do
 
       assert view
       |> element("tr:first-child > td:first-child")
-      |> render() =~ s2.title
+      |> render() =~ s1.title
     end
 
     test "applies paging", %{conn: conn} do

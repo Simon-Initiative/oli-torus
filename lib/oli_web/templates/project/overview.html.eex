@@ -17,11 +17,11 @@
       </div>
       <div class="form-label-group mb-3">
         <%= label f, :title, "Project Title", class: "control-label" %>
-        <%= text_input f, :title, class: "form-control", placeholder: "The title of your course...", required: false %>
+        <%= text_input f, :title, class: "form-control", placeholder: "The title of your project...", required: false %>
       </div>
       <div class="form-label-group mb-3">
         <%= label f, :description, "Project Description", class: "control-label" %>
-        <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your course...", required: false %>
+        <%= textarea f, :description, class: "form-control", placeholder: "A brief description of your project...", required: false %>
       </div>
       <div class="form-label-group mb-3">
         <%= label f, :description, "Latest Publication", class: "control-label" %>

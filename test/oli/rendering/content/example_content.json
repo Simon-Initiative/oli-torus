@@ -425,9 +425,8 @@
       "id": 169365459
     },
     {
-      "type": "formula",
-      "subtype": "richtext",
-      "children": [{ "text": "a richtext formula" }]
+      "type": "callout",
+      "children": [{ "text": "a richtext callout" }]
     },
     {
       "type": "formula",
@@ -443,9 +442,8 @@
       "type": "p",
       "children": [
         {
-          "type": "formula_inline",
-          "subtype": "richtext",
-          "children": [{ "text": "a richtext formula" }]
+          "type": "callout_inline",
+          "children": [{ "text": "a richtext inline callout" }]
         },
         {
           "type": "formula_inline",

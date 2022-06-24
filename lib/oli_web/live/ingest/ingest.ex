@@ -12,7 +12,7 @@ defmodule OliWeb.Admin.Ingest do
   prop author, :any
 
   data breadcrumbs, :any
-  data title, :string, default: "Ingest Course Project"
+  data title, :string, default: "Ingest Project"
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -23,7 +23,7 @@ defmodule OliWeb.Admin.Ingest do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Ingest Course Project",
+          full_title: "Ingest Project",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
