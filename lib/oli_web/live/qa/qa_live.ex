@@ -6,7 +6,7 @@ defmodule OliWeb.Qa.QaLive do
 
   import Phoenix.HTML.Link
 
-  alias OliWeb.Common.SessionContext
+  alias OliWeb.Common.{SessionContext, Utils}
   alias Oli.Authoring.Course
   alias Oli.Qa
   alias OliWeb.Qa.WarningFilter
@@ -159,7 +159,7 @@ defmodule OliWeb.Qa.QaLive do
         <div class="row mt-4">
           <div class="col-12">
             <p class="mb-3">
-              Last reviewed <strong><%= (hd @qa_reviews).inserted_at |> date(@context) %></strong>,
+              Last reviewed <strong><%= Utils.render_date(hd(@qa_reviews), :inserted_at, @context) %></strong>,
               with <strong><%= length @warnings %></strong> potential improvement <%= if (length @warnings) == 1 do "opportunity" else "opportunities" end %> found.
             </p>
             <%= if !Enum.empty?(@warnings_by_type) do %>

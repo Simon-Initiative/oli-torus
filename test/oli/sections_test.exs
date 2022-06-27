@@ -17,7 +17,6 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~U[2010-04-17 00:00:00.000000Z],
-      timezone: "some timezone",
       title: "some title",
       context_id: "context_id"
     }
@@ -150,7 +149,6 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~U[2010-04-17 00:00:00.000000Z],
-      timezone: "some timezone",
       title: "some title",
       context_id: "some context_id"
     }
@@ -159,7 +157,6 @@ defmodule Oli.SectionsTest do
       open_and_free: false,
       registration_open: false,
       start_date: ~U[2011-05-18 00:00:00.000000Z],
-      timezone: "some updated timezone",
       title: "some updated title",
       context_id: "some updated context_id"
     }
@@ -168,7 +165,6 @@ defmodule Oli.SectionsTest do
       open_and_free: nil,
       registration_open: nil,
       start_date: nil,
-      timezone: nil,
       title: nil,
       context_id: nil
     }
@@ -196,7 +192,6 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~U[2010-04-17 00:00:00Z]
       assert section.registration_open == true
       assert section.start_date == ~U[2010-04-17 00:00:00Z]
-      assert section.timezone == "some timezone"
       assert section.title == "some title"
       refute section.pay_by_institution
     end
@@ -255,7 +250,6 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~U[2011-05-18 00:00:00Z]
       assert section.registration_open == false
       assert section.start_date == ~U[2011-05-18 00:00:00Z]
-      assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
 
@@ -388,7 +382,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -443,7 +436,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -558,7 +550,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -705,7 +696,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,

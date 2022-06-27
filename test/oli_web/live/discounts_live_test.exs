@@ -158,6 +158,18 @@ defmodule OliWeb.DiscountsLiveTest do
       refute has_element?(view, "##{first_discount.id}")
       assert has_element?(view, "##{last_discount.id}")
     end
+
+    test "renders datetimes using the local timezone", %{product: product} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      discount = insert(:discount, section: product)
+
+      {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
+
+      assert view
+        |> element("tbody tr:first-child.##{discount.id}")
+        |> render() =~ OliWeb.Common.Utils.render_date(discount, :inserted_at, session_context)
+    end
   end
 
   describe "discount show view - product" do

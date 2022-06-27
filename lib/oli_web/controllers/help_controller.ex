@@ -1,7 +1,7 @@
 defmodule OliWeb.HelpController do
   use OliWeb, :controller
 
-  import OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.{SessionContext, Utils}
 
   require Logger
 
@@ -72,6 +72,7 @@ defmodule OliWeb.HelpController do
       email = if current_user.email == nil, do: " ", else: " "
       given_name = if current_user.given_name == nil, do: " ", else: " "
       family_name = if current_user.family_name == nil, do: " ", else: " "
+      context = SessionContext.init(conn)
 
       {
         :ok,
@@ -80,7 +81,7 @@ defmodule OliWeb.HelpController do
           %{
             "account_email" => email,
             "account_name" => given_name <> " " <> family_name,
-            "account_created" => date(current_user.inserted_at)
+            "account_created" => Utils.render_precise_date(current_user, :inserted_at, context)
           }
         )
       }

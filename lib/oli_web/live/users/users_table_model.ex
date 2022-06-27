@@ -12,7 +12,7 @@ defmodule OliWeb.Users.UsersTableModel do
     """
   end
 
-  def new(users) do
+  def new(users, context) do
     SortableTableModel.new(
       rows: users,
       column_specs: [
@@ -34,7 +34,10 @@ defmodule OliWeb.Users.UsersTableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 

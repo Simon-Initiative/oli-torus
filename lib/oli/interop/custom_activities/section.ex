@@ -25,7 +25,6 @@ defmodule Oli.Interop.CustomActivities.Section do
         end,
         registration_closed: context.section.registration_open,
         start_date: context.section.start_date,
-        time_zone: context.section.timezone,
         title: context.section.title
       },
       [

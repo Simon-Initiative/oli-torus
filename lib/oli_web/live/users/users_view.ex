@@ -7,7 +7,7 @@ defmodule OliWeb.Users.UsersView do
   alias Oli.Accounts
   alias Oli.Accounts.UserBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, Check, PagedTable, SessionContext, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.UsersTableModel
@@ -41,7 +41,7 @@ defmodule OliWeb.Users.UsersView do
       ]
   end
 
-  def mount(_, _, socket) do
+  def mount(_, session, socket) do
     users =
       Accounts.browse_users(
         %Paging{offset: 0, limit: @limit},
@@ -50,7 +50,9 @@ defmodule OliWeb.Users.UsersView do
       )
 
     total_count = SortableTableModel.determine_total(users)
-    {:ok, table_model} = UsersTableModel.new(users)
+
+    context = SessionContext.init(session)
+    {:ok, table_model} = UsersTableModel.new(users, context)
 
     {:ok,
      assign(socket,
