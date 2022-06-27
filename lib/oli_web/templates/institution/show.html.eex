@@ -12,6 +12,7 @@
       <%= link "Delete", to: Routes.institution_path(@conn, :delete, @institution), method: :delete, data: [confirm: "Are you sure you want to permanently delete the institution \"#{@institution.name}\"?"], class: "btn btn-sm btn-outline-danger" %>
       <%= link "Edit Details", to: Routes.institution_path(@conn, :edit, @institution), class: "btn btn-sm btn-outline-primary ml-2" %>
       <%= link "Manage Discount", to: Routes.discount_path(@conn, :institution, @institution.id), class: "btn btn-sm btn-outline-primary ml-2" %>
+      <%= link "Research Consent", to: Routes.institution_path(@conn, OliWeb.Admin.Institutions.ResearchConsentView, @institution.id), class: "btn btn-sm btn-outline-primary ml-2" %>
     </div>
   </h3>
 
