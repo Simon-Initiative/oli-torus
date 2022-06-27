@@ -34,7 +34,20 @@ defmodule Oli.Resources.PageContent do
   end
 
   def map_reduce(item, acc, map_fn) do
+    # IO.inspect(item)
+    # IO.inspect(acc)
     map_fn.(item, acc)
+  end
+
+  def map_reduce(values, key, content, acc, map_fn) when is_list(values) do
+    {children, acc} =
+      Enum.reduce(values, {[], acc}, fn item, {items, acc} ->
+        {item, acc} = map_reduce(item, acc, map_fn)
+        {items ++ [item], acc}
+      end)
+
+    Map.put(content, key, children)
+    |> map_fn.(acc)
   end
 
   @doc """
