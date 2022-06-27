@@ -598,4 +598,11 @@ defmodule Oli.TestHelpers do
 
     Regex.replace(~r/:\d\d\z/, datestring, "")
   end
+
+  def load_stripe_config(), do: load_stripe_config(nil)
+
+  def load_stripe_config(_conn) do
+    Config.Reader.read!("test/config/stripe_config.exs")
+      |> Application.put_all_env()
+  end
 end

@@ -120,8 +120,9 @@ defmodule OliWeb.PaymentControllerTest do
     test "direct payment shows section's cost", %{
       conn: conn
     } do
+      load_stripe_config()
+      
       product = insert(:section, %{amount: Money.new(:USD, "50.00")})
-
       user = insert(:user)
 
       enrollable =

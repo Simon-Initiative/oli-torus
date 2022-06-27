@@ -10,11 +10,6 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
 
   @stripe_payments_intents_url "https://api.stripe.com/v1/payment_intents"
 
-  defp load_stripe_config(_) do
-    Config.Reader.read!("test/config/stripe_config.exs")
-    |> Application.put_all_env()
-  end
-
   defp create_section(_) do
     section =
       insert(:section, %{
