@@ -2,6 +2,7 @@ defmodule OliWeb.Users.Common do
   use OliWeb, :surface_component
 
   alias Oli.Accounts
+  alias OliWeb.Common.Utils
 
   def render(assigns) do
     ~F"""
@@ -28,28 +29,28 @@ defmodule OliWeb.Users.Common do
           cond do
             Accounts.user_confirmation_pending?(row) ->
               ~F"""
-              <span data-toggle="tooltip" data-html="true" title={"<b>Confirmation Pending</b> sent to #{email}"}>
+              <span data-toggle="tooltip" data-html="true" title={"Confirmation Pending sent to #{email}"}>
                 <i class="las la-paper-plane text-secondary"></i>
               </span>
               """
 
             not is_nil(email_confirmed_at) ->
               ~F"""
-              <span data-toggle="tooltip" data-html="true" title={"<b>Email Confirmed</b> on #{date(email_confirmed_at)}"}>
+              <span data-toggle="tooltip" data-html="true" title={"Email Confirmed on #{Utils.render_precise_date(row, :email_confirmed_at, @context)}"}>
                 <i class="las la-check text-success"></i>
               </span>
               """
 
             not is_nil(invitation_accepted_at) ->
               ~F"""
-              <span data-toggle="tooltip" data-html="true" title={"<b>Invitation Accepted</b> on #{date(invitation_accepted_at)}"}>
+              <span data-toggle="tooltip" data-html="true" title={"Invitation Accepted on #{Utils.render_precise_date(row, :invitation_accepted_at, @context)}"}>
                 <i class="las la-check text-success"></i>
               </span>
               """
 
             true ->
               ~F"""
-              <span data-toggle="tooltip" data-html="true" title={"<b>Invitation Pending</b> sent to #{email}"}>
+              <span data-toggle="tooltip" data-html="true" title={"Invitation Pending sent to #{email}"}>
                 <i class="las la-paper-plane text-secondary"></i>
               </span>
               """

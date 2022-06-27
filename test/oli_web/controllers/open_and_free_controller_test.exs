@@ -8,7 +8,6 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: true,
     registration_open: true,
     start_date: ~U[2010-04-17 00:00:00.000000Z],
-    timezone: "America/Los_Angeles",
     title: "some title",
     context_id: "some context_id"
   }
@@ -17,7 +16,6 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: true,
     registration_open: false,
     start_date: ~U[2010-05-18 00:00:00.000000Z],
-    timezone: "US/Mountain",
     title: "some updated title",
     context_id: "some updated context_id"
   }
@@ -26,7 +24,6 @@ defmodule OliWeb.OpenAndFreeControllerTest do
     open_and_free: nil,
     registration_open: nil,
     start_date: nil,
-    timezone: nil,
     title: nil,
     context_id: nil
   }
@@ -41,9 +38,9 @@ defmodule OliWeb.OpenAndFreeControllerTest do
   end
 
   describe "new" do
-    setup [:create_fixtures]
+    setup [:create_fixtures, :set_timezone]
 
-    test "renders form from product", %{conn: conn, section: section} do
+    test "renders form from product", %{conn: conn, section: section, context: session_context} do
       conn =
         get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "product:#{section.id}"))
 
@@ -57,9 +54,15 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       assert conn.resp_body =~
                ~r/<input .* id="section_requires_enrollment" .* value="true"/
+
+      assert html_response(conn, 200) =~ "Timezone: " <> session_context.local_tz
     end
 
-    test "renders form from publication", %{conn: conn, publication: publication} do
+    test "renders form from publication", %{
+      conn: conn,
+      publication: publication,
+      context: session_context
+    } do
       conn =
         get(
           conn,
@@ -76,9 +79,11 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       assert conn.resp_body =~
                ~r/<input .* id="section_requires_enrollment" .* value="true"/
+
+      assert html_response(conn, 200) =~ "Timezone: " <> session_context.local_tz
     end
 
-    test "renders form from project", %{conn: conn, project: project} do
+    test "renders form from project", %{conn: conn, project: project, context: session_context} do
       conn =
         get(conn, Routes.admin_open_and_free_path(conn, :new, source_id: "project:#{project.id}"))
 
@@ -92,6 +97,8 @@ defmodule OliWeb.OpenAndFreeControllerTest do
 
       assert conn.resp_body =~
                ~r/<input .* id="section_requires_enrollment" .* value="true"/
+
+      assert html_response(conn, 200) =~ "Timezone: " <> session_context.local_tz
     end
   end
 
@@ -143,6 +150,22 @@ defmodule OliWeb.OpenAndFreeControllerTest do
       conn = get(conn, Routes.admin_open_and_free_path(conn, :edit, section))
       assert html_response(conn, 200) =~ "Edit Section"
     end
+
+    test "displays start and end dates using the local timezone", %{section: section} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      conn = get(conn, Routes.admin_open_and_free_path(conn, :edit, section))
+
+      timezone = session_context.local_tz
+
+      assert html_response(conn, 200) =~
+               utc_datetime_to_localized_datestring(section.start_date, timezone)
+
+      assert html_response(conn, 200) =~
+               utc_datetime_to_localized_datestring(section.end_date, timezone)
+
+      assert html_response(conn, 200) =~ "Timezone: " <> timezone
+    end
   end
 
   describe "update open_and_free section" do
@@ -182,7 +205,9 @@ defmodule OliWeb.OpenAndFreeControllerTest do
         institution_id: institution.id,
         base_project_id: project.id,
         context_id: UUID.uuid4(),
-        open_and_free: true
+        open_and_free: true,
+        start_date: DateTime.utc_now(),
+        end_date: DateTime.add(DateTime.utc_now(), 3600)
       })
 
     %{

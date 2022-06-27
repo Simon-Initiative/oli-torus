@@ -1,10 +1,11 @@
 defmodule OliWeb.DeliveryController do
   use OliWeb, :controller
 
-  alias Oli.Delivery.Sections
   alias Lti_1p3.Tool.{PlatformRoles, ContextRoles}
   alias Oli.Accounts
   alias Oli.Accounts.Author
+  alias Oli.Delivery.Sections
+  alias Oli.Institutions
   alias Oli.Repo
 
   import Oli.Utils
@@ -47,7 +48,13 @@ defmodule OliWeb.DeliveryController do
 
       # section has been configured
       section ->
-        if user.research_opt_out === nil do
+        {institution, _registration, _deployment} =
+          Institutions.get_institution_registration_deployment(
+            lti_params["iss"],
+            lti_params["aud"],
+            lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"])
+
+        if institution.research_consent != :no_form and is_nil(user.research_opt_out) do
           render_research_consent(conn)
         else
           redirect_to_page_delivery(conn, section)

@@ -20,7 +20,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
@@ -100,7 +100,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
 
         activity_types_map = Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
 
-        {:ok, table_model} = TableModel.new(attempts, activity_types_map)
+        context = SessionContext.init(session)
+        {:ok, table_model} = TableModel.new(attempts, activity_types_map, context)
 
         table_model = Map.put(table_model, :sort_order, :desc)
         |> Map.put(:sort_by_spec, TableModel.date_submitted_spec())

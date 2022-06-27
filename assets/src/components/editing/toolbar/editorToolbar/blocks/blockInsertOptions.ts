@@ -10,6 +10,8 @@ import { ContentModelMode } from 'data/content/model/elements/types';
 import { insertTable } from 'components/editing/elements/table/commands/insertTable';
 import { insertWebpage } from 'components/editing/elements/webpage/webpageActions';
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
+import { insertFormula } from '../../../elements/formula/formulaActions';
+import { insertCallout } from '../../../elements/callout/calloutActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -18,6 +20,8 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertYoutube,
   insertAudio(onRequestMedia),
   insertWebpage,
+  insertFormula,
+  insertCallout,
 ];
 
 interface Opts {
@@ -36,7 +40,14 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
     case 'inline':
       return [];
     case 'small':
-      return [insertCodeblock, insertImage(onRequestMedia), ytCmdDesc, insertAudio(onRequestMedia)];
+      return [
+        insertCodeblock,
+        insertImage(onRequestMedia),
+        ytCmdDesc,
+        insertAudio(onRequestMedia),
+        insertFormula,
+        insertCallout,
+      ];
     case 'all':
       return allBlockInsertActions(onRequestMedia);
     default:

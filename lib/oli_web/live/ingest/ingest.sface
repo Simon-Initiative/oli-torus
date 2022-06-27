@@ -1,6 +1,6 @@
 <div class="container">
   <h3 class="display-6">Course Ingestion</h3>
-  <p class="lead">Upload a course digest archive and convert into a Torus course project.</p>
+  <p class="lead">Upload a course digest archive and convert into a Torus project.</p>
   <hr class="my-4">
 
     {#case assigns[:error]}
@@ -52,7 +52,7 @@
 
       <div class="form-group">
         <label>Step 3. Upon successful ingestion, you will then be redirected
-        to the Overview page of the new course project.</label>
+        to the Overview page of the new project.</label>
       </div>
     </form>
 

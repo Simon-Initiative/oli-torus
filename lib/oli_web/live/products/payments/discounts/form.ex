@@ -35,19 +35,19 @@ defmodule OliWeb.Products.Payments.Discounts.Form do
 
         <Field name={:type} class="form-group">
           <Label />
-          <Select class="form-control" options={"Percentage": "percentage", "Fixed amount": "fixed_amount"} selected={get_field(@changeset, :type)}/>
+          <Select class="form-control" options={"Percentage": "percentage", "Fixed price": "fixed_amount"} selected={get_field(@changeset, :type)}/>
           <ErrorTag/>
         </Field>
 
         <Field name={:amount} class="form-group">
-          <Label/>
+          <Label text="Price"/>
           <TextInput class="form-control" opts={disabled: get_field(@changeset, :type) == :percentage} />
           <ErrorTag/>
         </Field>
 
         <Field name={:percentage} class="form-group">
           <Label/>
-          <NumberInput class="form-control" opts={disabled: get_field(@changeset, :type) == :fixed_amount} />
+          <NumberInput class="form-control" opts={min: 0, max: 100, step: 0.1, disabled: get_field(@changeset, :type) == :fixed_amount} />
           <ErrorTag/>
         </Field>
 

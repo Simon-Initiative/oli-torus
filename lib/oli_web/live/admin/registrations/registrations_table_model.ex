@@ -1,7 +1,7 @@
 defmodule OliWeb.Admin.RegistrationsTableModel do
   use Surface.LiveComponent
 
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
@@ -11,7 +11,7 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
     """
   end
 
-  def new(authors) do
+  def new(authors, context) do
     SortableTableModel.new(
       rows: authors,
       column_specs: [
@@ -26,7 +26,7 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &Common.render_date/3
         },
         %ColumnSpec{
           name: :deployments_count,
@@ -39,7 +39,10 @@ defmodule OliWeb.Admin.RegistrationsTableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 

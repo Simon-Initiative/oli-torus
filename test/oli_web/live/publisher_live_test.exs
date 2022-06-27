@@ -149,6 +149,18 @@ defmodule OliWeb.PublisherLiveTest do
       refute has_element?(view, "##{first_p.id}")
       assert has_element?(view, "##{last_p.id}")
     end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      publisher = Inventories.default_publisher()
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert view
+             |> element("tr##{publisher.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_date(publisher, :inserted_at, session_context)
+    end
   end
 
   describe "new" do

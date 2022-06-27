@@ -1,8 +1,9 @@
 defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
   use OliWeb, :surface_component
 
-  alias Surface.Components.{Link}
+  alias Surface.Components.Link
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
   alias Oli.Resources.Revision
   alias Oli.Delivery.Gating.{GatingCondition, GatingConditionData}
   alias OliWeb.Common.SessionContext
@@ -89,16 +90,16 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.TableModel do
           data: %GatingConditionData{
             start_datetime: start_datetime,
             end_datetime: end_datetime
-          }
+          } = data
         },
         _
       ) do
     ~F"""
       <div :if={start_datetime}>
-        <b>Start:</b> {date(start_datetime, context: context, precision: :minutes)}
+        <b>Start:</b> {Utils.render_precise_date(data, :start_datetime, context)}
       </div>
       <div :if={end_datetime}>
-        <b>End:</b> {date(end_datetime, context: context, precision: :minutes)}
+        <b>End:</b> {Utils.render_precise_date(data, :end_datetime, context)}
       </div>
     """
   end

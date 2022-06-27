@@ -19,6 +19,8 @@ import { CommandContext } from '../elements/commands/interfaces';
 import { ImageEditor } from '../elements/image/block/ImageElement';
 import { EditorProps } from '../elements/interfaces';
 import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
+import { FormulaEditor } from '../elements/formula/FormulaEditor';
+import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -59,6 +61,10 @@ export function editorFor(
       return <ul {...attributes}>{children}</ul>;
     case 'li':
       return <li {...attributes}>{children}</li>;
+    case 'callout':
+      return <CalloutEditor {...(editorProps as EditorProps<ContentModel.Callout>)} />;
+    case 'callout_inline':
+      return <InlineCalloutEditor {...(editorProps as EditorProps<ContentModel.CalloutInline>)} />;
     case 'blockquote':
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
@@ -90,6 +96,14 @@ export function editorFor(
       return <span {...attributes}>Not implemented</span>;
     case 'input_ref':
       return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
+    case 'formula':
+    case 'formula_inline':
+      return (
+        <FormulaEditor
+          {...(editorProps as EditorProps<ContentModel.FormulaInline | ContentModel.FormulaBlock>)}
+        />
+      );
+
     default:
       return <span>{children}</span>;
   }

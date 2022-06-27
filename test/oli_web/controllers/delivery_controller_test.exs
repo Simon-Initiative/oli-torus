@@ -35,13 +35,27 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
-    test "handles student with section", %{conn: conn, lti_param_ids: lti_param_ids} do
+    test "handles student with section and research consent form", %{conn: conn, lti_param_ids: lti_param_ids} do
       conn =
         conn
         |> LtiSession.put_session_lti_params(lti_param_ids.student)
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Online Consent Form"
+    end
+
+    test "handles student with section and no research consent form", %{
+      conn: conn,
+      section_no_rc: section_no_rc,
+      lti_param_ids: lti_param_ids
+    } do
+      conn =
+        conn
+        |> LtiSession.put_session_lti_params(lti_param_ids.student_no_rc)
+        |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
     end
 
     test "handles instructor with no section or linked account", %{
@@ -57,7 +71,7 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
-    test "handles instructor with section", %{
+    test "handles instructor with section and research consent form", %{
       conn: conn,
       lti_param_ids: lti_param_ids,
       user: user
@@ -70,6 +84,20 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 200) =~ "Online Consent Form"
+    end
+
+    test "handles instructor with section and no research consent form", %{
+      conn: conn,
+      section_no_rc: section_no_rc,
+      lti_param_ids: lti_param_ids
+    } do
+      conn =
+        conn
+        |> LtiSession.put_session_lti_params(lti_param_ids.instructor_no_rc)
+        |> get(Routes.delivery_path(conn, :index))
+
+      assert html_response(conn, 302) =~
+        "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
     end
   end
 
@@ -408,6 +436,10 @@ defmodule OliWeb.DeliveryControllerTest do
         base_project_id: project.id
       })
 
+    institution_no_rc = insert(:institution, research_consent: :no_form)
+    deployment_no_rc = insert(:lti_deployment, institution: institution_no_rc)
+    section_no_rc = insert(:section, institution: institution_no_rc, lti_1p3_deployment: deployment_no_rc)
+
     user = user_fixture()
     student = user_fixture()
     student_no_section = user_fixture()
@@ -455,6 +487,42 @@ defmodule OliWeb.DeliveryControllerTest do
             "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
           },
           student_no_section.id
+        ),
+      student_no_rc:
+        cache_lti_params(
+          %{
+            "iss" => deployment_no_rc.registration.issuer,
+            "aud" => deployment_no_rc.registration.client_id,
+            "sub" => student.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => section_no_rc.context_id,
+              "title" => section_no_rc.title
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_no_rc.deployment_id
+          },
+          student.id
+        ),
+      instructor_no_rc:
+        cache_lti_params(
+          %{
+            "iss" => deployment_no_rc.registration.issuer,
+            "aud" => deployment_no_rc.registration.client_id,
+            "sub" => instructor.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => section_no_rc.context_id,
+              "title" => section_no_rc.title
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_no_rc.deployment_id
+          },
+          instructor.id
         ),
       instructor:
         cache_lti_params(
@@ -519,19 +587,20 @@ defmodule OliWeb.DeliveryControllerTest do
       |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok,
-     conn: conn,
-     author: author,
-     institution: institution,
-     section: section,
-     user: user,
-     student: student,
-     student_no_section: student_no_section,
-     instructor: instructor,
-     instructor_no_section: instructor_no_section,
-     student_instructor_no_section: student_instructor_no_section,
-     project: project,
-     publication: publication,
-     lti_param_ids: lti_param_ids}
+      conn: conn,
+      author: author,
+      institution: institution,
+      section: section,
+      user: user,
+      student: student,
+      student_no_section: student_no_section,
+      instructor: instructor,
+      instructor_no_section: instructor_no_section,
+      student_instructor_no_section: student_instructor_no_section,
+      project: project,
+      publication: publication,
+      lti_param_ids: lti_param_ids,
+      section_no_rc: section_no_rc}
   end
 
   defp setup_open_and_free_session(%{conn: conn}) do

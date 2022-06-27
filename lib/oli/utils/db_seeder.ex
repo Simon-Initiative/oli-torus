@@ -424,7 +424,6 @@ defmodule Oli.Seeder do
     {:ok, section_1} =
       Sections.create_section(%{
         title: "1",
-        timezone: "America/New_York",
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
@@ -436,7 +435,6 @@ defmodule Oli.Seeder do
     {:ok, section_2} =
       Sections.create_section(%{
         title: "2",
-        timezone: "America/New_York",
         registration_open: true,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
@@ -448,7 +446,6 @@ defmodule Oli.Seeder do
     {:ok, oaf_section_1} =
       Sections.create_section(%{
         title: "3",
-        timezone: "America/New_York",
         registration_open: true,
         open_and_free: true,
         context_id: UUID.uuid4(),
@@ -481,7 +478,6 @@ defmodule Oli.Seeder do
       open_and_free: false,
       registration_open: true,
       start_date: ~U[2010-04-17 00:00:00.000000Z],
-      timezone: "America/New_York",
       title: "some title",
       context_id: UUID.uuid4(),
       base_project_id: map.project.id,
@@ -503,7 +499,6 @@ defmodule Oli.Seeder do
           type: :blueprint,
           registration_open: true,
           start_date: ~U[2010-04-17 00:00:00.000000Z],
-          timezone: "America/New_York",
           title: "some title",
           description: "a description",
           context_id: UUID.uuid4(),
@@ -729,12 +724,6 @@ defmodule Oli.Seeder do
       %Publication{published: nil} = p ->
         Oli.Publishing.update_publication(p, %{published: DateTime.utc_now()})
     end
-
-    query = """
-    REFRESH MATERIALIZED VIEW part_mapping;
-    """
-
-    Oli.Repo.query!(query, [])
   end
 
   defp create_published_resource(publication, resource, revision) do

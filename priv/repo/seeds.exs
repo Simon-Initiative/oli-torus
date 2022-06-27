@@ -172,7 +172,6 @@ if Application.fetch_env!(:oli, :env) == :dev do
       |> Map.put("base_project_id", seeds.project.id)
       |> Map.put("open_and_free", true)
       |> Map.put("context_id", UUID.uuid4())
-      |> Map.put("timezone", "US/Mountain")
 
     section =
       with {:ok, section} <- Oli.Delivery.Sections.create_section(section_params),

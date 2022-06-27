@@ -19,6 +19,14 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Many students wonder]: ", next.(), " "]
   end
 
+  def callout(%Oli.Rendering.Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
+  def callout_inline(%Oli.Rendering.Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
   def p(%Context{} = _context, next, _) do
     [next.(), " "]
   end

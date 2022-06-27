@@ -144,9 +144,11 @@ export const loadInitialPageState = createAsyncThunk(
           resumeSequenceId = sequence[resumeTarget].custom.sequenceId;
         }
         // need to check the visitHistory to see if the resumeSequenceId is in there and is NOT the latest, then we need to set history mode to true
-        const resumeHistoryIndex = visitHistory.findIndex((entry) => entry.id === resumeSequenceId);
+        const resumeHistoryIndex = visitHistory.findIndex(
+          (entry) => entry.id === resumeSequenceId && entry.ts > 0,
+        );
         if (resumeHistoryIndex > 0) {
-          /* console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
+          /*  console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
           dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
         }
         /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */

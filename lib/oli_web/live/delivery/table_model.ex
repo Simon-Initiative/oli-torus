@@ -1,10 +1,10 @@
 defmodule OliWeb.Delivery.SelectSource.TableModel do
   use Surface.LiveComponent
 
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(products) do
+  def new(products, context) do
     SortableTableModel.new(
       rows: products,
       column_specs: [
@@ -33,12 +33,15 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3,
+          render_fn: &Common.render_date/3,
           sort_fn: &OliWeb.Common.Table.Common.sort_date/2
         }
       ],
       event_suffix: "",
-      id_field: [:unique_id]
+      id_field: [:unique_id],
+      data: %{
+        context: context
+      }
     )
   end
 
@@ -100,7 +103,7 @@ defmodule OliWeb.Delivery.SelectSource.TableModel do
   end
 
   def render_type_column(_, item, _),
-    do: if is_product?(item), do: "Product", else: "Course Project"
+    do: if is_product?(item), do: "Product", else: "Project"
 
   def render(assigns) do
     ~F"""
