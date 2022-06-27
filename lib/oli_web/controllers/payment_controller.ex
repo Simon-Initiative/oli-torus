@@ -71,14 +71,14 @@ defmodule OliWeb.PaymentController do
       end
 
       if allow_payment do
-        case determine_enrollable_cost(section) do
-          {:ok, amount} ->
-            get_provider_module()
-            |> apply(:show, [conn, section, user, amount])
-
-          _ ->
+        case section.amount do
+          nil ->
             conn
             |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+
+          amount ->
+            get_provider_module()
+            |> apply(:show, [conn, section, user, amount])
         end
       else
         conn
@@ -88,11 +88,6 @@ defmodule OliWeb.PaymentController do
 
     # perform this check in the case that a user refreshes the payment page
     # after already paying.  This will simply redirect them to their course.
-  end
-
-  defp determine_enrollable_cost(section) do
-    section = Oli.Repo.preload(section, [:institution])
-    Oli.Delivery.Paywall.calculate_product_cost(section, section.institution)
   end
 
   @doc """
