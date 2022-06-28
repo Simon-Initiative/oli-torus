@@ -13,12 +13,14 @@ interface Props {
   disabled?: boolean;
 }
 export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
-  const { graded, onSubmitActivity } = useDeliveryElementContext();
+  const { graded, surveyId, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   return (
     <SubmitButton
-      shouldShow={!isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
+      shouldShow={
+        !isEvaluated(uiState) && !isSubmitted(uiState) && !graded && surveyId === undefined
+      }
       disabled={
         disabled === undefined
           ? Object.values(uiState.partState)

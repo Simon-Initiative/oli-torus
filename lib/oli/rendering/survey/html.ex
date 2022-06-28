@@ -16,6 +16,7 @@ defmodule Oli.Rendering.Survey.Html do
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Survey</div><div class="survey-content">|,
       next.(),
+      "</div>\n",
       survey_controls,
       "</div>\n"
     ]

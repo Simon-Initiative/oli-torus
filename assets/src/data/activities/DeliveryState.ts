@@ -1,4 +1,4 @@
-import { AnyAction, createSlice, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
+import { AnyAction, createSlice, Dispatch, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
 import {
   EvaluationResponse,
   RequestHintResponse,
@@ -15,6 +15,7 @@ import {
   StudentResponse,
   Success,
 } from 'components/activities/types';
+import { SubmitSurveyEventDetails } from 'components/misc/SurveyControls';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { Maybe } from 'tsmonad';
@@ -262,6 +263,16 @@ export const resetAction =
     );
   };
 
+export const getPartResponses = (activityState: ActivityDeliveryState) =>
+  activityState.attemptState.parts.map((partState) => ({
+    attemptGuid: partState.attemptGuid,
+    response: {
+      input: studentInputToString(
+        Maybe.maybe(activityState.partState[String(partState.partId)]?.studentInput).valueOr(['']),
+      ),
+    },
+  }));
+
 export const submit =
   (
     onSubmitActivity: (
@@ -270,16 +281,10 @@ export const submit =
     ) => Promise<EvaluationResponse>,
   ): AppThunk =>
   async (dispatch, getState) => {
+    const activityState = getState();
     const response = await onSubmitActivity(
-      getState().attemptState.attemptGuid,
-      getState().attemptState.parts.map((partState) => ({
-        attemptGuid: partState.attemptGuid,
-        response: {
-          input: studentInputToString(
-            Maybe.maybe(getState().partState[String(partState.partId)]?.studentInput).valueOr(['']),
-          ),
-        },
-      })),
+      activityState.attemptState.attemptGuid,
+      getPartResponses(activityState),
     );
     dispatch(slice.actions.activitySubmissionReceived(response));
   };
@@ -362,3 +367,21 @@ export const setSelection =
       },
     ]);
   };
+
+export const listenForParentSurveySubmit = (
+  surveyId: string | undefined,
+  dispatch: Dispatch<any>,
+  onSubmitActivity: (
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => Promise<EvaluationResponse>,
+) =>
+  Maybe.maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-submit', (e: CustomEvent<SubmitSurveyEventDetails>) => {
+      // check if this activity belongs to the survey being submitted
+      if (e.detail.id === surveyId) {
+        dispatch(submit(onSubmitActivity));
+      }
+    }),
+  );

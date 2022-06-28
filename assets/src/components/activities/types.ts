@@ -317,7 +317,7 @@ export interface ActivityState {
    */
   hasMoreAttempts: boolean;
   /**
-   * Whether or not this attempt has additonal hints.
+   * Whether or not this attempt has additional hints.
    */
   hasMoreHints: boolean;
   snapshot?: any;

@@ -11,11 +11,11 @@ export interface SubmitSurveyEventDetails {
 export const SurveyControls = ({ id }: SurveyControlsProps) => {
   const onSubmit = () =>
     document.dispatchEvent(
-      new CustomEvent<SubmitSurveyEventDetails>('oli-submit-survey', { detail: { id } }),
+      new CustomEvent<SubmitSurveyEventDetails>('oli-survey-submit', { detail: { id } }),
     );
 
   return (
-    <div className="d-flex">
+    <div className="d-flex mb-4">
       <div className="flex-grow-1"></div>
       <button className="btn btn-primary" onClick={onSubmit}>
         Submit Survey

@@ -12,6 +12,7 @@ import {
   initializeState,
   isEvaluated,
   isSubmitted,
+  listenForParentSurveySubmit,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -31,6 +32,8 @@ export const OrderingComponent: React.FC = () => {
   const {
     model,
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
@@ -54,6 +57,8 @@ export const OrderingComponent: React.FC = () => {
   };
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+
     dispatch(
       initializeState(
         activityState,

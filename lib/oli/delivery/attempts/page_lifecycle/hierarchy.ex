@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   import Oli.Delivery.Attempts.Core
   alias Oli.Activities.Realizer.Query.Source
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Revision, PageContent}
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.Result
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
@@ -35,6 +35,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         attempt ->
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
+
+    activity_groups = PageContent.activity_parent_groups(context.page_revision.content)
 
     %Result{
       errors: errors,
@@ -61,7 +63,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        bulk_create_attempts(resource_attempt, activity_revisions, unscored)
+        bulk_create_attempts(
+          resource_attempt,
+          activity_revisions,
+          unscored,
+          activity_groups
+        )
+
         {:ok, resource_attempt}
 
       error ->
@@ -76,7 +84,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   # 2. A query to fetch the newly created IDs and their corresponding resource_ids
   # 3. A final bulk insert query to create the part attempts
   #
-  defp bulk_create_attempts(resource_attempt, activity_revisions, unscored) do
+  defp bulk_create_attempts(
+         resource_attempt,
+         activity_revisions,
+         unscored,
+         activity_groups
+       ) do
     # Use a common timestamp for all insertions
     right_now =
       DateTime.utc_now()
@@ -85,8 +98,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     # Create the activity attempts, in bulk
     Enum.filter(activity_revisions, fn r -> !is_nil(r) end)
     |> Enum.map(fn r ->
-      scoreable = !MapSet.member?(unscored, r.resource_id)
-      create_raw_activity_attempt(r, scoreable)
+      %{group: group_id, survey: survey_id} = Map.get(activity_groups, r.resource_id)
+      unscored = MapSet.member?(unscored, r.resource_id)
+      scoreable = !unscored && !survey_id
+      create_raw_activity_attempt(r, scoreable, group_id, survey_id)
     end)
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
@@ -133,7 +148,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   defp create_raw_activity_attempt(
          %Revision{resource_id: resource_id, id: id, content: model},
-         scoreable
+         scoreable,
+         group_id,
+         survey_id
        ) do
     transformed_model =
       case Transformers.apply_transforms(model) do
@@ -150,6 +167,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       transformed_model: transformed_model,
       scoreable: scoreable,
       lifecycle_state: :active,
+      group_id: group_id,
+      survey_id: survey_id,
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

@@ -276,6 +276,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
     summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+
     bib_entrys =
       BibUtils.assemble_bib_entries(
         revision.content,
@@ -574,7 +575,7 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        },
+        }
       }
     )
   end
@@ -808,7 +809,9 @@ defmodule OliWeb.PageDeliveryController do
 
   defp build_enrollments_text(enrollments) do
     ([["Student name", "Student email", "Enrolled on"]] ++
-      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, date(record.inserted_at)] end))
+       Enum.map(enrollments, fn record ->
+         [record.user.name, record.user.email, date(record.inserted_at)]
+       end))
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()

@@ -15,6 +15,7 @@ import {
   resetAction,
   savePart,
   submitFiles,
+  listenForParentSurveySubmit,
 } from 'data/activities/DeliveryState';
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
 import { safelySelectFiles } from 'data/activities/utils';
@@ -214,13 +215,23 @@ const FileSubmission: React.FC<{
 };
 
 export const FileUploadComponent: React.FC = () => {
-  const { model, state, onResetActivity, onSubmitActivity, onSavePart, sectionSlug, graded } =
-    useDeliveryElementContext<FileUploadSchema>();
+  const {
+    model,
+    state,
+    surveyId,
+    sectionSlug,
+    graded,
+    onResetActivity,
+    onSubmitActivity,
+    onSavePart,
+  } = useDeliveryElementContext<FileUploadSchema>();
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+
     dispatch(
       initializeState(
         state,
@@ -258,7 +269,9 @@ export const FileUploadComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
         />
         <SubmitButton
-          shouldShow={!isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
+          shouldShow={
+            !isEvaluated(uiState) && !isSubmitted(uiState) && !graded && surveyId === undefined
+          }
           disabled={getFiles(uiState).length === 0}
           onClick={() => dispatch(submitFiles(onSubmitActivity, getFiles(uiState)))}
         />

@@ -13,6 +13,7 @@ import {
   resetAction,
   PartInputs,
   isEvaluated,
+  listenForParentSurveySubmit,
 } from 'data/activities/DeliveryState';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs } from 'data/activities/utils';
@@ -28,15 +29,18 @@ import { LikertTable } from './Sections/LikertTable';
 const LikertComponent: React.FC = () => {
   const {
     state: activityState,
-    onSaveActivity,
-    onResetActivity,
+    surveyId,
     model,
     writerContext,
+    onSubmitActivity,
+    onSaveActivity,
+    onResetActivity,
   } = useDeliveryElementContext<LikertModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 

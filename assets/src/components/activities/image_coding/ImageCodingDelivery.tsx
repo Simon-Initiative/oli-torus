@@ -17,6 +17,10 @@ import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
+import { activityDeliverySlice, listenForParentSurveySubmit } from 'data/activities/DeliveryState';
+import { Provider, useDispatch } from 'react-redux';
+import { configureStore } from 'state/store';
+import { DeliveryElementProvider } from '../DeliveryElementProvider';
 
 type Evaluation = {
   score: number;
@@ -85,7 +89,10 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   // effect hook to initiate fetching of resources, executes once on first render
+  const dispatch = useDispatch();
   useEffect(() => {
+    listenForParentSurveySubmit(props.surveyId, dispatch, props.onSubmitActivity);
+
     resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
     });
@@ -225,13 +232,12 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
   ) : null;
 
-  const reset =
-    isEvaluated && !props.graded ? (
-      <div className="d-flex">
-        <div className="flex-fill"></div>
-        <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
-      </div>
-    ) : null;
+  const reset = isEvaluated && !props.graded && props.surveyId === undefined && (
+    <div className="d-flex">
+      <div className="flex-fill"></div>
+      <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
+    </div>
+  );
 
   const ungradedDetails = props.graded
     ? null
@@ -286,7 +292,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = model.isExample ? null : (
+  const maybeSubmitButton = !model.isExample && props.surveyId === undefined && (
     <button
       className="btn btn-primary mt-2 float-right"
       disabled={isEvaluated || !ranCode}
@@ -334,8 +340,17 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
 // Defines the web component, a simple wrapper over our React component above
 export class ImageCodingDelivery extends DeliveryElement<ImageCodingModelSchema> {
-  render(mountPoint: HTMLDivElement, props: ImageCodingDeliveryProps) {
-    ReactDOM.render(<ImageCoding {...props} />, mountPoint);
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<ImageCodingModelSchema>) {
+    const store = configureStore({}, activityDeliverySlice.reducer);
+
+    ReactDOM.render(
+      <Provider store={store}>
+        <DeliveryElementProvider {...props}>
+          <ImageCoding {...props} />
+        </DeliveryElementProvider>
+      </Provider>,
+      mountPoint,
+    );
   }
 }
 
