@@ -70,7 +70,6 @@ postgres.env
 /assets/sdk/oli-torus-sdk-*.tgz
 /assets/sdk/dist/
 /assets/sdk/node_modules
-/assets/src/infra/dynamic-eval/node_modules/
 /assets/sdk/yarn.lock
 .devmode
 .elixir_ls
