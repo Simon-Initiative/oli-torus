@@ -88,7 +88,7 @@ defmodule Oli.Activities.Transformers do
   # Run one batch of transformers, for a specific operation.
   #
   # Takes the model repository, the module of the transformer impl, and a list of
-  # tuples of revision ids and transformer.  The larevision_id_transform_pairsst argument is really our
+  # tuples of revision ids and transformer.  The revision_id_transform_pairs argument is really our
   # "batch" of work.
   #
   # Returns a tuple with first element being the new model_repository, and second being a map of
