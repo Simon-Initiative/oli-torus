@@ -47,6 +47,8 @@ defmodule Oli.AutomationSetup do
       end)
       |> Repo.transaction()
 
+    Oli.Publishing.refresh_part_mapping()
+
     case result do
       {:ok,
        %{
