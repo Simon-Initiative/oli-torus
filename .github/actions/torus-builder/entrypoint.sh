@@ -12,6 +12,7 @@ MIX_ENV=prod SHA=$RELEASE_SHA mix compile
 yarn --cwd ./assets
 npm run deploy --prefix ./assets
 npm run deploy-node --prefix ./assets
+npm run deploy --prefix ./assets/src/infra/dynamic-eval
 
 MIX_ENV=prod mix phx.digest
 MIX_ENV=prod SHA=$RELEASE_SHA mix release
