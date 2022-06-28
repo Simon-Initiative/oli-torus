@@ -46,7 +46,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
 
   def render_institution_column(_assigns, item, _), do: item.institution.name
 
-  def render_type_column(_assigns, item, _), do: Phoenix.Naming.humanize(item.type)
+  def render_type_column(_assigns, item, _), do: humanize_type(item.type)
 
   def render_value_column(_assigns, %{type: :percentage} = item, _), do: item.percentage
   def render_value_column(_assigns, %{type: :fixed_amount} = item, _), do: item.amount
@@ -75,4 +75,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
       <div>nothing</div>
     """
   end
+
+  defp humanize_type(:fixed_amount), do: "Fixed price"
+  defp humanize_type(type), do: Phoenix.Naming.humanize(type)
 end
