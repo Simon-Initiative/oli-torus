@@ -34,8 +34,6 @@ defmodule Oli.Resources.PageContent do
   end
 
   def map_reduce(item, acc, map_fn) do
-    # IO.inspect(item)
-    # IO.inspect(acc)
     map_fn.(item, acc)
   end
 

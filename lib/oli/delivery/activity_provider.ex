@@ -71,7 +71,6 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
-    IO.inspect(bib_revisions)
     %ProviderResult{
       errors: [],
       revisions: revisions,
@@ -101,7 +100,7 @@ defmodule Oli.Delivery.ActivityProvider do
       )
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
-    IO.inspect(bib_revisions)
+
     %ProviderResult{
       errors: errors,
       revisions: only_revisions,
