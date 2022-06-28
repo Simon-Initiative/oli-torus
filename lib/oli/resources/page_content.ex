@@ -37,6 +37,17 @@ defmodule Oli.Resources.PageContent do
     map_fn.(item, acc)
   end
 
+  def map_reduce(values, key, content, acc, map_fn) when is_list(values) do
+    {children, acc} =
+      Enum.reduce(values, {[], acc}, fn item, {items, acc} ->
+        {item, acc} = map_reduce(item, acc, map_fn)
+        {items ++ [item], acc}
+      end)
+
+    Map.put(content, key, children)
+    |> map_fn.(acc)
+  end
+
   @doc """
   Flattens and filters the page content elements into a list. Implemented as a
   convenience function, over top of map_reduce.
