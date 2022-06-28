@@ -120,8 +120,9 @@ defmodule OliWeb.PaymentControllerTest do
     test "direct payment shows section's cost", %{
       conn: conn
     } do
-      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
+      load_stripe_config()
 
+      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
       user = insert(:user)
 
       enrollable =
@@ -144,6 +145,8 @@ defmodule OliWeb.PaymentControllerTest do
         |> get(Routes.payment_path(conn, :make_payment, enrollable.slug))
 
       assert html_response(conn, 200) =~ "<input type=\"text\" disabled value=\"$100.00\"/>"
+
+      reset_test_payment_config()
     end
   end
 
