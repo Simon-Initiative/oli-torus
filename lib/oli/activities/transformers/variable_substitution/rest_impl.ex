@@ -30,7 +30,7 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.RestImpl do
 
     case http().post(url, body, headers, []) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
-        {:ok, Poison.decode!(body)}
+        Poison.decode(body)
 
       {:ok, %HTTPoison.Response{}} ->
         {:error, "Error retrieving the payload"}
