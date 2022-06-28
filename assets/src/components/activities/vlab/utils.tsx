@@ -26,13 +26,6 @@ export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
 export const multiInputStem = (input: InputRef) => ({
   id: guid(),
   content: [
-    /*{
-      type: 'iframe',
-      id: 'vlab',
-      src: '/vlab/index.html',
-      children: [{ text: '.' }],
-    } as Webpage,
-    */
     {
       type: 'p',
       id: guid(),
