@@ -235,15 +235,22 @@ config :oli, :auth_providers,
 # Take into account that different strategies could use different config options
 config :libcluster,
   topologies: [
-    oli: [
-      strategy:
-        Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "ClusterEC2.Strategy.Tags")]),
-      config: [
-        ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
-        ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", ""),
-        app_prefix: System.get_env("LIBCLUSTER_EC2_STRATEGY_APP_PREFIX", "oli")
-      ]
-    ]
+    oli:
+      case System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip") do
+        "ClusterEC2.Strategy.Tags" = ec2_strategy ->
+          [
+            strategy:  Module.concat([ec2_strategy]),
+            config: [
+              ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
+              ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", ""),
+              app_prefix: System.get_env("LIBCLUSTER_EC2_STRATEGY_APP_PREFIX", "oli")
+            ]
+          ]
+        strategy ->
+          [
+            strategy: Module.concat([strategy])
+          ]
+      end
   ]
 
 # ## Using releases (Elixir v1.9+)
