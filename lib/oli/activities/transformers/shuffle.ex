@@ -16,7 +16,7 @@ defmodule Oli.Activities.Transformers.Shuffle do
   end
 
   @impl Transformer
-  def provide_batch_context(_transformers) do
-    {:ok, %{}}
+  def provide_batch_context(transformers) do
+    {:ok, Enum.map(transformers, fn _ -> %{} end)}
   end
 end
