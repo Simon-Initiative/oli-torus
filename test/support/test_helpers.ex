@@ -40,7 +40,6 @@ defmodule Oli.TestHelpers do
       |> Enum.into(%{
         open_and_free: false,
         registration_open: true,
-        timezone: "US/Eastern",
         title: "some title",
         context_id: "context_id"
       })
@@ -111,8 +110,7 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "institution@example.edu",
         institution_url: "institution.example.edu",
-        name: "Example Institution",
-        timezone: "US/Eastern"
+        name: "Example Institution"
       })
 
     {:ok, institution} = Institutions.create_institution(params)
@@ -128,7 +126,6 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "example@example.edu",
         institution_url: "institution.example.edu",
-        timezone: "US/Eastern",
         issuer: "https://institution.example.edu",
         client_id: "1000000000001",
         key_set_url: "some key_set_url",
@@ -444,7 +441,6 @@ defmodule Oli.TestHelpers do
         Map.merge(
           %{
             title: title,
-            timezone: "1",
             registration_open: true,
             context_id: UUID.uuid4(),
             institution_id:

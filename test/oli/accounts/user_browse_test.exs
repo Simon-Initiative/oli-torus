@@ -25,7 +25,6 @@ defmodule Oli.Accounts.UserBrowseTest do
         Map.merge(
           %{
             title: title,
-            timezone: "1",
             registration_open: true,
             context_id: UUID.uuid4(),
             institution_id:

@@ -228,7 +228,6 @@ defmodule Oli.Factory do
       country_code: "US",
       institution_email: "ins@example.edu",
       institution_url: "example.edu",
-      timezone: "America/New_York",
       research_consent: :oli_form
     }
   end

@@ -9,7 +9,6 @@ defmodule Oli.SectionInvitesTest do
     registration_open: true,
     start_date: ~U[2010-04-17 00:00:00.000000Z],
     end_date: ~U[2010-05-17 00:00:00.000000Z],
-    timezone: "some timezone",
     title: "some title",
     context_id: "context_id"
   }
