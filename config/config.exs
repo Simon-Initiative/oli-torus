@@ -110,6 +110,9 @@ config :oli, :stripe_provider,
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
 
+# Config adapter for refreshing part_mapping
+config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
+
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
   live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "LIVE_VIEW_SALT")],

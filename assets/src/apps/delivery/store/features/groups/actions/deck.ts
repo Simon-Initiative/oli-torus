@@ -26,7 +26,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { setLessonEnd } from '../../adaptivity/slice';
+import { selectHistoryNavigationActivity, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -56,6 +56,8 @@ export const initializeActivity = createAsyncThunk(
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
+
+    const isHistoryMode = selectHistoryNavigationActivity(rootState);
 
     /* console.log('CAT', { currentActivityTree, currentActivity }); */
     // bind all parent parts to current activity
@@ -196,7 +198,9 @@ export const initializeActivity = createAsyncThunk(
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
 
-    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    const stateOps = isHistoryMode ? globalizedInitState : [...sessionOps, ...globalizedInitState];
+
+    const results = bulkApplyState(stateOps, defaultGlobalEnv);
     /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
 
     const applyStateHasErrors = results.some((r) => r.result !== null);
@@ -225,7 +229,8 @@ export const initializeActivity = createAsyncThunk(
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
     // in preview mode we don't talk to the server, so we're done
-    if (isPreviewMode) {
+    // if we're in history mode we shouldn't be writing anything
+    if (isPreviewMode || isHistoryMode) {
       const allGood = results.every(({ result }) => result === null);
       // TODO: report actual errors?
       const status = allGood ? 'success' : 'error';

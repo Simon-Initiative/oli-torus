@@ -33,7 +33,7 @@ defmodule OliWeb.StaticPageControllerTest do
     end
 
     test "does not load timezone script when local timezone is set", context do
-      {:ok, conn: conn} = set_timezone(context)
+      {:ok, conn: conn, context: _} = set_timezone(context)
 
       conn = get(conn, "/")
 
@@ -45,8 +45,8 @@ defmodule OliWeb.StaticPageControllerTest do
     test "redirects when user is not logged in", %{conn: conn} do
       conn = get(conn, Routes.static_page_path(conn, :keep_alive))
 
-      assert html_response(conn, 302)
-        =~ "You are being <a href=\"/session/new?request_path=%2Fkeep-alive\">redirected"
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/session/new?request_path=%2Fkeep-alive\">redirected"
     end
 
     test "returns ok when user is logged in", conn do
@@ -59,8 +59,8 @@ defmodule OliWeb.StaticPageControllerTest do
     test "redirects when author is not logged in", %{conn: conn} do
       conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
 
-      assert html_response(conn, 302)
-        =~ "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fkeep-alive\">redirected"
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/authoring/session/new?request_path=%2Fauthoring%2Fkeep-alive\">redirected"
     end
 
     test "returns ok when author is logged in", conn do
@@ -68,6 +68,53 @@ defmodule OliWeb.StaticPageControllerTest do
       conn = get(conn, Routes.author_keep_alive_path(conn, :keep_alive))
 
       assert response(conn, 200) =~ "Ok"
+    end
+  end
+
+  describe "update_timezone" do
+    test "updates the author local timezone in the session and redirects correctly", context do
+      {:ok, conn: conn, author: _} = author_conn(context)
+      new_timezone = "America/Montevideo"
+      redirect_to = Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)
+
+      conn =
+        post(conn, Routes.static_page_path(conn, :update_timezone), %{
+          timezone: new_timezone,
+          redirect_to: redirect_to
+        })
+
+      assert get_session(conn, :local_tz) == new_timezone
+      assert redirected_to(conn, 302) == redirect_to
+    end
+
+    test "updates the user local timezone in the session and redirects correctly", context do
+      {:ok, conn: conn, user: _} = user_conn(context)
+      new_timezone = "America/Montevideo"
+      redirect_to = Routes.delivery_path(conn, :open_and_free_index)
+
+      conn =
+        post(conn, Routes.static_page_path(conn, :update_timezone), %{
+          timezone: new_timezone,
+          redirect_to: redirect_to
+        })
+
+      assert get_session(conn, :local_tz) == new_timezone
+      assert redirected_to(conn, 302) == redirect_to
+    end
+
+    test "updates the user local timezone in the session and redirects to the index page when the path is invalid",
+         context do
+      {:ok, conn: conn, user: _} = user_conn(context)
+      new_timezone = "America/Montevideo"
+
+      conn =
+        post(conn, Routes.static_page_path(conn, :update_timezone), %{
+          timezone: new_timezone,
+          redirect_to: "invalid_path"
+        })
+
+      assert get_session(conn, :local_tz) == new_timezone
+      assert redirected_to(conn, 302) == Routes.static_page_path(conn, :index)
     end
   end
 end

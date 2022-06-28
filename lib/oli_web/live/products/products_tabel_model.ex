@@ -1,8 +1,8 @@
 defmodule OliWeb.Products.ProductsTableModel do
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(products) do
+  def new(products, context) do
     SortableTableModel.new(
       rows: products,
       column_specs: [
@@ -25,11 +25,14 @@ defmodule OliWeb.Products.ProductsTableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &Common.render_date/3
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 

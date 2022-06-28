@@ -73,7 +73,6 @@ defmodule OliWeb.Progress.StudentTabelModel do
         }
       end)
 
-    {:ok, model} =
       SortableTableModel.new(
         rows: rows,
         column_specs: [
@@ -107,7 +106,7 @@ defmodule OliWeb.Progress.StudentTabelModel do
             render_fn: &__MODULE__.custom_render/3
           },
           %ColumnSpec{
-            name: :updated_at,
+            name: :inserted_at,
             label: "First Visited",
             render_fn: &OliWeb.Common.Table.Common.render_date/3,
             sort_fn: &OliWeb.Common.Table.Common.sort_date/2
@@ -122,11 +121,11 @@ defmodule OliWeb.Progress.StudentTabelModel do
         event_suffix: "",
         id_field: [:index],
         data: %{
-          context: context
+          context: context,
+          section_slug: section.slug,
+          user_id: user.id
         }
       )
-
-    {:ok, Map.put(model, :data, %{section_slug: section.slug, user_id: user.id})}
   end
 
   def custom_sort(direction, %ColumnSpec{name: name}) do

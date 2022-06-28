@@ -295,7 +295,7 @@ export const triggerCheck = createAsyncThunk(
         score = resultData.score;
         outOf = resultData.out_of;
 
-        console.log('POST CHECK RESULT (PREVIEW)', {
+        console.log('POST CHECK RESULT (DD)', {
           currentActivity,
           checkResult,
           localizedSnapshot,

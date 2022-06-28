@@ -4,10 +4,11 @@ defmodule OliWeb.Sections.InviteViewTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
-  import OliWeb.Common.FormatDateTime
 
   alias Oli.Delivery.Sections
+  alias Oli.Delivery.Sections.SectionInvites
   alias Lti_1p3.Tool.ContextRoles
+  alias OliWeb.Common.Utils
 
   defp live_view_invite_route(section_slug) do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.InviteView, section_slug)
@@ -117,31 +118,43 @@ defmodule OliWeb.Sections.InviteViewTest do
                "Create new invite link expiring after"
     end
 
-    test "creates an invitation link expiring after one day", %{conn: conn, section: section} do
+    test "creates an invitation link expiring after one day", %{section: section} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
              |> element("button[phx-value-option=\"one_day\"]")
              |> render_click(%{option: "one_day"})
 
+      [si | _] = SectionInvites.list_section_invites(section.id)
+
       html = render(view)
       assert html =~ "Invitation created"
       assert html =~ "Time remaining: 23 hours"
+      assert html =~ "Expires: " <> Utils.render_precise_date(si, :date_expires, session_context)
     end
 
-    test "creates an invitation link expiring after one week", %{conn: conn, section: section} do
+    test "creates an invitation link expiring after one week", %{section: section} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
       assert view
              |> element("button[phx-value-option=\"one_week\"]")
              |> render_click(%{option: "one_week"})
 
+      [si | _] = SectionInvites.list_section_invites(section.id)
+
       html = render(view)
       assert html =~ "Invitation created"
       assert html =~ "Time remaining: 6 days"
+      assert html =~ "Expires: " <> Utils.render_precise_date(si, :date_expires, session_context)
     end
 
-    test "creates an invitation link expiring when the section starts", %{conn: conn} do
+    test "creates an invitation link expiring when the section starts", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
       section = insert(:section_with_dates)
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
@@ -151,10 +164,14 @@ defmodule OliWeb.Sections.InviteViewTest do
 
       html = render(view)
       assert html =~ "Invitation created"
-      assert html =~ "Expires: #{date(section.start_date)}"
+
+      assert html =~
+               "Expires: " <> Utils.render_precise_date(section, :start_date, session_context)
     end
 
-    test "creates an invitation link expiring when the section ends", %{conn: conn} do
+    test "creates an invitation link expiring when the section ends", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
       section = insert(:section_with_dates)
       {:ok, view, _html} = live(conn, live_view_invite_route(section.slug))
 
@@ -164,7 +181,7 @@ defmodule OliWeb.Sections.InviteViewTest do
 
       html = render(view)
       assert html =~ "Invitation created"
-      assert html =~ "Expires: #{date(section.end_date)}"
+      assert html =~ "Expires: " <> Utils.render_precise_date(section, :end_date, session_context)
     end
 
     test "cannot create a section invite when the course registration is not open", %{conn: conn} do

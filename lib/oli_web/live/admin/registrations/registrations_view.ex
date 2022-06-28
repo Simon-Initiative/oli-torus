@@ -4,7 +4,7 @@ defmodule OliWeb.Admin.RegistrationsView do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias Oli.Accounts.Author
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Admin.RegistrationsTableModel
@@ -48,7 +48,8 @@ defmodule OliWeb.Admin.RegistrationsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
+    context = SessionContext.init(session)
     author = Repo.get(Author, author_id)
 
     registrations =
@@ -60,7 +61,7 @@ defmodule OliWeb.Admin.RegistrationsView do
 
     total_count = determine_total(registrations)
 
-    {:ok, table_model} = RegistrationsTableModel.new(registrations)
+    {:ok, table_model} = RegistrationsTableModel.new(registrations, context)
 
     {:ok,
      assign(socket,
