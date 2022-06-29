@@ -7,13 +7,7 @@ defmodule OliWeb.Telemetry do
   end
 
   def init(_arg) do
-    children = [
-      {TelemetryMetricsPrometheus,
-       [metrics: metrics(), port: Application.get_env(:oli, :prometheus_port)]},
-      {:telemetry_poller, measurements: periodic_measurements(), period: 10_000}
-    ]
-
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init([], strategy: :one_for_one)
   end
 
   def metrics do
@@ -64,9 +58,5 @@ defmodule OliWeb.Telemetry do
       summary("vm.total_run_queue_lengths.cpu"),
       summary("vm.total_run_queue_lengths.io")
     ]
-  end
-
-  defp periodic_measurements do
-    []
   end
 end
