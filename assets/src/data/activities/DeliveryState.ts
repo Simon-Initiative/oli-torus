@@ -14,8 +14,9 @@ import {
   PartState,
   StudentResponse,
   Success,
+  FileMetaData,
 } from 'components/activities/types';
-import { SubmitSurveyEventDetails } from 'components/misc/SurveyControls';
+import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { Maybe } from 'tsmonad';
@@ -237,20 +238,19 @@ export const requestHint =
 
 export const selectAttemptState = (state: ActivityDeliveryState) => state.attemptState;
 export const isEvaluated = (state: ActivityDeliveryState) =>
-  selectAttemptState(state).score !== null;
+  selectAttemptState(state).dateEvaluated !== null;
 
 export const isSubmitted = (state: ActivityDeliveryState) =>
-  selectAttemptState(state).dateEvaluated === null &&
   selectAttemptState(state).dateSubmitted !== null;
 
 export const resetAction =
   (
     onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
-    partInputs: PartInputs,
+    partInputs?: PartInputs,
   ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
-    dispatch(slice.actions.setPartInputs(partInputs));
+    partInputs && dispatch(slice.actions.setPartInputs(partInputs));
     dispatch(slice.actions.hideAllHints());
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
@@ -295,7 +295,7 @@ export const submitFiles =
       attemptGuid: string,
       partResponses: PartResponse[],
     ) => Promise<EvaluationResponse>,
-    files: any,
+    getFilesFromState: (state: ActivityDeliveryState) => FileMetaData[],
   ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onSubmitActivity(
@@ -303,7 +303,7 @@ export const submitFiles =
       getState().attemptState.parts.map((partState) => ({
         attemptGuid: partState.attemptGuid,
         response: {
-          files,
+          files: getFilesFromState(getState()),
           input: [''],
         },
       })),
@@ -378,10 +378,26 @@ export const listenForParentSurveySubmit = (
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-submit', (e: CustomEvent<SubmitSurveyEventDetails>) => {
+    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
       // check if this activity belongs to the survey being submitted
       if (e.detail.id === surveyId) {
         dispatch(submit(onSubmitActivity));
+      }
+    }),
+  );
+
+export const listenForParentSurveyReset = (
+  surveyId: string | undefined,
+  dispatch: Dispatch<any>,
+  onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+  partInputs?: PartInputs,
+) =>
+  Maybe.maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being reset
+      if (e.detail.id === surveyId) {
+        dispatch(resetAction(onResetActivity, partInputs));
       }
     }),
   );

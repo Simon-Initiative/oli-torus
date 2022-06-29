@@ -10,6 +10,7 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :script,
     :attempt_guid,
     :state,
+    :lifecycle_state,
     :model,
     :delivery_element,
     :authoring_element,
@@ -24,6 +25,8 @@ defmodule Oli.Rendering.Activity.ActivitySummary do
     :attempt_guid,
     # already encoded json of the state of the attempt
     :state,
+    # activity lifecycle state
+    :lifecycle_state,
     # already encoded json of the model of the activity
     :model,
     # the webcomponent elements

@@ -39,6 +39,7 @@ defmodule Oli.Delivery.Page.ActivityContext do
          attempt_guid: state.attemptGuid,
          model: prepare_model(model, opts),
          state: prepare_state(state),
+         lifecycle_state: state.lifecycle_state,
          delivery_element: type.delivery_element,
          authoring_element: type.authoring_element,
          script: type.delivery_script,

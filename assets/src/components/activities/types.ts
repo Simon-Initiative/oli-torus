@@ -598,3 +598,12 @@ export const makePreviewText = () => '';
  * Defines a mapping of a collection of choices to a response.
  */
 export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];
+
+/**
+ * File response metadata.
+ */
+export type FileMetaData = {
+  url: string;
+  creationTime: number;
+  fileSize: number;
+};

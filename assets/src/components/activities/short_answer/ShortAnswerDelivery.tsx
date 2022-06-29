@@ -16,6 +16,7 @@ import {
   activityDeliverySlice,
   resetAction,
   listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { safelySelectStringInputs } from 'data/activities/utils';
@@ -71,6 +72,7 @@ export const ShortAnswerComponent: React.FC = () => {
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [''] });
 
     dispatch(
       initializeState(

@@ -9,9 +9,12 @@ defmodule Oli.Rendering.Survey.Html do
 
   @behaviour Oli.Rendering.Survey
 
-  def survey(%Context{} = _context, next, %{"id" => id}) do
+  def survey(%Context{submitted_surveys: submitted_surveys} = _context, next, %{"id" => id}) do
     {:safe, survey_controls} =
-      ReactPhoenix.ClientSide.react_component("Components.SurveyControls", %{id: id})
+      ReactPhoenix.ClientSide.react_component("Components.SurveyControls", %{
+        id: id,
+        isSubmitted: submitted_surveys[id]
+      })
 
     [
       ~s|<div id="#{id}" class="survey"><div class="survey-label">Survey</div><div class="survey-content">|,

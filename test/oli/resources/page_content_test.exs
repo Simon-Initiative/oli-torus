@@ -116,4 +116,14 @@ defmodule Oli.Resources.PageContentTest do
       assert mapping[6] === %{group: nil, survey: nil}
     end
   end
+
+  describe "survey_activities" do
+    test "returns a mapping of all surveys to the activities they contain" do
+      mapping = PageContent.survey_activities(@basic_content)
+
+      assert mapping["00001"] === [1]
+      assert mapping["00002"] === nil
+      assert mapping["00003"] === [3, 2]
+    end
+  end
 end

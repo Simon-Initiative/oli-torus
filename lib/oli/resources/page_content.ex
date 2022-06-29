@@ -117,4 +117,29 @@ defmodule Oli.Resources.PageContent do
     )
     |> then(fn {_, result} -> result end)
   end
+
+  @doc """
+  Finds all surveys in page content and lists all activities that belong to each survey.
+  """
+  def survey_activities(%{"model" => _model} = content) do
+    map_reduce(
+      content,
+      %{},
+      fn el, survey_activities, %TraversalContext{survey_id: survey_id} ->
+        case el do
+          %{"type" => "activity-reference", "activity_id" => activity_id} ->
+            {el,
+             Map.put(
+               survey_activities,
+               survey_id,
+               [activity_id | Map.get(survey_activities, survey_id, [])]
+             )}
+
+          _ ->
+            {el, survey_activities}
+        end
+      end
+    )
+    |> then(fn {_, result} -> result end)
+  end
 end

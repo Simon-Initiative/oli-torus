@@ -14,6 +14,7 @@ import {
   PartInputs,
   isEvaluated,
   listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs } from 'data/activities/utils';
@@ -39,8 +40,14 @@ const LikertComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
+  const emptySelectionMap = model.items.reduce((acc, item) => {
+    acc[item.id] = [''];
+    return acc;
+  }, {} as PartInputs);
+
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptySelectionMap);
     dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 
@@ -56,11 +63,6 @@ const LikertComponent: React.FC = () => {
   const onSelect = (itemId: string, choiceId: string) => {
     dispatch(setSelection(itemId, choiceId, onSaveActivity, 'single'));
   };
-
-  const emptySelectionMap = model.items.reduce((acc, item) => {
-    acc[item.id] = [''];
-    return acc;
-  }, {} as PartInputs);
 
   return (
     <div className="activity multiple-choice-activity">

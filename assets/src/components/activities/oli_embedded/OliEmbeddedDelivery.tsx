@@ -6,7 +6,11 @@ import { Provider, useDispatch } from 'react-redux';
 import * as ActivityTypes from 'components/activities/types';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { activityDeliverySlice, listenForParentSurveySubmit } from 'data/activities/DeliveryState';
+import {
+  activityDeliverySlice,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
+} from 'data/activities/DeliveryState';
 
 interface Context {
   attempt_guid: string;
@@ -23,6 +27,7 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
     state: activityState,
     surveyId,
     onSubmitActivity,
+    onResetActivity,
   } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
   const [context, setContext] = useState<Context>();
@@ -31,6 +36,7 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
   const dispatch = useDispatch();
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity);
 
     fetchContext();
     setInterval(() => {

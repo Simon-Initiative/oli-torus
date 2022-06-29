@@ -17,16 +17,45 @@ import { Evaluator, EvalContext } from './Evaluator';
 import { lastPart } from './utils';
 import { defaultWriterContext } from 'data/content/writers/context';
 import { ImageCodeEditor } from './sections/ImageCodeEditor';
-import { activityDeliverySlice, listenForParentSurveySubmit } from 'data/activities/DeliveryState';
-import { Provider, useDispatch } from 'react-redux';
+import { activityDeliverySlice } from 'data/activities/DeliveryState';
+import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider } from '../DeliveryElementProvider';
+import { SurveyEventDetails } from 'components/misc/SurveyControls';
+import { maybe } from 'tsmonad';
 
 type Evaluation = {
   score: number;
   outOf: number;
   feedback: ActivityTypes.RichText;
 };
+
+const listenForParentSurveySubmit = (
+  surveyId: string | undefined,
+  onRun: () => void,
+  onSubmit: () => void,
+) =>
+  maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being submitted
+      if (e.detail.id === surveyId) {
+        onRun();
+        onSubmit();
+      }
+    }),
+  );
+
+const listenForParentSurveyReset = (surveyId: string | undefined, onReset: () => void) =>
+  maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being reset
+      if (e.detail.id === surveyId) {
+        onReset();
+      }
+    }),
+  );
 
 // eslint-disable-next-line
 export interface ImageCodingDeliveryProps extends DeliveryElementProps<ImageCodingModelSchema> {
@@ -89,9 +118,9 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   };
 
   // effect hook to initiate fetching of resources, executes once on first render
-  const dispatch = useDispatch();
   useEffect(() => {
-    listenForParentSurveySubmit(props.surveyId, dispatch, props.onSubmitActivity);
+    listenForParentSurveySubmit(props.surveyId, onRun, onSubmit);
+    listenForParentSurveyReset(props.surveyId, onReset);
 
     resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
@@ -331,7 +360,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && ungradedDetails}
+        {!model.isExample && props.surveyId === undefined && ungradedDetails}
       </div>
       {reset}
     </div>
