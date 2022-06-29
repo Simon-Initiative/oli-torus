@@ -56,26 +56,28 @@ defmodule Oli.Application do
     Application.fetch_env!(:oli, Oban)
   end
 
-  # Only add in the NodeJS config if that is indeed the selected rule engine evaluator
+  # Only add in the NodeJS config if it is being used for either the rule evaluator or the
+  # variable substitution transformer
   defp maybe_node_js_config do
-    case Application.fetch_env!(:oli, :rule_evaluator)[:dispatcher] do
-      Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator ->
-        [
-          %{
-            id: NodeJS,
-            start:
-              {NodeJS, :start_link,
+    if Application.fetch_env!(:oli, :rule_evaluator)[:dispatcher] ==
+         Oli.Delivery.Attempts.ActivityLifecycle.NodeEvaluator or
+         Application.fetch_env!(:oli, :variable_substitution)[:dispatcher] ==
+           Oli.Activities.Transformers.VariableSubstitution.NodeImpl do
+      [
+        %{
+          id: NodeJS,
+          start:
+            {NodeJS, :start_link,
+             [
                [
-                 [
-                   path: "#{:code.priv_dir(:oli)}/node",
-                   pool_size: Application.fetch_env!(:oli, :rule_evaluator)[:node_js_pool_size]
-                 ]
-               ]}
-          }
-        ]
-
-      _ ->
-        []
+                 path: "#{:code.priv_dir(:oli)}/node",
+                 pool_size: Application.fetch_env!(:oli, :node_js_pool_size)
+               ]
+             ]}
+        }
+      ]
+    else
+      []
     end
   end
 end

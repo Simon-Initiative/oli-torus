@@ -117,9 +117,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           revision = DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
 
           {model_to_store, working_model} =
-            case Transformers.apply_transforms(revision.content) do
-              {:ok, transformed_model} -> {transformed_model, transformed_model}
-              {:no_effect, original} -> {nil, original}
+            case Transformers.apply_transforms([revision]) do
+              [{:ok, nil}] -> {nil, revision.content}
+              [{:ok, transformed_model}] -> {transformed_model, transformed_model}
               _ -> {nil, nil}
             end
 
@@ -203,8 +203,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   @doc """
   Performs activity model transformation for test mode.
   """
-  def perform_test_transformation(model) do
-    Transformers.apply_transforms(model)
+  def perform_test_transformation(%Oli.Resources.Revision{} = revision) do
+    [result] = Transformers.apply_transforms([revision])
+    result
   end
 
   @doc """
@@ -225,22 +226,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   def get_activity_attempt_save_files(attempt_guid, user_id, attempt_number) do
     query =
       from a in ActivityAttemptSaveFile,
-           where: a.attempt_guid == ^attempt_guid and a.attempt_number == ^attempt_number and a.user_id == ^user_id,
-           select: a
+        where:
+          a.attempt_guid == ^attempt_guid and a.attempt_number == ^attempt_number and
+            a.user_id == ^user_id,
+        select: a
+
     Repo.all(query)
   end
 
   def get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name) do
     query =
       from a in ActivityAttemptSaveFile,
-           where: a.attempt_guid == ^attempt_guid
-                  and a.file_name == ^file_name and a.user_id == ^user_id,
-           select: a
-    query = if attempt_number != nil do
-      where(query, [a], a.attempt_number == ^attempt_number)
-    else
-      query
-    end
+        where:
+          a.attempt_guid == ^attempt_guid and
+            a.file_name == ^file_name and a.user_id == ^user_id,
+        select: a
+
+    query =
+      if attempt_number != nil do
+        where(query, [a], a.attempt_number == ^attempt_number)
+      else
+        query
+      end
+
     Repo.one(query)
   end
 
@@ -254,7 +262,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def save_activity_attempt_state_file(%{attempt_guid: attempt_guid, file_name: file_name, user_id: user_id} = changes) do
+  def save_activity_attempt_state_file(
+        %{attempt_guid: attempt_guid, file_name: file_name, user_id: user_id} = changes
+      ) do
     changes = Map.merge(changes, %{file_guid: UUID.uuid4()})
 
     case Repo.get_by(

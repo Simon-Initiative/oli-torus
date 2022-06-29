@@ -84,9 +84,19 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
     # Create the activity attempts, in bulk
     Enum.filter(activity_revisions, fn r -> !is_nil(r) end)
-    |> Enum.map(fn r ->
-      scoreable = !MapSet.member?(unscored, r.resource_id)
-      create_raw_activity_attempt(r, scoreable)
+    |> Transformers.apply_transforms()
+    |> Enum.zip(activity_revisions)
+    |> Enum.map(fn {transformation_result, revision} ->
+      scoreable = !MapSet.member?(unscored, revision.resource_id)
+
+      case transformation_result do
+        {:ok, transformed_model} ->
+          create_raw_activity_attempt(revision, scoreable, transformed_model)
+
+        {:error, e} ->
+          Logger.warning("Could not transform activity model #{Kernel.inspect(e)}")
+          create_raw_activity_attempt(revision, scoreable, nil)
+      end
     end)
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
@@ -132,15 +142,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   end
 
   defp create_raw_activity_attempt(
-         %Revision{resource_id: resource_id, id: id, content: model},
-         scoreable
+         %Revision{resource_id: resource_id, id: id},
+         scoreable,
+         transformed_model
        ) do
-    transformed_model =
-      case Transformers.apply_transforms(model) do
-        {:ok, t} -> t
-        _ -> nil
-      end
-
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),

@@ -632,9 +632,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                resource_id: activity.resource_id,
                revision_id: activity.id
              }) do
-        case Transformers.apply_transforms(content) do
-          {:ok, transformed} -> {activity, transformed}
-          {:no_effect, original} -> {activity, original}
+        case Transformers.apply_transforms([activity]) do
+          [{:ok, nil}] -> {activity, content}
+          [{:ok, transformed}] -> {activity, transformed}
           _ -> {activity, nil}
         end
       else
