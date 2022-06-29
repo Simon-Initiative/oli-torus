@@ -171,6 +171,10 @@ export const MultiInputActions = {
         (input as Dropdown).choiceIds = choices.map(({ id }) => id);
       }
 
+      if (type === 'vlabvalue') {
+        (input as VlabInput).parameter = 'volume';
+      }
+
       part.responses = {
         dropdown: Responses.forMultipleChoice(choices[0].id),
         text: Responses.forTextInput(),
@@ -181,6 +185,13 @@ export const MultiInputActions = {
       input.inputType = type;
 
       console.log('setInputType: my type is ' + type);
+    };
+  },
+
+  setVlabParameter(id: string, param: string) {
+    return (model: VlabSchema) => {
+      const input = getByUnsafe(model.inputs, (x) => x.id === id);
+      (input as VlabInput).parameter = param;
     };
   },
 

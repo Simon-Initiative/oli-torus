@@ -32,7 +32,7 @@ export interface VlabValue extends Identifiable {
   inputType: 'numeric';
   partId: string;
   species?: string;
-  parameter?: string;
+  parameter: string;
 }
 
 export type VlabInputType = 'dropdown' | 'text' | 'numeric' | 'vlabvalue';

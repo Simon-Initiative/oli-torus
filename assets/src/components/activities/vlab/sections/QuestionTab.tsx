@@ -2,6 +2,7 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
 import { Dropdown, VlabInput, VlabSchema } from 'components/activities/vlab/schema';
 import { DropdownQuestionEditor } from 'components/activities/multi_input/sections/DropdownQuestionEditor';
+import { VlabParameterSelector } from 'components/activities/vlab/sections/VlabParameterSelector';
 import { partTitle } from 'components/activities/vlab/utils';
 import { Card } from 'components/misc/Card';
 import { getParts } from 'data/activities/model/utils';
@@ -39,6 +40,9 @@ export const QuestionTab: React.FC<Props> = (props) => {
       <Card.Content>
         {props.input.inputType === 'dropdown' && (
           <DropdownQuestionEditor input={props.input as Dropdown} />
+        )}
+        {props.input.inputType === 'vlabvalue' && (
+          <div>This is a Vlab question. The selected parameter is {props.input.parameter}.</div>
         )}
       </Card.Content>
     </Card.Card>

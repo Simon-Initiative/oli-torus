@@ -52,10 +52,11 @@ export const MultiInputComponent: React.FC = () => {
     // Loop over the inputs, if an input is type vlabInput, update it's value.
     model.inputs.forEach((input) => {
       if (input.inputType === 'vlabvalue') {
+        const param = input.parameter;
         if (!selectedFlask.querySelector('parsererror')) {
           const value = selectedFlask
             .getElementsByTagName('flask')[0]
-            .getElementsByTagName('volume')[0].textContent;
+            .getElementsByTagName(param)[0].textContent;
           dispatch(
             activityDeliverySlice.actions.setStudentInputForPart({
               partId: input.partId,
