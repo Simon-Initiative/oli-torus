@@ -19,7 +19,7 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.RestImpl do
 
     body =
       %{
-        vars: Enum.map(transformers, fn t -> %{expression: t.data, variable: "module"} end),
+        vars: Enum.map(transformers, fn t -> Enum.map(t.data, fn d -> d end) end),
         count: 1
       }
       |> Poison.encode!()
