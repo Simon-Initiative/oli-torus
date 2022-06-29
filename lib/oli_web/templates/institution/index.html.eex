@@ -112,7 +112,7 @@
               <td><%= pending_registration.name %></td>
               <td><%= pending_registration.institution_url %></td>
               <td><%= pending_registration.institution_email %></td>
-              <td><%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @context) %></td>
+              <td><%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @conn) %></td>
 
               <td class="text-nowrap">
                 <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#review-<%= pending_registration.id %>">Review</button>

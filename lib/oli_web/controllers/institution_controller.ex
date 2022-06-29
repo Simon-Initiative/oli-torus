@@ -7,7 +7,7 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions.Institution
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Branding
 
   require Logger
@@ -61,7 +61,6 @@ defmodule OliWeb.InstitutionController do
     pending_registrations = Institutions.list_pending_registrations()
 
     render_institution_page(conn, "index.html",
-      context: SessionContext.init(conn),
       breadcrumbs: root_breadcrumbs(),
       institutions: institutions,
       pending_registrations: pending_registrations,
