@@ -190,7 +190,6 @@ defmodule Oli.MixProject do
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
-      {:telemetry_metrics_prometheus, "~> 1.0.0"},
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},
