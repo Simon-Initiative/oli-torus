@@ -14,7 +14,7 @@ export const ResetButtonConnected: React.FC<Props> = ({ onReset }) => {
   return (
     <ResetButton
       shouldShow={
-        isEvaluated(uiState) && !isSubmitted(uiState) && !graded && surveyId === undefined
+        (isEvaluated(uiState) || isSubmitted(uiState)) && !graded && surveyId === undefined
       }
       disabled={!uiState.attemptState.hasMoreAttempts}
       action={onReset}

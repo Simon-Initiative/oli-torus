@@ -18,9 +18,7 @@ export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
   const dispatch = useDispatch();
   return (
     <SubmitButton
-      shouldShow={
-        !isEvaluated(uiState) && !isSubmitted(uiState) && !graded && surveyId === undefined
-      }
+      shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
       disabled={
         disabled === undefined
           ? Object.values(uiState.partState)

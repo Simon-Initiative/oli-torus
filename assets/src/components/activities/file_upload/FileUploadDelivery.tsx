@@ -175,7 +175,7 @@ const FileSubmission: React.FC<{
     return (
       <SubmittedFile
         key={file.url}
-        editMode={!isSubmitted(uiState) && !isEvaluated(uiState)}
+        editMode={!isSubmitted(uiState)}
         file={file}
         onRemove={onRemove}
         fileSpec={model.fileSpec}
@@ -294,9 +294,7 @@ export const FileUploadComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
         />
         <SubmitButton
-          shouldShow={
-            !isEvaluated(uiState) && !isSubmitted(uiState) && !graded && surveyId === undefined
-          }
+          shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
           disabled={getFilesFromState(uiState).length === 0}
           onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
         />
