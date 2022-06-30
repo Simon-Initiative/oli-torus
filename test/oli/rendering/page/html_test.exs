@@ -96,8 +96,8 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} =
         read_json_file("./test/oli/rendering/page/example_malformed_page.json")
 
-      activity_map = %ActivitySummary{
-        1 => %{
+      activity_map = %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
           state: "{}",

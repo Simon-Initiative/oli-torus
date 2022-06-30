@@ -37,6 +37,10 @@ defmodule Oli.Resources.PageContent do
     item_with_children(content, acc, map_fn, %TraversalContext{meta | survey_id: survey_id})
   end
 
+  def map_reduce(%{"children" => _children} = item, acc, map_fn, meta) do
+    item_with_children(item, acc, map_fn, meta)
+  end
+
   def map_reduce(item, acc, map_fn, meta) do
     map_fn.(item, acc, meta)
   end

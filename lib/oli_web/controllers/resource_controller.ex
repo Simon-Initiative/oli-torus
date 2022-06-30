@@ -152,7 +152,8 @@ defmodule OliWeb.ResourceController do
                 ),
               content_html:
                 PageEditor.render_page_html(project_slug, transformed_content, author,
-                  preview: true, bib_app_params: bib_references
+                  preview: true,
+                  bib_app_params: bib_references
                 ),
               context: context,
               bib_app_params: %{
@@ -200,6 +201,7 @@ defmodule OliWeb.ResourceController do
 
   def render_not_found(conn, project_slug) do
     conn
+    |> put_root_layout({OliWeb.LayoutView, "default.html"})
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",
       title: "Not Found",

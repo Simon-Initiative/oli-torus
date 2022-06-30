@@ -29,7 +29,6 @@
   },
   "required": [
     "type",
-    "id",
     "layout",
     "purpose",
     "children"
