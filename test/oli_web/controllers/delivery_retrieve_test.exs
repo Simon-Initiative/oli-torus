@@ -14,7 +14,8 @@ defmodule OliWeb.DeliveryRetrieveTest do
     } do
       conn = get(conn, Routes.activity_path(conn, :retrieve_delivery, section.slug, activity_id))
 
-      assert %{"content" => %{"stem" => "1"}} = json_response(conn, 200)
+      assert %{"content" => %{"stem" => "1"}} = result = json_response(conn, 200)
+      refute Map.get(result, "authoring")
     end
 
     test "retrieves the published activity in preview mode", %{
@@ -38,7 +39,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
           )
         )
 
-      assert %{"content" => %{"authoring" => _, "stem" => "1"}} = json_response(conn, 200)
+      assert %{"content" => %{"stem" => "1"}, "authoring" => _} = json_response(conn, 200)
     end
 
     test "fails to retrieve the published activity in preview mode for a student", %{
@@ -72,6 +73,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
       assert %{"results" => results} = json_response(conn, 200)
       assert length(results) == 2
+      refute Map.get(hd(results), "authoring")
     end
 
     test "retrieves the published pages in preview mode", %{
@@ -99,6 +101,7 @@ defmodule OliWeb.DeliveryRetrieveTest do
 
       assert %{"results" => results} = json_response(conn, 200)
       assert length(results) == 2
+      assert %{"content" => _, "authoring" => _} = hd(results)
     end
 
     test "fails to retrieve the published pages in preview mode for a student", %{

@@ -464,6 +464,7 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
+        isInstructor: true,
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
         finalizeGradedURL:
