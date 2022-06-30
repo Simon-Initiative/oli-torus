@@ -656,6 +656,10 @@ export const diagnosePage = (page: any, allActivities: any[], sequence: any[]) =
 };
 
 const validateLessonVariables = (page: any) => {
+  if (!page?.custom?.variables) {
+    return [];
+  }
+
   const allNames = page.custom.variables.map((v: any) => v.name);
   // variables can and will ref previous ones
   // they will reference them "globally" so need to track the above

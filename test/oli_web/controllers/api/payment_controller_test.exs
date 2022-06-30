@@ -1,7 +1,10 @@
 defmodule OliWeb.PaymentControllerTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Seeder
+  alias OliWeb.Router.Helpers, as: Routes
 
   describe "payment controller tests" do
     setup [:setup_session]
@@ -112,6 +115,38 @@ defmodule OliWeb.PaymentControllerTest do
         )
 
       assert response(conn, 401)
+    end
+
+    test "direct payment shows section's cost", %{
+      conn: conn
+    } do
+      load_stripe_config()
+
+      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
+      user = insert(:user)
+
+      enrollable =
+        insert(:section, %{
+          type: :enrollable,
+          requires_payment: true,
+          blueprint: product,
+          amount: Money.new(:USD, "100.00"),
+          has_grace_period: true,
+          grace_period_days: 2,
+          grace_period_strategy: :relative_to_student
+        })
+
+      enroll_user_to_section(user, enrollable, :context_learner)
+
+      conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        conn
+        |> get(Routes.payment_path(conn, :make_payment, enrollable.slug))
+
+      assert html_response(conn, 200) =~ "<input type=\"text\" disabled value=\"$100.00\"/>"
+
+      reset_test_payment_config()
     end
   end
 

@@ -47,6 +47,24 @@ defmodule OliWeb.SystemMessageLiveTest do
              |> render() =~ system_message.message
     end
 
+    test "displays start and end datetimes using the local timezone", %{
+      conn: conn,
+      context: context
+    } do
+      system_message = insert(:system_message)
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert view
+             |> element("#system_message_start")
+             |> render() =~
+               utc_datetime_to_localized_datestring(system_message.start, context.local_tz)
+
+      assert view
+             |> element("#system_message_end")
+             |> render() =~
+               utc_datetime_to_localized_datestring(system_message.end, context.local_tz)
+    end
+
     test "uses UTC timezone by default when local timezone is not set", %{conn: conn} do
       conn = delete_session(conn, :local_tz)
 

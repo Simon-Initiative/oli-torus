@@ -65,7 +65,6 @@ defmodule Oli.Delivery do
       {:ok, section} =
         Oli.Delivery.Sections.Blueprint.duplicate(blueprint, %{
           type: :enrollable,
-          timezone: institution.timezone,
           title: lti_params[@context_claims]["title"],
           context_id: lti_params[@context_claims]["id"],
           institution_id: institution.id,
@@ -91,7 +90,6 @@ defmodule Oli.Delivery do
       {:ok, section} =
         Sections.create_section(%{
           type: :enrollable,
-          timezone: institution.timezone,
           title: lti_params[@context_claims]["title"],
           context_id: lti_params[@context_claims]["id"],
           institution_id: institution.id,

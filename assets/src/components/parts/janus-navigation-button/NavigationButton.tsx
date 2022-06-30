@@ -338,6 +338,10 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
               if (sTransparent !== undefined) {
                 setButtonTransparent(sTransparent);
               }
+
+              if (payload.mode === contexts.REVIEW) {
+                setButtonEnabled(false);
+              }
             }
             break;
         }

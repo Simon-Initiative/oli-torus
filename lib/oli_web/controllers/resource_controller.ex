@@ -104,6 +104,7 @@ defmodule OliWeb.ResourceController do
           project_slug: project_slug,
           title: revision.title,
           preview_mode: true,
+          display_curriculum_item_numbering: true,
           app_params: %{
             activityTypes: activity_types,
             resourceId: revision.resource_id,
@@ -168,6 +169,7 @@ defmodule OliWeb.ResourceController do
                 else
                   nil
                 end,
+              display_curriculum_item_numbering: true,
               page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
               container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )

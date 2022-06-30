@@ -52,7 +52,8 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
-  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
@@ -62,9 +63,21 @@ rule_evaluator_provider =
 
 config :oli, :rule_evaluator,
   dispatcher: rule_evaluator_provider,
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
   aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
+
+variable_substitution_provider =
+  case System.get_env("VARIABLE_SUBSTITUTION_PROVIDER") do
+    nil -> Oli.Activities.Transformers.VariableSubstitution.NoOpImpl
+    provider -> Module.concat([Oli, Activities, Transformers, VariableSubstitution, provider])
+  end
+
+config :oli, :variable_substitution,
+  dispatcher: variable_substitution_provider,
+  aws_fn_name: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME", "eval"),
+  aws_region: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_REGION", "us-east-1"),
+  rest_endpoint_url:
+    System.get_env("VARIABLE_SUBSTITUTION_REST_ENDPOINT_URL", "http://localhost:8000/sandbox")
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -96,6 +109,9 @@ config :oli, :stripe_provider,
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
+
+# Config adapter for refreshing part_mapping
+config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,

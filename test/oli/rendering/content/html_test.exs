@@ -53,14 +53,15 @@ defmodule Oli.Content.Content.HtmlTest do
       assert rendered_html_string =~
                ~r/<iframe class=".*" allowfullscreen src="https:\/\/www.wikipedia.org"><\/iframe>/
 
-      assert rendered_html_string =~ "<span class=\"formula\">a richtext formula</span>"
+      assert rendered_html_string =~ "<span class=\"callout-block\">a richtext callout</span>"
 
       assert rendered_html_string =~
                "<span class=\"formula\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></span>"
 
       assert rendered_html_string =~ "<span class=\"formula\">\\[x^2 + y^2 = z^2\\]</span>"
 
-      assert rendered_html_string =~ "<span class=\"formula-inline\">a richtext formula</span>"
+      assert rendered_html_string =~
+               "<span class=\"callout-inline\">a richtext inline callout</span>"
 
       assert rendered_html_string =~
                "<span class=\"formula-inline\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></span>"

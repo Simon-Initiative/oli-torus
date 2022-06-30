@@ -5,7 +5,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
   alias OliWeb.Router.Helpers, as: Routes
   alias Surface.Components.Link
 
-  def new(discounts) do
+  def new(discounts, context) do
     SortableTableModel.new(
       rows: discounts,
       column_specs: [
@@ -28,7 +28,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &OliWeb.Common.Table.Common.render_date/3
         },
         %ColumnSpec{
           name: :actions,
@@ -37,13 +37,16 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 
   def render_institution_column(_assigns, item, _), do: item.institution.name
 
-  def render_type_column(_assigns, item, _), do: Phoenix.Naming.humanize(item.type)
+  def render_type_column(_assigns, item, _), do: humanize_type(item.type)
 
   def render_value_column(_assigns, %{type: :percentage} = item, _), do: item.percentage
   def render_value_column(_assigns, %{type: :fixed_amount} = item, _), do: item.amount
@@ -72,4 +75,7 @@ defmodule OliWeb.Products.Payments.Discounts.TableModel do
       <div>nothing</div>
     """
   end
+
+  defp humanize_type(:fixed_amount), do: "Fixed price"
+  defp humanize_type(type), do: Phoenix.Naming.humanize(type)
 end

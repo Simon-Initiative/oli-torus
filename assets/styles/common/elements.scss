@@ -1,6 +1,7 @@
 @import 'bootstrap';
 
 .structured-content,
+.activity-editor,
 .content {
   blockquote {
     margin-top: 12px;
@@ -119,6 +120,7 @@
     @extend .embed-responsive-item;
   }
 
+  .callout-inline,
   .formula-inline {
     display: inline-block;
     background-color: darken($body-bg, 5%);
@@ -126,16 +128,28 @@
     padding: 2px 0.5em;
     vertical-align: middle;
     mjx-container[display='true'] {
+      pointer-events: none;
       margin: 0px !important;
     }
   }
 
+  .callout-block,
   .formula {
     display: block;
     background-color: darken($body-bg, 5%);
     text-align: center;
     margin: 8px;
     padding: 12px;
+
+    blockquote,
+    ol,
+    ul,
+    .monaco-editor {
+      text-align: left;
+    }
+    mjx-container[display='true'] {
+      pointer-events: none;
+    }
   }
 
   .figure-wrapper {

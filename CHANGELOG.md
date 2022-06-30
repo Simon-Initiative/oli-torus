@@ -3,7 +3,11 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+- Dynamic question infrastructure
+- Survey delivery support
 
 ## 0.19.5 (2022-06-21)
 

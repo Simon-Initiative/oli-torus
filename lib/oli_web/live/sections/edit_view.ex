@@ -3,7 +3,7 @@ defmodule OliWeb.Sections.EditView do
 
   alias Oli.Branding
   alias Oli.Delivery.Sections
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{LtiSettings, MainDetails, Mount, OpenFreeSettings, PaywallSettings, ContentSettings}
@@ -43,6 +43,7 @@ defmodule OliWeb.Sections.EditView do
 
         {:ok,
          assign(socket,
+           context: SessionContext.init(session),
            delivery_breadcrumb: true,
            brands: available_brands,
            changeset: Sections.change_section(section),
@@ -61,7 +62,7 @@ defmodule OliWeb.Sections.EditView do
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
         </Group>
         {#if @section.open_and_free}
-          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false}/>
+          <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
         {#else}
           <LtiSettings section={@section}/>
         {/if}
@@ -73,13 +74,13 @@ defmodule OliWeb.Sections.EditView do
   end
 
   def handle_event("validate", %{"section" => params}, socket) do
-    params = convert_dates(params)
+    params = convert_dates(params, socket.assigns.context)
 
     {:noreply, assign(socket, changeset: Sections.change_section(socket.assigns.section, params))}
   end
 
   def handle_event("save", %{"section" => params}, socket) do
-    params = convert_dates(params)
+    params = convert_dates(params, socket.assigns.context)
 
     case Sections.update_section(socket.assigns.section, params) do
       {:ok, section} ->
@@ -91,13 +92,9 @@ defmodule OliWeb.Sections.EditView do
     end
   end
 
-  defp convert_dates(params) do
-    {utc_start_date, utc_end_date} =
-      Sections.parse_and_convert_start_end_dates_to_utc(
-        params["start_date"],
-        params["end_date"],
-        params["timezone"]
-      )
+  defp convert_dates(params, context) do
+    utc_start_date = FormatDateTime.datestring_to_utc_datetime(params["start_date"], context)
+    utc_end_date = FormatDateTime.datestring_to_utc_datetime(params["end_date"], context)
 
     params
     |> Map.put("start_date", utc_start_date)

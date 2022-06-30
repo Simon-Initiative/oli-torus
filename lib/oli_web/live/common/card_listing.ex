@@ -3,12 +3,11 @@ defmodule OliWeb.Common.CardListing do
 
   import OliWeb.Common.SourceImage
 
-  alias OliWeb.Common.FormatDateTime
+  alias OliWeb.Common.Utils
   alias OliWeb.Delivery.SelectSource.TableModel
 
   prop model, :struct, required: true
   prop selected, :event, required: true
-  prop context, :any
 
   def render(assigns) do
     ~F"""
@@ -24,7 +23,7 @@ defmodule OliWeb.Common.CardListing do
               </div>
               <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-0">
                 <div class="badge badge-success mr-5">{TableModel.render_payment_column(assigns, item, nil)}</div>
-                <div class="small-date text-muted">{render_date(item, @context)}</div>
+                <div class="small-date text-muted">{render_date(item, Map.merge(assigns, @model.data))}</div>
               </div>
             </div>
           </a>
@@ -46,8 +45,9 @@ defmodule OliWeb.Common.CardListing do
       else:  item.project.description
   end
 
-  defp render_date(item, context),
-    do: FormatDateTime.date(Map.get(item, :inserted_at), context)
+  defp render_date(item, assigns) do
+    Utils.render_date(item, :inserted_at, Map.get(assigns, :context))
+  end
 
   defp action_id(item) do
     if TableModel.is_product?(item),

@@ -23,6 +23,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
   alias Oli.Resources.PageContent
+  alias OliWeb.Common.SessionContext
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -346,6 +347,8 @@ defmodule OliWeb.PageDeliveryController do
          _,
          _
        ) do
+    session_context = SessionContext.init(conn)
+
     section = conn.assigns.section
 
     # Only consider graded attempts
@@ -393,6 +396,7 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
 
     render(conn, "prologue.html", %{
+      session_context: session_context,
       summary: summary,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
@@ -512,6 +516,7 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states, in addition to
   # handling review mode
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
+    session_context = SessionContext.init(conn)
     section = conn.assigns.section
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
@@ -562,6 +567,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        session_context: session_context,
         context: context,
         page: context.page,
         review_mode: context.review_mode,

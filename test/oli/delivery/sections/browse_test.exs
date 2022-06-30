@@ -46,12 +46,14 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       results = browse(0, :requires_payment, :asc, @default_opts)
       assert length(results) == 3
       assert hd(results).total_count == 30
-      refute hd(results).title == "aA"
+      refute hd(results).requires_payment
+      assert Enum.at(results, 1).amount == Money.new(:USD, 1)
 
       results = browse(0, :requires_payment, :desc, @default_opts)
       assert length(results) == 3
       assert hd(results).total_count == 30
-      assert hd(results).title == "aA"
+      assert hd(results).requires_payment
+      assert hd(results).amount == Money.new(:USD, "100.00")
 
       results = browse(0, :base, :asc, @default_opts)
       assert length(results) == 3
@@ -83,7 +85,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert hd(results).total_count == 30
       assert hd(results).enrollments_count == 0
 
-      results = browse(0, :instructor, :asc, @default_opts)
+      results = browse(0, :instructor, :desc, @default_opts)
       assert length(results) == 3
       assert hd(results).total_count == 30
       assert hd(results).instructor_name == "Instructor"
@@ -120,6 +122,11 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "instructor"}))
       assert length(results) == 1
       assert hd(results).total_count == 1
+
+      # do not exclude stop words
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "a"}))
+      assert length(results) == 3
+      assert hd(results).total_count == 30
     end
 
     test "filtering", %{second: second, sections: sections} do
@@ -196,7 +203,13 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       start_date: yesterday(),
       end_date: tomorrow(),
       open_and_free: true,
+      requires_payment: false,
       amount: Money.new(:USD, 10000000)
+    })
+
+    # There is only one section that differs in the amount
+    Sections.update_section(Enum.at(sections, 1), %{
+      amount: Money.new(:USD, 1)
     })
 
     # Enroll an instructor to first section

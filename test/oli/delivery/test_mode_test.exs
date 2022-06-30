@@ -6,12 +6,20 @@ defmodule Oli.Delivery.TestModeTest do
   alias Oli.Delivery.Evaluation.Actions.FeedbackAction
   alias Oli.Delivery.Evaluation.Actions.SubmissionAction
 
+  defp as_revision(id, model) do
+    %Oli.Resources.Revision{
+      id: id,
+      resource_id: id,
+      content: model
+    }
+  end
+
   describe "test mode evaluation and transformation" do
     setup do
       # all we need is the definition of an activity model
       %{
         content: %{
-          "stem" => "1",
+          "stem" => "",
           "choices" => [
             %{id: "1", content: []},
             %{id: "2", content: []},
@@ -102,7 +110,8 @@ defmodule Oli.Delivery.TestModeTest do
 
     test "performing a transformation", %{content: content} do
       assert {:ok, %{"stem" => _, "authoring" => _, "choices" => _}} =
-               ActivityLifecycle.perform_test_transformation(content)
+               as_revision(1, content)
+               |> ActivityLifecycle.perform_test_transformation()
     end
 
     test "performing evaluations where one is a non-matching input", %{content: content} do

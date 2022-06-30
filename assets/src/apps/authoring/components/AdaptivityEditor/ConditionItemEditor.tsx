@@ -121,7 +121,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
           value={fact}
           onChange={(e) => setFact(e.target.value)}
           onBlur={(e) => handleFactChange(e.target.value)}
-          title={fact}
+          title={fact.toString()}
           tabIndex={0}
         />
       </div>
@@ -151,7 +151,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         placeholder="Operator"
         defaultValue={operator}
         onChange={(e) => handleOperatorChange(e)}
-        title={operator}
+        title={operator.toString()}
         tabIndex={0}
       >
         {getFilteredConditionOperatorOptions().map(
@@ -172,7 +172,7 @@ const ConditionItemEditor: React.FC<ConditionItemEditorProps> = (props) => {
         id={`value-${parentIndex}`}
         defaultValue={value}
         onBlur={(e) => handleValueChange(e)}
-        title={value}
+        title={value.toString()}
         placeholder="Value"
         tabIndex={0}
       />

@@ -38,6 +38,9 @@ defmodule Oli.Rendering.Content do
   @callback formula(%Context{}, next, %{}) :: [any()]
   @callback formula_inline(%Context{}, next, %{}) :: [any()]
 
+  @callback callout(%Context{}, next, %{}) :: [any()]
+  @callback callout_inline(%Context{}, next, %{}) :: [any()]
+
   @callback math(%Context{}, next, %{}) :: [any()]
   @callback math_line(%Context{}, next, %{}) :: [any()]
   @callback code(%Context{}, next, %{}) :: [any()]
@@ -221,6 +224,12 @@ defmodule Oli.Rendering.Content do
 
       "popup" ->
         writer.popup(context, next, element)
+
+      "callout" ->
+        writer.callout(context, next, element)
+
+      "callout_inline" ->
+        writer.callout_inline(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

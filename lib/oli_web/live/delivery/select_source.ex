@@ -107,11 +107,10 @@ defmodule OliWeb.Delivery.SelectSource do
       retrieve_all_sources(live_action, %{user: user, lti_params: lti_params})
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
-    {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources)
+    {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources, context)
 
     {:ok,
       assign(socket,
-        context: context,
         breadcrumbs: breadcrumbs(live_action),
         delivery_breadcrumb: true,
         total_count: length(sources),
@@ -158,7 +157,7 @@ defmodule OliWeb.Delivery.SelectSource do
           page_change="page_change"
           show_bottom_paging={false}
           cards_view={is_cards_view?(@live_action, @view_type)}
-          context={@context}/>
+        />
 
         {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
           <div class="row mb-5">
