@@ -45,7 +45,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js" integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
     <script>
       window.cite = require('citation-js')

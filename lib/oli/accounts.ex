@@ -10,7 +10,8 @@ defmodule Oli.Accounts do
     SystemRole,
     UserBrowseOptions,
     AuthorBrowseOptions,
-    AuthorPreferences
+    AuthorPreferences,
+    UserPreferences
   }
 
   alias Oli.Groups
@@ -500,14 +501,43 @@ defmodule Oli.Accounts do
   def get_author_preference(%Author{preferences: preferences}, key, default) do
     preferences
     |> value_or(%AuthorPreferences{})
-    |> Map.get(key, default)
-    |> value_or(default)
+    |> get_preference(key, default)
   end
 
   def get_author_preference(author_id, key, default) when is_integer(author_id) do
-    author = get_author!(author_id)
+    author_id
+    |> get_author!()
+    |> get_author_preference(key, default)
+  end
 
-    get_author_preference(author, key, default)
+  @doc """
+  Returns a user preference using the key provided. If the preference isn't set or
+  the user preferences have not been created yet, the default value will be returned.
+
+  Accepts and User struct or user id. If an id is given, the latest user record
+  will be queried from the database. Otherwise, the preferences in the User struct
+  is used.
+
+  See UserPreferences for available key options
+  """
+  def get_user_preference(user, key, default \\ nil)
+
+  def get_user_preference(%User{preferences: preferences}, key, default) do
+    preferences
+    |> value_or(%UserPreferences{})
+    |> get_preference(key, default)
+  end
+
+  def get_user_preference(user_id, key, default) when is_integer(user_id) do
+    user_id
+    |> get_user!()
+    |> get_user_preference(key, default)
+  end
+
+  defp get_preference(preferences, key, default) do
+    preferences
+    |> Map.get(key, default)
+    |> value_or(default)
   end
 
   @doc """
@@ -515,19 +545,41 @@ defmodule Oli.Accounts do
 
   See AuthorPreferences for available key options
   """
-  def set_author_preference(%Author{id: author_id}, key, value),
-    do: set_author_preference(author_id, key, value)
+  def set_author_preference(author_id, key, value) when is_integer(author_id) do
+    author_id
+    |> get_author!()
+    |> set_author_preference(key, value)
+  end
 
-  def set_author_preference(author_id, key, value) do
-    author = get_author!(author_id)
-
+  def set_author_preference(%Author{preferences: preferences} = author, key, value) do
     updated_preferences =
-      author.preferences
+      preferences
       |> value_or(%AuthorPreferences{})
       |> Map.put(key, value)
       |> Map.from_struct()
 
     update_author(author, %{preferences: updated_preferences})
+  end
+
+  @doc """
+  Set's an user preference to the provided value at a given key
+
+  See UserPreferences for available key options
+  """
+  def set_user_preference(user_id, key, value) when is_integer(user_id) do
+    user_id
+    |> get_user!()
+    |> set_user_preference(key, value)
+  end
+
+  def set_user_preference(%User{preferences: preferences} = user, key, value) do
+    updated_preferences =
+      preferences
+      |> value_or(%UserPreferences{})
+      |> Map.put(key, value)
+      |> Map.from_struct()
+
+    update_user(user, %{preferences: updated_preferences})
   end
 
   def can_access?(author, project) do
