@@ -9,7 +9,7 @@ defmodule OliWeb.Common.SelectTimezone do
 
   def render(assigns) do
     context = SessionContext.init(assigns.conn)
-    browser_timezone = Plug.Conn.get_session(assigns.conn, "local_tz")
+    browser_timezone = Plug.Conn.get_session(assigns.conn, "browser_timezone")
 
     timezones =
       Enum.map(Predefined.timezones(), fn

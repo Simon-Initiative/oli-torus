@@ -36,7 +36,7 @@ defmodule OliWeb.Common.SessionContext do
 
   def init(%Plug.Conn{assigns: assigns} = conn) do
     browser_timezone =
-      Plug.Conn.get_session(conn, "local_tz") || FormatDateTime.default_timezone()
+      Plug.Conn.get_session(conn, "browser_timezone") || FormatDateTime.default_timezone()
 
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
@@ -49,7 +49,7 @@ defmodule OliWeb.Common.SessionContext do
   end
 
   def init(%{} = session) do
-    browser_timezone = Map.get(session, "local_tz", FormatDateTime.default_timezone())
+    browser_timezone = Map.get(session, "browser_timezone", FormatDateTime.default_timezone())
 
     author =
       case Map.get(session, "current_author_id") do

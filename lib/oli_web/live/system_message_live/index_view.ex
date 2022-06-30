@@ -30,24 +30,17 @@ defmodule OliWeb.SystemMessageLive.IndexView do
 
   def mount(_, session, socket) do
     messages = Notifications.list_system_messages()
-    is_local_timezone_set = Map.has_key?(session, "local_tz")
 
     {:ok,
      assign(socket,
        context: SessionContext.init(session),
        messages: messages,
-       is_local_timezone_set: is_local_timezone_set,
        breadcrumbs: breadcrumb()
      )}
   end
 
   def render(assigns) do
     ~F"""
-      {#unless @is_local_timezone_set}
-        <div class="alert alert-info" role="alert">
-          The local timezone is not set in your browser. UTC is used by default.
-        </div>
-      {/unless}
       {#for message <- @messages}
         <EditMessage save="save" system_message={current_message(@unsaved_system_message, message)} {=@context}/>
       {/for}
