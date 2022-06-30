@@ -22,11 +22,11 @@ export interface VariableEvaluationResult {
   evaluations: VariableEvaluation[];
 }
 
-export function evaluateVariables(scripts: VariableScript[], count = 1) {
+export function evaluateVariables(data: VariableScript[], count = 1) {
   const params = {
     method: 'POST',
-    body: JSON.stringify({ scripts, count }),
-    url: `/api/v1/variables`,
+    body: JSON.stringify({ data, count }),
+    url: `/variables`,
   };
 
   return makeRequest<VariableEvaluationResult>(params);

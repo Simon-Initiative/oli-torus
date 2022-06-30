@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { VariableEvaluation } from 'data/persistence/variables';
 import './ResultsPanel.scss';
-import { WrappedMonaco } from '../WrappedMonaco';
 
 interface ResultsPanelProps {
   evalResults: VariableEvaluation[];
@@ -14,16 +13,14 @@ export class ResultsPanel extends React.Component<ResultsPanelProps, Record<stri
   }
 
   render() {
-    const { evalResults } = this.props;
-
-    const resultLines = evalResults
-      .map((r) => r.variable + ': ' + JSON.stringify(r.result))
-      .join('\n');
+    const results = this.props.evalResults.map((r) => (
+      <div key={r.variable}>{r.variable + ': ' + JSON.stringify(r.result)}</div>
+    ));
 
     return (
       <div className="resultsPanel">
         <span className="panelTitle">Results</span>
-        <WrappedMonaco editMode={false} model={resultLines} onEdit={() => true} />
+        {results}
       </div>
     );
   }

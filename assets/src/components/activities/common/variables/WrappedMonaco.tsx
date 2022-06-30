@@ -11,6 +11,7 @@ type WrappedMonacoProps = {
   model: string;
   onEdit: (model: string) => void;
   editMode: boolean;
+  activetab: boolean;
 };
 
 export const WrappedMonaco = (props: PropsWithChildren<WrappedMonacoProps>) => {
@@ -52,6 +53,13 @@ export const WrappedMonaco = (props: PropsWithChildren<WrappedMonacoProps>) => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  useEffect(() => {
+    updateSize(editorRef.current?.editor);
+  }, [props.activetab]);
+
+  console.log('wrapped');
+  console.log(model);
 
   return (
     <div>

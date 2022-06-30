@@ -9,6 +9,7 @@ interface SourcePanelProps {
   onExpressionEdit: (expression: string) => void;
   evaluate: () => void;
   onSwitchToOldVariableEditor: () => void;
+  activetab: boolean;
 }
 
 interface SourcePanelState {}
@@ -16,12 +17,16 @@ interface SourcePanelState {}
 // AceEditor is inside here!
 export class SourcePanel extends React.Component<SourcePanelProps, SourcePanelState> {
   render() {
-    const { editMode, script, onExpressionEdit } = this.props;
-    console.log(script);
+    const { editMode, script, onExpressionEdit, activetab } = this.props;
     return (
       <div className="sourcePanel">
         <span className="panelTitle">JavaScript</span>
-        <WrappedMonaco editMode={editMode} model={script} onEdit={onExpressionEdit} />
+        <WrappedMonaco
+          editMode={editMode}
+          model={script}
+          onEdit={onExpressionEdit}
+          activetab={activetab}
+        />
       </div>
     );
   }

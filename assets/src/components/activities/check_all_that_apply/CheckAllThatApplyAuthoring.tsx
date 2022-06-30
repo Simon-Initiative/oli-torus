@@ -22,13 +22,15 @@ import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { CATAActions } from './actions';
 
 const store = configureStore();
 
 const CheckAllThatApply = () => {
-  const { dispatch, model } = useAuthoringElementContext<CATASchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<CATASchema>();
   return (
     <TabbedNavigation.Tabs>
       <TabbedNavigation.Tab label="Question">
@@ -76,7 +78,13 @@ const CheckAllThatApply = () => {
       <TabbedNavigation.Tab label="Hints">
         <HintsAuthoring partId={DEFAULT_PART_ID} />
       </TabbedNavigation.Tab>
-
+      <TabbedNavigation.Tab label="Dynamic Variables">
+        <VariableEditorOrNot
+          editMode={editMode}
+          model={model}
+          onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+        />
+      </TabbedNavigation.Tab>
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
     </TabbedNavigation.Tabs>
   );

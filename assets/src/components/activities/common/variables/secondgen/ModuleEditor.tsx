@@ -11,6 +11,7 @@ export interface ModuleEditorProps {
   editMode: boolean;
   variables: Variable[];
   onEdit: (vars: Variable[]) => void;
+  activetab: boolean;
 }
 
 export interface ModuleEditorState {
@@ -135,7 +136,7 @@ export class ModuleEditor extends React.Component<ModuleEditorProps, ModuleEdito
         {variables && (
           <div className="splitPane">
             <SourcePanel
-              ref={(ref) => (this.source = ref)}
+              ref={(ref: any) => (this.source = ref)}
               {...this.props}
               script={variables[0].expression}
               onExpressionEdit={this.onExpressionEdit}

@@ -8,6 +8,7 @@ export interface VariablesEditorProps {
   editMode: boolean;
   variables: Variable[];
   onEdit: (vars: Variable[]) => void;
+  activetab: boolean;
 }
 
 export interface VariablesEditorState {
@@ -27,10 +28,6 @@ export class VariablesEditor extends React.Component<VariablesEditorProps, Varia
     this.state = {
       results: Immutable.Map<string, VariableEvaluation>(),
     };
-  }
-
-  shouldComponentUpdate(nextProps: VariablesEditorProps, nextState: VariablesEditorState) {
-    return this.state.results !== nextState.results;
   }
 
   onExpressionEdit(variable: Variable, expression: string) {
@@ -60,13 +57,14 @@ export class VariablesEditor extends React.Component<VariablesEditorProps, Varia
     ) : null;
 
     return (
-      <tr>
+      <tr key={variable.id}>
         <td className={'variableLabel'}>{variable.variable}</td>
         <td>
           <WrappedMonaco
             editMode={editMode}
             model={variable.expression}
             onEdit={this.onExpressionEdit.bind(this, variable)}
+            activetab={this.props.activetab}
           />
         </td>
         <td className={'variableResult'}>{evaluation}</td>

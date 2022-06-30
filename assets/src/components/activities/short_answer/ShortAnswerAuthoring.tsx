@@ -1,8 +1,6 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
-import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -124,7 +122,6 @@ const ShortAnswer = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
-        <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>
   );

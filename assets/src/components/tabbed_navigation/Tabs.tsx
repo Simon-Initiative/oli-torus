@@ -12,7 +12,11 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, acti
     role="tabpanel"
     aria-labelledby={'tab-' + index}
   >
-    {children}
+    {React.Children.map(
+      children,
+      (child, _index) =>
+        React.isValidElement(child) && React.cloneElement(child, { activetab: activeTab }),
+    )}
   </div>
 );
 

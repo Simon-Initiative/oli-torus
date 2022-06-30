@@ -8,6 +8,7 @@ export interface VariablesEditorFacadeProps {
   editMode: boolean;
   variables: Variable[];
   onEdit: (vars: Variable[]) => void;
+  activetab: boolean;
 }
 
 /**
