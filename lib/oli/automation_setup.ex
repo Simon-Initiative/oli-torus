@@ -56,8 +56,6 @@ defmodule Oli.AutomationSetup do
          project: project,
          section: section
        }} ->
-        Oli.Publishing.refresh_part_mapping()
-
         {:ok, author, author_password, educator, educator_password, learner, learner_password,
          project, section}
 
@@ -165,7 +163,11 @@ defmodule Oli.AutomationSetup do
   end
 
   defp publish_project(project) do
-    Oli.Publishing.publish_project(project, "Automated test setup", true)
+    Oli.Publishing.publish_project(
+      project,
+      "Automated test setup",
+      Oli.Publishing.PartMappingRefreshSync
+    )
   end
 
   defp create_project(nil, _) do

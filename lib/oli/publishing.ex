@@ -525,28 +525,22 @@ defmodule Oli.Publishing do
   @doc """
   Updates a publication.
 
-  update_publication(publication, attrs, skip_part_view_refresh)
-    - skip_part_view_refresh - if true, will not refresh the part materialized view after publishing
-
   ## Examples
       iex> update_publication(publication, %{field: new_value})
       {:ok, %Publication{}}
       iex> update_publication(publication, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_publication(publication, attrs, skip_part_view_refresh \\ false)
 
-  def update_publication(%Publication{} = publication, attrs, false) do
+  def update_publication(
+        %Publication{} = publication,
+        attrs,
+        adapter \\ refresh_adapter()
+      ) do
     publication
     |> Publication.changeset(attrs)
     |> Repo.update()
-    |> refresh_adapter().maybe_refresh_part_mapping()
-  end
-
-  def update_publication(%Publication{} = publication, attrs, true) do
-    publication
-    |> Publication.changeset(attrs)
-    |> Repo.update()
+    |> adapter.maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -799,16 +793,14 @@ defmodule Oli.Publishing do
   Publishes the active publication and creates a new working unpublished publication for a project.
   Returns the published publication
 
-  skip_part_view_refresh - if true, will not refresh the part materialized view after publishing
-
   ## Examples
 
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t(), boolean()) ::
+  @spec publish_project(%Project{}, String.t(), PartMappingRefreshAdapter | nil) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description, skip_part_view_refresh \\ false) do
+  def publish_project(project, description, refresh_adapter \\ refresh_adapter()) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
@@ -846,7 +838,7 @@ defmodule Oli.Publishing do
                  major: major,
                  minor: minor
                },
-               skip_part_view_refresh
+               refresh_adapter
              ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
