@@ -311,7 +311,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_activity_references(content, activity_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _meta ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
           case retrieve(activity_map, original) do
@@ -336,7 +336,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_bank_selections(content, tag_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _meta ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
       case e do
         %{"type" => "selection", "logic" => logic} = ref ->
           case logic do
@@ -380,7 +380,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_bib_refs(%{"type" => "content", "children" => _children} = content, bib_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn i, {status, bibrefs}, _meta ->
+    PageContent.map_reduce(content, {:ok, []}, fn i, {status, bibrefs}, _tr_context ->
       case i do
         %{"type" => "cite", "bibref" => bibref} = ref ->
           bib_id = Map.get(Map.get(bib_map, bibref, %{resource_id: bibref}), :resource_id)
@@ -404,7 +404,7 @@ defmodule Oli.Interop.Ingest do
 
     bcontent = Map.put(content, "bibrefs", brefs)
 
-    PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _meta ->
+    PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _tr_context ->
       case e do
         %{"type" => "content"} = ref ->
           rewire_bib_refs(ref, bib_map)

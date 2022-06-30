@@ -64,7 +64,7 @@ defmodule Oli.Resources.PageContentTest do
   describe "reduce support" do
     test "it reduces all nodes, except top level 'model'" do
       assert {_, 8} =
-               PageContent.map_reduce(@advanced_content, 0, fn item, acc, _meta ->
+               PageContent.map_reduce(@advanced_content, 0, fn item, acc, _tr_context ->
                  {item, acc + 1}
                end)
     end
@@ -73,7 +73,7 @@ defmodule Oli.Resources.PageContentTest do
   describe "map support via map_reduce" do
     test "it numbers all the nodes" do
       {item, _acc} =
-        PageContent.map_reduce(@advanced_content, 0, fn item, acc, _meta ->
+        PageContent.map_reduce(@advanced_content, 0, fn item, acc, _tr_context ->
           {Map.put(item, "id", acc + 1), acc + 1}
         end)
 
