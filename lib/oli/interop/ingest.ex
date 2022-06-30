@@ -223,7 +223,15 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Process each resource file of type "Page" to create pages
-  defp create_pages(project, resource_map, activity_map, objective_map, tag_map, bib_map, as_author) do
+  defp create_pages(
+         project,
+         resource_map,
+         activity_map,
+         objective_map,
+         tag_map,
+         bib_map,
+         as_author
+       ) do
     {changes, pages} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
@@ -232,7 +240,15 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
-             case create_page(project, page, activity_map, objective_map, tag_map, bib_map, as_author) do
+             case create_page(
+                    project,
+                    page,
+                    activity_map,
+                    objective_map,
+                    tag_map,
+                    bib_map,
+                    as_author
+                  ) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -363,12 +379,13 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp rewire_bib_refs(%{"type" => "content", "children" => children} = content, bib_map) do
-    PageContent.map_reduce(children, "children", content, {:ok, []}, fn i, {status, bibrefs} ->
+  defp rewire_bib_refs(%{"type" => "content", "children" => _children} = content, bib_map) do
+    PageContent.map_reduce(content, {:ok, []}, fn i, {status, bibrefs}, _meta ->
       case i do
         %{"type" => "cite", "bibref" => bibref} = ref ->
           bib_id = Map.get(Map.get(bib_map, bibref, %{resource_id: bibref}), :resource_id)
           {Map.put(ref, "bibref", bib_id), {status, bibrefs ++ [bib_id]}}
+
         other ->
           {other, {status, bibrefs}}
       end
@@ -376,18 +393,22 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_citation_references(content, bib_map) do
-    brefs = Enum.reduce(Map.get(content, "bibrefs", []), [], fn k, acc ->
-      if Map.has_key?(bib_map, k) do
-        acc ++ [Map.get(Map.get(bib_map, k, %{id: k}), :resource_id)]
-      else
-        acc
-      end
-    end)
+    brefs =
+      Enum.reduce(Map.get(content, "bibrefs", []), [], fn k, acc ->
+        if Map.has_key?(bib_map, k) do
+          acc ++ [Map.get(Map.get(bib_map, k, %{id: k}), :resource_id)]
+        else
+          acc
+        end
+      end)
+
     bcontent = Map.put(content, "bibrefs", brefs)
-    PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs} ->
+
+    PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _meta ->
       case e do
         %{"type" => "content"} = ref ->
           rewire_bib_refs(ref, bib_map)
+
         other ->
           {other, {status, bibrefs}}
       end
@@ -395,6 +416,7 @@ defmodule Oli.Interop.Ingest do
     |> case do
       {mapped, {:ok, _bibrefs}} ->
         {:ok, mapped}
+
       {_mapped, {:error, _bibrefs}} ->
         {:error, {:rewire_citation_references, "error"}}
     end
@@ -406,8 +428,7 @@ defmodule Oli.Interop.Ingest do
          :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map),
-         {:ok, content} <- rewire_citation_references(content, bib_map)
-        do
+         {:ok, content} <- rewire_citation_references(content, bib_map) do
       graded = Map.get(page, "isGraded", false)
 
       %{
