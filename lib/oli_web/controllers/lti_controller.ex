@@ -427,6 +427,7 @@ defmodule OliWeb.LtiController do
 
                 # sign current user in and redirect to home page
                 conn
+                |> OliWeb.SessionController.perform_signout()
                 |> create_pow_user(:user, user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end

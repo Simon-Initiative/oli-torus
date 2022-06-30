@@ -9,13 +9,18 @@ defmodule OliWeb.SessionController do
 
   def signout(conn, _) do
     conn
+    |> perform_signout()
+    |> redirect(to: Routes.static_page_path(conn, :index))
+  end
+
+  def perform_signout(conn) do
+    conn
     |> delete_pow_user(:user)
     |> delete_session_data("user")
     |> delete_pow_user(:author)
     |> delete_session_data("author")
     |> PowPersistentSession.Plug.Cookie.delete(OliWeb.Pow.PowHelpers.get_pow_config(:user))
     |> PowPersistentSession.Plug.Cookie.delete(OliWeb.Pow.PowHelpers.get_pow_config(:author))
-    |> redirect(to: Routes.static_page_path(conn, :index))
   end
 
   defp delete_session_data(conn, type) do
