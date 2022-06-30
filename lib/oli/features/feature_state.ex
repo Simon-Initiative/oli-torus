@@ -12,9 +12,11 @@ defmodule Oli.Features.FeatureState do
   def changeset(feature, attrs \\ %{}) do
     feature
     |> cast(attrs, [
+      :id,
       :state
     ])
     |> validate_required([
+      :id,
       :state
     ])
   end

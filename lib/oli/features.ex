@@ -57,7 +57,7 @@ defmodule Oli.Features do
 
       Enum.map(@features, fn %Feature{id: id} ->
         case Repo.get(FeatureState, id) do
-          nil -> create_feature_state(%{state: :disabled})
+          nil -> create_feature_state(%{id: id, state: :disabled})
           e -> e
         end
       end)
