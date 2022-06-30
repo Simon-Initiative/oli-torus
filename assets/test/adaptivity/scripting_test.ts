@@ -1,15 +1,16 @@
-import { CapiVariable, CapiVariableTypes } from 'adaptivity/capi';
+import { CapiVariableTypes } from 'adaptivity/capi';
 import { janus_std } from 'adaptivity/janus-scripts/builtin_functions';
 import {
   applyState,
   ApplyStateOperation,
+  checkExpressionsWithWrongBrackets,
   evalScript,
+  extractUniqueVariablesFromText,
   getAssignScript,
-  getValue,
   getExpressionStringForValue,
+  getValue,
   looksLikeJson,
   templatizeText,
-  checkExpressionsWithWrongBrackets,
 } from 'adaptivity/scripting';
 import { Environment } from 'janus-script';
 
@@ -760,6 +761,20 @@ describe('Scripting Interface', () => {
       expect(script).toBe(
         '{{q:1468628289415:435|stage.BMR.value}+({q:1468628289415:435|stage.BMR.value}*{q:1468628289656:443|stage.activityFactor.value})}*0.10',
       );
+    });
+  });
+
+  describe('extractUniqueVariablesFromText', () => {
+    it('should handle nested expressions', () => {
+      const text =
+        '(max({q:1499727122739:724|stage.massofbasket1first.Current Display Value},{q:1523384627938:342|stage.massofbasket1second.Current Display Value},{q:1499727122898:728|stage.Basket1third.Current Display Value},{q:1519241677429:566|stage.Basket1fourth.Current Display Value}))-(min({q:1499727122739:724|stage.massofbasket1first.Current Display Value},{q:1523384627938:342|stage.massofbasket1second.Current Display Value},{q:1499727122898:728|stage.Basket1third.Current Display Value},{q:1519241677429:566|stage.Basket1fourth.Current Display Value})),1';
+      const expressions = extractUniqueVariablesFromText(text);
+      expect(expressions).toEqual([
+        'q:1499727122739:724|stage.massofbasket1first.Current Display Value',
+        'q:1523384627938:342|stage.massofbasket1second.Current Display Value',
+        'q:1499727122898:728|stage.Basket1third.Current Display Value',
+        'q:1519241677429:566|stage.Basket1fourth.Current Display Value',
+      ]);
     });
   });
 });

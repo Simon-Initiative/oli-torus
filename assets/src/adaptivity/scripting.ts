@@ -491,6 +491,76 @@ export const extractAllExpressionsFromText = (text: string): string[] => {
   return expressions;
 };
 
+export const variableContainsValidPrefix = (variable: string): boolean => {
+  return variable.search(/app.|variables.|stage.|session./) !== -1;
+};
+
+export const containsExactlyOneVariable = (text: string): boolean => {
+  const m = text.match(/app.|variables.|stage.|session./g);
+  return !!(m && m.length === 1);
+};
+
+export const extractUniqueVariablesFromText = (text: string): string[] => {
+  // walk the string taking the opening and closing curly braces into account
+  const variables = [];
+  let counter = 0;
+  const openIndexes = [];
+  while (counter < text.length) {
+    if (text[counter] === '{') {
+      openIndexes.push(counter);
+    } else if (text[counter] === '}') {
+      const openIndex = openIndexes.pop();
+      if (openIndex !== undefined) {
+        variables.push(text.substring(openIndex + 1, counter));
+      }
+    }
+    counter++;
+  }
+
+  if (openIndexes.length > 0) {
+    throw new Error(`Unmatched curly braces in text: ${text}`);
+  }
+
+  if (variables.some((v) => v.indexOf('{') !== -1 || v.indexOf('}') !== -1)) {
+    console.warn('Found variables with embedded curly braces in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // warn if any exist with an invalid prefix
+  if (variables.some((v) => !variableContainsValidPrefix(v))) {
+    console.warn('Found variables with invalid prefix in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // also warn if more than one variable is somehow parsed
+  if (variables.some((v) => !containsExactlyOneVariable(v))) {
+    console.warn('Found variables with multiple prefixes in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // make unique
+  return Array.from(
+    new Set(
+      variables.filter(
+        (v) =>
+          v.length > 0 &&
+          v.indexOf('{') === -1 &&
+          v.indexOf('}') === -1 &&
+          containsExactlyOneVariable(v),
+      ),
+    ),
+  );
+};
+
 export const templatizeText = (
   text: string,
   locals: any,

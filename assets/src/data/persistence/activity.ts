@@ -7,6 +7,7 @@ import {
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
+import { clone } from 'utils/common';
 
 export type ActivityUpdate = {
   title: string;
@@ -176,15 +177,22 @@ export function bulkEdit(
   resource: ResourceId,
   updates: BulkActivityUpdate[],
 ) {
-  // Index "citation references" in the "content and authoring" and elevate them as top-level list
-  updates.forEach((u) => {
-    const citationRefs: string[] = [];
-    indexBibrefs(u.content, citationRefs);
-    if (u.authoring) {
-      indexBibrefs(u.authoring, citationRefs);
-    }
-    u.content.bibrefs = citationRefs;
-  });
+  try {
+    // Index "citation references" in the "content and authoring" and elevate them as top-level list
+    updates.forEach((u) => {
+      const citationRefs: string[] = [];
+      indexBibrefs(u.content, citationRefs);
+      if (u.authoring) {
+        indexBibrefs(u.authoring, citationRefs);
+      }
+      // make content mutable
+      const contentClone = clone(u.content);
+      contentClone.bibrefs = citationRefs;
+      u.content = contentClone;
+    });
+  } catch (e) {
+    console.error('bulkEdit: ', e);
+  }
 
   const params = {
     method: 'PUT',

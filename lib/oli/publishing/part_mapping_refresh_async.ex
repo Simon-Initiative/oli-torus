@@ -8,7 +8,10 @@ defmodule Oli.Publishing.PartMappingRefreshAsync do
   @impl PartMappingRefreshAdapter
   @spec maybe_refresh_part_mapping(ecto_publication_operation) :: ecto_publication_operation
   def maybe_refresh_part_mapping({:ok, _publication} = operation_result) do
-    Task.async(fn -> Oli.Publishing.refresh_part_mapping() end)
+    Task.start(fn ->
+      Process.sleep(5_000)
+      Oli.Publishing.refresh_part_mapping()
+    end)
     operation_result
   end
 
