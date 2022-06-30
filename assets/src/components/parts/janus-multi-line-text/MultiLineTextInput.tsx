@@ -187,6 +187,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
               if (sText !== undefined) {
                 setText(sText.toString());
                 saveTextLength(sText.toString());
+                saveInputText(sText.toString());
               }
 
               const sEnabled = snapshot[`stage.${id}.enabled`];
