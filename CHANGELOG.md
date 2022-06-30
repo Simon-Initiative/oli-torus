@@ -17,7 +17,7 @@
 
 ### Enhancements
 
-- Provide more context in the brower tab
+- Provide more context in the browser tab
 - Improve the learning objective selection dropdown
 - Improve authoring improvement insights UI
 - Improve content and activity insertion menu
