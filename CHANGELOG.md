@@ -6,9 +6,7 @@
 
 ### Enhancements
 
-- Dynamic question infrastructure
-
-## 0.19.5 (2022-06-21)
+## 0.20.0 (2022-06-30)
 
 ### Bug Fixes
 
@@ -23,6 +21,7 @@
 - Improve the learning objective selection dropdown
 - Improve authoring improvement insights UI
 - Improve content and activity insertion menu
+- Dynamic question infrastructure
 
 ## 0.19.4 (2022-06-09)
 
