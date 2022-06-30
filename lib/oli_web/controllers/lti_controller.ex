@@ -286,7 +286,8 @@ defmodule OliWeb.LtiController do
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" => "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, context)}"
+                  "text" =>
+                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, context)}"
                 }
               ]
             },
@@ -423,18 +424,6 @@ defmodule OliWeb.LtiController do
                   %{"title" => context_title} = context
                   {:ok, _section} = update_section_details(context_title, section, lti_params)
                 end
-
-                # if account is linked to an author, sign them in
-                conn =
-                  if user.author_id != nil do
-                    author = Accounts.get_author!(user.author_id)
-
-                    # sign into authoring account using Pow
-                    conn
-                    |> create_pow_user(:author, author)
-                  else
-                    conn
-                  end
 
                 # sign current user in and redirect to home page
                 conn
