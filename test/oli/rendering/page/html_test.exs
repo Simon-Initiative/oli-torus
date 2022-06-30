@@ -3,6 +3,7 @@ defmodule Oli.Content.Page.HtmlTest do
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
+  alias Oli.Rendering.Activity.ActivitySummary
 
   import ExUnit.CaptureLog
 
@@ -17,23 +18,29 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} = read_json_file("./test/oli/rendering/page/example_page.json")
 
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
-          slug: "test",
           state: "{}",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         },
-        2 => %{
+        2 => %ActivitySummary{
           id: 2,
           graded: false,
-          slug: "test",
           state: "{}",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-check-all-that-apply-delivery"
+          delivery_element: "oli-check-all-that-apply-delivery",
+          authoring_element: "oli-check-all-that-apply-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -58,14 +65,17 @@ defmodule Oli.Content.Page.HtmlTest do
       }
 
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
-          slug: "test",
           state: "{}",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -86,15 +96,18 @@ defmodule Oli.Content.Page.HtmlTest do
       {:ok, page_content} =
         read_json_file("./test/oli/rendering/page/example_malformed_page.json")
 
-      activity_map = %{
+      activity_map = %ActivitySummary{
         1 => %{
           id: 1,
           graded: false,
-          slug: "test",
           state: "{}",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 

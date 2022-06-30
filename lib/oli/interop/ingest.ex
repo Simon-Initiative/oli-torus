@@ -274,7 +274,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_activity_references(content, activity_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs} ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _meta ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
           case retrieve(activity_map, original) do
@@ -299,7 +299,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_bank_selections(content, tag_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs} ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _meta ->
       case e do
         %{"type" => "selection", "logic" => logic} = ref ->
           case logic do
