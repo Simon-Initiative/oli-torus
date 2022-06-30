@@ -29,15 +29,13 @@ defmodule OliWeb.PageDeliveryController do
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-    is_admin? = Oli.Accounts.is_admin?(current_author)
 
-    # We only allow access to preview mode if the user is logged in as an author admin, or
-    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # We only allow access to preview mode if the user is logged in as an instructor
+    # enrolled in the course section.  If the user is enrolled as a student,
     # we want to redirect out of this mode to render the page in regular delivery mode.
 
-    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
-      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+    if Sections.is_enrolled?(user.id, section_slug) do
+      if Sections.has_instructor_role?(user, section_slug) do
         case Sections.get_section_by(slug: section_slug)
              |> Oli.Repo.preload([:base_project, :root_section_resource]) do
           nil ->
@@ -193,15 +191,13 @@ defmodule OliWeb.PageDeliveryController do
         }
       ) do
     user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-    is_admin? = Oli.Accounts.is_admin?(current_author)
 
-    # We only allow access to preview mode if the user is logged in as an author admin, or
-    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # We only allow access to preview mode if the user is logged in as an or instructor
+    # enrolled in the course section. If the user is enrolled as a student,
     # we want to redirect out of this mode to render the page in regular delivery mode.
 
-    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
-      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+    if Sections.is_enrolled?(user.id, section_slug) do
+      if Sections.has_instructor_role?(user, section_slug) do
         revision = Resolver.from_revision_slug(section_slug, revision_slug)
         render_preview_mode(conn, section_slug, revision)
       else
