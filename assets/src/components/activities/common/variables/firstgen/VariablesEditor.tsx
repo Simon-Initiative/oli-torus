@@ -1,19 +1,8 @@
 import * as React from 'react';
 import * as Immutable from 'immutable';
 import { VariableEvaluation, evaluateVariables, Variable } from 'data/persistence/variables';
-
-import AceEditor from 'react-ace';
-
-import 'brace/mode/java';
-import 'brace/mode/python';
-import 'brace/mode/html';
-import 'brace/mode/xml';
-import 'brace/mode/actionscript';
-import 'brace/mode/sh';
-import 'brace/mode/c_cpp';
-import 'brace/mode/text';
-
-import 'brace/theme/github';
+import guid from 'utils/guid';
+import { WrappedMonaco } from '../WrappedMonaco';
 
 export interface VariablesEditorProps {
   editMode: boolean;
@@ -24,8 +13,6 @@ export interface VariablesEditorProps {
 export interface VariablesEditorState {
   results: Immutable.Map<string, VariableEvaluation>;
 }
-
-type Variables = Immutable.OrderedMap<string, Variable>;
 
 /**
  * VariablesEditor React Component
@@ -46,58 +33,40 @@ export class VariablesEditor extends React.Component<VariablesEditorProps, Varia
     return this.state.results !== nextState.results;
   }
 
-  onExpressionEdit(variable, expression) {
-    const { onEdit, model } = this.props;
+  onExpressionEdit(variable: Variable, expression: string) {
+    const { onEdit, variables } = this.props;
 
     onEdit(
-      model.set(
-        variable.guid,
-        variable.with({
-          expression,
-        }),
-      ),
-      null,
+      variables.map((v) => {
+        if (v.id === variable.id) {
+          return Object.assign({}, v, { expression });
+        }
+        return v;
+      }),
     );
   }
 
-  renderVariable(variable: contentTypes.Variable) {
-    const { classes, className, editMode } = this.props;
+  renderVariable(variable: Variable) {
+    const { editMode } = this.props;
 
-    const evaluation = this.state.results.has(variable.name) ? (
-      this.state.results.get(variable.name).errored ? (
-        <span className={classNames([classes.error, className])}>Error</span>
+    const evaluation = this.state.results.has(variable.variable) ? (
+      (this.state.results as any).get(variable.variable).errored ? (
+        <span className={'error'}>Error</span>
       ) : (
-        <span className={classNames([classes.evaluated, className])}>
-          {this.state.results.get(variable.name).result}
+        <span className={'evaluated'}>
+          {(this.state.results as any).get(variable.variable).result}
         </span>
       )
     ) : null;
 
     return (
       <tr>
-        <td className={'variableLabel'}>{variable.name}</td>
+        <td className={'variableLabel'}>{variable.variable}</td>
         <td>
-          <AceEditor
-            name={variable.name}
-            width="initial"
-            mode="javascript"
-            theme="github"
-            readOnly={!editMode}
-            minLines={1}
-            maxLines={40}
-            value={variable.expression}
-            onChange={this.onExpressionEdit.bind(this, variable)}
-            setOptions={{
-              enableBasicAutocompletion: false,
-              enableLiveAutocompletion: false,
-              enableSnippets: false,
-              showLineNumbers: false,
-              tabSize: 2,
-              showPrintMargin: false,
-              useWorker: false,
-              showGutter: false,
-              highlightActiveLine: false,
-            }}
+          <WrappedMonaco
+            editMode={editMode}
+            model={variable.expression}
+            onEdit={this.onExpressionEdit.bind(this, variable)}
           />
         </td>
         <td className={'variableResult'}>{evaluation}</td>
@@ -106,7 +75,7 @@ export class VariablesEditor extends React.Component<VariablesEditorProps, Varia
             <button
               disabled={!editMode}
               tabIndex={-1}
-              onClick={this.onRemoveVariable.bind(this, variable.guid)}
+              onClick={this.onRemoveVariable.bind(this, variable.id)}
               type="button"
               className="btn btn-sm"
             >
@@ -119,47 +88,35 @@ export class VariablesEditor extends React.Component<VariablesEditorProps, Varia
   }
 
   onTestExpressions() {
-    const { model } = this.props;
+    const { variables } = this.props;
 
     // Clear the current results and re-evaluate
-    this.setState({ results: Immutable.Map<string, Evaluation>() }, () =>
-      evaluate(model).then((results) => {
+    this.setState({ results: Immutable.Map<string, VariableEvaluation>() }, () =>
+      evaluateVariables(variables).then((results) => {
+        let convertedResults: any[] = [];
+        if (results.result === 'success') {
+          convertedResults = results.evaluations.map((r) => [r.variable, r]);
+        }
+
         this.setState({
-          results: Immutable.Map<string, Evaluation>(results.map((r) => [r.variable, r])),
+          results: Immutable.Map<string, VariableEvaluation>(convertedResults),
         });
       }),
     );
   }
 
   onRemoveVariable(guid: string) {
-    const { onEdit, model } = this.props;
-
-    let position = 0;
-    onEdit(
-      model
-        .delete(guid)
-        .map((variable) => {
-          position = position + 1;
-          return variable.with({ name: 'V' + position });
-        })
-        .toOrderedMap(),
-    );
+    const { onEdit, variables } = this.props;
+    onEdit([...variables.filter((v) => v.id !== guid)]);
   }
 
   onAddVariable() {
-    const { onEdit, model } = this.props;
+    const { onEdit, variables } = this.props;
 
-    const name = 'V' + (model.size + 1);
+    const name = 'V' + (variables.length + 1);
     const expression = 'const x = 1';
 
-    const variable = new contentTypes.Variable().with({
-      name,
-      expression,
-    });
-
-    onEdit();
-
-    onEdit(model.set(variable.guid, variable), null);
+    onEdit([...variables, { id: guid(), variable: name, expression }]);
   }
 
   renderButtonPanel() {

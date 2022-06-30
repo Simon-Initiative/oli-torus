@@ -5,6 +5,12 @@ export type VariableScript = {
   variable: string;
 };
 
+export type Variable = {
+  variable: string;
+  expression: string;
+  id: string;
+};
+
 export type VariableEvaluation = {
   variable: string;
   result: string | number | null;

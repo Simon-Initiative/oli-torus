@@ -1,21 +1,16 @@
 import * as React from 'react';
-import { VariableEvaluation, evaluateVariables } from 'data/persistence/variables';
+import { VariableEvaluation, evaluateVariables, Variable } from 'data/persistence/variables';
 
 import { SourcePanel } from './SourcePanel';
 import { ResultsPanel } from './ResultsPanel';
-import { Maybe } from 'tsmonad';
-
 import './ModuleEditor.scss';
-import 'brace/ext/language_tools';
-import 'brace/snippets/javascript';
-
 const NUMBER_OF_ATTEMPTS = 10;
 
 export interface ModuleEditorProps {
   onSwitchToOldVariableEditor: () => void;
-  script: string;
-  onEdit: (script: string) => void;
   editMode: boolean;
+  variables: Variable[];
+  onEdit: (vars: Variable[]) => void;
 }
 
 export interface ModuleEditorState {
@@ -52,15 +47,15 @@ export class ModuleEditor extends React.Component<ModuleEditorProps, ModuleEdito
     return true;
   }
 
-  onExpressionEdit(script: string) {
-    const { onEdit } = this.props;
-    onEdit(script);
+  onExpressionEdit(expression: string) {
+    const { onEdit, variables } = this.props;
+    onEdit([Object.assign({}, variables[0], { expression })]);
   }
 
   evaluateOnce() {
     // Reset results and evaluate
     this.setState({ results: [] }, () =>
-      evaluateVariables([{ variable: 'module', expression: this.props.script }]).then((results) => {
+      evaluateVariables(this.props.variables).then((results) => {
         if (results.result === 'success') {
           this.setState({ results: results.evaluations });
         }
@@ -69,10 +64,7 @@ export class ModuleEditor extends React.Component<ModuleEditorProps, ModuleEdito
   }
 
   onEvaluate(attempts = NUMBER_OF_ATTEMPTS): Promise<void> {
-    return evaluateVariables(
-      [{ variable: 'module', expression: this.props.script }],
-      attempts,
-    ).then((results) => {
+    return evaluateVariables(this.props.variables, attempts).then((results) => {
       if (results.result === 'success') {
         this.setState({ results: results.evaluations });
       }
@@ -136,16 +128,16 @@ export class ModuleEditor extends React.Component<ModuleEditorProps, ModuleEdito
   }
 
   render(): React.ReactNode {
-    const { onSwitchToOldVariableEditor, script } = this.props;
+    const { onSwitchToOldVariableEditor, variables } = this.props;
 
     return (
       <div>
-        {script && (
+        {variables && (
           <div className="splitPane">
             <SourcePanel
               ref={(ref) => (this.source = ref)}
               {...this.props}
-              script={script}
+              script={variables[0].expression}
               onExpressionEdit={this.onExpressionEdit}
               evaluate={this.onEvaluate}
               onSwitchToOldVariableEditor={onSwitchToOldVariableEditor}
