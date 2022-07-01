@@ -68,7 +68,9 @@ export const OrderingComponent: React.FC = () => {
     dispatch(
       initializeState(
         activityState,
-        initialPartInputs(activityState, { [DEFAULT_PART_ID]: model.choices.map((c) => c.id) }),
+        initialPartInputs(activityState, {
+          [DEFAULT_PART_ID]: model.choices.map((c) => c.id),
+        }),
         model,
       ),
     );
@@ -78,7 +80,7 @@ export const OrderingComponent: React.FC = () => {
     // to be evaluated correctly.
     setTimeout(() => {
       if (activityState.parts[0].response === null) {
-        const selection = model.choices.map((choice) => choice.id);
+        const selection = (uiState.model as OrderingSchema).choices.map((choice) => choice.id);
         const input = studentInputToString(selection);
         onSaveActivity(activityState.attemptGuid, [
           {
@@ -103,7 +105,7 @@ export const OrderingComponent: React.FC = () => {
         <ResponseChoices
           choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
             .valueOr<StudentInput>([])
-            .map((id) => Choices.getOne(model, id))}
+            .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />

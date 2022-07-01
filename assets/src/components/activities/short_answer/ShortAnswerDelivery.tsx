@@ -115,7 +115,7 @@ export const ShortAnswerComponent: React.FC = () => {
         <GradedPointsConnected />
 
         <Input
-          inputType={model.inputType}
+          inputType={(uiState.model as ShortAnswerModelSchema).inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
           input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}

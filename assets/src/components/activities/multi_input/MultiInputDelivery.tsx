@@ -31,18 +31,19 @@ export const MultiInputComponent: React.FC = () => {
   const {
     state: activityState,
     surveyId,
-    model,
     sectionSlug,
     bibParams,
     onSubmitActivity,
     onSaveActivity,
     onResetActivity,
+    model,
   } = useDeliveryElementContext<MultiInputSchema>();
+
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
 
-  const emptyPartInputs = model.inputs.reduce((acc, input) => {
+  const emptyPartInputs = model.inputs.reduce((acc: any, input: any) => {
     acc[input.partId] = [''];
     return acc;
   }, {} as PartInputs);
@@ -73,7 +74,7 @@ export const MultiInputComponent: React.FC = () => {
   }
 
   const toggleHints = (id: string) => {
-    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     setHintsShown((hintsShown) =>
       hintsShown.includes(input.partId)
         ? hintsShown.filter((id) => id !== input.partId)
@@ -82,7 +83,7 @@ export const MultiInputComponent: React.FC = () => {
   };
 
   const inputs = new Map(
-    model.inputs.map((input) => [
+    (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
       {
         input:
@@ -90,7 +91,7 @@ export const MultiInputComponent: React.FC = () => {
             ? {
                 id: input.id,
                 inputType: input.inputType,
-                options: model.choices
+                options: (uiState.model as MultiInputSchema).choices
                   .filter((c) => input.choiceIds.includes(c.id))
                   .map((choice) => ({
                     value: choice.id,
@@ -105,7 +106,7 @@ export const MultiInputComponent: React.FC = () => {
   );
 
   const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     const value = e.target.value;
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
@@ -137,7 +138,11 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
+        <StemDelivery
+          className="form-inline"
+          stem={(uiState.model as MultiInputSchema).stem}
+          context={writerContext}
+        />
         <GradedPointsConnected />
         <ResetButtonConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
