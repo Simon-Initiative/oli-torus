@@ -7,20 +7,11 @@ defmodule OliWeb.SessionController do
 
   @shared_session_data_to_delete [:dismissed_messages]
 
-  def signout(conn, _) do
+  def signout(conn, %{"type" => type}) do
     conn
-    |> perform_signout()
+    |> delete_pow_user(String.to_atom(type))
+    |> delete_session_data(type)
     |> redirect(to: Routes.static_page_path(conn, :index))
-  end
-
-  def perform_signout(conn) do
-    conn
-    |> delete_pow_user(:user)
-    |> delete_session_data("user")
-    |> delete_pow_user(:author)
-    |> delete_session_data("author")
-    |> PowPersistentSession.Plug.Cookie.delete(OliWeb.Pow.PowHelpers.get_pow_config(:user))
-    |> PowPersistentSession.Plug.Cookie.delete(OliWeb.Pow.PowHelpers.get_pow_config(:author))
   end
 
   defp delete_session_data(conn, type) do
