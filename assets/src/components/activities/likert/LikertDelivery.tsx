@@ -67,10 +67,10 @@ const LikertComponent: React.FC = () => {
   return (
     <div className="activity multiple-choice-activity">
       <div className="activity-content">
-        <StemDelivery stem={model.stem} context={writerContext} />
+        <StemDelivery stem={(uiState.model as LikertModelSchema).stem} context={writerContext} />
         <LikertTable
-          items={(uiState.model as any).items}
-          choices={(uiState.model as any).choices}
+          items={(uiState.model as LikertModelSchema).items}
+          choices={(uiState.model as LikertModelSchema).choices}
           isSelected={isSelected}
           onSelect={onSelect}
           disabled={isEvaluated(uiState)}
