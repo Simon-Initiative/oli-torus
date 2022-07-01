@@ -19,7 +19,7 @@ import {
 import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
-import { ActivityModelSchema } from 'oli-torus-sdk';
+import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
