@@ -520,12 +520,18 @@ defmodule OliWeb.Router do
   scope "/api/v1/bibs/project/:project", OliWeb do
     pipe_through([:api, :authoring_protected])
 
-
     post("/retrieve", Api.BibEntryController, :retrieve)
     post("/", Api.BibEntryController, :new)
     get("/", Api.BibEntryController, :index)
     delete("/entry/:entry", Api.BibEntryController, :delete)
     put("/entry/:entry", Api.BibEntryController, :update)
+  end
+
+  # Dynamic question variable evaluation service
+  scope "/api/v1/variables", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.VariableEvaluationController, :evaluate)
   end
 
   scope "/api/v1/products", OliWeb do
@@ -917,7 +923,9 @@ defmodule OliWeb.Router do
       as: :discount
     )
 
-    live("/institutions/:institution_id/research_consent", Admin.Institutions.ResearchConsentView, as: :institution)
+    live("/institutions/:institution_id/research_consent", Admin.Institutions.ResearchConsentView,
+      as: :institution
+    )
 
     live("/registrations", Admin.RegistrationsView)
 

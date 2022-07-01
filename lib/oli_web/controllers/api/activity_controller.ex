@@ -582,8 +582,11 @@ defmodule OliWeb.Api.ActivityController do
   end
 
   @doc false
-  def transform(conn, %{"model" => model}) do
-    case ActivityLifecycle.perform_test_transformation(model) do
+  def transform(conn, content) do
+    case ActivityLifecycle.perform_test_transformation(%Oli.Resources.Revision{
+           content: content,
+           id: 1
+         }) do
       {:ok, transformed} ->
         json(conn, %{"result" => "success", "transformed" => transformed})
 

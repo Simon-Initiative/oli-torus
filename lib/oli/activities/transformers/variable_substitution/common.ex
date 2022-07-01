@@ -6,9 +6,9 @@ defmodule Oli.Activities.Transformers.VariableSubstitution.Common do
   def replace_variables(model, evaluation_digest) do
     encoded = Jason.encode!(model)
 
-    Enum.reduce(evaluation_digest, encoded, fn %{"variable" => v, "result" => r}, s ->
+    Enum.reduce(evaluation_digest, encoded, fn %{"variable" => v} = e, s ->
       r =
-        case r do
+        case Map.get(e, "result", "") do
           s when is_binary(s) -> s
           number -> Kernel.to_string(number)
         end

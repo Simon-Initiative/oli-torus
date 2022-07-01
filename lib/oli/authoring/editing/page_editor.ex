@@ -335,6 +335,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          # version of the model that it can immediately use for display purposes. If it fails
          # to transform, nil will be handled by the client and the raw model will be used
          # instead
+
          transformed =
            case Transformers.apply_transforms([revision]) do
              [{:ok, nil}] ->
