@@ -518,7 +518,8 @@ export const extractUniqueVariablesFromText = (text: string): string[] => {
   }
 
   if (openIndexes.length > 0) {
-    throw new Error(`Unmatched curly braces in text: ${text}`);
+    console.warn('Unmatched curly braces in text: ', text);
+    /* throw new Error(`Unmatched curly braces in text: ${text}`); */
   }
 
   if (variables.some((v) => v.indexOf('{') !== -1 || v.indexOf('}') !== -1)) {
