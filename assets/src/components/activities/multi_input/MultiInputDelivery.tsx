@@ -14,6 +14,8 @@ import {
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -28,17 +30,27 @@ import { configureStore } from 'state/store';
 export const MultiInputComponent: React.FC = () => {
   const {
     state: activityState,
-    onSaveActivity,
-    onResetActivity,
+    surveyId,
     model,
     sectionSlug,
     bibParams,
+    onSubmitActivity,
+    onSaveActivity,
+    onResetActivity,
   } = useDeliveryElementContext<MultiInputSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
 
+  const emptyPartInputs = model.inputs.reduce((acc, input) => {
+    acc[input.partId] = [''];
+    return acc;
+  }, {} as PartInputs);
+
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptyPartInputs);
+
     dispatch(
       initializeState(
         activityState,
@@ -127,17 +139,7 @@ export const MultiInputComponent: React.FC = () => {
         <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
         <GradedPointsConnected />
         <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(
-                onResetActivity,
-                model.inputs.reduce((acc, input) => {
-                  acc[input.partId] = [''];
-                  return acc;
-                }, {} as PartInputs),
-              ),
-            )
-          }
+          onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
         />
         <SubmitButtonConnected disabled={false} />
         {hintsShown.map((partId) => (

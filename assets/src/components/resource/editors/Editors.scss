@@ -32,10 +32,6 @@ html.authoring {
           border: none;
         }
 
-        .structured-content {
-          padding: 1.3em calc(50% - 400px);
-        }
-
         // handle the special case when purpose type is none, apply the
         // padding styles to slate editor itself. this allows slate to utilize
         // the entire surrounding padding for cursor events and allow for easier

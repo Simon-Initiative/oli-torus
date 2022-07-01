@@ -358,6 +358,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            attempt_guid: nil,
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
+           lifecycle_state: state.lifecycle_state,
            delivery_element: type.delivery_element,
            authoring_element: type.authoring_element,
            script: type.delivery_script,

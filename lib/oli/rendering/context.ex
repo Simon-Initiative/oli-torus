@@ -1,8 +1,7 @@
 defmodule Oli.Rendering.Context do
   @moduledoc """
   The context struct that is used by the renderers contains useful
-  data that may change the way rendering occurs. It is intended to be read-only
-  by the renderers
+  data that may change the way rendering occurs.
   """
   defstruct user: nil,
             activity_map: %{},
@@ -15,5 +14,8 @@ defmodule Oli.Rendering.Context do
             section_slug: nil,
             project_slug: nil,
             activity_types_map: %{},
-            bib_app_params: []
+            group_id: nil,
+            survey_id: nil,
+            bib_app_params: [],
+            submitted_surveys: %{}
 end

@@ -8,12 +8,14 @@ interface Props {
   onReset: () => void;
 }
 export const ResetButtonConnected: React.FC<Props> = ({ onReset }) => {
-  const { graded } = useDeliveryElementContext();
+  const { graded, surveyId } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
 
   return (
     <ResetButton
-      shouldShow={isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
+      shouldShow={
+        (isEvaluated(uiState) || isSubmitted(uiState)) && !graded && surveyId === undefined
+      }
       disabled={!uiState.attemptState.hasMoreAttempts}
       action={onReset}
     />

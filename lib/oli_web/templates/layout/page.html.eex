@@ -26,18 +26,19 @@
         <%= @inner_content %>
 
         <%= render OliWeb.BibliographyView, "_references.html", conn: @conn, bib_app_params: @bib_app_params %>
-        <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
-          conn: @conn,
-          section_slug: @section_slug,
-          previous_page: @previous_page,
-          next_page: @next_page,
-          current_page: @current_page,
-          section: @section,
-          preview_mode: @preview_mode,
-          revision: @revision,
-          resource_slug: @resource_slug %>
 
       </div>
+
+      <%= render OliWeb.PageDeliveryView, "_previous_next_nav.html",
+        conn: @conn,
+        section_slug: @section_slug,
+        previous_page: @previous_page,
+        next_page: @next_page,
+        current_page: @current_page,
+        section: @section,
+        preview_mode: @preview_mode,
+        revision: @revision,
+        resource_slug: @resource_slug %>
 
   </div>
 

@@ -1,18 +1,17 @@
-defmodule Oli.Rendering.Group.Plaintext do
+defmodule Oli.Rendering.Survey.Plaintext do
   @moduledoc """
-  Implements the Plaintext writer for content group rendering
+  Implements the Plaintext writer for content survey rendering
   """
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Elements
   alias Oli.Rendering.Error
-  alias Oli.Utils.Purposes
 
-  @behaviour Oli.Rendering.Group
+  @behaviour Oli.Rendering.Survey
 
-  def group(%Context{} = _context, next, %{"id" => id, "purpose" => purpose}) do
+  def survey(%Context{} = _context, next, %{"id" => id}) do
     [
-      "[#{Purposes.label_for(purpose)} #{id}         ]",
+      "[Survey #{id}          ]",
       next.(),
       "------------------------------------------\n"
     ]

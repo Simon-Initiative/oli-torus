@@ -203,6 +203,7 @@ defmodule OliWeb.ResourceController do
 
   def render_not_found(conn, project_slug) do
     conn
+    |> put_root_layout({OliWeb.LayoutView, "default.html"})
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",
       title: "Not Found",

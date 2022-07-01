@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { maybe } from 'tsmonad';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
@@ -15,12 +16,22 @@ import {
   resetAction,
   savePart,
   submitFiles,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
 import { safelySelectFiles } from 'data/activities/utils';
-import { ActivityState, StudentResponse } from 'components/activities/types';
+import {
+  ActivityState,
+  PartResponse,
+  StudentResponse,
+  FileMetaData,
+} from 'components/activities/types';
 import { configureStore } from 'state/store';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  EvaluationResponse,
+} from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from 'components/activities/types';
 import { FileSpec, FileUploadSchema } from 'components/activities/file_upload/schema';
@@ -29,22 +40,36 @@ import { getReadableFileSizeString, fileName } from './utils';
 import { RemoveButton } from '../common/authoring/removeButton/RemoveButton';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
 import { defaultMaxFileSize } from './utils';
+import { SurveyEventDetails } from 'components/misc/SurveyControls';
+import { Dispatch } from '@reduxjs/toolkit';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');
 }
 
-const getFiles = (state: ActivityDeliveryState) => {
+const getFilesFromState = (state: ActivityDeliveryState) => {
   return state.partState[DEFAULT_PART_ID].studentInput === undefined
     ? []
     : (state.partState[DEFAULT_PART_ID].studentInput as any as FileMetaData[]);
 };
 
-type FileMetaData = {
-  url: string;
-  creationTime: number;
-  fileSize: number;
-};
+const listenForParentSurveySubmit = (
+  surveyId: string | undefined,
+  dispatch: Dispatch<any>,
+  onSubmitActivity: (
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => Promise<EvaluationResponse>,
+) =>
+  maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being submitted
+      if (e.detail.id === surveyId) {
+        dispatch(submitFiles(onSubmitActivity, getFilesFromState));
+      }
+    }),
+  );
 
 const Preview: React.FC<{ file: FileMetaData; fileSpec: FileSpec }> = ({ file }) => {
   let preview = null;
@@ -82,7 +107,7 @@ const SubmittedFile: React.FC<{
   fileSpec: FileSpec;
 }> = ({ file, editMode, onRemove, fileSpec }) => {
   return (
-    <a className="list-group-item list-group-item-action">
+    <div className="list-group-item list-group-item-action">
       <div className="d-flex w-100 justify-content-between">
         <h5 className="mb-1">
           <a href={file.url}>{fileName(file.url)}</a>
@@ -100,7 +125,7 @@ const SubmittedFile: React.FC<{
         <small>{getReadableFileSizeString(file.fileSize)}</small>
         <Preview file={file} fileSpec={fileSpec} />
       </div>
-    </a>
+    </div>
   );
 };
 
@@ -127,7 +152,7 @@ const FileSubmission: React.FC<{
           if (result.result === 'success') {
             setError('');
             const newFiles = [
-              ...getFiles(uiState),
+              ...getFilesFromState(uiState),
               { url: result.url, creationDate: result.creationDate, fileSize: result.fileSize },
             ];
             onSavePart(state.attemptGuid, state.parts[0].attemptGuid, {
@@ -142,15 +167,15 @@ const FileSubmission: React.FC<{
     }
   };
 
-  const files = getFiles(uiState).map((file: FileMetaData) => {
+  const files = getFilesFromState(uiState).map((file: FileMetaData) => {
     const onRemove = () => {
-      const newFiles = getFiles(uiState).filter((f: FileMetaData) => f.url !== file.url);
+      const newFiles = getFilesFromState(uiState).filter((f: FileMetaData) => f.url !== file.url);
       onSavePart(state.attemptGuid, state.parts[0].attemptGuid, { files: newFiles, input: '' });
     };
     return (
       <SubmittedFile
         key={file.url}
-        editMode={!isSubmitted(uiState) && !isEvaluated(uiState)}
+        editMode={!isSubmitted(uiState)}
         file={file}
         onRemove={onRemove}
         fileSpec={model.fileSpec}
@@ -214,13 +239,24 @@ const FileSubmission: React.FC<{
 };
 
 export const FileUploadComponent: React.FC = () => {
-  const { model, state, onResetActivity, onSubmitActivity, onSavePart, sectionSlug, graded } =
-    useDeliveryElementContext<FileUploadSchema>();
+  const {
+    model,
+    state,
+    surveyId,
+    sectionSlug,
+    graded,
+    onResetActivity,
+    onSubmitActivity,
+    onSavePart,
+  } = useDeliveryElementContext<FileUploadSchema>();
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+
     dispatch(
       initializeState(
         state,
@@ -258,9 +294,9 @@ export const FileUploadComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
         />
         <SubmitButton
-          shouldShow={!isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
-          disabled={getFiles(uiState).length === 0}
-          onClick={() => dispatch(submitFiles(onSubmitActivity, getFiles(uiState)))}
+          shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
+          disabled={getFilesFromState(uiState).length === 0}
+          onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
         />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
         <EvaluationConnected />

@@ -5,14 +5,14 @@
   "description": "A grouping of content with a particular layout",
   "type": "object",
   "properties": {
+    "type": {
+      "const": "group"
+    },
     "id": {
       "type": [
         "integer",
         "string"
       ]
-    },
-    "type": {
-      "const": "group"
     },
     "layout": {
       "enum": [

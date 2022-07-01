@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- Survey delivery support
+
 ## 0.20.0 (2022-06-30)
 
 ### Bug Fixes

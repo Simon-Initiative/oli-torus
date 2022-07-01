@@ -12,6 +12,8 @@ import {
   initializeState,
   isEvaluated,
   isSubmitted,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -31,6 +33,8 @@ export const OrderingComponent: React.FC = () => {
   const {
     model,
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
@@ -53,7 +57,14 @@ export const OrderingComponent: React.FC = () => {
     ]);
   };
 
+  const defaultPartInputs = {
+    [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
+  };
+
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, defaultPartInputs);
+
     dispatch(
       initializeState(
         activityState,
@@ -96,13 +107,7 @@ export const OrderingComponent: React.FC = () => {
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
         <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(onResetActivity, {
-                [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
-              }),
-            )
-          }
+          onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
