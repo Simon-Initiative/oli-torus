@@ -344,9 +344,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
              [{:ok, t}] ->
                t
 
-             e ->
-               IO.inspect(e)
-               nil
+             _ ->
+               revision.content
            end
 
          # the activity type this revision pertains to
