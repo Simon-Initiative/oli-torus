@@ -268,6 +268,7 @@ export const FileUploadComponent: React.FC = () => {
             [DEFAULT_PART_ID]: [],
           }),
         }),
+        model,
       ),
     );
   }, []);

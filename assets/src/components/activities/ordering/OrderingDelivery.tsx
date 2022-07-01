@@ -69,6 +69,7 @@ export const OrderingComponent: React.FC = () => {
       initializeState(
         activityState,
         initialPartInputs(activityState, { [DEFAULT_PART_ID]: model.choices.map((c) => c.id) }),
+        model,
       ),
     );
 

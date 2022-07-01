@@ -85,6 +85,7 @@ export const ShortAnswerComponent: React.FC = () => {
             [DEFAULT_PART_ID]: [''],
           }),
         }),
+        model,
       ),
     );
   }, []);

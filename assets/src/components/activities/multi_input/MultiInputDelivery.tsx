@@ -62,6 +62,7 @@ export const MultiInputComponent: React.FC = () => {
               return acc;
             }, {} as PartInputs),
         }),
+        model,
       ),
     );
   }, []);
