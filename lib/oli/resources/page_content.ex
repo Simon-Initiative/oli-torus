@@ -1,6 +1,8 @@
 defmodule Oli.Resources.PageContent do
   alias Oli.Resources.PageContent.TraversalContext
 
+  import Oli.Utils, only: [ensure_number_is_string: 1]
+
   @doc """
   Modelled after `Enum.map_reduce`, this invokes the given function to each content element in a page content tree.
 
@@ -115,7 +117,11 @@ defmodule Oli.Resources.PageContent do
       fn el, activity_groups, %TraversalContext{group_id: group_id, survey_id: survey_id} ->
         case el do
           %{"type" => "activity-reference", "activity_id" => activity_id} ->
-            {el, Map.put_new(activity_groups, activity_id, %{group: group_id, survey: survey_id})}
+            {el,
+             Map.put_new(activity_groups, activity_id, %{
+               group: ensure_number_is_string(group_id),
+               survey: ensure_number_is_string(survey_id)
+             })}
 
           _ ->
             {el, activity_groups}
