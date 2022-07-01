@@ -8,8 +8,8 @@ defmodule OliWeb.Router do
 
   import Phoenix.LiveDashboard.Router
 
-  @user_persistent_session_cookie_key "oli_user_persistent_session"
-  @author_persistent_session_cookie_key "oli_author_persistent_session"
+  @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
+  @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
 
   ### BASE PIPELINES ###
   # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
