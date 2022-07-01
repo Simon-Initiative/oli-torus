@@ -320,7 +320,7 @@ defmodule Oli.Utils do
   """
   def ensure_number_is_string(value) when is_integer(value), do: Integer.to_string(value)
   def ensure_number_is_string(value) when is_float(value), do: Float.to_string(value)
-  def ensure_number_is_string(value), do: Integer.to_string(value)
+  def ensure_number_is_string(value), do: value
 
   @doc """
   Detects all urls in a string and replaces them with hyperlinks.
