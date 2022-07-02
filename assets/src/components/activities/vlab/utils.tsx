@@ -61,6 +61,10 @@ export const friendlyType = (type: VlabInputType) => {
   }
 };
 
+export const friendlyVlabParameter = (param: VlabParameter) => {
+  return `${param === 'temp' ? 'temperature (deg (k)' : 'volume (L)'}`;
+};
+
 export const partTitle = (input: VlabInput, index: number) => (
   <div>
     {`Part ${index + 1}: `}

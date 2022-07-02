@@ -43,8 +43,6 @@ export const MultiInputComponent: React.FC = () => {
 
   const onVlabChange = () => {
     // Get the selected flask XML and parse.
-    // Vlab emits a 'message' event (for logging) with almost every action
-    console.log('Vlab Changed!');
     const selectedFlaskXML = document.getElementById('vlab').contentWindow.getSelectedItem();
     const parser = new DOMParser();
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
@@ -160,7 +158,7 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <iframe id="vlab" src="/vlab/index.html" width="100%" height="400px" />
+        <iframe id="vlab" className="vlab-holder" src="/vlab/index.html" />
         <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
         <GradedPointsConnected />
         <ResetButtonConnected

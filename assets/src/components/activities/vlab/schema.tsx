@@ -12,7 +12,6 @@ import { Identifiable } from 'data/content/model/other';
 import { Maybe } from 'tsmonad';
 import { assertNever } from 'utils/common';
 
-//export type MultiInput = Dropdown | FillInTheBlank;
 export type VlabInput = Dropdown | FillInTheBlank | VlabValue;
 export type VlabInputDelivery =
   | { id: string; inputType: 'dropdown'; options: SelectOption[] }
@@ -47,6 +46,8 @@ export const VlabInputTypeFriendly = (type: VlabInputType): string =>
       vlabvalue: 'Vlab Value',
     }[type],
   ).valueOr(assertNever(type));
+
+export type VlabParameter = 'volume' | 'temp';
 
 export interface VlabSchema extends ActivityModelSchema {
   stem: Stem;

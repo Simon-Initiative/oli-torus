@@ -48,6 +48,7 @@ export const MultiInputComponent = () => {
 
   return (
     <>
+      <iframe id="vlab" src="/vlab/index.html" height="450px" width="100%" />
       <VlabStem
         selectedInputRef={selectedInputRef}
         setSelectedInputRef={setSelectedInputRef}

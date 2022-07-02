@@ -42,7 +42,7 @@ export const QuestionTab: React.FC<Props> = (props) => {
           <DropdownQuestionEditor input={props.input as Dropdown} />
         )}
         {props.input.inputType === 'vlabvalue' && (
-          <div>This is a Vlab question. The selected parameter is {props.input.parameter}.</div>
+          <VlabParameterSelector input={props.input as VlabValue} />
         )}
       </Card.Content>
     </Card.Card>
