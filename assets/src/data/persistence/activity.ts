@@ -8,6 +8,7 @@ import {
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
 import { clone } from 'utils/common';
+import { fixObjectiveParts } from './objectives';
 
 export type ActivityUpdate = {
   title: string;
@@ -186,22 +187,25 @@ export function bulkEdit(
   resource: ResourceId,
   updates: BulkActivityUpdate[],
 ) {
-  try {
-    // Index "citation references" in the "content and authoring" and elevate them as top-level list
-    updates.forEach((u) => {
-      const citationRefs: string[] = [];
-      indexBibrefs(u.content, citationRefs);
-      if (u.authoring) {
-        indexBibrefs(u.authoring, citationRefs);
-      }
-      // make content mutable
-      const contentClone = clone(u.content);
-      contentClone.bibrefs = citationRefs;
-      u.content = contentClone;
-    });
-  } catch (e) {
-    console.error('bulkEdit: ', e);
-  }
+  // Index "citation references" in the "content and authoring" and elevate them as top-level list
+  updates.forEach((u) => {
+    const citationRefs: string[] = [];
+
+    console.info('PRE BULK', u.objectives);
+
+    console.info('POST BULK', u.objectives);
+
+    indexBibrefs(u.content, citationRefs);
+    if (u.authoring) {
+      indexBibrefs(u.authoring, citationRefs);
+    }
+    const { objectives } = fixObjectiveParts(u);
+    // make content mutable
+    const contentClone = clone(u.content);
+    contentClone.bibrefs = citationRefs;
+    u.content = contentClone;
+    u.objectives = objectives || {};
+  });
 
   const params = {
     method: 'PUT',
@@ -228,23 +232,31 @@ export function edit(
   pendingUpdate: ActivityUpdate,
   releaseLock: boolean,
 ) {
-  const update = Object.assign({}, pendingUpdate, { releaseLock });
-  update.content = Object.assign({}, update.content);
+  let update = Object.assign({}, pendingUpdate, { releaseLock });
+  try {
+    update.content = Object.assign({}, update.content);
 
-  // Here we pull the "authoring" key out of "content" and elevate it
-  // as a top-level key
-  if (update.content.authoring !== undefined) {
-    update.authoring = update.content.authoring;
-    delete update.content.authoring;
-  }
+    // Here we pull the "authoring" key out of "content" and elevate it
+    // as a top-level key
+    if (update.content.authoring !== undefined) {
+      update.authoring = update.content.authoring;
+      delete update.content.authoring;
+    }
 
-  // Index "citation references" in the "content and authoring" and elevate them as top-level list
-  const citationRefs: string[] = [];
-  indexBibrefs(update.content, citationRefs);
-  if (update.authoring) {
-    indexBibrefs(update.authoring, citationRefs);
+    // Index "citation references" in the "content and authoring" and elevate them as top-level list
+    const citationRefs: string[] = [];
+    indexBibrefs(update.content, citationRefs);
+    if (update.authoring) {
+      indexBibrefs(update.authoring, citationRefs);
+    }
+    update.content.bibrefs = citationRefs;
+    console.info('PRE EDIT', update.objectives);
+    update = fixObjectiveParts(update) as ActivityUpdate & { releaseLock: boolean };
+    console.info('POST EDIT', update.objectives);
+  } catch (e) {
+    console.error('activity::edit failed', e);
+    throw e;
   }
-  update.content.bibrefs = citationRefs;
 
   const params = {
     method: 'PUT',

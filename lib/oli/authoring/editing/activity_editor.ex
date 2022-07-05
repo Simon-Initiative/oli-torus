@@ -484,6 +484,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   # Applies the update to the revision, converting any objective slugs back to ids
   defp update_revision(revision, update, _) do
+    IO.puts("🤡🤡🤡🤡🤡🤡🤡")
+    IO.inspect(update)
+
     objectives =
       if Map.has_key?(update, "objectives"),
         do: Map.get(update, "objectives"),
