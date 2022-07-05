@@ -43,8 +43,14 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug(:fetch_session)
     plug(:fetch_flash)
-    plug(Oli.Plugs.SetCurrentUser)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+  end
+
+  # pipeline for SSO endpoints
+  pipeline :sso do
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(Oli.Plugs.ValidateIdToken)
   end
 
   pipeline :skip_csrf_protection do
@@ -197,10 +203,6 @@ defmodule OliWeb.Router do
     plug Plug.Static,
       at: "/superactivity",
       from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
-  end
-
-  pipeline :sso do
-    plug(Oli.Plugs.ValidateIdToken)
   end
 
   scope "/superactivity", OliWeb do
@@ -652,7 +654,7 @@ defmodule OliWeb.Router do
 
   # LTI routes
   scope "/lti", OliWeb do
-    pipe_through([:lti, :www_url_form])
+    pipe_through([:lti, :www_url_form, :delivery])
 
     post("/login", LtiController, :login)
     get("/login", LtiController, :login)
@@ -1012,11 +1014,15 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
-    pipe_through([:sso])
+    pipe_through([:sso, :delivery])
 
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([:sso, :authoring])
 
     get("/launch_clone/products/:product_slug", CognitoController, :launch_clone,
       as: :product_clone
