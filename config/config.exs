@@ -68,7 +68,7 @@ config :oli, :rule_evaluator,
 
 variable_substitution_provider =
   case System.get_env("VARIABLE_SUBSTITUTION_PROVIDER") do
-    nil -> Oli.Activities.Transformers.VariableSubstitution.NoOpImpl
+    nil -> Oli.Activities.Transformers.VariableSubstitution.RestImpl
     provider -> Module.concat([Oli, Activities, Transformers, VariableSubstitution, provider])
   end
 

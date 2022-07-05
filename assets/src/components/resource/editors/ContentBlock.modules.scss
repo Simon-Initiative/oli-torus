@@ -3,6 +3,10 @@
 .contentBlock {
   width: 100%;
   padding: 0 20px;
+
+  :global(.slate-editor) {
+    padding: 0 calc(50% - 400px) !important;
+  }
 }
 
 .contentBlockHeader {

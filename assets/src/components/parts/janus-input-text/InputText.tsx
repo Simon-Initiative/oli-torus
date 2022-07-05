@@ -141,6 +141,7 @@ const InputText: React.FC<PartComponentProps<InputTextModel>> = (props) => {
               if (sText !== undefined) {
                 setText(sText.toString());
                 saveTextLength(sText.toString());
+                saveInputText(sText.toString());
               }
               const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {

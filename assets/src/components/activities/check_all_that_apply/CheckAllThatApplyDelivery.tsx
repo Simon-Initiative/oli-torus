@@ -8,6 +8,8 @@ import {
   setSelection,
   activityDeliverySlice,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -28,6 +30,8 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<CATASchema>();
@@ -35,6 +39,9 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+
     dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 

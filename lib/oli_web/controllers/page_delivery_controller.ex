@@ -22,6 +22,7 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
+  alias Oli.Resources.PageContent
   alias OliWeb.Common.SessionContext
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
@@ -267,6 +268,7 @@ defmodule OliWeb.PageDeliveryController do
           script: type.authoring_script,
           attempt_guid: nil,
           state: nil,
+          lifecycle_state: :active,
           model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
           delivery_element: type.delivery_element,
           authoring_element: type.authoring_element,
@@ -277,6 +279,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
     summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+
     bib_entrys =
       BibUtils.assemble_bib_entries(
         revision.content,
@@ -297,7 +300,8 @@ defmodule OliWeb.PageDeliveryController do
       mode: :instructor_preview,
       activity_map: activity_map,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
-      bib_app_params: bib_entrys
+      bib_app_params: bib_entrys,
+      submitted_surveys: %{}
     }
 
     html = Page.render(render_context, revision.content, Page.Html)
@@ -517,6 +521,18 @@ defmodule OliWeb.PageDeliveryController do
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
+    submitted_surveys =
+      PageContent.survey_activities(context.page.content)
+      |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
+        survey_state =
+          Enum.all?(activity_ids, fn id ->
+            context.activities[id].lifecycle_state === :submitted ||
+              context.activities[id].lifecycle_state === :evaluated
+          end)
+
+        Map.put(acc, survey_id, survey_state)
+      end)
+
     render_context = %Context{
       # Allow admin authors to review student work
       user:
@@ -533,7 +549,8 @@ defmodule OliWeb.PageDeliveryController do
           :delivery
         end,
       activity_map: context.activities,
-      bib_app_params: context.bib_revisions
+      bib_app_params: context.bib_revisions,
+      submitted_surveys: submitted_surveys
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -580,7 +597,7 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        },
+        }
       }
     )
   end
@@ -814,7 +831,9 @@ defmodule OliWeb.PageDeliveryController do
 
   defp build_enrollments_text(enrollments) do
     ([["Student name", "Student email", "Enrolled on"]] ++
-      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, date(record.inserted_at)] end))
+       Enum.map(enrollments, fn record ->
+         [record.user.name, record.user.email, date(record.inserted_at)]
+       end))
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()

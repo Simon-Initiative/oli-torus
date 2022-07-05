@@ -1,6 +1,6 @@
 defmodule Oli.Rendering.Group.Plaintext do
   @moduledoc """
-  Implements the Html writer for content group rendering
+  Implements the Plaintext writer for content group rendering
   """
 
   alias Oli.Rendering.Context
@@ -10,9 +10,9 @@ defmodule Oli.Rendering.Group.Plaintext do
 
   @behaviour Oli.Rendering.Group
 
-  def group(%Context{} = _context, next, %{"purpose" => purpose}) do
+  def group(%Context{} = _context, next, %{"id" => id, "purpose" => purpose}) do
     [
-      "[#{Purposes.label_for(purpose)}          ]",
+      "[#{Purposes.label_for(purpose)} #{id}         ]",
       next.(),
       "------------------------------------------\n"
     ]

@@ -156,7 +156,13 @@ defmodule Oli.Utils do
     end
   end
 
-  def validate_number_if(changeset, field, condition, greater_than_or_equal_to, less_than_or_equal_to) do
+  def validate_number_if(
+        changeset,
+        field,
+        condition,
+        greater_than_or_equal_to,
+        less_than_or_equal_to
+      ) do
     if condition.(changeset) do
       Ecto.Changeset.validate_number(
         changeset,
@@ -308,6 +314,13 @@ defmodule Oli.Utils do
   """
   def string_to_boolean("true"), do: true
   def string_to_boolean(_bool), do: false
+
+  @doc """
+  Ensures a number (integer/float) is a string
+  """
+  def ensure_number_is_string(value) when is_integer(value), do: Integer.to_string(value)
+  def ensure_number_is_string(value) when is_float(value), do: Float.to_string(value)
+  def ensure_number_is_string(value), do: value
 
   @doc """
   Detects all urls in a string and replaces them with hyperlinks.

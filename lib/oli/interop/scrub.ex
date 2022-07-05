@@ -99,7 +99,7 @@ defmodule Oli.Interop.Scrub do
   # From an arbitrary content element, recursively extract all "text" nodes, concatenating
   # them together to form a singular string
   defp extract_text(item) do
-    PageContent.map_reduce(item, "", fn e, text -> {e, text <> Map.get(e, "text", "")} end)
+    PageContent.map_reduce(item, "", fn e, text, _tr_context -> {e, text <> Map.get(e, "text", "")} end)
     |> Tuple.to_list()
     |> Enum.at(1)
   end

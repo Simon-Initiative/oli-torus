@@ -12,6 +12,8 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { FileSpecConfiguration } from './FileSpecConfiguration';
 import { FileUploadActions } from './actions';
 import { FileUploadSchema, FileSpec } from './schema';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 
 const store = configureStore();
 
@@ -38,6 +40,13 @@ const FileUpload = () => {
 
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={DEFAULT_PART_ID} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Dynamic Variables">
+          <VariableEditorOrNot
+            editMode={editMode}
+            model={model}
+            onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+          />
         </TabbedNavigation.Tab>
       </TabbedNavigation.Tabs>
     </>

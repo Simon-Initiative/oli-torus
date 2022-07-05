@@ -15,6 +15,8 @@ import {
   isSubmitted,
   activityDeliverySlice,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { safelySelectStringInputs } from 'data/activities/utils';
@@ -59,6 +61,8 @@ export const ShortAnswerComponent: React.FC = () => {
   const {
     model,
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onSaveActivity,
     onResetActivity,
   } = useDeliveryElementContext<ShortAnswerModelSchema>();
@@ -67,6 +71,9 @@ export const ShortAnswerComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [''] });
+
     dispatch(
       initializeState(
         activityState,

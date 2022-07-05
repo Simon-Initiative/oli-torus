@@ -335,6 +335,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
          # version of the model that it can immediately use for display purposes. If it fails
          # to transform, nil will be handled by the client and the raw model will be used
          # instead
+
          transformed =
            case Transformers.apply_transforms([revision]) do
              [{:ok, nil}] ->
@@ -343,9 +344,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
              [{:ok, t}] ->
                t
 
-             e ->
-               IO.inspect(e)
-               nil
+             _ ->
+               revision.content
            end
 
          # the activity type this revision pertains to
@@ -358,6 +358,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            attempt_guid: nil,
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
+           lifecycle_state: state.lifecycle_state,
            delivery_element: type.delivery_element,
            authoring_element: type.authoring_element,
            script: type.delivery_script,

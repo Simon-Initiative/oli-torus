@@ -1,5 +1,5 @@
 import { Maybe } from 'tsmonad';
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
 

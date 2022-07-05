@@ -17,10 +17,10 @@ defmodule Oli.Rendering.Group do
   """
   def render(
         %Context{} = context,
-        %{"type" => "group", "children" => children} = element,
+        %{"type" => "group", "id" => id, "children" => children} = element,
         writer
       ) do
-    next = fn -> writer.elements(context, children) end
+    next = fn -> writer.elements(%Context{context | group_id: id}, children) end
 
     writer.group(context, next, element)
   end

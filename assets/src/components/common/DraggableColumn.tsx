@@ -115,7 +115,7 @@ const getStyle = (
   style: DraggingStyle | NotDraggingStyle | undefined,
   snapshot: DraggableStateSnapshot,
 ) => {
-  const snapshotStyle = snapshot.draggingOver ? { 'pointer-events': 'none' } : {};
+  const snapshotStyle = snapshot.draggingOver ? ({ pointerEvents: 'none' } as any) : {};
   if (style?.transform) {
     const axisLockY = `translate(0px, ${style.transform.split(',').pop()}`;
     return {

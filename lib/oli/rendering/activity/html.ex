@@ -3,9 +3,11 @@ defmodule Oli.Rendering.Activity.Html do
   Implements the Html writer for activity rendering
   """
   import Oli.Utils
+  import Oli.Rendering.Activity.Common
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
+  alias Oli.Rendering.Activity.ActivitySummary
 
   @behaviour Oli.Rendering.Activity
 
@@ -15,18 +17,21 @@ defmodule Oli.Rendering.Activity.Html do
           render_opts: render_opts,
           mode: mode,
           user: user,
+          group_id: group_id,
+          survey_id: survey_id,
           bib_app_params: bib_app_params
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
-       
     activity_summary = activity_map[activity_id]
 
-    bib_params = Enum.reduce(bib_app_params, [], fn x, acc ->
-      acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
-    end)
+    bib_params =
+      Enum.reduce(bib_app_params, [], fn x, acc ->
+        acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
+      end)
 
     {:ok, bib_params_json} = Jason.encode(bib_params)
+
     case activity_summary do
       nil ->
         {error_id, error_msg} =
@@ -41,28 +46,31 @@ defmodule Oli.Rendering.Activity.Html do
           []
         end
 
-      _ ->
+      %ActivitySummary{
+        authoring_element: authoring_element,
+        delivery_element: delivery_element,
+        state: state,
+        graded: graded,
+        model: model
+      } ->
         tag =
           case mode do
-            :instructor_preview -> activity_summary.authoring_element
-            _ -> activity_summary.delivery_element
+            :instructor_preview -> authoring_element
+            _ -> delivery_element
           end
 
-        state = activity_summary.state
-        graded = activity_summary.graded
-        model_json = activity_summary.model
         section_slug = context.section_slug
 
         activity_html =
           case mode do
             :instructor_preview ->
               [
-                "<#{tag} model=\"#{model_json}\" bib_params=\"#{Base.encode64(bib_params_json)}\" editmode=\"false\" projectSlug=\"#{section_slug}\"></#{tag}>\n"
+                ~s|<#{tag} model="#{model}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
 
             _ ->
               [
-                "<#{tag} class=\"activity-container\" bib_params=\"#{Base.encode64(bib_params_json)}\" graded=\"#{graded}\" state=\"#{state}\" model=\"#{model_json}\" mode=\"#{mode}\" user_id=\"#{user.id}\" section_slug=\"#{section_slug}\"></#{tag}>\n"
+                ~s|<#{tag} class="activity-container" graded="#{graded}" state="#{state}" model="#{model}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
           end
 
@@ -76,9 +84,9 @@ defmodule Oli.Rendering.Activity.Html do
 
           purpose ->
             [
-              "<h4 class=\"activity-purpose ",
+              ~s|<h4 class="activity-purpose |,
               Oli.Utils.Slug.slugify(purpose),
-              "\">",
+              ~s|">|,
               Oli.Utils.Purposes.label_for(purpose),
               "</h4>",
               activity_html

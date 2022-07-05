@@ -8,6 +8,7 @@ import { selectCurrentSelection, setCurrentSelection } from '../../store/parts/s
 import { RightPanelTabs } from '../RightMenu/RightMenu';
 import AuthoringActivityRenderer from './AuthoringActivityRenderer';
 import ConfigurationModal from './ConfigurationModal';
+import StagePan from './StagePan';
 
 const EditingCanvas: React.FC = () => {
   const dispatch = useDispatch();
@@ -127,22 +128,24 @@ const EditingCanvas: React.FC = () => {
   return (
     <React.Fragment>
       <section className="aa-stage" onClick={handleStageClick}>
-        {currentActivityTree &&
-          currentActivityTree.map((activity) => (
-            <AuthoringActivityRenderer
-              key={activity.id}
-              activityModel={activity}
-              editMode={activity.id === currentActivityId}
-              configEditorId={configEditorId}
-              onSelectPart={handlePartSelect}
-              onCopyPart={handlePartCopy}
-              onConfigurePart={handlePartConfigure}
-              onCancelConfigurePart={handlePartCancelConfigure}
-              onSaveConfigurePart={handlePartSaveConfigure}
-              onPartChangePosition={handlePositionChanged}
-              notificationStream={notificationStream}
-            />
-          ))}
+        <StagePan>
+          {currentActivityTree &&
+            currentActivityTree.map((activity) => (
+              <AuthoringActivityRenderer
+                key={activity.id}
+                activityModel={activity}
+                editMode={activity.id === currentActivityId}
+                configEditorId={configEditorId}
+                onSelectPart={handlePartSelect}
+                onCopyPart={handlePartCopy}
+                onConfigurePart={handlePartConfigure}
+                onCancelConfigurePart={handlePartCancelConfigure}
+                onSaveConfigurePart={handlePartSaveConfigure}
+                onPartChangePosition={handlePositionChanged}
+                notificationStream={notificationStream}
+              />
+            ))}
+        </StagePan>
       </section>
       <ConfigurationModal
         fullscreen={configModalFullscreen}

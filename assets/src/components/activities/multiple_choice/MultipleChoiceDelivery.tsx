@@ -13,6 +13,8 @@ import {
   activityDeliverySlice,
   isEvaluated,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
@@ -28,6 +30,8 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 export const MultipleChoiceComponent: React.FC = () => {
   const {
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onSaveActivity,
     onResetActivity,
   } = useDeliveryElementContext<MCSchema>();
@@ -35,6 +39,9 @@ export const MultipleChoiceComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+
     dispatch(initializeState(activityState, initialPartInputs(activityState)));
   }, []);
 
@@ -77,6 +84,7 @@ export const MultipleChoiceComponent: React.FC = () => {
 export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
+
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

@@ -6,8 +6,7 @@ defmodule Oli.Features do
 
   @features [
     %Feature{id: 1, label: "adaptivity", description: "Adaptive lesson authoring"},
-    %Feature{id: 2, label: "equity", description: "Equity qa check"},
-    %Feature{id: 3, label: "survey", description: "Survey Support (beta)"}
+    %Feature{id: 2, label: "equity", description: "Equity qa check"}
   ]
 
   @by_id Enum.reduce(@features, %{}, fn f, m -> Map.put(m, f.id, f) end)
@@ -19,15 +18,12 @@ defmodule Oli.Features do
   # safety since a client could not do something like call get_by_label("something wrong")
   def get_by_id(1), do: Map.get(@by_id, 1)
   def get_by_id(2), do: Map.get(@by_id, 2)
-  def get_by_id(3), do: Map.get(@by_id, 3)
 
   def get_by_label("adaptivity"), do: Map.get(@by_label, "adaptivity")
   def get_by_label("equity"), do: Map.get(@by_label, "equity")
-  def get_by_label("survey"), do: Map.get(@by_label, "survey")
 
   def enabled?("adaptivity"), do: get_state(get_by_label("adaptivity").id) == :enabled
   def enabled?("equity"), do: get_state(get_by_label("equity").id) == :enabled
-  def enabled?("survey"), do: get_state(get_by_label("survey").id) == :enabled
 
   defp get_state(id) do
     Repo.get!(FeatureState, id).state
@@ -49,11 +45,22 @@ defmodule Oli.Features do
     do: update_feature_state(get_by_label(label).id, state)
 
   def bootstrap_feature_states() do
-    Enum.map(@features, fn %Feature{id: id} ->
-      case Repo.get(FeatureState, id) do
-        nil -> create_feature_state(%{state: :disabled})
-        e -> e
-      end
+    Repo.transaction(fn ->
+      # delete any feature flags that are no longer defined
+      Repo.all(FeatureState)
+      |> Enum.each(fn %FeatureState{id: id} ->
+        if id not in @features do
+          from(f in FeatureState, where: f.id == ^id)
+          |> Repo.delete_all()
+        end
+      end)
+
+      Enum.map(@features, fn %Feature{id: id} ->
+        case Repo.get(FeatureState, id) do
+          nil -> create_feature_state(%{id: id, state: :disabled})
+          e -> e
+        end
+      end)
     end)
   end
 

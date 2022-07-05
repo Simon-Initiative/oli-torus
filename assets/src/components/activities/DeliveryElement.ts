@@ -21,7 +21,7 @@ export interface EvaluationResponse extends Success {
 }
 
 /**
- * Reponse to a request for an additional hint.
+ * Response to a request for an additional hint.
  * Notice that the hint attribute here is optional.  If a
  * client requests a hint and there are no more, the platform
  * will return an instance of this interface with hasMoreHints set to false
@@ -57,32 +57,49 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
    * Whether the activity is operating within the context of a graded page.
    */
   graded: boolean;
+
   /**
    * The model of the activity, pruned to remove the authoring specific portion.
    */
   model: T;
+
   /**
    * The state of the activity and part attempts.
    */
   state: ActivityState;
+
   /**
    * The current delivery mode.
    */
   mode: DeliveryMode;
+
   /**
    * The unique id of the course section.
    */
   sectionSlug?: string;
 
   bibParams?: any;
+
   /**
    * The unique id of the student user.
    */
   userId: number;
+
+  /**
+   * Unique group id that the activity belongs to
+   */
+  groupId?: string;
+
+  /**
+   * Unique survey id that the activity belongs to
+   */
+  surveyId?: string;
+
   /**
    * @ignore
    */
   notify?: EventEmitter;
+
   /**
    * The HTML div element reference created by the abstract component for use in
    * rendering by the concrete implementation.
@@ -93,13 +110,14 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
    * Allows read access to the user state.
    */
   onReadUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
+
   /**
    * Allows writing to the user state.
    */
   onWriteUserState?: (attemptGuid: string, partAttemptGuid: string, payload: any) => Promise<any>;
 
   /**
-   * Initiaties saving of the student response for all parts.
+   * Initiates saving of the student response for all parts.
    */
   onSaveActivity: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>;
 
@@ -138,6 +156,7 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     partAttemptGuid: string,
     response: StudentResponse,
   ) => Promise<EvaluationResponse>;
+
   /**
    * Resets the attempt for one part.
    */
@@ -150,10 +169,12 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
     attemptGuid: string,
     clientEvaluations: ClientEvaluation[],
   ) => Promise<EvaluationResponse>;
+
   /**
    * @ignore
    */
   onReady?: (attemptGuid: string) => Promise<Success>;
+
   /**
    * @ignore
    */
@@ -164,8 +185,8 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
  * An abstract delivery web component, designed to delegate rendering
  * via the `render` method.  This delivery web component will re-render
  * when the 'model' attribute of the the web component changes.  It also provides
- * several callback function to allow the concrete implemenation to initiate
- * lifecylce events (e.g. request a hint, reset an attempt, etc).
+ * several callback function to allow the concrete implementation to initiate
+ * lifecycle events (e.g. request a hint, reset an attempt, etc).
  *
  * While the delegated implementation is a React component in the case of natively
  * implemented activities, this does not need to be the case.  This `DeliveryElement`
@@ -224,6 +245,7 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   ) => Promise<EvaluationResponse>;
   onReady: (attemptGuid: string) => Promise<Success>;
   onResize: (attemptGuid: string) => Promise<Success>;
+
   constructor() {
     super();
     this.mountPoint = document.createElement('div');
@@ -295,12 +317,18 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   }
 
   props(): DeliveryElementProps<T> {
+    // required
     const model = JSON.parse(this.getAttribute('model') as any);
     const graded = JSON.parse(this.getAttribute('graded') as any);
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
+
+    // optional
     const mode = valueOr(this.getAttribute('mode'), 'delivery') as DeliveryMode;
     const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
     const userId = this.getAttribute('user_id') as any;
+    const groupId = valueOr(this.getAttribute('group_id'), undefined);
+    const surveyId = valueOr(this.getAttribute('survey_id'), undefined);
+
     let bibParams = valueOr(this.getAttribute('bib_params'), undefined);
     if (bibParams) {
       bibParams = JSON.parse(atob(bibParams));
@@ -314,6 +342,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       state,
       mode,
       sectionSlug,
+      userId,
+      groupId,
+      surveyId,
+      notify: this._notify,
+      mountPoint: this.mountPoint,
       bibParams,
       onWriteUserState: this.onSetData,
       onReadUserState: this.onGetData,
@@ -327,9 +360,6 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
       onSubmitEvaluations: this.onSubmitEvaluations,
       onReady: this.onReady,
       onResize: this.onResize,
-      userId,
-      notify: this._notify,
-      mountPoint: this.mountPoint,
     };
   }
 
