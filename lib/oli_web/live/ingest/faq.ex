@@ -18,7 +18,7 @@ defmodule OliWeb.Admin.Ingest.FAQ do
         <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordionExample">
           <div class="card-body">
               It depends on the size of the course described in the digest, but expect the ingestion to take anywhere from a
-              few seconds to a minute or two.  After the ingestion finishes you will be taken to the Project Overview of the new course project.
+              few seconds to a minute or two. After the ingestion finishes you will be taken to the Project Overview of the new project.
           </div>
         </div>
       </div>
