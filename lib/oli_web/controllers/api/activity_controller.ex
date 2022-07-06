@@ -411,8 +411,7 @@ defmodule OliWeb.Api.ActivityController do
     content: content,
     resource_id: resource_id
   }) do
-    authoring = Map.get(content, "authoring")
-    content = Map.delete(content, "authoring")
+    {authoring, content} = Map.pop(content, "authoring")
 
     result = %{
     "result" => "success",
@@ -427,12 +426,8 @@ defmodule OliWeb.Api.ActivityController do
       else: result
   end
 
-  defp is_preview_mode?(conn) do
-    case Map.get(conn.query_params, "mode", "delivery") do
-      "preview" -> true
-      _ -> false
-    end
-  end
+  defp is_preview_mode?(%{query_params: %{"mode" => "preview"}}), do: true
+  defp is_preview_mode?(_), do: false
 
   defp has_access?(conn, user, section_slug, is_preview_mode) do
     if is_preview_mode do
