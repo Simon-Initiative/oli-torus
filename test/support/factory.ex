@@ -2,6 +2,7 @@ defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
   alias Oli.Accounts.{Author, User}
+  alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
 
@@ -114,6 +115,17 @@ defmodule Oli.Factory do
       visibility: :global,
       authors: anonymous_build_list(2, :author),
       publisher: anonymous_build(:publisher)
+    }
+  end
+
+  def author_project_factory() do
+    author = insert(:author)
+    project = insert(:project)
+
+    %AuthorProject{
+      author_id: author.id,
+      project_id: project.id,
+      project_role_id: ProjectRole.role_id().owner
     }
   end
 
