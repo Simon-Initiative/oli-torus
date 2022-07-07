@@ -183,8 +183,6 @@ export const MultiInputActions = {
       }[type];
 
       input.inputType = type;
-
-      console.log('setInputType: my type is ' + type);
     };
   },
 
@@ -192,6 +190,13 @@ export const MultiInputActions = {
     return (model: VlabSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
       (input as VlabInput).parameter = param;
+    };
+  },
+
+  setVlabSpecies(id: string, species: string) {
+    return (model: VlabSchema) => {
+      const input = getByUnsafe(model.inputs, (x) => x.id === id);
+      (input as VlabInput).species = species;
     };
   },
 

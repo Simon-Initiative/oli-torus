@@ -62,7 +62,16 @@ export const friendlyType = (type: VlabInputType) => {
 };
 
 export const friendlyVlabParameter = (param: VlabParameter) => {
-  return `${param === 'temp' ? 'temperature (deg (k)' : 'volume (L)'}`;
+  switch (param) {
+    case 'temp':
+      return 'temperature (deg K)';
+    case 'volume':
+      return 'volume (L)';
+    case 'moles':
+      return 'moles';
+    case 'mass':
+      return 'mass (g)';
+  }
 };
 
 export const partTitle = (input: VlabInput, index: number) => (

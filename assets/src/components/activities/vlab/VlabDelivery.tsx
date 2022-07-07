@@ -47,26 +47,39 @@ export const MultiInputComponent: React.FC = () => {
     const parser = new DOMParser();
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
 
-    // Loop over the inputs, if an input is type vlabInput, update it's value.
-    model.inputs.forEach((input) => {
-      if (input.inputType === 'vlabvalue') {
-        const param = input.parameter;
-        if (!selectedFlask.querySelector('parsererror')) {
-          const value = selectedFlask
-            .getElementsByTagName('flask')[0]
-            .getElementsByTagName(param)[0].textContent;
+    // Loop over the inputs, if an input is type vlabInput, update it's value based on XML.
+    // Move this mess to Utils
+    if (!selectedFlask.querySelector('parsererror')) {
+      let value = 0;
+      model.inputs.forEach((input) => {
+        if (input.inputType === 'vlabvalue') {
+          const param = input.parameter;
+          if (param === 'volume' || param === 'temp') {
+            value = selectedFlask
+              .getElementsByTagName('flask')[0]
+              .getElementsByTagName(param)[0].textContent;
+          } else {
+            const speciesList = Array.from(
+              selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('species'),
+            );
+            speciesList.forEach((species) => {
+              if (species.getElementsByTagName('id')[0].textContent === input.species) {
+                value = species.getElementsByTagName(param)[0].textContent;
+              }
+            });
+          }
+          console.log('SelectedFlask reported value for ' + param + ' = ' + value + '.');
           dispatch(
             activityDeliverySlice.actions.setStudentInputForPart({
               partId: input.partId,
               studentInput: [value],
             }),
           );
-          console.log('SelectedFlask volume = ' + value + 'L.');
-        } else {
-          console.log('Nothing selected on the workbench.');
         }
-      }
-    });
+      });
+    } else {
+      console.log('Vlab XML parse error. Nothing selected on the workbench?');
+    }
   };
 
   useEffect(() => {
