@@ -49,7 +49,7 @@ export const LearningObjectivesEditor: React.FC<CustomFieldProps> = ({
   return (
     <div>
       <label className="form-label">Learning Objectives</label>
-      <ul className="list-unstyled">
+      <ul className="list-unstyled objectives-flat-list">
         {value
           .map((objectiveId) => objectiveMap[String(objectiveId)])
           .filter((objective) => !!objective)
