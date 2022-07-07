@@ -58,6 +58,7 @@ export const getExpressionStringForValue = (
         val[val.length - 1] === ']' &&
         v.type === CapiVariableTypes.ARRAY
       ) {
+        //Is there a possibility that EverApp variable of type array can have expression in them?
         isEverAppArrayObject = true;
       }
       /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
