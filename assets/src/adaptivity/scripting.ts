@@ -42,12 +42,25 @@ export const getExpressionStringForValue = (
 ): string => {
   let val: any = v.value;
   let isValueVar = false;
-
+  let isEverAppArrayObject = false;
   if (typeof val === 'string') {
     let canEval = false;
     try {
       const test = evalScript(val, env);
       canEval = test?.result !== undefined && !test.result.message;
+      if (
+        test?.result &&
+        test?.result?.length > 1 &&
+        v.key &&
+        v.key.startsWith('app.') &&
+        typeof val === 'string' &&
+        val[0] === '[' &&
+        val[val.length - 1] === ']' &&
+        v.type === CapiVariableTypes.ARRAY
+      ) {
+        //Is there a possibility that EverApp variable of type array can have expression in them?
+        isEverAppArrayObject = true;
+      }
       /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
     } catch (e) {
       // failed for any reason
@@ -74,8 +87,8 @@ export const getExpressionStringForValue = (
 
     const hasBackslash = val.includes('\\');
     isValueVar =
-      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash) ||
-      (hasCurlies && !looksLikeJSON && !hasBackslash);
+      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash && !isEverAppArrayObject) ||
+      (hasCurlies && !looksLikeJSON && !hasBackslash && !isEverAppArrayObject);
   }
 
   if (isValueVar) {
