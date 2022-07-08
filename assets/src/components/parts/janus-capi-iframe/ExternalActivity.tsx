@@ -562,13 +562,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 currentStateSnapshot,
                 simLife.domain,
               );
-              console.log({
-                currentStateSnapshot,
-                interestedSnapshot,
-                id,
-                initStateBindToFacts: payload.initStateBindToFacts,
-              });
-
               if (interestedSnapshot && Object.keys(interestedSnapshot).length) {
                 processInitStateVariable(currentStateSnapshot, simLife.domain);
                 setSimIsInitStatePassedOnce(false);
