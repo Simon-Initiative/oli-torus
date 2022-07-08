@@ -1,6 +1,6 @@
-import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
+import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 import { Manifest } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import React from 'react';
@@ -12,33 +12,52 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 import { WrappedMonaco } from '../common/variables/WrappedMonaco';
 import { CustomDnDActions } from './actions';
 import { CustomDnDSchema } from './schema';
-import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
-import { VariableActions } from '../common/variables/variableActions';
+import { PartManager } from './PartManager';
+import { AnswerKey } from './AnswerKey';
+import { HintsEditor } from './HintsEditor';
 
 const store = configureStore();
 
 const CustomDnd = () => {
   const { dispatch, model, editMode } = useAuthoringElementContext<CustomDnDSchema>();
+  const [currentPart, setCurrentPart] = React.useState<string>(model.authoring.parts[0].id);
 
   return (
     <>
+      <div className="mt-3 mb-3" />
+      <Stem />
+      <div className="mt-3 mb-3" />
+      <PartManager
+        model={model}
+        editMode={editMode}
+        currentPartId={currentPart}
+        onSelectPart={(partId) => setCurrentPart(partId)}
+        onAddPart={() => dispatch(CustomDnDActions.addPart())}
+        onRemovePart={(id) => {
+          if (model.authoring.parts.length > 1) {
+            const remainingParts = model.authoring.parts.filter((p) => p.id !== id);
+            setCurrentPart(remainingParts[0].id);
+            dispatch(CustomDnDActions.removePart(id));
+          }
+        }}
+        onEditPart={(old, newId) => {
+          dispatch(CustomDnDActions.editPart(old, newId));
+          setCurrentPart(newId);
+        }}
+      />
+      <div className="mb-3" />
       <TabbedNavigation.Tabs>
-        <TabbedNavigation.Tab label="Question">
-          <div className="d-flex flex-column flex-md-row mb-2">
-            <Stem />
-          </div>
+        <TabbedNavigation.Tab label={`Answer Key (${currentPart})`}>
+          <AnswerKey partId={currentPart} />
         </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label="Hints">
-          <Hints partId={DEFAULT_PART_ID} />
-        </TabbedNavigation.Tab>
-        <TabbedNavigation.Tab label="Dynamic Variables">
-          <VariableEditorOrNot
-            editMode={editMode}
-            model={model}
-            onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
-          />
+        <TabbedNavigation.Tab label={`Hints (${currentPart})`}>
+          <HintsEditor partId={currentPart} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="CSS">
+          <div className="alert alert-info" role="alert">
+            Define custom CSS styles here. Do not include the outer <code>&lt;style&gt;</code>{' '}
+            element. Background image URLs must contain the full URL to the image.
+          </div>
           <WrappedMonaco
             model={model.layoutStyles}
             editMode={editMode}
@@ -47,6 +66,12 @@ const CustomDnd = () => {
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Target Area">
+          <div className="alert alert-info" role="alert">
+            Every part identifier must have a corresponding <code>&lt;div&gt;</code> element whose{' '}
+            <code>input_ref</code> attribute is set to that part identifier. Each of these{' '}
+            <code>&lt;div&gt;</code> elements must also have <code>target</code> set a CSS class
+            name.
+          </div>
           <WrappedMonaco
             model={model.targetArea}
             editMode={editMode}
@@ -55,6 +80,12 @@ const CustomDnd = () => {
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Initiators">
+          <div className="alert alert-info" role="alert">
+            For each possible initiator identifier (the things students will drag) define a{' '}
+            <code>&lt;div&gt;</code> element whose <code>input_val</code> attribute is set to that
+            initiator identifier. Each of these <code>&lt;div&gt;</code> elements must also have{' '}
+            <code>initiator</code> set a CSS class name.
+          </div>
           <WrappedMonaco
             model={model.initiators}
             editMode={editMode}

@@ -21,6 +21,11 @@ export const DragCanvas: React.FC<DragCanvasProps> = (props: DragCanvasProps) =>
     renderRawContent(id, props);
   }, []);
 
+  // When the current activity attempt guid changes, the user has initiated a "reset" to
+  // get another attempt.  We must reset the drop handlers on all drop targets so that
+  // these functions close over the most up to date 'onSubmitPart` handler, which allows
+  // the parent CustomDnDDelivery component to issue part submissions with the correct
+  // part attempt guids.
   useEffect(() => {
     updateDropHandler(id, props);
   }, [props.activityAttemptGuid]);

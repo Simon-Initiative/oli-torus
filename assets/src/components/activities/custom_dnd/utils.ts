@@ -1,7 +1,19 @@
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
-import { Responses } from 'data/activities/model/responses';
 import { GradingApproach, makeHint, makeStem, makeResponse, ScoringStrategy } from '../types';
 import { matchRule } from 'data/activities/model/rules';
+
+export function createNewPart(id: string, answer: string) {
+  return {
+    id,
+    scoringStrategy: ScoringStrategy.average,
+    gradingApproach: GradingApproach.automatic,
+    responses: [
+      makeResponse(matchRule(answer), 1, 'Correct'),
+      makeResponse(matchRule('.*'), 0, 'Incorrect'),
+    ],
+    hints: [makeHint(''), makeHint(''), makeHint('')],
+  };
+}
 
 export const defaultModel: () => CustomDnDSchema = () => {
   return {
@@ -13,36 +25,9 @@ export const defaultModel: () => CustomDnDSchema = () => {
     initiators: DEFAULT_INITIATORS,
     authoring: {
       parts: [
-        {
-          id: 'option1_area',
-          scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.automatic,
-          responses: [
-            makeResponse(matchRule('input1'), 1, 'Correct'),
-            makeResponse(matchRule('.*'), 0, 'Incorrect'),
-          ],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
-        {
-          id: 'option2_area',
-          scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.automatic,
-          responses: [
-            makeResponse(matchRule('input2'), 1, 'Correct'),
-            makeResponse(matchRule('.*'), 0, 'Incorrect'),
-          ],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
-        {
-          id: 'option3_area',
-          scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.automatic,
-          responses: [
-            makeResponse(matchRule('input3'), 1, 'Correct'),
-            makeResponse(matchRule('.*'), 0, 'Incorrect'),
-          ],
-          hints: [makeHint(''), makeHint(''), makeHint('')],
-        },
+        createNewPart('option1_area', 'input1'),
+        createNewPart('option2_area', 'input2'),
+        createNewPart('option3_area', 'input3'),
       ],
       transformations: [],
       previewText: '',

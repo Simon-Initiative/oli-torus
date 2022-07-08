@@ -25,6 +25,7 @@ import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { DragCanvas, ResetListener } from './DragCanvas';
 import { FocusedFeedback } from './FocusedFeedback';
+import { FocusedHints } from './FocusedHints';
 
 export const CustomDnDComponent: React.FC = () => {
   const {
@@ -124,6 +125,8 @@ export const CustomDnDComponent: React.FC = () => {
         <ResetButtonConnected
           onReset={() => {
             if (resetListener !== null) {
+              // This informs the non-React DragCanvas impl to move all draggables
+              // back to their original location
               resetListener();
             }
 
@@ -136,6 +139,7 @@ export const CustomDnDComponent: React.FC = () => {
         />
 
         <FocusedFeedback focusedPart={focusedPart} />
+        <FocusedHints focusedPart={focusedPart} />
       </div>
     </div>
   );
