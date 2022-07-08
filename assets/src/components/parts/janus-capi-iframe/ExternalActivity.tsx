@@ -58,6 +58,23 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   // console.log('ExternalActivity', props, model);
 
+  const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
+    return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
+      if (key.indexOf(`${domain}.${id}.`) === 0) {
+        const value = StateSnapshot[key];
+        const typeOfValue = typeof value;
+        if (value === '[]') {
+          collect[key] = '';
+        } else if (typeOfValue === 'object') {
+          collect[key] = JSON.stringify(value);
+        } else {
+          collect[key] = value;
+        }
+      }
+      return collect;
+    }, {});
+  };
+
   useEffect(() => {
     const styleChanges: any = {};
     if (frameWidth !== undefined) {
@@ -295,23 +312,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     // INIT STATE also needs to take in all the sim values
-    const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
-      (collect: Record<string, any>, key) => {
-        if (key.indexOf(`${domain}.${id}.`) === 0) {
-          const value = currentStateSnapshot[key];
-          const typeOfValue = typeof value;
-          if (value === '[]') {
-            collect[key] = '';
-          } else if (typeOfValue === 'object') {
-            collect[key] = JSON.stringify(value);
-          } else {
-            collect[key] = value;
-          }
-        }
-        return collect;
-      },
-      {},
-    );
+    const interestedSnapshot = getInterestedVariable(currentStateSnapshot, domain);
     setInitState(interestedSnapshot);
     simLife.snapshot = currentStateSnapshot;
     setInitStateReceived(true);
@@ -557,8 +558,21 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
-              processInitStateVariable(currentStateSnapshot, simLife.domain);
-              setSimIsInitStatePassedOnce(false);
+              const interestedSnapshot = getInterestedVariable(
+                currentStateSnapshot,
+                simLife.domain,
+              );
+              console.log({
+                currentStateSnapshot,
+                interestedSnapshot,
+                id,
+                initStateBindToFacts: payload.initStateBindToFacts,
+              });
+
+              if (interestedSnapshot && Object.keys(interestedSnapshot).length) {
+                processInitStateVariable(currentStateSnapshot, simLife.domain);
+                setSimIsInitStatePassedOnce(false);
+              }
             }
             break;
         }
