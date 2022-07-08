@@ -457,6 +457,18 @@ describe('Scripting Interface', () => {
       expect(script).toBe('{q:1541204522672:818|stage.FillInTheBlanks.Input 1.Value}');
     });
 
+    it('should give the array back in same format to what was sent', () => {
+      const value =
+        '[{"data":{"notes":"asd asd asdas dasdas dasdd","url":"https://static.argos.education/repo/images/6b8d8462ac05fd45cf8d73577baed921.jpg"},"type":"IMAGE","uuid":"36bfc906-88e6-4f41-938a-89ce15d3d8b1"},{"data":{"notes":"asd asd asdasdd ","url":"https://static.argos.education/repo/images/782e06cacd2729e579eba2a05d130484.jpg"},"type":"IMAGE","uuid":"cbe7fc7e-ba93-4aaf-9c5c-d5458c68de07"},{"data":{"notes":"sad asd asdas dasda sdasd","url":"https://static.argos.education/repo/images/45d4d206419c471fb035c19b852f4682.png"},"type":"IMAGE","uuid":"92197b95-2aa6-4b7c-9a55-7f48267da733"},{"uuid":"63548c9a-3fad-45e2-8c5d-e60cebb44b76","type":"IMAGE","data":{"url":"https://static.argos.education/repo/images/b9fc166eebd25a3bd65873411b8b5662.gif","notes":"as fsdf sfs s fsfd"}},{"uuid":"a13e0e2e-1039-403a-ae99-1990424da6b4","type":"IMAGE","data":{"url":"https://static.argos.education/repo/images/a3bf0a353a8344f518db51419a55c7c9.png","notes":"asd asda dasd adad"}},{"uuid":"cc0b2057-6ca2-48f7-ad34-4d86474eb6dc","type":"IMAGE","data":{"url":"https://static.argos.education/repo/images/4ab2dd2db9e1c48f2524aa29f4209b5e.png","notes":"asd asd ada sdasd"}}]';
+      const variable = {
+        type: CapiVariableTypes.ARRAY,
+        key: 'app.ispk-bio-blue-planet-report.observations',
+        value: value,
+      };
+      const script = getExpressionStringForValue(variable);
+      expect(script).toBe(value);
+    });
+
     it('should allow full janus-script expressions to be assigned', () => {
       const variable = {
         type: CapiVariableTypes.STRING,
