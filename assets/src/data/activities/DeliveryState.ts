@@ -171,7 +171,6 @@ export const activityDeliverySlice = createSlice({
       );
     },
     setAttemptState(state, action: PayloadAction<ActivityState>) {
-      console.log(action.payload);
       state.attemptState = action.payload;
     },
     updateChoiceSelectionMultiple(

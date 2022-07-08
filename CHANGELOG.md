@@ -7,6 +7,7 @@
 ### Enhancements
 
 - Survey delivery support
+- Legacy Custom Drag and Drag activity support
 
 ## 0.20.0 (2022-06-30)
 
