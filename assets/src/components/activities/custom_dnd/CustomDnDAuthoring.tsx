@@ -1,6 +1,4 @@
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
-import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 import { Manifest } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import React from 'react';
