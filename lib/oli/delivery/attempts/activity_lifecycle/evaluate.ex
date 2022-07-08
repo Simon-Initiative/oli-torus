@@ -274,9 +274,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
       part_inputs = filter_already_evaluated(part_inputs, part_attempts)
 
-      IO.inspect("filtered")
-      IO.inspect(part_inputs)
-
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
