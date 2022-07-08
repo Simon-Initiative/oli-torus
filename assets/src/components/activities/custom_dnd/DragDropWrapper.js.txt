@@ -1,0 +1,236 @@
+define(function () {
+  var DragDropWrapper = new Class({
+    Implements: [Events],
+
+    layoutFile: null,
+    viewPlaceholder: null,
+    questionId: null,
+    isDisabled: false,
+    assessmentQuestion: null,
+
+    initialize: function () {},
+
+    initOptions: function (options) {
+      if (options) {
+        this.layoutFile = options.layoutFile;
+        this.viewPlaceholder = options.viewPlaceholder;
+        this.assessmentQuestion = options.assessmentQuestion;
+        this.questionId = options.assessmentQuestion.id;
+      }
+    },
+
+    process: function () {
+      if (this.viewPlaceholder) {
+        //trace("The mighty layout file: " + this.layoutFile);
+        var xml = this.loadXml(this.layoutFile);
+
+        var json = xml2json(xml, '');
+        var obj = JSON.decode(json);
+
+        this.renderLayout(obj.dragdrop);
+        var instance = this;
+        this.dispatchEvent(ComponentEvent.COMPONENT_LOADED, {
+          questionId: instance.assessmentQuestion.id,
+        });
+      }
+    },
+
+    loadXml: function (dname) {
+      var xhttp;
+
+      if (window.XMLHttpRequest) {
+        xhttp = new XMLHttpRequest();
+      } else {
+        xhttp = new ActiveXObject('Microsoft.XMLHTTP');
+      }
+
+      xhttp.open('GET', dname, false);
+      xhttp.send();
+
+      return xhttp.responseXML;
+    },
+
+    renderLayout: function (obj) {
+      var instance = this;
+      var styleLines = obj.layoutStyles['#cdata'].split('\n');
+      var base = instance.layoutFile.slice(0, instance.layoutFile.lastIndexOf('/') + 1);
+      var re = /url\((?!\s*[\'"]?(?:https?:)?\/\/)\s*([\'"])?/;
+      var styleData = '';
+      styleLines.forEach(function (val) {
+        var newstr = val.replace(re, 'url($1' + base);
+        styleData = styleData + newstr + '\n';
+      });
+
+      var componentContainer = new Element('div', {
+        html: styleData,
+      });
+      this.viewPlaceholder.grab(componentContainer);
+
+      var targetArea = new Element('div', {
+        html: obj.targetArea['#cdata'],
+        class: 'component',
+      });
+      targetArea.addEvent('click', function (e) {
+        if (e.target.get('input_ref')) {
+          instance.changeFocus(e.target.get('input_ref'));
+        } else if (e.target.getParent().get('input_ref')) {
+          instance.changeFocus(e.target.getParent().get('input_ref'));
+        }
+      });
+      componentContainer.grab(targetArea);
+
+      var initiatorsContainer = new Element('div', {
+        class: 'input_source',
+        html: obj.initiators['#cdata'],
+      });
+      componentContainer.grab(initiatorsContainer);
+
+      componentContainer.getElements('div[class=initiator]').each(function (element) {
+        element.posx = element.getStyle('top');
+        element.posy = element.getStyle('left');
+      });
+
+      componentContainer.getElements('div[class=initiator]').makeDraggable({
+        droppables: componentContainer.getElements('div[class=target]'),
+        onDrop: function (draggable, droppable) {
+          if (instance.isDisabled) {
+            return;
+          }
+          // Below commented out to allow DND after being placed on the stage
+          // if (draggable.getParent().get("input_ref")) {
+          //     draggable.setStyles(
+          //             {
+          //                 "left": "0px",
+          //                 "top": "0px",
+          //                 "position": "relative"
+          //             });
+          //     return;
+          // }
+
+          if (
+            droppable &&
+            droppable.get('input_ref') !== null &&
+            droppable.getParents('#' + instance.questionId).length > 0
+          ) {
+            droppable.getChildren().each(function (child) {
+              trace('On Drop -- replace');
+              initiatorsContainer.grab(child);
+              child.setStyles({
+                left: '0px',
+                top: '0px',
+                position: 'relative',
+              });
+            });
+
+            droppable.grab(draggable, 'top');
+            draggable.setStyles({
+              left: '0px',
+              top: '0px',
+              position: 'relative',
+            });
+
+            instance.processUserInput(droppable.get('input_ref'), draggable.get('input_val'));
+            instance.changeFocus(droppable.get('input_ref'));
+          } else {
+            initiatorsContainer.grab(draggable);
+            draggable.setStyles({
+              left: '0px',
+              'background-color': '#ffc',
+              top: '0px',
+              position: 'relative',
+            });
+          }
+        },
+        onDrag: function (el) {
+          el.setStyle('z-index', 555);
+        },
+      });
+
+      // This is a temporary fix to keep the initiators seperated.  MooTools makes them absolute when draggable
+      componentContainer.getElements('div[class=initiator]').setStyles({
+        position: 'relative',
+        left: '0px',
+        top: '0px',
+      });
+    },
+    processUserInput: function (partId, value) {
+      var instance = this;
+      this.dispatchEvent(ComponentEvent.VALUE_COMMIT, {
+        questionId: instance.questionId,
+        partId: partId,
+        partValue: value,
+      });
+    },
+    changeFocus: function (partId) {
+      var instance = this;
+      instance.viewPlaceholder.getElements('div[input_ref]').forEach(function (el) {
+        el.setStyle('border-width', '1px');
+      });
+
+      var droppable = this.viewPlaceholder.getElement('div[input_ref="' + partId + '"]');
+
+      droppable.setStyle('border-width', '3px');
+
+      instance.dispatchEvent(ComponentEvent.FOCUS_CHANGE, {
+        questionId: instance.questionId,
+        partId: partId,
+      });
+    },
+    restore: function (id, val, isCorrect) {
+      trace('Drag and drop restore()');
+      var droppable = this.viewPlaceholder.getElement('div[input_ref="' + id + '"]');
+      var draggable = this.viewPlaceholder.getElement('div[input_val="' + val + '"]');
+      droppable.grab(draggable, 'top');
+      this.correct(id, isCorrect);
+    },
+    correct: function (id, isCorrect) {
+      trace('Drag and drop correct() ' + id);
+      var droppable = this.viewPlaceholder.getElement('div[input_ref="' + id + '"]');
+      var borderColor = isCorrect ? '#ddffdd' : '#f4cfc9';
+
+      var droppedElement = this.viewPlaceholder.getElement(
+        'div[input_ref="' + id + '"] div.initiator',
+      );
+
+      if (droppedElement) {
+        droppedElement.setStyles({
+          'background-color': borderColor,
+        });
+      }
+      // droppable.setStyles({
+      //     "border-style": "solid",
+      //     "border-width": "1px",
+      //     "border-color": borderColor
+      // });
+    },
+    highlight: function (id, isHighlighted) {
+      trace('Drag and drop highlight()');
+      this.viewPlaceholder.getElements('div[input_ref]').forEach(function (el) {
+        trace('For Each ' + el);
+        el.setStyle('background-color', '');
+      });
+
+      var droppable = this.viewPlaceholder.getElement('div[input_ref="' + id + '"]');
+      var backgroundColor = isHighlighted ? 'cyan' : 'none';
+
+      droppable.setStyle('background-color', backgroundColor);
+    },
+    disable: function (id, isDisabled) {
+      trace('Drag and drop disable()');
+      this.isDisabled = isDisabled;
+    },
+    // Allows dispatching of all events with optional parameters. A reference to this component as "target" is always included
+    dispatchEvent: function (eventType, params) {
+      if (!params) {
+        params = {};
+      }
+
+      if (!params.target) {
+        params['target'] = this;
+      }
+
+      this.fireEvent(eventType, params);
+    },
+  });
+  return DragDropWrapper;
+});

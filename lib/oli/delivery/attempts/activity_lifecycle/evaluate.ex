@@ -43,6 +43,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
+
         # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
 
         variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
@@ -272,6 +273,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     Repo.transaction(fn ->
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
       part_inputs = filter_already_evaluated(part_inputs, part_attempts)
+
+      IO.inspect("filtered")
+      IO.inspect(part_inputs)
 
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 

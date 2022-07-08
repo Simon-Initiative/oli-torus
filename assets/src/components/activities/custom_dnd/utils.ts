@@ -1,11 +1,13 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
 import { Responses } from 'data/activities/model/responses';
-import { GradingApproach, makeHint, makeStem, ScoringStrategy } from '../types';
+import { GradingApproach, makeHint, makeStem, makeResponse, ScoringStrategy } from '../types';
+import { matchRule } from 'data/activities/model/rules';
 
 export const defaultModel: () => CustomDnDSchema = () => {
   return {
     stem: makeStem(''),
+    height: '400',
+    width: '600',
     targetArea: DEFAULT_TARGET_AREA,
     layoutStyles: DEFAULT_LAYOUT_STYLES,
     initiators: DEFAULT_INITIATORS,
@@ -14,22 +16,31 @@ export const defaultModel: () => CustomDnDSchema = () => {
         {
           id: 'option1_area',
           scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.manual,
-          responses: Responses.forTextInput(),
+          gradingApproach: GradingApproach.automatic,
+          responses: [
+            makeResponse(matchRule('input1'), 1, 'Correct'),
+            makeResponse(matchRule('.*'), 0, 'Incorrect'),
+          ],
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
         {
           id: 'option2_area',
           scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.manual,
-          responses: Responses.forTextInput(),
+          gradingApproach: GradingApproach.automatic,
+          responses: [
+            makeResponse(matchRule('input2'), 1, 'Correct'),
+            makeResponse(matchRule('.*'), 0, 'Incorrect'),
+          ],
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
         {
           id: 'option3_area',
           scoringStrategy: ScoringStrategy.average,
-          gradingApproach: GradingApproach.manual,
-          responses: Responses.forTextInput(),
+          gradingApproach: GradingApproach.automatic,
+          responses: [
+            makeResponse(matchRule('input3'), 1, 'Correct'),
+            makeResponse(matchRule('.*'), 0, 'Incorrect'),
+          ],
           hints: [makeHint(''), makeHint(''), makeHint('')],
         },
       ],
@@ -40,6 +51,13 @@ export const defaultModel: () => CustomDnDSchema = () => {
 };
 
 const DEFAULT_LAYOUT_STYLES = `
+
+#targetContainer {
+  margin: auto;
+  height: 300px;
+  position: relative;
+}
+
 .target {
   border: 2px;
   border-style: dashed;
@@ -73,7 +91,7 @@ const DEFAULT_LAYOUT_STYLES = `
 `;
 
 const DEFAULT_TARGET_AREA = `
-<div>
+<div id="targetContainer">
 
   <div id="lefttitle" style="position:absolute;top:30px; left:5px" >Label 1</div>
   <div id="middletitle" style="position:absolute;top:95px; left:5px" >Label 2</div>
@@ -87,7 +105,7 @@ const DEFAULT_TARGET_AREA = `
 `;
 
 const DEFAULT_INITIATORS = `
-<div input_val="electron" class="initiator">electron capture</div>
-<div input_val="alpha" class="initiator">alpha decay</div>
-<div input_val="beta" class="initiator">beta decay</div>
+<div input_val="input1" class="initiator">Initiator 1</div>
+<div input_val="input2" class="initiator">Initiator 2</div>
+<div input_val="input3" class="initiator">Initiator 3</div>
 `;

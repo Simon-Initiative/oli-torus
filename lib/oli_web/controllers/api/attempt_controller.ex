@@ -408,10 +408,16 @@ defmodule OliWeb.Api.AttemptController do
         "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => attempt_guid,
-        "input" => input
+        "response" => input
       }) do
     case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
-           %{attempt_guid: attempt_guid, input: input}
+           %{
+             attempt_guid: attempt_guid,
+             input: %StudentInput{
+               files: Map.get(input, "files", []),
+               input: Map.get(input, "input")
+             }
+           }
          ]) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
@@ -430,8 +436,18 @@ defmodule OliWeb.Api.AttemptController do
        responses: %{
          200 => {"Evaluation response", "application/json", UserStateUpdateResponse}
        }
-  def new_part(conn, %{"activity_attempt_guid" => _, "part_attempt_guid" => _attempt_guid}) do
-    json(conn, %{"type" => "success"})
+  def new_part(conn, %{
+        "activity_attempt_guid" => activity_attempt_guid,
+        "part_attempt_guid" => part_attempt_guid
+      }) do
+    case Activity.reset_part(activity_attempt_guid, part_attempt_guid) do
+      {:ok, attempt_state} ->
+        json(conn, %{"type" => "success", "attemptState" => attempt_state})
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not reset part", e)
+        error(conn, 500, msg)
+    end
   end
 
   @doc """
