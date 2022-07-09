@@ -158,6 +158,11 @@ export const MultiInputComponent: React.FC = () => {
     ]);
   };
 
+  const onVlabLoad = () => {
+    const assignment = model.configuration['assignmentPath'];
+    document.getElementById('vlab').contentWindow.loadAssignment(assignment);
+  };
+
   const writerContext = defaultWriterContext({
     sectionSlug,
     inputRefContext: {
@@ -171,7 +176,7 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <iframe id="vlab" className="vlab-holder" src="/vlab/index.html" />
+        <iframe id="vlab" className="vlab-holder" src="/vlab/index.html" onLoad={onVlabLoad} />
         <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
         <GradedPointsConnected />
         <ResetButtonConnected

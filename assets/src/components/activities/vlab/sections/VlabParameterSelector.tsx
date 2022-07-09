@@ -3,7 +3,6 @@ import { MultiInputActions } from 'components/activities/vlab/actions';
 import { friendlyVlabParameter } from 'components/activities/vlab/utils';
 import { VlabValue, VlabSchema } from 'components/activities/vlab/schema';
 import React from 'react';
-import { Provider, useDispatch, useSelector } from 'react-redux';
 
 interface Props {
   input: VlabValue;
@@ -37,7 +36,9 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
             name="speciesID"
             value={props.input.species}
             disabled={props.input.parameter !== 'moles' && props.input.parameter !== 'mass'}
-            onChange={() => dispatch(MultiInputActions.setVlabSpecies(props.input.id, '1'))}
+            onChange={(e) =>
+              dispatch(MultiInputActions.setVlabSpecies(props.input.id, e.target.value))
+            }
           />
           Species ID
         </label>

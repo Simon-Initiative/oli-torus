@@ -6,6 +6,7 @@ import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 // import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
 import { VlabStem } from 'components/activities/vlab/sections/VlabStem';
 import { QuestionTab } from 'components/activities/vlab/sections/QuestionTab';
+import { VlabConfigTab } from 'components/activities/vlab/sections/VlabConfigTab';
 import { Manifest } from 'components/activities/types';
 import { elementsOfType } from 'components/editing/utils';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -56,6 +57,9 @@ export const MultiInputComponent = () => {
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>
+          <TabbedNavigation.Tab label="Config">
+            <VlabConfigTab editor={editor} />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Question">
             <QuestionTab editor={editor} input={input} index={index} />
           </TabbedNavigation.Tab>

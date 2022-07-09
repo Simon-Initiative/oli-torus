@@ -51,27 +51,27 @@ export const defaultModel = (): VlabSchema => {
 };
 
 export const friendlyType = (type: VlabInputType) => {
-  switch (type) {
-    case 'dropdown':
-      return 'Dropdown';
-    case 'vlabvalue':
-      return 'Vlab Value';
-    default:
-      return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
-  }
+  return `${
+    type === 'dropdown'
+      ? 'Dropdown'
+      : type === 'vlabvalue'
+      ? 'Vlab Value'
+      : type === 'numeric'
+      ? 'Input (Number)'
+      : 'Input (Text)'
+  }`;
 };
 
 export const friendlyVlabParameter = (param: VlabParameter) => {
-  switch (param) {
-    case 'temp':
-      return 'temperature (deg K)';
-    case 'volume':
-      return 'volume (L)';
-    case 'moles':
-      return 'moles';
-    case 'mass':
-      return 'mass (g)';
-  }
+  return `${
+    param === 'temp'
+      ? 'temperature (deg K)'
+      : param === 'volume'
+      ? 'volume (L)'
+      : param === 'moles'
+      ? 'moles'
+      : 'mass(g)'
+  }`;
 };
 
 export const partTitle = (input: VlabInput, index: number) => (

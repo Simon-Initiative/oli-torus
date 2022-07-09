@@ -1,6 +1,12 @@
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
-import { Dropdown, VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
+import {
+  Dropdown,
+  VlabInput,
+  VlabSchema,
+  VlabInputType,
+  VlabConfiguration,
+} from 'components/activities/vlab/schema';
 import {
   Choice,
   ChoiceId,
@@ -197,6 +203,12 @@ export const MultiInputActions = {
     return (model: VlabSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
       (input as VlabInput).species = species;
+    };
+  },
+
+  setVlabConfiguration(settings) {
+    return (model: VlabSchema) => {
+      model.configuration = { assignmentPath: settings };
     };
   },
 
