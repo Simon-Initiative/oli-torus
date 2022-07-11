@@ -4,7 +4,7 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.19.5",
+      version: "0.20.0",
       elixir: "~> 1.13.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
@@ -190,7 +190,6 @@ defmodule Oli.MixProject do
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
-      {:telemetry_metrics_prometheus, "~> 1.0.0"},
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},

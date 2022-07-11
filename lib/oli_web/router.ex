@@ -8,8 +8,8 @@ defmodule OliWeb.Router do
 
   import Phoenix.LiveDashboard.Router
 
-  @user_persistent_session_cookie_key "oli_user_persistent_session"
-  @author_persistent_session_cookie_key "oli_author_persistent_session"
+  @user_persistent_session_cookie_key "oli_user_persistent_session_v2"
+  @author_persistent_session_cookie_key "oli_author_persistent_session_v2"
 
   ### BASE PIPELINES ###
   # We have four "base" pipelines: :browser, :api, :lti, and :skip_csrf_protection
@@ -43,8 +43,14 @@ defmodule OliWeb.Router do
   pipeline :lti do
     plug(:fetch_session)
     plug(:fetch_flash)
-    plug(Oli.Plugs.SetCurrentUser)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
+  end
+
+  # pipeline for SSO endpoints
+  pipeline :sso do
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(Oli.Plugs.ValidateIdToken)
   end
 
   pipeline :skip_csrf_protection do
@@ -199,10 +205,6 @@ defmodule OliWeb.Router do
       from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
   end
 
-  pipeline :sso do
-    plug(Oli.Plugs.ValidateIdToken)
-  end
-
   scope "/superactivity", OliWeb do
     pipe_through :superactivity
     get "/*path", LegacySuperactivityController, :file_not_found
@@ -276,6 +278,9 @@ defmodule OliWeb.Router do
     get("/", StaticPageController, :index)
     get("/unauthorized", StaticPageController, :unauthorized)
     get("/not_found", StaticPageController, :not_found)
+
+    # update session timezone information
+    post("/update_timezone", StaticPageController, :update_timezone)
   end
 
   scope "/", OliWeb do
@@ -517,12 +522,18 @@ defmodule OliWeb.Router do
   scope "/api/v1/bibs/project/:project", OliWeb do
     pipe_through([:api, :authoring_protected])
 
-
     post("/retrieve", Api.BibEntryController, :retrieve)
     post("/", Api.BibEntryController, :new)
     get("/", Api.BibEntryController, :index)
     delete("/entry/:entry", Api.BibEntryController, :delete)
     put("/entry/:entry", Api.BibEntryController, :update)
+  end
+
+  # Dynamic question variable evaluation service
+  scope "/api/v1/variables", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    post("/", Api.VariableEvaluationController, :evaluate)
   end
 
   scope "/api/v1/products", OliWeb do
@@ -643,7 +654,7 @@ defmodule OliWeb.Router do
 
   # LTI routes
   scope "/lti", OliWeb do
-    pipe_through([:lti, :www_url_form])
+    pipe_through([:lti, :www_url_form, :delivery])
 
     post("/login", LtiController, :login)
     get("/login", LtiController, :login)
@@ -914,6 +925,10 @@ defmodule OliWeb.Router do
       as: :discount
     )
 
+    live("/institutions/:institution_id/research_consent", Admin.Institutions.ResearchConsentView,
+      as: :institution
+    )
+
     live("/registrations", Admin.RegistrationsView)
 
     resources("/registrations", RegistrationController, except: [:index]) do
@@ -999,11 +1014,15 @@ defmodule OliWeb.Router do
 
   # Support for cognito JWT auth currently used by Infiniscope
   scope "/cognito", OliWeb do
-    pipe_through([:sso])
+    pipe_through([:sso, :delivery])
 
     get("/launch", CognitoController, :index)
     get("/launch/products/:product_slug", CognitoController, :launch)
     get("/launch/projects/:project_slug", CognitoController, :launch)
+  end
+
+  scope "/cognito", OliWeb do
+    pipe_through([:sso, :authoring])
 
     get("/launch_clone/products/:product_slug", CognitoController, :launch_clone,
       as: :product_clone

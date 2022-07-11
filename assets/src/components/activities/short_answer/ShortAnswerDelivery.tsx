@@ -15,6 +15,8 @@ import {
   isSubmitted,
   activityDeliverySlice,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { safelySelectStringInputs } from 'data/activities/utils';
@@ -59,6 +61,8 @@ export const ShortAnswerComponent: React.FC = () => {
   const {
     model,
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onSaveActivity,
     onResetActivity,
   } = useDeliveryElementContext<ShortAnswerModelSchema>();
@@ -67,6 +71,9 @@ export const ShortAnswerComponent: React.FC = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [''] });
+
     dispatch(
       initializeState(
         activityState,
@@ -78,6 +85,7 @@ export const ShortAnswerComponent: React.FC = () => {
             [DEFAULT_PART_ID]: [''],
           }),
         }),
+        model,
       ),
     );
   }, []);
@@ -107,7 +115,7 @@ export const ShortAnswerComponent: React.FC = () => {
         <GradedPointsConnected />
 
         <Input
-          inputType={model.inputType}
+          inputType={(uiState.model as ShortAnswerModelSchema).inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
           input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}

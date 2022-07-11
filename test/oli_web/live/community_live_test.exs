@@ -181,6 +181,20 @@ defmodule OliWeb.CommunityLiveTest do
       refute has_element?(view, "##{first_c.id}")
       assert has_element?(view, "##{last_c.id}")
     end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      c1 = insert(:community)
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert has_element?(
+               view,
+               "tr##{c1.id}",
+               OliWeb.Common.Utils.render_date(c1, :inserted_at, session_context)
+             )
+    end
   end
 
   describe "new" do
@@ -972,7 +986,8 @@ defmodule OliWeb.CommunityLiveTest do
 
     test "applies paging", %{conn: conn, community: community} do
       [first_cv | tail] =
-        insert_list(26, :community_visibility, %{community: community}) |> Enum.sort_by(& &1.project.title)
+        insert_list(26, :community_visibility, %{community: community})
+        |> Enum.sort_by(& &1.project.title)
 
       last_cv = List.last(tail)
 
@@ -987,6 +1002,20 @@ defmodule OliWeb.CommunityLiveTest do
 
       refute has_element?(view, "##{first_cv.id}")
       assert has_element?(view, "##{last_cv.id}")
+    end
+
+    test "renders datetimes using the local timezone", %{community: community} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      cv1 = insert(:community_visibility, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      assert has_element?(
+               view,
+               "tr##{cv1.id}",
+               OliWeb.Common.Utils.render_date(cv1, :inserted_at, session_context)
+             )
     end
   end
 
@@ -1116,12 +1145,12 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-              first_p.title
+               first_p.title
 
       refute view
              |> element("tr:last-child > td:first-child")
              |> render() =~
-              last_p.title
+               last_p.title
 
       view
       |> element("a[phx-click=\"page_change\"]", "2")
@@ -1130,7 +1159,21 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-              last_p.title
+               last_p.title
+    end
+
+    test "renders datetimes using the local timezone", %{community: community} = context do
+      s = insert(:section)
+
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
+
+      assert element(
+               view,
+               "tbody",
+               OliWeb.Common.Utils.render_date(s, :inserted_at, session_context)
+             )
     end
   end
 

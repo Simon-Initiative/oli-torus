@@ -3,7 +3,10 @@ import { CapiVariableTypes } from 'adaptivity/capi';
 import { templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
-import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
+import {
+  getBulkActivitiesForAuthoring,
+  getBulkActivitiesForDelivery,
+} from 'data/persistence/activity';
 import {
   getBulkAttemptState,
   getPageAttemptState,
@@ -26,12 +29,13 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { setLessonEnd } from '../../adaptivity/slice';
+import { selectHistoryNavigationActivity, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
   selectNavigationSequence,
   selectPreviewMode,
+  selectIsInstructor,
   selectResourceAttemptGuid,
   selectSectionSlug,
   setScore,
@@ -56,6 +60,8 @@ export const initializeActivity = createAsyncThunk(
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
+
+    const isHistoryMode = selectHistoryNavigationActivity(rootState);
 
     /* console.log('CAT', { currentActivityTree, currentActivity }); */
     // bind all parent parts to current activity
@@ -196,7 +202,9 @@ export const initializeActivity = createAsyncThunk(
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
 
-    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+    const stateOps = isHistoryMode ? globalizedInitState : [...sessionOps, ...globalizedInitState];
+
+    const results = bulkApplyState(stateOps, defaultGlobalEnv);
     /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
 
     const applyStateHasErrors = results.some((r) => r.result !== null);
@@ -225,7 +233,8 @@ export const initializeActivity = createAsyncThunk(
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
     // in preview mode we don't talk to the server, so we're done
-    if (isPreviewMode) {
+    // if we're in history mode we shouldn't be writing anything
+    if (isPreviewMode || isHistoryMode) {
       const allGood = results.every(({ result }) => result === null);
       // TODO: report actual errors?
       const status = allGood ? 'success' : 'error';
@@ -449,10 +458,14 @@ export const loadActivities = createAsyncThunk(
     const rootState = thunkApi.getState() as RootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
+    const isInstructor = selectIsInstructor(rootState);
     let results;
     if (isPreviewMode) {
       const activityIds = activityAttemptMapping.map((m) => m.id);
-      results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+
+      results = isInstructor
+        ? await getBulkActivitiesForDelivery(sectionSlug, activityIds, isPreviewMode)
+        : await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
     } else {
       const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);
       results = await getBulkAttemptState(sectionSlug, attemptGuids);

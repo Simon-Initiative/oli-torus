@@ -42,7 +42,7 @@ export const getResponseBy = (model: HasParts, predicate: (x: Response) => boole
 
 // Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
-  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score === 1)).valueOrThrow(
+  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score >= 1)).valueOrThrow(
     new Error('Could not find correct response'),
   );
 };

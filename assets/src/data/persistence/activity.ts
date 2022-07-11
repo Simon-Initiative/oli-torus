@@ -7,6 +7,7 @@ import {
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
+import { clone } from 'utils/common';
 
 export type ActivityUpdate = {
   title: string;
@@ -103,10 +104,15 @@ export const getBulkActivitiesForAuthoring = async (
   });
 };
 
-export const getActivityForDelivery = (sectionSlug: string, activityId: ResourceId) => {
+export const getActivityForDelivery = (
+  sectionSlug: string,
+  activityId: ResourceId,
+  isPreviewMode: boolean,
+) => {
   const params = {
     method: 'GET',
     url: `/storage/course/${sectionSlug}/resource/${activityId}`,
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   return makeRequest<Retrieved>(params);
@@ -115,11 +121,13 @@ export const getActivityForDelivery = (sectionSlug: string, activityId: Resource
 export const getBulkActivitiesForDelivery = async (
   sectionSlug: string,
   activityIds: ResourceId[],
+  isPreviewMode: boolean,
 ) => {
   const params = {
     method: 'POST',
     url: `/storage/course/${sectionSlug}/resource`,
     body: JSON.stringify({ resourceIds: activityIds }),
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   const response = await makeRequest<BulkRetrieved>(params);
@@ -128,11 +136,13 @@ export const getBulkActivitiesForDelivery = async (
   }
 
   return response.results.map((result: Retrieved) => {
-    const { resourceId: id, title, content } = result;
+    const { resourceId: id, activityType, title, content, authoring } = result;
     return {
       id,
+      activityType,
       title,
       content,
+      authoring,
     };
   });
 };
@@ -176,15 +186,22 @@ export function bulkEdit(
   resource: ResourceId,
   updates: BulkActivityUpdate[],
 ) {
-  // Index "citation references" in the "content and authoring" and elevate them as top-level list
-  updates.forEach((u) => {
-    const citationRefs: string[] = [];
-    indexBibrefs(u.content, citationRefs);
-    if (u.authoring) {
-      indexBibrefs(u.authoring, citationRefs);
-    }
-    u.content.bibrefs = citationRefs;
-  });
+  try {
+    // Index "citation references" in the "content and authoring" and elevate them as top-level list
+    updates.forEach((u) => {
+      const citationRefs: string[] = [];
+      indexBibrefs(u.content, citationRefs);
+      if (u.authoring) {
+        indexBibrefs(u.authoring, citationRefs);
+      }
+      // make content mutable
+      const contentClone = clone(u.content);
+      contentClone.bibrefs = citationRefs;
+      u.content = contentClone;
+    });
+  } catch (e) {
+    console.error('bulkEdit: ', e);
+  }
 
   const params = {
     method: 'PUT',

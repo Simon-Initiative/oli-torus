@@ -4,7 +4,7 @@
       <div class="username">
         <%= user_name @current_user %>
       </div>
-      <div class="role text-right" style="color: <%= user_role_color @conn, @current_user %>;">
+      <div class="role text-right" style={"color: #{user_role_color(@conn, @current_user)};"}>
         <%= user_role_text @conn, @current_user %>
       </div>
     </div>
@@ -33,10 +33,10 @@
       <%= if (not user_role_is_student(@conn, @current_user)) or Sections.is_independent_instructor?(@current_user) do %>
         <%= if account_linked?(@current_user) do %>
           <h6 class="dropdown-header">Linked: <%= @current_user.author.email %></h6>
-          <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive) %>" target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
-          <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link a different account</a>
+          <a class="dropdown-item" href={Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive)} target="_blank">Go to Course Author <i class="fas fa-external-link-alt float-right" style="margin-top: 2px"></i></a>
+          <a class="dropdown-item" href={Routes.delivery_path(@conn, :link_account)} target="_blank">Link a different account</a>
         <% else %>
-          <a class="dropdown-item" href="<%= Routes.delivery_path(@conn, :link_account) %>" target="_blank">Link Existing Account</a>
+          <a class="dropdown-item" href={Routes.delivery_path(@conn, :link_account)} target="_blank">Link Existing Account</a>
         <% end %>
         <div class="dropdown-divider"></div>
       <% end %>
@@ -47,14 +47,18 @@
           Dark Mode
           <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
         </div>
-        <div class="dropdown-divider"></div>
       <% end %>
+      <div class="dropdown-item no-hover">
+        Timezone
+        <br>
+        <OliWeb.Common.SelectTimezone.render selected={Plug.Conn.get_session(@conn, "local_tz")} conn={@conn}/>
+      </div>
+      <div class="dropdown-divider"></div>
 
       <%= if user_is_independent_learner?(@current_user) or Sections.is_independent_instructor?(@current_user) do %>
         <%= link "My Courses", to: Routes.delivery_path(@conn, :open_and_free_index), class: "dropdown-item btn" %>
         <div class="dropdown-divider"></div>
       <% end %>
-
       <%= link "Sign out", to: Routes.session_path(@conn, :signout, type: :user), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
     </div>
   <% end %>

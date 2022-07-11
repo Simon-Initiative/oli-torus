@@ -15,6 +15,8 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:out_of, :float)
     field(:custom_scores, :map)
     field(:transformed_model, :map, default: nil)
+    field(:group_id, :string, default: nil)
+    field(:survey_id, :string, default: nil)
 
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)

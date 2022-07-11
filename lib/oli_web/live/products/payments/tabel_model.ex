@@ -2,6 +2,7 @@ defmodule OliWeb.Products.Payments.TableModel do
   use OliWeb, :surface_component
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
 
   def new(payments, context) do
     SortableTableModel.new(
@@ -16,13 +17,13 @@ defmodule OliWeb.Products.Payments.TableModel do
         %ColumnSpec{
           name: :generation_date,
           label: "Created Date",
-          render_fn: &__MODULE__.render_gen_date_column/3,
+          render_fn: &__MODULE__.render_date_column/3,
           sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
           name: :application_date,
           label: "Application Date",
-          render_fn: &__MODULE__.render_app_date_column/3,
+          render_fn: &__MODULE__.render_date_column/3,
           sort_fn: &__MODULE__.sort_date/2
         },
         %ColumnSpec{
@@ -120,12 +121,8 @@ defmodule OliWeb.Products.Payments.TableModel do
      end, direction}
   end
 
-  def render_gen_date_column(%{context: context}, %{payment: payment}, _) do
-    date(payment.generation_date, context)
-  end
-
-  def render_app_date_column(%{context: context}, %{payment: payment}, _) do
-    date(payment.application_date, context)
+  def render_date_column(%{context: context}, %{payment: payment}, %ColumnSpec{name: name}) do
+    Utils.render_date(payment, name, context)
   end
 
   def render(assigns) do

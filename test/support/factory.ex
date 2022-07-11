@@ -160,7 +160,6 @@ defmodule Oli.Factory do
 
     %Section{
       title: sequence("Section"),
-      timezone: "America/New_York",
       registration_open: true,
       context_id: UUID.uuid4(),
       institution: deployment.institution,
@@ -217,7 +216,8 @@ defmodule Oli.Factory do
       country_code: "US",
       institution_email: "ins@example.edu",
       institution_url: "example.edu",
-      timezone: "America/New_York"
+      timezone: "America/New_York",
+      research_consent: :oli_form
     }
   end
 

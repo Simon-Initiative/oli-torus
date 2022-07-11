@@ -1,8 +1,6 @@
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { InputTypeDropdown } from 'components/activities/common/authoring/InputTypeDropdown';
 import { GradingApproachDropdown } from 'components/activities/common/authoring/GradingApproachDropdown';
-import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -32,6 +30,8 @@ import { AuthoringElementProvider, useAuthoringElementContext } from '../Authori
 
 import { ShortAnswerActions } from './actions';
 import { ShortAnswerModelSchema } from './schema';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 
 const store = configureStore();
 
@@ -115,7 +115,13 @@ const ShortAnswer = () => {
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={DEFAULT_PART_ID} />
         </TabbedNavigation.Tab>
-        <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
+        <TabbedNavigation.Tab label="Dynamic Variables">
+          <VariableEditorOrNot
+            editMode={editMode}
+            model={model}
+            onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+          />
+        </TabbedNavigation.Tab>
       </TabbedNavigation.Tabs>
     </>
   );

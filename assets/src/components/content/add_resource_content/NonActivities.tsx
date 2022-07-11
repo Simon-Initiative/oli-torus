@@ -11,10 +11,6 @@ import React from 'react';
 import { ResourceChoice } from './ResourceChoice';
 import { FeatureFlags } from 'apps/page-editor/types';
 
-// returns true if non of the parents are a survey element
-const canInsertSurvey = (parents: ResourceContent[], featureFlags: FeatureFlags) =>
-  featureFlags.survey && parents.every((p) => p.type !== 'survey');
-
 interface Props {
   index: number[];
   onAddItem: AddCallback;
@@ -88,7 +84,7 @@ export const NonActivities: React.FC<Props> = ({
           onHoverStart={() => onSetTip('Collect student feedback via no-stakes activities')}
           onHoverEnd={() => onResetTip()}
           key={'survey'}
-          disabled={!canInsertSurvey(parents, featureFlags)}
+          disabled={false}
           onClick={() => addSurvey(onAddItem, index)}
         />
         <ResourceChoice

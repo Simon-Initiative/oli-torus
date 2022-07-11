@@ -317,7 +317,7 @@ export interface ActivityState {
    */
   hasMoreAttempts: boolean;
   /**
-   * Whether or not this attempt has additonal hints.
+   * Whether or not this attempt has additional hints.
    */
   hasMoreHints: boolean;
   snapshot?: any;
@@ -598,3 +598,12 @@ export const makePreviewText = () => '';
  * Defines a mapping of a collection of choices to a response.
  */
 export type ChoiceIdsToResponseId = [ChoiceId[], ResponseId];
+
+/**
+ * File response metadata.
+ */
+export type FileMetaData = {
+  url: string;
+  creationTime: number;
+  fileSize: number;
+};

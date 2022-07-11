@@ -195,6 +195,7 @@ const MultiLineTextInput: React.FC<PartComponentProps<MultiLineTextModel>> = (pr
                   // strings wont trigger a re-render if they haven't changed
                   return newText;
                 });
+                saveInputText(sText.toString());
               }
 
               const sEnabled = snapshot[`stage.${id}.enabled`];

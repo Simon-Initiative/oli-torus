@@ -19,9 +19,11 @@ type TopLevel =
   | Math
   | (CodeV1 | CodeV2)
   | Blockquote
-  | FormulaBlock;
-type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
-type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline;
+  | FormulaBlock
+  | Callout;
+
+type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock | Callout;
+type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline | CalloutInline;
 
 type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
@@ -32,6 +34,14 @@ type TableCell = TableHeader | TableData;
 type HeadingChildren = Text[];
 export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]> {
   type: 'p';
+}
+
+export interface Callout extends SlateElement<Paragraph[]> {
+  type: 'callout';
+}
+
+export interface CalloutInline extends SlateElement<(InputRef | Text | ImageInline)[]> {
+  type: 'callout_inline';
 }
 
 export interface HeadingOne extends SlateElement<HeadingChildren> {
@@ -86,22 +96,16 @@ export interface ImageInline extends BaseImage {
   type: 'img_inline';
 }
 
-interface FormulaChildren<typeIdentifier>
+export type FormulaSubTypes = 'mathml' | 'latex';
+interface Formula<typeIdentifier>
   extends SlateElement<(ImageInline | Hyperlink | Popup | InputRef)[]> {
   type: typeIdentifier;
-  subtype: 'richtext';
-  src: never;
-}
-
-interface FormulaSrc<typeIdentifier> extends SlateElement<VoidChildren> {
-  type: typeIdentifier;
-  subtype: 'mathml' | 'latex';
+  subtype: FormulaSubTypes;
   src: string;
-  children: never;
 }
 
-export type FormulaBlock = FormulaSrc<'formula'> | FormulaChildren<'formula'>;
-export type FormulaInline = FormulaSrc<'formula_inline'> | FormulaChildren<'formula_inline'>;
+export type FormulaBlock = Formula<'formula'>;
+export type FormulaInline = Formula<'formula_inline'>;
 
 export interface YouTube extends SlateElement<VoidChildren> {
   type: 'youtube';

@@ -22,20 +22,20 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Publishing.DeliveryResolver, as: Resolver
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
+  alias Oli.Resources.PageContent
+  alias OliWeb.Common.SessionContext
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
   def index_preview(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-    is_admin? = Oli.Accounts.is_admin?(current_author)
 
-    # We only allow access to preview mode if the user is logged in as an author admin, or
-    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # We only allow access to preview mode if the user is logged in as an instructor
+    # enrolled in the course section.  If the user is enrolled as a student,
     # we want to redirect out of this mode to render the page in regular delivery mode.
 
-    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
-      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+    if Sections.is_enrolled?(user.id, section_slug) do
+      if Sections.has_instructor_role?(user, section_slug) do
         case Sections.get_section_by(slug: section_slug)
              |> Oli.Repo.preload([:base_project, :root_section_resource]) do
           nil ->
@@ -191,15 +191,13 @@ defmodule OliWeb.PageDeliveryController do
         }
       ) do
     user = conn.assigns.current_user
-    current_author = conn.assigns.current_author
-    is_admin? = Oli.Accounts.is_admin?(current_author)
 
-    # We only allow access to preview mode if the user is logged in as an author admin, or
-    # is an instructor enrolled in the course section.  If the user is enrolled as a student,
+    # We only allow access to preview mode if the user is logged in as an or instructor
+    # enrolled in the course section. If the user is enrolled as a student,
     # we want to redirect out of this mode to render the page in regular delivery mode.
 
-    if is_admin? or Sections.is_enrolled?(user.id, section_slug) do
-      if is_admin? or Sections.has_instructor_role?(user, section_slug) do
+    if Sections.is_enrolled?(user.id, section_slug) do
+      if Sections.has_instructor_role?(user, section_slug) do
         revision = Resolver.from_revision_slug(section_slug, revision_slug)
         render_preview_mode(conn, section_slug, revision)
       else
@@ -266,6 +264,7 @@ defmodule OliWeb.PageDeliveryController do
           script: type.authoring_script,
           attempt_guid: nil,
           state: nil,
+          lifecycle_state: :active,
           model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
           delivery_element: type.delivery_element,
           authoring_element: type.authoring_element,
@@ -276,6 +275,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
 
     summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+
     bib_entrys =
       BibUtils.assemble_bib_entries(
         revision.content,
@@ -296,7 +296,8 @@ defmodule OliWeb.PageDeliveryController do
       mode: :instructor_preview,
       activity_map: activity_map,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
-      bib_app_params: bib_entrys
+      bib_app_params: bib_entrys,
+      submitted_surveys: %{}
     }
 
     html = Page.render(render_context, revision.content, Page.Html)
@@ -342,6 +343,8 @@ defmodule OliWeb.PageDeliveryController do
          _,
          _
        ) do
+    session_context = SessionContext.init(conn)
+
     section = conn.assigns.section
 
     # Only consider graded attempts
@@ -389,6 +392,7 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
 
     render(conn, "prologue.html", %{
+      session_context: session_context,
       summary: summary,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
@@ -460,6 +464,7 @@ defmodule OliWeb.PageDeliveryController do
         previousPageURL: previous_url,
         nextPageURL: next_url,
         previewMode: preview_mode,
+        isInstructor: true,
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
         finalizeGradedURL:
@@ -508,9 +513,22 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states, in addition to
   # handling review mode
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
+    session_context = SessionContext.init(conn)
     section = conn.assigns.section
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
+
+    submitted_surveys =
+      PageContent.survey_activities(context.page.content)
+      |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
+        survey_state =
+          Enum.all?(activity_ids, fn id ->
+            context.activities[id].lifecycle_state === :submitted ||
+              context.activities[id].lifecycle_state === :evaluated
+          end)
+
+        Map.put(acc, survey_id, survey_state)
+      end)
 
     render_context = %Context{
       # Allow admin authors to review student work
@@ -528,7 +546,8 @@ defmodule OliWeb.PageDeliveryController do
           :delivery
         end,
       activity_map: context.activities,
-      bib_app_params: context.bib_revisions
+      bib_app_params: context.bib_revisions,
+      submitted_surveys: submitted_surveys
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -545,6 +564,7 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
+        session_context: session_context,
         context: context,
         page: context.page,
         review_mode: context.review_mode,
@@ -574,7 +594,7 @@ defmodule OliWeb.PageDeliveryController do
         resource_slug: context.page.slug,
         bib_app_params: %{
           bibReferences: context.bib_revisions
-        },
+        }
       }
     )
   end
@@ -808,7 +828,9 @@ defmodule OliWeb.PageDeliveryController do
 
   defp build_enrollments_text(enrollments) do
     ([["Student name", "Student email", "Enrolled on"]] ++
-      Enum.map(enrollments, fn record -> [record.user.name, record.user.email, date(record.inserted_at)] end))
+       Enum.map(enrollments, fn record ->
+         [record.user.name, record.user.email, date(record.inserted_at)]
+       end))
     |> CSV.encode()
     |> Enum.to_list()
     |> to_string()

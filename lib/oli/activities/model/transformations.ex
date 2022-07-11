@@ -1,14 +1,26 @@
 defmodule Oli.Activities.Model.Transformation do
-  defstruct [:id, :path, :operation]
+  defstruct [:id, :path, :operation, :data]
 
-  def parse(%{"id" => id, "path" => path, "operation" => operation_str}) do
+  def parse(%{"operation" => operation_str} = json) do
+    id = Map.get(json, "id", UUID.uuid4())
+
     case operation_str do
       "shuffle" ->
         {:ok,
          %Oli.Activities.Model.Transformation{
+           data: nil,
            id: id,
-           path: path,
+           path: Map.get(json, "path"),
            operation: :shuffle
+         }}
+
+      "variable_substitution" ->
+        {:ok,
+         %Oli.Activities.Model.Transformation{
+           data: Map.get(json, "data"),
+           id: id,
+           path: nil,
+           operation: :variable_substitution
          }}
 
       _ ->

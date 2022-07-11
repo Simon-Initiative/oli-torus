@@ -163,7 +163,11 @@ defmodule Oli.AutomationSetup do
   end
 
   defp publish_project(project) do
-    Oli.Publishing.publish_project(project, "Automated test setup")
+    Oli.Publishing.publish_project(
+      project,
+      "Automated test setup",
+      Oli.Publishing.PartMappingRefreshSync
+    )
   end
 
   defp create_project(nil, _) do
@@ -191,7 +195,6 @@ defmodule Oli.AutomationSetup do
         context_id: UUID.uuid4(),
         start_date: Timex.now(),
         end_date: Timex.add(Timex.now(), Timex.Duration.from_days(1)),
-        timezone: "US/Eastern",
         base_project_id: project.id,
         open_and_free: true
       })

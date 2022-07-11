@@ -24,10 +24,12 @@ import { SimpleFeedback } from '../common/responses/SimpleFeedback';
 import { TargetedFeedback } from '../common/responses/TargetedFeedback';
 import { ChoicesDelivery } from '../common/choices/delivery/ChoicesDelivery';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
-  const { dispatch, model } = useAuthoringElementContext<LikertModelSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<LikertModelSchema>();
 
   // for now, we always select the first part for editing correct/feedback/hints.
   const selectedPartId = model.authoring.parts[0].id;
@@ -84,6 +86,13 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
 
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={selectedPartId} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Dynamic Variables">
+          <VariableEditorOrNot
+            editMode={editMode}
+            model={model}
+            onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+          />
         </TabbedNavigation.Tab>
       </TabbedNavigation.Tabs>
     </React.Fragment>

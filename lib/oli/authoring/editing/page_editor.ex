@@ -330,16 +330,22 @@ defmodule Oli.Authoring.Editing.PageEditor do
                         activity_type_id: activity_type_id,
                         content: content,
                         graded: graded
-                      } ->
+                      } = revision ->
          # To support 'test mode' in the editor, we give the editor an initial transformed
          # version of the model that it can immediately use for display purposes. If it fails
          # to transform, nil will be handled by the client and the raw model will be used
          # instead
+
          transformed =
-           case Transformers.apply_transforms(content) do
-             {:ok, t} -> t
-             {:no_effect, t} -> t
-             _ -> nil
+           case Transformers.apply_transforms([revision]) do
+             [{:ok, nil}] ->
+               revision.content
+
+             [{:ok, t}] ->
+               t
+
+             _ ->
+               revision.content
            end
 
          # the activity type this revision pertains to
@@ -352,6 +358,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            attempt_guid: nil,
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
+           lifecycle_state: state.lifecycle_state,
            delivery_element: type.delivery_element,
            authoring_element: type.authoring_element,
            script: type.delivery_script,

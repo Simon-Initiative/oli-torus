@@ -13,6 +13,8 @@ import {
   resetAction,
   PartInputs,
   isEvaluated,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs } from 'data/activities/utils';
@@ -28,16 +30,25 @@ import { LikertTable } from './Sections/LikertTable';
 const LikertComponent: React.FC = () => {
   const {
     state: activityState,
-    onSaveActivity,
-    onResetActivity,
+    surveyId,
     model,
     writerContext,
+    onSubmitActivity,
+    onSaveActivity,
+    onResetActivity,
   } = useDeliveryElementContext<LikertModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
+  const emptySelectionMap = model.items.reduce((acc, item) => {
+    acc[item.id] = [''];
+    return acc;
+  }, {} as PartInputs);
+
   useEffect(() => {
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptySelectionMap);
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model));
   }, []);
 
   // First render initializes state
@@ -53,18 +64,13 @@ const LikertComponent: React.FC = () => {
     dispatch(setSelection(itemId, choiceId, onSaveActivity, 'single'));
   };
 
-  const emptySelectionMap = model.items.reduce((acc, item) => {
-    acc[item.id] = [''];
-    return acc;
-  }, {} as PartInputs);
-
   return (
     <div className="activity multiple-choice-activity">
       <div className="activity-content">
-        <StemDelivery stem={model.stem} context={writerContext} />
+        <StemDelivery stem={(uiState.model as LikertModelSchema).stem} context={writerContext} />
         <LikertTable
-          items={model.items}
-          choices={model.choices}
+          items={(uiState.model as LikertModelSchema).items}
+          choices={(uiState.model as LikertModelSchema).choices}
           isSelected={isSelected}
           onSelect={onSelect}
           disabled={isEvaluated(uiState)}

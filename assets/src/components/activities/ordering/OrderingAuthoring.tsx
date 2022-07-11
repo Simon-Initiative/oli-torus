@@ -18,6 +18,8 @@ import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
 import { OrderingSchema } from './schema';
@@ -25,7 +27,7 @@ import { OrderingSchema } from './schema';
 const store = configureStore();
 
 export const Ordering: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext<OrderingSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<OrderingSchema>();
 
   const choices = model.choices.reduce((m: any, c) => {
     m[c.id] = c;
@@ -57,6 +59,13 @@ export const Ordering: React.FC = () => {
 
       <TabbedNavigation.Tab label="Hints">
         <Hints partId={DEFAULT_PART_ID} />
+      </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label="Dynamic Variables">
+        <VariableEditorOrNot
+          editMode={editMode}
+          model={model}
+          onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+        />
       </TabbedNavigation.Tab>
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />

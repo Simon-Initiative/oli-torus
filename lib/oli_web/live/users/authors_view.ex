@@ -7,7 +7,7 @@ defmodule OliWeb.Users.AuthorsView do
   alias Oli.Accounts
   alias Oli.Accounts.AuthorBrowseOptions
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{Breadcrumb, PagedTable, TextSearch}
+  alias OliWeb.Common.{Breadcrumb, PagedTable, SessionContext, TextSearch}
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Users.AuthorsTableModel
@@ -42,7 +42,7 @@ defmodule OliWeb.Users.AuthorsView do
       ]
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Accounts.get_author(author_id)
 
     authors =
@@ -52,8 +52,9 @@ defmodule OliWeb.Users.AuthorsView do
         @default_options
       )
 
+    context = SessionContext.init(session)
     total_count = SortableTableModel.determine_total(authors)
-    {:ok, table_model} = AuthorsTableModel.new(authors)
+    {:ok, table_model} = AuthorsTableModel.new(authors, context)
 
     {:ok,
      assign(socket,

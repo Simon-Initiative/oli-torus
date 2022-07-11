@@ -150,6 +150,27 @@ defmodule OliWeb.InstitutionControllerTest do
                assert Institutions.count_pending_registrations() == 0
              end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
     end
+
+    test "displays pending registration data", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      pending_registration = pending_registration_fixture()
+
+      conn = get(conn, Routes.institution_path(conn, :index))
+
+      assert html_response(conn, 200) =~ pending_registration.name
+      assert html_response(conn, 200) =~ pending_registration.institution_url
+      assert html_response(conn, 200) =~ pending_registration.institution_email
+
+      assert html_response(conn, 200) =~
+               OliWeb.Common.Utils.render_date(
+                 pending_registration,
+                 :inserted_at,
+                 session_context
+               )
+
+      assert html_response(conn, 200) =~ "Decline"
+    end
   end
 
   defp create_institution(%{conn: conn}) do

@@ -31,5 +31,4 @@ export function empty() {
 export interface FeatureFlags {
   adaptivity: boolean;
   equity: boolean;
-  survey: boolean;
 }

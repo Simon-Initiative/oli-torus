@@ -1,6 +1,8 @@
 defmodule OliWeb.RevisionHistory.Table do
   use OliWeb, :surface_component
 
+  alias OliWeb.Common.Utils
+
   prop selected, :string
   prop revisions, :any
   prop publication, :any
@@ -8,6 +10,7 @@ defmodule OliWeb.RevisionHistory.Table do
   prop tree, :any
   prop page_offset, :number
   prop page_size, :number
+  prop context, :struct
 
   defp publication_state(assigns, revision_id) do
     publication = assigns.publication
@@ -52,8 +55,8 @@ defmodule OliWeb.RevisionHistory.Table do
         <tr id="{ rev.id }" {...tr_props.(rev.id)}>
           <td>{ rev.id }</td>
           <td>{ Map.get(@tree, rev.id).project_id }</td>
-          <td>{ date(rev.inserted_at) }</td>
-          <td>{ date(rev.updated_at) }</td>
+          <td>{ Utils.render_date(rev, :inserted_at, @context) }</td>
+          <td>{ Utils.render_date(rev, :updated_at, @context) }</td>
           <td>{ rev.author.email }</td>
           <td>{ rev.slug }</td>
           <td>{ publication_state(assigns, rev.id) }</td>

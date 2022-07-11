@@ -3,6 +3,7 @@ defmodule Oli.Content.Activity.HtmlTest do
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity
+  alias Oli.Rendering.Activity.ActivitySummary
 
   import ExUnit.CaptureLog
 
@@ -15,13 +16,17 @@ defmodule Oli.Content.Activity.HtmlTest do
 
     test "renders well-formed activity properly", %{author: author} do
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -29,7 +34,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         "activity_id" => 1,
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 
@@ -43,26 +48,29 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~
-      "<h4 class=\"activity-purpose none\">None</h4><oli-multiple-choice-delivery id=\"activity_1\" class=\"activity-container\"  bib_params=\"W10=\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\" mode=\"delivery\" user_id=\"#{author.id}\" section_slug=\"\"></oli-multiple-choice-delivery>\n"
+               ~s|<oli-multiple-choice-delivery id=\"activity_1\" class="activity-container" graded="false" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}"|
     end
 
     test "renders malformed activity gracefully", %{author: author} do
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
-          slug: "test",
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
       element = %{
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 
@@ -84,14 +92,17 @@ defmodule Oli.Content.Activity.HtmlTest do
 
     test "handles missing activity from activity-map gracefully", %{author: author} do
       activity_map = %{
-        5 => %{
+        5 => %ActivitySummary{
           id: 5,
           graded: false,
-          slug: "test",
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -99,7 +110,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         "activity_id" => 1,
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 

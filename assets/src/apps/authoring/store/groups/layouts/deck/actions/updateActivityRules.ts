@@ -175,7 +175,7 @@ export const updateActivityRules = createAsyncThunk(
               return sequenceItem.resourceId;
             } else {
               console.warn(
-                `[updateActivityRules] could not find referenced activity ${id} in sequence`,
+                `[updateActivityRules (${childActivity.id})] could not find referenced activity ${id} in sequence`,
                 deck,
               );
             }
@@ -194,7 +194,10 @@ export const updateActivityRules = createAsyncThunk(
             referencedActivityIds,
             childActivityClone,
           });
-          activitiesToUpdate.push(childActivityClone);
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
+            activitiesToUpdate.push(childActivityClone);
+          }
         }
 
         childActivityClone.authoring.variablesRequiredForEvaluation =
@@ -216,21 +219,25 @@ export const updateActivityRules = createAsyncThunk(
             referencedVariableKeys,
             childActivityClone,
           });
-          activitiesToUpdate.push(childActivityClone);
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
+            activitiesToUpdate.push(childActivityClone);
+          }
         }
 
         childActivityClone.authoring.rules = activityRulesClone;
         /* console.log('CLONE RULES', { childActivityClone, childActivity }); */
         if (!isEqual(childActivity.authoring.rules, childActivityClone.authoring.rules)) {
           /* console.log('CLONE IS DIFFERENT!'); */
-          if (activitiesToUpdate.indexOf(childActivityClone) === -1) {
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
             activitiesToUpdate.push(childActivityClone);
           }
         }
       }),
     );
 
-    /* console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate); */
+    console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate);
 
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));

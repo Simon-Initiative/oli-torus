@@ -1,7 +1,8 @@
-
-<div class="alert alert-danger mt-3" role="alert">
-  <h4 class="alert-heading">Something went wrong!</h4>
-  <p>Hmmmm, we can't seem to locate or load the resource you were trying to access.</p>
-  <hr>
-  <p class="mb-0"><b>Tip:</b> Refresh your browser and try again.</p>
-</div>
+<main role="main" class="container">
+  <div class="alert alert-danger mt-3" role="alert">
+    <h4 class="alert-heading">Not Found</h4>
+    <p>The resource you are trying to access does not exist. If you think this is an error, please contact support.</p>
+    <hr>
+    <p class="mb-0"><b>Tip:</b> Check the URL or link and try again.</p>
+  </div>
+</main>

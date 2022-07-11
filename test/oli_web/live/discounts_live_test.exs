@@ -109,13 +109,27 @@ defmodule OliWeb.DiscountsLiveTest do
   describe "products discounts index view" do
     setup [:admin_conn, :create_product]
 
-    test "loads correctly when there are no discounts updates", %{conn: conn, product: product} do
+    test "loads correctly when there are no discounts", %{conn: conn, product: product} do
       {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
 
       assert has_element?(view, "#discounts-table")
       assert has_element?(view, "p", "None exist")
       assert has_element?(view, "a[href=\"#{live_view_product_new_show_route(product.slug)}\"]")
-      refute has_element?(view, "button[phx-click=\"clear\"")
+    end
+
+    test "loads correctly when there are discounts", %{conn: conn, product: product} do
+      first_discount = insert(:discount, section: product, type: :fixed_amount, amount: Money.new(:USD, 25))
+      second_discount = insert(:discount, section: product, percentage: 20)
+
+      {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
+
+      assert has_element?(view, "#discounts-table")
+      assert view
+        |> element("tbody tr.##{first_discount.id}")
+        |> render() =~ "Fixed price"
+      assert view
+        |> element("tbody tr.##{second_discount.id}")
+        |> render() =~ "Percentage"
     end
 
     test "applies sorting", %{conn: conn, product: product} do
@@ -158,6 +172,18 @@ defmodule OliWeb.DiscountsLiveTest do
       refute has_element?(view, "##{first_discount.id}")
       assert has_element?(view, "##{last_discount.id}")
     end
+
+    test "renders datetimes using the local timezone", %{product: product} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      discount = insert(:discount, section: product)
+
+      {:ok, view, _html} = live(conn, live_view_products_index_route(product.slug))
+
+      assert view
+        |> element("tbody tr:first-child.##{discount.id}")
+        |> render() =~ OliWeb.Common.Utils.render_date(discount, :inserted_at, session_context)
+    end
   end
 
   describe "discount show view - product" do
@@ -176,6 +202,10 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_product_show_route(product.slug, discount.id))
 
       assert has_element?(view, "h5", "Manage Discount")
+      assert has_element?(view, "option", "Fixed price")
+      assert has_element?(view, "option", "Percentage")
+      assert has_element?(view, "label", "Price")
+      assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "input[value=\"#{discount.institution.name}\"")
       # type is percentage
@@ -243,6 +273,10 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_product_new_show_route(product.slug))
 
       assert has_element?(view, "h5", "New Discount")
+      assert has_element?(view, "option", "Fixed price")
+      assert has_element?(view, "option", "Percentage")
+      assert has_element?(view, "label", "Price")
+      assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "option[value=\"#{institution.id}\"", "#{institution.name}")
       refute has_element?(view, "button[phx-click=\"clear\"")
@@ -295,6 +329,10 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_institution_show_route(institution.id))
 
       assert has_element?(view, "h5", "Manage Discount")
+      assert has_element?(view, "option", "Fixed price")
+      assert has_element?(view, "option", "Percentage")
+      assert has_element?(view, "label", "Price")
+      assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "input[value=\"#{institution.name}\"")
     end
@@ -312,6 +350,10 @@ defmodule OliWeb.DiscountsLiveTest do
       {:ok, view, _html} = live(conn, live_view_institution_show_route(institution.id))
 
       assert has_element?(view, "h5", "Manage Discount")
+      assert has_element?(view, "option", "Fixed price")
+      assert has_element?(view, "option", "Percentage")
+      assert has_element?(view, "label", "Price")
+      assert has_element?(view, "label", "Percentage")
       assert has_element?(view, "form[phx-submit=\"save\"")
       assert has_element?(view, "input[value=\"#{institution.name}\"")
       assert has_element?(view, "input[value=\"#{discount.amount}\"")

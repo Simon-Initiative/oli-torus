@@ -5,7 +5,7 @@ defmodule Oli.TestHelpers do
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User}
+  alias Oli.Accounts.{Author, AuthorPreferences, User}
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections
@@ -13,7 +13,7 @@ defmodule Oli.TestHelpers do
   alias Oli.Institutions
   alias Oli.PartComponents
   alias Oli.Publishing
-  alias OliWeb.Common.LtiSession
+  alias OliWeb.Common.{LtiSession, SessionContext}
   alias Lti_1p3.Tool.ContextRoles
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
@@ -325,7 +325,11 @@ defmodule Oli.TestHelpers do
   end
 
   def admin_conn(%{conn: conn}) do
-    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().admin})
+    admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
 
     conn =
       Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
@@ -580,10 +584,34 @@ defmodule Oli.TestHelpers do
   end
 
   def set_timezone(%{conn: conn}) do
-    timezone = DateTime.utc_now().time_zone
+    conn = Plug.Test.init_test_session(conn, %{local_tz: "America/New_York"})
 
-    conn = Plug.Test.init_test_session(conn, %{local_tz: timezone})
+    {:ok, conn: conn, context: SessionContext.init(conn)}
+  end
 
-    {:ok, conn: conn}
+  def utc_datetime_to_localized_datestring(utc_datetime, timezone) do
+    datestring =
+      utc_datetime
+      |> Timex.to_datetime(timezone)
+      |> DateTime.to_naive()
+      |> NaiveDateTime.to_iso8601()
+
+    Regex.replace(~r/:\d\d\z/, datestring, "")
+  end
+
+  def load_stripe_config(), do: load_stripe_config(nil)
+
+  def load_stripe_config(_conn) do
+    load_env_file("test/config/stripe_config.exs")
+  end
+
+  def reset_test_payment_config() do
+    load_env_file("test/config/config.exs")
+  end
+
+  defp load_env_file(path) do
+    path
+    |> Config.Reader.read!()
+    |> Application.put_all_env()
   end
 end

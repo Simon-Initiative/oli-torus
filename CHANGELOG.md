@@ -3,9 +3,12 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
 
-## 0.19.5 (2022-06-21)
+- Survey delivery support
+
+## 0.20.0 (2022-06-30)
 
 ### Bug Fixes
 
@@ -16,10 +19,11 @@
 
 ### Enhancements
 
-- Provide more context in the brower tab
+- Provide more context in the browser tab
 - Improve the learning objective selection dropdown
 - Improve authoring improvement insights UI
 - Improve content and activity insertion menu
+- Dynamic question infrastructure
 
 ## 0.19.4 (2022-06-09)
 

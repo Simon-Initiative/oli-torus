@@ -10,7 +10,10 @@ defmodule OliWeb.SelectSourceTest do
   import Oli.Factory
 
   @live_view_admin_route Routes.select_source_path(OliWeb.Endpoint, :admin)
-  @live_view_independent_learner_route Routes.select_source_path(OliWeb.Endpoint, :independent_learner)
+  @live_view_independent_learner_route Routes.select_source_path(
+                                         OliWeb.Endpoint,
+                                         :independent_learner
+                                       )
   @live_view_lms_instructor_route Routes.select_source_path(OliWeb.Endpoint, :lms_instructor)
 
   describe "user cannot access when is not logged in" do
@@ -21,14 +24,12 @@ defmodule OliWeb.SelectSourceTest do
     end
 
     test "redirects to new session when accessing the independent instructor view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/session/new?request_path=%2Fsections%2Findependent%2Fcreate"}}} =
+      {:error, {:redirect, %{to: "/session/new?request_path=%2Fsections%2Findependent%2Fcreate"}}} =
         live(conn, @live_view_independent_learner_route)
     end
 
     test "redirects to new session when accessing the lms instructor view", %{conn: conn} do
-      {:error,
-       {:redirect, %{to: "/session/new?request_path=%2Fcourse%2Fselect_project"}}} =
+      {:error, {:redirect, %{to: "/session/new?request_path=%2Fcourse%2Fselect_project"}}} =
         live(conn, @live_view_lms_instructor_route)
     end
   end
@@ -52,6 +53,7 @@ defmodule OliWeb.SelectSourceTest do
       refute has_element?(view, "#select_sort")
       refute has_element?(view, "form[phx-change=\"update_view_type\"")
       assert has_element?(view, "a[href=\"#{details_view(section)}\"]")
+
       assert view
              |> element("tr:first-child > td:first-child + td")
              |> render() =~ "#{section.title}"
@@ -106,7 +108,9 @@ defmodule OliWeb.SelectSourceTest do
     end
 
     test "applies paging", %{conn: conn} do
-      [first_s | tail] = insert_list(21, :section, open_and_free: true) |> Enum.sort_by(& &1.title)
+      [first_s | tail] =
+        insert_list(21, :section, open_and_free: true) |> Enum.sort_by(& &1.title)
+
       last_s = List.last(tail)
 
       {:ok, view, _html} = live(conn, @live_view_admin_route)
@@ -136,9 +140,21 @@ defmodule OliWeb.SelectSourceTest do
       |> render_click()
 
       assert_redirected(
-          view,
-          Routes.admin_open_and_free_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
-        )
+        view,
+        Routes.admin_open_and_free_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
+      )
+    end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      section = insert(:section, open_and_free: true)
+
+      {:ok, view, _html} = live(conn, @live_view_admin_route)
+
+      assert view
+             |> element("tr:last-child > td:last-child")
+             |> render() =~
+               OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
     end
   end
 
@@ -231,7 +247,10 @@ defmodule OliWeb.SelectSourceTest do
 
     test "applies paging", %{conn: conn} do
       %Publication{id: publication_id, project: project} = insert(:publication)
-      [_first_s | tail] = insert_list(21, :section, base_project: project) |> Enum.sort_by(& &1.title)
+
+      [_first_s | tail] =
+        insert_list(21, :section, base_project: project) |> Enum.sort_by(& &1.title)
+
       last_s = List.last(tail)
 
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -262,9 +281,23 @@ defmodule OliWeb.SelectSourceTest do
       |> render_click()
 
       assert_redirected(
-          view,
-          Routes.independent_sections_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
-        )
+        view,
+        Routes.independent_sections_path(OliWeb.Endpoint, :new, source_id: "product:#{section.id}")
+      )
+    end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      %Publication{project: project} = insert(:publication)
+      section = insert(:section, base_project: project)
+
+      {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
+
+      assert view
+             |> element(".card-deck:last-child")
+             |> render() =~
+               OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
     end
   end
 
@@ -357,7 +390,10 @@ defmodule OliWeb.SelectSourceTest do
 
     test "applies paging", %{conn: conn} do
       %Publication{id: publication_id, project: project} = insert(:publication)
-      [_first_s | tail] = insert_list(21, :section, base_project: project) |> Enum.sort_by(& &1.title)
+
+      [_first_s | tail] =
+        insert_list(21, :section, base_project: project) |> Enum.sort_by(& &1.title)
+
       last_s = List.last(tail)
 
       {:ok, view, _html} = live(conn, @live_view_independent_learner_route)
@@ -381,6 +417,7 @@ defmodule OliWeb.SelectSourceTest do
       %Publication{project: project} = insert(:publication)
       section = insert(:section, base_project: project)
       section_resource = insert(:section_resource, %{section: section})
+
       Sections.update_section(section, %{
         root_section_resource_id: section_resource.id
       })
@@ -393,6 +430,20 @@ defmodule OliWeb.SelectSourceTest do
 
       assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :index))
       assert Sections.get_section_by(%{blueprint_id: section.id})
+    end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      %Publication{project: project} = insert(:publication)
+      section = insert(:section, base_project: project)
+
+      {:ok, view, _html} = live(conn, @live_view_lms_instructor_route)
+
+      assert view
+             |> element(".card-deck:last-child")
+             |> render() =~
+               OliWeb.Common.Utils.render_date(section, :inserted_at, session_context)
     end
   end
 

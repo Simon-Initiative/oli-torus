@@ -10,6 +10,7 @@ import {
   RuleProperties,
   TopLevelCondition,
 } from 'json-rules-engine';
+import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
@@ -22,9 +23,9 @@ import {
   evalAssignScript,
   evalScript,
   extractAllExpressionsFromText,
+  extractUniqueVariablesFromText,
   getExpressionStringForValue,
   getValue,
-  looksLikeJson,
 } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
@@ -158,6 +159,21 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         }
         const evaluatedValue = evaluateValueExpression(actualValue, env);
         modifiedValue = `${evaluatedValue},${toleranceValue}`;
+      } else if (condition?.operator === 'inRange' || condition?.operator === 'notInRange') {
+        // these have min, max, and optionally (unused) tolerance
+        if (Array.isArray(ogValue)) {
+          modifiedValue = ogValue
+            .map((value) =>
+              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+            )
+            .join(',');
+        } else if (typeof ogValue === 'string') {
+          modifiedValue = parseArray(ogValue)
+            .map((value) =>
+              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+            )
+            .join(',');
+        }
       } else if (typeof ogValue === 'string' && ogValue.indexOf('{') === -1) {
         modifiedValue = ogValue;
       } else {
@@ -312,93 +328,18 @@ export const defaultWrongRule = {
 };
 
 export const findReferencedActivitiesInConditions = (conditions: any) => {
-  const referencedActivities: Set<string> = new Set();
+  const referencedKeys = getReferencedKeysInConditions(conditions);
+  const sequenceRefs = referencedKeys
+    .filter((key) => key.indexOf('|stage.') !== -1)
+    .map((key) => key.split('|')[0]);
 
-  conditions.forEach((condition: any) => {
-    if (condition.fact && condition.fact.indexOf('|stage.') !== -1) {
-      const referencedSequenceId = condition.fact.split('|stage.')[0];
-      referencedActivities.add(referencedSequenceId);
-    }
-    if (typeof condition.value === 'string' && condition.value.indexOf('|stage.') !== -1) {
-      // value could have more than one reference inside it
-      const exprs = extractAllExpressionsFromText(condition.value);
-      exprs.forEach((expr: string) => {
-        if (expr.indexOf('|stage.') !== -1) {
-          const referencedSequenceId = expr.split('|stage.')[0];
-          referencedActivities.add(referencedSequenceId);
-        }
-      });
+  /* console.log('findReferencedActivitiesInConditions', { referencedKeys, sequenceRefs }); */
 
-      const expressions = condition.value.match(/{([^{^}]+)}/g) || [];
-      expressions.forEach((expr: string) => {
-        if (expr.indexOf('|stage.') !== -1) {
-          //need to remove the {} and then get the referencedSequenceId
-          const actualExp = expr.substring(1, expr.length - 1);
-          const referencedSequenceId = actualExp.split('|stage.')[0];
-          referencedActivities.add(referencedSequenceId);
-        }
-      });
-    }
-    if (Array.isArray(condition.value)) {
-      condition.value.forEach((subValue: any) => {
-        if (typeof subValue === 'string' && subValue.indexOf('|stage.') !== -1) {
-          // value could have more than one reference inside it
-          const exprs = extractAllExpressionsFromText(subValue);
-          exprs.forEach((expr: string) => {
-            if (expr.indexOf('|stage.') !== -1) {
-              const referencedSequenceId = expr.split('|stage.')[0];
-              referencedActivities.add(referencedSequenceId);
-            }
-          });
-
-          const expressions = subValue.match(/{([^{^}]+)}/g) || [];
-          expressions.forEach((expr: string) => {
-            if (expr.indexOf('|stage.') !== -1) {
-              //need to remove the {} and then get the referencedSequenceId
-              const actualExp = expr.substring(1, expr.length - 1);
-              const referencedSequenceId = actualExp.split('|stage.')[0];
-              referencedActivities.add(referencedSequenceId);
-            }
-          });
-        }
-      });
-    }
-    if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
-      childRefs.forEach((ref) => referencedActivities.add(ref));
-    }
-  });
-  /* console.log(
-    'referencedActivities: ',
-    referencedActivities,
-    Array.from(referencedActivities).filter((ref) => ref.indexOf('{') !== -1),
-    conditions,
-  ); */
-  return Array.from(referencedActivities);
+  return Array.from(new Set(sequenceRefs));
 };
 
 export const getReferencedKeysInConditions = (conditions: any) => {
   const references: Set<string> = new Set();
-
-  const extractRefsFromString = (str: string) => {
-    // value could have more than one reference inside it
-    const exprs = extractAllExpressionsFromText(str);
-    const expressions = str.match(/{([^{^}]+)}/g) || [];
-    exprs.forEach((expr: string) => {
-      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-        references.add(expr);
-      }
-    });
-    expressions.forEach((expr: string) => {
-      if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-        //we should remove the {}
-        const actualExp = expr.substring(1, expr.length - 1);
-        if (!references.has(actualExp)) {
-          references.add(expr.substring(1, expr.length - 1));
-        }
-      }
-    });
-  };
 
   conditions.forEach(
     (condition: {
@@ -413,11 +354,11 @@ export const getReferencedKeysInConditions = (conditions: any) => {
       }
       // the value *might* contain a reference to a key we need
       if (typeof condition.value === 'string') {
-        extractRefsFromString(condition.value);
+        extractUniqueVariablesFromText(condition.value).forEach((v) => references.add(v));
       } else if (Array.isArray(condition.value)) {
         condition.value.forEach((value: any) => {
           if (typeof value === 'string') {
-            extractRefsFromString(value);
+            extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
           }
         });
       }
@@ -432,43 +373,14 @@ export const getReferencedKeysInConditions = (conditions: any) => {
 };
 
 export const findReferencedActivitiesInActions = (actions: any) => {
-  const referencedActivities: Set<string> = new Set();
-  actions.forEach(
-    (action: { type: string; target: string; value: string | number | boolean | unknown }) => {
-      if (action.type === 'mutateState') {
-        if (action.target && action.target.indexOf('|stage.') !== -1) {
-          const referencedSequenceId = action.target.split('|stage.')[0];
-          referencedActivities.add(referencedSequenceId);
-        }
-        if (typeof action.value === 'string' && action.value.indexOf('|stage.') !== -1) {
-          // value could have more than one reference inside it
-          const exprs = extractAllExpressionsFromText(action.value);
-          exprs.forEach((expr: string) => {
-            if (expr.indexOf('|stage.') !== -1) {
-              const referencedSequenceId = expr.split('|stage.')[0];
-              referencedActivities.add(referencedSequenceId);
-            }
-          });
-        }
-        if (Array.isArray(action.value)) {
-          action.value.forEach((subValue: any) => {
-            if (typeof subValue === 'string' && subValue.indexOf('|stage.') !== -1) {
-              // value could have more than one reference inside it
-              const exprs = extractAllExpressionsFromText(subValue);
-              exprs.forEach((expr: string) => {
-                if (expr.indexOf('|stage.') !== -1) {
-                  const referencedSequenceId = expr.split('|stage.')[0];
-                  referencedActivities.add(referencedSequenceId);
-                }
-              });
-            }
-          });
-        }
-      }
-    },
-  );
+  const referencedKeys = getReferencedKeysInActions(actions);
+  const sequenceRefs = referencedKeys
+    .filter((key) => key.indexOf('|stage.') !== -1)
+    .map((key) => key.split('|')[0]);
 
-  return Array.from(referencedActivities);
+  /* console.log('findReferencedActivitiesInActions', { referencedKeys, sequenceRefs }); */
+
+  return Array.from(new Set(sequenceRefs));
 };
 
 export const getReferencedKeysInActions = (actions: any) => {
@@ -483,26 +395,14 @@ export const getReferencedKeysInActions = (actions: any) => {
         if (action.params.target) {
           references.add(action.params.target);
         }
+
         // the value *might* contain a reference to a key we need
-        if (
-          typeof action.params.value === 'string' &&
-          action.params.value.search(/app\.|variables\.|stage\.|session\./) !== -1
-        ) {
-          // value could have more than one reference inside it
-          const exprs = extractAllExpressionsFromText(action.params.value);
-          const expressions = action.params.value.match(/{([^{^}]+)}/g) || [];
-          exprs.forEach((expr: string) => {
-            if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-              references.add(expr);
-            }
-          });
-          expressions.forEach((expr: string) => {
-            if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-              //we should remove the {}
-              const actualExp = expr.substring(1, expr.length - 1);
-              if (!references.has(actualExp)) {
-                references.add(expr.substring(1, expr.length - 1));
-              }
+        if (typeof action.params.value === 'string') {
+          extractUniqueVariablesFromText(action.params.value).forEach((v) => references.add(v));
+        } else if (Array.isArray(action.params.value)) {
+          action.params.value.forEach((value: any) => {
+            if (typeof value === 'string') {
+              extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
             }
           });
         }

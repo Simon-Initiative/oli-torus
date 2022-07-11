@@ -23,7 +23,6 @@ defmodule Oli.Delivery.Sections.Section do
     field(:registration_open, :boolean, default: false)
     field(:start_date, :utc_datetime)
     field(:end_date, :utc_datetime)
-    field(:timezone, :string)
     field(:title, :string)
     field(:description, :string)
     field(:context_id, :string)
@@ -109,7 +108,6 @@ defmodule Oli.Delivery.Sections.Section do
       :title,
       :start_date,
       :end_date,
-      :timezone,
       :registration_open,
       :description,
       :context_id,
@@ -147,7 +145,6 @@ defmodule Oli.Delivery.Sections.Section do
     |> validate_required([
       :type,
       :title,
-      :timezone,
       :registration_open,
       :base_project_id
     ])

@@ -62,6 +62,9 @@
         },
         {
           "$ref": "#/$defs/formula"
+        },
+        {
+          "$ref": "#/$defs/callout"
         }
       ]
     },
@@ -90,6 +93,9 @@
         },
         {
           "$ref": "#/$defs/formula-inline"
+        },
+        {
+          "$ref": "#/$defs/callout-inline"
         }
       ]
     },
@@ -539,70 +545,98 @@
       "required": ["type", "children"]
     },
 
-    "formula-src": {
+    "callout": {
       "type": "object",
       "properties": {
-        "subtype": {
-          "enum": ["mathml", "latex"]
-        },
-        "src": {
-          "type": "string"
-        }
-      },
-      "required": ["type", "subtype", "src"]
-    },
-
-    "formula-children": {
-      "type": "object",
-      "properties": {
-        "subtype": {
-          "const": "richtext"
+        "type": {
+          "const": "callout"
         },
         "children": {
           "type": "array",
           "items": {
             "anyOf": [
               {
-                "$ref": "#/$defs/text"
+                "$ref": "#/$defs/paragraph"
               },
               {
-                "$ref": "#/$defs/hyperlink"
+                "$ref": "#/$defs/heading"
               },
               {
-                "$ref": "#/$defs/input-ref"
+                "$ref": "#/$defs/code-v1"
               },
               {
-                "$ref": "#/$defs/image-inline"
+                "$ref": "#/$defs/code-v2"
+              },
+              {
+                "$ref": "#/$defs/blockquote"
+              },
+              {
+                "$ref": "#/$defs/media"
+              },
+              {
+                "$ref": "#/$defs/list"
               }
             ]
           }
         }
       },
-      "required": ["type", "subtype", "children"]
+      "required": ["type", "children"]
+    },
+
+    "callout-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout_inline"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        }
+      },
+      "required": ["type", "children"]
     },
 
     "formula": {
-      "oneOf": [
-        { "$ref": "#/$defs/formula-src" },
-        { "$ref": "#/$defs/formula-children" }
-      ],
+      "type": "object",
       "properties": {
-        "type": {
-          "const": "formula"
+        "const": "formula",
+        "subtype": {
+          "enum": ["mathml", "latex"]
+        },
+        "src": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
         }
-      }
+      },
+      "required": ["type", "subtype", "src"]
     },
 
     "formula-inline": {
-      "oneOf": [
-        { "$ref": "#/$defs/formula-src" },
-        { "$ref": "#/$defs/formula-children" }
-      ],
+      "type": "object",
       "properties": {
-        "type": {
-          "const": "formula_inline"
+        "const": "formula_inline",
+        "subtype": {
+          "enum": ["mathml", "latex"]
+        },
+        "src": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
         }
-      }
+      },
+      "required": ["type", "subtype", "src"]
     },
 
     "math": {
@@ -765,11 +799,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "bibref",
-        "children"
-      ]
+      "required": ["type", "bibref", "children"]
     },
     "popup": {
       "type": "object",

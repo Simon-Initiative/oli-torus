@@ -143,7 +143,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
         newSelectionPrefix="Create new objective: "
         labelKey="title"
         selected={asObjectives}
-        placeholder="Attach learning objectives..."
+        placeholder="Select learning objectives..."
       />
     </div>
   );
