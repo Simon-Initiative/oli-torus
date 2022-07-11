@@ -1,7 +1,7 @@
 defmodule Oli.Publishing.PartMappingRefreshAsync do
   alias Oli.Publishing.PartMappingRefreshAdapter
 
-  @type ecto_publication_operation :: PartMappingRefreshAdapter.ecto_publication_operation
+  @type ecto_publication_operation :: PartMappingRefreshAdapter.ecto_publication_operation()
 
   @behaviour PartMappingRefreshAdapter
 
@@ -12,6 +12,7 @@ defmodule Oli.Publishing.PartMappingRefreshAsync do
       Process.sleep(5_000)
       Oli.Publishing.refresh_part_mapping()
     end)
+
     operation_result
   end
 
