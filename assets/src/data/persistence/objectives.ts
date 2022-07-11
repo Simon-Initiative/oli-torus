@@ -22,31 +22,26 @@ interface UpdateParam {
   authoring?: any;
 }
 export const fixObjectiveParts = (activity: UpdateParam): UpdateParam => {
-  console.info(
-    'FixObjectives',
-    activity.objectives,
-    activity.authoring.parts.map((p: any) => p.id),
-  );
   if (!activity.objectives) {
-    console.info('No activity.objectives');
+    console.info('fixObjectiveParts - No activity.objectives');
     return activity;
   }
   const keyCount = Object.keys(activity.objectives).length;
 
   if (keyCount === 0) {
-    console.info('No objectives');
+    console.info('fixObjectiveParts - No objectives');
     // No objectives to worry about
     return activity;
   }
 
   if (!Array.isArray(activity?.authoring?.parts)) {
-    console.info('Parts not an array');
+    console.info('fixObjectiveParts - Parts not an array');
     return activity;
   }
 
   if (activity.authoring.parts.length === 0) {
     // This really should never happen since the __default part would be generated beforehand
-    console.error('saveActivity::fixObjectives - No parts were present in the activity');
+    console.error('fixObjectiveParts - No parts were present in the activity');
     return activity;
   }
 
@@ -54,14 +49,13 @@ export const fixObjectiveParts = (activity: UpdateParam): UpdateParam => {
     Object.values(activity.authoring.parts)
       .map((p: { id: string }) => p.id)
       .filter((k) => k !== '__default')[0] || '__default';
-  console.info('targetKey', targetKey);
 
   const allObjectives = Object.values(activity.objectives).flat();
 
   if (keyCount > 1) {
     // Somehow, we got more than 1 objective assignment, consolidate them onto the first non-default part
     console.warn(
-      'saveActivity::fixObjectives - Multiple parts had objectives assigned to them, consolidating.',
+      'fixObjectiveParts - Multiple parts had objectives assigned to them, consolidating.',
     );
 
     return {

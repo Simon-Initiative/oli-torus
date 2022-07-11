@@ -200,23 +200,26 @@ export const selectRevisionSlug = createSelector(
   (state: AppState) => state.revisionSlug,
 );
 
-// Returns the allObjectives as a map of id to Objective
-// selectAllObjectivesMap(...) === {1: Objective1, 2:Objective2, etc}
-export type ObjectivesMap = Record<string, Objective>;
-export const selectAllObjectivesMap = createSelector(selectState, (state: AppState) =>
-  state.allObjectives.reduce<ObjectivesMap>(
-    (acc, obj) => ({
-      ...acc,
-      [obj.id]: obj,
-    }),
-    {},
-  ),
-);
-
 export const selectAllObjectives = createSelector(
   selectState,
   (state: AppState) => state.allObjectives,
 );
+
+// Returns the allObjectives as a map of id to Objective
+// selectAllObjectivesMap(...) === {1: Objective1, 2:Objective2, etc}
+export type ObjectivesMap = Record<string, Objective>;
+export const selectAllObjectivesMap = createSelector(
+  selectAllObjectives,
+  (objectives: Objective[]) =>
+    objectives.reduce<ObjectivesMap>(
+      (acc, obj) => ({
+        ...acc,
+        [obj.id]: obj,
+      }),
+      {},
+    ),
+);
+
 export const selectLeftPanel = createSelector(selectState, (state: AppState) => state.leftPanel);
 export const selectRightPanel = createSelector(selectState, (state: AppState) => state.rightPanel);
 export const selectTopPanel = createSelector(selectState, (state: AppState) => state.topPanel);

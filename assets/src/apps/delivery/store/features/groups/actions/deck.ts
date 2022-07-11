@@ -56,7 +56,7 @@ export const initializeActivity = createAsyncThunk(
     const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
       .sequenceId;
     if (!currentSequenceId) {
-      throw new Error(`Activity ${activityId} not found in sequence!`);
+      throw new Error(`deck::initializeActivity - Activity ${activityId} not found in sequence!`);
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
@@ -354,7 +354,7 @@ export const navigateToPrevActivity = createAsyncThunk(
         previousEntry = sequence[layerIndex - 1];
       }
     } else {
-      navError = `Current Activity ${currentActivityId} not found in sequence`;
+      navError = `deck::navigateToPrevActivity - Current Activity ${currentActivityId} not found in sequence`;
     }
     if (navError) {
       throw new Error(navError);
@@ -437,7 +437,7 @@ export const navigateToActivity = createAsyncThunk(
         return;
       }
     } else {
-      navError = `Current Activity ${sequenceId} not found in sequence`;
+      navError = `deck::navigateToActivity - Current Activity ${sequenceId} not found in sequence`;
     }
     if (navError) {
       throw new Error(navError);

@@ -188,7 +188,6 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
 };
 
 export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> => {
-  console.info('TRANSFORM', schema);
   return {
     objectives: schema.learningObjectives,
     title: schema.title,

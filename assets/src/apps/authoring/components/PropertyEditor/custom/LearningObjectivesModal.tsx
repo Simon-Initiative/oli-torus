@@ -26,10 +26,6 @@ export const LearningObjectivesModal: React.FC<LearningModalObjectiveProps> = ({
         <Modal.Title>Objectives editor</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        {/* <div>{results}</div> */}
-        {/* {props.items.map((element: any, idx: number) => (
-          <VariableArrayItem key={idx} {...element} />
-        ))} */}
         <ObjectivesSelection
           editMode={!readonly}
           objectives={Object.values(objectiveMap)}

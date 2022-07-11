@@ -8,6 +8,16 @@ import React, { Fragment, useCallback, useEffect } from 'react';
 import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
+import { Objective } from '../../../../data/content/objective';
+
+interface ScoredActivity {
+  sequenceId: number;
+  sequenceName: string;
+  resourceId: number;
+  maxScore: number;
+  scoreType: string;
+  objectives: Record<string, Objective>;
+}
 
 const ScoringOverview: React.FC<{
   onClose?: () => void;
@@ -18,7 +28,7 @@ const ScoringOverview: React.FC<{
   const allActivities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
-  const [scoredActivities, setScoredActivities] = React.useState([]);
+  const [scoredActivities, setScoredActivities] = React.useState<ScoredActivity[]>([]);
 
   useEffect(() => {
     if (!sequence || !allActivities) {
@@ -120,7 +130,7 @@ const ScoringOverview: React.FC<{
   }, [page]);
 
   useEffect(() => {
-    const sum = scoredActivities.reduce((acc: number, activity: any) => {
+    const sum = scoredActivities.reduce((acc: number, activity: ScoredActivity) => {
       return acc + activity.maxScore;
     }, 0);
     setScoreSum(sum);

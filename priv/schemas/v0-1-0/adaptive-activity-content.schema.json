@@ -49,8 +49,7 @@
               "janus-popup",
               "janus-slider",
               "janus-text-flow",
-              "janus-video",
-              "janus-meta-data"
+              "janus-video"
             ]
           },
           "custom": {}

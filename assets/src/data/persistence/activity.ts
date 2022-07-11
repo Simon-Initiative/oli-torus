@@ -191,10 +191,6 @@ export function bulkEdit(
   updates.forEach((u) => {
     const citationRefs: string[] = [];
 
-    console.info('PRE BULK', u.objectives);
-
-    console.info('POST BULK', u.objectives);
-
     indexBibrefs(u.content, citationRefs);
     if (u.authoring) {
       indexBibrefs(u.authoring, citationRefs);
@@ -250,9 +246,7 @@ export function edit(
       indexBibrefs(update.authoring, citationRefs);
     }
     update.content.bibrefs = citationRefs;
-    console.info('PRE EDIT', update.objectives);
     update = fixObjectiveParts(update) as ActivityUpdate & { releaseLock: boolean };
-    console.info('POST EDIT', update.objectives);
   } catch (e) {
     console.error('activity::edit failed', e);
     throw e;

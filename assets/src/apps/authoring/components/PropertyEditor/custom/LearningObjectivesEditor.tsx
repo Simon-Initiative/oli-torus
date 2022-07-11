@@ -38,9 +38,12 @@ export const LearningObjectivesEditor: React.FC<CustomFieldProps> = ({
   }, []);
   const objectiveMap = useSelector(selectAllObjectivesMap);
 
-  const onObjectivesChanged = (value: number[]) => {
-    onChange(value);
-  };
+  const onObjectivesChanged = useCallback(
+    (value: number[]) => {
+      onChange(value);
+    },
+    [onChange],
+  );
 
   if (!Array.isArray(value)) {
     return null;
