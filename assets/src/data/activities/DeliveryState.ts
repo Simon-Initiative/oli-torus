@@ -20,6 +20,7 @@ import {
 import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
+import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
 import { isObjectBindingPattern } from 'typescript';
 
@@ -33,6 +34,7 @@ export type StudentInput = string[];
 export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
+  model: ActivityModelSchema;
   attemptState: ActivityState;
   partState: Record<
     PartId,
@@ -213,6 +215,9 @@ export const activityDeliverySlice = createSlice({
     hideAllHints(state) {
       Object.values(state.partState).forEach((partState) => (partState.hintsShown = []));
     },
+    updateModel(state, action: PayloadAction<ActivityModelSchema>) {
+      state.model = action.payload;
+    },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
       Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
     },
@@ -275,6 +280,7 @@ export const resetAction =
     const response = await onResetActivity(getState().attemptState.attemptGuid);
     partInputs && dispatch(slice.actions.setPartInputs(partInputs));
     dispatch(slice.actions.hideAllHints());
+    dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
       dispatch(
@@ -374,9 +380,10 @@ export const submitFiles =
   };
 
 export const initializeState =
-  (state: ActivityState, initialPartInputs: PartInputs): AppThunk =>
+  (state: ActivityState, initialPartInputs: PartInputs, model: ActivityModelSchema): AppThunk =>
   async (dispatch, _getState) => {
     dispatch(slice.actions.initializePartState(state));
+    dispatch(slice.actions.updateModel(model));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({
