@@ -173,6 +173,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     end)
   end
 
+  @doc """
+  Resets a single part attempt.  Returns {:ok, %PartState{}} or error.
+  """
   def reset_part(activity_attempt_guid, part_attempt_guid) do
     Repo.transaction(fn ->
       part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)

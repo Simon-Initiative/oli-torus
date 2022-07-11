@@ -965,6 +965,33 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert updated_attempt.score == nil
       assert updated_attempt.out_of == nil
       assert updated_attempt.date_evaluated == nil
+
+      # verify that we can reset that part attempt
+      {:ok, partState} = ActivityLifecycle.reset_part(activity_attempt.attempt_guid, attempt_guid)
+      new_attempt = Oli.Repo.get_by!(PartAttempt, attempt_guid: partState.attemptGuid)
+      assert new_attempt.score == nil
+      assert new_attempt.out_of == nil
+      assert new_attempt.date_evaluated == nil
+      refute new_attempt.attempt_guid == updated_attempt.attempt_guid
+      assert new_attempt.attempt_number == 2
+      assert new_attempt.activity_attempt_id == activity_attempt.id
+
+      # and submit again against the new attempt
+      part_inputs = [%{attempt_guid: new_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
+
+      {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
+        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+
+      assert attempt_guid == new_attempt.attempt_guid
+      assert score == 10
+      assert out_of == 10
+      assert id == "1"
+
+      # verify the part attempt record was updated correctly
+      updated_attempt = Oli.Repo.get!(PartAttempt, new_attempt.id)
+      assert updated_attempt.score == 10
+      assert updated_attempt.out_of == 10
+      refute updated_attempt.date_evaluated == nil
     end
 
     test "processing a submission with all parts submitted", %{
