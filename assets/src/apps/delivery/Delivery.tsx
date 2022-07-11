@@ -25,6 +25,7 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode?: boolean;
+  isInstructor: boolean;
   enableHistory?: boolean;
   activityTypes?: any[];
   graded: boolean;
@@ -45,6 +46,7 @@ const Delivery: React.FC<DeliveryProps> = ({
   activityGuidMapping,
   activityTypes = [],
   previewMode = false,
+  isInstructor = false,
   enableHistory = false,
   graded = false,
   overviewURL = '',
@@ -83,6 +85,7 @@ const Delivery: React.FC<DeliveryProps> = ({
         resourceAttemptState,
         activityGuidMapping,
         previewMode: !!previewMode,
+        isInstructor,
         activityTypes,
         enableHistory,
         showHistory: false,

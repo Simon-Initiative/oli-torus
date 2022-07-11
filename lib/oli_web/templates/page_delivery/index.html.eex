@@ -1,7 +1,7 @@
 <div class="mt-3 mb-5">
   <h1><%= @title %></h1>
   <p class="text-secondary"><%= @description %></p>
-  <%= if is_section_instructor_or_admin?(@section_slug, @current_user) do %>
+  <%= if is_section_instructor_or_admin?(@section_slug, @current_user) and not @preview_mode do %>
     <div class="d-flex flex-row my-2">
       <div class="flex-fill"></div>
       <div>

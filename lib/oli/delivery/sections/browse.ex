@@ -7,6 +7,8 @@ defmodule Oli.Delivery.Sections.Browse do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  @chars_to_replace_on_search [" ", "&", ":", ";", "(", ")", "|", "!", "'", "<", ">"]
+
   @doc """
     Paged, sorted, filterable queries for course sections. Joins the institution,
     the base product or project and counts the number of enrollments.
@@ -23,7 +25,8 @@ defmodule Oli.Delivery.Sections.Browse do
       else
         # allow to search by prefix
         search_term =
-          String.split(options.text_search)
+          options.text_search
+          |> String.split(@chars_to_replace_on_search, trim: true)
           |> Enum.map(fn x -> x <> ":*" end)
           |> Enum.join(" & ")
 
