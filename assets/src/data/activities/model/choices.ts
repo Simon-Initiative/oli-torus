@@ -7,13 +7,13 @@ const PATH = '$..choices';
 
 export const Choices = {
   path: PATH,
-  pathById: (id: string, path = PATH) => path + `[?(@.id==${id})]`,
+  pathById: (id: string, path = PATH) => path + `[?(@.id=='${id}')]`,
 
   ...List<Choice>(PATH),
 
   setContent(id: string, content: Descendant[]) {
     return (model: any, _post: PostUndoable) => {
-      Operations.apply(model, Operations.replace(`$..choices[?(@.id==${id})].content`, content));
+      Operations.apply(model, Operations.replace(`$..choices[?(@.id=='${id}')].content`, content));
     };
   },
 };
@@ -26,7 +26,7 @@ export const Items = {
 
   setContent(id: string, content: Descendant[]) {
     return (model: any, _post: PostUndoable) => {
-      Operations.apply(model, Operations.replace(`$..items[?(@.id==${id})].content`, content));
+      Operations.apply(model, Operations.replace(`$..items[?(@.id=='${id}')].content`, content));
     };
   },
 };

@@ -83,6 +83,9 @@ function changeFocus(shadowRoot: any, partId: string, props: DragCanvasProps) {
 function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
   return (ev: DragEvent) => {
     if (ev !== null && (ev.currentTarget as any).classList.contains('target')) {
+      ev.preventDefault();
+      ev.stopPropagation();
+
       (ev as any).dataTransfer.dropEffect = 'move';
 
       const inputVal = (ev as any).dataTransfer.getData('text/plain');
@@ -98,8 +101,6 @@ function createTargetDropHandler(shadowRoot: any, props: DragCanvasProps) {
       const partId = (ev.currentTarget as any).getAttribute('input_ref');
       changeFocus(shadowRoot, partId, props);
       props.onSubmitPart(partId, inputVal);
-
-      ev.stopPropagation();
     }
   };
 }
