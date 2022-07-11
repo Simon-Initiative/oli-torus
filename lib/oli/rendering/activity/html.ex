@@ -63,15 +63,12 @@ defmodule Oli.Rendering.Activity.Html do
             _ -> delivery_element
           end
 
-        state = activity_summary.state
-        graded = activity_summary.graded
-
         model_json = case tag do
           "oli-adaptive-delivery" ->
             page_model = Map.get(resource_attempt.content, "model")
             get_flattened_activity_model(page_model, activity_id, activity_map)
 
-          _ -> activity_summary.model
+          _ -> model
         end
 
         section_slug = context.section_slug
