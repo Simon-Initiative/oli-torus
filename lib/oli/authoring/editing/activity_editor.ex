@@ -588,7 +588,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, {%Activity{}, transformed_content}}` when the creation processes succeeds
+  .`{:ok, {%Revision{}, transformed_content}}` when the creation processes succeeds
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
@@ -598,7 +598,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded") do
+  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded", title \\ nil) do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -610,7 +610,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
            {:ok, %{content: content} = activity} <-
              Resources.create_new(
                %{
-                 title: activity_type.title,
+                 title: title || activity_type.title,
                  scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
                  objectives: attached_objectives,
                  author_id: author.id,

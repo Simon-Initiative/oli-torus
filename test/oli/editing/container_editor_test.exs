@@ -1,6 +1,7 @@
 defmodule Oli.Authoring.Editing.ContainerEditorTest do
   use Oli.DataCase
 
+  alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Locks
@@ -165,6 +166,95 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert Enum.find_index(unit1_container.children, fn c -> page1_revision.resource_id == c end) ==
                2
+    end
+  end
+
+  describe "page duplication" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "duplicate_page/1 duplicates a page correctly", %{
+      author: author,
+      project: project
+    } do
+      embeded_activity_content = %{
+        "stem" => "1",
+        "authoring" => %{
+          "parts" => [
+            %{
+              "id" => "1",
+              "gradingApproach" => "manual",
+              "responses" => [
+                %{
+                  "rule" => "input like {a}",
+                  "score" => 10,
+                  "id" => "r1",
+                  "feedback" => %{"id" => "1", "content" => "yes"}
+                },
+              ],
+              "scoringStrategy" => "best",
+              "evaluationStrategy" => "regex"
+            }
+          ]
+        }
+      }
+
+      {:ok, {activity_revision, _}} = ActivityEditor.create(
+        project.slug,
+        "oli_short_answer",
+        author,
+        embeded_activity_content,
+        [],
+        "embedded",
+        "An embedded activity"
+      )
+
+      page = %{
+        objectives: %{"attached" => []},
+        children: [],
+        content: %{
+          "model" => [
+            %{
+              "id" => UUID.uuid4(),
+              "type" => "content",
+              "purpose" => "none",
+              "children" => [
+                %{
+                  "id" => UUID.uuid4(),
+                  "type" => "p",
+                  "children" => [%{"text" => "Here's some test content"}]
+                }
+              ]
+            },
+            # Embedded activity
+            %{
+              "id" => UUID.uuid4(),
+              "type" => "activity-reference",
+              "children" => [],
+              "activity_id" => activity_revision.resource_id
+            },
+          ]
+        },
+        title: "New Page",
+        graded: true,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
+      }
+
+      root_container = AuthoringResolver.root_container(project.slug)
+      {:ok, page_revision} = ContainerEditor.add_new(root_container, page, author, project)
+
+      assert page_revision.title == "New Page"
+
+      {:ok, duplicated_page_revision} =
+        ContainerEditor.duplicate_page(root_container, page_revision.id, author, project)
+
+      assert duplicated_page_revision.title == "Copy of New Page"
+      assert length(duplicated_page_revision.content["model"]) == length(page_revision.content["model"])
+
+      # Verify that it deep copied the activities, id should't be the same as the previous one
+      activity_reference = duplicated_page_revision.content["model"] |> Enum.at(1)
+      refute activity_reference["activity_id"] == activity_revision.resource_id
     end
   end
 end
