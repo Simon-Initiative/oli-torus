@@ -83,12 +83,9 @@ const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInter
 export const updateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
-  useBatchUpdate = true,
 ) => {
   /* console.log('updateGlobalUserState called', { updates, useLocalStorage }); */
-  const result = useBatchUpdate
-    ? await batchedUpdate(updates, useLocalStorage)
-    : await internalUpdateGlobalUserState(updates, useLocalStorage);
+  const result = await batchedUpdate(updates, useLocalStorage);
   /* console.log('updateGlobalUserState result', { result, updates }); */
   return result;
 };
