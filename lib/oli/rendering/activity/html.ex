@@ -79,7 +79,7 @@ defmodule Oli.Rendering.Activity.Html do
           case mode do
             :instructor_preview ->
               [
-                ~s|<#{tag} model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
+                ~s|<#{tag} id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
 
             _ ->
