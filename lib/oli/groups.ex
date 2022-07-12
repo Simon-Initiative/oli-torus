@@ -6,16 +6,13 @@ defmodule Oli.Groups do
   import Ecto.Query, warn: false
 
   alias Ecto.Multi
-  alias Oli.Accounts
+  alias Oli.{Accounts, Institutions, Publishing, Repo, Utils}
   alias Oli.Accounts.{Author, User}
   alias Oli.Authoring.Course.Project
   alias Oli.Delivery.Sections.Section
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
-  alias Oli.Institutions
   alias Oli.Institutions.Institution
-  alias Oli.Publishing
   alias Oli.Publishing.Publication
-  alias Oli.Repo
 
   # ------------------------------------------------------------
   # Communities
@@ -43,7 +40,7 @@ defmodule Oli.Groups do
       []
   """
   def search_communities(filter) do
-    from(c in Community, where: ^filter_conditions(filter))
+    from(c in Community, where: ^Utils.filter_conditions(filter))
     |> Repo.all()
   end
 
@@ -675,12 +672,6 @@ defmodule Oli.Groups do
   end
 
   # ------------------------------------------------------------
-
-  defp filter_conditions(filter) do
-    Enum.reduce(filter, false, fn {field, value}, conditions ->
-      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
-    end)
-  end
 
   defp create_community_associations_from_fields(fields, attrs, create_association) do
     {created_community_associations, errors} =
