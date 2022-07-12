@@ -26,10 +26,10 @@ defmodule Oli.Inventories do
 
   ## Examples
 
-      iex> search_publishers(%{available_via_api: :true})
-      [%Publisher{available_via_api: :true}, ...]
+      iex> search_publishers(%{available_via_api: true})
+      [%Publisher{available_via_api: true}, ...]
 
-      iex> search_publishers(%{available_via_api: :true})
+      iex> search_publishers(%{available_via_api: false})
       []
   """
   def search_publishers(filter) do
