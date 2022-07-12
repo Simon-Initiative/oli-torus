@@ -460,7 +460,8 @@ defmodule Oli.Factory do
       address: "Publisher Address",
       main_contact: "Publisher Contact",
       website_url: "mypublisher.com",
-      default: false
+      default: false,
+      available_via_api: true
     }
   end
 
