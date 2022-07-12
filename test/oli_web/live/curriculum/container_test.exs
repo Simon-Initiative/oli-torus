@@ -94,7 +94,8 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
       conn: conn,
       author: author,
       project: project,
-      map: map
+      revision1: revision_page_one,
+      revision2: revision_page_two
     } do
       conn =
         recycle(conn)
@@ -103,25 +104,26 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      revision_page_one = Map.get(map, :revision1)
-      revision_page_two = Map.get(map, :revision2)
-
       # Duplicate action is present with the right revision id
       assert view
-        |> element("div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"duplicate_page\"]")
-        |> render =~ "phx-value-id=\"#{revision_page_one.id}\""
+             |> element(
+               "div[phx-value-slug=\"#{revision_page_one.slug}\"] button[phx-click=\"duplicate_page\"]"
+             )
+             |> render =~ "phx-value-id=\"#{revision_page_one.id}\""
 
       # Clicking on duplicate action creates a new entry with the right title name
       view
-        |> element("div[phx-value-slug=\"#{revision_page_two.slug}\"] button[phx-click=\"duplicate_page\"]")
-        |> render_click =~ "entry-title\">Copy of #{revision_page_two.title}</span>"
+      |> element(
+        "div[phx-value-slug=\"#{revision_page_two.slug}\"] button[phx-click=\"duplicate_page\"]"
+      )
+      |> render_click =~ "entry-title\">Copy of #{revision_page_two.title}</span>"
     end
 
     test "does not show duplicate action for adaptive pages", %{
       conn: conn,
       author: author,
       project: project,
-      map: map
+      adaptive_page_revision: adaptive_page_revision
     } do
       conn =
         recycle(conn)
@@ -130,24 +132,32 @@ defmodule OliWeb.Curriculum.ContainerLiveTest do
 
       {:ok, view, _html} = live(conn)
 
-      adaptive_page_revision = Map.get(map, :adaptive_page_revision)
-
       assert view
-       |> element("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]") |> has_element?()
+             |> has_element?("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"]")
 
       refute view
-        |> element("div[phx-value-slug=\"#{adaptive_page_revision.slug}\"] button[phx-click=\"duplicate_page\"]") |> has_element?()
+             |> has_element?(
+               "div[phx-value-slug=\"#{adaptive_page_revision.slug}\"] button[phx-click=\"duplicate_page\"]"
+             )
     end
   end
 
   defp setup_session(%{conn: conn}) do
-    map = Seeder.base_project_with_resource2()
+    map =
+      Seeder.base_project_with_resource2()
       |> Seeder.add_adaptive_page()
 
     conn =
       Plug.Test.init_test_session(conn, lti_session: nil)
       |> Pow.Plug.assign_current_user(map.author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
-    {:ok, conn: conn, map: map, author: map.author, project: map.project}
+    {:ok,
+     conn: conn,
+     map: map,
+     author: map.author,
+     project: map.project,
+     adaptive_page_revision: map.adaptive_page_revision,
+     revision1: map.revision1,
+     revision2: map.revision2}
   end
 end

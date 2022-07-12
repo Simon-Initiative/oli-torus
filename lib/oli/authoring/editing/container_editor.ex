@@ -282,43 +282,26 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     new_page_attrs =
       original_page
-      |> Map.delete(:slug)
-      |> Map.delete(:inserted_at)
-      |> Map.delete(:updated_at)
-      |> Map.delete(:updated_at)
-      |> Map.delete(:resource_id)
-      |> Map.delete(:resource)
+      |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
       |> Map.put(:title, "Copy of #{original_page.title}")
       |> Map.put(:content, nil)
 
     Repo.transaction(fn ->
       with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
-           {:ok, duplicated_content} <-
-             duplicate_content_activities(
-               original_page.content,
+           {:ok, model_duplicated_activities} <-
+            deep_copy_activities(
+               original_page.content["model"],
                project.slug,
                author
              ),
-           {:ok, updated_revision} <-
-             Resources.update_revision(created_revision, %{content: duplicated_content}) do
+           new_content <- %{original_page.content | "model" => Enum.reverse(model_duplicated_activities)},
+           {:ok, updated_revision} <- Resources.update_revision(created_revision, %{content: new_content}) do
         updated_revision
       else
         {:error, e} -> Repo.rollback(e)
       end
     end)
   end
-
-  defp duplicate_content_activities(content, project_slug, author) do
-    case deep_copy_activities(content["model"], project_slug, author) do
-      {:ok, duplicated_activities} ->
-        {:ok, %{content | "model" => Enum.reverse(duplicated_activities)}}
-
-      {:error, error} ->
-        {:error, error}
-    end
-  end
-
-  defp deep_copy_activities([], _project_slug, _author), do: {:ok, []}
 
   defp deep_copy_activities(model, project_slug, author) do
     Enum.reduce_while(model, {:ok, []}, fn activity, {:ok, acc} ->
