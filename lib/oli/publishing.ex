@@ -9,7 +9,14 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.{Revision, ResourceType}
-  alias Oli.Publishing.{Publication, PublishedResource, PartMappingRefreshAdapter, PartMappingRefreshAsync}
+
+  alias Oli.Publishing.{
+    Publication,
+    PublishedResource,
+    PartMappingRefreshAdapter,
+    PartMappingRefreshAsync
+  }
+
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
   alias Oli.Publishing
@@ -517,17 +524,23 @@ defmodule Oli.Publishing do
 
   @doc """
   Updates a publication.
+
   ## Examples
       iex> update_publication(publication, %{field: new_value})
       {:ok, %Publication{}}
       iex> update_publication(publication, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_publication(%Publication{} = publication, attrs) do
+
+  def update_publication(
+        %Publication{} = publication,
+        attrs,
+        adapter \\ refresh_adapter()
+      ) do
     publication
-      |> Publication.changeset(attrs)
-      |> Repo.update()
-      |> refresh_adapter().maybe_refresh_part_mapping()
+    |> Publication.changeset(attrs)
+    |> Repo.update()
+    |> adapter.maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -540,8 +553,8 @@ defmodule Oli.Publishing do
   """
   def delete_publication(%Publication{} = publication) do
     publication
-      |> Repo.delete()
-      |> refresh_adapter().maybe_refresh_part_mapping()
+    |> Repo.delete()
+    |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -785,9 +798,9 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t()) ::
+  @spec publish_project(%Project{}, String.t(), PartMappingRefreshAdapter | nil) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description) do
+  def publish_project(project, description, refresh_adapter \\ refresh_adapter()) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
@@ -816,13 +829,17 @@ defmodule Oli.Publishing do
 
            # set the active publication to published
            {:ok, publication} <-
-             update_publication(active_publication, %{
-               published: now,
-               description: description,
-               edition: edition,
-               major: major,
-               minor: minor
-             }) do
+             update_publication(
+               active_publication,
+               %{
+                 published: now,
+                 description: description,
+                 edition: edition,
+                 major: major,
+                 minor: minor
+               },
+               refresh_adapter
+             ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -1141,7 +1158,7 @@ defmodule Oli.Publishing do
   @spec refresh_adapter() :: PartMappingRefreshAdapter
   defp refresh_adapter() do
     :oli
-      |> Application.get_env(Oli.Publishing)
-      |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
+    |> Application.get_env(Oli.Publishing)
+    |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

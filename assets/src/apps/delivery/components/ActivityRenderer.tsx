@@ -91,7 +91,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key, value } = payload;
-    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
+    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode, false);
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {

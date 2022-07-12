@@ -45,7 +45,6 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
       return;
     }
     setValue(val);
-    setIsDirty(true);
   };
 
   const handleTargetTypeChange = (e: any) => {
@@ -173,6 +172,7 @@ const ActionMutateEditor: React.FC<ActionMutateEditorProps> = (props) => {
           id={`action-mutate-value-${uuid}`}
           value={value}
           onChange={(e) => handleValueChange(e)}
+          onBlur={(e) => setIsDirty(true)}
           title={value}
           placeholder="Value"
         />

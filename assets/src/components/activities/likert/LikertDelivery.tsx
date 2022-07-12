@@ -48,7 +48,7 @@ const LikertComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptySelectionMap);
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model));
   }, []);
 
   // First render initializes state
@@ -67,10 +67,10 @@ const LikertComponent: React.FC = () => {
   return (
     <div className="activity multiple-choice-activity">
       <div className="activity-content">
-        <StemDelivery stem={model.stem} context={writerContext} />
+        <StemDelivery stem={(uiState.model as LikertModelSchema).stem} context={writerContext} />
         <LikertTable
-          items={model.items}
-          choices={model.choices}
+          items={(uiState.model as LikertModelSchema).items}
+          choices={(uiState.model as LikertModelSchema).choices}
           isSelected={isSelected}
           onSelect={onSelect}
           disabled={isEvaluated(uiState)}

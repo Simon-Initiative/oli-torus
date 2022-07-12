@@ -39,7 +39,16 @@ export const StagePan: React.FC = ({ children }) => {
         transform: getTranslate(transformation.translateX, transformation.translateY),
       }}
       onMouseMove={onMove}
-      onMouseDown={() => setMoving(true)}
+      onMouseDown={(e) => {
+        /*  console.log('pan event', e); */
+        const clickTarget = e.target;
+        if (
+          (clickTarget as HTMLElement).classList.contains('aa-stage-pan') ||
+          (clickTarget as HTMLElement).classList.contains('activity-content')
+        ) {
+          setMoving(true);
+        }
+      }}
       onMouseUp={() => setMoving(false)}
       onMouseLeave={() => setMoving(false)}
     >
