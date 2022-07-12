@@ -167,6 +167,26 @@ defmodule Oli.Accounts do
   def get_user_by(clauses), do: Repo.get_by(User, clauses)
 
   @doc """
+  Gets a single user with platform roles and author preloaded
+  Returns `nil` if the User does not exist.
+  ## Examples
+      iex> get_user_with_roles(123)
+      %User{}
+      iex> get_user_with_roles(456)
+      nil
+
+  """
+  def get_user_with_roles(id) do
+    from(user in User,
+      where: user.id == ^id,
+      left_join: platform_roles in assoc(user, :platform_roles),
+      left_join: author in assoc(user, :author),
+      preload: [platform_roles: platform_roles, author: author]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a user.
   ## Examples
       iex> create_user(%{field: value})

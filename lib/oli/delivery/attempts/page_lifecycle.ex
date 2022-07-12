@@ -44,7 +44,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   `{:error, {:no_more_attempts}}` if no more attempts are present
 
   """
-  def start(revision_slug, section_slug, user_id, activity_provider) do
+  def start(revision_slug, section_slug, datashop_session_id, user_id, activity_provider) do
     Repo.transaction(fn ->
       case DeliveryResolver.from_revision_slug(section_slug, revision_slug) do
         nil ->
@@ -64,6 +64,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
             page_revision: page_revision,
             section_slug: section_slug,
             user_id: user_id,
+            datashop_session_id: datashop_session_id,
             activity_provider: activity_provider
           }
 
@@ -96,13 +97,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:ok, {:not_started, %HistorySummary{}}}`
   """
-  @spec visit(%Revision{}, String.t(), number(), any) ::
+  @spec visit(%Revision{}, String.t(), String.t(), number(), any) ::
           {:ok, {:in_progress | :revised, %AttemptState{}}}
           | {:ok, {:not_started, %HistorySummary{}}}
           | {:error, any}
   def visit(
         page_revision,
         section_slug,
+        datashop_session_id,
         user_id,
         activity_provider
       ) do
@@ -121,6 +123,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
         page_revision: page_revision,
         section_slug: section_slug,
         user_id: user_id,
+        datashop_session_id: datashop_session_id,
         activity_provider: activity_provider
       }
 

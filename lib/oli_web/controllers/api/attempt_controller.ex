@@ -584,8 +584,14 @@ defmodule OliWeb.Api.AttemptController do
         } = params
       ) do
     seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    case Activity.reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous) do
+    case Activity.reset_activity(
+           section_slug,
+           activity_attempt_guid,
+           datashop_session_id,
+           seed_state_from_previous
+         ) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
