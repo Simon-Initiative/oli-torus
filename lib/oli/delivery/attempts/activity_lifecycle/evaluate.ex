@@ -38,7 +38,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
         max_score = case is_manually_graded do
           true ->
-            Map.get(custom, "maxScore", Enum.reduce(part_attempts, 0, fn pa -> pa.out_of end))
+            manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+            Map.get(custom, "maxScore", manual_max)
           false ->
             Map.get(custom, "maxScore", 0)
         end
