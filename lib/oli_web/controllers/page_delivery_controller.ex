@@ -682,8 +682,9 @@ defmodule OliWeb.PageDeliveryController do
       }) do
     user = conn.assigns.current_user
     section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    case PageLifecycle.finalize(section_slug, attempt_guid) do
+    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
       {:ok, %ResourceAccess{id: id}} ->
         Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 

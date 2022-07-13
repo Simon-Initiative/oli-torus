@@ -410,9 +410,16 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => attempt_guid,
         "input" => input
       }) do
-    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
-           %{attempt_guid: attempt_guid, input: input}
-         ]) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case ActivityEvaluation.evaluate_from_input(
+           section_slug,
+           activity_attempt_guid,
+           [
+             %{attempt_guid: attempt_guid, input: input}
+           ],
+           datashop_session_id
+         ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -501,6 +508,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "partInputs" => part_inputs
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
         %{
@@ -509,7 +518,12 @@ defmodule OliWeb.Api.AttemptController do
         }
       end)
 
-    case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_activity(
+           section_slug,
+           activity_attempt_guid,
+           parsed,
+           datashop_session_id
+         ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -534,6 +548,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "evaluations" => client_evaluations
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     client_evaluations =
       Enum.map(client_evaluations, fn %{
                                         "attemptGuid" => attempt_guid,
@@ -558,7 +574,8 @@ defmodule OliWeb.Api.AttemptController do
     case ActivityEvaluation.apply_client_evaluation(
            section_slug,
            activity_attempt_guid,
-           client_evaluations
+           client_evaluations,
+           datashop_session_id
          ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})

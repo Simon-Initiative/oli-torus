@@ -528,6 +528,8 @@ defmodule Oli.Delivery.AttemptsTest do
     alias Oli.Activities.ModeSpecification
 
     test "processes a set of client evaluations for an activity that permits client evaluation" do
+      datashop_session_id = UUID.uuid4()
+
       # create mock activity which allows client evaluation
       {:ok, %Activities.ActivityRegistration{}} =
         Activities.register_activity(%Manifest{
@@ -619,7 +621,8 @@ defmodule Oli.Delivery.AttemptsTest do
       assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
-               client_evaluations
+               client_evaluations,
+               datashop_session_id
              ) ==
                {:ok,
                 [
@@ -635,6 +638,8 @@ defmodule Oli.Delivery.AttemptsTest do
     end
 
     test "fails to process a set of client evaluations for an activity that does not permit client evaluation" do
+      datashop_session_id = UUID.uuid4()
+
       # create mock activity which does not allow client evaluation
       {:ok, %Activities.ActivityRegistration{}} =
         Activities.register_activity(%Manifest{
@@ -726,7 +731,8 @@ defmodule Oli.Delivery.AttemptsTest do
       assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
-               client_evaluations
+               client_evaluations,
+               datashop_session_id
              ) == {:error, "Activity type does not allow client evaluation"}
     end
   end

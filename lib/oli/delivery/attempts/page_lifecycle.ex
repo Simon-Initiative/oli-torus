@@ -183,7 +183,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
 
   `{:error, {:already_submitted}}`
   """
-  def finalize(section_slug, resource_attempt_guid) do
+  def finalize(section_slug, resource_attempt_guid, datashop_session_id) do
     result =
       Repo.transaction(fn _ ->
         case get_resource_attempt_by(attempt_guid: resource_attempt_guid) do
@@ -193,7 +193,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
           resource_attempt ->
             context = %FinalizationContext{
               resource_attempt: resource_attempt,
-              section_slug: section_slug
+              section_slug: section_slug,
+              datashop_session_id: datashop_session_id
             }
 
             impl = determine_page_impl(resource_attempt.revision.graded)

@@ -211,7 +211,12 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ])
 
       # Make sure user 2 can submit the page
-      {:ok, access} = PageLifecycle.finalize(section.slug, user2_resource_attempt.attempt_guid)
+      {:ok, access} =
+        PageLifecycle.finalize(
+          section.slug,
+          user2_resource_attempt.attempt_guid,
+          datashop_session_id_user2
+        )
 
       access = Repo.preload(access, [:resource_attempts])
 
@@ -419,11 +424,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
-          part_inputs
+          part_inputs,
+          datashop_session_id_user1
         )
 
       # Submit the page to toggle it from "in progress" to completed
-      PageLifecycle.finalize(section.slug, resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(
+        section.slug,
+        resource_attempt1.attempt_guid,
+        datashop_session_id_user1
+      )
 
       # determine_resource_attempt_state should no longer retrieve the previously in progress attempt
       {:ok, {:not_started, _resource_attempt}} =
@@ -461,14 +471,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
-          part_inputs
+          part_inputs,
+          datashop_session_id_user1
         )
 
       {:error, "nothing to process"} =
         Evaluate.evaluate_from_input(
           section.slug,
           activity_attempt.attempt_guid,
-          part_inputs
+          part_inputs,
+          datashop_session_id_user1
         )
     end
 
@@ -507,10 +519,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Evaluate.evaluate_from_input(
           section.slug,
           user1_activity_attempt.attempt_guid,
-          part_inputs
+          part_inputs,
+          datashop_session_id_user1
         )
 
-      PageLifecycle.finalize(section.slug, user1_resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(
+        section.slug,
+        user1_resource_attempt1.attempt_guid,
+        datashop_session_id_user1
+      )
 
       {:ok, {:not_started, _resource_attempt}} =
         PageLifecycle.visit(
@@ -542,10 +559,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Evaluate.evaluate_from_input(
           section.slug,
           user2_activity_attempt.attempt_guid,
-          part_inputs
+          part_inputs,
+          datashop_session_id_user2
         )
 
-      PageLifecycle.finalize(section.slug, user2_resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(
+        section.slug,
+        user2_resource_attempt1.attempt_guid,
+        datashop_session_id_user2
+      )
 
       {:ok, {:not_started, _resource_attempt}} =
         PageLifecycle.visit(
@@ -584,7 +606,12 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id
+        )
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -650,10 +677,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, _} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # verify the part attempt record was updated correctly
       updated_attempt = Oli.Repo.get!(PartAttempt, part_attempt.id)
@@ -673,7 +706,11 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       Attempts.update_activity_attempt(updated_attempt, %{score: 2.0, out_of: 1.0})
 
-      PageLifecycle.finalize(section.slug, resource_attempt1.attempt_guid)
+      PageLifecycle.finalize(
+        section.slug,
+        resource_attempt1.attempt_guid,
+        datashop_session_id_user1
+      )
 
       # Verify a valid grade was recorded despite the invalid grade at the activity attempt
       ra = Oli.Repo.get(ResourceAccess, resource_attempt1.resource_access_id)
@@ -686,20 +723,25 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
+
       # submit activity with a known state for the part attempt
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, _} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # now reset the activity, requesting seed_state_from_previous to be true
-      datashop_session_id = UUID.uuid4()
-
       {:ok, {%{parts: [part_attempt]}, _}} =
         ActivityLifecycle.reset_activity(
           section.slug,
           activity_attempt.attempt_guid,
-          datashop_session_id,
+          datashop_session_id_user1,
           true
         )
 
@@ -718,12 +760,17 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
-      datashop_session_id = UUID.uuid4()
+      datashop_session_id_user1 = UUID.uuid4()
       # Submit in tab A:
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, _} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # now reset the activity, this is a simulation of the student
       # opening the resource in tab B.
@@ -731,7 +778,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         ActivityLifecycle.reset_activity(
           section.slug,
           activity_attempt.attempt_guid,
-          datashop_session_id
+          datashop_session_id_user1
         )
 
       assert attempt_state.hasMoreAttempts == false
@@ -742,7 +789,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
                ActivityLifecycle.reset_activity(
                  section.slug,
                  activity_attempt.attempt_guid,
-                 datashop_session_id
+                 datashop_session_id_user1
                )
     end
   end
@@ -831,10 +878,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -860,10 +913,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "b"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       assert attempt_guid == part_attempt.attempt_guid
       assert score == 1
@@ -876,12 +935,18 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "d"}}]
 
       # No matching response should mark the answer as incorrect with out_of
       # being the highest score of any response considered.
       {:ok, [%{feedback: %{id: _id}, score: 0, out_of: 10}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
     end
   end
 
@@ -1006,10 +1071,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ungraded_page_user1_activity_attempt1_part1_attempt1: part_attempt,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
@@ -1036,6 +1107,8 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ungraded_page_user1_activity_attempt1_part2_attempt1: part2_attempt,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id_user1 = UUID.uuid4()
+
       part_inputs = [
         %{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}},
         %{attempt_guid: part2_attempt.attempt_guid, input: %StudentInput{input: "b"}}
@@ -1045,7 +1118,13 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
        [
          %{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}},
          %{attempt_guid: attempt_guid2, out_of: out_of2, score: score2, feedback: %{id: id2}}
-       ]} = Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+       ]} =
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       # verify the returned feedback was what we expected
       assert attempt_guid == part_attempt.attempt_guid
