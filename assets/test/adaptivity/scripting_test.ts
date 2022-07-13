@@ -12,7 +12,6 @@ import {
   looksLikeJson,
   templatizeText,
 } from 'adaptivity/scripting';
-import { templatizeText } from 'apps/delivery/components/TextParser';
 import { Environment } from 'janus-script';
 
 describe('Scripting Interface', () => {
