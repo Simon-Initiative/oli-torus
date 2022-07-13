@@ -78,6 +78,7 @@ defmodule Oli.Analytics.Datashop do
         date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
         email: email,
         sub: sub,
+        datashop_session_id: hd(part_attempts).datashop_session_id,
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
         dataset_name: dataset_name,
