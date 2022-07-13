@@ -55,7 +55,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       left: '300px',
       paddingRight: '300px',
       paddingBottom: '300px',
-      pointerEvents: `${editMode ? 'auto' : 'none'}`
+      pointerEvents: `${editMode ? 'auto' : 'none'}`,
     },
     authoringContext: JSON.stringify({
       selectedPartId,
