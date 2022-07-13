@@ -11,24 +11,32 @@ defmodule OliWeb.Telemetry do
   end
 
   def metrics do
+    non_distributed_metrics() ++
+      [
+        distribution("oli.plug.stop.duration",
+          reporter_options: [buckets: 1..20 |> Enum.map(&(&1 * 25))],
+          unit: {:native, :millisecond}
+        ),
+        distribution("oli.repo.query.total_time",
+          reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
+          unit: {:native, :millisecond}
+        ),
+        distribution("oli.resolvers.delivery.duration",
+          reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
+          unit: {:native, :millisecond}
+        )
+      ]
+  end
+
+  # separating these because live_dashboard don't support
+  # showing distribution metrics yet
+  def non_distributed_metrics do
     [
       last_value("vm.memory.total", unit: :byte),
       last_value("vm.total_run_queue_lengths.total"),
       last_value("vm.total_run_queue_lengths.cpu"),
       last_value("vm.total_run_queue_lengths.io"),
       last_value("vm.system_counts.process_count"),
-      distribution("oli.plug.stop.duration",
-        reporter_options: [buckets: 1..20 |> Enum.map(&(&1 * 25))],
-        unit: {:native, :millisecond}
-      ),
-      distribution("oli.repo.query.total_time",
-        reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
-        unit: {:native, :millisecond}
-      ),
-      distribution("oli.resolvers.delivery.duration",
-        reporter_options: [buckets: 1..40 |> Enum.map(&(&1 * 5))],
-        unit: {:native, :millisecond}
-      ),
 
       # Phoenix Metrics
       summary("phoenix.endpoint.stop.duration",

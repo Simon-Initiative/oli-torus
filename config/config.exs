@@ -221,6 +221,15 @@ config :oli, :auth_providers,
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
 
+# Configure libcluster for horizontal scaling
+# Take into account that different strategies could use different config options
+config :libcluster,
+  topologies: [
+    oli: [
+      strategy: Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip")])
+    ]
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
