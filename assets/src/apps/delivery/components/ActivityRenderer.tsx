@@ -91,7 +91,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const saveUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
     const { simId, key, value } = payload;
-    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode, false);
+    await Extrinsic.updateGlobalUserState({ [simId]: { [key]: value } }, isPreviewMode);
   };
 
   const readUserData = async (attemptGuid: string, partAttemptGuid: string, payload: any) => {
@@ -544,7 +544,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     const currentStateSnapshot: any = {};
     const appChanges = changes.changed.filter((change: any) => change.includes('app.'));
-    if (appChanges.length) {
+    if (appChanges.length && changes?.changed?.length > 1) {
       // need to write the updated state to the global state
       const updatePayload = appChanges.reduce((data: any, key: string) => {
         const [, everAppId] = key.split('.');

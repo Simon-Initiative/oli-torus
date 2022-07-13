@@ -184,6 +184,7 @@ export const getAttemptScoringContext = (
   trapStateScoreScheme: false,
   negativeScoreAllowed,
   currentAttemptNumber: attempts,
+  isManuallyGraded: false,
 });
 
 export const simpleScoringCorrectRule = {
