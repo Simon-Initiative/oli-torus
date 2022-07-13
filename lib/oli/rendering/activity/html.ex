@@ -173,7 +173,7 @@ defmodule Oli.Rendering.Activity.Html do
         %{"activity_id" => parent_activity_id} = find_sequence_entry_by_sequence_id(parent_sequence_id, entries)
         parent_lineage = get_activity_lineage(parent_activity_id, entries)
 
-        List.insert_at(parent_lineage, 0, entry)
+        List.insert_at(parent_lineage, -1, entry)
     end
   end
 
