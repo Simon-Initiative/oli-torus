@@ -7,6 +7,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
+  alias Oli.Delivery.Attempts.Core
   alias Oli.Delivery.Attempts.Core.{ResourceAccess, ActivityAttempt, PartAttempt, StudentInput}
   alias Oli.Delivery.Snapshots.Snapshot
   alias Oli.Delivery.Page.PageContext
@@ -577,6 +578,13 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
           user2.id,
           activity_provider
         )
+
+      # verify that the submitted part attempts have the correct datashop session id
+      # corresponding to the user who submitted them
+      updated_user1_part1_attempt1 = Core.get_part_attempt_by(id: user1_part1_attempt1.id)
+      updated_user2_part1_attempt1 = Core.get_part_attempt_by(id: user2_part1_attempt1.id)
+      assert updated_user1_part1_attempt1.datashop_session_id == datashop_session_id_user1
+      assert updated_user2_part1_attempt1.datashop_session_id == datashop_session_id_user2
     end
 
     # this is the function that saves an input in a graded assessment before the page is submitted
@@ -669,6 +677,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert snapshot.activity_id == updated_attempt.resource_id
       assert snapshot.resource_id == page_revision.resource_id
       assert snapshot.revision_id == activity_revision.id
+
+      # verify that the submitted part attempt has the latest datashop session id
+      updated_part_attempt = Core.get_part_attempt_by(id: part_attempt.id)
+      assert updated_part_attempt.datashop_session_id == datashop_session_id
     end
 
     test "processing a submission where there are invalid scores", %{
@@ -761,6 +773,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
       datashop_session_id_user1 = UUID.uuid4()
+
       # Submit in tab A:
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
@@ -791,6 +804,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
                  activity_attempt.attempt_guid,
                  datashop_session_id_user1
                )
+
+      # verify that the reset activity part attempt has the latest datashop session id
+      updated_part_attempt = Core.get_part_attempt_by(id: part_attempt.id)
+      assert updated_part_attempt.datashop_session_id == datashop_session_id_user1
     end
   end
 
@@ -879,6 +896,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
       datashop_session_id_user1 = UUID.uuid4()
+
+      # assert the part attempt does not start with the latest datashop session id
+      assert part_attempt.datashop_session_id != datashop_session_id_user1
+
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
@@ -906,6 +927,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert updated_attempt.score == 1.0
       assert updated_attempt.out_of == 1.0
       refute updated_attempt.date_evaluated == nil
+
+      # verify that the updated part attempt has the latest datashop session id
+      updated_part_attempt = Core.get_part_attempt_by(id: part_attempt.id)
+      assert updated_part_attempt.datashop_session_id == datashop_session_id_user1
     end
 
     test "processing a different submission", %{

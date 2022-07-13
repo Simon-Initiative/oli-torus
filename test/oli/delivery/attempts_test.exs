@@ -472,13 +472,7 @@ defmodule Oli.Delivery.AttemptsTest do
     end
 
     test "get latest attempts - part attempts", %{attempt1: attempt1} do
-      [{_activity_attempt, part_attempt_map}] =
-        Hierarchy.get_latest_attempts(attempt1.id)
-        |> Map.values()
-
-      [part_attempt] =
-        part_attempt_map
-        |> Map.values()
+      part_attempt = get_latest_resource_part_attempt(attempt1.id)
 
       assert %Oli.Delivery.Attempts.Core.PartAttempt{} = part_attempt
       assert part_attempt.attempt_number == 1
@@ -548,7 +542,12 @@ defmodule Oli.Delivery.AttemptsTest do
         })
 
       # create an example project with the activity in a graded page
-      %{activity_attempt1: activity_attempt1, part1_attempt1: part1_attempt1, section: section} =
+      %{
+        attempt1: attempt1,
+        activity_attempt1: activity_attempt1,
+        part1_attempt1: part1_attempt1,
+        section: section
+      } =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
         |> Seeder.add_user(%{}, :user1)
@@ -635,6 +634,10 @@ defmodule Oli.Delivery.AttemptsTest do
                     type: "FeedbackAction"
                   }
                 ]}
+
+      # verify the latest part attempt includes the datashop session id
+      assert get_latest_resource_part_attempt(attempt1.id).datashop_session_id ==
+               datashop_session_id
     end
 
     test "fails to process a set of client evaluations for an activity that does not permit client evaluation" do
@@ -727,7 +730,7 @@ defmodule Oli.Delivery.AttemptsTest do
         }
       ]
 
-      # check that client evaluation submission succeeds
+      # verify the client evaluation submission fails with error message
       assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
@@ -735,5 +738,17 @@ defmodule Oli.Delivery.AttemptsTest do
                datashop_session_id
              ) == {:error, "Activity type does not allow client evaluation"}
     end
+  end
+
+  defp get_latest_resource_part_attempt(resource_attempt_id) do
+    [{_activity_attempt, part_attempt_map}] =
+      Hierarchy.get_latest_attempts(resource_attempt_id)
+      |> Map.values()
+
+    [part_attempt] =
+      part_attempt_map
+      |> Map.values()
+
+    part_attempt
   end
 end
