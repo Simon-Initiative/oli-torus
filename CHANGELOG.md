@@ -6,6 +6,12 @@
 
 ### Enhancements
 
+## 0.20.2 (2022-07-13)
+
+### Bug Fixes
+
+- Fix an issue related to EverApp data loss
+
 ## 0.20.1 (2022-07-07)
 
 ### Bug Fixes
