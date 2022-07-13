@@ -211,7 +211,7 @@ export const parseArrayWithoutStringConversion = (val: unknown): unknown[] => {
 export const batchedBuffer = (fn: any, ms: number) => {
   let timer: any = null;
   let buffer: any[] = [];
-  let batch = {};
+  let batch: any = {};
 
   const batchedFn = (batchedInput: any, ...nonBatchedInputs: any[]) => {
     const myDeferred: any = { promise: null, resolve: null, reject: null };
@@ -221,7 +221,11 @@ export const batchedBuffer = (fn: any, ms: number) => {
     });
     myDeferred.promise = myPromise;
     buffer.push(myDeferred);
-    batch = { ...batch, ...batchedInput };
+
+    const topLevelKeys = Object.keys(batchedInput);
+    topLevelKeys.forEach((topKey: any) => {
+      batch[topKey] = { ...batch[topKey], ...batchedInput[topKey] };
+    });
 
     if (timer) {
       clearTimeout(timer);
