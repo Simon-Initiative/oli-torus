@@ -8,6 +8,8 @@ defmodule Oli.Analytics.Datashop do
   """
 
   import XmlBuilder
+  import Oli.Utils, only: [value_or: 2]
+
   alias Oli.Publishing
   alias Oli.Authoring.Course
   alias Oli.Delivery.Attempts.Core, as: Attempts
@@ -78,7 +80,10 @@ defmodule Oli.Analytics.Datashop do
         date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
         email: email,
         sub: sub,
-        datashop_session_id: hd(part_attempts).datashop_session_id,
+        # datashop_session_id will be set to the latest part attempt datashop_session_id
+        # unless it is nil, then it will be set to a generated UUID. This will handle any
+        # part attempts that existed before this value was tracked in the part attempt record
+        datashop_session_id: value_or(hd(part_attempts).datashop_session_id, UUID.uuid4()),
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
         dataset_name: dataset_name,
