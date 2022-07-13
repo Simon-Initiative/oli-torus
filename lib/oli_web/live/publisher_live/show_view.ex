@@ -2,6 +2,7 @@ defmodule OliWeb.PublisherLive.ShowView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
+  import Ecto.Changeset
   import OliWeb.ErrorHelpers
 
   alias Oli.Inventories
@@ -13,6 +14,14 @@ defmodule OliWeb.PublisherLive.ShowView do
   }
 
   alias OliWeb.Router.Helpers, as: Routes
+
+  alias Surface.Components.Form, as: SurfaceForm
+
+  alias Surface.Components.Form.{
+    Field,
+    Label,
+    Checkbox
+  }
 
   data title, :string, default: "Edit Publisher"
   data publisher, :struct
@@ -63,17 +72,32 @@ defmodule OliWeb.PublisherLive.ShowView do
           <Form changeset={@changeset} save="save"/>
         </ShowSection>
 
-        {#unless @publisher.default}
-          <ShowSection section_title="Actions">
-            <div class="d-flex align-items-center">
-              <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
-              <span>Permanently delete this publisher.</span>
-            </div>
-            <div class="d-flex align-items-center">
-              <button type="button" class="btn btn-link action-button" :on-click="show_set_default_modal">Set this publisher as the default</button>
-            </div>
-          </ShowSection>
-        {/unless}
+        <ShowSection section_title="Actions">
+          <div>
+            <SurfaceForm for={@changeset} change="save" class="d-flex">
+              <div class="form-group">
+                <div class="form-row">
+                  <div class="custom-control custom-switch">
+                    <Field name={:available_via_api} class="form-check">
+                      <Checkbox class="custom-control-input" value={get_field(@changeset, :available_via_api)}/>
+                      <Label class="custom-control-label">Available via API</Label>
+                      <p class="text-muted">Make the publisher available through the publishers API</p>
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            </SurfaceForm>
+            {#unless @publisher.default}
+              <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-link text-danger action-button" :on-click="show_delete_modal">Delete</button>
+                <span>Permanently delete this publisher.</span>
+              </div>
+              <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-link action-button" :on-click="show_set_default_modal">Set this publisher as the default</button>
+              </div>
+            {/unless}
+          </div>
+        </ShowSection>
       </div>
       {#if @show_confirm_default}
         <Confirm title="Confirm Default" id="set_default_modal" ok="set_default" cancel="cancel_set_default_modal">
@@ -177,7 +201,12 @@ defmodule OliWeb.PublisherLive.ShowView do
          assign(socket, publisher: default, changeset: Inventories.change_publisher(default))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, put_flash(socket, :error, "Could not update default publisher: #{translate_all_changeset_errors(changeset)}")}
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Could not update default publisher: #{translate_all_changeset_errors(changeset)}"
+         )}
     end
   end
 end

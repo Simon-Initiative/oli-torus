@@ -2,6 +2,7 @@ defmodule Oli.Utils do
   require Logger
 
   import Ecto.Changeset
+  import Ecto.Query, warn: false
 
   @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
@@ -335,6 +336,15 @@ defmodule Oli.Utils do
         end
 
       "<a href=\"#{absolute_url}\" target=\"_blank\">#{url}</a>"
+    end)
+  end
+
+  @doc """
+  Receives a map with conditions on entity's fields, and returns dynamic conditions to be used in an Ecto query.
+  """
+  def filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
     end)
   end
 end
