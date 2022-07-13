@@ -41,6 +41,7 @@ export const defaultModel = (): VlabSchema => {
     stem: multiInputStem(input),
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
+    configuration: [],
     authoring: {
       parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
       targeted: [],
@@ -70,7 +71,9 @@ export const friendlyVlabParameter = (param: VlabParameter) => {
       ? 'volume (L)'
       : param === 'moles'
       ? 'moles'
-      : 'mass(g)'
+      : param === 'mass'
+      ? 'mass(g)'
+      : 'molarity (moles/L)'
   }`;
 };
 

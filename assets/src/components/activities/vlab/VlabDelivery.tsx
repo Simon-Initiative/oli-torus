@@ -48,7 +48,7 @@ export const MultiInputComponent: React.FC = () => {
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
 
     // Loop over the inputs, if an input is type vlabInput, update it's value based on XML.
-    // Move this mess to Utils
+    // Move this mess to Utils?
     if (!selectedFlask.querySelector('parsererror')) {
       let value = 0;
       model.inputs.forEach((input) => {
@@ -64,7 +64,14 @@ export const MultiInputComponent: React.FC = () => {
             );
             speciesList.forEach((species) => {
               if (species.getElementsByTagName('id')[0].textContent === input.species) {
-                value = species.getElementsByTagName(param)[0].textContent;
+                if (param === 'molarity') {
+                  const vol = selectedFlask
+                    .getElementsByTagName('flask')[0]
+                    .getElementsByTagName('volume')[0].textContent;
+                  value = species.getElementsByTagName('moles')[0].textContent / vol;
+                } else {
+                  value = species.getElementsByTagName(param)[0].textContent;
+                }
               }
             });
           }
