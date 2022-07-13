@@ -90,11 +90,16 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
            user2: user2,
            section: section
          } do
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
+
       # View index
       {:ok, _summary} = Summary.get_summary(section.slug, user1)
 
       # Open the graded page as user 1 to get the prologue
-      user1_page_context = PageContext.create_for_visit(section, revision.slug, user1)
+      user1_page_context =
+        PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
+
       assert user1_page_context.progress_state == :not_started
       assert Enum.empty?(user1_page_context.resource_attempts)
 
@@ -105,7 +110,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
          resource_attempt: user1_resource_attempt,
          attempt_hierarchy: user1_activity_attempts
-       }} = PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
+       }} =
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id_user1,
+          user1.id,
+          activity_provider
+        )
 
       # Save an activity part on the page but do not submit it
       {:ok, {:ok, 1}} =
@@ -131,7 +143,12 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert user1_latest_resource_attempt.id == user1_resource_attempt.id
 
       # Make sure the progress state is correct for the latest resource attempt
-      assert PageContext.create_for_visit(section, revision.slug, user1).progress_state ==
+      assert PageContext.create_for_visit(
+               section,
+               revision.slug,
+               user1,
+               datashop_session_id_user1
+             ).progress_state ==
                :in_progress
 
       # Now we have an "in progress" resource attempt for student 1 with a saved student input,
@@ -143,7 +160,10 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # Access the graded page with user2
       assert is_nil(Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id))
-      user2_page_context = PageContext.create_for_visit(section, revision.slug, user2)
+
+      user2_page_context =
+        PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
+
       assert user2_page_context.progress_state == :not_started
       assert Enum.count(user2_page_context.resource_attempts) == 0
 
@@ -151,7 +171,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
          resource_attempt: user2_resource_attempt,
          attempt_hierarchy: user2_activity_attempts
-       }} = PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
+       }} =
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id_user2,
+          user2.id,
+          activity_provider
+        )
 
       # Save attempts for both activities
       ActivityLifecycle.save_student_input([
@@ -373,12 +400,14 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       graded_page_user1_attempt1: resource_attempt1
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
 
       # User1 has a started resource attempt, so it should be "in progress"
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -401,6 +430,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -414,11 +444,13 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       user1_activity_attempt1: activity_attempt
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
 
       {:ok, {:in_progress, _resource_attempt}} =
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -454,12 +486,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
            user2: user2
          } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
 
       # User 1
       {:ok, {:in_progress, resource_attempt_user1}} =
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -481,6 +516,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -490,6 +526,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
@@ -514,6 +551,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
@@ -542,6 +580,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id = UUID.uuid4()
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
@@ -567,7 +606,11 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # now reset the activity
       {:ok, {attempt_state, _}} =
-        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
+        ActivityLifecycle.reset_activity(
+          section.slug,
+          activity_attempt.attempt_guid,
+          datashop_session_id
+        )
 
       assert attempt_state.dateEvaluated == nil
       assert attempt_state.score == nil
@@ -578,7 +621,11 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
 
       # now try to reset when there are no more attempts
       assert {:error, {:no_more_attempts}} ==
-               ActivityLifecycle.reset_activity(section.slug, attempt_state.attemptGuid)
+               ActivityLifecycle.reset_activity(
+                 section.slug,
+                 attempt_state.attemptGuid,
+                 datashop_session_id
+               )
 
       # verify that a snapshot record was created properly
       [%Snapshot{} = snapshot] = Oli.Repo.all(Snapshot)
@@ -646,8 +693,15 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
 
       # now reset the activity, requesting seed_state_from_previous to be true
+      datashop_session_id = UUID.uuid4()
+
       {:ok, {%{parts: [part_attempt]}, _}} =
-        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid, true)
+        ActivityLifecycle.reset_activity(
+          section.slug,
+          activity_attempt.attempt_guid,
+          datashop_session_id,
+          true
+        )
 
       assert part_attempt.response == %{"input" => "a", "files" => nil}
     end
@@ -664,6 +718,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       section: section,
       ungraded_page_user1_activity_attempt1: activity_attempt
     } do
+      datashop_session_id = UUID.uuid4()
       # Submit in tab A:
       part_inputs = [%{attempt_guid: part_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
@@ -673,14 +728,22 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       # now reset the activity, this is a simulation of the student
       # opening the resource in tab B.
       {:ok, {attempt_state, _}} =
-        ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
+        ActivityLifecycle.reset_activity(
+          section.slug,
+          activity_attempt.attempt_guid,
+          datashop_session_id
+        )
 
       assert attempt_state.hasMoreAttempts == false
 
       # now try to reset the guid from the first attempt, simulating the
       # student clicking 'Reset' in tab A.
       assert {:error, {:no_more_attempts}} ==
-               ActivityLifecycle.reset_activity(section.slug, activity_attempt.attempt_guid)
+               ActivityLifecycle.reset_activity(
+                 section.slug,
+                 activity_attempt.attempt_guid,
+                 datashop_session_id
+               )
     end
   end
 

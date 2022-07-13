@@ -77,6 +77,7 @@ defmodule Oli.Delivery.AttemptsTest do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id = UUID.uuid4()
 
       refute Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
 
@@ -85,6 +86,7 @@ defmodule Oli.Delivery.AttemptsTest do
           latest_resource_attempt: nil,
           page_revision: p1.revision,
           section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
           user_id: user.id,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
@@ -143,19 +145,38 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
 
       # Page 1
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
-        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       {:error, {:active_attempt_present}} =
-        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       # No page
       {:error, {:not_found}} =
-        PageLifecycle.start("garbage slug", section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          "garbage slug",
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       # The started attempt should be the latest attempt for this user
       latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
@@ -166,6 +187,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id,
           user1.id,
           activity_provider
         )
@@ -178,15 +200,18 @@ defmodule Oli.Delivery.AttemptsTest do
       user2: user2
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
-      PageContext.create_for_visit(section, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
+      PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
       # User1 - same as above
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -198,6 +223,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -208,13 +234,20 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
 
       # Start an attempt, should have same results as user1 above
       {:ok, %AttemptState{resource_attempt: resource_attempt2}} =
-        PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id_user2,
+          user2.id,
+          activity_provider
+        )
 
       latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
       assert latest_attempt2.id == resource_attempt2.id
@@ -223,6 +256,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
@@ -343,13 +377,15 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -370,23 +406,27 @@ defmodule Oli.Delivery.AttemptsTest do
       user2: user2
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
 
-      PageContext.create_for_visit(section, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
@@ -459,13 +499,15 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1
     } do
       activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      datashop_session_id_user1 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
