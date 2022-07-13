@@ -191,6 +191,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,
@@ -209,6 +210,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,
@@ -227,6 +229,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,

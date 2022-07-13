@@ -505,11 +505,11 @@ export const extractAllExpressionsFromText = (text: string): string[] => {
 };
 
 export const variableContainsValidPrefix = (variable: string): boolean => {
-  return variable.search(/app.|variables.|stage.|session./) !== -1;
+  return variable.search(/app\.|variables\.|stage\.|session\./) !== -1;
 };
 
 export const containsExactlyOneVariable = (text: string): boolean => {
-  const m = text.match(/app.|variables.|stage.|session./g);
+  const m = text.match(/app\.|variables\.|stage\.|session\./g);
   return !!(m && m.length === 1);
 };
 

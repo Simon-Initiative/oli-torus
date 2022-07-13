@@ -96,7 +96,8 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         total_count = determine_total(attempts)
 
         activities = Oli.Activities.list_activity_registrations()
-        additional_scripts = Enum.map(activities, fn a -> a.authoring_script end)
+        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+        additional_scripts = Enum.map(activities, fn a -> a.authoring_script end) |> Enum.concat(part_components)
 
         activity_types_map = Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
 

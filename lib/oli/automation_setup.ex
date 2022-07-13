@@ -163,7 +163,11 @@ defmodule Oli.AutomationSetup do
   end
 
   defp publish_project(project) do
-    Oli.Publishing.publish_project(project, "Automated test setup")
+    Oli.Publishing.publish_project(
+      project,
+      "Automated test setup",
+      Oli.Publishing.PartMappingRefreshSync
+    )
   end
 
   defp create_project(nil, _) do

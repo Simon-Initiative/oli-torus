@@ -15,6 +15,7 @@ export interface PageState {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode: boolean;
+  isInstructor: boolean;
   enableHistory: boolean;
   showHistory: boolean;
   activityTypes: any[];
@@ -37,6 +38,7 @@ const initialState: PageState = {
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
+  isInstructor: false,
   enableHistory: false,
   showHistory: false,
   activityTypes: [],
@@ -67,6 +69,7 @@ const pageSlice = createSlice({
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
+      state.isInstructor = !!action.payload.isInstructor;
       state.activityTypes = action.payload.activityTypes;
       state.graded = !!action.payload.graded;
       state.overviewURL = action.payload.overviewURL;
@@ -96,6 +99,7 @@ export const selectPageTitle = createSelector(selectState, (state) => state.page
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(

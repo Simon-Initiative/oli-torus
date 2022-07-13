@@ -50,12 +50,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         true
       end
 
-    show_deleted =
-      if is_admin do
-        Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
-      else
-        true
-      end
+    show_deleted = Accounts.get_author_preference(author, :admin_show_deleted_projects, false)
 
     projects =
       Course.browse_projects(
@@ -66,7 +61,7 @@ defmodule OliWeb.Projects.ProjectsLive do
         admin_show_all: show_all
       )
 
-    {:ok, table_model} = TableModel.new(context, projects, is_admin)
+    {:ok, table_model} = TableModel.new(context, projects)
 
     total_count = determine_total(projects)
 
@@ -119,7 +114,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     {show_deleted, author} =
       case get_boolean_param(params, "show_deleted", show_deleted) do
-        new_value when new_value != show_deleted and is_admin ->
+        new_value when new_value != show_deleted ->
           {:ok, author} =
             Accounts.set_author_preference(author, :admin_show_deleted_projects, new_value)
 
@@ -157,7 +152,7 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div class="projects-title-row mb-4">
       <div class="container">
         <div class="row">
@@ -166,14 +161,14 @@ defmodule OliWeb.Projects.ProjectsLive do
               <div>
                 <%= if @is_admin do %>
                   <div class="form-check" style="display: inline;">
-                    <input type="checkbox" class="form-check-input" id="allCheck" <%= if @show_all do "checked" else "" end %> phx-click="toggle_show_all">
+                    <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
                     <label class="form-check-label" for="allCheck">Show all projects</label>
                   </div>
-                  <div class="form-check ml-4" style="display: inline;">
-                    <input type="checkbox" class="form-check-input" id="deletedCheck" <%= if @show_deleted do "checked" else "" end %> phx-click="toggle_show_deleted">
-                    <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
-                  </div>
                 <% end %>
+                <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
+                  <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
+                  <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
+                </div>
               </div>
 
               <div class="flex-grow-1"></div>
@@ -201,7 +196,7 @@ defmodule OliWeb.Projects.ProjectsLive do
 
     <div class="container">
       <div class="row">
-        <div class="col-12">
+        <div id="projects-table" class="col-12">
           <%= live_component PagedTable, page_change: "paged_table_page_change", sort: "paged_table_sort",
             total_count: @total_count, filter: @text_search,
             selection_change: nil, allow_selection: false,

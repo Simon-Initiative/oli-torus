@@ -34,13 +34,34 @@ const ScoringOverview: React.FC<{
       }
       const { maxAttempt, maxScore, trapStateScoreScheme } = activity.content?.custom;
 
-      if (maxScore > 0) {
+      const manualGradingDetails = activity.authoring?.parts.reduce(
+        (gradingDetails: { manuallyGraded: boolean; maxManualScore: number }, part: any) => {
+          const partIsManuallyGraded = part.gradingApproach === 'manual';
+          if (partIsManuallyGraded) {
+            gradingDetails.manuallyGraded = true;
+            gradingDetails.maxManualScore += part.outOf || 0;
+          }
+          return gradingDetails;
+        },
+        { manuallyGraded: false, maxManualScore: 0 },
+      );
+
+      const isScored =
+        maxScore > 0 ||
+        (manualGradingDetails.manuallyGraded && manualGradingDetails.maxManualScore > 0);
+
+      if (isScored) {
+        const scoringMax = maxScore > 0 ? maxScore : manualGradingDetails.maxManualScore;
+
+        const scoreSchemeText = trapStateScoreScheme ? 'Trap State' : `Attempts (${maxAttempt})`;
+        const scoreType = manualGradingDetails.manuallyGraded ? 'Manually Graded' : scoreSchemeText;
+
         acc.push({
           sequenceId: sequenceItem.custom.sequenceId,
           sequenceName: sequenceItem.custom.sequenceName,
           resourceId: sequenceItem.resourceId,
-          maxScore,
-          scoreType: trapStateScoreScheme ? 'Trap State' : `Attempts (${maxAttempt})`,
+          maxScore: scoringMax,
+          scoreType,
         });
       }
 

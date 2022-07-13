@@ -34,6 +34,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     onSubmitActivity,
     onResetActivity,
     onSaveActivity,
+    model,
   } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
@@ -42,7 +43,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model));
   }, []);
 
   // First render initializes state

@@ -3,7 +3,7 @@ defmodule Oli.Inventories do
 
   alias Ecto.{Changeset, Multi}
   alias Oli.Inventories.Publisher
-  alias Oli.Repo
+  alias Oli.{Repo, Utils}
 
   # ------------------------------------------------------------
   # Publishers
@@ -19,6 +19,22 @@ defmodule Oli.Inventories do
   """
   def list_publishers do
     Repo.all(from(p in Publisher, order_by: [desc: :default]))
+  end
+
+  @doc """
+  Returns the list of publishers that meets the criteria passed in the input.
+
+  ## Examples
+
+      iex> search_publishers(%{available_via_api: true})
+      [%Publisher{available_via_api: true}, ...]
+
+      iex> search_publishers(%{available_via_api: false})
+      []
+  """
+  def search_publishers(filter) do
+    from(p in Publisher, where: ^Utils.filter_conditions(filter))
+    |> Repo.all()
   end
 
   @doc """

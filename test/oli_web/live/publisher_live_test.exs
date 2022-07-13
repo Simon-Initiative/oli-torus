@@ -463,5 +463,23 @@ defmodule OliWeb.PublisherLiveTest do
 
       refute has_element?(view, "button[phx-click=\"show_set_default_modal\"]")
     end
+
+    test "makes a publisher unavailable via API", %{
+      conn: conn,
+      publisher: %Publisher{id: id}
+    } do
+      {:ok, view, _html} = live(conn, live_view_show_route(id))
+
+      view
+      |> element("form[phx-change=\"save\"")
+      |> render_change(%{publisher: %{available_via_api: false}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Publisher successfully updated."
+
+      assert %Publisher{available_via_api: false} = Inventories.get_publisher(id)
+    end
   end
 end

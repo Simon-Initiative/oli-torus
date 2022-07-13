@@ -268,6 +268,7 @@ export const FileUploadComponent: React.FC = () => {
             [DEFAULT_PART_ID]: [],
           }),
         }),
+        model,
       ),
     );
   }, []);
@@ -285,7 +286,7 @@ export const FileUploadComponent: React.FC = () => {
 
         <FileSubmission
           sectionSlug={sectionSlug as any}
-          model={model}
+          model={uiState.model}
           state={state}
           onSavePart={(a, p, s) => dispatch(savePart(DEFAULT_PART_ID, s, onSavePart))}
         />

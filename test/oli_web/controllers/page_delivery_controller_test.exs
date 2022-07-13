@@ -520,6 +520,36 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "part three"
       assert html_response(conn, 200) =~ ~s|<div data-react-class="Components.PaginationControls"|
     end
+
+    test "index show manage section button when accessing as instructor", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      assert html_response(conn, 200) =~ "Manage Section"
+    end
+
+    test "index preview do not show manage section button when accessing as instructor", %{
+      conn: conn,
+      user: user,
+      section: section
+    } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
+
+      conn =
+        conn
+        |> get(Routes.page_delivery_path(conn, :index_preview, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+      refute html_response(conn, 200) =~ "Manage Section"
+    end
   end
 
   describe "independent learner page_delivery_controller" do

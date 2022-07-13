@@ -11,9 +11,11 @@ defmodule Oli.Rendering.Context do
             # Mode can be one of  [:delivery, :review, :author_preview, :instructor_preview]
             mode: :delivery,
             revision_slug: nil,
+            page_id: nil,
             section_slug: nil,
             project_slug: nil,
             activity_types_map: %{},
+            resource_attempt: nil,
             group_id: nil,
             survey_id: nil,
             bib_app_params: [],

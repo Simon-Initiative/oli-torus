@@ -16,6 +16,8 @@ defmodule Oli.Repo.Migrations.AddPublisherToProjectsAndProducts do
       ON CONFLICT DO NOTHING
     """
 
+    flush()
+
     publisher_id =
       Repo.one(from(p in Publisher, where: p.name == "Torus Publisher", select: p.id))
 

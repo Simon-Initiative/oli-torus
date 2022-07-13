@@ -207,7 +207,7 @@ defmodule Oli.Seeder do
 
     create_published_resource(publication, container_resource, container_revision)
 
-    %{resource: page1, revision: revision1} =
+    %{resource: page1, revision: revision1, published_resource: published_resource1} =
       create_page("Page one", publication, project, author)
 
     %{resource: page2, revision: revision2} =
@@ -227,6 +227,7 @@ defmodule Oli.Seeder do
     |> Map.put(:page2, page2)
     |> Map.put(:revision1, revision1)
     |> Map.put(:revision2, revision2)
+    |> Map.put(:published_resource1, published_resource1)
   end
 
   def add_adaptive_page(
@@ -759,9 +760,9 @@ defmodule Oli.Seeder do
       })
       |> Repo.insert()
 
-    create_published_resource(publication, resource, revision)
+    {:ok, published_resource} = create_published_resource(publication, resource, revision)
 
-    %{resource: resource, revision: revision}
+    %{resource: resource, revision: revision, published_resource: published_resource}
   end
 
   def create_container(title, publication, project, author, children \\ []) do

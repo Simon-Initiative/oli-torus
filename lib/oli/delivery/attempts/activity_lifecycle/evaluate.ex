@@ -25,6 +25,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     } = activity_attempt
 
     activity_model = select_model(activity_attempt)
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
@@ -33,12 +34,26 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
         custom = Map.get(delivery, "custom", %{})
 
+        is_manually_graded = Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
+
+        # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
+        max_score =
+          case is_manually_graded do
+            true ->
+              manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+              Map.get(custom, "maxScore", manual_max)
+
+            false ->
+              Map.get(custom, "maxScore", 0)
+          end
+
         scoringContext = %{
-          maxScore: Map.get(custom, "maxScore", 0),
+          maxScore: max_score,
           maxAttempt: Map.get(custom, "maxAttempt", 1),
           trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
           negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-          currentAttemptNumber: attempt_number
+          currentAttemptNumber: attempt_number,
+          isManuallyGraded: is_manually_graded
         }
 
         activitiesRequiredForEvaluation =
@@ -49,7 +64,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
         # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
 
-        # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+        Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+
         evaluate_from_rules(
           section_slug,
           resource_attempt,
@@ -109,20 +125,25 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         client_evaluations = to_client_results(score, out_of, part_inputs)
 
-        case apply_client_evaluation(
-               section_slug,
-               activity_attempt_guid,
-               client_evaluations,
-               :do_not_normalize,
-               datashop_session_id
-             ) do
-          {:ok, _} ->
-            {:ok, decodedResults}
+        if scoringContext.isManuallyGraded do
+          # TODO: update part attempts?
+          {:ok, decodedResults}
+        else
+          case apply_client_evaluation(
+                 section_slug,
+                 activity_attempt_guid,
+                 client_evaluations,
+                 :do_not_normalize,
+                 datashop_session_id
+               ) do
+            {:ok, _} ->
+              {:ok, decodedResults}
 
-          {:error, err} ->
-            Logger.error("Error in apply client results! #{err}")
+            {:error, err} ->
+              Logger.error("Error in apply client results! #{err}")
 
-            {:error, err}
+              {:error, err}
+          end
         end
 
       {:error, err} ->

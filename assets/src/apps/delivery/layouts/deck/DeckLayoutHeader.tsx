@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
+  selectIsInstructor,
   selectPageContent,
   selectPageSlug,
   selectPreviewMode,
@@ -39,6 +40,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const [showOptions, setShowOptions] = React.useState(false);
 
   const isPreviewMode = useSelector(selectPreviewMode);
+  const isInstructor = useSelector(selectIsInstructor);
 
   const [backButtonUrl, setBackButtonUrl] = useState('');
   const [backButtonText, setBackButtonText] = useState('Back to Overview');
@@ -47,7 +49,7 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
   const resourceSlug = useSelector(selectPageSlug);
 
   useEffect(() => {
-    if (isPreviewMode) {
+    if (isPreviewMode && !isInstructor) {
       // return to authoring
       setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
       setBackButtonText('Back to Authoring');
