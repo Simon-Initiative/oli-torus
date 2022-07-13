@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       results = browse(0, :enrollments_count, :desc, @default_opts)
       assert length(results) == 3
       assert hd(results).total_count == 30
-      assert hd(results).enrollments_count == 28
+      assert hd(results).enrollments_count == 27
 
       results = browse(0, :enrollments_count, :asc, @default_opts)
       assert length(results) == 3
@@ -102,11 +102,11 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       assert length(results) == 1
       assert hd(results).total_count == 1
 
-      # there are ten sections associated with the insitution titled "ZZZ", and two with
+      # there are ten sections associated with the insitution titled "ZZZ", and three with
       # zzz in the title
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "ZZZ"}))
       assert length(results) == 3
-      assert hd(results).total_count == 12
+      assert hd(results).total_count == 13
 
       # there is one section with base on aA (apart from itself)
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "aA"}))
@@ -127,13 +127,19 @@ defmodule Oli.Delivery.Sections.BrowseTest do
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: "a"}))
       assert length(results) == 3
       assert hd(results).total_count == 30
+
+      # exclude special characters
+      results = browse(0, :title, :asc, Map.merge(@default_opts, %{text_search: ";:-|'<$p#(!*) characters"}))
+      assert length(results) == 1
+      assert hd(results).total_count == 1
+      assert hd(results).title == "zzz ;:-|'<$p#(!*) characters"
     end
 
     test "filtering", %{second: second, sections: sections} do
       # by institution
       results = browse(0, :title, :asc, Map.merge(@default_opts, %{institution_id: second.id}))
       assert length(results) == 3
-      assert hd(results).total_count == 10
+      assert hd(results).total_count == 11
       assert hd(results).institution_name == "ZZZ"
 
       # by active date: finds the one section with start and end dates that overlap today
@@ -195,7 +201,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
     sections =
       (make_sections(map.project, map.institution, "a", 10, %{}) ++
          make_sections(map.project, institution2, "b", 10, %{}) ++
-         make_sections(map.project, nil, "c", 8, %{}))
+         make_sections(map.project, nil, "c", 7, %{}))
       |> enroll
 
     # There is only one section that is "active" in that the start and end dates overlap today
@@ -232,6 +238,8 @@ defmodule Oli.Delivery.Sections.BrowseTest do
 
     # Add one section that is archived
     make(map.project, map.institution, "zzzArchived", %{status: :archived})
+
+    make(map.project, institution2, "zzz ;:-|'<$p#(!*) characters", %{})
 
     Map.put(map, :sections, sections) |> Map.put(:second, institution2)
   end

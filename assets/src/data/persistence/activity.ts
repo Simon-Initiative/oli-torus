@@ -104,10 +104,15 @@ export const getBulkActivitiesForAuthoring = async (
   });
 };
 
-export const getActivityForDelivery = (sectionSlug: string, activityId: ResourceId) => {
+export const getActivityForDelivery = (
+  sectionSlug: string,
+  activityId: ResourceId,
+  isPreviewMode: boolean,
+) => {
   const params = {
     method: 'GET',
     url: `/storage/course/${sectionSlug}/resource/${activityId}`,
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   return makeRequest<Retrieved>(params);
@@ -116,11 +121,13 @@ export const getActivityForDelivery = (sectionSlug: string, activityId: Resource
 export const getBulkActivitiesForDelivery = async (
   sectionSlug: string,
   activityIds: ResourceId[],
+  isPreviewMode: boolean,
 ) => {
   const params = {
     method: 'POST',
     url: `/storage/course/${sectionSlug}/resource`,
     body: JSON.stringify({ resourceIds: activityIds }),
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   const response = await makeRequest<BulkRetrieved>(params);
@@ -129,11 +136,13 @@ export const getBulkActivitiesForDelivery = async (
   }
 
   return response.results.map((result: Retrieved) => {
-    const { resourceId: id, title, content } = result;
+    const { resourceId: id, activityType, title, content, authoring } = result;
     return {
       id,
+      activityType,
       title,
       content,
+      authoring,
     };
   });
 };

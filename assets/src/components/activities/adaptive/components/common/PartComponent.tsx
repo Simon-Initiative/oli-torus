@@ -4,7 +4,7 @@ import {
   CustomProperties,
   PartComponentProps,
 } from 'components/parts/types/parts';
-import React, { CSSProperties, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import React, { CSSProperties, useContext, useEffect, useRef, useState } from 'react';
 import {
   NotificationContext,
   NotificationType,
@@ -60,7 +60,14 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       styleChanges.height = sHeight as number;
     }
     setComponentStyle((previousStyle) => {
-      return { ...previousStyle, ...styleChanges };
+      // don't need to update if there are no changes
+      let changed = false;
+      Object.keys(styleChanges).forEach((key) => {
+        if ((previousStyle as any)[key] !== (styleChanges as any)[key]) {
+          changed = true;
+        }
+      });
+      return changed ? { ...previousStyle, ...styleChanges } : previousStyle;
     });
 
     const sCssClass = currentStateSnapshot[`stage.${props.id}.IFRAME_frameCssClass`];
@@ -74,30 +81,36 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
     }
   };
 
-  const onResize = useCallback(
-    async (payload: any) => {
-      const settings = payload.settings;
-      const styleChanges: CSSProperties = {};
+  const handleResize = async (payload: any) => {
+    const settings = payload.settings;
+    const styleChanges: CSSProperties = {};
 
-      if (settings?.width) {
-        styleChanges.width = settings.width.value;
-      }
+    if (settings?.width) {
+      styleChanges.width = settings.width.value;
+    }
 
-      if (settings?.height) {
-        styleChanges.height = settings.height.value;
-      }
+    if (settings?.height) {
+      styleChanges.height = settings.height.value;
+    }
 
-      if (settings?.zIndex) {
-        const newZ = settings.zIndex.value;
-        styleChanges.zIndex = newZ;
-      }
-      setComponentStyle((previousStyle) => {
-        return { ...previousStyle, ...styleChanges };
+    if (settings?.zIndex) {
+      const newZ = settings.zIndex.value;
+      styleChanges.zIndex = newZ;
+    }
+
+    setComponentStyle((previousStyle) => {
+      // don't need to update if there are no changes
+      let changed = false;
+      Object.keys(styleChanges).forEach((key) => {
+        if ((previousStyle as any)[key] !== (styleChanges as any)[key]) {
+          changed = true;
+        }
       });
-      return true;
-    },
-    [componentStyle],
-  );
+      return changed ? { ...previousStyle, ...styleChanges } : previousStyle;
+    });
+
+    return true; // TODO: should be "changed" ?
+  };
 
   const [wcEvents, setWcEvents] = useState<Record<string, (payload: any) => Promise<any>>>({
     init: props.onInit,
@@ -114,19 +127,80 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
   });
 
   useEffect(() => {
-    setWcEvents({
-      init: props.onInit,
-      ready: props.onReady,
-      save: props.onSave,
-      submit: props.onSubmit,
-      resize: props.onResize,
-      getData: props.onGetData || stubHandler,
-      setData: props.onSetData || stubHandler,
+    setWcEvents((currentWcEvents) => {
+      let changed = false;
+      if (currentWcEvents.init !== props.onInit) {
+        /* console.log('[PartComponent] init changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.ready !== props.onReady) {
+        /* console.log('[PartComponent] ready changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.save !== props.onSave) {
+        /* console.log('[PartComponent] save changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.submit !== props.onSubmit) {
+        /* console.log('[PartComponent] submit changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.resize !== props.onResize) {
+        /* console.log('[PartComponent] resize changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.getData !== props.onGetData) {
+        /* console.log('[PartComponent] getData changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.setData !== props.onSetData) {
+        /* console.log('[PartComponent] setData changed'); */
+        changed = true;
+      }
+      if (currentWcEvents.configure !== (props as AuthorProps).onConfigure) {
+        if (
+          (props as AuthorProps).onConfigure === undefined &&
+          currentWcEvents.configure !== stubHandler
+        ) {
+          /* console.log('[PartComponent] configure changed'); */
+          changed = true;
+        }
+      }
+      if (currentWcEvents.saveconfigure !== (props as AuthorProps).onSaveConfigure) {
+        if (
+          (props as AuthorProps).onSaveConfigure === undefined &&
+          currentWcEvents.saveconfigure !== stubHandler
+        ) {
+          /* console.log('[PartComponent] saveconfigure changed'); */
+          changed = true;
+        }
+      }
+      if (currentWcEvents.cancelconfigure !== (props as AuthorProps).onCancelConfigure) {
+        if (
+          (props as AuthorProps).onCancelConfigure === undefined &&
+          currentWcEvents.cancelconfigure !== stubHandler
+        ) {
+          /* console.log('[PartComponent] cancelconfigure changed'); */
+          changed = true;
+        }
+      }
+      // don't trigger a re-render if nothing changed
+      return !changed
+        ? currentWcEvents
+        : {
+            init: props.onInit,
+            ready: props.onReady,
+            save: props.onSave,
+            submit: props.onSubmit,
+            resize: props.onResize,
+            getData: props.onGetData || stubHandler,
+            setData: props.onSetData || stubHandler,
 
-      // authoring
-      configure: (props as AuthorProps).onConfigure || stubHandler,
-      saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
-      cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
+            // authoring
+            configure: (props as AuthorProps).onConfigure || stubHandler,
+            saveconfigure: (props as AuthorProps).onSaveConfigure || stubHandler,
+            cancelconfigure: (props as AuthorProps).onCancelConfigure || stubHandler,
+          };
     });
   }, [
     props.onInit,
@@ -194,25 +268,33 @@ const PartComponent: React.FC<AuthorProps | DeliveryProps> = (props) => {
       const handler = wcEvents[e.type];
       if (handler) {
         // TODO: refactor all handlers to take ID and send it here
-        const result = await handler(payload);
-        if (e.type === 'resize') {
-          onResize(payload);
-        }
-        if (callback) {
-          callback(result);
+        // console.log(`${e.type} event handled [PC : ${props.id}]`, e);
+        try {
+          const result = await handler(payload);
+          if (e.type === 'resize') {
+            handleResize(payload);
+          }
+          if (callback) {
+            callback(result);
+          }
+        } catch (error) {
+          console.error('Error in PC handler', { error, type: e.type, payload, callback, handler });
         }
       }
     };
     Object.keys(wcEvents).forEach((eventName) => {
       document.addEventListener(eventName, wcEventHandler);
     });
+    /* console.log(`${props.id} listening for events`); */
     setIsListening(true);
     return () => {
+      /* console.log(`${props.id} stopped listening for events`); */
+      setIsListening(false);
       Object.keys(wcEvents).forEach((eventName) => {
         document.removeEventListener(eventName, wcEventHandler);
       });
     };
-  }, [wcEvents, onResize]);
+  }, [wcEvents]);
 
   const webComponentProps: any = {
     ref,

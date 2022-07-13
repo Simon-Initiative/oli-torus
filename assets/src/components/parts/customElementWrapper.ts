@@ -294,7 +294,10 @@ const register = (
         }
         Object.defineProperty(this, name, {
           get() {
-            return this._vdom.props[name];
+            if (!this._vdom) {
+              console.warn(`${name} accessed before component mounted`);
+            }
+            return this._vdom?.props[name] || this.getAttribute(name);
           },
           set(v) {
             if (this._vdom) {

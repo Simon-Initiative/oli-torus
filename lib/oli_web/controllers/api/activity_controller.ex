@@ -316,41 +316,7 @@ defmodule OliWeb.Api.ActivityController do
     end
   end
 
-  defp document_to_delivery_result(is_preview_mode, %{
-         title: title,
-         activity_type_id: activity_type_id,
-         content: content,
-         resource_id: resource_id
-       }) do
-    %{
-      "result" => "success",
-      "title" => title,
-      "activityTypeId" => activity_type_id,
-      "resourceId" => resource_id,
-      "content" =>
-        if is_preview_mode do
-          content
-        else
-          Map.delete(content, "authoring")
-        end
-    }
-  end
-
-  defp is_preview_mode?(conn) do
-    case Map.get(conn.query_params, "mode", "delivery") do
-      "preview" -> true
-      _ -> false
-    end
-  end
-
-  defp has_access?(conn, user, section_slug, is_preview_mode) do
-    if is_preview_mode do
-      is_admin? = Oli.Accounts.is_admin?(conn.assigns[:current_author])
-      Sections.is_instructor?(user, section_slug) or is_admin?
-    else
-      Sections.is_enrolled?(user.id, section_slug)
-    end
-  end
+  # --------- DELIVERY PREVIEW ---------
 
   @doc """
   Retrieve a document for an activity for delivery purposes.
@@ -438,6 +404,41 @@ defmodule OliWeb.Api.ActivityController do
       error(conn, 403, "unauthorized")
     end
   end
+
+  defp document_to_delivery_result(is_preview_mode, %{
+    title: title,
+    activity_type_id: activity_type_id,
+    content: content,
+    resource_id: resource_id
+  }) do
+    {authoring, content} = Map.pop(content, "authoring")
+
+    result = %{
+    "result" => "success",
+    "title" => title,
+    "activityType" => activity_type_id,
+    "resourceId" => resource_id,
+    "content" => content
+    }
+
+    if is_preview_mode,
+      do: Map.put(result, "authoring", authoring),
+      else: result
+  end
+
+  defp is_preview_mode?(%{query_params: %{"mode" => "preview"}}), do: true
+  defp is_preview_mode?(_), do: false
+
+  defp has_access?(conn, user, section_slug, is_preview_mode) do
+    if is_preview_mode do
+      is_admin? = Oli.Accounts.is_admin?(conn.assigns[:current_author])
+      Sections.is_instructor?(user, section_slug) or is_admin?
+    else
+      Sections.is_enrolled?(user.id, section_slug)
+    end
+  end
+
+  # --------- END DELIVERY PREVIEW ---------
 
   @doc """
   Update a document for an activity.

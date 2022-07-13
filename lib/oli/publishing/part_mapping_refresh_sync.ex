@@ -1,7 +1,7 @@
-defmodule Oli.PublishingTest.PartMappingMockAdapter do
+defmodule Oli.Publishing.PartMappingRefreshSync do
   alias Oli.Publishing.PartMappingRefreshAdapter
 
-  @type ecto_publication_operation :: PartMappingRefreshAdapter.ecto_publication_operation
+  @type ecto_publication_operation :: PartMappingRefreshAdapter.ecto_publication_operation()
 
   @behaviour PartMappingRefreshAdapter
 

@@ -34,6 +34,7 @@ export const MultipleChoiceComponent: React.FC = () => {
     onSubmitActivity,
     onSaveActivity,
     onResetActivity,
+    model,
   } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
@@ -42,7 +43,7 @@ export const MultipleChoiceComponent: React.FC = () => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model));
   }, []);
 
   // First render initializes state

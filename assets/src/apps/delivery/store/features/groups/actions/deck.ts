@@ -3,7 +3,10 @@ import { CapiVariableTypes } from 'adaptivity/capi';
 import { templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
-import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
+import {
+  getBulkActivitiesForAuthoring,
+  getBulkActivitiesForDelivery,
+} from 'data/persistence/activity';
 import {
   getBulkAttemptState,
   getPageAttemptState,
@@ -32,6 +35,7 @@ import {
   selectActivityTypes,
   selectNavigationSequence,
   selectPreviewMode,
+  selectIsInstructor,
   selectResourceAttemptGuid,
   selectSectionSlug,
   setScore,
@@ -454,10 +458,14 @@ export const loadActivities = createAsyncThunk(
     const rootState = thunkApi.getState() as RootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
+    const isInstructor = selectIsInstructor(rootState);
     let results;
     if (isPreviewMode) {
       const activityIds = activityAttemptMapping.map((m) => m.id);
-      results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+
+      results = isInstructor
+        ? await getBulkActivitiesForDelivery(sectionSlug, activityIds, isPreviewMode)
+        : await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
     } else {
       const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);
       results = await getBulkAttemptState(sectionSlug, attemptGuids);
