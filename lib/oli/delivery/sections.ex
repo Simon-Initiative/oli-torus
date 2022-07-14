@@ -670,6 +670,27 @@ defmodule Oli.Delivery.Sections do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
+  defp create_hierarchy_definition_from_project(
+         published_resources_by_resource_id,
+         revision,
+         definition
+       ) do
+    child_revisions =
+      Enum.map(revision.children, fn id -> published_resources_by_resource_id[id].revision end)
+
+    Enum.reduce(
+      child_revisions,
+      fn revision, definition ->
+        create_hierarchy_definition_from_project(
+          published_resources_by_resource_id,
+          revision,
+          definition
+        )
+      end,
+      Map.put(definition, revision.resource_id, child_revisions)
+    )
+  end
+
   @doc """
   Create all section resources from the given section and publication using the
   root resource's revision tree. Returns the root section resource record.
@@ -683,17 +704,33 @@ defmodule Oli.Delivery.Sections do
           id: publication_id,
           root_resource_id: root_resource_id,
           project_id: project_id
-        } = publication
+        } = publication,
+        hierarchy_definition \\ nil
       ) do
     Repo.transaction(fn ->
       published_resources_by_resource_id = published_resources_map(publication.id)
 
+      %PublishedResource{revision: root_revision} =
+        published_resources_by_resource_id[root_resource_id]
+
+      # If a custom hierarchy_definition was supplied, use it, otherwise
+      # use the hierarchy defined by the project
+      hierarchy_definition =
+        case hierarchy_definition do
+          nil ->
+            create_hierarchy_definition_from_project(
+              published_resources_by_resource_id,
+              root_revision,
+              %{}
+            )
+
+          other ->
+            other
+        end
+
       numbering_tracker = Numbering.init_numbering_tracker()
       level = 0
       processed_ids = []
-
-      %PublishedResource{revision: root_revision} =
-        published_resources_by_resource_id[root_resource_id]
 
       {root_section_resource_id, _numbering_tracker, processed_ids} =
         create_section_resource(
@@ -703,7 +740,8 @@ defmodule Oli.Delivery.Sections do
           processed_ids,
           root_revision,
           level,
-          numbering_tracker
+          numbering_tracker,
+          hierarchy_definition
         )
 
       processed_ids = [root_resource_id | processed_ids]
@@ -738,14 +776,17 @@ defmodule Oli.Delivery.Sections do
          processed_ids,
          revision,
          level,
-         numbering_tracker
+         numbering_tracker,
+         hierarchy_definition
        ) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
+    children = Map.get(hierarchy_definition, revision.resource_id)
+
     {children, numbering_tracker, processed_ids} =
       Enum.reduce(
-        revision.children,
+        children,
         {[], numbering_tracker, processed_ids},
         fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
           %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
@@ -1491,7 +1532,6 @@ defmodule Oli.Delivery.Sections do
         %Section{start_date: start_date, end_date: end_date} = section,
         context
       ) do
-
     start_date = FormatDateTime.convert_datetime(start_date, context)
     end_date = FormatDateTime.convert_datetime(end_date, context)
 

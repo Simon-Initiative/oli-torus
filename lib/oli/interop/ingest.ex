@@ -141,6 +141,123 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  defp create_products(project, root_revision, resource_map, page_map, container_map) do
+    products =
+      Map.keys(resource_map)
+      |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
+      |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Product" end)
+
+    Enum.reduce_while(products, container_map, fn {id, product}, container_map ->
+      case create_product(project, root_revision, product, container_map, page_map, as_author) do
+        {:ok, container_map} -> {:cont, container_map}
+        {:error, e} -> {:halt, {:error, e}}
+      end
+    end)
+  end
+
+  defp create_product(project, root_revision, product, container_map, page_map, as_author) do
+    # parse the product JSON map recursively in order to create the hierarchy_definition
+    # for each container
+    # if it does not already exist in container map create a new resource for it and add it container map
+    # add the resource id into hierarchy_definition, pointing to the revision of the container
+    # for each page, add it to the parent container's list entry of hierarchy_definition
+
+    hierarchy_definition = Map.put(%{}, root_revision.resource_id, [])
+
+    children =
+      Map.get(product, "children")
+      |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
+      |> Enum.reduce({container_map, hierarchy_definition}, fn item,
+                                                               {container_map,
+                                                                hierarchy_definition} ->
+        process_product_item(
+          root_revision.resource_id,
+          hierarchy_definition,
+          project,
+          item,
+          container_map,
+          page_map,
+          as_author
+        )
+      end)
+  end
+
+  defp process_product_item(
+         parent_resource_id,
+         hierarchy_definition,
+         project,
+         item,
+         container_map,
+         page_map,
+         as_author
+       ) do
+    case Map.get(item, "type") do
+      "item" ->
+        # simply add the item to the parent container in the hierarchy definition. The
+        # will had to have already been created, since the base hierarchy must reference all
+        # pages
+        id = Map.get(page_map, Map.get(c, "idref")).resource_id
+
+        hierarchy_definition =
+          Map.put(
+            hierarchy_definition,
+            parent_resource_id,
+            Map.get(hierarchy_definition, parent_resource_id) ++ [id]
+          )
+
+        {container_map, hierarchy_definition}
+
+      "container" ->
+        {revision, container_map} =
+          case Map.get(container_map, Map.get(item, "id", UUID.uuid4())) do
+            nil ->
+              attrs = %{
+                tags: [],
+                title: Map.get(item, "title"),
+                children: [],
+                author_id: as_author.id,
+                content: %{"model" => []},
+                resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container")
+              }
+
+              {:ok, %{revision: revision}} =
+                Oli.Authoring.Course.create_and_attach_resource(project, attrs)
+
+              {:ok, _} = ChangeTracker.track_revision(project.slug, revision)
+
+              {revision, Map.put(container_map, Map.get(item, "id", UUID.uuid4()), revision)}
+
+            revision ->
+              {revision, container_map}
+          end
+
+        # Insert this container in the hierarchy with an initially empty collection of children,
+        # and also add it to the parent container
+        hierarchy_definition =
+          Map.put(hierarchy_definition, revision.resource_id, [])
+          |> Map.put(
+            parent_resource_id,
+            Map.get(hierarchy_definition, parent_resource_id) ++ [revision.resource_id]
+          )
+
+        # process ever child element of this container
+        Map.get(item, "children", [])
+        |> Enum.reduce({container_map, hierarchy_definition}, fn item,
+                                                                 {container_map,
+                                                                  hierarchy_definition} ->
+          process_product_item(
+            revision.resource_id,
+            hierarchy_definition,
+            project,
+            item,
+            container_map,
+            page_map,
+            as_author
+          )
+        end)
+    end
+  end
+
   defp get_registration_map() do
     Oli.Activities.list_activity_registrations()
     |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.slug, e.id) end)
