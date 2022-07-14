@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
     field(:feedback, :map)
     field(:hints, {:array, :string}, default: [])
     field(:part_id, :string)
+    field(:datashop_session_id, :string)
 
     belongs_to(:activity_attempt, Oli.Delivery.Attempts.Core.ActivityAttempt)
 
@@ -39,8 +40,15 @@ defmodule Oli.Delivery.Attempts.Core.PartAttempt do
       :feedback,
       :hints,
       :part_id,
+      :datashop_session_id,
       :activity_attempt_id
     ])
-    |> validate_required([:attempt_guid, :attempt_number, :part_id, :activity_attempt_id])
+    |> validate_required([
+      :attempt_guid,
+      :attempt_number,
+      :part_id,
+      :activity_attempt_id,
+      :datashop_session_id
+    ])
   end
 end
