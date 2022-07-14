@@ -18,4 +18,10 @@
       }
     }
   }
+
+  .toolbar {
+    display: flex;
+    flex-direction: row;
+    margin: 8px 0;
+  }
 }

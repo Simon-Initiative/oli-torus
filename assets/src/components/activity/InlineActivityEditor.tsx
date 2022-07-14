@@ -20,6 +20,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   allTags: Tag[];
   banked: boolean;
   canRemove: boolean;
+  customToolbarItems?: React.ComponentType;
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
@@ -177,11 +178,14 @@ export class InlineActivityEditor extends React.Component<
               editMode={this.props.editMode}
             />
             <div className="flex-grow-1"></div>
-            <DeleteButton
-              className="ml-2"
-              editMode={this.props.editMode && this.props.canRemove}
-              onClick={this.props.onRemove}
-            />
+            <div className={styles.toolbar}>
+              {this.props.customToolbarItems && <this.props.customToolbarItems />}
+              <DeleteButton
+                className="ml-2"
+                editMode={this.props.editMode && this.props.canRemove}
+                onClick={this.props.onRemove}
+              />
+            </div>
           </div>
           <ActivityLOs
             partIds={partIds}

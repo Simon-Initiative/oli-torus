@@ -64,14 +64,6 @@ html.authoring {
             }
           }
         }
-
-        .btn-delete:not([disabled]) {
-          color: rgba(authoring.$body-color, 0.8);
-
-          &:hover {
-            color: authoring.$danger;
-          }
-        }
       }
 
       .assistive-text {

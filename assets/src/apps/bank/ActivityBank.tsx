@@ -34,11 +34,13 @@ import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { CreateActivity } from './CreateActivity';
 import { DeleteActivity } from './DeleteActivity';
-import { EditingLock } from './EditingLock';
+import { EditButton } from './EditButton';
 import { LogicFilter } from './LogicFilter';
 import '../ResourceEditor.scss';
 import { arrangeObjectives } from 'components/resource/objectives/sort';
 import { Page, Paging } from 'components/misc/Paging';
+import { classNames } from 'utils/classNames';
+import styles from './ActivityBank.modules.scss';
 
 const PAGE_SIZE = 5;
 
@@ -475,12 +477,14 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
         this.onDelete(thisKey);
       };
 
+      const CustomToolbar = (_props: any) => (
+        <React.Fragment>
+          <EditButton editMode={editMode} onChangeEditMode={onChangeEditMode} />
+        </React.Fragment>
+      );
+
       return (
-        <div key={key} className="d-flex justify-content-start">
-          <div>
-            <EditingLock editMode={editMode} onChangeEditMode={onChangeEditMode} />
-            <DeleteActivity editMode={editMode} onDelete={onDelete} />
-          </div>
+        <div key={key} className={classNames(styles.activityBank, 'd-flex justify-content-start')}>
           <InlineActivityEditor
             key={key}
             projectSlug={this.props.projectSlug}
@@ -492,8 +496,9 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             onRegisterNewObjective={this.onRegisterNewObjective}
             onRegisterNewTag={this.onRegisterNewTag}
             banked={true}
-            canRemove={false}
-            onRemove={() => {}}
+            canRemove={true}
+            onRemove={onDelete}
+            customToolbarItems={CustomToolbar}
             {...context}
           />
         </div>
