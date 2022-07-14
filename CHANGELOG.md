@@ -4,9 +4,12 @@
 
 ### Bug Fixes
 
+- Fix an issue where activity bank styles were not rendering properly
+
 ### Enhancements
 
 - Survey delivery support
+- Improve the way activity bank edit locks are presented to a user
 
 ## 0.20.0 (2022-06-30)
 
