@@ -410,15 +410,24 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => attempt_guid,
         "response" => input
       }) do
-    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
-           %{
-             attempt_guid: attempt_guid,
-             input: %StudentInput{
-               files: Map.get(input, "files", []),
-               input: Map.get(input, "input")
+
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case ActivityEvaluation.evaluate_from_input(
+           section_slug,
+           activity_attempt_guid,
+           [
+             %{
+               attempt_guid: attempt_guid, 
+               input: %StudentInput{
+                 files: Map.get(input, "files", []),
+                 input: Map.get(input, "input")
+               }
              }
-           }
-         ]) do
+           ],
+           datashop_session_id
+         ) do
+
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -517,6 +526,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "partInputs" => part_inputs
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
         %{
@@ -525,7 +536,12 @@ defmodule OliWeb.Api.AttemptController do
         }
       end)
 
-    case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_activity(
+           section_slug,
+           activity_attempt_guid,
+           parsed,
+           datashop_session_id
+         ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -550,6 +566,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "evaluations" => client_evaluations
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     client_evaluations =
       Enum.map(client_evaluations, fn %{
                                         "attemptGuid" => attempt_guid,
@@ -574,7 +592,8 @@ defmodule OliWeb.Api.AttemptController do
     case ActivityEvaluation.apply_client_evaluation(
            section_slug,
            activity_attempt_guid,
-           client_evaluations
+           client_evaluations,
+           datashop_session_id
          ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
@@ -600,8 +619,14 @@ defmodule OliWeb.Api.AttemptController do
         } = params
       ) do
     seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    case Activity.reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous) do
+    case Activity.reset_activity(
+           section_slug,
+           activity_attempt_guid,
+           datashop_session_id,
+           seed_state_from_previous
+         ) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 

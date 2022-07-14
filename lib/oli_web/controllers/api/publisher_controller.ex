@@ -97,7 +97,7 @@ defmodule OliWeb.Api.PublisherController do
             OliWeb.Api.PublisherController.PublisherResponse}
        }
   def show(conn, %{"publisher_id" => publisher_id}) do
-    case Inventories.get_publisher(publisher_id) do
+    case Inventories.get_publisher_by(%{id: publisher_id, available_via_api: true}) do
       nil ->
         error(conn, 404, "Not found")
 
@@ -117,7 +117,7 @@ defmodule OliWeb.Api.PublisherController do
             OliWeb.Api.PublisherController.PublisherListingResponse}
        }
   def index(conn, _) do
-    publishers = Inventories.list_publishers()
+    publishers = Inventories.search_publishers(%{available_via_api: true})
     render(conn, "index.json", publishers: publishers)
   end
 end

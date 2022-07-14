@@ -5,36 +5,29 @@ defmodule OliWeb.Projects.TableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(%SessionContext{} = context, sections, include_status?) do
-    column_specs =
-      [
-        %ColumnSpec{
-          name: :title,
-          label: "Title",
-          render_fn: &__MODULE__.custom_render/3
-        },
-        %ColumnSpec{
-          name: :inserted_at,
-          label: "Created",
-          render_fn: &OliWeb.Common.Table.Common.render_date/3
-        },
-        %ColumnSpec{
-          name: :name,
-          label: "Created By",
-          render_fn: &__MODULE__.custom_render/3
-        }
-      ] ++
-        if include_status? do
-          [
-            %ColumnSpec{
-              name: :status,
-              label: "Status",
-              render_fn: &__MODULE__.custom_render/3
-            }
-          ]
-        else
-          []
-        end
+  def new(%SessionContext{} = context, sections) do
+    column_specs = [
+      %ColumnSpec{
+        name: :title,
+        label: "Title",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
+        name: :inserted_at,
+        label: "Created",
+        render_fn: &OliWeb.Common.Table.Common.render_date/3
+      },
+      %ColumnSpec{
+        name: :name,
+        label: "Created By",
+        render_fn: &__MODULE__.custom_render/3
+      },
+      %ColumnSpec{
+        name: :status,
+        label: "Status",
+        render_fn: &__MODULE__.custom_render/3
+      }
+    ]
 
     SortableTableModel.new(
       rows: sections,

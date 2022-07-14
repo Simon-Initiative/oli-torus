@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where question STEM isn't displayed in ordering answer key
+
 ### Enhancements
 
 - Survey delivery support
