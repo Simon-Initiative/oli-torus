@@ -36,12 +36,39 @@ defmodule OliWeb.Common.Utils do
     render_date_with_opts(item, attr_name, opts)
   end
 
+  @spec render_precise_date(map, any, any) :: binary
   def render_precise_date(item, attr_name, context) do
     opts = [context: context, precision: :minutes]
     render_date_with_opts(item, attr_name, opts)
   end
 
   def render_date_with_opts(item, attr_name, opts), do: date(Map.get(item, attr_name), opts)
+
+  @doc """
+    Rounds up a grading score to two significant figures.
+    For numbers with no decimals, or non-significant zeros after the comma, it keeps only one zero
+
+    ## Examples
+    iex> format_score(200.0)
+    200.0
+
+    iex> format_score(120.2333)
+    120.23
+
+    iex> format_score(88.00)
+    88.0
+
+    iex> format_score(78.479)
+    78.48
+
+    iex> format_score(0.0)
+    0.0
+  """
+  @spec format_score(float) :: float
+  def format_score(score) when is_float(score) do
+    formatted_score = Float.round(score, 2)
+    if score - formatted_score != 0.0, do: formatted_score, else: score
+  end
 
   defp has_value(v) do
     !is_nil(v) and v != ""

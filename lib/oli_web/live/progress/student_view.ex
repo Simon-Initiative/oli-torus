@@ -60,7 +60,11 @@ defmodule OliWeb.Progress.StudentView do
                 section_slug,
                 user_id
               )
-              |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+              |> Enum.reduce(%{}, fn r, m ->
+                 # limit score decimals to two significant figures, rounding up
+                r = Map.put(r, :score, Float.round(r.score, 2))
+                Map.put(m, r.resource_id, r)
+              end)
 
             hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 

@@ -57,8 +57,14 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             changeset =
               case resource_access do
-                nil -> nil
-                _ -> ResourceAccess.changeset(resource_access, %{})
+                nil ->
+                  nil
+
+                _ ->
+                  ResourceAccess.changeset(resource_access, %{
+                    # limit score decimals to two significant figures, rounding up
+                    score: Float.round(resource_access.score, 2)
+                  })
               end
 
             {:ok,
@@ -136,6 +142,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             <Field name={:score} class="form-label-group">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
               <NumberInput class="form-control" opts={disabled: !@is_editing}/>
+              <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
             </Field>
             <Field name={:out_of} class="form-label-group mb-4">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
@@ -237,7 +244,7 @@ defmodule OliWeb.Progress.StudentResourceView do
          assign(socket,
            is_editing: false,
            resource_access: resource_access,
-           changeset: ResourceAccess.changeset(resource_access, %{})
+           changeset: ResourceAccess.changeset(resource_access, %{score: Float.round(resource_access.score, 2)})
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
