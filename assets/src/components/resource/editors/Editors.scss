@@ -10,22 +10,6 @@ html.authoring {
     margin-top: 20px;
     padding: 20px 0px;
 
-    .slate-editor {
-      padding: 0.5rem;
-      border: 1px solid authoring.$gray-400;
-      border-radius: 0.25em;
-    }
-
-    .activity,
-    .activity-bank-selection,
-    .activity-editor {
-      margin: 0px auto;
-
-      .objectives {
-        background: authoring.$card-cap-bg;
-      }
-    }
-
     .resource-block-editor-and-controls {
       .content-block {
         .slate-editor {

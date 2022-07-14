@@ -10,6 +10,8 @@ import React from 'react';
 import { valueOr } from 'utils/common';
 import { TextEditor } from 'components/TextEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
+import styles from './InlineActivityEditor.modules.scss';
+import { classNames } from 'utils/classNames';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
@@ -164,7 +166,7 @@ export class InlineActivityEditor extends React.Component<
 
     return (
       <div className="col-12">
-        <div className="activity-editor">
+        <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
           <div className="d-flex align-items-baseline flex-grow-1 mr-2">
             <TextEditor
               onEdit={onTitleEdit}

@@ -1,0 +1,21 @@
+@use 'authoring/theme' as authoring;
+
+:global(html.authoring) {
+  .inlineActivityEditor {
+    margin: 0px auto;
+
+    :global .objectives {
+      background: authoring.$card-cap-bg;
+    }
+
+    :global .slate-editor {
+      padding: 0.5rem;
+      border: 1px solid authoring.$gray-400;
+      border-radius: 0.25em;
+
+      &.disabled {
+        background: authoring.$gray-100;
+      }
+    }
+  }
+}
