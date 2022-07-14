@@ -6,6 +6,8 @@ defmodule Oli.InventoriesTest do
   alias Oli.Inventories
   alias Oli.Inventories.Publisher
 
+  # It is important to highlight that there is an already existing default publisher
+  # created through a migration, which will affect the test results.
   describe "publishers" do
     test "create_publisher/1 with valid data creates a publisher" do
       params = params_for(:publisher)
@@ -155,6 +157,17 @@ defmodule Oli.InventoriesTest do
       assert new_default.id == publisher.id
       assert new_default.default
       refute Inventories.get_publisher(old_default.id).default
+    end
+
+    test "search_publishers/1 returns all publishers meeting the criteria" do
+      insert_pair(:publisher)
+      non_available_publisher = insert(:publisher, available_via_api: false)
+
+      returned_publishers = Inventories.search_publishers(%{available_via_api: true})
+
+      # It returns the two created publishers and the existing default one.
+      assert length(returned_publishers) == 3
+      refute non_available_publisher.id in Enum.map(returned_publishers, & &1.id)
     end
   end
 end
