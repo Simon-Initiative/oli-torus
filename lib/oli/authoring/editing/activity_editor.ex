@@ -425,6 +425,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   defp activity_content(%{content: content}), do: content
   defp activity_content(_), do: nil
 
+  # if objectives to attach are provided, attach them to all parts
+  defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{}, do: attach_objectives_to_all_parts(model, objectives_to_attach)
+  # if the objectives map is already built and can be used directly
+  defp attach_objectives(_model, _objectives = [], raw_objectives), do: {:ok, raw_objectives}
+
   # takes the model of the activity to be created and a list of objective ids and
   # creates a map of all part ids to objective resource ids
   defp attach_objectives_to_all_parts(model, objectives) do
@@ -598,7 +603,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded", title \\ nil) do
+  def create(project_slug, activity_type_slug, author, model, all_parts_objectives, scope \\ "embedded", title \\ nil, raw_objectives \\ %{}) do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -606,13 +611,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
+           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, raw_objectives),
            {:ok, %{content: content} = activity} <-
              Resources.create_new(
                %{
                  title: title || activity_type.title,
                  scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-                 objectives: attached_objectives,
+                 objectives: objectives,
                  author_id: author.id,
                  content: model,
                  scope: scope,

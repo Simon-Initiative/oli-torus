@@ -172,11 +172,13 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
   describe "page duplication" do
     setup do
       Seeder.base_project_with_resource2()
+        |> Seeder.add_objective("objective 1", :obj1)
     end
 
     test "duplicate_page/1 duplicates a page correctly", %{
       author: author,
-      project: project
+      project: project,
+      obj1: obj1
     } do
       embeded_activity_content = %{
         "stem" => "1",
@@ -205,13 +207,13 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
         "oli_short_answer",
         author,
         embeded_activity_content,
-        [],
+        [obj1.resource.id],
         "embedded",
         "An embedded activity"
       )
 
       page = %{
-        objectives: %{"attached" => []},
+        objectives: %{"attached" => [obj1.resource.id]},
         children: [],
         content: %{
           "model" => [
@@ -251,10 +253,14 @@ defmodule Oli.Authoring.Editing.ContainerEditorTest do
 
       assert duplicated_page_revision.title == "Copy of New Page"
       assert length(duplicated_page_revision.content["model"]) == length(page_revision.content["model"])
+      assert duplicated_page_revision.objectives == page.objectives
 
       # Verify that it deep copied the activities, id should't be the same as the previous one
       activity_reference = duplicated_page_revision.content["model"] |> Enum.at(1)
       refute activity_reference["activity_id"] == activity_revision.resource_id
+
+      created_activity = Repo.get_by(Oli.Resources.Revision, %{resource_id: activity_reference["activity_id"]})
+      assert created_activity.objectives["1"] == activity_revision.objectives["1"]
     end
   end
 end

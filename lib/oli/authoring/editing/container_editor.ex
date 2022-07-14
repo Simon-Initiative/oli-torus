@@ -317,17 +317,15 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     activity_type = Activities.get_registration(activity_revision.activity_type_id)
 
-    objectives =
-      Enum.reduce(activity_revision.objectives, [], fn {_key, ids}, acc -> acc ++ ids end)
-
     case ActivityEditor.create(
            project_slug,
            activity_type.slug,
            author,
            activity_revision.content,
-           objectives,
+           [],
            "embedded",
-           activity_revision.title
+           activity_revision.title,
+           activity_revision.objectives
          ) do
       {:ok, {revision, _}} ->
         {:ok,
