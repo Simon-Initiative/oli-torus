@@ -11,18 +11,23 @@ defmodule OliWeb.Common.SelectTimezone do
     browser_timezone = Plug.Conn.get_session(conn, "browser_timezone")
     context = SessionContext.init(conn)
 
+    {maybe_browser_timezone, timezones} =
+      Enum.split_with(Predefined.timezones(), fn
+        {_, ^browser_timezone} -> true
+        _ -> false
+      end)
+
     timezones =
-      Enum.map(Predefined.timezones(), fn
-        {timezone_desc, ^browser_timezone} ->
+      case maybe_browser_timezone do
+        [{timezone_desc, browser_timezone}] ->
           [
-            key: timezone_desc <> " (browser default)",
-            value: browser_timezone,
-            class: "font-weight-bold"
+            {"Use Browser Timezone - " <> timezone_desc, browser_timezone}
+            | timezones
           ]
 
-        {timezone_desc, timezone} ->
-          [key: timezone_desc, value: timezone]
-      end)
+        [] ->
+          timezones
+      end
 
     ~H"""
       <script>
