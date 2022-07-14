@@ -544,7 +544,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
     const currentStateSnapshot: any = {};
     const appChanges = changes.changed.filter((change: any) => change.includes('app.'));
-    if (appChanges.length) {
+    if (appChanges.length && changes?.changed?.length > 1) {
       // need to write the updated state to the global state
       const updatePayload = appChanges.reduce((data: any, key: string) => {
         const [, everAppId] = key.split('.');
