@@ -706,7 +706,8 @@ defmodule Oli.Seeder do
       Map.merge(attrs, %{
         activity_attempt_id: activity_attempt.id,
         part_id: part.id,
-        attempt_guid: UUID.uuid4()
+        attempt_guid: UUID.uuid4(),
+        datashop_session_id: UUID.uuid4()
       })
 
     {:ok, attempt} = create_part_attempt(attrs)

@@ -12,7 +12,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
   alias OliWeb.Router.Helpers, as: Routes
 
   describe "page_delivery_controller index" do
-    setup [:setup_session]
+    setup [:setup_lti_session]
 
     test "handles student access by an enrolled student", %{
       conn: conn,
@@ -552,10 +552,10 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
-  describe "open and free page_delivery_controller" do
-    setup [:setup_open_and_free_section]
+  describe "independent learner page_delivery_controller" do
+    setup [:setup_independent_learner_section]
 
-    test "handles new open and free user access", %{conn: conn, section: section} do
+    test "handles new independent learner user access", %{conn: conn, section: section} do
       Oli.Test.MockHTTP
       |> expect(:post, fn "https://www.google.com/recaptcha/api/siteverify",
                           _body,
@@ -649,11 +649,12 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 302) =~ Routes.delivery_path(conn, :show_enroll, section.slug)
     end
 
-    test "handles open and free user access after author and another user have been deleted", %{
-      conn: conn,
-      section: section,
-      author: author
-    } do
+    test "handles independent learner user access after author and another user have been deleted",
+         %{
+           conn: conn,
+           section: section,
+           author: author
+         } do
       enrolled_user = user_fixture()
       another_user = user_fixture()
 
@@ -959,7 +960,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
     end
   end
 
-  defp setup_session(%{conn: conn}) do
+  defp setup_lti_session(%{conn: conn}) do
     user = user_fixture()
 
     content = %{
@@ -1061,7 +1062,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
      page_revision: map.page.revision}
   end
 
-  defp setup_open_and_free_section(_) do
+  defp setup_independent_learner_section(_) do
     author = author_fixture()
 
     %{project: project, institution: institution} = Oli.Seeder.base_project_with_resource(author)

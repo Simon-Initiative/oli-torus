@@ -86,7 +86,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   `{:error, {:not_found}}`
   """
-  def reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous \\ false) do
+  def reset_activity(
+        section_slug,
+        activity_attempt_guid,
+        datashop_session_id,
+        seed_state_from_previous \\ false
+      ) do
     Repo.transaction(fn ->
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
@@ -152,7 +157,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                             part_id: p.part_id,
                             grading_approach: p.grading_approach,
                             response: response,
-                            activity_attempt_id: new_activity_attempt.id
+                            activity_attempt_id: new_activity_attempt.id,
+                            datashop_session_id: datashop_session_id
                           }) do
                        {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}
                        {:error, changeset} -> {:halt, {:error, changeset}}
