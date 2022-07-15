@@ -64,6 +64,7 @@ export const CustomDnDComponent: React.FC = () => {
             [DEFAULT_PART_ID]: [],
           }),
         }),
+        model,
       ),
     );
   }, []);
