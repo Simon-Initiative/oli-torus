@@ -8,7 +8,7 @@ interface Props {
   input: VlabValue;
 }
 
-const paramList = ['volume', 'temp', 'moles', 'mass', 'molarity'];
+const paramList = ['volume', 'temp', , 'pH', 'moles', 'mass', 'molarity', 'concentration'];
 
 export const VlabParameterSelector: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
@@ -36,9 +36,9 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
             name="speciesID"
             value={props.input.species}
             disabled={
-              props.input.parameter !== 'moles' &&
-              props.input.parameter !== 'mass' &&
-              props.input.parameter !== 'molarity'
+              props.input.parameter === 'volume' ||
+              props.input.parameter === 'temp' ||
+              props.input.parameter === 'pH'
             }
             onChange={(e) =>
               dispatch(MultiInputActions.setVlabSpecies(props.input.id, e.target.value))

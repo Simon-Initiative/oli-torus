@@ -73,7 +73,13 @@ export const friendlyVlabParameter = (param: VlabParameter) => {
       ? 'moles'
       : param === 'mass'
       ? 'mass(g)'
-      : 'molarity (moles/L)'
+      : param === 'molarity'
+      ? 'molarity (moles/L)'
+      : param === 'concentration'
+      ? 'concentration (g/L)'
+      : param === 'pH'
+      ? 'pH'
+      : ''
   }`;
 };
 

@@ -48,27 +48,37 @@ export const MultiInputComponent: React.FC = () => {
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
 
     // Loop over the inputs, if an input is type vlabInput, update it's value based on XML.
-    // Move this mess to Utils?
     if (!selectedFlask.querySelector('parsererror')) {
       let value = 0;
       model.inputs.forEach((input) => {
         if (input.inputType === 'vlabvalue') {
+          // Move this mess to Utils?
+          // value = vlabValueFromXML(input, selectedFlask);
           const param = input.parameter;
+          const volume = selectedFlask
+            .getElementsByTagName('flask')[0]
+            .getElementsByTagName('volume')[0].textContent;
+          const speciesList = Array.from(
+            selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('species'),
+          );
           if (param === 'volume' || param === 'temp') {
             value = selectedFlask
               .getElementsByTagName('flask')[0]
               .getElementsByTagName(param)[0].textContent;
+          } else if (param === 'pH') {
+            speciesList.forEach((species) => {
+              if (species.getElementsByTagName('id')[0].textContent === '1') {
+                const hPlusMolarity = species.getElementsByTagName('moles')[0].textContent / volume;
+                value = -1 * Math.log10(hPlusMolarity);
+              }
+            });
           } else {
-            const speciesList = Array.from(
-              selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('species'),
-            );
             speciesList.forEach((species) => {
               if (species.getElementsByTagName('id')[0].textContent === input.species) {
                 if (param === 'molarity') {
-                  const vol = selectedFlask
-                    .getElementsByTagName('flask')[0]
-                    .getElementsByTagName('volume')[0].textContent;
-                  value = species.getElementsByTagName('moles')[0].textContent / vol;
+                  value = species.getElementsByTagName('moles')[0].textContent / volume;
+                } else if (param === 'concentration') {
+                  value = species.getElementsByTagName('mass')[0].textContent / volume;
                 } else {
                   value = species.getElementsByTagName(param)[0].textContent;
                 }
