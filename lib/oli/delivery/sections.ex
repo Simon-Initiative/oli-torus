@@ -799,7 +799,8 @@ defmodule Oli.Delivery.Sections do
               processed_ids,
               child,
               level + 1,
-              numbering_tracker
+              numbering_tracker,
+              hierarchy_definition
             )
 
           {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}

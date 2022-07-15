@@ -141,13 +141,13 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
-  defp create_products(project, root_revision, resource_map, page_map, container_map) do
+  defp create_products(project, root_revision, resource_map, page_map, container_map, as_author) do
     products =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Product" end)
 
-    Enum.reduce_while(products, container_map, fn {id, product}, container_map ->
+    Enum.reduce_while(products, container_map, fn {_, product}, container_map ->
       case create_product(project, root_revision, product, container_map, page_map, as_author) do
         {:ok, container_map} -> {:cont, container_map}
         {:error, e} -> {:halt, {:error, e}}
@@ -196,7 +196,7 @@ defmodule Oli.Interop.Ingest do
         # simply add the item to the parent container in the hierarchy definition. The
         # will had to have already been created, since the base hierarchy must reference all
         # pages
-        id = Map.get(page_map, Map.get(c, "idref")).resource_id
+        id = Map.get(page_map, Map.get(item, "idref")).resource_id
 
         hierarchy_definition =
           Map.put(
