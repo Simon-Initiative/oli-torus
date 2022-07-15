@@ -439,33 +439,37 @@ defmodule Oli.Delivery.PaywallTest do
       assert {:ok, Money.new(:USD, 80)} == Paywall.calculate_product_cost(paid, institution)
     end
 
-    test "calculate_product_cost/2 correctly applies percentage discounts",
-         %{
-           paid: paid,
-           institution: institution
-         } do
+    percentage_discounts = [
+      %{discount: 50, expected: 50},
+      %{discount: 20, expected: 80},
+      %{discount: 19, expected: 81},
+      %{discount: 12.45, expected: 88},
+      %{discount: 12.55, expected: 87},
+      %{discount: 90, expected: 10},
+      %{discount: 3, expected: 97}
+    ]
+
+    for %{discount: discount, expected: expected_amount} <- percentage_discounts do
+      @discount discount
+      @expected_amount expected_amount
+
       # amount from paid is #Money<:USD, 100>
+      test "calculate_product_cost/2 correctly applies percentage discount for #{discount}",
+          %{
+            paid: paid,
+            institution: institution
+          } do
+        {:ok, _} =
+          Paywall.create_discount(%{
+            institution_id: institution.id,
+            section_id: nil,
+            type: :percentage,
+            percentage: @discount,
+            amount: Money.new(:USD, @expected_amount)
+          })
 
-      {:ok, _} =
-        Paywall.create_discount(%{
-          institution_id: institution.id,
-          section_id: nil,
-          type: :percentage,
-          percentage: 50,
-          amount: Money.new(:USD, 90)
-        })
-
-      assert {:ok, Money.new(:USD, 50)} == Paywall.calculate_product_cost(paid, institution)
-
-      Paywall.create_discount(%{
-        institution_id: institution.id,
-        section_id: paid.id,
-        type: :percentage,
-        percentage: 20,
-        amount: Money.new(:USD, 80)
-      })
-
-      assert {:ok, Money.new(:USD, 20)} == Paywall.calculate_product_cost(paid, institution)
+        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.calculate_product_cost(paid, institution)
+      end
     end
 
     test "calculate_product_cost/2 correctly works when no institution present", %{
