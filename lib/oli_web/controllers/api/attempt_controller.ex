@@ -410,7 +410,6 @@ defmodule OliWeb.Api.AttemptController do
         "part_attempt_guid" => attempt_guid,
         "response" => input
       }) do
-
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     case ActivityEvaluation.evaluate_from_input(
@@ -418,7 +417,7 @@ defmodule OliWeb.Api.AttemptController do
            activity_attempt_guid,
            [
              %{
-               attempt_guid: attempt_guid, 
+               attempt_guid: attempt_guid,
                input: %StudentInput{
                  files: Map.get(input, "files", []),
                  input: Map.get(input, "input")
@@ -427,7 +426,6 @@ defmodule OliWeb.Api.AttemptController do
            ],
            datashop_session_id
          ) do
-
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -449,7 +447,9 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => part_attempt_guid
       }) do
-    case Activity.reset_part(activity_attempt_guid, part_attempt_guid) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case Activity.reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
       {:ok, attempt_state} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state})
 

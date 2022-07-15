@@ -182,7 +182,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   @doc """
   Resets a single part attempt.  Returns {:ok, %PartState{}} or error.
   """
-  def reset_part(activity_attempt_guid, part_attempt_guid) do
+  def reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
     Repo.transaction(fn ->
       part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -218,7 +218,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                part_id: part_attempt.part_id,
                grading_approach: part_attempt.grading_approach,
                response: nil,
-               activity_attempt_id: activity_attempt.id
+               activity_attempt_id: activity_attempt.id,
+               datashop_session_id: datashop_session_id
              }) do
           {:ok, part_attempt} -> PartState.from_attempt(part_attempt, part)
           {:error, changeset} -> Repo.rollback(changeset)

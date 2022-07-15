@@ -1126,7 +1126,9 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       assert updated_attempt.date_evaluated == nil
 
       # verify that we can reset that part attempt
-      {:ok, partState} = ActivityLifecycle.reset_part(activity_attempt.attempt_guid, attempt_guid)
+      {:ok, partState} =
+        ActivityLifecycle.reset_part(activity_attempt.attempt_guid, attempt_guid, UUID.uuid4())
+
       new_attempt = Oli.Repo.get_by!(PartAttempt, attempt_guid: partState.attemptGuid)
       assert new_attempt.score == nil
       assert new_attempt.out_of == nil
