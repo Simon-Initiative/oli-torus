@@ -3,6 +3,7 @@ import {
   EvaluationResponse,
   RequestHintResponse,
   ResetActivityResponse,
+  PartActivityResponse,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
@@ -21,6 +22,7 @@ import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
+import { isObjectBindingPattern } from 'typescript';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -76,7 +78,7 @@ function updatePartsStates(
   return state.attemptState.parts.map((part) => {
     const feedbackAction = action.payload.actions.find(
       (action: FeedbackAction | SubmissionAction) =>
-        action.type === 'FeedbackAction' && action.attempt_guid === part.attemptGuid,
+        action.type === 'FeedbackAction' && action.part_id === part.partId,
     ) as FeedbackAction | undefined;
     if (!feedbackAction) return part;
     return Object.assign(part, {
@@ -84,6 +86,7 @@ function updatePartsStates(
       outOf: feedbackAction.out_of,
       feedback: feedbackAction.feedback,
       error: feedbackAction.error,
+      dateEvaluated: new Date(),
     } as Partial<PartState>);
   });
 }
@@ -127,6 +130,26 @@ export const activityDeliverySlice = createSlice({
           parts: updatePartsStates(state, action),
         };
       }
+    },
+    partSubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
+      if (action.payload.actions.length > 0) {
+        const parts = updatePartsStates(state, action);
+        state.attemptState = {
+          ...state.attemptState,
+          parts,
+          dateEvaluated: parts.every((p) => p.dateEvaluated !== null) ? new Date() : null,
+        };
+      }
+    },
+    partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
+      const parts = state.attemptState.parts.filter(
+        (p) => p.partId === action.payload.attemptState.partId,
+      );
+
+      state.attemptState = {
+        ...state.attemptState,
+        parts: [...parts, action.payload.attemptState],
+      };
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
       state.partState = action.payload.parts.reduce((acc, partState) => {
@@ -293,6 +316,45 @@ export const submit =
       getPartResponses(activityState),
     );
     dispatch(slice.actions.activitySubmissionReceived(response));
+  };
+
+export const submitPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    studentResponse: StudentResponse,
+    onSubmitPart: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      studentResponse: StudentResponse,
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const response = await onSubmitPart(attemptGuid, partAttemptGuid, studentResponse);
+    dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetAndSubmitPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    studentResponse: StudentResponse,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+    onSubmitPart: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      studentResponse: StudentResponse,
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
+    const response = await onSubmitPart(
+      attemptGuid,
+      partActivityResponse.attemptState.attemptGuid,
+      studentResponse,
+    );
+    dispatch(slice.actions.partSubmissionReceived(response));
   };
 
 export const submitFiles =

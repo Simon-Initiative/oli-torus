@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
 
 ## 0.21.0 (2022-07-15)
@@ -16,6 +17,7 @@
 ### Enhancements
 
 - Survey delivery support
+- Legacy Custom Drag and Drag activity support
 - Improve the way activity bank edit locks are presented to a user
 - Add proper datashop session id tracking
 - Add ability to set bullet-style on ordered and unordered lists

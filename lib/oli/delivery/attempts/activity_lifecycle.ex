@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   }
 
   alias Oli.Activities.State.ActivityState
+  alias Oli.Activities.State.PartState
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
 
@@ -179,6 +180,55 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   end
 
   @doc """
+  Resets a single part attempt.  Returns {:ok, %PartState{}} or error.
+  """
+  def reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
+    Repo.transaction(fn ->
+      part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)
+      activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+
+      if is_nil(part_attempt) or is_nil(activity_attempt) do
+        Repo.rollback({:not_found})
+      else
+        # We cannot rely on the attempt number from the supplied activity attempt
+        # to determine the total number of attempts - or the next attempt number, since
+        # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
+        # browser windows).
+        # Instead we will query to determine the count of attempts. This is likely an
+        # area where we want locking in place to ensure that we can never get into a state
+        # where two attempts are generated with the same number
+
+        attempt_count =
+          count_part_attempts(
+            activity_attempt.id,
+            part_attempt.part_id
+          )
+
+        {:ok, parsed_model} =
+          case activity_attempt.transformed_model do
+            nil -> Model.parse(activity_attempt.revision.content)
+            t -> Model.parse(t)
+          end
+
+        part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
+
+        case create_part_attempt(%{
+               attempt_guid: UUID.uuid4(),
+               attempt_number: attempt_count + 1,
+               part_id: part_attempt.part_id,
+               grading_approach: part_attempt.grading_approach,
+               response: nil,
+               activity_attempt_id: activity_attempt.id,
+               datashop_session_id: datashop_session_id
+             }) do
+          {:ok, part_attempt} -> PartState.from_attempt(part_attempt, part)
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
+      end
+    end)
+  end
+
+  @doc """
   Processes a list of part inputs and saves the response to the corresponding
   part attempt record.
 
@@ -286,6 +336,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     end
     |> ActivityAttemptSaveFile.changeset(changes)
     |> Repo.insert_or_update()
+  end
+
+  defp count_part_attempts(activity_attempt_id, part_id) do
+    {count} =
+      Repo.one(
+        from(p in PartAttempt,
+          where: p.activity_attempt_id == ^activity_attempt_id and p.part_id == ^part_id,
+          select: {count(p.id)}
+        )
+      )
+
+    count
   end
 
   defp count_activity_attempts(resource_attempt_id, resource_id) do
