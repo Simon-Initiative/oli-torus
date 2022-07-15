@@ -1,6 +1,6 @@
 defmodule OliWeb.Progress.StudentResourceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, SessionContext, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Surface.Components.Form
@@ -63,7 +63,7 @@ defmodule OliWeb.Progress.StudentResourceView do
                 _ ->
                   ResourceAccess.changeset(resource_access, %{
                     # limit score decimals to two significant figures, rounding up
-                    score: Float.round(resource_access.score, 2)
+                    score: Utils.format_score(resource_access.score)
                   })
               end
 
@@ -237,6 +237,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       |> ensure_no_nil("out_of")
 
     case Core.update_resource_access(socket.assigns.resource_access, params) do
+      # Score is updated as provided, and it's formatted and rounded for display only
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
 
@@ -244,7 +245,7 @@ defmodule OliWeb.Progress.StudentResourceView do
          assign(socket,
            is_editing: false,
            resource_access: resource_access,
-           changeset: ResourceAccess.changeset(resource_access, %{score: Float.round(resource_access.score, 2)})
+           changeset: ResourceAccess.changeset(resource_access, %{score: Utils.format_score(resource_access.score)})
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->

@@ -66,8 +66,7 @@ defmodule OliWeb.Common.Utils do
   """
   @spec format_score(float) :: float
   def format_score(score) when is_float(score) do
-    formatted_score = Float.round(score, 2)
-    if score - formatted_score != 0.0, do: formatted_score, else: score
+    Float.round(score, 2)
   end
 
   defp has_value(v) do

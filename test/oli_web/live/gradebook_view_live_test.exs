@@ -5,8 +5,6 @@ defmodule OliWeb.GradebookViewLiveTest do
   import Phoenix.LiveViewTest
   import Oli.Factory
 
-  alias Oli.Delivery.Sections
-
   defp live_view_gradebook_view_route(section_slug) do
     Routes.live_path(
       OliWeb.Endpoint,
@@ -16,7 +14,7 @@ defmodule OliWeb.GradebookViewLiveTest do
   end
 
   describe "user cannot access when is not logged in" do
-    setup [:setup_section]
+    setup [:section_with_assessment]
 
     test "redirects to enroll page when accessing the gradebook view", %{
       conn: conn,
@@ -30,7 +28,7 @@ defmodule OliWeb.GradebookViewLiveTest do
   end
 
   describe "user cannot access when is logged in as an author but is not a system admin" do
-    setup [:author_conn, :setup_section]
+    setup [:author_conn, :section_with_assessment]
 
     test "redirects to section enroll page when accessing the student view", %{
       conn: conn,
@@ -48,7 +46,7 @@ defmodule OliWeb.GradebookViewLiveTest do
   end
 
   describe "gradebook view" do
-    setup [:admin_conn, :setup_section]
+    setup [:admin_conn, :section_with_assessment]
 
     scores_expected_format = %{
       100.334 => 100.33,
@@ -92,68 +90,5 @@ defmodule OliWeb.GradebookViewLiveTest do
           |> render =~ "#{@expected_score}/#{@out_of}"
       end
     end
-  end
-
-  def setup_section(_context) do
-    project = insert(:project)
-
-    # Graded page revision
-    page_revision =
-      insert(:revision,
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-        title: "Progress test revision",
-        graded: true
-      )
-
-    # Associate nested graded page to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
-
-    # root container
-    container_resource = insert(:resource)
-
-    # Associate root container to the project
-    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
-
-    container_revision =
-      insert(:revision, %{
-        resource: container_resource,
-        objectives: %{},
-        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_revision.resource.id],
-        content: %{},
-        deleted: false,
-        slug: "root_container",
-        title: "Root Container"
-      })
-
-    # Publication of project with root container
-    publication =
-      insert(:publication, %{project: project, root_resource_id: container_resource.id})
-
-    # Publish root container resource
-    insert(:published_resource, %{
-      publication: publication,
-      resource: container_resource,
-      revision: container_revision
-    })
-
-    # Publish nested page resource
-    insert(:published_resource, %{
-      publication: publication,
-      resource: page_revision.resource,
-      revision: page_revision
-    })
-
-    section =
-      insert(:section,
-        base_project: project,
-        context_id: UUID.uuid4(),
-        open_and_free: true,
-        registration_open: true
-      )
-
-    {:ok, section} = Sections.create_section_resources(section, publication)
-
-    {:ok, section: section, page_revision: page_revision}
   end
 end
