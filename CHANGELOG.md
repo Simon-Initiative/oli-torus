@@ -10,6 +10,12 @@
 
 - Survey delivery support
 
+## 0.20.1 (2022-07-07)
+
+### Bug Fixes
+
+- Fix an issue related to session cookies
+
 ## 0.20.0 (2022-06-30)
 
 ### Bug Fixes
