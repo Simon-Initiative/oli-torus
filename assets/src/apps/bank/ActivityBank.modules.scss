@@ -1,0 +1,13 @@
+.activityBank {
+  padding: 0 calc(50% - 400px);
+  margin-bottom: 50px;
+
+  :global .edit-btn {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+.customToolbar {
+  margin: 8px 0;
+}
