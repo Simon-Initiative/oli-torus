@@ -7,7 +7,6 @@ defmodule Oli.Institutions.PendingRegistration do
     field :institution_email, :string
     field :institution_url, :string
     field :name, :string
-    field :timezone, :string
 
     field :issuer, :string
     field :client_id, :string
@@ -28,7 +27,6 @@ defmodule Oli.Institutions.PendingRegistration do
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone,
       :issuer,
       :client_id,
       :deployment_id,
@@ -42,7 +40,6 @@ defmodule Oli.Institutions.PendingRegistration do
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone,
       :issuer,
       :client_id,
       :key_set_url,
@@ -58,8 +55,7 @@ defmodule Oli.Institutions.PendingRegistration do
       :name,
       :country_code,
       :institution_email,
-      :institution_url,
-      :timezone
+      :institution_url
     ])
   end
 

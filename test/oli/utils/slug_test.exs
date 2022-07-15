@@ -134,7 +134,6 @@ defmodule Oli.Utils.SlugTest do
       {:ok, section} =
         Sections.create_section(%{
           base_project_id: project.id,
-          timezone: "some timezone",
           title: "some title",
           context_id: "context_id"
         })
@@ -156,7 +155,6 @@ defmodule Oli.Utils.SlugTest do
       {:ok, section} =
         Sections.create_section(%{
           base_project_id: project.id,
-          timezone: "some timezone",
           title: "some title",
           context_id: "context_id"
         })

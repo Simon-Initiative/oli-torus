@@ -86,7 +86,6 @@ defmodule Oli.Resources.NumberingTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -117,7 +116,6 @@ defmodule Oli.Resources.NumberingTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,

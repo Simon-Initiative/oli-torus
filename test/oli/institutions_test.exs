@@ -15,7 +15,6 @@ defmodule Oli.InstitutionsTest do
 
       assert institution.name == params.name
       assert institution.institution_email == params.institution_email
-      assert institution.timezone == params.timezone
       assert institution.research_consent == params.research_consent
     end
 
@@ -305,7 +304,6 @@ defmodule Oli.InstitutionsTest do
       country_code: "some country_code",
       institution_email: "some institution_email",
       institution_url: "some institution_url",
-      timezone: "some timezone",
       issuer: "some issuer",
       client_id: "some client_id",
       key_set_url: "some key_set_url",
@@ -318,7 +316,6 @@ defmodule Oli.InstitutionsTest do
       country_code: "some updated country_code",
       institution_email: "some updated institution_email",
       institution_url: "some updated institution_url",
-      timezone: "some updated timezone",
       issuer: "some updated issuer",
       client_id: "some updated client_id",
       key_set_url: "some updated key_set_url",
@@ -331,7 +328,6 @@ defmodule Oli.InstitutionsTest do
       country_code: nil,
       institution_email: nil,
       institution_url: nil,
-      timezone: nil,
       issuer: nil,
       client_id: nil,
       key_set_url: nil,
@@ -416,8 +412,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "https://institution.example.edu/",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert same_institution.id == institution.id
@@ -427,8 +422,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "http://institution.example.edu",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert same_institution.id == institution.id
@@ -438,8 +432,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "http://different.example.edu",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert different_institution.id != institution.id
@@ -454,8 +447,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "https://institution.example.edu/",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert result_institution.id == first_institution.id
@@ -470,8 +462,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "https://institution.ExAmPle.EDU/",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert result_institution.id == first_institution.id
@@ -484,7 +475,6 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@new.example.edu",
           institution_url: "http://new.example.edu",
-          timezone: "US/Eastern",
           issuer: "new issuer",
           client_id: "new client_id",
           key_set_url: "new key_set_url",
@@ -516,7 +506,6 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@new.example.edu",
           institution_url: "http://institution.example.edu",
-          timezone: "US/Eastern",
           issuer: "new issuer",
           client_id: "new client_id",
           key_set_url: "new key_set_url",
