@@ -1139,7 +1139,12 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
       part_inputs = [%{attempt_guid: new_attempt.attempt_guid, input: %StudentInput{input: "a"}}]
 
       {:ok, [%{attempt_guid: attempt_guid, out_of: out_of, score: score, feedback: %{id: id}}]} =
-        Evaluate.evaluate_from_input(section.slug, activity_attempt.attempt_guid, part_inputs)
+        Evaluate.evaluate_from_input(
+          section.slug,
+          activity_attempt.attempt_guid,
+          part_inputs,
+          datashop_session_id_user1
+        )
 
       assert attempt_guid == new_attempt.attempt_guid
       assert score == 10
