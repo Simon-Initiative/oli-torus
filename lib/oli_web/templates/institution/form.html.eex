@@ -27,11 +27,6 @@
       required: true, autofocus: focusHelper(f, :country_code) %>
   <%= error_tag f, :country_code %>
 </div>
-<div class="form-label-group">
-  <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
-      required: true, autofocus: focusHelper(f, :timezone) %>
-  <%= error_tag f, :timezone %>
-</div>
 
 <div class="text-secondary my-2">Default Brand</div>
 <div class="form-label-group">

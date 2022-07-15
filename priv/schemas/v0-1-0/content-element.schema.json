@@ -276,6 +276,19 @@
         "type": {
           "const": "ol"
         },
+        "style": {
+          "oneOf": [
+            { "const": "none" },
+            { "const": "decimal" },
+            { "const": "decimal-leading-zero" },
+            { "const": "lower-roman" },
+            { "const": "upper-roman" },
+            { "const": "lower-alpha" },
+            { "const": "upper-alpha" },
+            { "const": "lower-latin" },
+            { "const": "upper-latin" }
+          ]
+        },
         "children": {
           "type": "array",
           "items": {
@@ -297,6 +310,14 @@
       "properties": {
         "type": {
           "const": "ul"
+        },
+        "style": {
+          "oneOf": [
+            { "const": "none" },
+            { "const": "disc" },
+            { "const": "circle" },
+            { "const": "square" }
+          ]
         },
         "children": {
           "type": "array",
@@ -602,7 +623,9 @@
     "formula": {
       "type": "object",
       "properties": {
-        "const": "formula",
+        "type": {
+          "const": "formula"
+        },
         "subtype": {
           "enum": ["mathml", "latex"]
         },
@@ -622,7 +645,9 @@
     "formula-inline": {
       "type": "object",
       "properties": {
-        "const": "formula_inline",
+        "type": {
+          "const": "formula_inline"
+        },
         "subtype": {
           "enum": ["mathml", "latex"]
         },

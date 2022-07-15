@@ -10,6 +10,8 @@ import React from 'react';
 import { valueOr } from 'utils/common';
 import { TextEditor } from 'components/TextEditor';
 import { DeleteButton } from 'components/misc/DeleteButton';
+import styles from './InlineActivityEditor.modules.scss';
+import { classNames } from 'utils/classNames';
 
 export interface ActivityEditorProps extends ActivityEditContext {
   editMode: boolean;
@@ -18,6 +20,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   allTags: Tag[];
   banked: boolean;
   canRemove: boolean;
+  customToolbarItems?: React.ComponentType;
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
   onRegisterNewObjective: (o: Objective) => void;
@@ -164,7 +167,7 @@ export class InlineActivityEditor extends React.Component<
 
     return (
       <div className="col-12">
-        <div className="activity-editor">
+        <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
           <div className="d-flex align-items-baseline flex-grow-1 mr-2">
             <TextEditor
               onEdit={onTitleEdit}
@@ -175,11 +178,14 @@ export class InlineActivityEditor extends React.Component<
               editMode={this.props.editMode}
             />
             <div className="flex-grow-1"></div>
-            <DeleteButton
-              className="ml-2"
-              editMode={this.props.editMode && this.props.canRemove}
-              onClick={this.props.onRemove}
-            />
+            <div className={styles.toolbar}>
+              {this.props.customToolbarItems && <this.props.customToolbarItems />}
+              <DeleteButton
+                className="ml-2"
+                editMode={this.props.editMode && this.props.canRemove}
+                onClick={this.props.onRemove}
+              />
+            </div>
           </div>
           <ActivityLOs
             partIds={partIds}

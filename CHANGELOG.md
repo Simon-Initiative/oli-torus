@@ -4,12 +4,29 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.21.0 (2022-07-15)
+
+### Bug Fixes
+
+- Fix an issue where activity bank styles were not rendering properly
 - Fix an issue where question STEM isn't displayed in ordering answer key
+- Fix an issue with the insertion menu visibility in dark mode
 
 ### Enhancements
 
 - Survey delivery support
 - Legacy Custom Drag and Drag activity support
+- Improve the way activity bank edit locks are presented to a user
+- Add proper datashop session id tracking
+- Add ability to set bullet-style on ordered and unordered lists
+
+## 0.20.1 (2022-07-07)
+
+### Bug Fixes
+
+- Fix an issue related to session cookies
 
 ## 0.20.0 (2022-06-30)
 

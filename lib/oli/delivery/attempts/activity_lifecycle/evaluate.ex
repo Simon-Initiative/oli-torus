@@ -32,6 +32,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id)
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
+        submit_active_part_attempts(activity_attempt)
+
         custom = Map.get(delivery, "custom", %{})
 
         is_manually_graded = Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
@@ -81,6 +83,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       e ->
         e
     end
+  end
+
+  defp submit_active_part_attempts(activity_attempt) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
+    |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
+      case update_part_attempt(pa, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()}) do
+        {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
+        e -> {:halt, e}
+      end
+    end)
   end
 
   def evaluate_from_rules(
@@ -559,6 +573,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
+
+    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
 
     {score, out_of} =
       case normalize_mode do
