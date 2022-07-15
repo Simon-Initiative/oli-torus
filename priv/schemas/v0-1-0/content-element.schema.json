@@ -602,7 +602,9 @@
     "formula": {
       "type": "object",
       "properties": {
-        "const": "formula",
+        "type": {
+          "const": "formula"
+        },
         "subtype": {
           "enum": ["mathml", "latex"]
         },
@@ -622,7 +624,9 @@
     "formula-inline": {
       "type": "object",
       "properties": {
-        "const": "formula_inline",
+        "type": {
+          "const": "formula_inline"
+        },
         "subtype": {
           "enum": ["mathml", "latex"]
         },
