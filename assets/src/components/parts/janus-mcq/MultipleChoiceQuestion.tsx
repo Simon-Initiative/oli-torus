@@ -71,7 +71,7 @@ export const MCQItem: React.FC<JanusMultipleChoiceQuestionProperties> = ({
   configureMode,
   verticalGap = 0,
 }) => {
-  console.log('MCQItem RENDERED');
+  /* console.log('MCQItem RENDERED'); */
 
   const mcqItemStyles: CSSProperties = {};
   if (layoutType === 'horizontalLayout') {
@@ -268,8 +268,6 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     selectedChoices: [],
     selectedChoicesText: [],
   });
-
-  console.log('MCQ RENDERED');
 
   // converts stringfied number array to number array
   const convertToNumberArray = (arr: string[]) =>
@@ -491,7 +489,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       selectedChoicesText: newSelectedChoicesText,
     });
 
-    console.log('HANDLE MULTIPLE SELECTION', {
+    /* console.log('HANDLE MULTIPLE SELECTION', {
       newCount,
       newSelectedChoice,
       newSelectedChoices,
@@ -499,7 +497,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
       newSelectedChoicesText,
       selections,
       shouldSave,
-    });
+    }); */
 
     if (shouldSave) {
       saveState({
@@ -544,7 +542,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         updatedChoicesText = [];
       }
 
-      console.log('HANDLE ITEM SELECTION', {
+      /* console.log('HANDLE ITEM SELECTION', {
         shouldSave,
         value,
         textValue,
@@ -554,7 +552,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
         modifiedNewSelectedChoices,
         updatedChoiceText,
         updatedChoicesText,
-      });
+      }); */
 
       setSelectionState({
         numberOfSelectedChoices: newCount,
@@ -597,7 +595,7 @@ const MultipleChoiceQuestion: React.FC<PartComponentProps<McqModel>> = (props) =
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [MCQ]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [MCQ]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // should disable input during check?
