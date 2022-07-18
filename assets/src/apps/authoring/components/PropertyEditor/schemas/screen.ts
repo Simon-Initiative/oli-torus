@@ -4,6 +4,7 @@ import chroma from 'chroma-js';
 import { JSONSchema7 } from 'json-schema';
 import ColorPickerWidget from '../custom/ColorPickerWidget';
 import CustomFieldTemplate from '../custom/CustomFieldTemplate';
+import { LearningObjectivesEditor } from '../custom/LearningObjectivesEditor';
 
 export interface ScreenModel {
   title: string;
@@ -14,6 +15,8 @@ export interface ScreenModel {
   combineFeedback: boolean;
   showCheckButton: boolean;
   checkButtonLabel: string;
+  objectives: number[];
+
   [key: string]: any; // TODO
 }
 
@@ -91,6 +94,13 @@ const screenSchema: JSONSchema7 = {
       format: 'checkbox',
       default: true,
     },
+    learningObjectives: {
+      title: 'Learning Objectives',
+      type: 'array',
+      items: {
+        type: 'number',
+      },
+    },
   },
 };
 
@@ -135,6 +145,9 @@ export const screenUiSchema: UiSchema = {
       classNames: 'col-12',
     },
   },
+  learningObjectives: {
+    'ui:widget': LearningObjectivesEditor,
+  },
 };
 
 export const transformScreenModeltoSchema = (activity?: IActivity) => {
@@ -169,12 +182,14 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
       checkButton: { showCheckBtn: data.showCheckBtn, checkButtonLabel: data.checkButtonLabel },
       max: { maxAttempt: data.maxAttempt, maxScore: data.maxScore },
       palette: data.palette.useHtmlProps ? data.palette : schemaPalette,
+      learningObjectives: Object.values(activity?.objectives || {}).flat(),
     };
   }
 };
 
 export const transformScreenSchematoModel = (schema: any): Partial<ScreenModel> => {
   return {
+    objectives: schema.learningObjectives,
     title: schema.title,
     width: schema.Size.width,
     height: schema.Size.height,
