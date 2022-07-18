@@ -782,7 +782,7 @@ defmodule Oli.Delivery.Sections do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
-    children = Map.get(hierarchy_definition, revision.resource_id)
+    children = Map.get(hierarchy_definition, revision.resource_id, [])
 
     {children, numbering_tracker, processed_ids} =
       Enum.reduce(

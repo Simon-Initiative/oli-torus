@@ -124,13 +124,22 @@ defmodule Oli.Interop.Ingest do
                as_author
              ),
            {:ok, _} <- create_media(project, media_details),
-           {:ok, _} <-
+           {:ok, container_map} <-
              create_hierarchy(
                project,
                root_revision,
                page_map,
                tag_map,
                hierarchy_details,
+               as_author
+             ),
+           {:ok, _} <-
+             create_products(
+               project,
+               root_revision,
+               resource_map,
+               page_map,
+               container_map,
                as_author
              ),
            {:ok, _} <- Oli.Ingest.RewireLinks.rewire_all_hyperlinks(page_map, project) do
@@ -147,12 +156,20 @@ defmodule Oli.Interop.Ingest do
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
       |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Product" end)
 
-    Enum.reduce_while(products, container_map, fn {_, product}, container_map ->
-      case create_product(project, root_revision, product, container_map, page_map, as_author) do
-        {:ok, container_map} -> {:cont, container_map}
-        {:error, e} -> {:halt, {:error, e}}
-      end
-    end)
+    case products do
+      [] ->
+        {:ok, container_map}
+
+      _ ->
+        Oli.Publishing.publish_project(project, "Initial publication")
+
+        Enum.reduce_while(products, {:ok, container_map}, fn {_, product}, {:ok, container_map} ->
+          case create_product(project, root_revision, product, container_map, page_map, as_author) do
+            {:ok, container_map} -> {:cont, {:ok, container_map}}
+            {:error, e} -> {:halt, {:error, e}}
+          end
+        end)
+    end
   end
 
   defp create_product(project, root_revision, product, container_map, page_map, as_author) do
@@ -164,7 +181,9 @@ defmodule Oli.Interop.Ingest do
 
     hierarchy_definition = Map.put(%{}, root_revision.resource_id, [])
 
-    children =
+    original_container_count = Map.keys(container_map) |> Enum.count()
+
+    {container_map, hierarchy_definition} =
       Map.get(product, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.reduce({container_map, hierarchy_definition}, fn item,
@@ -180,6 +199,19 @@ defmodule Oli.Interop.Ingest do
           as_author
         )
       end)
+
+    if Map.keys(container_map) |> Enum.count() != original_container_count do
+      Oli.Publishing.publish_project(project, "New containers for product")
+    end
+
+    case Oli.Delivery.Sections.Blueprint.create_blueprint(
+           project.slug,
+           product["title"],
+           hierarchy_definition
+         ) do
+      {:ok, _} -> {:ok, container_map}
+      e -> e
+    end
   end
 
   defp process_product_item(
@@ -736,41 +768,49 @@ defmodule Oli.Interop.Ingest do
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, tag_map, hierarchy_details, as_author) do
     # Process top-level items and containers, add recursively add container
-    children =
+    {container_map, children} =
       Map.get(hierarchy_details, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
-      |> Enum.map(fn c ->
+      |> Enum.reduce({%{}, []}, fn c, {container_map, children} ->
         case Map.get(c, "type") do
           "item" ->
-            Map.get(page_map, Map.get(c, "idref")).resource_id
+            {container_map, children ++ [Map.get(page_map, Map.get(c, "idref")).resource_id]}
 
           "container" ->
-            create_container(project, page_map, as_author, tag_map, c)
+            {container_map, id} =
+              create_container(project, page_map, as_author, tag_map, c, container_map)
+
+            {container_map, children ++ [id]}
         end
       end)
 
     # wire those newly created top-level containers into the root resource
     ChangeTracker.track_revision(project.slug, root_revision, %{children: children})
+
+    {:ok, container_map}
   end
 
   # This is the recursive container creation routine.  It processes a hierarchy by
   # descending through the tree and processing the leaves first, and then back upwards.
-  defp create_container(project, page_map, as_author, tag_map, container) do
+  defp create_container(project, page_map, as_author, tag_map, container, container_map) do
     # recursively visit item container in the hierarchy, and via bottom
     # up approach create resource and revisions for each container, while
     # substituting page references for resource ids and container references
     # for container resource ids
 
-    children_ids =
+    {container_map, children_ids} =
       Map.get(container, "children")
-      |> Enum.map(fn c ->
+      |> Enum.reduce({container_map, []}, fn c, {container_map, children} ->
         case Map.get(c, "type") do
           "item" ->
             p = Map.get(page_map, Map.get(c, "idref"))
-            p.resource_id
+            {container_map, children ++ [p.resource_id]}
 
           "container" ->
-            create_container(project, page_map, as_author, tag_map, c)
+            {container_map, id} =
+              create_container(project, page_map, as_author, tag_map, c, container_map)
+
+            {container_map, children ++ [id]}
         end
       end)
 
@@ -785,7 +825,10 @@ defmodule Oli.Interop.Ingest do
 
     {:ok, %{revision: revision}} = Oli.Authoring.Course.create_and_attach_resource(project, attrs)
     {:ok, _} = ChangeTracker.track_revision(project.slug, revision)
-    revision.resource_id
+
+    container_map = Map.put(container_map, Map.get(container, "id", UUID.uuid4()), revision)
+
+    {container_map, revision.resource_id}
   end
 
   defp transform_tags(value, tag_map) do
