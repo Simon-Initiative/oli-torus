@@ -159,6 +159,16 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
       // TODO: maybe look into validation / defaults
       return;
     }
+
+    let backgroundColor = `rgba(255, 255, 255, 100)`;
+    if (data.palette.fillColor || data.palette.fillColor === 0) {
+      backgroundColor = `rgba(${chroma(data.palette.fillColor).rgb().join(',')},${
+        data.palette.fillAlpha || '100'
+      })`;
+    } else if (data.palette.backgroundColor) {
+      backgroundColor = chroma(data.palette.backgroundColor).rgba().join(',');
+    }
+
     const schemaPalette = {
       ...data.palette,
       borderWidth: `${data.palette.lineThickness ? data.palette.lineThickness + 'px' : '1px'}`,
@@ -169,11 +179,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
           ? chroma(data.palette.lineColor).rgb().join(',')
           : '255, 255, 255'
       },${data.palette.lineAlpha || '100'})`,
-      backgroundColor: `rgba(${
-        data.palette.fillColor || data.palette.fillColor === 0
-          ? chroma(data.palette.fillColor).rgb().join(',')
-          : '255, 255, 255'
-      },${data.palette.fillAlpha || '100'})`,
+      backgroundColor,
     };
     return {
       ...data,
