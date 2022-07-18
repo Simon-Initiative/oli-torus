@@ -680,14 +680,18 @@ defmodule Oli.Delivery.Sections do
 
     Enum.reduce(
       child_revisions,
+      Map.put(
+        definition,
+        revision.resource_id,
+        Enum.map(child_revisions, fn r -> r.resource_id end)
+      ),
       fn revision, definition ->
         create_hierarchy_definition_from_project(
           published_resources_by_resource_id,
           revision,
           definition
         )
-      end,
-      Map.put(definition, revision.resource_id, child_revisions)
+      end
     )
   end
 
