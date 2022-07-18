@@ -229,7 +229,7 @@ defmodule Oli.Seeder do
   end
 
   def add_adaptive_page(
-        %{project: project, publication: publication, author: author} = seed,
+        %{project: project, publication: publication, author: author, container: container} = seed,
         activity_resource_tag \\ :adaptive_resource,
         activity_revision_tag \\ :adaptive_revision,
         page_resource_tag \\ :adaptive_page_resource,
@@ -314,6 +314,8 @@ defmodule Oli.Seeder do
         author,
         create_sample_adaptive_page_content(activity_revision.resource_id)
       )
+
+    attach_pages_to([page_resource], container.resource, container.revision, publication)
 
     seed
     |> Map.put(page_resource_tag, page_resource)

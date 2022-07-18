@@ -88,7 +88,7 @@ defmodule OliWeb.ResourceControllerTest do
   end
 
   describe "preview" do
-    test "renders an adanced lesson preview", %{
+    test "renders an advanced lesson preview", %{
       conn: conn,
       project: project,
       adaptive_page_revision: adaptive_page_revision
