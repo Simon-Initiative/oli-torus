@@ -12,6 +12,7 @@ defmodule Oli.Inventories.Publisher do
     field :main_contact, :string
     field :website_url, :string
     field :default, :boolean, default: false
+    field :available_via_api, :boolean, default: true
 
     has_many :products, Oli.Delivery.Sections.Section
     has_many :projects, Oli.Authoring.Course.Project
@@ -22,7 +23,15 @@ defmodule Oli.Inventories.Publisher do
   @doc false
   def changeset(publisher, attrs \\ %{}) do
     publisher
-    |> cast(attrs, [:name, :email, :address, :main_contact, :website_url, :default])
+    |> cast(attrs, [
+      :name,
+      :email,
+      :address,
+      :main_contact,
+      :website_url,
+      :default,
+      :available_via_api
+    ])
     |> validate_required([:name, :email, :default])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:name)

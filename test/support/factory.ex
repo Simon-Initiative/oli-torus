@@ -1,7 +1,8 @@
 defmodule Oli.Factory do
   use ExMachina.Ecto, repo: Oli.Repo
 
-  alias Oli.Accounts.{Author, User}
+  alias Oli.Accounts.{Author, User, AuthorPreferences, UserPreferences}
+  alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
   alias Oli.Authoring.Course.{Family, Project, ProjectVisibility, ProjectResource}
   alias Oli.Branding.Brand
 
@@ -40,7 +41,14 @@ defmodule Oli.Factory do
       name: "Author name",
       given_name: sequence("Author given name"),
       family_name: "Author family name",
-      system_role_id: Oli.Accounts.SystemRole.role_id().author
+      system_role_id: Oli.Accounts.SystemRole.role_id().author,
+      preferences: build(:author_preferences)
+    }
+  end
+
+  def author_preferences_factory() do
+    %AuthorPreferences{
+      timezone: "America/New_York"
     }
   end
 
@@ -56,7 +64,14 @@ defmodule Oli.Factory do
       independent_learner: true,
       can_create_sections: true,
       locked_at: nil,
-      age_verified: true
+      age_verified: true,
+      preferences: build(:user_preferences)
+    }
+  end
+
+  def user_preferences_factory() do
+    %UserPreferences{
+      timezone: "America/New_York"
     }
   end
 
@@ -114,6 +129,17 @@ defmodule Oli.Factory do
       visibility: :global,
       authors: anonymous_build_list(2, :author),
       publisher: anonymous_build(:publisher)
+    }
+  end
+
+  def author_project_factory() do
+    author = insert(:author)
+    project = insert(:project)
+
+    %AuthorProject{
+      author_id: author.id,
+      project_id: project.id,
+      project_role_id: ProjectRole.role_id().owner
     }
   end
 
@@ -216,7 +242,6 @@ defmodule Oli.Factory do
       country_code: "US",
       institution_email: "ins@example.edu",
       institution_url: "example.edu",
-      timezone: "America/New_York",
       research_consent: :oli_form
     }
   end
@@ -460,7 +485,8 @@ defmodule Oli.Factory do
       address: "Publisher Address",
       main_contact: "Publisher Contact",
       website_url: "mypublisher.com",
-      default: false
+      default: false,
+      available_via_api: true
     }
   end
 

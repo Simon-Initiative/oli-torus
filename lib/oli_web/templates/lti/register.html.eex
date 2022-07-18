@@ -78,12 +78,6 @@
               <%= error_tag f, :country_code %>
             </div>
 
-            <div class="form-label-group">
-              <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
-                required: true, autofocus: focusHelper(f, :timezone) %>
-              <%= error_tag f, :timezone %>
-            </div>
-
             <hr class="my-4" />
 
             <h6>LTI 1.3 Configuration</h6>

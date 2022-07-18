@@ -68,13 +68,31 @@ export interface HeadingSix extends SlateElement<HeadingChildren> {
   type: 'h6';
 }
 
+export const OrderedListStyles = [
+  'none',
+  'decimal',
+  'decimal-leading-zero',
+  'lower-roman',
+  'upper-roman',
+  'lower-alpha',
+  'upper-alpha',
+  'lower-latin',
+  'upper-latin',
+] as const;
+export type OrderedListStyle = typeof OrderedListStyles[number];
+
+export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
+export type UnorderedListStyle = typeof UnorderdListStyles[number];
+
 type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
 export interface OrderedList extends SlateElement<ListChildren> {
   type: 'ol';
+  style?: OrderedListStyle;
 }
 
 export interface UnorderedList extends SlateElement<ListChildren> {
   type: 'ul';
+  style?: UnorderedListStyle;
 }
 
 type VoidChildren = Text[];

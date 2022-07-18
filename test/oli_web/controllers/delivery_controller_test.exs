@@ -35,7 +35,10 @@ defmodule OliWeb.DeliveryControllerTest do
       assert html_response(conn, 200) =~ "<h3>Create Course Section</h3>"
     end
 
-    test "handles student with section and research consent form", %{conn: conn, lti_param_ids: lti_param_ids} do
+    test "handles student with section and research consent form", %{
+      conn: conn,
+      lti_param_ids: lti_param_ids
+    } do
       conn =
         conn
         |> LtiSession.put_session_lti_params(lti_param_ids.student)
@@ -55,7 +58,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-        "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
     end
 
     test "handles instructor with no section or linked account", %{
@@ -97,7 +100,7 @@ defmodule OliWeb.DeliveryControllerTest do
         |> get(Routes.delivery_path(conn, :index))
 
       assert html_response(conn, 302) =~
-        "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
+               "You are being <a href=\"/sections/#{section_no_rc.slug}/overview\">redirected"
     end
   end
 
@@ -235,8 +238,8 @@ defmodule OliWeb.DeliveryControllerTest do
     end
   end
 
-  describe "open and free" do
-    setup [:setup_open_and_free_session]
+  describe "independent learner" do
+    setup [:setup_independent_learner_session]
 
     test "shows enroll page if user is not enrolled", %{conn: conn, oaf_section_1: section} do
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
@@ -294,9 +297,11 @@ defmodule OliWeb.DeliveryControllerTest do
       conn =
         Plug.Test.init_test_session(conn, lti_session: nil)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
       conn = get(conn, Routes.delivery_path(conn, :open_and_free_index))
 
-      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+      assert html_response(conn, 200) =~
+               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
     end
 
     test "renders product's cover image in enrollment page", %{
@@ -315,7 +320,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+      assert html_response(conn, 200) =~
+               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
     end
 
     test "if no cover image is set, renders default image in enrollment page", %{
@@ -332,7 +338,8 @@ defmodule OliWeb.DeliveryControllerTest do
 
       conn = get(conn, Routes.delivery_path(conn, :show_enroll, section.slug))
 
-      assert html_response(conn, 200) =~ "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
+      assert html_response(conn, 200) =~
+               "<img src=\"#{cover_image}\" class=\"card-img-top\" alt=\"course image\""
     end
   end
 
@@ -438,7 +445,9 @@ defmodule OliWeb.DeliveryControllerTest do
 
     institution_no_rc = insert(:institution, research_consent: :no_form)
     deployment_no_rc = insert(:lti_deployment, institution: institution_no_rc)
-    section_no_rc = insert(:section, institution: institution_no_rc, lti_1p3_deployment: deployment_no_rc)
+
+    section_no_rc =
+      insert(:section, institution: institution_no_rc, lti_1p3_deployment: deployment_no_rc)
 
     user = user_fixture()
     student = user_fixture()
@@ -502,7 +511,8 @@ defmodule OliWeb.DeliveryControllerTest do
             "https://purl.imsglobal.org/spec/lti/claim/roles" => [
               "http://purl.imsglobal.org/vocab/lis/v2/membership#Learner"
             ],
-            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_no_rc.deployment_id
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+              deployment_no_rc.deployment_id
           },
           student.id
         ),
@@ -520,7 +530,8 @@ defmodule OliWeb.DeliveryControllerTest do
             "https://purl.imsglobal.org/spec/lti/claim/roles" => [
               "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
             ],
-            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment_no_rc.deployment_id
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" =>
+              deployment_no_rc.deployment_id
           },
           instructor.id
         ),
@@ -587,23 +598,23 @@ defmodule OliWeb.DeliveryControllerTest do
       |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
     {:ok,
-      conn: conn,
-      author: author,
-      institution: institution,
-      section: section,
-      user: user,
-      student: student,
-      student_no_section: student_no_section,
-      instructor: instructor,
-      instructor_no_section: instructor_no_section,
-      student_instructor_no_section: student_instructor_no_section,
-      project: project,
-      publication: publication,
-      lti_param_ids: lti_param_ids,
-      section_no_rc: section_no_rc}
+     conn: conn,
+     author: author,
+     institution: institution,
+     section: section,
+     user: user,
+     student: student,
+     student_no_section: student_no_section,
+     instructor: instructor,
+     instructor_no_section: instructor_no_section,
+     student_instructor_no_section: student_instructor_no_section,
+     project: project,
+     publication: publication,
+     lti_param_ids: lti_param_ids,
+     section_no_rc: section_no_rc}
   end
 
-  defp setup_open_and_free_session(%{conn: conn}) do
+  defp setup_independent_learner_session(%{conn: conn}) do
     user = user_fixture()
 
     conn =

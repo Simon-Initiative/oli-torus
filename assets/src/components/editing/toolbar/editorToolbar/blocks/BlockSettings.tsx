@@ -5,16 +5,21 @@ import {
   headingLevelDesc,
   headingTypeDescs,
 } from 'components/editing/elements/heading/headingActions';
-import { listSettings } from 'components/editing/elements/list/listActions';
+import {
+  listSettings,
+  orderedListStyleCommands,
+  unorderedListStyleCommands,
+} from 'components/editing/elements/list/listActions';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
 import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButton';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
-import { getHighestTopLevel } from 'components/editing/slateUtils';
+import { getHighestTopLevel, isActive } from 'components/editing/slateUtils';
 import React from 'react';
 import { Editor, Element, Transforms } from 'slate';
 import { useSlate } from 'slate-react';
 import { activeBlockType } from 'components/editing/toolbar/toolbarUtils';
+import { ListStyleToggle } from '../ListStyleToggle';
 
 interface BlockSettingProps {}
 export const BlockSettings = (_props: BlockSettingProps) => {
@@ -34,11 +39,17 @@ export const BlockSettings = (_props: BlockSettingProps) => {
 };
 
 function List() {
+  const editor = useSlate();
+  const formatOptions = isActive(editor, ['ol'])
+    ? orderedListStyleCommands
+    : unorderedListStyleCommands;
+
   return (
     <>
       {listSettings.map((desc, i) => (
         <CommandButton key={i} description={desc} />
       ))}
+      <ListStyleToggle listStyleOptions={formatOptions} />
     </>
   );
 }

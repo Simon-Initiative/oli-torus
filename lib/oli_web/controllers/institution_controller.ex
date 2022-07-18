@@ -7,7 +7,7 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions.Institution
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Branding
 
   require Logger
@@ -61,12 +61,10 @@ defmodule OliWeb.InstitutionController do
     pending_registrations = Institutions.list_pending_registrations()
 
     render_institution_page(conn, "index.html",
-      context: SessionContext.init(conn),
       breadcrumbs: root_breadcrumbs(),
       institutions: institutions,
       pending_registrations: pending_registrations,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       lti_config_defaults: Predefined.lti_config_defaults(),
       world_universities_and_domains: Predefined.world_universities_and_domains()
     )
@@ -78,7 +76,6 @@ defmodule OliWeb.InstitutionController do
     render_institution_page(conn, "new.html",
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       breadcrumbs: root_breadcrumbs() |> named("New"),
       available_brands: available_brands()
     )
@@ -102,7 +99,6 @@ defmodule OliWeb.InstitutionController do
           changeset: changeset,
           country_codes: Predefined.country_codes(),
           breadcrumbs: root_breadcrumbs() |> named("New"),
-          timezones: Predefined.timezones(),
           available_brands: available_brands()
         )
     end
@@ -126,7 +122,6 @@ defmodule OliWeb.InstitutionController do
       institution: institution,
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       available_brands: available_brands(id)
     )
   end
@@ -146,7 +141,6 @@ defmodule OliWeb.InstitutionController do
           institution: institution,
           changeset: changeset,
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           available_brands: available_brands(id)
         )
     end

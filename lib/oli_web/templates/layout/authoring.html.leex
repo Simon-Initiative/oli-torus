@@ -77,7 +77,7 @@
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
-    <%= unless Plug.Conn.get_session(@conn, "local_tz") do %>
+    <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>

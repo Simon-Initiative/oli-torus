@@ -4,6 +4,8 @@ import { Choices as ChoicesAuthoring } from 'components/activities/common/choice
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { defaultWriterContext } from 'data/content/writers/context';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
@@ -49,6 +51,8 @@ export const Ordering: React.FC = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
+        <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+
         <ResponseChoices
           choices={getCorrectChoiceIds(model).map((id) => choices[id])}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}

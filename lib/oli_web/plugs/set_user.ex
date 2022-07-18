@@ -1,9 +1,9 @@
 defmodule Oli.Plugs.SetCurrentUser do
   import Plug.Conn
 
+  import Oli.Utils, only: [value_or: 2, trap_nil: 1]
+
   alias Oli.Accounts
-  alias Oli.Accounts.User
-  alias Oli.Repo
 
   def init(_params) do
   end
@@ -16,46 +16,43 @@ defmodule Oli.Plugs.SetCurrentUser do
   end
 
   def set_author(conn) do
-    pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:author)
-
-    if author = Pow.Plug.current_user(conn, pow_config) do
-      cond do
-        current_author = Accounts.get_author_with_community_admin_count(author.id) ->
-          conn
-          |> put_session(:current_author_id, current_author.id)
-          |> put_session(:is_community_admin, current_author.community_admin_count > 0)
-          |> put_session(:is_system_admin, Accounts.is_admin?(current_author))
-          |> assign(:current_author, current_author)
-
-        true ->
-          conn
-          |> delete_session(:current_author_id)
-          |> delete_session(:is_community_admin)
-          |> delete_session(:is_system_admin)
-          |> assign(:current_author, nil)
-      end
-    else
+    with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:author),
+         %{id: author_id} <- Pow.Plug.current_user(conn, pow_config),
+         {:ok, current_author} <-
+           Accounts.get_author_with_community_admin_count(author_id) |> trap_nil() do
       conn
+      |> put_session(:current_author_id, current_author.id)
+      |> put_session(:is_community_admin, current_author.community_admin_count > 0)
+      |> put_session(:is_system_admin, Accounts.is_admin?(current_author))
+      |> assign(:current_author, current_author)
+    else
+      _ ->
+        conn
+        |> delete_session(:current_author_id)
+        |> delete_session(:is_community_admin)
+        |> delete_session(:is_system_admin)
+        |> assign(:current_author, nil)
     end
   end
 
   def set_user(conn) do
-    pow_config = OliWeb.Pow.PowHelpers.get_pow_config(:user)
-
-    if user = Pow.Plug.current_user(conn, pow_config) do
-      cond do
-        current_user = Repo.get(User, user.id) |> Repo.preload([:platform_roles, :author]) ->
-          conn
-          |> put_session(:current_user_id, current_user.id)
-          |> assign(:current_user, current_user)
-
-        true ->
-          conn
-          |> delete_session(:current_user_id)
-          |> assign(:current_user, nil)
-      end
-    else
+    with pow_config <- OliWeb.Pow.PowHelpers.get_pow_config(:user),
+         %{id: user_id} <- Pow.Plug.current_user(conn, pow_config),
+         {:ok, current_user} <- Accounts.get_user_with_roles(user_id) |> trap_nil(),
+         active_datashop_session_id <- get_session(conn, :datashop_session_id) do
       conn
+      |> put_session(:current_user_id, current_user.id)
+      |> put_session(
+        :datashop_session_id,
+        value_or(active_datashop_session_id, UUID.uuid4())
+      )
+      |> assign(:current_user, current_user)
+    else
+      _ ->
+        conn
+        |> delete_session(:current_user_id)
+        |> delete_session(:datashop_session_id)
+        |> assign(:current_user, nil)
     end
   end
 

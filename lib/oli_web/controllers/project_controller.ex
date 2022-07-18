@@ -9,7 +9,7 @@ defmodule OliWeb.ProjectController do
   alias Oli.Publishing
   alias Oli.Qa
   alias Oli.Analytics.Datashop
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Clone
   alias Oli.Activities
   alias OliWeb.Insights
@@ -117,7 +117,6 @@ defmodule OliWeb.ProjectController do
       active: :publish,
 
       # publish
-      context: SessionContext.init(conn),
       unpublished: active_publication_changes == nil,
       latest_published_publication: latest_published_publication,
       active_publication_changes: active_publication_changes,

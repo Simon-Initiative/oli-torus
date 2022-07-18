@@ -193,8 +193,7 @@ defmodule Oli.Delivery.Sections.BrowseTest do
         name: "ZZZ",
         country_code: "US",
         institution_email: "noone",
-        institution_url: "example.edu",
-        timezone: "America/New_York"
+        institution_url: "example.edu"
       })
       |> Repo.insert()
 

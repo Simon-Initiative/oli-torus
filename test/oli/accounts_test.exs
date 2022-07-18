@@ -4,7 +4,7 @@ defmodule Oli.AccountsTest do
   import Oli.Factory
 
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User}
+  alias Oli.Accounts.{Author, AuthorPreferences, User, UserPreferences}
   alias Oli.Groups
   alias Oli.Groups.CommunityAccount
 
@@ -65,6 +65,42 @@ defmodule Oli.AccountsTest do
     test "user_confirmation_pending?/1 returns false when author has a confirmed account" do
       confirmed_author = insert(:author, email_confirmed_at: Timex.now())
       refute Accounts.user_confirmation_pending?(confirmed_author)
+    end
+
+    test "get_author_preference/3 returns an author preference" do
+      author = insert(:author)
+
+      assert Accounts.get_author_preference(author, :timezone) == "America/New_York"
+    end
+
+    test "get_author_preference/3 fetches an author by id and returns the preference" do
+      author = insert(:author)
+
+      assert Accounts.get_author_preference(author.id, :timezone) == "America/New_York"
+    end
+
+    test "get_author_preference/3 returns the default value when no preference was set" do
+      author = insert(:author, preferences: %AuthorPreferences{})
+
+      assert Accounts.get_author_preference(author, :timezone, "default") == "default"
+    end
+
+    test "set_author_preference/3 sets an author preference" do
+      author = insert(:author)
+
+      assert {:ok, author} =
+               Accounts.set_author_preference(author, :timezone, "America/Los_Angeles")
+
+      assert author.preferences.timezone == "America/Los_Angeles"
+    end
+
+    test "set_author_preference/3 fetches an author by id and sets the preference" do
+      author = insert(:author)
+
+      assert {:ok, author} =
+               Accounts.set_author_preference(author.id, :timezone, "America/Los_Angeles")
+
+      assert author.preferences.timezone == "America/Los_Angeles"
     end
   end
 
@@ -282,6 +318,38 @@ defmodule Oli.AccountsTest do
       user = insert(:user)
 
       refute Accounts.is_lms_user?(user.email)
+    end
+
+    test "get_user_preference/3 returns an user preference" do
+      user = insert(:user)
+
+      assert Accounts.get_user_preference(user, :timezone) == "America/New_York"
+    end
+
+    test "get_user_preference/3 fetches an user by id and returns the preference" do
+      user = insert(:user)
+
+      assert Accounts.get_user_preference(user.id, :timezone) == "America/New_York"
+    end
+
+    test "get_user_preference/3 returns the default value when no preference was set" do
+      user = insert(:user, preferences: %UserPreferences{})
+
+      assert Accounts.get_user_preference(user, :timezone, "default") == "default"
+    end
+
+    test "set_user_preference/3 sets an user preference" do
+      user = insert(:user)
+
+      assert {:ok, user} = Accounts.set_user_preference(user, :timezone, "America/Los_Angeles")
+      assert user.preferences.timezone == "America/Los_Angeles"
+    end
+
+    test "set_user_preference/3 fetches an user by id and sets the preference" do
+      user = insert(:user)
+
+      assert {:ok, user} = Accounts.set_user_preference(user.id, :timezone, "America/Los_Angeles")
+      assert user.preferences.timezone == "America/Los_Angeles"
     end
   end
 

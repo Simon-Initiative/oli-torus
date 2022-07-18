@@ -22,7 +22,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   use a constant number of queries relative to the number of activities and parts.
   Returns {:ok, %ResourceAttempt{}}
   """
-  def create(%VisitContext{} = context) do
+  def create(%VisitContext{datashop_session_id: datashop_session_id} = context) do
     {resource_access_id, next_attempt_number} =
       case context.latest_resource_attempt do
         nil ->
@@ -67,7 +67,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           resource_attempt,
           activity_revisions,
           unscored,
-          activity_groups
+          activity_groups,
+          datashop_session_id
         )
 
         {:ok, resource_attempt}
@@ -88,7 +89,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          resource_attempt,
          activity_revisions,
          unscored,
-         activity_groups
+         activity_groups,
+         datashop_session_id
        ) do
     # Use a common timestamp for all insertions
     right_now =
@@ -116,7 +118,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
-    query_driven_part_attempt_creation(resource_attempt.id)
+    query_driven_part_attempt_creation(resource_attempt.id, datashop_session_id)
   end
 
   defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
@@ -131,10 +133,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   # This is the optimal way to bulk create part attempts: passing a query driven 'insert'
   # to the database, instead of passing the raw payload of each record to create.
-  defp query_driven_part_attempt_creation(resource_attempt_id) do
+  defp query_driven_part_attempt_creation(resource_attempt_id, datashop_session_id) do
     query = """
-      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
-      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
+      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, datashop_session_id, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
+      SELECT pm.part_id, a.id, gen_random_uuid(), $2, now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
       'automatic'
        ELSE
        pm.grading_approach
@@ -144,7 +146,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       WHERE a.resource_attempt_id = $1;
     """
 
-    Repo.query!(query, [resource_attempt_id])
+    Repo.query!(query, [resource_attempt_id, datashop_session_id])
   end
 
   # If all of the transformed_model attrs are nil, we do not need to include them in

@@ -11,7 +11,8 @@ type WrappedMonacoProps = {
   model: string;
   onEdit: (model: string) => void;
   editMode: boolean;
-  activetab: boolean;
+  activetab?: boolean;
+  language?: string;
 };
 
 export const WrappedMonaco = (props: PropsWithChildren<WrappedMonacoProps>) => {
@@ -58,8 +59,7 @@ export const WrappedMonaco = (props: PropsWithChildren<WrappedMonacoProps>) => {
     updateSize(editorRef.current?.editor);
   }, [props.activetab]);
 
-  console.log('wrapped');
-  console.log(model);
+  const language = props.language !== undefined ? props.language : 'JavaScript';
 
   return (
     <div>
@@ -68,7 +68,7 @@ export const WrappedMonaco = (props: PropsWithChildren<WrappedMonacoProps>) => {
           <MonacoEditor
             ref={editorRef}
             value={model}
-            language={CodeLanguages.byPrettyName('JavaScript').monacoMode}
+            language={CodeLanguages.byPrettyName(language).monacoMode}
             options={{
               tabSize: 2,
               scrollBeyondLastLine: false,

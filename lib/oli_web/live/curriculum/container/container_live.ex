@@ -683,9 +683,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     # latest active publication_id would need to be tracked in the assigns and updated if a project is published.
     # Same thing applies to the :lock_released handler below.
     if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
-      author =
-        Accounts.get_user!(author_id)
-        |> Repo.preload(:author)
+      author = Accounts.get_author(author_id)
 
       new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
       {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}

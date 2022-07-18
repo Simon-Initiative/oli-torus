@@ -140,7 +140,7 @@ defmodule OliWeb.Sections.EditLiveTest do
 
     test "loads open and free section datetimes correctly using the local timezone", context do
       {:ok, conn: conn, context: _} = set_timezone(context)
-      timezone = Plug.Conn.get_session(conn, :local_tz)
+      timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
       section = insert(:section_with_dates, open_and_free: true)
 
