@@ -117,3 +117,43 @@ export const isActive = (editor: Editor, type: string | string[]) => {
   });
   return !!match;
 };
+
+/**
+ * Returns true if all the properties in propMap match properties in node.
+ *
+ * Examples:
+ *   containsProps({a: 5}, {a: 5}) => true
+ *   containsProps({a: 5, b: 5}, {a: 5}) => true, extra params in node don't matter
+ *   containsProps({a: 5}, {a: 6}) => false, a doesn't equal
+ *   containsProps({a: 5}, {a: 5, b: 6}) => false, b is not in node
+ */
+const containsProps = (node: any, propMap: Record<string, string>): boolean => {
+  return Object.keys(propMap).reduce((result, currentKey) => {
+    return result && node[currentKey] === propMap[currentKey];
+  }, true);
+};
+
+/**
+ * Returns true if a specific property (or set of properties) are currently active.
+ *
+ * Example:
+ *   Do we currently have an image selected with the given src:
+ *     isPropActive(editor, "img", { src: 'http://example.com/image.jpg' })
+ *
+ *   Do we currently have a list selected with the given style?
+ *     isPropActive(editor, ["ul", "ol"], { style: 'disc' })
+ *
+ */
+export const isPropActive = (
+  editor: Editor,
+  type: string | string[],
+  propMap: Record<string, string>,
+) => {
+  const [match] = Editor.nodes(editor, {
+    match: (n) =>
+      Element.isElement(n) &&
+      (typeof type === 'string' ? n.type === type : type.indexOf(n.type as string) > -1) &&
+      containsProps(n, propMap),
+  });
+  return !!match;
+};

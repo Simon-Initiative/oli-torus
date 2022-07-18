@@ -160,7 +160,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      timezone = Plug.Conn.get_session(conn, :local_tz)
+      timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
       assert view
              |> element("#start_date")
@@ -330,7 +330,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_edit_route(section.slug, gating_condition.id)
         )
 
-      timezone = Plug.Conn.get_session(conn, :local_tz)
+      timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
       input_start_date = "2022-01-12T13:48"
       input_end_date = "2022-01-13T13:48"
@@ -445,7 +445,7 @@ defmodule OliWeb.Sections.GatingAndSchedulingTest do
           gating_condition_new_route(section.slug)
         )
 
-      timezone = Plug.Conn.get_session(conn, :local_tz)
+      timezone = Plug.Conn.get_session(conn, :browser_timezone)
 
       input_start_date = "2022-01-12T13:48"
       input_end_date = "2022-01-13T13:48"

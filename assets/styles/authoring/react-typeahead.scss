@@ -1,4 +1,4 @@
-@import "delivery/variables";
+@use 'authoring/theme' as authoring;
 
 /**
  * Inlined react-bootstrap-typeahead styles
@@ -55,7 +55,7 @@
 }
 
 .rbt-input-multi.form-control[disabled] {
-  background-color: #e9ecef;
+  background-color: authoring.$gray-100;
   opacity: 1;
 }
 
@@ -112,7 +112,7 @@
 .rbt-token {
   background-color: #f8f9fa;
   border: 0;
-  border-radius: .25rem;
+  border-radius: 0.25rem;
   color: rgb(115, 116, 117);
   font-weight: 500;
   display: inline-block;

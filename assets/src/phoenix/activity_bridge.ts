@@ -227,7 +227,19 @@ export const initPreviewActivityBridge = (elementId: string) => {
       e.preventDefault();
       e.stopPropagation();
 
-      submit(e);
+      const props = e.detail.props;
+      const continuation: Continuation = e.detail.continuation;
+      const partInputs: PartResponse[] = [
+        { response: e.detail.payload, attemptGuid: e.detail.partAttemptGuid },
+      ];
+
+      Persistence.evaluate(props.model, partInputs).then((result: Persistence.Evaluated) => {
+        if (result.result === 'success') {
+          submissionTransform('evaluations', result).then((actions) =>
+            continuation({ type: 'success', actions: actions.actions }, undefined),
+          );
+        }
+      });
     },
     false,
   );

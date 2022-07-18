@@ -23,6 +23,27 @@ defmodule OliWeb.LegacySuperactivityController do
   alias Oli.Delivery.Attempts.ActivityLifecycle
   alias Oli.Repo
 
+  defmodule LegacySuperactivityContext do
+    @moduledoc false
+    defstruct [
+      :server_time_zone,
+      :user,
+      :host,
+      :section,
+      :datashop_session_id,
+      :activity_attempt,
+      :resource_attempt,
+      :resource_access,
+      :save_files,
+      :instructors,
+      :enrollment,
+      :web_content_url,
+      :host_url,
+      :base,
+      :src
+    ]
+  end
+
   def context(conn, %{"attempt_guid" => attempt_guid} = _params) do
     user = conn.assigns.current_user
 
@@ -60,8 +81,9 @@ defmodule OliWeb.LegacySuperactivityController do
         %{"commandName" => command_name, "activityContextGuid" => attempt_guid} = params
       ) do
     user = conn.assigns.current_user
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    context = fetch_context(conn.host, user, attempt_guid)
+    context = fetch_context(conn.host, user, attempt_guid, datashop_session_id)
 
     xml_response = process_command(command_name, context, params)
 
@@ -84,7 +106,7 @@ defmodule OliWeb.LegacySuperactivityController do
     |> text("File Not Found")
   end
 
-  defp fetch_context(host, user, attempt_guid) do
+  defp fetch_context(host, user, attempt_guid, datashop_session_id) do
     activity_attempt =
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
       |> Repo.preload([:part_attempts, revision: [:scoring_strategy]])
@@ -118,11 +140,12 @@ defmodule OliWeb.LegacySuperactivityController do
         activity_attempt.attempt_number
       )
 
-    %{
+    %LegacySuperactivityContext{
       server_time_zone: get_timezone(),
       user: user,
       host: host,
       section: section,
+      datashop_session_id: datashop_session_id,
       activity_attempt: activity_attempt,
       resource_attempt: resource_attempt,
       resource_access: resource_access,
@@ -136,7 +159,7 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  defp process_command("loadClientConfig", context, _params) do
+  defp process_command("loadClientConfig", %LegacySuperactivityContext{} = context, _params) do
     xml =
       SuperActivityClient.setup(%{
         context: context
@@ -147,7 +170,7 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command("beginSession", context, _params) do
+  defp process_command("beginSession", %LegacySuperactivityContext{} = context, _params) do
     xml =
       SuperActivitySession.setup(%{
         context: context
@@ -158,12 +181,12 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command("loadContentFile", context, _params) do
+  defp process_command("loadContentFile", %LegacySuperactivityContext{} = context, _params) do
     %{"modelXml" => modelXml} = context.activity_attempt.revision.content
     {:ok, modelXml}
   end
 
-  defp process_command("startAttempt", context, params) do
+  defp process_command("startAttempt", %LegacySuperactivityContext{} = context, params) do
     case context.activity_attempt.date_evaluated do
       nil ->
         attempt_history(context)
@@ -174,10 +197,18 @@ defmodule OliWeb.LegacySuperactivityController do
         case ActivityLifecycle.reset_activity(
                context.section.slug,
                context.activity_attempt.attempt_guid,
+               context.datashop_session_id,
                seed_state_from_previous
              ) do
           {:ok, {attempt_state, _model}} ->
-            attempt_history(fetch_context(context.host, context.user, attempt_state.attemptGuid))
+            attempt_history(
+              fetch_context(
+                context.host,
+                context.user,
+                attempt_state.attemptGuid,
+                context.datashop_session_id
+              )
+            )
 
           {:error, _} ->
             {:error, "server error", 500}
@@ -187,7 +218,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp process_command(
          "scoreAttempt",
-         context,
+         %LegacySuperactivityContext{} = context,
          %{"scoreValue" => score_value, "scoreId" => score_type} = params
        ) do
     part_attempt =
@@ -214,11 +245,16 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command("endAttempt", context, _params) do
+  defp process_command("endAttempt", %LegacySuperactivityContext{} = context, _params) do
     case finalize_activity_attempt(context) do
       {:ok, _} ->
         attempt_history(
-          fetch_context(context.host, context.user, context.activity_attempt.attempt_guid)
+          fetch_context(
+            context.host,
+            context.user,
+            context.activity_attempt.attempt_guid,
+            context.datashop_session_id
+          )
         )
 
       {:error, message} ->
@@ -227,14 +263,14 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command(command_name, _context, _params)
+  defp process_command(command_name, %LegacySuperactivityContext{} = _context, _params)
        when command_name === "loadUserSyllabus" do
     {:error, "command not supported", 400}
   end
 
   defp process_command(
          "writeFileRecord",
-         context,
+         %LegacySuperactivityContext{} = context,
          %{
            "activityContextGuid" => attempt_guid,
            "byteEncoding" => byte_encoding,
@@ -304,7 +340,7 @@ defmodule OliWeb.LegacySuperactivityController do
 
   defp process_command(
          "loadFileRecord",
-         _context,
+         %LegacySuperactivityContext{} = _context,
          %{
            "activityContextGuid" => attempt_guid
          } = params
@@ -327,7 +363,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp process_command("deleteFileRecord", context, _params) do
+  defp process_command("deleteFileRecord", %LegacySuperactivityContext{} = context, _params) do
     # no op
     xml =
       FileDirectory.setup(%{
@@ -339,11 +375,11 @@ defmodule OliWeb.LegacySuperactivityController do
     {:ok, xml}
   end
 
-  defp process_command(_command_name, _context, _params) do
+  defp process_command(_command_name, %LegacySuperactivityContext{} = _context, _params) do
     {:error, "command not supported", 400}
   end
 
-  defp finalize_activity_attempt(context) do
+  defp finalize_activity_attempt(%LegacySuperactivityContext{} = context) do
     case context.activity_attempt.date_evaluated do
       nil ->
         part_attempts = Attempts.get_latest_part_attempts(context.activity_attempt.attempt_guid)
@@ -363,7 +399,8 @@ defmodule OliWeb.LegacySuperactivityController do
             ActivityEvaluation.apply_super_activity_evaluation(
               context.section.slug,
               context.activity_attempt.attempt_guid,
-              client_evaluations
+              client_evaluations,
+              context.datashop_session_id
             )
           end
 
@@ -381,7 +418,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp create_evaluation(context, score, out_of, part_attempt) do
+  defp create_evaluation(%LegacySuperactivityContext{} = context, score, out_of, part_attempt) do
     {:ok, feedback} = Feedback.parse(%{"id" => "1", "content" => "elsewhere"})
 
     user_input =
@@ -403,7 +440,7 @@ defmodule OliWeb.LegacySuperactivityController do
     }
   end
 
-  defp eval_numeric_score(context, score, out_of, part_attempt) do
+  defp eval_numeric_score(%LegacySuperactivityContext{} = context, score, out_of, part_attempt) do
     client_evaluations = [
       create_evaluation(context, score, out_of, part_attempt)
     ]
@@ -411,11 +448,17 @@ defmodule OliWeb.LegacySuperactivityController do
     case ActivityEvaluation.apply_super_activity_evaluation(
            context.section.slug,
            context.activity_attempt.attempt_guid,
-           client_evaluations
+           client_evaluations,
+           context.datashop_session_id
          ) do
       {:ok, _evaluations} ->
         attempt_history(
-          fetch_context(context.host, context.user, context.activity_attempt.attempt_guid)
+          fetch_context(
+            context.host,
+            context.user,
+            context.activity_attempt.attempt_guid,
+            context.datashop_session_id
+          )
         )
 
       {:error, message} ->
@@ -487,7 +530,7 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  defp attempt_history(context) do
+  defp attempt_history(%LegacySuperactivityContext{} = context) do
     xml =
       AttemptHistory.setup(%{
         context: context

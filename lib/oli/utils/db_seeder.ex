@@ -52,8 +52,7 @@ defmodule Oli.Seeder do
         name: "Example Institution",
         country_code: "US",
         institution_email: author.email,
-        institution_url: "example.edu",
-        timezone: "America/New_York"
+        institution_url: "example.edu"
       })
       |> Repo.insert()
 
@@ -169,7 +168,6 @@ defmodule Oli.Seeder do
         country_code: "some country_code",
         institution_email: "some institution_email",
         institution_url: "some institution_url",
-        timezone: "America/New_York",
         author_id: author.id
       })
       |> Repo.insert()
@@ -706,7 +704,8 @@ defmodule Oli.Seeder do
       Map.merge(attrs, %{
         activity_attempt_id: activity_attempt.id,
         part_id: part.id,
-        attempt_guid: UUID.uuid4()
+        attempt_guid: UUID.uuid4(),
+        datashop_session_id: UUID.uuid4()
       })
 
     {:ok, attempt} = create_part_attempt(attrs)

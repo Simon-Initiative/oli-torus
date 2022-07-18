@@ -224,11 +224,11 @@ export class HtmlParser implements WriterImpl {
   td(context: WriterContext, next: Next, _x: TableData) {
     return <td>{next()}</td>;
   }
-  ol(context: WriterContext, next: Next, _x: OrderedList) {
-    return <ol>{next()}</ol>;
+  ol(context: WriterContext, next: Next, item: OrderedList) {
+    return item.style ? <ol className={`list-${item.style}`}>{next()}</ol> : <ol>{next()}</ol>;
   }
-  ul(context: WriterContext, next: Next, _x: UnorderedList) {
-    return <ul>{next()}</ul>;
+  ul(context: WriterContext, next: Next, item: UnorderedList) {
+    return item.style ? <ul className={`list-${item.style}`}>{next()}</ul> : <ul>{next()}</ul>;
   }
   li(context: WriterContext, next: Next, _x: ListItem) {
     return <li>{next()}</li>;

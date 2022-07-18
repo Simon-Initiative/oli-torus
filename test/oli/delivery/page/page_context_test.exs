@@ -73,7 +73,8 @@ defmodule Oli.Delivery.Page.PageContextTest do
 
       Seeder.rebuild_section_resources(%{section: section, publication: publication})
 
-      context = PageContext.create_for_visit(section, p1.revision.slug, user)
+      datashop_session_id = UUID.uuid4()
+      context = PageContext.create_for_visit(section, p1.revision.slug, user, datashop_session_id)
 
       # verify activities map
       assert Map.get(context.activities, a1.resource.id).model != nil
