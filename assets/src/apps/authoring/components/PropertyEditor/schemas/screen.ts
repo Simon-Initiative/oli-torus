@@ -147,7 +147,14 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
       return;
     }
 
-    const bgcolor = data.palette.backgroundColor || data.palette.fillColor;
+    let backgroundColor = `rgba(255, 255, 255, 100)`;
+    if (data.palette.fillColor || data.palette.fillColor === 0) {
+      backgroundColor = `rgba(${chroma(data.palette.fillColor).rgb().join(',')},${
+        data.palette.fillAlpha || '100'
+      })`;
+    } else if (data.palette.backgroundColor) {
+      backgroundColor = chroma(data.palette.backgroundColor).rgba().join(',');
+    }
 
     const schemaPalette = {
       ...data.palette,
@@ -159,9 +166,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
           ? chroma(data.palette.lineColor).rgb().join(',')
           : '255, 255, 255'
       },${data.palette.lineAlpha || '100'})`,
-      backgroundColor: `rgba(${
-        bgcolor || bgcolor === 0 ? chroma(bgcolor).rgba().join(',') : '255, 255, 255'
-      },${data.palette.fillAlpha || '100'})`,
+      backgroundColor,
     };
     return {
       ...data,
