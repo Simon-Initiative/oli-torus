@@ -51,7 +51,21 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
               addOne={() => dispatch(LikertActions.addChoice())}
               onRemove={(id) => dispatch(LikertActions.removeChoice(id))}
             />
+            <div className="form-check mb-2">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id="descending-toggle"
+                aria-label="Checkbox for descending order"
+                checked={model.orderDescending}
+                onChange={(e: any) => dispatch(LikertActions.setOrderDescending(e.target.checked))}
+              />
+              <label className="form-check-label" htmlFor="descending-toggle">
+                Number Descending
+              </label>
+            </div>
           </div>
+
           <p>Questions:</p>
           <ChoicesAuthoring
             choices={model.items}
