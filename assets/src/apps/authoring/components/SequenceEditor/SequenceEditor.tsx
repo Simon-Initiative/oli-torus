@@ -127,8 +127,10 @@ const SequenceEditor: React.FC<any> = () => {
       activityType: newActivity.activityType,
       content: { ...newActivity.model, authoring: undefined },
       authoring: newActivity.model.authoring,
+      title: newTitle,
+      tags: [],
     };
-
+    dispatch(saveActivity({ activity: reduxActivity, undoable: false }));
     await dispatch(upsertActivity({ activity: reduxActivity }));
     addNewSequence(newSequenceEntry, currentActivity?.activitySlug);
   };

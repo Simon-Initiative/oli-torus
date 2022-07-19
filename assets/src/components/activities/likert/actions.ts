@@ -1,4 +1,4 @@
-import { LikertModelSchema } from './schema';
+import { LikertModelSchema, makeLikertChoice } from './schema';
 import { makeHint, HasParts, Part } from '../types';
 import * as ActivityTypes from '../types';
 import { PostUndoable, makeUndoable } from 'components/activities/types';
@@ -12,7 +12,7 @@ import { getCorrectResponse, Responses } from 'data/activities/model/responses';
 export const LikertActions = {
   addChoice() {
     return (model: any & HasParts, post: PostUndoable) => {
-      Choices.addOne(ActivityTypes.makeChoice(''))(model);
+      Choices.addOne(makeLikertChoice(''))(model);
     };
   },
 
@@ -63,6 +63,12 @@ export const LikertActions = {
 
       // remove the specified item
       Items.removeOne(id)(model);
+    };
+  },
+
+  setOrderDescending(orderDescending: boolean) {
+    return (model: any & HasParts, post: PostUndoable) => {
+      model.orderDescending = orderDescending;
     };
   },
 };

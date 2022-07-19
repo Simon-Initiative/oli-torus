@@ -69,8 +69,7 @@ const LikertComponent: React.FC = () => {
       <div className="activity-content">
         <StemDelivery stem={(uiState.model as LikertModelSchema).stem} context={writerContext} />
         <LikertTable
-          items={(uiState.model as LikertModelSchema).items}
-          choices={(uiState.model as LikertModelSchema).choices}
+          model={uiState.model as LikertModelSchema}
           isSelected={isSelected}
           onSelect={onSelect}
           disabled={isEvaluated(uiState)}

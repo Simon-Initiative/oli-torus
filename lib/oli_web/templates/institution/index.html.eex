@@ -68,7 +68,6 @@
               <th>Country Code</th>
               <th>Email</th>
               <th>URL</th>
-              <th>Timezone</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -79,7 +78,6 @@
               <td><%= institution.country_code %></td>
               <td><%= institution.institution_email %></td>
               <td><%= institution.institution_url %></td>
-              <td><%= institution.timezone %></td>
 
               <td class="text-nowrap">
                 <%= link "Details", to: Routes.institution_path(@conn, :show, institution), class: "btn btn-sm btn-outline-primary" %>
@@ -114,7 +112,7 @@
               <td><%= pending_registration.name %></td>
               <td><%= pending_registration.institution_url %></td>
               <td><%= pending_registration.institution_email %></td>
-              <td><%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @context) %></td>
+              <td><%= OliWeb.Common.Utils.render_date(pending_registration, :inserted_at, @conn) %></td>
 
               <td class="text-nowrap">
                 <a href="#review-<%= pending_registration.id %>" class="btn btn-sm btn-outline-primary ml-2" data-toggle="modal" data-target="#review-<%= pending_registration.id %>">Review</button>
@@ -206,12 +204,6 @@
                       <%= select f, :country_code, @country_codes, prompt: "Select Country", class: "form-control " <> error_class(f, :country_code, "is-invalid"),
                         required: true %>
                       <%= error_tag f, :country_code %>
-                    </div>
-
-                    <div class="form-label-group">
-                      <%= select f, :timezone, @timezones, prompt: "Select Timezone", class: "form-control " <> error_class(f, :timezone, "is-invalid"),
-                        required: true %>
-                      <%= error_tag f, :timezone %>
                     </div>
                   </div>
                 </div>

@@ -373,13 +373,6 @@ html.authoring.dark {
     }
   }
 
-  .activity,
-  .activity-editor {
-    .card {
-      background-color: $gray-900;
-    }
-  }
-
   .draggableColumn {
     &__card {
       background-color: $gray-900;
@@ -496,10 +489,10 @@ html.authoring.dark {
   .editorToolbar {
     border-top: 1px solid $body-color;
     border-bottom: 1px solid $body-color;
-    background: $body-bg;
+    background: $gray-400;
 
     &__group {
-      background: $body-bg;
+      background: $gray-400;
       border-left: 1px solid $body-color;
     }
     &__group:last-of-type {
@@ -508,11 +501,11 @@ html.authoring.dark {
 
     &__dropdownGroup {
       border: 1px solid $body-color;
-      background: $body-bg;
+      background: $gray-400;
     }
 
     &__button {
-      background: $body-bg;
+      background: $gray-400;
 
       &--descriptive {
         &:hover {

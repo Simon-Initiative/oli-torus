@@ -282,7 +282,7 @@ defmodule OliWeb.LtiController do
                 %{
                   "type" => "mrkdwn",
                   "text" =>
-                    "*Location:*\n#{pending_registration.country_code} - #{pending_registration.timezone}"
+                    "*Location:*\n#{pending_registration.country_code}"
                 },
                 %{
                   "type" => "mrkdwn",
@@ -317,7 +317,6 @@ defmodule OliWeb.LtiController do
           changeset: changeset,
           submit_action: Routes.lti_path(conn, :request_registration),
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: pending_registration_attrs["issuer"],
@@ -346,7 +345,6 @@ defmodule OliWeb.LtiController do
           changeset: Institutions.change_pending_registration(%PendingRegistration{}),
           submit_action: Routes.lti_path(conn, :request_registration),
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,

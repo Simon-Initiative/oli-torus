@@ -52,8 +52,7 @@ defmodule Oli.Seeder do
         name: "Example Institution",
         country_code: "US",
         institution_email: author.email,
-        institution_url: "example.edu",
-        timezone: "America/New_York"
+        institution_url: "example.edu"
       })
       |> Repo.insert()
 
@@ -169,7 +168,6 @@ defmodule Oli.Seeder do
         country_code: "some country_code",
         institution_email: "some institution_email",
         institution_url: "some institution_url",
-        timezone: "America/New_York",
         author_id: author.id
       })
       |> Repo.insert()
@@ -231,7 +229,7 @@ defmodule Oli.Seeder do
   end
 
   def add_adaptive_page(
-        %{project: project, publication: publication, author: author} = seed,
+        %{project: project, publication: publication, author: author, container: container} = seed,
         activity_resource_tag \\ :adaptive_resource,
         activity_revision_tag \\ :adaptive_revision,
         page_resource_tag \\ :adaptive_page_resource,
@@ -316,6 +314,8 @@ defmodule Oli.Seeder do
         author,
         create_sample_adaptive_page_content(activity_revision.resource_id)
       )
+
+    attach_pages_to([page_resource], container.resource, container.revision, publication)
 
     seed
     |> Map.put(page_resource_tag, page_resource)
@@ -706,7 +706,8 @@ defmodule Oli.Seeder do
       Map.merge(attrs, %{
         activity_attempt_id: activity_attempt.id,
         part_id: part.id,
-        attempt_guid: UUID.uuid4()
+        attempt_guid: UUID.uuid4(),
+        datashop_session_id: UUID.uuid4()
       })
 
     {:ok, attempt} = create_part_attempt(attrs)

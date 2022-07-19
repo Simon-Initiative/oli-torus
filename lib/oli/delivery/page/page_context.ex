@@ -102,7 +102,8 @@ defmodule Oli.Delivery.Page.PageContext do
   def create_for_visit(
         %Section{slug: section_slug, id: section_id},
         page_slug,
-        user
+        user,
+        datashop_session_id
       ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
@@ -115,6 +116,7 @@ defmodule Oli.Delivery.Page.PageContext do
       case PageLifecycle.visit(
              page_revision,
              section_slug,
+             datashop_session_id,
              user.id,
              activity_provider
            ) do

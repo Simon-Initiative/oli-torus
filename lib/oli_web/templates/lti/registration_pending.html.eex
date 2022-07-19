@@ -30,7 +30,7 @@
             </tr>
             <tr>
                 <td>
-                    <%= @pending_registration.country_code %> - <%= @pending_registration.timezone %>
+                    <%= @pending_registration.country_code %>
                 </td>
             </tr>
         </table>

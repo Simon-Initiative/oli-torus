@@ -44,6 +44,9 @@ defmodule Oli.Resources.ResourceType do
   def is_secondary(revision), do: is_type(revision, "secondary")
   def is_tag(revision), do: is_type(revision, "tag")
   def is_bibentry(revision), do: is_type(revision, "bibentry")
+  def is_non_adaptive_page(revision), do: is_type(revision, "page") and !is_adaptive_page(revision)
+  def is_adaptive_page(%{content: %{"advancedAuthoring" => true}}), do: true
+  def is_adaptive_page(_), do: false
 
   schema "resource_types" do
     field :type, :string
