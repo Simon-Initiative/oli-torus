@@ -1,6 +1,9 @@
 defmodule OliWeb.Grades.GradebookTableModel do
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+
   use Surface.LiveComponent
+
+  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Utils
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -105,7 +108,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
         if is_nil(score) do
           "?"
         else
-          score
+          Utils.format_score(score)
         end
 
       safe_out_of =
