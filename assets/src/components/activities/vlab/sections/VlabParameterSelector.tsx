@@ -8,7 +8,7 @@ interface Props {
   input: VlabValue;
 }
 
-const paramList = ['volume', 'temp', , 'pH', 'moles', 'mass', 'molarity', 'concentration'];
+const paramList = ['volume', 'temp', 'pH', 'moles', 'mass', 'molarity', 'concentration'];
 
 export const VlabParameterSelector: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
