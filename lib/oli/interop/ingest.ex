@@ -150,6 +150,7 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  # Create any products that are found in the digest.
   defp create_products(project, root_revision, resource_map, page_map, container_map, as_author) do
     products =
       Map.keys(resource_map)
@@ -161,8 +162,10 @@ defmodule Oli.Interop.Ingest do
         {:ok, container_map}
 
       _ ->
+        # Products can only be created with the project published, so do that first
         Oli.Publishing.publish_project(project, "Initial publication")
 
+        # Create each product, all the while tracking any newly created containers in the container map
         Enum.reduce_while(products, {:ok, container_map}, fn {_, product}, {:ok, container_map} ->
           case create_product(project, root_revision, product, container_map, page_map, as_author) do
             {:ok, container_map} -> {:cont, {:ok, container_map}}
@@ -172,17 +175,14 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
+  # Create a single product. Recursively process the product JSON, reuising containers that already
+  # exist, creating new ones when new ones are encountered.
   defp create_product(project, root_revision, product, container_map, page_map, as_author) do
-    # parse the product JSON map recursively in order to create the hierarchy_definition
-    # for each container
-    # if it does not already exist in container map create a new resource for it and add it container map
-    # add the resource id into hierarchy_definition, pointing to the revision of the container
-    # for each page, add it to the parent container's list entry of hierarchy_definition
-
     hierarchy_definition = Map.put(%{}, root_revision.resource_id, [])
 
     original_container_count = Map.keys(container_map) |> Enum.count()
 
+    # Recursive processing to track new containers and build the hierarchy definition
     {container_map, hierarchy_definition} =
       Map.get(product, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
@@ -200,10 +200,14 @@ defmodule Oli.Interop.Ingest do
         )
       end)
 
+    # If any new containers were created, we have to publish again so that the product can pin
+    # a published version of this new container as a section resource
     if Map.keys(container_map) |> Enum.count() != original_container_count do
       Oli.Publishing.publish_project(project, "New containers for product")
     end
 
+    # Create the blueprint (aka 'product'), with the hierarchy definition that was just built
+    # to mirror the product JSON.
     case Oli.Delivery.Sections.Blueprint.create_blueprint(
            project.slug,
            product["title"],
@@ -225,9 +229,8 @@ defmodule Oli.Interop.Ingest do
        ) do
     case Map.get(item, "type") do
       "item" ->
-        # simply add the item to the parent container in the hierarchy definition. The
-        # will had to have already been created, since the base hierarchy must reference all
-        # pages
+        # simply add the item to the parent container in the hierarchy definition. Pages are guaranteed
+        # to already exist since all of them are generated during digest creation for all orgs
         id = Map.get(page_map, Map.get(item, "idref")).resource_id
 
         hierarchy_definition =
@@ -242,6 +245,7 @@ defmodule Oli.Interop.Ingest do
       "container" ->
         {revision, container_map} =
           case Map.get(container_map, Map.get(item, "id", UUID.uuid4())) do
+            # This container is new, we have never enountered it within another org
             nil ->
               attrs = %{
                 tags: [],
@@ -272,7 +276,7 @@ defmodule Oli.Interop.Ingest do
             Map.get(hierarchy_definition, parent_resource_id) ++ [revision.resource_id]
           )
 
-        # process ever child element of this container
+        # process every child element of this container
         Map.get(item, "children", [])
         |> Enum.reduce({container_map, hierarchy_definition}, fn item,
                                                                  {container_map,
