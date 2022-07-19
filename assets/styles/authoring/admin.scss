@@ -12,3 +12,44 @@
 .flex-basis-20 {
   flex-basis: 20%;
 }
+
+.sections-table {
+  .table {
+    .fade-text {
+      height: 3em;
+      overflow: auto;
+      word-break: break-word;
+    }
+
+    th:nth-child(1) {
+      width: 25%;
+    }
+    th:nth-child(2) {
+      width: 4%;
+    }
+    th:nth-child(3) {
+      width: 7%;
+    }
+    th:nth-child(4) {
+      width: 5%;
+    }
+    th:nth-child(5) {
+      width: 10%;
+    }
+    th:nth-child(6) {
+      width: 10%;
+    }
+    th:nth-child(7) {
+      width: 5%;
+    }
+    th:nth-child(8) {
+      width: 11%;
+    }
+    th:nth-child(9) {
+      width: 12%;
+    }
+    th:nth-child(10) {
+      width: 11%;
+    }
+  }
+}

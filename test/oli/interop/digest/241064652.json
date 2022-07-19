@@ -1,0 +1,40 @@
+{
+  "type": "Bibentry",
+  "id": "241064652",
+  "originalFile": "",
+  "title": "Preliminary analysis of functions of the temporal lobes in monkeys",
+  "tags": [],
+  "unresolvedReferences": [],
+  "children": [],
+  "content": {
+    "data": [
+      {
+        "container-title": "Archives of Neurology & Psychiatry (Chicago)",
+        "author": [
+          {
+            "family": "Klüver",
+            "suffix": "H."
+          },
+          {
+            "given": "P. C.",
+            "family": "Bucy"
+          }
+        ],
+        "type": "article-journal",
+        "id": "Kluver_1939",
+        "citation-label": "Kluver_1939",
+        "issued": {
+          "date-parts": [
+            [
+              1939
+            ]
+          ]
+        },
+        "page": "979-1000",
+        "title": "Preliminary analysis of functions of the temporal lobes in monkeys",
+        "volume": "42"
+      }
+    ]
+  },
+  "objectives": []
+}

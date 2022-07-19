@@ -31,16 +31,19 @@
 
     <%= if @preview_mode == true do %>
     <!-- Preview Mode Styles -->
-      <link id="preview-theme-dark" rel="stylesheet" href="/css/preview_torus_dark.css" media="(prefers-color-scheme: dark)"/>
-      <link id="preview-theme-light" rel="stylesheet" href="/css/preview_torus_light.css" media="(prefers-color-scheme: light)"/>
+      <link id="preview-theme-light" rel="stylesheet" href="/css/preview_default.css" />
     <% end %>
 
-    <!-- Janus Part Component (Slider & Carousel) external CSS File -->
-    <link rel="stylesheet" href="/css/janus_input_number_delivery.css"/>
-    <link rel="stylesheet" href="/css/janus_slider_delivery.css"/>
+    <!-- Janus Part Component external CSS Files -->
     <link rel="stylesheet" href="/css/janus_image_carousel_delivery.css"/>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+    <script>
+      window.cite = require('citation-js')
+    </script>
+
     <script>
     window.MathJax = window.MathJax || {
       tex: {

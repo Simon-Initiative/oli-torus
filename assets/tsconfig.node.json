@@ -17,22 +17,12 @@
     "outDir": "../_node",
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "src/*"
-      ]
+      "*": ["src/*"]
     },
-    "types": [
-      "node",
-      "jest",
-      "jquery"
-    ],
+    "types": ["node", "jest", "jquery"],
     "esModuleInterop": true
   },
-  "include": [
-    "src/adaptivity/rules.ts"
-  ],
+  "include": ["src/adaptivity/rules.ts"],
 
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }

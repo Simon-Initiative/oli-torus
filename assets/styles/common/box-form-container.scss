@@ -137,14 +137,14 @@
     }
   }
 
-  .google-auth-container{
+  .google-auth-container {
     display: flex;
     align-items: center;
 
-    .google-icon-container{
+    .google-icon-container {
       padding-right: 0.5rem;
 
-      .google-icon{
+      .google-icon {
         background-color: white;
         width: 2.5rem;
         padding: 0.2rem;
@@ -152,7 +152,7 @@
       }
     }
 
-    .google-text-container{
+    .google-text-container {
       padding: 0 0.5rem;
     }
   }
@@ -168,21 +168,27 @@
     }
   }
 
-  .github-auth-container{
+  .github-auth-container {
     display: flex;
     align-items: center;
 
-    .github-icon-container{
+    .github-icon-container {
       padding-right: 0.5rem;
       padding-left: 0.1rem;
 
-      .github-icon{
+      .github-icon {
         font-size: 2.5rem;
       }
     }
 
-    .github-text-container{
+    .github-text-container {
       padding: 0 0.5rem;
     }
+  }
+}
+
+.custom-switch {
+  &.fixed-width {
+    width: 200px;
   }
 }

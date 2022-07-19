@@ -5,14 +5,7 @@ import TimeAgo from '../../../../../components/common/TimeAgo';
 import { selectCurrentActivityId } from '../../../store/features/activities/slice';
 import { setHistoryNavigationTriggered } from '../../../store/features/adaptivity/slice';
 import { navigateToActivity } from '../../../store/features/groups/actions/deck';
-
-interface HistoryEntry {
-  id: string;
-  name: string;
-  timestamp?: any; // not sure if this is needed
-  current?: boolean;
-  selected?: boolean;
-}
+import { HistoryEntry } from './HistoryNavigation';
 
 interface HistoryPanelProps {
   items: HistoryEntry[];
@@ -69,7 +62,12 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
           </div>
           <nav className="history">
             {items.map((item, index) => (
-              <div key={item.id} id={`qrID${item.id}`} className={getItemClasses(item)}>
+              <div
+                key={item.id}
+                id={`qrID${item.id}`}
+                className={getItemClasses(item)}
+                onClick={() => itemClickHandler(item)}
+              >
                 {items.length - index}. {item.name}
               </div>
             ))}
@@ -104,7 +102,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ items, onMinimize, onRestar
               >
                 <div className="history-element__screenName">{item.name}</div>
                 <div className="history-element__timestamp">
-                  {<TimeAgo timeStamp={item.timestamp} liveUpdate={true} />}
+                  {<TimeAgo timeStamp={item.timestamp as number} liveUpdate={true} />}
                 </div>
               </button>
             ))}

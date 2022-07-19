@@ -20,6 +20,7 @@ export const savePartState = createAsyncThunk(
     const sectionSlug = selectSectionSlug(rootState);
     const attemptNumber = getValue('session.attemptNumber', defaultGlobalEnv);
 
+    let updatedPartResponses = response;
     // update redux state to match optimistically
     const attemptRecord = selectById(rootState, attemptGuid);
     if (attemptRecord) {
@@ -31,7 +32,10 @@ export const savePartState = createAsyncThunk(
           parts: attemptRecord.parts.map((p) => {
             const result = { ...p };
             if (p.attemptGuid === partAttemptRecord.attemptGuid) {
-              result.response = response;
+              // always want to merge the previous response inputs into the attempt
+              // overwrite with later info, but don't delete
+              updatedPartResponses = { ...result.response, ...updatedPartResponses };
+              result.response = updatedPartResponses;
             }
             return result;
           }),
@@ -41,7 +45,7 @@ export const savePartState = createAsyncThunk(
     }
 
     // update scripting env with latest values
-    const assignScripts = getAssignStatements(response);
+    const assignScripts = getAssignStatements(updatedPartResponses);
     const scriptResult: string[] = [];
     if (Array.isArray(assignScripts)) {
       //Need to execute scripts one-by-one so that error free expression are evaluated and only the expression with error fails. It should not have any impacts
@@ -62,7 +66,13 @@ export const savePartState = createAsyncThunk(
 
     const finalize = false;
 
-    return writePartAttemptState(sectionSlug, attemptGuid, partAttemptGuid, response, finalize);
+    return writePartAttemptState(
+      sectionSlug,
+      attemptGuid,
+      partAttemptGuid,
+      updatedPartResponses,
+      finalize,
+    );
   },
 );
 

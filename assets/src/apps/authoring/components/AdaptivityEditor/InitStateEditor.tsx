@@ -38,6 +38,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   const typeRef = useRef<HTMLSelectElement>(null);
 
   const [target, setTarget] = useState(state.target);
+  const [value, setValue] = useState(state.value);
 
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
 
@@ -58,6 +59,10 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
   React.useEffect(() => {
     setTarget(state.target);
   }, [state.target]);
+
+  React.useEffect(() => {
+    setValue(state.value);
+  }, [state.value]);
 
   return (
     <div
@@ -85,7 +90,7 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           value={target}
           onChange={(e) => setTarget(e.target.value)}
           onBlur={(e) => handleTargetChange(e.target.value)}
-          title={target}
+          title={target.toString()}
           tabIndex={0}
         />
       </div>
@@ -148,10 +153,11 @@ const InitStateItem: React.FC<InitStateItemProps> = ({ state, onChange, onDelete
           className="form-control form-control-sm flex-grow-1"
           key={`value-${state.id}`}
           id={`value-${state.id}`}
-          defaultValue={state.value}
+          value={value}
           placeholder="Value"
+          onChange={(e) => setValue(e.target.value)}
           onBlur={(e) => onChange(state.id, 'value', e.target.value)}
-          title={state.value}
+          title={state.value.toString()}
           tabIndex={0}
         />
       </div>

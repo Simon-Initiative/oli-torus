@@ -10,10 +10,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
 
   @stripe_payments_intents_url "https://api.stripe.com/v1/payment_intents"
 
-  defp load_stripe_config(_) do
-    Config.Reader.read!("test/config/stripe_config.exs")
-    |> Application.put_all_env()
-  end
+  defp create_section(), do: create_section(nil)
 
   defp create_section(_) do
     section =
@@ -31,9 +28,11 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
   describe "user cannot direct pay when stripe is not configured" do
     setup [:user_conn, :create_section]
 
-    test "displays not enabled message", %{conn: conn, section: section} do
+    test "displays not enabled message", %{conn: conn, user: user, section: section} do
       Config.Reader.read!("test/config/config.exs")
       |> Application.put_all_env()
+
+      insert(:enrollment, %{user: user, section: section})
 
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
 
@@ -42,7 +41,11 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
   end
 
   describe "user cannot access when is not logged in" do
-    setup [:load_stripe_config, :create_section]
+    setup do
+      load_stripe_config()
+      on_exit(fn -> reset_test_payment_config() end)
+      create_section()
+    end
 
     test "redirects to new session when accessing the show view", %{conn: conn, section: section} do
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))
@@ -74,7 +77,15 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
   end
 
   describe "show (through payment controller)" do
-    setup [:user_conn, :load_stripe_config, :create_section]
+    setup attrs do
+      [section: section] = create_section()
+      {:ok, conn: conn, user: user} = user_conn(attrs)
+      load_stripe_config()
+
+      on_exit(fn -> reset_test_payment_config() end)
+
+      [conn: conn, user: user, section: section]
+    end
 
     test "can access if user already paid", %{conn: conn, user: user, section: section} do
       enrollment = insert(:enrollment, %{user: user, section: section})
@@ -87,6 +98,8 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
     end
 
     test "displays stripe form", %{conn: conn, section: section, user: user} do
+      insert(:enrollment, %{user: user, section: section})
+
       {:ok, amount} = Money.to_string(section.amount)
 
       conn = get(conn, Routes.payment_path(conn, :make_payment, section.slug))

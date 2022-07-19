@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AuthoringElementProvider } from 'components/activities/AuthoringElement';
+import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';

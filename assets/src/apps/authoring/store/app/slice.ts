@@ -5,6 +5,7 @@ import {
   savePartState,
   savePartStateToTree,
 } from 'apps/delivery/store/features/attempt/actions/savePart';
+import { Objective } from '../../../../data/content/objective';
 
 import { RightPanelTabs } from '../../components/RightMenu/RightMenu';
 import { saveActivity } from '../activities/actions/saveActivity';
@@ -52,6 +53,7 @@ export interface AppState {
   currentRule: any;
   partComponentTypes: PartComponentRegistration[];
   activityTypes: ActivityRegistration[];
+  allObjectives: Objective[];
   copiedPart: any | null;
   readonly: boolean;
   showDiagnosticsWindow: boolean;
@@ -73,6 +75,7 @@ const initialState: AppState = {
   currentRule: undefined,
   partComponentTypes: [],
   activityTypes: [],
+  allObjectives: [],
   copiedPart: null,
   readonly: true,
   showDiagnosticsWindow: false,
@@ -86,6 +89,7 @@ export interface AppConfig {
   revisionSlug?: string;
   partComponentTypes?: any[];
   activityTypes?: any[];
+  allObjectives?: Objective[];
   copiedPart?: any;
 }
 
@@ -100,6 +104,10 @@ const slice: Slice<AppState> = createSlice({
       state.revisionSlug = action.payload.revisionSlug || initialState.revisionSlug;
       state.partComponentTypes =
         action.payload.partComponentTypes || initialState.partComponentTypes;
+      state.allObjectives = action.payload.allObjectives || initialState.allObjectives;
+      // HACK! AddPartToolbar needs partComponentTypes on the window for now
+      (window as any)['partComponentTypes'] = state.partComponentTypes;
+
       state.activityTypes = action.payload.activityTypes || initialState.activityTypes;
       state.copiedPart = action.payload.copiedPart || initialState.copiedPart;
     },
@@ -191,6 +199,27 @@ export const selectRevisionSlug = createSelector(
   selectState,
   (state: AppState) => state.revisionSlug,
 );
+
+export const selectAllObjectives = createSelector(
+  selectState,
+  (state: AppState) => state.allObjectives,
+);
+
+// Returns the allObjectives as a map of id to Objective
+// selectAllObjectivesMap(...) === {1: Objective1, 2:Objective2, etc}
+export type ObjectivesMap = Record<string, Objective>;
+export const selectAllObjectivesMap = createSelector(
+  selectAllObjectives,
+  (objectives: Objective[]) =>
+    objectives.reduce<ObjectivesMap>(
+      (acc, obj) => ({
+        ...acc,
+        [obj.id]: obj,
+      }),
+      {},
+    ),
+);
+
 export const selectLeftPanel = createSelector(selectState, (state: AppState) => state.leftPanel);
 export const selectRightPanel = createSelector(selectState, (state: AppState) => state.rightPanel);
 export const selectTopPanel = createSelector(selectState, (state: AppState) => state.topPanel);
@@ -244,5 +273,7 @@ export const selectShowScoringOverview = createSelector(
   selectState,
   (state: AppState) => state.showScoringOverview,
 );
+
+export const selectIsAdmin = createSelector(selectState, (state: AppState) => state.isAdmin);
 
 export default slice.reducer;

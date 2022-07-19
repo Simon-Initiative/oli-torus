@@ -5,7 +5,7 @@ import { ResourceContent } from 'data/content/resource';
 export type PageUndoable = {
   type: 'PageUndoable';
   description: string;
-  index: number;
+  index: number[];
   item: ResourceContent;
 };
 
@@ -26,4 +26,9 @@ export type Undoables = Immutable.OrderedMap<string, UndoAction>;
 
 export function empty() {
   return Immutable.OrderedMap<string, UndoAction>();
+}
+
+export interface FeatureFlags {
+  adaptivity: boolean;
+  equity: boolean;
 }

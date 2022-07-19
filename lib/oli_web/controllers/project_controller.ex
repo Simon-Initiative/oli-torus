@@ -3,8 +3,9 @@ defmodule OliWeb.ProjectController do
 
   alias Oli.Accounts
   alias Oli.Utils
-  alias Oli.Authoring.{Course}
+  alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
+  alias Oli.Inventories
   alias Oli.Publishing
   alias Oli.Qa
   alias Oli.Analytics.Datashop
@@ -16,20 +17,25 @@ defmodule OliWeb.ProjectController do
   def overview(conn, project_params) do
     project = conn.assigns.project
 
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     latest_published_publication =
       Publishing.get_latest_published_publication_by_slug(project.slug)
 
     params = %{
-      breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+      breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
       active: :overview,
       collaborators: Accounts.project_authors(project),
-      activities_enabled: Activities.advanced_activities(project),
+      activities_enabled: Activities.advanced_activities(project, is_admin?),
       changeset:
         Utils.value_or(
           Map.get(project_params, :changeset),
           Project.changeset(project)
         ),
-      latest_published_publication: latest_published_publication
+      latest_published_publication: latest_published_publication,
+      publishers: Inventories.list_publishers(),
+      title: "Overview | " <> project.title
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -122,7 +128,8 @@ defmodule OliWeb.ProjectController do
       tool_url: tool_url,
       initiate_login_url: initiate_login_url,
       public_keyset_url: public_keyset_url,
-      redirect_uris: redirect_uris
+      redirect_uris: redirect_uris,
+      title: "Publish | " <> project.title
     )
   end
 
@@ -167,6 +174,9 @@ defmodule OliWeb.ProjectController do
   def update(conn, %{"project" => project_params}) do
     project = conn.assigns.project
 
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     case Course.update_project(project, project_params) do
       {:ok, project} ->
         conn
@@ -175,13 +185,15 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.advanced_activities(project),
+          activities_enabled: Activities.advanced_activities(project, is_admin?),
           changeset: changeset,
           latest_published_publication:
-            Publishing.get_latest_published_publication_by_slug(project.slug)
+            Publishing.get_latest_published_publication_by_slug(project.slug),
+          publishers: Inventories.list_publishers(),
+          title: "Overview | " <> project.title
         }
 
         conn
@@ -240,6 +252,9 @@ defmodule OliWeb.ProjectController do
   end
 
   defp delete_project(conn, project) do
+    author = conn.assigns[:current_author]
+    is_admin? = Accounts.is_admin?(author)
+
     case Course.update_project(project, %{status: :deleted}) do
       {:ok, _project} ->
         conn
@@ -247,13 +262,15 @@ defmodule OliWeb.ProjectController do
 
       {:error, %Ecto.Changeset{} = changeset} ->
         overview_params = %{
-          breadcrumbs: [Breadcrumb.new(%{full_title: "Overview"})],
+          breadcrumbs: [Breadcrumb.new(%{full_title: "Project Overview"})],
           active: :overview,
           collaborators: Accounts.project_authors(project),
-          activities_enabled: Activities.advanced_activities(project),
+          activities_enabled: Activities.advanced_activities(project, is_admin?),
           changeset: changeset,
           latest_published_publication:
-            Publishing.get_latest_published_publication_by_slug(project.slug)
+            Publishing.get_latest_published_publication_by_slug(project.slug),
+          publishers: Inventories.list_publishers(),
+          title: "Overview | " <> project.title
         }
 
         conn

@@ -15,7 +15,12 @@ export interface WriterImpl {
   h4: ElementWriter;
   h5: ElementWriter;
   h6: ElementWriter;
+  formula: ElementWriter;
+  formulaInline: ElementWriter;
+  callout: ElementWriter;
+  calloutInline: ElementWriter;
   img: ElementWriter;
+  img_inline: ElementWriter;
   youtube: ElementWriter;
   iframe: ElementWriter;
   audio: ElementWriter;
@@ -32,6 +37,7 @@ export interface WriterImpl {
   codeLine: ElementWriter;
   blockquote: ElementWriter;
   a: ElementWriter;
+  cite: ElementWriter;
   inputRef: ElementWriter;
   popup: (
     ctx: WriterContext,
@@ -99,8 +105,18 @@ export class ContentWriter {
         return impl.h5(context, next, content);
       case 'h6':
         return impl.h6(context, next, content);
+      case 'formula':
+        return impl.formula(context, next, content);
+      case 'formula_inline':
+        return impl.formulaInline(context, next, content);
+      case 'callout':
+        return impl.callout(context, next, content);
+      case 'callout_inline':
+        return impl.calloutInline(context, next, content);
       case 'img':
         return impl.img(context, next, content);
+      case 'img_inline':
+        return impl.img_inline(context, next, content);
       case 'youtube':
         return impl.youtube(context, next, content);
       case 'iframe':
@@ -133,6 +149,8 @@ export class ContentWriter {
         return impl.blockquote(context, next, content);
       case 'a':
         return impl.a(context, next, content);
+      case 'cite':
+        return impl.cite(context, next, content);
       case 'input_ref':
         return impl.inputRef(context, next, content);
       case 'popup':

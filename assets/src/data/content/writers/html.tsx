@@ -8,9 +8,12 @@ import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguag
 import {
   Audio,
   Blockquote,
+  Citation,
   CodeLine,
   CodeV1,
   CodeV2,
+  FormulaBlock,
+  FormulaInline,
   HeadingFive,
   HeadingFour,
   HeadingOne,
@@ -18,7 +21,8 @@ import {
   HeadingThree,
   HeadingTwo,
   Hyperlink,
-  Image,
+  ImageBlock,
+  ImageInline,
   InputRef,
   ListItem,
   Math,
@@ -41,8 +45,12 @@ import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
+import {
+  MathJaxLatexFormula,
+  MathJaxMathMLFormula,
+} from '../../../components/common/MathJaxFormula';
 import { WriterContext } from './context';
-import { Next, WriterImpl } from './writer';
+import { Next, WriterImpl, ContentWriter } from './writer';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -70,22 +78,28 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => mark(acc), <>{text}</>);
   }
 
-  private figure(attrs: any, content: React.ReactElement) {
+  private figure(context: WriterContext, attrs: any, content: React.ReactElement) {
     if (!attrs.caption) {
       return content;
     }
+    const caption =
+      attrs.caption &&
+      (typeof attrs.caption === 'string'
+        ? this.escapeXml(attrs.caption)
+        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
+
+    const width = attrs.width ? { width: this.escapeXml(String(attrs.width)) + 'px' } : {};
 
     return (
-      <div className="figure-wrapper">
+      <div className="figure-wrapper" style={width}>
         <figure className="figure embed-responsive text-center">
           {content}
-          <figcaption className="figure-caption text-center">
-            {this.escapeXml(attrs.caption)}
-          </figcaption>
+          <figcaption className="figure-caption text-center">{caption}</figcaption>
         </figure>
       </div>
     );
   }
+
   p(context: WriterContext, next: Next, _x: Paragraph) {
     return <p>{next()}</p>;
   }
@@ -107,18 +121,47 @@ export class HtmlParser implements WriterImpl {
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
     return <h6>{next()}</h6>;
   }
-  img(context: WriterContext, next: Next, attrs: Image) {
+
+  formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+    switch (element.subtype) {
+      case 'latex':
+        return <MathJaxLatexFormula src={element.src} inline={element.type === 'formula_inline'} />;
+      case 'mathml':
+        return (
+          <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
+        );
+      default:
+        return <span className="formula">Unknown formula type</span>;
+    }
+  }
+
+  formulaInline(ctx: WriterContext, next: Next, element: FormulaInline) {
+    return this.formula(ctx, next, element);
+  }
+
+  img(context: WriterContext, next: Next, attrs: ImageBlock) {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <img
         className="figure-img img-fluid"
         alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
-        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
-        height={attrs.height ? this.escapeXml(String(attrs.height)) : undefined}
         src={this.escapeXml(attrs.src)}
       />,
+    );
+  }
+  img_inline(context: WriterContext, next: Next, attrs: ImageInline) {
+    if (!attrs.src) return <></>;
+
+    return (
+      <img
+        className="img-fluid"
+        alt={attrs.alt ? this.escapeXml(attrs.alt) : ''}
+        width={attrs.width ? this.escapeXml(String(attrs.width)) : undefined}
+        src={this.escapeXml(attrs.src)}
+      />
     );
   }
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
@@ -133,6 +176,7 @@ export class HtmlParser implements WriterImpl {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <div className="embed-responsive embed-responsive-16by9">
         <iframe className="embed-responsive-item" allowFullScreen src={this.escapeXml(attrs.src)} />
@@ -143,6 +187,7 @@ export class HtmlParser implements WriterImpl {
     if (!attrs.src) return <></>;
 
     return this.figure(
+      context,
       attrs,
       <audio controls src={this.escapeXml(attrs.src)}>
         Your browser does not support the <code>audio</code> element.
@@ -150,13 +195,27 @@ export class HtmlParser implements WriterImpl {
     );
   }
   table(context: WriterContext, next: Next, attrs: Table) {
+    const caption =
+      attrs.caption &&
+      (typeof attrs.caption === 'string'
+        ? this.escapeXml(attrs.caption)
+        : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
+
     return (
       <table>
-        {attrs.caption ? <caption>{this.escapeXml(attrs.caption)}</caption> : undefined}
+        {attrs.caption ? <caption>{caption}</caption> : undefined}
         {next()}
       </table>
     );
   }
+  callout(context: WriterContext, next: Next) {
+    return <div className="callout-block">{next()}</div>;
+  }
+
+  calloutInline(context: WriterContext, next: Next) {
+    return <span className="callout-inline">{next()}</span>;
+  }
+
   tr(context: WriterContext, next: Next, _x: TableRow) {
     return <tr>{next()}</tr>;
   }
@@ -166,11 +225,11 @@ export class HtmlParser implements WriterImpl {
   td(context: WriterContext, next: Next, _x: TableData) {
     return <td>{next()}</td>;
   }
-  ol(context: WriterContext, next: Next, _x: OrderedList) {
-    return <ol>{next()}</ol>;
+  ol(context: WriterContext, next: Next, item: OrderedList) {
+    return item.style ? <ol className={`list-${item.style}`}>{next()}</ol> : <ol>{next()}</ol>;
   }
-  ul(context: WriterContext, next: Next, _x: UnorderedList) {
-    return <ul>{next()}</ul>;
+  ul(context: WriterContext, next: Next, item: UnorderedList) {
+    return item.style ? <ul className={`list-${item.style}`}>{next()}</ul> : <ul>{next()}</ul>;
   }
   li(context: WriterContext, next: Next, _x: ListItem) {
     return <li>{next()}</li>;
@@ -187,16 +246,18 @@ export class HtmlParser implements WriterImpl {
     if ('code' in attrs) return this.codev2(context, next, attrs as CodeV2, langClass);
     return this.codev1(context, next, attrs as CodeV1, langClass);
   }
-  codev1(_context: WriterContext, next: Next, attrs: CodeV1, className: string) {
+  codev1(context: WriterContext, next: Next, attrs: CodeV1, className: string) {
     return this.figure(
+      context,
       attrs,
       <pre>
         <code className={`language-${className}`}>{next()}</code>
       </pre>,
     );
   }
-  codev2(_context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
+  codev2(context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
     return this.figure(
+      context,
       attrs,
       <pre>
         <code className={`language-${className}`}>{this.escapeXml(attrs.code)}</code>
@@ -204,7 +265,12 @@ export class HtmlParser implements WriterImpl {
     );
   }
   codeLine(context: WriterContext, next: Next, _x: CodeLine) {
-    return next();
+    return (
+      <>
+        {next()}
+        {'\n'}
+      </>
+    );
   }
   blockquote(context: WriterContext, next: Next, _x: Blockquote) {
     return <blockquote>{next()}</blockquote>;
@@ -297,6 +363,37 @@ export class HtmlParser implements WriterImpl {
           {anchorNext()}
         </span>
       </OverlayTrigger>
+    );
+  }
+
+  private executeScroll(slug: string) {
+    const d = document.getElementById(slug);
+    if (d && d.scrollIntoView) {
+      d.scrollIntoView();
+    }
+  }
+
+  cite(context: WriterContext, next: Next, x: Citation) {
+    if (context.bibParams) {
+      const bibEntry = context.bibParams.find((el: any) => el.id === x.bibref);
+      if (bibEntry) {
+        return (
+          <cite>
+            <sup>
+              [
+              <a onClick={() => this.executeScroll(bibEntry.slug)} href={`#${bibEntry.slug}`}>
+                {bibEntry.ordinal}
+              </a>
+              ]
+            </sup>
+          </cite>
+        );
+      }
+    }
+    return (
+      <cite>
+        <sup>{next()}</sup>
+      </cite>
     );
   }
 

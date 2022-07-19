@@ -1,6 +1,6 @@
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { ButtonContent } from 'components/editing/toolbar/buttons/shared';
-import { useToolbar } from 'components/editing/toolbar/useToolbar';
+import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React, { PropsWithChildren } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useSlate } from 'slate-react';
@@ -30,7 +30,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       onClickOutside={toolbar.closeSubmenus}
       isOpen={isOpen}
       padding={8}
-      positions={['bottom']}
+      positions={['right']}
       reposition={true}
       align={'start'}
       content={<div className="editorToolbar__dropdownGroup">{props.children}</div>}

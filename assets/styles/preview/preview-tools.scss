@@ -5,9 +5,6 @@
 
   box-shadow: 0px 0px 5px 1px $black;
   background: $gray-100;
-  @media (prefers-color-scheme: dark) {
-    background: $gray-700;
-  }
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -32,9 +29,6 @@
     position: relative;
     padding: 8px;
     border-bottom: 1px solid $gray-400;
-    @media (prefers-color-scheme: dark) {
-      border-bottom: 1px solid $gray-800;
-    }
     > button {
       float: right;
       margin-top: 5px;
@@ -45,27 +39,18 @@
       display: flex;
       background: $gray-100;
       align-items: center;
-      @media (prefers-color-scheme: dark) {
-        background: $gray-700;
-      }
       padding: 7px;
       margin: 0;
     }
     .pt-title {
       margin-left: 8px;
       color: $black;
-      @media (prefers-color-scheme: dark) {
-        color: $white;
-      }
       font-size: 18px;
     }
   }
   .pt-body {
     overflow: auto;
     color: $gray-800;
-    @media (prefers-color-scheme: dark) {
-      color: $white;
-    }
     .preview-tools-view {
       overflow: auto;
       counter-reset: li;
@@ -78,9 +63,6 @@
 
         a {
           color: $gray-800;
-          @media (prefers-color-scheme: dark) {
-            color: $white;
-          }
           display: block;
           position: relative;
           padding: 8px 8px;
@@ -176,12 +158,7 @@
     }
     .apply-changes {
       display: flex;
-      @media (prefers-color-scheme: dark) {
-        background-color: $gray-900;
-      }
-      @media (prefers-color-scheme: light) {
-        background-color: $gray-300;
-      }
+      background-color: $gray-300;
       button {
         flex-grow: 1;
       }

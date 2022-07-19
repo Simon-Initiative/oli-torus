@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectPageContent, selectScore } from '../../store/features/page/slice';
+import {
+  selectIsInstructor,
+  selectPageContent,
+  selectPageSlug,
+  selectPreviewMode,
+  selectScore,
+  selectSectionSlug,
+} from '../../store/features/page/slice';
 import EverappMenu from './components/EverappMenu';
 import { Everapp } from './components/EverappRenderer';
 import OptionsPanel from './components/OptionsPanel';
@@ -32,8 +39,61 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
 
   const [showOptions, setShowOptions] = React.useState(false);
 
+  const isPreviewMode = useSelector(selectPreviewMode);
+  const isInstructor = useSelector(selectIsInstructor);
+
+  const [backButtonUrl, setBackButtonUrl] = useState('');
+  const [backButtonText, setBackButtonText] = useState('Back to Overview');
+
+  const projectSlug = useSelector(selectSectionSlug);
+  const resourceSlug = useSelector(selectPageSlug);
+
+  useEffect(() => {
+    if (isPreviewMode && !isInstructor) {
+      // return to authoring
+      setBackButtonUrl(`/authoring/project/${projectSlug}/resource/${resourceSlug}`);
+      setBackButtonText('Back to Authoring');
+    } else {
+      setBackButtonUrl(window.location.href.split('/page')[0] + '/overview');
+      setBackButtonText('Back to Overview');
+    }
+  }, [isPreviewMode]);
+
   return (
     <div className="headerContainer">
+      <div className="back-button">
+        <style>
+          {`
+          .back-button {
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: calc(50% - .65rem);
+          }
+          .back-button a {
+            text-decoration: none;
+            padding: 0 0 0 4px;
+            font-size: 1.3rem;
+            line-height: 1.5;
+            border-radius: 0 0 4px 4px;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+            border-top: none;
+            transition: color .15s ease-in-out, background-color .15s ease-in-out, box-shadow .15s ease-in-out;
+          }
+          .back-button a:hover {
+            color: #fff;
+            background-color: #6c757d;
+            box-shadow: 0 1px 2px #00000079;
+          }
+          `}
+        </style>
+        <a href={backButtonUrl} title={backButtonText}>
+          <span className="fa fa-arrow-left">&nbsp;</span>
+        </a>
+      </div>
       <header id="delivery-header">
         <div className="defaultView">
           <h1 className="lessonTitle">{pageName}</h1>
@@ -41,7 +101,9 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
           <div className={`wrapper ${!isLegacyTheme ? 'displayNone' : ''}`}>
             <div className="nameScoreButtonWrapper">
               {/* <a className="trapStateListToggle">Force Adaptivity</a> */}
-              {isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
+              {isLegacyTheme && hasEverApps && (
+                <EverappMenu apps={everApps} isLegacyTheme={isLegacyTheme} />
+              )}
 
               <div className="name">{userName}</div>
               <div className={`score ${!showScore ? 'displayNone' : ''}`}>{scoreText}</div>
@@ -64,6 +126,9 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
               <span className="theme-header-score__label">Score:&nbsp;</span>
               <span className="theme-header-score__value">{scoreText}</span>
             </div>
+            {!isLegacyTheme && hasEverApps && (
+              <EverappMenu apps={everApps} isLegacyTheme={isLegacyTheme} />
+            )}
             <div className="theme-header-profile" style={{ display: 'flex' }}>
               <button
                 className="theme-header-profile__toggle"
@@ -76,7 +141,6 @@ const DeckLayoutHeader: React.FC<DeckLayoutHeaderProps> = ({
                   <span className="theme-header-profile__label">{userName}</span>
                 </span>
               </button>
-              {!isLegacyTheme && hasEverApps && <EverappMenu apps={everApps} />}
               {/*update panel - logout and update details button*/}
             </div>
             {/*  */}

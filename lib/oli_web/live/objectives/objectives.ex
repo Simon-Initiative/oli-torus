@@ -53,7 +53,8 @@ defmodule OliWeb.Objectives.Objectives do
        author: author,
        force_render: 0,
        can_delete?: true,
-       edit: :none
+       edit: :none,
+       title: "Objectives | " <> project.title
      )}
   end
 
@@ -141,7 +142,7 @@ defmodule OliWeb.Objectives.Objectives do
         end
       end)
       |> Enum.sort(fn e1, e2 ->
-        e1.mapping.resource.inserted_at <= e2.mapping.resource.inserted_at
+        e1.mapping.resource.inserted_at >= e2.mapping.resource.inserted_at
       end)
     end
   end

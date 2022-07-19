@@ -1,5 +1,7 @@
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
@@ -11,7 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import { CapiVariableTypes } from '../../../../adaptivity/capi';
 import { saveActivity } from '../../../authoring/store/activities/actions/saveActivity';
-import { selectCurrentRule, setCurrentRule } from '../../../authoring/store/app/slice';
+import { selectCurrentRule } from '../../../authoring/store/app/slice';
 import { selectCurrentActivity } from '../../../delivery/store/features/activities/slice';
 import {
   findInSequence,
@@ -19,12 +21,12 @@ import {
   getIsLayer,
 } from '../../../delivery/store/features/groups/actions/sequence';
 import { createFeedback } from '../../store/activities/actions/createFeedback';
-import { AdaptiveRule } from '../AdaptiveRulesList/AdaptiveRulesList';
 import ActionFeedbackEditor from './ActionFeedbackEditor';
 import ActionMutateEditor from './ActionMutateEditor';
 import ActionNavigationEditor from './ActionNavigationEditor';
 import ConditionsBlockEditor from './ConditionsBlockEditor';
-
+import uniq from 'lodash/uniq';
+import flatten from 'lodash/flatten';
 export interface AdaptivityEditorProps {
   content?: any;
 }
@@ -56,8 +58,6 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   );
   const hasFeedback = actions.find((action: any) => action.type === 'feedback');
   const hasNavigation = actions.find((action: any) => action.type === 'navigation');
-
-  useEffect(() => console.log(currentRule), [currentRule]);
 
   useEffect(() => {
     if (!currentRule) return;
@@ -98,11 +98,11 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
   const handleRuleChange = (rule: any) => {
     const existing = currentActivity?.authoring.rules.find((r: any) => r.id === rule.id);
     const diff = JSON.stringify(rule) !== JSON.stringify(existing);
-    /* console.log('RULE CHANGE: ', {
+    /*console.log('RULE CHANGE: ', {
       rule,
       existing,
       diff,
-    }); */
+    });*/
     if (!existing) {
       console.warn("rule not found, shouldn't happen!!!");
       return;
@@ -117,44 +117,68 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
       const conditionRefs = findReferencedActivitiesInConditions(
         rule.conditions.any || rule.conditions.all,
       );
-      const variableRefs = getReferencedKeysInConditions(
+      const variableRefsInConditions = getReferencedKeysInConditions(
         rule.conditions.any || rule.conditions.all,
       );
+
+      const actions = rule?.event?.params?.actions || [];
+      const actionsRefs = findReferencedActivitiesInActions(actions);
+      const variableRefsInActions = getReferencedKeysInActions(actions);
+
       if (!activityClone.authoring.variablesRequiredForEvaluation) {
         activityClone.authoring.variablesRequiredForEvaluation = [];
       }
-      activityClone.authoring.variablesRequiredForEvaluation.push(...variableRefs);
+
+      const concatVars = [...variableRefsInConditions, ...variableRefsInActions];
+
+      activityClone.authoring.variablesRequiredForEvaluation.push(concatVars);
       // make unique
-      activityClone.authoring.variablesRequiredForEvaluation = [
-        ...new Set(activityClone.authoring.variablesRequiredForEvaluation),
-      ];
-      if (conditionRefs.length > 0) {
-        if (!activityClone.authoring.activitiesRequiredForEvaluation) {
-          activityClone.authoring.activitiesRequiredForEvaluation = [];
-        }
-        // need to find the resourceId based on the sequenceId that is referenced
-        const resourceIds = conditionRefs
-          .map((conditionRef: any) => {
-            const sequenceItem = findInSequence(sequence, conditionRef);
-            if (sequenceItem) {
-              return sequenceItem.resourceId;
-            } else {
-              console.warn(
-                `[handleRuleChange] could not find referenced activity ${conditionRef} in sequence`,
-                sequence,
-              );
-            }
-          })
-          .filter((id) => id) as number[];
-        const current = activityClone.authoring.activitiesRequiredForEvaluation;
-        activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
-          new Set([...current, ...resourceIds]),
-        );
-        console.log('[handleRuleChange] adding activities to required for evaluation', {
-          activityClone,
-          rule,
-        });
+      activityClone.authoring.variablesRequiredForEvaluation = uniq(
+        flatten([...new Set(activityClone.authoring.variablesRequiredForEvaluation)]),
+      );
+
+      if (!activityClone.authoring.activitiesRequiredForEvaluation) {
+        activityClone.authoring.activitiesRequiredForEvaluation = [];
       }
+
+      // finally need to add to the required activities any variables that are required but inherited from the sequence
+      const treeRefs = activityClone.authoring.variablesRequiredForEvaluation
+        .map((key: string) => {
+          // find the key in the authoring.parts
+          if (key.indexOf('stage.') === 0) {
+            const [, componentId] = key.split('.');
+            const partDef = activityClone.authoring.parts.find(
+              (part: any) => part.id === componentId,
+            );
+            if (partDef && partDef.inherited) {
+              return partDef.owner;
+            }
+          }
+        })
+        .filter((key: string) => key);
+
+      const resourceIds = [...actionsRefs, ...conditionRefs, ...treeRefs]
+        .map((ref: any) => {
+          const sequenceItem = findInSequence(sequence, ref);
+          if (sequenceItem) {
+            return sequenceItem.resourceId;
+          } else {
+            console.warn(
+              `[handleActionChange] could not find referenced activity ${ref} in sequence`,
+              sequence,
+            );
+          }
+        })
+        .filter((id) => id) as number[];
+      const current = activityClone.authoring.activitiesRequiredForEvaluation;
+      activityClone.authoring.activitiesRequiredForEvaluation = Array.from(
+        new Set([...current, ...resourceIds]),
+      );
+      /*console.log('[handleRuleChange] adding activities to required for evaluation', {
+        activityClone,
+        rule,
+      });*/
+
       dispatch(saveActivity({ activity: activityClone, undoable: true }));
       // setTimeout(() => dispatch(setCurrentRule({ currentRule: rule })));
     }
@@ -262,8 +286,9 @@ export const AdaptivityEditor: React.FC<AdaptivityEditorProps> = () => {
 
   const handleActionChange = async (action: any, changes: any) => {
     const updated = { ...action, params: { ...action.params, ...changes } };
+
     const actionIndex = actions.indexOf(action);
-    /* console.log('action changed', { action, changes, actionIndex }); */
+
     if (actionIndex !== -1) {
       const cloneActions = [...actions];
       cloneActions[actionIndex] = updated;

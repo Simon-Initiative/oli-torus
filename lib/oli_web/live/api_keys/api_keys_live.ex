@@ -79,6 +79,9 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                 <th>Status</th>
                 <th>Payments Enabled</th>
                 <th>Prodcuts Enabled</th>
+                <th>Registration Enabled</th>
+                <th>Registration Namespace</th>
+                <th>Automation Data<br/>Setup Enabled</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -87,13 +90,33 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
                 <tr>
                   <td><%= key.hint %></td>
                   <td><%= current(key.status) %></td>
-                  <td><%= key.payments_enabled %></td>
-                  <td><%= key.products_enabled %></td>
+                  <td>
+                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="payments_enabled" phx-value-id={key.id} phx-value-action={if key.payments_enabled do "false" else "true" end}>
+                      <%= key.payments_enabled %>
+                    </button>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="products_enabled" phx-value-id={key.id} phx-value-action={if key.products_enabled do "false" else "true" end}>
+                      <%= key.products_enabled %>
+                    </button>
+                  </td>
+                  <td>
+                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="registration_enabled" phx-value-id={key.id} phx-value-action={if key.registration_enabled do "false" else "true" end}>
+                      <%= key.registration_enabled %>
+                    </button>
+                  </td>
+                  <td><input id={"text_#{key.id}"} type="text" phx-hook="TextInputListener" value={key.registration_namespace}/></td>
+                  <td>
+                    <button type="button" class="btn btn-outline-danger" phx-click="update" phx-value-field="automation_setup_enabled" phx-value-id={key.id} phx-value-action={if key.automation_setup_enabled do "false" else "true" end}>
+                      <%= key.automation_setup_enabled %>
+                    </button>
+                  </td>
                   <td>
                     <button type="button" class="btn btn-outline-danger" phx-click="toggle" phx-value-id={key.id} phx-value-action={action(key.status)}>
                       <%= action(key.status) %>
                     </button>
                   </td>
+
                 </tr>
               <% end %>
             </tbody>
@@ -117,13 +140,38 @@ defmodule OliWeb.ApiKeys.ApiKeysLive do
 
       {:error, _} ->
         socket
-        |> put_flash(:error, "Could not edit objective")
+        |> put_flash(:error, "Could not create API key")
     end
+  end
+
+  def handle_event("change", %{"id" => "text_" <> id, "value" => namespace}, socket) do
+    Oli.Interop.get_key(id)
+    |> Oli.Interop.update_key(%{registration_namespace: namespace})
+
+    {:noreply, assign(socket, keys: all_keys_sorted())}
   end
 
   def handle_event("toggle", %{"id" => id, "action" => action}, socket) do
     Oli.Interop.get_key(id)
     |> Oli.Interop.update_key(%{status: to_state(action)})
+
+    {:noreply, assign(socket, keys: all_keys_sorted())}
+  end
+
+  def handle_event("update", %{"field" => field, "id" => id, "action" => action}, socket) do
+    attrs =
+      Map.put(
+        %{},
+        String.to_existing_atom(field),
+        if action == "true" do
+          true
+        else
+          false
+        end
+      )
+
+    Oli.Interop.get_key(id)
+    |> Oli.Interop.update_key(attrs)
 
     {:noreply, assign(socket, keys: all_keys_sorted())}
   end

@@ -1,5 +1,5 @@
 defmodule OliWeb.ApiSpec do
-  alias OpenApiSpex.{Info, OpenApi, Paths, Server}
+  alias OpenApiSpex.{Info, OpenApi, Paths, Server, SecurityScheme, Components}
   alias OliWeb.{Endpoint, Router}
   @behaviour OpenApi
 
@@ -13,6 +13,11 @@ defmodule OliWeb.ApiSpec do
       info: %Info{
         title: "OLI",
         version: "1.0"
+      },
+      components: %Components{
+        securitySchemes: %{
+          "bearer-authorization" => %SecurityScheme{type: "http", scheme: "bearer"}
+        }
       },
 
       # Populate the paths from a phoenix router

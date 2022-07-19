@@ -1,19 +1,20 @@
 defmodule Oli.TestHelpers do
   import Ecto.Query, warn: false
+  import Mox
+  import Oli.Factory
 
   alias Oli.Repo
   alias Oli.Accounts
-  alias Oli.Institutions
-  alias Oli.Accounts.User
-  alias Oli.Accounts.Author
+  alias Oli.Accounts.{Author, AuthorPreferences, User}
   alias Oli.Authoring.Course
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.Section
-  alias Oli.Publishing
-  alias Oli.PartComponents
   alias Oli.Delivery.Sections
-
-  import Mox
+  alias Oli.Delivery.Sections.Section
+  alias Oli.Institutions
+  alias Oli.PartComponents
+  alias Oli.Publishing
+  alias OliWeb.Common.{LtiSession, SessionContext}
+  alias Lti_1p3.Tool.ContextRoles
 
   Mox.defmock(Oli.Test.MockHTTP, for: HTTPoison.Base)
   Mox.defmock(Oli.Test.MockAws, for: ExAws.Behaviour)
@@ -39,7 +40,6 @@ defmodule Oli.TestHelpers do
       |> Enum.into(%{
         open_and_free: false,
         registration_open: true,
-        timezone: "US/Eastern",
         title: "some title",
         context_id: "context_id"
       })
@@ -110,8 +110,7 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "institution@example.edu",
         institution_url: "institution.example.edu",
-        name: "Example Institution",
-        timezone: "US/Eastern"
+        name: "Example Institution"
       })
 
     {:ok, institution} = Institutions.create_institution(params)
@@ -127,7 +126,6 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "example@example.edu",
         institution_url: "institution.example.edu",
-        timezone: "US/Eastern",
         issuer: "https://institution.example.edu",
         client_id: "1000000000001",
         key_set_url: "some key_set_url",
@@ -243,11 +241,65 @@ defmodule Oli.TestHelpers do
     |> Repo.insert()
   end
 
-  def user_conn(%{conn: conn}) do
-    user = user_fixture()
+  def independent_instructor_conn(context), do: user_conn(context, %{can_create_sections: true})
+
+  def user_conn(%{conn: conn}, attrs \\ %{}) do
+    user = user_fixture(attrs)
     conn = Pow.Plug.assign_current_user(conn, user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
     {:ok, conn: conn, user: user}
+  end
+
+  def instructor_conn(%{conn: conn}) do
+    {:ok, instructor} =
+      Accounts.update_user_platform_roles(
+        insert(:user, %{can_create_sections: true, independent_learner: true}),
+        [Lti_1p3.Tool.PlatformRoles.get_role(:institution_instructor)]
+      )
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
+      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+    {:ok, conn: conn, instructor: instructor}
+  end
+
+  def lms_instructor_conn(%{conn: conn}) do
+    institution = insert(:institution)
+    tool_jwk = jwk_fixture()
+    registration = insert(:lti_registration, %{tool_jwk_id: tool_jwk.id})
+    deployment = insert(:lti_deployment, %{institution: institution, registration: registration})
+    instructor = insert(:user)
+
+    lti_param_ids = %{
+      instructor:
+        cache_lti_params(
+          %{
+            "iss" => registration.issuer,
+            "aud" => registration.client_id,
+            "sub" => instructor.sub,
+            "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
+            "https://purl.imsglobal.org/spec/lti/claim/context" => %{
+              "id" => "some_id",
+              "title" => "some_title"
+            },
+            "https://purl.imsglobal.org/spec/lti/claim/roles" => [
+              "http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor"
+            ],
+            "https://purl.imsglobal.org/spec/lti/claim/deployment_id" => deployment.deployment_id
+          },
+          instructor.id
+        )
+    }
+
+    conn =
+      conn
+      |> Plug.Test.init_test_session(lti_session: nil)
+      |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+      |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
+
+    {:ok, conn: conn}
   end
 
   def author_conn(%{conn: conn}) do
@@ -270,7 +322,11 @@ defmodule Oli.TestHelpers do
   end
 
   def admin_conn(%{conn: conn}) do
-    admin = author_fixture(%{system_role_id: Accounts.SystemRole.role_id().admin})
+    admin =
+      author_fixture(%{
+        system_role_id: Accounts.SystemRole.role_id().admin,
+        preferences: %AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
 
     conn =
       Pow.Plug.assign_current_user(conn, admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
@@ -330,6 +386,25 @@ defmodule Oli.TestHelpers do
     end)
   end
 
+  # Sets up a mock to simulate a recaptcha failure
+  def expect_recaptcha_http_failure_post() do
+    verify_recaptcha_url = Application.fetch_env!(:oli, :recaptcha)[:verify_url]
+
+    Oli.Test.MockHTTP
+    |> expect(:post, fn ^verify_recaptcha_url, _body, _headers, _opts ->
+      {:ok,
+       %HTTPoison.Response{
+         status_code: 200,
+         body:
+           Jason.encode!(%{
+             "challenge_ts" => "some-challenge-ts",
+             "hostname" => "testkey.google.com",
+             "success" => false
+           })
+       }}
+    end)
+  end
+
   def part_component_registration_fixture(attrs \\ %{}) do
     params =
       attrs
@@ -357,7 +432,7 @@ defmodule Oli.TestHelpers do
   def make_sections(project, institution, prefix, n, attrs) do
     65..(65 + (n - 1))
     |> Enum.map(fn value -> List.to_string([value]) end)
-    |> Enum.map(fn value -> make(project, institution, "#{prefix}-#{value}", attrs) end)
+    |> Enum.map(fn value -> make(project, institution, "#{prefix}#{value}", attrs) end)
   end
 
   def make(project, institution, title, attrs) do
@@ -366,7 +441,6 @@ defmodule Oli.TestHelpers do
         Map.merge(
           %{
             title: title,
-            timezone: "1",
             registration_open: true,
             context_id: UUID.uuid4(),
             institution_id:
@@ -388,11 +462,207 @@ defmodule Oli.TestHelpers do
     section
   end
 
+  @doc """
+    Creates an open and free section for a given project
+  """
+  def open_and_free_section(project, attrs) do
+    insert(
+      :section,
+      Map.merge(
+        %{
+          base_project: project,
+          context_id: UUID.uuid4(),
+          open_and_free: true,
+          registration_open: true,
+          display_curriculum_item_numbering: attrs.display_curriculum_item_numbering
+        },
+        attrs
+      )
+    )
+  end
+
+  @doc """
+    Creates and publishes a project with a curriculum composed of a root container, a unit, and a nested page.
+  """
+  def base_project_with_curriculum(_) do
+    project = insert(:project)
+
+    nested_page_resource = insert(:resource)
+
+    nested_page_revision =
+      insert(:revision, %{
+        objectives: %{"attached" => []},
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "Nested page 1",
+        resource: nested_page_resource
+      })
+
+    # Associate nested page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: nested_page_resource.id})
+
+    unit_one_resource = insert(:resource)
+
+    # Associate unit to the project
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [nested_page_resource.id],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [unit_one_resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: nested_page_resource,
+      revision: nested_page_revision
+    })
+
+    # Publish unit one resource
+    insert(
+      :published_resource,
+      %{
+        resource: unit_one_resource,
+        publication: publication,
+        revision: unit_one_revision
+      }
+    )
+
+    %{publication: publication, project: project}
+  end
+
+  def section_with_assessment(_context) do
+    project = insert(:project)
+
+    # Graded page revision
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Progress test revision",
+        graded: true
+      )
+
+    # Associate nested graded page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_revision.resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    })
+
+    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true)
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, section: section, page_revision: page_revision}
+  end
+
+  def enroll_user_to_section(user, section, role) do
+    Sections.enroll(user.id, section.id, [
+      ContextRoles.get_role(role)
+    ])
+  end
+
   def set_timezone(%{conn: conn}) do
-    timezone = DateTime.utc_now().time_zone
+    conn = Plug.Test.init_test_session(conn, %{browser_timezone: "America/New_York"})
 
-    conn = Plug.Test.init_test_session(conn, %{local_tz: timezone})
+    {:ok, conn: conn, context: SessionContext.init(conn)}
+  end
 
-    {:ok, conn: conn}
+  def utc_datetime_to_localized_datestring(utc_datetime, timezone) do
+    datestring =
+      utc_datetime
+      |> Timex.to_datetime(timezone)
+      |> DateTime.to_naive()
+      |> NaiveDateTime.to_iso8601()
+
+    Regex.replace(~r/:\d\d\z/, datestring, "")
+  end
+
+  def load_stripe_config(), do: load_stripe_config(nil)
+
+  def load_stripe_config(_conn) do
+    load_env_file("test/config/stripe_config.exs")
+  end
+
+  def reset_test_payment_config() do
+    load_env_file("test/config/config.exs")
+  end
+
+  defp load_env_file(path) do
+    path
+    |> Config.Reader.read!()
+    |> Application.put_all_env()
   end
 end

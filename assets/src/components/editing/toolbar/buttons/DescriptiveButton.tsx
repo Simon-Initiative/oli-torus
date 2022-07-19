@@ -1,5 +1,5 @@
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { useToolbar } from 'components/editing/toolbar/useToolbar';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
@@ -11,7 +11,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
   const editor = useSlate();
   const { context, closeSubmenus } = useToolbar();
 
-  const onClick = React.useCallback(
+  const onMouseDown = React.useCallback(
     (_e) => {
       props.description.command.execute(context, editor);
       closeSubmenus();
@@ -35,7 +35,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
   );
 
   return (
-    <button className={classes} onClick={onClick}>
+    <button className={classes} onMouseDown={onMouseDown}>
       {icon && <span className="icon material-icons">{icon}</span>}
       {description}
     </button>

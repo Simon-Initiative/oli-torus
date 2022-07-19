@@ -15,6 +15,7 @@ defmodule OliWeb.Pow.PowHelpers do
       routes_backend: OliWeb.Pow.UserRoutes,
       extensions: [PowResetPassword, PowEmailConfirmation, PowPersistentSession, PowInvitation],
       controller_callbacks: Pow.Extension.Phoenix.ControllerCallbacks,
+      messages_backend: OliWeb.Pow.Messages,
       cache_store_backend: Pow.Store.Backend.MnesiaCache,
       users_context: OliWeb.Pow.UserContext,
       mailer_backend: OliWeb.Pow.Mailer,
@@ -59,6 +60,20 @@ defmodule OliWeb.Pow.PowHelpers do
   def current_pow_config(conn) do
     Pow.Plug.fetch_config(conn)
     |> Keyword.get(:user)
+  end
+
+  def delete_pow_user(conn, type) do
+    conn
+    |> use_pow_config(type)
+    |> Pow.Plug.delete()
+    |> PowPersistentSession.Plug.delete()
+  end
+
+  def create_pow_user(conn, type, account) do
+    conn
+    |> use_pow_config(type)
+    |> Pow.Plug.create(account)
+    |> PowPersistentSession.Plug.create(account)
   end
 
   ## provider_links forked from original pow_assent codebase to support custom styling for providers ##

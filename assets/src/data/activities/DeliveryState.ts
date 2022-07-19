@@ -1,8 +1,9 @@
-import { AnyAction, createSlice, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
+import { AnyAction, createSlice, Dispatch, PayloadAction, ThunkAction } from '@reduxjs/toolkit';
 import {
   EvaluationResponse,
   RequestHintResponse,
   ResetActivityResponse,
+  PartActivityResponse,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
@@ -12,11 +13,16 @@ import {
   PartId,
   PartResponse,
   PartState,
+  StudentResponse,
   Success,
+  FileMetaData,
 } from 'components/activities/types';
+import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
+import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
+import { isObjectBindingPattern } from 'typescript';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -28,6 +34,7 @@ export type StudentInput = string[];
 export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
+  model: ActivityModelSchema;
   attemptState: ActivityState;
   partState: Record<
     PartId,
@@ -71,7 +78,7 @@ function updatePartsStates(
   return state.attemptState.parts.map((part) => {
     const feedbackAction = action.payload.actions.find(
       (action: FeedbackAction | SubmissionAction) =>
-        action.type === 'FeedbackAction' && action.attempt_guid === part.attemptGuid,
+        action.type === 'FeedbackAction' && action.part_id === part.partId,
     ) as FeedbackAction | undefined;
     if (!feedbackAction) return part;
     return Object.assign(part, {
@@ -79,6 +86,7 @@ function updatePartsStates(
       outOf: feedbackAction.out_of,
       feedback: feedbackAction.feedback,
       error: feedbackAction.error,
+      dateEvaluated: new Date(),
     } as Partial<PartState>);
   });
 }
@@ -122,6 +130,26 @@ export const activityDeliverySlice = createSlice({
           parts: updatePartsStates(state, action),
         };
       }
+    },
+    partSubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
+      if (action.payload.actions.length > 0) {
+        const parts = updatePartsStates(state, action);
+        state.attemptState = {
+          ...state.attemptState,
+          parts,
+          dateEvaluated: parts.every((p) => p.dateEvaluated !== null) ? new Date() : null,
+        };
+      }
+    },
+    partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
+      const parts = state.attemptState.parts.filter(
+        (p) => p.partId === action.payload.attemptState.partId,
+      );
+
+      state.attemptState = {
+        ...state.attemptState,
+        parts: [...parts, action.payload.attemptState],
+      };
     },
     initializePartState(state, action: PayloadAction<ActivityState>) {
       state.partState = action.payload.parts.reduce((acc, partState) => {
@@ -171,6 +199,11 @@ export const activityDeliverySlice = createSlice({
         partState.hintsShown.push(action.payload.hint),
       );
     },
+    updatePartState(state, action: PayloadAction<{ partId: PartId; response: any }>) {
+      Maybe.maybe(state.partState[action.payload.partId]).lift(
+        (partState) => (partState.studentInput = action.payload.response),
+      );
+    },
     setHasMoreHintsForPart(
       state,
       action: PayloadAction<{ partId: PartId; hasMoreHints: boolean }>,
@@ -182,12 +215,36 @@ export const activityDeliverySlice = createSlice({
     hideAllHints(state) {
       Object.values(state.partState).forEach((partState) => (partState.hintsShown = []));
     },
+    updateModel(state, action: PayloadAction<ActivityModelSchema>) {
+      state.model = action.payload;
+    },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
       Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
     },
   },
 });
 const slice = activityDeliverySlice;
+
+export const savePart =
+  (
+    partId: PartId,
+    response: any,
+    onSave: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      payload: StudentResponse,
+    ) => Promise<Success>,
+  ): AppThunk =>
+  async (dispatch, getState) => {
+    const attemptGuid = getState().attemptState.parts.find(
+      (part) => String(part.partId) === partId,
+    )?.attemptGuid;
+    if (!attemptGuid) return;
+
+    const r = await onSave(getState().attemptState.attemptGuid, attemptGuid, response);
+    const files = (response as any).files;
+    dispatch(slice.actions.updatePartState({ partId, response: files }));
+  };
 
 export const requestHint =
   (
@@ -209,21 +266,21 @@ export const requestHint =
 
 export const selectAttemptState = (state: ActivityDeliveryState) => state.attemptState;
 export const isEvaluated = (state: ActivityDeliveryState) =>
-  selectAttemptState(state).score !== null;
+  selectAttemptState(state).dateEvaluated !== null;
 
 export const isSubmitted = (state: ActivityDeliveryState) =>
-  selectAttemptState(state).dateEvaluated === null &&
   selectAttemptState(state).dateSubmitted !== null;
 
 export const resetAction =
   (
     onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
-    partInputs: PartInputs,
+    partInputs?: PartInputs,
   ): AppThunk =>
   async (dispatch, getState) => {
     const response = await onResetActivity(getState().attemptState.attemptGuid);
-    dispatch(slice.actions.setPartInputs(partInputs));
+    partInputs && dispatch(slice.actions.setPartInputs(partInputs));
     dispatch(slice.actions.hideAllHints());
+    dispatch(slice.actions.updateModel(response.model));
     dispatch(slice.actions.setAttemptState(response.attemptState));
     getState().attemptState.parts.forEach((partState) =>
       dispatch(
@@ -235,6 +292,16 @@ export const resetAction =
     );
   };
 
+export const getPartResponses = (activityState: ActivityDeliveryState) =>
+  activityState.attemptState.parts.map((partState) => ({
+    attemptGuid: partState.attemptGuid,
+    response: {
+      input: studentInputToString(
+        Maybe.maybe(activityState.partState[String(partState.partId)]?.studentInput).valueOr(['']),
+      ),
+    },
+  }));
+
 export const submit =
   (
     onSubmitActivity: (
@@ -243,14 +310,69 @@ export const submit =
     ) => Promise<EvaluationResponse>,
   ): AppThunk =>
   async (dispatch, getState) => {
+    const activityState = getState();
+    const response = await onSubmitActivity(
+      activityState.attemptState.attemptGuid,
+      getPartResponses(activityState),
+    );
+    dispatch(slice.actions.activitySubmissionReceived(response));
+  };
+
+export const submitPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    studentResponse: StudentResponse,
+    onSubmitPart: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      studentResponse: StudentResponse,
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const response = await onSubmitPart(attemptGuid, partAttemptGuid, studentResponse);
+    dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetAndSubmitPart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    studentResponse: StudentResponse,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+    onSubmitPart: (
+      attemptGuid: string,
+      partAttemptGuid: string,
+      studentResponse: StudentResponse,
+    ) => Promise<EvaluationResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
+    const response = await onSubmitPart(
+      attemptGuid,
+      partActivityResponse.attemptState.attemptGuid,
+      studentResponse,
+    );
+    dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const submitFiles =
+  (
+    onSubmitActivity: (
+      attemptGuid: string,
+      partResponses: PartResponse[],
+    ) => Promise<EvaluationResponse>,
+    getFilesFromState: (state: ActivityDeliveryState) => FileMetaData[],
+  ): AppThunk =>
+  async (dispatch, getState) => {
     const response = await onSubmitActivity(
       getState().attemptState.attemptGuid,
       getState().attemptState.parts.map((partState) => ({
         attemptGuid: partState.attemptGuid,
         response: {
-          input: studentInputToString(
-            Maybe.maybe(getState().partState[String(partState.partId)]?.studentInput).valueOr(['']),
-          ),
+          files: getFilesFromState(getState()),
+          input: [''],
         },
       })),
     );
@@ -258,9 +380,10 @@ export const submit =
   };
 
 export const initializeState =
-  (state: ActivityState, initialPartInputs: PartInputs): AppThunk =>
+  (state: ActivityState, initialPartInputs: PartInputs, model: ActivityModelSchema): AppThunk =>
   async (dispatch, _getState) => {
     dispatch(slice.actions.initializePartState(state));
+    dispatch(slice.actions.updateModel(model));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({
@@ -313,3 +436,37 @@ export const setSelection =
       },
     ]);
   };
+
+export const listenForParentSurveySubmit = (
+  surveyId: string | undefined,
+  dispatch: Dispatch<any>,
+  onSubmitActivity: (
+    attemptGuid: string,
+    partResponses: PartResponse[],
+  ) => Promise<EvaluationResponse>,
+) =>
+  Maybe.maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being submitted
+      if (e.detail.id === surveyId) {
+        dispatch(submit(onSubmitActivity));
+      }
+    }),
+  );
+
+export const listenForParentSurveyReset = (
+  surveyId: string | undefined,
+  dispatch: Dispatch<any>,
+  onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
+  partInputs?: PartInputs,
+) =>
+  Maybe.maybe(surveyId).lift((surveyId) =>
+    // listen for survey submit events if the delivery element is in a survey
+    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
+      // check if this activity belongs to the survey being reset
+      if (e.detail.id === surveyId) {
+        dispatch(resetAction(onResetActivity, partInputs));
+      }
+    }),
+  );

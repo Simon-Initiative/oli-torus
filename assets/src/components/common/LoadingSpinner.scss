@@ -1,14 +1,14 @@
-@import 'authoring/mixins';
-@import 'authoring/variables';
+@use 'authoring/theme' as authoring;
+@import 'common/mixins';
 
 .LoadingSpinner {
   text-align: center;
-  color: $gray-500;
+  color: authoring.$gray-500;
 
   & i {
-    margin: "0 5px";
-    animation-duration: "1s";
-    -webkit-animation-duration: "1s";
+    margin: '0 5px';
+    animation-duration: '1s';
+    -webkit-animation-duration: '1s';
   }
 
   &.ls-small {
@@ -22,5 +22,4 @@
   &.ls-large {
     font-size: 1.2em;
   }
-
 }

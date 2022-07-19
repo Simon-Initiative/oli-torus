@@ -1,0 +1,27 @@
+.banner {
+  :global(.message) {
+    overflow: hidden;
+  }
+
+  :global(.message-enter) {
+    height: 0px;
+    opacity: 0;
+  }
+
+  :global(.message-enter):global(.message-enter-active) {
+    height: 40px;
+    opacity: 1;
+    transition: height, opacity 200ms ease-in;
+  }
+
+  :global(.message-leave) {
+    height: 40px;
+    opacity: 1;
+  }
+
+  :global(.message-leave):global(.message-leave-active) {
+    height: 0px;
+    opacity: 0;
+    transition: height, opacity 200ms ease-in;
+  }
+}

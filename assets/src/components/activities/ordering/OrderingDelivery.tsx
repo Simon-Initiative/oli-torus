@@ -10,6 +10,10 @@ import {
   activityDeliverySlice,
   ActivityDeliveryState,
   initializeState,
+  isEvaluated,
+  isSubmitted,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -20,12 +24,8 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import * as ActivityTypes from '../types';
 import { OrderingSchema } from './schema';
 
@@ -33,6 +33,8 @@ export const OrderingComponent: React.FC = () => {
   const {
     model,
     state: activityState,
+    surveyId,
+    onSubmitActivity,
     onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
@@ -55,11 +57,21 @@ export const OrderingComponent: React.FC = () => {
     ]);
   };
 
+  const defaultPartInputs = {
+    [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
+  };
+
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, defaultPartInputs);
+
     dispatch(
       initializeState(
         activityState,
-        initialPartInputs(activityState, { [DEFAULT_PART_ID]: model.choices.map((c) => c.id) }),
+        initialPartInputs(activityState, {
+          [DEFAULT_PART_ID]: model.choices.map((c) => c.id),
+        }),
+        model,
       ),
     );
 
@@ -68,7 +80,7 @@ export const OrderingComponent: React.FC = () => {
     // to be evaluated correctly.
     setTimeout(() => {
       if (activityState.parts[0].response === null) {
-        const selection = model.choices.map((choice) => choice.id);
+        const selection = (uiState.model as OrderingSchema).choices.map((choice) => choice.id);
         const input = studentInputToString(selection);
         onSaveActivity(activityState.attemptGuid, [
           {
@@ -93,17 +105,12 @@ export const OrderingComponent: React.FC = () => {
         <ResponseChoices
           choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
             .valueOr<StudentInput>([])
-            .map((id) => Choices.getOne(model, id))}
+            .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
+          disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
         <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(onResetActivity, {
-                [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
-              }),
-            )
-          }
+          onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
         <HintsDeliveryConnected partId={DEFAULT_PART_ID} />

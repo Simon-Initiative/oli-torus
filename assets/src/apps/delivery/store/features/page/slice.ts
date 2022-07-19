@@ -15,12 +15,15 @@ export interface PageState {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode: boolean;
+  isInstructor: boolean;
   enableHistory: boolean;
   showHistory: boolean;
   activityTypes: any[];
   score: number;
   graded: boolean;
   activeEverapp: string;
+  overviewURL: string;
+  finalizeGradedURL: string;
 }
 
 const initialState: PageState = {
@@ -35,12 +38,15 @@ const initialState: PageState = {
   resourceAttemptState: {},
   activityGuidMapping: {},
   previewMode: false,
+  isInstructor: false,
   enableHistory: false,
   showHistory: false,
   activityTypes: [],
   score: 0,
   graded: false,
   activeEverapp: '',
+  overviewURL: '',
+  finalizeGradedURL: '',
 };
 
 const pageSlice = createSlice({
@@ -63,8 +69,11 @@ const pageSlice = createSlice({
       state.resourceAttemptState = action.payload.resourceAttemptState;
       state.activityGuidMapping = action.payload.activityGuidMapping;
       state.previewMode = !!action.payload.previewMode;
+      state.isInstructor = !!action.payload.isInstructor;
       state.activityTypes = action.payload.activityTypes;
       state.graded = !!action.payload.graded;
+      state.overviewURL = action.payload.overviewURL;
+      state.finalizeGradedURL = action.payload.finalizeGradedURL;
 
       if (state.previewMode && !state.resourceAttemptGuid) {
         state.resourceAttemptGuid = `preview_${guid()}`;
@@ -90,6 +99,7 @@ export const selectPageTitle = createSelector(selectState, (state) => state.page
 export const selectPageSlug = createSelector(selectState, (state) => state.pageSlug);
 export const selectPageContent = createSelector(selectState, (state) => state.content);
 export const selectPreviewMode = createSelector(selectState, (state) => state.previewMode);
+export const selectIsInstructor = createSelector(selectState, (state) => state.isInstructor);
 export const selectEnableHistory = createSelector(selectState, (state) => state.enableHistory);
 export const selectShowHistory = createSelector(selectState, (state) => state.showHistory);
 export const selectResourceAttemptGuid = createSelector(
@@ -119,6 +129,15 @@ export const selectActiveEverapp = createSelector(selectState, (state) => state.
 export const selectIsLegacyTheme = createSelector(
   selectState,
   (state) => !state.content?.custom?.themeId,
+);
+
+export const selectOverviewURL = createSelector(
+  selectState,
+  (state: PageState) => state.overviewURL,
+);
+export const selectFinalizeGradedURL = createSelector(
+  selectState,
+  (state: PageState) => state.finalizeGradedURL,
 );
 
 export default pageSlice.reducer;

@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { isOperator, RuleOperator } from 'data/activities/model/rules';
 import React from 'react';
 

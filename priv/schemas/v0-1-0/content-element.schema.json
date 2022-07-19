@@ -59,6 +59,12 @@
         },
         {
           "$ref": "#/$defs/code-line"
+        },
+        {
+          "$ref": "#/$defs/formula"
+        },
+        {
+          "$ref": "#/$defs/callout"
         }
       ]
     },
@@ -71,6 +77,9 @@
           "$ref": "#/$defs/hyperlink"
         },
         {
+          "$ref": "#/$defs/citation"
+        },
+        {
           "$ref": "#/$defs/activity-link"
         },
         {
@@ -78,6 +87,15 @@
         },
         {
           "$ref": "#/$defs/input-ref"
+        },
+        {
+          "$ref": "#/$defs/image-inline"
+        },
+        {
+          "$ref": "#/$defs/formula-inline"
+        },
+        {
+          "$ref": "#/$defs/callout-inline"
         }
       ]
     },
@@ -104,10 +122,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "text": {
       "type": "object",
@@ -116,9 +131,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "text"
-      ]
+      "required": ["text"]
     },
     "input-ref": {
       "type": "object",
@@ -133,10 +146,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading": {
       "oneOf": [
@@ -173,10 +183,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading-two": {
       "type": "object",
@@ -191,10 +198,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading-three": {
       "type": "object",
@@ -209,10 +213,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading-four": {
       "type": "object",
@@ -227,10 +228,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading-five": {
       "type": "object",
@@ -245,10 +243,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "heading-six": {
       "type": "object",
@@ -263,10 +258,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "list": {
       "oneOf": [
@@ -284,30 +276,18 @@
         "type": {
           "const": "ol"
         },
-        "children": {
-          "type": "array",
-          "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/list-item"
-              },
-              {
-                "$ref": "#/$defs/list"
-              }
-            ]
-          }
-        }
-      },
-      "required": [
-        "type",
-        "children"
-      ]
-    },
-    "unordered-list": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "ul"
+        "style": {
+          "oneOf": [
+            { "const": "none" },
+            { "const": "decimal" },
+            { "const": "decimal-leading-zero" },
+            { "const": "lower-roman" },
+            { "const": "upper-roman" },
+            { "const": "lower-alpha" },
+            { "const": "upper-alpha" },
+            { "const": "lower-latin" },
+            { "const": "upper-latin" }
+          ]
         },
         "children": {
           "type": "array",
@@ -323,10 +303,37 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
+    },
+    "unordered-list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "ul"
+        },
+        "style": {
+          "oneOf": [
+            { "const": "none" },
+            { "const": "disc" },
+            { "const": "circle" },
+            { "const": "square" }
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/list-item"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["type", "children"]
     },
     "list-item": {
       "type": "object",
@@ -352,6 +359,9 @@
           "$ref": "#/$defs/image"
         },
         {
+          "$ref": "#/$defs/image-inline"
+        },
+        {
           "$ref": "#/$defs/youtube"
         },
         {
@@ -372,24 +382,43 @@
           "type": "string"
         },
         "height": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "width": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
+    },
+    "image-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "img_inline"
+        },
+        "src": {
+          "type": "string"
+        },
+        "height": {
+          "type": ["string", "number"]
+        },
+        "width": {
+          "type": ["string", "number"]
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": ["type"]
     },
     "youtube": {
       "type": "object",
@@ -401,24 +430,22 @@
           "type": "string"
         },
         "height": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "width": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "audio": {
       "type": "object",
@@ -433,12 +460,10 @@
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "webpage": {
       "type": "object",
@@ -447,27 +472,25 @@
           "const": "iframe"
         },
         "src": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "height": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "width": {
-          "type": "string"
+          "type": ["string", "number"]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": [
-        "type"
-      ]
+      "required": ["type"]
     },
     "table": {
       "type": "object",
@@ -476,7 +499,7 @@
           "const": "table"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         },
         "children": {
           "type": "array",
@@ -485,10 +508,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "table-row": {
       "type": "object",
@@ -503,10 +523,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "table-cell": {
       "anyOf": [
@@ -531,10 +548,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "table-data": {
       "type": "object",
@@ -549,11 +563,107 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
+
+    "callout": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/paragraph"
+              },
+              {
+                "$ref": "#/$defs/heading"
+              },
+              {
+                "$ref": "#/$defs/code-v1"
+              },
+              {
+                "$ref": "#/$defs/code-v2"
+              },
+              {
+                "$ref": "#/$defs/blockquote"
+              },
+              {
+                "$ref": "#/$defs/media"
+              },
+              {
+                "$ref": "#/$defs/list"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
+
+    "callout-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "callout_inline"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
+
+    "formula": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "formula"
+        },
+        "subtype": {
+          "enum": ["mathml", "latex"]
+        },
+        "src": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["type", "subtype", "src"]
+    },
+
+    "formula-inline": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "formula_inline"
+        },
+        "subtype": {
+          "enum": ["mathml", "latex"]
+        },
+        "src": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["type", "subtype", "src"]
+    },
+
     "math": {
       "type": "object",
       "properties": {
@@ -567,10 +677,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "math-line": {
       "type": "object",
@@ -585,10 +692,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "code-v1": {
       "type": "object",
@@ -600,7 +704,7 @@
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         },
         "children": {
           "type": "array",
@@ -609,11 +713,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "language",
-        "children"
-      ]
+      "required": ["type", "language", "children"]
     },
     "code-line": {
       "type": "object",
@@ -628,10 +728,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "code-v2": {
       "type": "object",
@@ -646,14 +743,10 @@
           "type": "string"
         },
         "caption": {
-          "type": "string"
+          "type": ["string", "array"]
         }
       },
-      "required": [
-        "type",
-        "code",
-        "language"
-      ]
+      "required": ["type", "code", "language"]
     },
     "blockquote": {
       "type": "object",
@@ -668,10 +761,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "children"
-      ]
+      "required": ["type", "children"]
     },
     "hyperlink": {
       "type": "object",
@@ -692,11 +782,7 @@
           }
         }
       },
-      "required": [
-        "type",
-        "href",
-        "children"
-      ]
+      "required": ["type", "href", "children"]
     },
     "activity-link": {
       "type": "object",
@@ -717,11 +803,28 @@
           }
         }
       },
-      "required": [
-        "type",
-        "idref",
-        "children"
-      ]
+      "required": ["type", "idref", "children"]
+    },
+    "citation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "cite"
+        },
+        "bibref": {
+          "type": ["string", "number"]
+        },
+        "slug": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": ["type", "bibref", "children"]
     },
     "popup": {
       "type": "object",
@@ -730,11 +833,7 @@
           "const": "popup"
         },
         "trigger": {
-          "enum": [
-            "hover",
-            "click",
-            "focus"
-          ]
+          "enum": ["hover", "click", "focus"]
         },
         "content": {
           "$ref": "#/$defs/rich-text"

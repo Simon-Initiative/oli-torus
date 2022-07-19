@@ -5,6 +5,9 @@
   "description": "An activity reference",
   "type": "object",
   "properties": {
+    "id": {
+      "type": "string"
+    },
     "type": {
       "const": "activity-reference"
     },
@@ -13,14 +16,10 @@
         "integer",
         "string"
       ]
-    },
-    "purpose": {
-      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     }
   },
   "required": [
     "type",
-    "activity_id",
-    "purpose"
+    "activity_id"
   ]
 }

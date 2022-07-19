@@ -33,7 +33,7 @@ export const BottomPanel: React.FC<BottomPanelProps> = (props: BottomPanelProps)
     if (currentRule === undefined) return;
     if (currentRule !== 'initState') {
       setCorrect(currentRule.correct);
-      setIsDisabled(currentRule.disabled);
+      setIsDisabled(!!currentRule.disabled);
     }
   }, [currentRule]);
 

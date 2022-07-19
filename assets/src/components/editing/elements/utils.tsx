@@ -41,3 +41,10 @@ export const InlineChromiumBugfix = () => (
     ${String.fromCodePoint(160) /* Non-breaking space */}
   </span>
 );
+
+export function elementBorderStyle(active: boolean): React.CSSProperties {
+  return {
+    border: active ? '3px solid blue' : '3px solid transparent',
+    borderRadius: 3,
+  };
+}

@@ -17,7 +17,6 @@ export const updatePart = createAsyncThunk(
   async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
     const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
     const activity = selectActivityById(rootState, payload.activityId);
-
     const undo: any[] = [];
     const redo: any[] = [];
 
@@ -32,24 +31,32 @@ export const updatePart = createAsyncThunk(
       throw new Error(`Part: ${payload.partId} not found in Activity: ${payload.activityId}`);
     }
 
+    // need to also update the authoring parts list
+    const authorPart = activityClone.authoring.parts.find(
+      (part: any) => part.id === payload.partId && !part.inherited,
+    );
+
+    /* console.log('updatePart: ', { activity, authorPart, partDef, payload }); */
+
     if (payload.changes.id) {
-      // need to also update the authoring parts list
-      const authorPart = activityClone.authoring.parts.find(
-        (part: any) => part.id === payload.partId && !part.inherited,
-      );
       const sequence = selectSequence(rootState);
       const sequenceEntry = findInSequenceByResourceId(sequence, activityClone.id);
       const activitySequenceId = sequenceEntry?.custom.sequenceId;
       if (!authorPart && partDef.type !== 'janus-text-flow' && partDef.type !== 'janus-image') {
         // this shouldn't happen, but maybe it was missing?? add it
-        activityClone.authoring.parts.push({
+        const authorPartConfig = {
           id: payload.changes.id,
           inherited: false,
           type: partDef.type,
           owner: activitySequenceId,
-        });
+          gradingApproach: partDef.custom.requiresManualGrading ? 'manual' : 'automatic',
+          outOf: partDef.custom.maxScore || 1,
+        };
+        activityClone.authoring.parts.push(authorPartConfig);
       } else if (authorPart) {
         authorPart.id = payload.changes.id;
+        authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
+        authorPart.outOf = partDef.custom.maxScore || 1;
       }
 
       // if this item has any children in the sequence, update them too
@@ -83,6 +90,48 @@ export const updatePart = createAsyncThunk(
     // merge so that a partial of {custom: {x: 1, y: 1}} will not overwrite the entire custom object
     // TODO: payload.changes is Partial<Part>
     merge(partDef, payload.changes);
+
+    if (authorPart) {
+      authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
+      authorPart.outOf = partDef.custom.maxScore || 1;
+    }
+
+    await dispatch(saveActivity({ activity: activityClone, undoable: false }));
+
+    undo.unshift(saveActivity({ activity, undoable: false }));
+    redo.unshift(saveActivity({ activity: activityClone, undoable: false }));
+
+    dispatch(
+      createUndoAction({
+        undo,
+        redo,
+      }),
+    );
+  },
+);
+
+export const updatePartWithCorrectExpression = createAsyncThunk(
+  `${PartsSlice}/updatePart`,
+  async (payload: { activityId: string; partId: string; changes: any }, { getState, dispatch }) => {
+    const rootState = getState() as any; // any because Activity slice is shared with delivery and things got funky with typescript...
+    const activity = selectActivityById(rootState, payload.activityId);
+    const undo: any[] = [];
+    const redo: any[] = [];
+
+    if (!activity) {
+      throw new Error(`Activity: ${payload.activityId} not found!`);
+    }
+    const activityClone = clone(activity);
+    const partDef = activityClone.content.partsLayout.find(
+      (part: any) => part.id === payload.partId,
+    );
+    if (!partDef) {
+      throw new Error(`Part: ${payload.partId} not found in Activity: ${payload.activityId}`);
+    }
+
+    if (payload.changes.formattedExpression && partDef?.custom && payload.changes?.part?.custom) {
+      partDef.custom = payload.changes.part.custom;
+    }
 
     await dispatch(saveActivity({ activity: activityClone, undoable: false }));
 

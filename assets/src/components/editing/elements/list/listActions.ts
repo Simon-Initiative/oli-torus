@@ -2,9 +2,16 @@ import { handleOutdent, handleIndent } from 'components/editing/editor/handlers/
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Command, CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';
-import { isActive, isActiveList, isTopLevel } from 'components/editing/utils';
+import { isActive, isPropActive, isTopLevel } from 'components/editing/slateUtils';
+
 import { Transforms, Editor, Element } from 'slate';
 import guid from 'utils/guid';
+import {
+  OrderedListStyle,
+  OrderedListStyles,
+  UnorderdListStyles,
+  UnorderedListStyle,
+} from '../../../../data/content/model/elements/types';
 
 const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
   return {
@@ -71,6 +78,57 @@ export const toggleOrderedList: CommandDescription = {
   active: (editor) => isActive(editor, ['ol']),
 };
 
+const listStyleLabels: Record<OrderedListStyle | UnorderedListStyle, string> = {
+  none: 'No Bullet',
+  decimal: 'Decimal - 1',
+  'decimal-leading-zero': 'Decimal w/ Zero - 01',
+  'lower-roman': 'Lower Roman - i',
+  'upper-roman': 'Upper Roman - I',
+  'lower-alpha': 'Lower Alpha - a',
+  'upper-alpha': 'Upper Alpha - A',
+  // 'lower-latin': 'Lower Latin - a', // These are the same as -alpha, no need to have both in the menu
+  // 'upper-latin': 'Upper Latin - A', // but we do support rendering both for legacy content.
+  disc: 'Disc - •',
+  circle: 'Circle - ○',
+  square: 'Square - ■',
+};
+
+export const unorderedListStyleCommands = UnorderdListStyles.map((styleType: string) =>
+  createButtonCommandDesc({
+    icon: 'list_alt',
+    description: listStyleLabels[styleType],
+    active: (editor) => isPropActive(editor, 'ul', { style: styleType }),
+    execute: (_ctx, editor) => {
+      const [, at] = [...Editor.nodes(editor)][1];
+      Transforms.setNodes(
+        editor,
+        { style: styleType },
+        { at, match: (e) => Element.isElement(e) && isList(e), mode: 'all' },
+      );
+    },
+  }),
+);
+
+// The two -latin options don't need menu options since they are the same as -alpha
+const notLatinOption = (styleType: string) => styleType.indexOf('latin') === -1;
+
+export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption).map(
+  (styleType: string) =>
+    createButtonCommandDesc({
+      icon: 'list_alt',
+      description: listStyleLabels[styleType],
+      active: (editor) => isPropActive(editor, 'ol', { style: styleType }),
+      execute: (_ctx, editor) => {
+        const [, at] = [...Editor.nodes(editor)][1];
+        Transforms.setNodes(
+          editor,
+          { style: styleType },
+          { at, match: (e) => Element.isElement(e) && isList(e), mode: 'all' },
+        );
+      },
+    }),
+);
+
 export const listSettings = [
   createButtonCommandDesc({
     icon: 'format_list_bulleted',
@@ -80,7 +138,7 @@ export const listSettings = [
       const [, at] = [...Editor.nodes(editor)][1];
       Transforms.setNodes(
         editor,
-        { type: 'ul' },
+        { type: 'ul', style: undefined },
         { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'all' },
       );
     },
@@ -93,7 +151,7 @@ export const listSettings = [
       const [, at] = [...Editor.nodes(editor)][1];
       Transforms.setNodes(
         editor,
-        { type: 'ol' },
+        { type: 'ol', style: undefined },
         { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'all' },
       );
     },
@@ -111,3 +169,9 @@ export const listSettings = [
     execute: (_ctx, editor) => handleIndent(editor),
   }),
 ];
+
+const isList = (e: Element): boolean => ['ul', 'ol'].indexOf(e.type) !== -1;
+
+function isActiveList(editor: Editor) {
+  return isActive(editor, ['ul', 'ol']);
+}

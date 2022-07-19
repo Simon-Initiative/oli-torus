@@ -1,0 +1,113 @@
+import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { Manifest } from 'components/activities/types';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Provider } from 'react-redux';
+import { configureStore } from 'state/store';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { WrappedMonaco } from '../common/variables/WrappedMonaco';
+import { CustomDnDActions } from './actions';
+import { CustomDnDSchema } from './schema';
+import { PartManager } from './PartManager';
+import { AnswerKey } from './AnswerKey';
+import { HintsEditor } from './HintsEditor';
+
+const store = configureStore();
+
+const CustomDnd = () => {
+  const { dispatch, model, editMode } = useAuthoringElementContext<CustomDnDSchema>();
+  const [currentPart, setCurrentPart] = React.useState<string>(model.authoring.parts[0].id);
+
+  return (
+    <>
+      <div className="mt-3 mb-3" />
+      <Stem />
+      <div className="mt-3 mb-3" />
+      <PartManager
+        model={model}
+        editMode={editMode}
+        currentPartId={currentPart}
+        onSelectPart={(partId) => setCurrentPart(partId)}
+        onAddPart={() => dispatch(CustomDnDActions.addPart())}
+        onRemovePart={(id) => {
+          if (model.authoring.parts.length > 1) {
+            const remainingParts = model.authoring.parts.filter((p) => p.id !== id);
+            setCurrentPart(remainingParts[0].id);
+            dispatch(CustomDnDActions.removePart(id));
+          }
+        }}
+        onEditPart={(old, newId) => {
+          dispatch(CustomDnDActions.editPart(old, newId));
+          setCurrentPart(newId);
+        }}
+      />
+      <div className="mb-3" />
+      <TabbedNavigation.Tabs>
+        <TabbedNavigation.Tab label={`Answer Key (${currentPart})`}>
+          <AnswerKey partId={currentPart} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label={`Hints (${currentPart})`}>
+          <HintsEditor partId={currentPart} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="CSS">
+          <div className="alert alert-info" role="alert">
+            Define custom CSS styles here. Do not include the outer <code>&lt;style&gt;</code>{' '}
+            element. Background image URLs must contain the full URL to the image.
+          </div>
+          <WrappedMonaco
+            model={model.layoutStyles}
+            editMode={editMode}
+            language="CSS"
+            onEdit={(s) => dispatch(CustomDnDActions.editLayoutStyles(s))}
+          />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Target Area">
+          <div className="alert alert-info" role="alert">
+            Every part identifier must have a corresponding <code>&lt;div&gt;</code> element whose{' '}
+            <code>input_ref</code> attribute is set to that part identifier. Each of these{' '}
+            <code>&lt;div&gt;</code> elements must also have <code>target</code> set a CSS class
+            name.
+          </div>
+          <WrappedMonaco
+            model={model.targetArea}
+            editMode={editMode}
+            language="HTML"
+            onEdit={(s) => dispatch(CustomDnDActions.editTargetArea(s))}
+          />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Initiators">
+          <div className="alert alert-info" role="alert">
+            For each possible initiator identifier (the things students will drag) define a{' '}
+            <code>&lt;div&gt;</code> element whose <code>input_val</code> attribute is set to that
+            initiator identifier. Each of these <code>&lt;div&gt;</code> elements must also have{' '}
+            <code>initiator</code> set a CSS class name.
+          </div>
+          <WrappedMonaco
+            model={model.initiators}
+            editMode={editMode}
+            language="HTML"
+            onEdit={(s) => dispatch(CustomDnDActions.editInitiators(s))}
+          />
+        </TabbedNavigation.Tab>
+      </TabbedNavigation.Tabs>
+    </>
+  );
+};
+
+export class CustomDnDAuthoring extends AuthoringElement<CustomDnDSchema> {
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<CustomDnDSchema>) {
+    ReactDOM.render(
+      <Provider store={store}>
+        <AuthoringElementProvider {...props}>
+          <CustomDnd />
+        </AuthoringElementProvider>
+      </Provider>,
+      mountPoint,
+    );
+  }
+}
+// eslint-disable-next-line
+const manifest = require('./manifest.json') as Manifest;
+window.customElements.define(manifest.authoring.element, CustomDnDAuthoring);

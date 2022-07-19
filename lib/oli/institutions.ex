@@ -305,6 +305,21 @@ defmodule Oli.Institutions do
   def get_deployment!(id), do: Repo.get!(Deployment, id)
 
   @doc """
+  Returns true if the institution with a given id has any associated deployments
+  """
+  def institution_has_deployments?(institution_id) do
+    count =
+      from(d in Deployment, where: d.institution_id == ^institution_id)
+      |> Repo.aggregate(:count)
+
+    if count > 0 do
+      true
+    else
+      false
+    end
+  end
+
+  @doc """
   Creates a deployment.
 
   ## Examples
@@ -502,6 +517,7 @@ defmodule Oli.Institutions do
   def find_or_create_institution_by_normalized_url(institution_attrs) do
     normalized_url =
       institution_attrs[:institution_url]
+      |> String.downcase()
       |> String.replace(~r/^https?\:\/\//i, "")
       |> String.replace_trailing("/", "")
 

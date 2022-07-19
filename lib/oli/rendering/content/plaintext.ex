@@ -19,6 +19,14 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Many students wonder]: ", next.(), " "]
   end
 
+  def callout(%Oli.Rendering.Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
+  def callout_inline(%Oli.Rendering.Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
   def p(%Context{} = _context, next, _) do
     [next.(), " "]
   end
@@ -52,6 +60,14 @@ defmodule Oli.Rendering.Content.Plaintext do
   end
 
   def img(%Context{} = _context, _, _) do
+    ["[image with missing src] "]
+  end
+
+  def img_inline(%Context{} = _context, _, %{"src" => src}) do
+    ["[image with src #{src}] "]
+  end
+
+  def img_inline(%Context{} = _context, _, _) do
     ["[image with missing src] "]
   end
 
@@ -107,6 +123,18 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[List item]: ", next.(), " "]
   end
 
+  def formula(%Oli.Rendering.Context{} = _context, nil, %{"src" => src}) do
+    ["[Formula]: ", src, " "]
+  end
+
+  def formula(%Oli.Rendering.Context{} = _context, next, _) do
+    ["[Formula]: ", next.(), " "]
+  end
+
+  def formula_inline(context, next, content) do
+    formula(context, next, content)
+  end
+
   def math(%Context{} = _context, next, _) do
     ["[Math]: ", next.(), " "]
   end
@@ -133,6 +161,10 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def a(%Context{} = _context, next, _) do
     ["[link with missing href ", next.(), " "]
+  end
+
+  def cite(%Context{} = _context, next, _) do
+    [next.(), " "]
   end
 
   def popup(%Context{} = _context, next, _) do

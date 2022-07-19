@@ -1,4 +1,10 @@
-import { ActivityState, makeContent, makeFeedback, RichText } from 'components/activities/types';
+import {
+  ActivityState,
+  makeContent,
+  makeFeedback,
+  RichText,
+  PartState,
+} from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
@@ -9,13 +15,39 @@ interface Props {
   attemptState: ActivityState;
   context: WriterContext;
 }
+
+export function renderPartFeedback(partState: PartState, context: WriterContext) {
+  if (!partState.score && !partState.outOf) {
+    return null;
+  }
+  const errorText = makeContent('There was an error processing this response');
+  const error = partState.error;
+  const feedback = partState.feedback?.content;
+  return (
+    <Component
+      key={partState.partId}
+      resultClass={resultClass(partState.score, partState.outOf, partState.error)}
+      score={partState.score}
+      outOf={partState.outOf}
+    >
+      <HtmlContentModelRenderer
+        content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
+        context={context}
+      />
+    </Component>
+  );
+}
+
 export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
   const { score, outOf, parts } = attemptState;
   if (!shouldShow || outOf === null || score === null) {
     return null;
   }
 
-  const errorText = makeContent('There was an error processing this response');
+  if (parts.length === 1) {
+    return renderPartFeedback(parts[0], context);
+  }
+
   const totalScoreText: RichText = [
     {
       type: 'p',
@@ -24,48 +56,12 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     },
   ];
 
-  if (parts.length === 1) {
-    const error = parts[0].error;
-    const feedback = parts[0].feedback?.content;
-    return (
-      <Component
-        resultClass={resultClass(score, outOf, parts[0].error)}
-        score={score}
-        outOf={outOf}
-      >
-        <HtmlContentModelRenderer
-          content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
-          context={context}
-        />
-      </Component>
-    );
-  }
-
   return (
     <>
       <Component resultClass={resultClass(score, outOf, undefined)} score={score} outOf={outOf}>
         <HtmlContentModelRenderer content={totalScoreText} context={context} />
       </Component>
-      {parts.map((partState) => {
-        if (!partState.score && !partState.outOf) {
-          return null;
-        }
-        const error = partState.error;
-        const feedback = partState.feedback?.content;
-        return (
-          <Component
-            key={partState.partId}
-            resultClass={resultClass(partState.score, partState.outOf, partState.error)}
-            score={partState.score}
-            outOf={partState.outOf}
-          >
-            <HtmlContentModelRenderer
-              content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
-              context={context}
-            />
-          </Component>
-        );
-      })}
+      {parts.map((partState) => renderPartFeedback(partState, context))}
     </>
   );
 };

@@ -1,6 +1,6 @@
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { ButtonContent } from 'components/editing/toolbar/buttons/shared';
-import { useToolbar } from 'components/editing/toolbar/useToolbar';
+import { ButtonContent } from 'components/editing/toolbar/buttons/ButtonContent';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
@@ -16,7 +16,7 @@ export const CommandButton = (props: Props) => {
   return (
     <button
       className={classNames('editorToolbar__button', active?.(editor) && 'active')}
-      onClick={(_e) => {
+      onMouseDown={(_e) => {
         command.execute(context, editor);
         closeSubmenus();
       }}

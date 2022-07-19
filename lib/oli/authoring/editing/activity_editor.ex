@@ -5,6 +5,10 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   """
 
   import Oli.Authoring.Editing.Utils
+  import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Resources
   alias Oli.Resources.Revision
   alias Oli.Authoring.Editing.PageEditor
@@ -19,8 +23,8 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Activities.Transformers
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster
-
-  import Ecto.Query, warn: false
+  alias Oli.Resources.ContentMigrator
+  alias Oli.Utils.SchemaResolver
 
   @doc """
   Retrieves a list of activity resources.
@@ -298,7 +302,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
           activity ->
             get_latest_revision(publication.id, activity.id)
-            |> maybe_create_new_revision(publication, activity, author.id, update)
+            |> maybe_create_new_revision(publication, project, activity, author.id, update)
             |> update_revision(update, project.slug)
         end
       end)
@@ -341,6 +345,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     result =
       with {:ok, {author, project, _publication}} <-
              authorize_edit(project_slug, author_email, update),
+           :ok <- validate_activity_content_json(update),
            {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
@@ -360,7 +365,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
             # to resolve this activity via the historical slugs would fail.
             {:updated} ->
               get_latest_revision(publication.id, activity.id)
-              |> maybe_create_new_revision(publication, activity, author.id, update)
+              |> maybe_create_new_revision(publication, project, activity, author.id, update)
               |> update_revision(update, project.slug)
               |> possibly_release_lock(project, publication, resource, author, update)
 
@@ -390,6 +395,40 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     previous
   end
+
+  defp validate_activity_content_json(activity) do
+    case activity_content(activity) do
+      nil ->
+        :ok
+
+      json ->
+        schema = SchemaResolver.schema("activity-content.schema.json")
+
+        case ExJsonSchema.Validator.validate(schema, json) do
+          :ok ->
+            :ok
+
+          {:error, errors} ->
+            error_details = [
+              schema: "activity-content.schema.json",
+              activity: activity,
+              errors: errors
+            ]
+
+            Logger.error("Activity content JSON invalid #{Kernel.inspect(error_details)}")
+            {:error, errors}
+        end
+    end
+  end
+
+  defp activity_content(%{"content" => content}), do: content
+  defp activity_content(%{content: content}), do: content
+  defp activity_content(_), do: nil
+
+  # if objectives to attach are provided, attach them to all parts
+  defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{}, do: attach_objectives_to_all_parts(model, objectives_to_attach)
+  # if the objectives map is already built and can be used directly
+  defp attach_objectives(_model, _objectives = [], raw_objectives), do: {:ok, raw_objectives}
 
   # takes the model of the activity to be created and a list of objective ids and
   # creates a map of all part ids to objective resource ids
@@ -436,10 +475,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   # create a new revision only if the slug will change due to this update
-  defp maybe_create_new_revision(previous, publication, activity, author_id, update) do
+  defp maybe_create_new_revision(previous, publication, project, activity, author_id, update) do
     title = Map.get(update, "title", previous.title)
 
-    if title != previous.title do
+    needs_new_revision = Oli.Publishing.needs_new_revision_for_edit?(project.slug, previous.id)
+
+    if title != previous.title or needs_new_revision do
       create_new_revision(previous, publication, activity, author_id)
     else
       previous
@@ -552,7 +593,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
   Returns:
 
-  .`{:ok, {%Activity{}, transformed_content}}` when the creation processes succeeds
+  .`{:ok, {%Revision{}, transformed_content}}` when the creation processes succeeds
   .`{:error, {:not_found}}` if the project, resource, or user cannot be found
   .`{:error, {:not_authorized}}` if the user is not authorized to create this activity
   .`{:error, {:error}}` unknown error
@@ -562,7 +603,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, objectives, scope \\ "embedded") do
+  def create(project_slug, activity_type_slug, author, model, all_parts_objectives, scope \\ "embedded", title \\ nil, raw_objectives \\ %{}) do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -570,13 +611,13 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, activity_type} <-
              Activities.get_registration_by_slug(activity_type_slug) |> trap_nil(),
-           {:ok, attached_objectives} <- attach_objectives_to_all_parts(model, objectives),
+           {:ok, objectives} <- attach_objectives(model, all_parts_objectives, raw_objectives),
            {:ok, %{content: content} = activity} <-
              Resources.create_new(
                %{
-                 title: activity_type.title,
+                 title: title || activity_type.title,
                  scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("total"),
-                 objectives: attached_objectives,
+                 objectives: objectives,
                  author_id: author.id,
                  content: model,
                  scope: scope,
@@ -596,9 +637,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
                resource_id: activity.resource_id,
                revision_id: activity.id
              }) do
-        case Transformers.apply_transforms(content) do
-          {:ok, transformed} -> {activity, transformed}
-          {:no_effect, original} -> {activity, original}
+        case Transformers.apply_transforms([activity]) do
+          [{:ok, nil}] -> {activity, content}
+          [{:ok, transformed}] -> {activity, transformed}
           _ -> {activity, nil}
         end
       else
@@ -645,12 +686,12 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
          {:ok,
           %{
             activity_type: activity_type,
-            content: model,
             title: title,
             objectives: objectives,
             tags: tags
-          }} <-
-           get_latest_revision(publication.id, activity_id) |> trap_nil() do
+          } = revision} <-
+           get_latest_revision(publication.id, activity_id) |> trap_nil(),
+         {:ok, %{content: model}} <- maybe_migrate_revision_content(revision) do
       context = %ActivityContext{
         authoringScript: activity_type.authoring_script,
         authoringElement: activity_type.authoring_element,
@@ -683,8 +724,11 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
       |> Enum.reduce(%{}, fn t, m -> Map.put(m, t.id, t) end)
 
     AuthoringResolver.from_resource_id(project_slug, activity_ids)
+    |> Enum.filter(fn r -> !is_nil(r) end)
     |> Enum.map(fn r ->
       activity_type = Map.get(type_by_id, r.activity_type_id)
+
+      {:ok, r} = maybe_migrate_revision_content(r)
 
       %ActivityContext{
         authoringScript: activity_type.authoring_script,
@@ -707,5 +751,15 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   def get_latest_revision(publication_id, resource_id) do
     Publishing.get_published_revision(publication_id, resource_id)
     |> Repo.preload([:activity_type])
+  end
+
+  defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
+    case ContentMigrator.migrate(content, :activity, to: :latest) do
+      {:migrated, migrated_content} ->
+        {:ok, %Revision{revision | content: migrated_content}}
+
+      {:skipped, _content} ->
+        {:ok, revision}
+    end
   end
 end

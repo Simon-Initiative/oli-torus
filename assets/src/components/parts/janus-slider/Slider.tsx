@@ -8,6 +8,7 @@ import {
 import { contexts } from '../../../types/applicationContext';
 import { PartComponentProps } from '../types/parts';
 import { SliderModel } from './schema';
+
 import './Slider.scss';
 
 const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
@@ -164,6 +165,9 @@ const Slider: React.FC<PartComponentProps<SliderModel>> = (props) => {
               const sCssClass = changes[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
+              }
+              if (payload.mode === contexts.REVIEW) {
+                setIsSliderEnabled(false);
               }
             }
             break;

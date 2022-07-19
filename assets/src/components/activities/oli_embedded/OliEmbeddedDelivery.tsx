@@ -2,15 +2,15 @@ import { configureStore } from 'state/store';
 import React, { useEffect, useState } from 'react';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import * as ActivityTypes from 'components/activities/types';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from 'components/activities/DeliveryElement';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
+  activityDeliverySlice,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
+} from 'data/activities/DeliveryState';
 
 interface Context {
   attempt_guid: string;
@@ -22,13 +22,22 @@ interface Context {
   part_ids: string;
 }
 
-const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
-  const { state: activityState } = useDeliveryElementContext<OliEmbeddedModelSchema>();
+const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
+  const {
+    state: activityState,
+    surveyId,
+    onSubmitActivity,
+    onResetActivity,
+  } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
   const [context, setContext] = useState<Context>();
   const [preview, setPreview] = useState<boolean>(false);
 
+  const dispatch = useDispatch();
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity);
+
     fetchContext();
     setInterval(() => {
       const iframe: HTMLIFrameElement = document.querySelector(

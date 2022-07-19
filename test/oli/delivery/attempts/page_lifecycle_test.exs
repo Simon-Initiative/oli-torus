@@ -135,11 +135,13 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
       attempt1: attempt1,
       attempt2: attempt2
     } do
+      datashop_session_id_user1 = UUID.uuid4()
+
       {:ok, %ResourceAccess{} = resource_access1} =
-        PageLifecycle.finalize(section.slug, attempt1.attempt_guid)
+        PageLifecycle.finalize(section.slug, attempt1.attempt_guid, datashop_session_id_user1)
 
       {:ok, %ResourceAccess{} = resource_access2} =
-        PageLifecycle.finalize(section.slug, attempt2.attempt_guid)
+        PageLifecycle.finalize(section.slug, attempt2.attempt_guid, datashop_session_id_user1)
 
       ra1 = Core.get_resource_attempt_by(attempt_guid: attempt1.attempt_guid)
       ra2 = Core.get_resource_attempt_by(attempt_guid: attempt2.attempt_guid)

@@ -7,7 +7,7 @@ defmodule OliWeb.InstitutionController do
   alias Oli.Institutions.Institution
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.Breadcrumb
   alias Oli.Branding
 
   require Logger
@@ -65,7 +65,6 @@ defmodule OliWeb.InstitutionController do
       institutions: institutions,
       pending_registrations: pending_registrations,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       lti_config_defaults: Predefined.lti_config_defaults(),
       world_universities_and_domains: Predefined.world_universities_and_domains()
     )
@@ -77,7 +76,6 @@ defmodule OliWeb.InstitutionController do
     render_institution_page(conn, "new.html",
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       breadcrumbs: root_breadcrumbs() |> named("New"),
       available_brands: available_brands()
     )
@@ -101,7 +99,6 @@ defmodule OliWeb.InstitutionController do
           changeset: changeset,
           country_codes: Predefined.country_codes(),
           breadcrumbs: root_breadcrumbs() |> named("New"),
-          timezones: Predefined.timezones(),
           available_brands: available_brands()
         )
     end
@@ -125,7 +122,6 @@ defmodule OliWeb.InstitutionController do
       institution: institution,
       changeset: changeset,
       country_codes: Predefined.country_codes(),
-      timezones: Predefined.timezones(),
       available_brands: available_brands(id)
     )
   end
@@ -145,19 +141,27 @@ defmodule OliWeb.InstitutionController do
           institution: institution,
           changeset: changeset,
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           available_brands: available_brands(id)
         )
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    institution = Institutions.get_institution!(id)
-    {:ok, _institution} = Institutions.delete_institution(institution)
+    if Institutions.institution_has_deployments?(id) do
+      conn
+      |> put_flash(
+        :error,
+        "Institution with deployments cannot be deleted. Please move or delete all associated deployments and try again"
+      )
+      |> redirect(to: Routes.institution_path(conn, :show, id))
+    else
+      institution = Institutions.get_institution!(id)
+      {:ok, _institution} = Institutions.delete_institution(institution)
 
-    conn
-    |> put_flash(:info, "Institution deleted")
-    |> redirect(to: Routes.institution_path(conn, :index))
+      conn
+      |> put_flash(:info, "Institution deleted")
+      |> redirect(to: Routes.institution_path(conn, :index))
+    end
   end
 
   def approve_registration(
@@ -169,10 +173,11 @@ defmodule OliWeb.InstitutionController do
 
     # handle the case where deployment_id is nil in the html form, causing this attr
     # to be and empty string
-    deployment_id = case pending_registration_attrs["deployment_id"] do
-      "" -> nil
-      deployment_id -> deployment_id
-    end
+    deployment_id =
+      case pending_registration_attrs["deployment_id"] do
+        "" -> nil
+        deployment_id -> deployment_id
+      end
 
     case Institutions.get_pending_registration(issuer, client_id, deployment_id) do
       nil ->

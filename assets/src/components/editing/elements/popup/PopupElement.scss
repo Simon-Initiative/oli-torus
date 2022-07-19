@@ -1,7 +1,7 @@
-@use 'delivery/variables' as delivery;
+@use 'authoring/theme' as authoring;
 
 .popup__anchorText {
-  color: delivery.$orange;
+  color: authoring.$orange;
   font-style: italic;
   cursor: pointer;
 }

@@ -4,6 +4,7 @@ defmodule OliWeb.Pow.UserRoutes do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
 
   @impl true
@@ -26,7 +27,10 @@ defmodule OliWeb.Pow.UserRoutes do
     |> request_path_or(
       case conn.params do
         %{"user" => %{"section" => section_slug}} ->
-          Routes.pow_session_path(conn, :new, section: section_slug)
+          case Sections.get_section_by_slug(section_slug) do
+            %Section{skip_email_verification: true} -> Routes.delivery_path(conn, :show_enroll, section_slug)
+            _ -> Routes.pow_session_path(conn, :new, section: section_slug)
+          end
 
         _ ->
           Routes.pow_session_path(conn, :new)

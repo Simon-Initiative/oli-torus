@@ -61,6 +61,11 @@ defmodule OliWeb.Workspace.AccountDetailsLive do
       </Group>
       <Group label="Preferences" description="Adjust your authoring preferences">
         {render_preferences(assigns)}
+
+        <div class="my-4">
+          <div class="mb-1">Dark Mode</div>
+          <div id="theme-toggle" phx-hook="ThemeToggle" phx-update="ignore"></div>
+        </div>
       </Group>
     </Groups>
     """

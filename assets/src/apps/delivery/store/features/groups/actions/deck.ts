@@ -3,7 +3,10 @@ import { CapiVariableTypes } from 'adaptivity/capi';
 import { templatizeText } from 'adaptivity/scripting';
 import { handleValueExpression } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { ActivityState } from 'components/activities/types';
-import { getBulkActivitiesForAuthoring } from 'data/persistence/activity';
+import {
+  getBulkActivitiesForAuthoring,
+  getBulkActivitiesForDelivery,
+} from 'data/persistence/activity';
 import {
   getBulkAttemptState,
   getPageAttemptState,
@@ -26,10 +29,15 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { setLessonEnd } from '../../adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  setInitPhaseComplete,
+  setLessonEnd,
+} from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectIsInstructor,
   selectNavigationSequence,
   selectPreviewMode,
   selectResourceAttemptGuid,
@@ -44,6 +52,7 @@ import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
+    thunkApi.dispatch(setInitPhaseComplete(false));
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -52,10 +61,12 @@ export const initializeActivity = createAsyncThunk(
     const currentSequenceId = sequence.find((entry) => entry.activity_id === activityId)?.custom
       .sequenceId;
     if (!currentSequenceId) {
-      throw new Error(`Activity ${activityId} not found in sequence!`);
+      throw new Error(`deck::initializeActivity - Activity ${activityId} not found in sequence!`);
     }
     const currentActivity = selectCurrentActivity(rootState);
     const currentActivityTree = selectCurrentActivityTree(rootState);
+
+    const isHistoryMode = selectHistoryNavigationActivity(rootState);
 
     /* console.log('CAT', { currentActivityTree, currentActivity }); */
     // bind all parent parts to current activity
@@ -71,13 +82,21 @@ export const initializeActivity = createAsyncThunk(
             const instance = new Klass() as any;
             if (instance.getAdaptivitySchema) {
               const variables = await instance.getAdaptivitySchema({ currentModel: part.custom });
-              // for each key in variables create a ApplyStateOperation with "bind to" for the current activity
+              // for each key in variables create a ApplyStateOperation with "anchor to" for the current activity
               for (const key in variables) {
                 const target = `${currentSequenceId}|stage.${part.id}.${key}`;
                 const operator = 'anchor to';
                 const value = `${ancestor.id}|stage.${part.id}.${key}`;
-                const op: ApplyStateOperation = { target, operator, value, type: variables[key] };
-                syncOps.push(op);
+                // we don't need to apply binding if both the target & value are same
+                if (target !== value) {
+                  const op: ApplyStateOperation = {
+                    target,
+                    operator,
+                    value,
+                    type: variables[key],
+                  };
+                  syncOps.push(op);
+                }
               }
             }
           }
@@ -163,8 +182,15 @@ export const initializeActivity = createAsyncThunk(
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
     const globalizedInitState = initState.map((s: any) => {
+      // do this first so that *all* can have their values processed
+      let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
+      modifiedValue =
+        typeof modifiedValue === 'string'
+          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
+          : modifiedValue;
+
       if (s.target.indexOf('stage.') !== 0) {
-        return { ...s };
+        return { ...s, value: modifiedValue };
       }
       const [, targetPart] = s.target.split('.');
       const ownerActivity = currentActivityTree?.find(
@@ -173,18 +199,19 @@ export const initializeActivity = createAsyncThunk(
       if (s.type === CapiVariableTypes.MATH_EXPR) {
         return { ...s, target: `${ownerActivity.id}|${s.target}` };
       }
-      let modifiedValue = handleValueExpression(currentActivityTree, s.value, s.operator);
-      modifiedValue =
-        typeof modifiedValue === 'string'
-          ? templatizeText(modifiedValue, {}, defaultGlobalEnv, false)
-          : modifiedValue;
+
       if (!ownerActivity) {
         // shouldn't happen, but ignore I guess
         return { ...s, value: modifiedValue };
       }
       return { ...s, target: `${ownerActivity.id}|${s.target}`, value: modifiedValue };
     });
-    const results = bulkApplyState([...sessionOps, ...globalizedInitState], defaultGlobalEnv);
+
+    const stateOps = isHistoryMode ? globalizedInitState : [...sessionOps, ...globalizedInitState];
+
+    const results = bulkApplyState(stateOps, defaultGlobalEnv);
+    /* console.log('INIT STATE', { results, globalizedInitState, defaultGlobalEnv }); */
+
     const applyStateHasErrors = results.some((r) => r.result !== null);
     if (applyStateHasErrors) {
       console.warn('[INIT STATE] applyState has errors', results);
@@ -211,7 +238,8 @@ export const initializeActivity = createAsyncThunk(
     thunkApi.dispatch(updateExtrinsicState({ state: sessionState }));
 
     // in preview mode we don't talk to the server, so we're done
-    if (isPreviewMode) {
+    // if we're in history mode we shouldn't be writing anything
+    if (isPreviewMode || isHistoryMode) {
       const allGood = results.every(({ result }) => result === null);
       // TODO: report actual errors?
       const status = allGood ? 'success' : 'error';
@@ -331,7 +359,7 @@ export const navigateToPrevActivity = createAsyncThunk(
         previousEntry = sequence[layerIndex - 1];
       }
     } else {
-      navError = `Current Activity ${currentActivityId} not found in sequence`;
+      navError = `deck::navigateToPrevActivity - Current Activity ${currentActivityId} not found in sequence`;
     }
     if (navError) {
       throw new Error(navError);
@@ -414,7 +442,7 @@ export const navigateToActivity = createAsyncThunk(
         return;
       }
     } else {
-      navError = `Current Activity ${sequenceId} not found in sequence`;
+      navError = `deck::navigateToActivity - Current Activity ${sequenceId} not found in sequence`;
     }
     if (navError) {
       throw new Error(navError);
@@ -435,10 +463,14 @@ export const loadActivities = createAsyncThunk(
     const rootState = thunkApi.getState() as RootState;
     const sectionSlug = selectSectionSlug(rootState);
     const isPreviewMode = selectPreviewMode(rootState);
+    const isInstructor = selectIsInstructor(rootState);
     let results;
     if (isPreviewMode) {
       const activityIds = activityAttemptMapping.map((m) => m.id);
-      results = await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
+
+      results = isInstructor
+        ? await getBulkActivitiesForDelivery(sectionSlug, activityIds, isPreviewMode)
+        : await getBulkActivitiesForAuthoring(sectionSlug, activityIds);
     } else {
       const attemptGuids = activityAttemptMapping.map((m) => m.attemptGuid);
       results = await getBulkAttemptState(sectionSlug, attemptGuids);

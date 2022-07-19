@@ -59,11 +59,13 @@ defmodule OliWeb.Common.SortableTable.Table do
     <tr id={id_field(row, @model)} class={row_class} :on-click={@select} phx-value-id={id_field(row, @model)}>
     {#for column_spec <- @model.column_specs}
       <td>
-      {#if is_nil(column_spec.render_fn)}
-        {ColumnSpec.default_render_fn(column_spec, row)}
-      {#else}
-        {column_spec.render_fn.(assigns, row, column_spec)}
-      {/if}
+        <div class={if Map.get(@model.data, :fade_data, false), do: "fade-text", else: ""}>
+          {#if is_nil(column_spec.render_fn)}
+            {ColumnSpec.default_render_fn(column_spec, row)}
+          {#else}
+            {column_spec.render_fn.(assigns, row, column_spec)}
+          {/if}
+        </div>
       </td>
     {/for}
     </tr>

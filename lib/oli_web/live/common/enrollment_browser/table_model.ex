@@ -19,18 +19,16 @@ defmodule OliWeb.Common.EnrollmentBrowser.TableModel do
       }
     ]
 
-    {:ok, model} =
-      SortableTableModel.new(
-        rows: users,
-        column_specs: column_specs,
-        event_suffix: "",
-        id_field: [:id],
-        data: %{
-          context: context
-        }
-      )
-
-    {:ok, Map.put(model, :data, %{section_slug: section.slug})}
+    SortableTableModel.new(
+      rows: users,
+      column_specs: column_specs,
+      event_suffix: "",
+      id_field: [:id],
+      data: %{
+        context: context,
+        section_slug: section.slug
+      }
+    )
   end
 
   def render_name_column(

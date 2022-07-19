@@ -1,5 +1,5 @@
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import {
   ActivityDeliveryState,
   isEvaluated,
@@ -13,12 +13,12 @@ interface Props {
   disabled?: boolean;
 }
 export const SubmitButtonConnected: React.FC<Props> = ({ disabled }) => {
-  const { graded, onSubmitActivity } = useDeliveryElementContext();
+  const { graded, surveyId, onSubmitActivity } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
   return (
     <SubmitButton
-      shouldShow={!isEvaluated(uiState) && !isSubmitted(uiState) && !graded}
+      shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
       disabled={
         disabled === undefined
           ? Object.values(uiState.partState)

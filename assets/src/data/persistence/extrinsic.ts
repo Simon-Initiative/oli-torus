@@ -1,4 +1,5 @@
 import { SectionSlug } from 'data/types';
+import { batchedBuffer } from 'utils/common';
 import { makeRequest } from './common';
 
 // eslint-disable-next-line
@@ -47,10 +48,11 @@ export const readGlobalUserState = async (
   return result;
 };
 
-export const updateGlobalUserState = async (
+export const internalUpdateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
+  /* console.log('updateGlobalUserState', updates); */
   const topLevelKeys = Object.keys(updates);
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
 
@@ -73,6 +75,19 @@ export const updateGlobalUserState = async (
     await upsertGlobal(newState);
   }
   return newState;
+};
+
+const updateInterval = 300;
+const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInterval);
+
+export const updateGlobalUserState = async (
+  updates: { [topKey: string]: { [key: string]: any } },
+  useLocalStorage = false,
+) => {
+  /* console.log('updateGlobalUserState called', { updates, useLocalStorage }); */
+  const result = await batchedUpdate(updates, useLocalStorage);
+  /* console.log('updateGlobalUserState result', { result, updates }); */
+  return result;
 };
 
 export function deleteGlobal(keys: string[]) {

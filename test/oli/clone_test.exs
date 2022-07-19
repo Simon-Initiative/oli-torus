@@ -12,6 +12,23 @@ defmodule Oli.CloneTest do
   alias Oli.Authoring.Clone
   alias Oli.Authoring.Editing.PageEditor
 
+  describe "need for new revision checks" do
+    setup do
+      Oli.Seeder.base_project_with_resource2()
+    end
+
+    test "needs_new_revision_for_edit?/2", %{
+      project: project,
+      revision1: revision1,
+      author2: author2
+    } do
+      refute Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
+
+      {:ok, _} = Clone.clone_project(project.slug, author2)
+      assert Oli.Publishing.needs_new_revision_for_edit?(project.slug, revision1.id)
+    end
+  end
+
   describe "project duplication" do
     setup do
       project_map = Oli.Seeder.base_project_with_resource2()
@@ -34,6 +51,28 @@ defmodule Oli.CloneTest do
       )
     end
 
+    test "already_has_clone?/2 and existing_clones/2 works", %{
+      project: project,
+      author2: author2,
+      author: author
+    } do
+      assert Clone.already_has_clone?(project.slug, author2)
+      refute Clone.already_has_clone?(project.slug, author)
+
+      # Clone the project again for author2
+      Clone.clone_project(project.slug, author2)
+      assert Clone.already_has_clone?(project.slug, author2)
+      refute Clone.already_has_clone?(project.slug, author)
+
+      assert Clone.existing_clones(project.slug, author2) |> Enum.count() == 2
+
+      # Now clone it for the original author
+      {:ok, %{id: id}} = Clone.clone_project(project.slug, author)
+      assert Clone.already_has_clone?(project.slug, author)
+
+      assert [%{id: ^id}] = Clone.existing_clones(project.slug, author)
+    end
+
     test "clone_project/2 creates a new family", %{family: family, duplicated: duplicated} do
       assert %Family{} = duplicated.family
       assert family.title <> " Copy" == duplicated.family.title
@@ -46,6 +85,7 @@ defmodule Oli.CloneTest do
       assert duplicated.version == "1.0.0"
       assert project.family_id != duplicated.family_id
       assert duplicated.project_id == project.id
+      assert duplicated.publisher_id == project.publisher_id
     end
 
     test "clone_project/2 creates a new collaborator", %{author2: author, duplicated: duplicated} do
@@ -98,6 +138,14 @@ defmodule Oli.CloneTest do
       assert head.publication_id == cloned_publication.id
     end
 
+    test "clone_project/2 creates a new project with the author email in the name when optional field is passed in",
+         %{project: project, author2: author2} do
+      {:ok, duplicated} =
+        Clone.clone_project(project.slug, author2, author_in_project_title: true)
+
+      assert project.title <> " <#{author2.email}>" == duplicated.title
+    end
+
     test "clone_all_media_items/2 works", %{project: project, duplicated: duplicated} do
       {:ok, _dummy_media_item} =
         MediaLibrary.create_media_item(%{
@@ -136,6 +184,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -165,6 +214,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }

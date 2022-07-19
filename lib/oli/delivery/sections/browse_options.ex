@@ -4,26 +4,29 @@ defmodule Oli.Delivery.Sections.BrowseOptions do
   """
 
   @enforce_keys [
-    :show_deleted,
     :institution_id,
     :blueprint_id,
-    :active_only,
-    :text_search
+    :text_search,
+    :active_today,
+    :filter_status,
+    :filter_type
   ]
 
   defstruct [
-    :show_deleted,
     :institution_id,
     :blueprint_id,
-    :active_only,
-    :text_search
+    :text_search,
+    :active_today,
+    :filter_status,
+    :filter_type
   ]
 
   @type t() :: %__MODULE__{
-          show_deleted: boolean(),
           institution_id: integer(),
           blueprint_id: integer(),
-          active_only: boolean(),
-          text_search: String.t()
+          text_search: String.t(),
+          active_today: boolean(),
+          filter_status: atom(),
+          filter_type: atom()
         }
 end

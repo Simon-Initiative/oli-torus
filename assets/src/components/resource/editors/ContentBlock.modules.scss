@@ -1,0 +1,111 @@
+@use 'authoring/theme' as authoring;
+
+.contentBlock {
+  width: 100%;
+  padding: 0 20px;
+
+  :global(.slate-editor) {
+    padding: 0 calc(50% - 400px) !important;
+  }
+}
+
+.contentBlockHeader {
+  display: flex;
+  flex-direction: row;
+  padding: 0 calc(50% - 400px);
+}
+
+.groupBlock {
+  margin: 20px;
+
+  // handle the special case when purpose type is none, apply the
+  // padding styles to slate editor itself. this allows slate to utilize
+  // the entire surrounding padding for cursor events and allow for easier
+  // selection etc..
+  :global(&.purpose-none) {
+    .slate-editor {
+      clear: both;
+      cursor: initial;
+      padding: 1.3em 10px;
+
+      &.structured-content {
+        padding: 1.3em calc(50% - 400px);
+      }
+    }
+  }
+
+  :global(.btn-purpose) {
+    border: 1px solid authoring.$gray-200;
+
+    text-align: left;
+    :global(&.dropdown-toggle)::after {
+      float: right;
+      margin-top: 0.7em;
+    }
+
+    &:hover {
+      border-color: rgba(authoring.$body-color, 0.6);
+      background: rgba(authoring.$body-color, 0.05);
+    }
+
+    &:disabled {
+      background-color: authoring.$card-cap-bg;
+
+      &:hover {
+        border-color: rgba(authoring.$body-color, 0.1);
+        background: authoring.$card-cap-bg;
+      }
+    }
+  }
+
+  :global(.btn-delete):not([disabled]) {
+    color: rgba(authoring.$body-color, 0.8);
+
+    &:hover {
+      color: authoring.$danger;
+    }
+  }
+}
+
+.groupBlockHeader {
+  padding: 0 calc(50% - 400px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+}
+
+.purposeContainer {
+  padding: 20px calc(50% - 400px);
+}
+
+.activityBlock {
+  margin: 20px;
+  padding: 0 calc(50% - 400px);
+}
+
+.activityBlockHeader {
+  display: flex;
+  flex-direction: row;
+}
+
+.surveyBlock {
+  margin: 20px;
+  padding: 0 calc(50% - 400px);
+
+  :global(i.las.la-poll) {
+    font-size: 32px;
+    margin-right: 6px;
+  }
+}
+
+.surveyBlockHeader {
+  margin: 0 auto;
+  display: flex;
+  flex-direction: row;
+}
+
+.surveyBlockBorder {
+  border: 1px solid authoring.$gray-500;
+  border-radius: 6px;
+  padding: 20px;
+}

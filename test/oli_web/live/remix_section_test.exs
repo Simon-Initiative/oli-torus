@@ -142,6 +142,56 @@ defmodule OliWeb.RemixSectionLiveTest do
 
       assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
     end
+
+    test "remix section items and add materials items are ordered correctly", %{
+      conn: conn,
+      admin: admin,
+      map: %{
+        oaf_section_1: oaf_section_1,
+        unit1_container: unit1_container,
+        latest1: latest1,
+        latest2: latest2
+      }
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      {:ok, view, _html} = live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug))
+
+      assert view
+        |> element(".curriculum-entries > div:nth-child(2)")
+        |> render() =~ "#{latest1.title}"
+
+      assert view
+        |> element(".curriculum-entries > div:nth-child(4)")
+        |> render() =~ "#{latest2.title}"
+
+      assert view
+        |> element(".curriculum-entries > div:nth-child(6)")
+        |> render() =~ "#{unit1_container.revision.title}"
+
+      # click add materials and assert is listing units first
+      view
+      |> element("button[phx-click=\"show_add_materials_modal\"]")
+      |> render_click()
+
+      view
+      |> element(".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]")
+      |> render_click()
+
+      assert view
+        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
+        |> render() =~ "#{unit1_container.revision.title}"
+
+      assert view
+        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+        |> render() =~ "#{latest1.title}"
+
+      assert view
+        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
+        |> render() =~ "#{latest2.title}"
+    end
   end
 
   describe "breadcrumbs" do

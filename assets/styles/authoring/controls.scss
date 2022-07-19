@@ -33,20 +33,6 @@
   background-color: $body-bg;
   background-clip: padding-box;
   position: relative;
-
-  .toolbar.add-resource-content {
-    .insert-button-container {
-      left: -34px;
-      top: 0px;
-
-      .insert-button {
-        i {
-          margin-top: 1px;
-          margin-left: 0px;
-        }
-      }
-    }
-  }
 }
 
 .table-dropdown {
@@ -79,7 +65,6 @@
   border-radius: 0.2rem;
 }
 
-
 .icon-chevron-up,
 .icon-chevron-down {
   width: 12px;
@@ -111,4 +96,8 @@
 .icon-history {
   width: 1.6rem;
   height: 1.6rem;
+}
+
+.indented-list {
+  padding-left: 2rem;
 }

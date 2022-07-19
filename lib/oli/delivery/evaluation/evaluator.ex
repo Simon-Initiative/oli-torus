@@ -1,6 +1,6 @@
 defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.{EvaluationContext}
-  alias Oli.Delivery.Evaluation.Actions.{SubmissionActionResult, FeedbackActionResult}
+  alias Oli.Delivery.Evaluation.Actions.{SubmissionAction, FeedbackAction}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
   alias Oli.Activities.ParseUtils
@@ -13,8 +13,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
         part_attempt_guid: attempt_guid
       }) do
     {:ok,
-     %SubmissionActionResult{
-       type: "SubmissionActionResult",
+     %SubmissionAction{
+       type: "SubmissionAction",
        attempt_guid: attempt_guid,
        part_id: part_id
      }}
@@ -24,8 +24,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
       {_, %Response{feedback: feedback, score: score}, _, out_of} ->
         {:ok,
-         %FeedbackActionResult{
-           type: "FeedbackActionResult",
+         %FeedbackAction{
+           type: "FeedbackAction",
            score: score,
            out_of: out_of,
            feedback: feedback,
@@ -47,8 +47,8 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
           end
 
         {:ok,
-         %FeedbackActionResult{
-           type: "FeedbackActionResult",
+         %FeedbackAction{
+           type: "FeedbackAction",
            score: 0,
            out_of: adjusted_out_of,
            feedback: ParseUtils.default_content_item("Incorrect"),

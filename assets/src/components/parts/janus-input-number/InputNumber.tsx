@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
@@ -124,6 +123,9 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
               const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
               if (sCssClass !== undefined) {
                 setCssClass(sCssClass);
+              }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
               }
             }
             break;

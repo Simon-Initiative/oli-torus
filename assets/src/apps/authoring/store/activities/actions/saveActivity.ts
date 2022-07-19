@@ -23,75 +23,86 @@ import { diff } from 'deep-object-diff';
 export const saveActivity = createAsyncThunk(
   `${ActivitiesSlice}/saveActivity`,
   async (payload: { activity: IActivity; undoable?: boolean }, { dispatch, getState }) => {
-    const { activity, undoable = true } = payload;
-    const rootState = getState() as any;
-    const projectSlug = selectProjectSlug(rootState);
-    const resourceId = selectResourceId(rootState);
-    const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
-    const group = selectCurrentGroup(rootState);
+    try {
+      const { activity, undoable = true } = payload;
+      const rootState = getState() as any;
+      const projectSlug = selectProjectSlug(rootState);
+      const resourceId = selectResourceId(rootState);
+      const currentActivityState = selectActivityById(rootState, activity.id) as IActivity;
+      const group = selectCurrentGroup(rootState);
 
-    const isReadOnlyMode = selectReadOnly(rootState);
+      const isReadOnlyMode = selectReadOnly(rootState);
 
-    if (!activity.authoring.parts?.length) {
-      activity.authoring.parts = [
-        {
-          id: '__default',
-          type: 'janus-text-flow',
-          inherited: false,
-          owner: 'self', // should be sequenceId, but not sure it's needed here
-        },
-      ];
-    }
-
-    const changeData: ActivityUpdate = {
-      title: activity.title as string,
-      objectives: activity.objectives as ObjectiveMap,
-      content: { ...activity.content, authoring: activity.authoring },
-      tags: activity.tags,
-    };
-
-    if (!isReadOnlyMode) {
-      /*console.log('going to save acivity: ', { changeData, activity });*/
-      const editResults = await edit(
-        projectSlug,
-        resourceId,
-        activity.resourceId as number,
-        changeData,
-        false,
-      );
-
-      // grab the activity before it's updated for the score check
-      const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
-
-      // update the activitiy before saving the page so that the score is correct
-      await dispatch(upsertActivity({ activity }));
-
-      const currentPage = selectCurrentPage(rootState);
-
-      const updatePage =
-        activity.title !== currentActivityState?.title ||
-        (!currentPage.custom.scoreFixed &&
-          activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore);
-
-      if (updatePage) {
-        dispatch(updateSequenceItemFromActivity({ activity, group }));
-        await dispatch(savePage({}));
-      }
-
-      console.log('EDIT SAVE RESULTS', { editResults });
-
-      /*console.log('EDIT SAVE RESULTS', { editResults });*/
-      if (undoable) {
-        dispatch(
-          createUndoAction({
-            undo: [saveActivity({ activity: cloneDeep(currentActivityState), undoable: false })],
-            redo: [saveActivity({ activity: cloneDeep(activity), undoable: false })],
-          }),
+      if (!activity.authoring.parts?.length) {
+        // There were no parts, so generate a default.
+        activity.authoring.parts = [
+          {
+            id: '__default',
+            type: 'janus-text-flow',
+            inherited: false,
+            owner: 'self', // should be sequenceId, but not sure it's needed here
+          },
+        ];
+      } else if (activity.authoring.parts.length > 1) {
+        // don't need the default part if another has been added
+        activity.authoring.parts = activity.authoring.parts.filter(
+          (part: any) => part.id !== '__default',
         );
       }
-    }
 
-    return;
+      const changeData: ActivityUpdate = {
+        title: activity.title as string,
+        objectives: activity.objectives as ObjectiveMap,
+        content: { ...activity.content, authoring: activity.authoring },
+        tags: activity.tags,
+      };
+
+      if (!isReadOnlyMode) {
+        /*console.log('going to save acivity: ', { changeData, activity });*/
+        const editResults = await edit(
+          projectSlug,
+          resourceId,
+          activity.resourceId as number,
+          changeData,
+          false,
+        );
+
+        // grab the activity before it's updated for the score check
+        const oldActivityData = selectActivityById(rootState, activity.resourceId as number);
+
+        // update the activitiy before saving the page so that the score is correct
+        await dispatch(upsertActivity({ activity }));
+
+        const currentPage = selectCurrentPage(rootState);
+
+        const updatePage =
+          activity.title !== currentActivityState?.title ||
+          (!currentPage.custom.scoreFixed &&
+            activity.content?.custom.maxScore !== oldActivityData?.content?.custom.maxScore);
+
+        if (updatePage) {
+          dispatch(updateSequenceItemFromActivity({ activity, group }));
+          await dispatch(savePage({}));
+        }
+
+        console.log('EDIT SAVE RESULTS', { editResults });
+
+        /*console.log('EDIT SAVE RESULTS', { editResults });*/
+        if (undoable) {
+          dispatch(
+            createUndoAction({
+              undo: [saveActivity({ activity: cloneDeep(currentActivityState), undoable: false })],
+              redo: [saveActivity({ activity: cloneDeep(activity), undoable: false })],
+            }),
+          );
+        }
+      }
+
+      return;
+    } catch (e) {
+      console.error(`Error during ${ActivitiesSlice}/saveActivity: `, e);
+      throw e;
+    }
   },
 );
 
@@ -124,6 +135,7 @@ export const bulkSaveActivity = createAsyncThunk(
             },
           ];
         }
+
         const changeData: BulkActivityUpdate = {
           title: activity.title as string,
           objectives: activity.objectives as ObjectiveMap,

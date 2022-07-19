@@ -12,6 +12,7 @@ import { SystemMessage } from './system_message';
 import { MonacoEditor } from './monaco_editor';
 import { TooltipInit } from './tooltip';
 import { BeforeUnloadListener } from './before_unload';
+import { ThemeToggle } from './theme_toggle';
 
 export const Hooks = {
   GraphNavigation,
@@ -29,4 +30,5 @@ export const Hooks = {
   MonacoEditor,
   TooltipInit,
   BeforeUnloadListener,
+  ThemeToggle,
 };

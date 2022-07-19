@@ -146,10 +146,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "end_date" => now,
             "title" => title,
             "requires_payment" => false,
+            "pay_by_institution" => false,
             "registration_open" => false,
-            "timezone" => "America/New_York",
             "grace_period_days" => 1,
-            "amount" => Money.new(:USD, "25.00")
+            "amount" => Money.new(:USD, "25.00"),
+            "publisher_id" => project.publisher_id
           }
 
           case Sections.create_section(new_blueprint) do
@@ -194,8 +195,6 @@ defmodule Oli.Delivery.Sections.Blueprint do
   end
 
   defp dupe_section(%Section{} = section, attrs) do
-    now = DateTime.utc_now()
-
     params =
       Map.merge(
         %{
@@ -204,8 +203,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
           base_project_id: section.base_project_id,
           open_and_free: false,
           context_id: UUID.uuid4(),
-          start_date: now,
-          end_date: now,
+          start_date: nil,
+          end_date: nil,
           title: section.title <> " Copy",
           invite_token: nil,
           passcode: nil,
@@ -331,7 +330,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
     query =
       from(
         s in Section,
-        where: s.type == :blueprint,
+        where: s.type == :blueprint and s.status == :active,
         select: s,
         preload: [:base_project]
       )

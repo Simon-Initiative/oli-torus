@@ -190,7 +190,7 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
   if (showLabel && label && width) {
     //is this the best way to handle?
     //if lable is visible then need to set the maxWidth otherwise it gets out of the container
-    dropDownStyle.maxWidth = `${Number(width * 0.63)}px`;
+    dropDownStyle.maxWidth = `${Number(width)}px`;
   }
 
   useEffect(() => {
@@ -358,6 +358,9 @@ const Dropdown: React.FC<PartComponentProps<DropdownModel>> = (props) => {
               const sEnabled = changes[`stage.${id}.enabled`];
               if (sEnabled !== undefined) {
                 setEnabled(parseBool(sEnabled));
+              }
+              if (payload.mode === contexts.REVIEW) {
+                setEnabled(false);
               }
             }
             break;

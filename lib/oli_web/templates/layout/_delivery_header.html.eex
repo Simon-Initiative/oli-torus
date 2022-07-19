@@ -42,8 +42,10 @@
 
 <%= if delivery_breadcrumbs?(@conn) do %>
   <div class="container">
-    <nav class="breadcrumb-bar d-flex align-items-center px-3 mt-3 mb-1">
-      <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+    <nav class="breadcrumb-bar d-flex align-items-center mt-3 mb-1">
+      <div class="w-100">
+        <%= live_render(@conn, BreadcrumbTrailLive, session: %{"breadcrumbs" => @breadcrumbs}) %>
+      </div>
     </nav>
   </div>
 <% end %>

@@ -2,16 +2,21 @@ defmodule Oli.Accounts do
   import Ecto.Query, warn: false
   import Oli.Utils, only: [value_or: 2]
 
+  alias Ecto.Multi
+
   alias Oli.Accounts.{
     User,
     Author,
     SystemRole,
     UserBrowseOptions,
     AuthorBrowseOptions,
-    AuthorPreferences
+    AuthorPreferences,
+    UserPreferences
   }
 
+  alias Oli.Groups
   alias Oli.Groups.CommunityAccount
+  alias Oli.Lti.LtiParams
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
   alias PowEmailConfirmation.Ecto.Context, as: EmailConfirmationContext
@@ -163,6 +168,26 @@ defmodule Oli.Accounts do
   def get_user_by(clauses), do: Repo.get_by(User, clauses)
 
   @doc """
+  Gets a single user with platform roles and author preloaded
+  Returns `nil` if the User does not exist.
+  ## Examples
+      iex> get_user_with_roles(123)
+      %User{}
+      iex> get_user_with_roles(456)
+      nil
+
+  """
+  def get_user_with_roles(id) do
+    from(user in User,
+      where: user.id == ^id,
+      left_join: platform_roles in assoc(user, :platform_roles),
+      left_join: author in assoc(user, :author),
+      preload: [platform_roles: platform_roles, author: author]
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a user.
   ## Examples
       iex> create_user(%{field: value})
@@ -312,6 +337,24 @@ defmodule Oli.Accounts do
 
       _ ->
         false
+    end
+  end
+
+  @doc """
+  Returns true if a user belongs to an LMS.
+  """
+  def is_lms_user?(email) do
+    case get_user_by(%{email: email}) do
+      nil ->
+        false
+
+      %User{id: user_id} ->
+        Repo.exists?(
+          from(
+            lti in LtiParams,
+            where: lti.user_id == ^user_id
+          )
+        )
     end
   end
 
@@ -478,14 +521,43 @@ defmodule Oli.Accounts do
   def get_author_preference(%Author{preferences: preferences}, key, default) do
     preferences
     |> value_or(%AuthorPreferences{})
-    |> Map.get(key, default)
-    |> value_or(default)
+    |> get_preference(key, default)
   end
 
   def get_author_preference(author_id, key, default) when is_integer(author_id) do
-    author = get_author!(author_id)
+    author_id
+    |> get_author!()
+    |> get_author_preference(key, default)
+  end
 
-    get_author_preference(author, key, default)
+  @doc """
+  Returns a user preference using the key provided. If the preference isn't set or
+  the user preferences have not been created yet, the default value will be returned.
+
+  Accepts and User struct or user id. If an id is given, the latest user record
+  will be queried from the database. Otherwise, the preferences in the User struct
+  is used.
+
+  See UserPreferences for available key options
+  """
+  def get_user_preference(user, key, default \\ nil)
+
+  def get_user_preference(%User{preferences: preferences}, key, default) do
+    preferences
+    |> value_or(%UserPreferences{})
+    |> get_preference(key, default)
+  end
+
+  def get_user_preference(user_id, key, default) when is_integer(user_id) do
+    user_id
+    |> get_user!()
+    |> get_user_preference(key, default)
+  end
+
+  defp get_preference(preferences, key, default) do
+    preferences
+    |> Map.get(key, default)
+    |> value_or(default)
   end
 
   @doc """
@@ -493,19 +565,41 @@ defmodule Oli.Accounts do
 
   See AuthorPreferences for available key options
   """
-  def set_author_preference(%Author{id: author_id}, key, value),
-    do: set_author_preference(author_id, key, value)
+  def set_author_preference(author_id, key, value) when is_integer(author_id) do
+    author_id
+    |> get_author!()
+    |> set_author_preference(key, value)
+  end
 
-  def set_author_preference(author_id, key, value) do
-    author = get_author!(author_id)
-
+  def set_author_preference(%Author{preferences: preferences} = author, key, value) do
     updated_preferences =
-      author.preferences
+      preferences
       |> value_or(%AuthorPreferences{})
       |> Map.put(key, value)
       |> Map.from_struct()
 
     update_author(author, %{preferences: updated_preferences})
+  end
+
+  @doc """
+  Set's an user preference to the provided value at a given key
+
+  See UserPreferences for available key options
+  """
+  def set_user_preference(user_id, key, value) when is_integer(user_id) do
+    user_id
+    |> get_user!()
+    |> set_user_preference(key, value)
+  end
+
+  def set_user_preference(%User{preferences: preferences} = user, key, value) do
+    updated_preferences =
+      preferences
+      |> value_or(%UserPreferences{})
+      |> Map.put(key, value)
+      |> Map.from_struct()
+
+    update_user(user, %{preferences: updated_preferences})
   end
 
   def can_access?(author, project) do
@@ -629,5 +723,93 @@ defmodule Oli.Accounts do
   def user_confirmation_pending?(user) do
     EmailConfirmationContext.current_email_unconfirmed?(user, []) or
       EmailConfirmationContext.pending_email_change?(user, [])
+  end
+
+  @doc """
+  Finds or creates an author and user logged in via sso, adds the user as a member of the given community
+  and links both user and author.
+
+  ## Examples
+
+      iex> setup_sso_author(fields, community_id)
+      {:ok, %Author{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def setup_sso_author(fields, community_id) do
+    res =
+      Multi.new()
+      |> Multi.run(:user, &create_sso_user(&1, &2, fields))
+      |> Multi.run(:community_account, &create_community_account(&1, &2, community_id))
+      |> Multi.run(:author, &create_sso_author(&1, &2, fields))
+      |> Multi.run(:linked_user, &link_user_with_author(&1, &2))
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{author: author}} ->
+        {:ok, author}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Inserts or updates a user logged in via sso, and adds the user as a member of the given community.
+
+  ## Examples
+
+      iex> setup_sso_user(fields, community_id)
+      {:ok, %User{}}    -> # Inserted or updated with success
+      {:error, changeset}         -> # Something went wrong
+
+  """
+  def setup_sso_user(fields, community_id) do
+    res =
+      Multi.new()
+      |> Multi.run(:user, &create_sso_user(&1, &2, fields))
+      |> Multi.run(:community_account, &create_community_account(&1, &2, community_id))
+      |> Repo.transaction()
+
+    case res do
+      {:ok, %{user: user}} ->
+        {:ok, user}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp create_sso_user(_repo, _changes, fields) do
+    insert_or_update_lms_user(%{
+      sub: Map.get(fields, "sub"),
+      preferred_username: Map.get(fields, "cognito:username"),
+      email: Map.get(fields, "email"),
+      name: Map.get(fields, "name"),
+      can_create_sections: true
+    })
+  end
+
+  defp create_sso_author(_repo, _changes, fields) do
+    email = Map.get(fields, "email")
+    username = Map.get(fields, "cognito:username")
+
+    case get_author_by_email(email) do
+      nil ->
+        %Author{}
+        |> Author.noauth_changeset(%{name: username, email: email})
+        |> Repo.insert()
+
+      author ->
+        {:ok, author}
+    end
+  end
+
+  defp link_user_with_author(_repo, %{user: user, author: author}) do
+    link_user_author_account(user, author)
+  end
+
+  defp create_community_account(_repo, %{user: %User{id: user_id}}, community_id) do
+    Groups.find_or_create_community_user_account(user_id, community_id)
   end
 end

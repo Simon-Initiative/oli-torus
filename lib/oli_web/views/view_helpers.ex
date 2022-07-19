@@ -11,15 +11,15 @@ defmodule OliWeb.ViewHelpers do
 
   def brand_logo(%{brand: %Brand{name: name, logo: logo, logo_dark: logo_dark}} = assigns) do
     ~H"""
-      <img src={logo} height="40" class={["d-dark-none", assigns[:class]]} alt={name}>
-      <img src={value_or(logo_dark, logo)} height="40" class={["d-light-none", assigns[:class]]}  alt={name}>
+      <img src={logo} height="40" class={[assigns[:class], "d-dark-none"]} alt={name}>
+      <img src={value_or(logo_dark, logo)} height="40" class={[assigns[:class], "d-light-none"]}  alt={name}>
     """
   end
 
   def brand_logo(assigns) do
     ~H"""
-      <img src={brand_logo_url(assigns[:section])} height="40" class={["d-dark-none", assigns[:class]]} alt={brand_name(assigns[:section])}>
-      <img src={brand_logo_url_dark( assigns[:section])} height="40" class={["d-light-none", assigns[:class]]}  alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url(assigns[:section])} height="40" class={[assigns[:class], "d-dark-none"]} alt={brand_name(assigns[:section])}>
+      <img src={brand_logo_url_dark( assigns[:section])} height="40" class={[assigns[:class], "d-light-none"]}  alt={brand_name(assigns[:section])}>
     """
   end
 
@@ -63,4 +63,10 @@ defmodule OliWeb.ViewHelpers do
       Map.has_key?(assigns, :delivery_breadcrumb) and
         Map.get(assigns, :delivery_breadcrumb, false) and
         (Map.has_key?(assigns, :breadcrumbs) and length(Map.get(assigns, :breadcrumbs, [])) > 0)
+
+  def redirect_with_error(conn, error_url, error) do
+    conn
+    |> Phoenix.Controller.redirect(external: "#{error_url}?error=#{error}")
+    |> Plug.Conn.halt()
+  end
 end

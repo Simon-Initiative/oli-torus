@@ -17,7 +17,7 @@ defmodule OliWeb.RevisionHistory do
   alias Oli.Authoring.Broadcaster
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.Breadcrumb
+  alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias OliWeb.History.RestoreRevisionModal
   alias Oli.Utils.SchemaResolver
   alias OliWeb.Router.Helpers, as: Routes
@@ -26,24 +26,26 @@ defmodule OliWeb.RevisionHistory do
   @page_size 15
 
   @impl Phoenix.LiveView
-  def mount(%{"slug" => slug, "project_id" => project_slug}, _, socket) do
+  def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
+    context = SessionContext.init(session)
     case AuthoringResolver.from_revision_slug(project_slug, slug) do
       nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
       revision ->
-        do_mount(revision, project_slug, socket)
+        do_mount(revision, project_slug, socket, context)
     end
 
   end
 
-  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, _, socket) do
+  def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, session, socket) do
+    context = SessionContext.init(session)
     case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
       nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
       revision ->
-        do_mount(revision, project_slug, socket)
+        do_mount(revision, project_slug, socket, context)
     end
   end
 
-  defp do_mount(revision, project_slug, socket) do
+  defp do_mount(revision, project_slug, socket, context) do
     project = Course.get_project_by_slug(project_slug)
     resource_id = revision.resource_id
     slug = revision.slug
@@ -62,9 +64,20 @@ defmodule OliWeb.RevisionHistory do
 
     selected = fetch_revision(hd(revisions).id)
 
+    resource_schema = case Oli.Resources.ResourceType.get_type_by_id(selected.resource_type_id) do
+      "page" -> SchemaResolver.schema("page-content.schema.json")
+      "activity" ->
+        case selected.activity_type_id do
+          1 -> SchemaResolver.schema("adaptive-activity-content.schema.json")
+          _ -> SchemaResolver.schema("activity-content.schema.json")
+        end
+      _ -> SchemaResolver.schema("page-content.schema.json")
+    end
+
     {:ok,
      socket
      |> assign(
+       context: context,
        breadcrumbs: Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
         [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
@@ -85,7 +98,7 @@ defmodule OliWeb.RevisionHistory do
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
-       resource_schema: SchemaResolver.schema("page-content.schema.json")
+       resource_schema: resource_schema
      )
      |> allow_upload(:json, accept: ~w(.json), max_entries: 1)}
   end

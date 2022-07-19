@@ -1,5 +1,5 @@
 import { Environment, Evaluator, Lexer, Parser } from 'janus-script';
-import { parseArray, parseBoolean } from 'utils/common';
+import { formatNumber, parseArray, parseBoolean } from 'utils/common';
 import { CapiVariableTypes, getCapiType } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
 
@@ -42,12 +42,25 @@ export const getExpressionStringForValue = (
 ): string => {
   let val: any = v.value;
   let isValueVar = false;
-
+  let isEverAppArrayObject = false;
   if (typeof val === 'string') {
     let canEval = false;
     try {
       const test = evalScript(val, env);
       canEval = test?.result !== undefined && !test.result.message;
+      if (
+        test?.result &&
+        test?.result?.length > 1 &&
+        v.key &&
+        v.key.startsWith('app.') &&
+        typeof val === 'string' &&
+        val[0] === '[' &&
+        val[val.length - 1] === ']' &&
+        v.type === CapiVariableTypes.ARRAY
+      ) {
+        //Is there a possibility that EverApp variable of type array can have expression in them?
+        isEverAppArrayObject = true;
+      }
       /* console.log('can actually eval:', { val, canEval, test, t: typeof test.result }); */
     } catch (e) {
       // failed for any reason
@@ -74,8 +87,8 @@ export const getExpressionStringForValue = (
 
     const hasBackslash = val.includes('\\');
     isValueVar =
-      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash) ||
-      (hasCurlies && !looksLikeJSON && !hasBackslash);
+      (canEval && !looksLikeJSON && looksLikeAFunction && !hasBackslash && !isEverAppArrayObject) ||
+      (hasCurlies && !looksLikeJSON && !hasBackslash && !isEverAppArrayObject);
   }
 
   if (isValueVar) {
@@ -84,17 +97,39 @@ export const getExpressionStringForValue = (
       val = val.replace(/[[\]]+/g, '');
     }
     if (val.includes('},{') || val.includes('}, {')) {
-      val = JSON.stringify(val.split(',')).replace(/"/g, '');
+      const expressions = extractAllExpressionsFromText(val);
+      if (val[0] === '{' && val[val.length - 1] === '}' && expressions?.length === 1) {
+        try {
+          const modifiedValue = val.substring(1, val.length - 1);
+          const evaluatedValue = evalScript(modifiedValue, env).result;
+          if (evaluatedValue !== undefined) {
+            val = evaluatedValue;
+          }
+        } catch (ex) {
+          val = JSON.stringify(val.split(',')).replace(/"/g, '');
+        }
+      } else {
+        val = JSON.stringify(val.split(',')).replace(/"/g, '');
+      }
     }
 
     // it might be CSS string, which can be decieving
     let actuallyAString = false;
     const expressions = extractAllExpressionsFromText(val);
-    // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS.
+    // A expression will not have a ';' inside it.So if there is a ';' inside it, it is CSS.
     const isCSSString = expressions.filter((e) => e.includes(';'));
     if (isCSSString?.length) {
       actuallyAString = true;
     }
+
+    // at this point, if the value fails an evalScript check, it is probably a math expression
+    try {
+      const testEnv = new Environment(env);
+      evalScript(val, testEnv);
+    } catch (err) {
+      actuallyAString = true;
+    }
+
     if (!actuallyAString) {
       try {
         const testEnv = new Environment(env);
@@ -131,8 +166,30 @@ export const getExpressionStringForValue = (
           }
         }
       } catch (e) {
-        // if we have parsing error then we're guessing it's CSS
-        actuallyAString = true;
+        //lets evaluat everything if first and last char are {}
+        if (val[0] === '{' && val[val.length - 1] === '}') {
+          const evaluatedValues = evalScript(expressions[0], env).result;
+          if (evaluatedValues !== undefined) {
+            val = evaluatedValues;
+            actuallyAString = false;
+          }
+        } else {
+          const containsExpression = val.match(/{([^{^}]+)}/g) || [];
+          if (containsExpression?.length) {
+            try {
+              const modifiedVal = templatizeText(val, {}, env);
+              const updatedValue = evalScript(modifiedVal, env).result;
+              if (updatedValue !== undefined) {
+                val = updatedValue;
+              }
+            } catch (ex) {
+              actuallyAString = true;
+            }
+          } else {
+            // if we have parsing error then we're guessing it's CSS
+            actuallyAString = true;
+          }
+        }
       }
     }
     if (!actuallyAString) {
@@ -148,9 +205,13 @@ export const getExpressionStringForValue = (
     if (typeof val !== 'string') {
       val = JSON.stringify(val);
     }
+    if (!val) {
+      val = '';
+    }
     // strings need to have escaped quotes and backslashes
     // for janus-script
-    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '')}"`;
+    // PMP-2785: Replacing the new line with the space
+    val = `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`;
   }
 
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
@@ -443,19 +504,100 @@ export const extractAllExpressionsFromText = (text: string): string[] => {
   return expressions;
 };
 
+export const variableContainsValidPrefix = (variable: string): boolean => {
+  return variable.search(/app\.|variables\.|stage\.|session\./) !== -1;
+};
+
+export const containsExactlyOneVariable = (text: string): boolean => {
+  const m = text.match(/app\.|variables\.|stage\.|session\./g);
+  return !!(m && m.length === 1);
+};
+
+export const extractUniqueVariablesFromText = (text: string): string[] => {
+  // walk the string taking the opening and closing curly braces into account
+  const variables = [];
+  let counter = 0;
+  const openIndexes = [];
+  while (counter < text.length) {
+    if (text[counter] === '{') {
+      openIndexes.push(counter);
+    } else if (text[counter] === '}') {
+      const openIndex = openIndexes.pop();
+      if (openIndex !== undefined) {
+        variables.push(text.substring(openIndex + 1, counter));
+      }
+    }
+    counter++;
+  }
+
+  if (openIndexes.length > 0) {
+    console.warn('Unmatched curly braces in text: ', text);
+    /* throw new Error(`Unmatched curly braces in text: ${text}`); */
+  }
+
+  if (variables.some((v) => v.indexOf('{') !== -1 || v.indexOf('}') !== -1)) {
+    console.warn('Found variables with embedded curly braces in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // warn if any exist with an invalid prefix
+  if (variables.some((v) => !variableContainsValidPrefix(v))) {
+    console.warn('Found variables with invalid prefix in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // also warn if more than one variable is somehow parsed
+  if (variables.some((v) => !containsExactlyOneVariable(v))) {
+    console.warn('Found variables with multiple prefixes in text (they will be filtered): ', {
+      text,
+      variables,
+    });
+    // these will be filtered out for safety; TODO: diagnostics?
+  }
+
+  // make unique
+  return Array.from(
+    new Set(
+      variables.filter(
+        (v) =>
+          v.length > 0 &&
+          v.indexOf('{') === -1 &&
+          v.indexOf('}') === -1 &&
+          containsExactlyOneVariable(v),
+      ),
+    ),
+  );
+};
+
 export const templatizeText = (
   text: string,
   locals: any,
   env?: Environment,
   isFromTrapStates = false,
+  useFormattedText = true,
 ): string => {
   let innerEnv = env; // TODO: this should be a child scope
+  // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
+  // and we should just return it as is; if it has variables inside, then we still need to evaluate it
+  if (
+    typeof text !== 'string' ||
+    (text?.indexOf('\\') >= 0 && text?.search(/app\.|variables\.|stage\.|session\./) === -1)
+  ) {
+    return text;
+  }
   let vars = extractAllExpressionsFromText(text);
   const totalVariablesLength = vars?.length;
   // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS and we should filter it.
   vars = Array.isArray(vars) ? vars.filter((e) => !e.includes(';')) : vars;
   /* console.log('templatizeText call: ', { text, vars, locals, env }); */
   //if length of totalVariablesLength && vars are not same at this point then it means that the string has variables that continas ';' in it which we assume is CSS String
+
   const isCSSString = totalVariablesLength !== vars.length;
   if (!vars || isCSSString) {
     return text;
@@ -474,36 +616,52 @@ export const templatizeText = (
   const vals = vars.map((v) => {
     let stateValue = locals[v];
     if (!stateValue || typeof stateValue === 'object') {
+      // first need to just try to evaluate it whatever it might be
       try {
-        if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
-          // if the expression is just a variable, then if it has a colon
-          // it is most likely targetting another screen, and needs to be wrapped
-          // for evaluation; same with if it has a space in it TODO: detect that;
-          // also note this will break hash expression support but no one uses that
-          // currently (TODO #2)
-          v = `{${v}}`;
-        }
-        try {
-          const result = evalScript(v, innerEnv);
-          // it is very possible here that result.result is undefined simply because the variable has not been defined
-          // in the scripting env, so really we should just return undefined or an empty string here in that case.
+        const result = evalScript(v, innerEnv);
+        if (result?.result !== undefined && !result?.result?.message) {
+          // if we were successful, then we should actually set the env to the result
+          // in case it was an assignment script
           innerEnv = result.env;
-          if (!result?.result?.message) {
-            stateValue = result.result;
+          stateValue = result.result;
+        }
+      } catch (ex) {
+        // do nothing, not giving up yet
+        /* console.warn('[templatizeText] error evaluating expression', { ex, v, innerEnv }); */
+      }
+      // still that first shot didnt work, try again checking for other variable conditions
+      if (!stateValue) {
+        try {
+          if (v.indexOf(':') !== -1 || v.indexOf('.') !== -1) {
+            // if the expression is just a variable, then if it has a colon
+            // it is most likely targetting another screen, and needs to be wrapped
+            // for evaluation; same with if it has a space in it TODO: detect that;
+            // also note this will break hash expression support but no one uses that
+            // currently (TODO #2)
+            v = `{${v}}`;
           }
-        } catch (ex) {
-          if (v[0] === '{' && v[v.length - 1] === '}') {
-            //lets evaluat everything if first and last char are {}
-            const functionExpression = v.substring(1, v.length - 1);
-            const result = evalScript(functionExpression, innerEnv);
-            if (result?.result !== undefined && !result?.result?.message) {
+          try {
+            const result = evalScript(v, innerEnv);
+            // it is very possible here that result.result is undefined simply because the variable has not been defined
+            // in the scripting env, so really we should just return undefined or an empty string here in that case.
+            innerEnv = result.env;
+            if (!result?.result?.message) {
               stateValue = result.result;
             }
+          } catch (ex) {
+            if (v[0] === '{' && v[v.length - 1] === '}') {
+              //lets evaluat everything if first and last char are {}
+              const functionExpression = v.substring(1, v.length - 1);
+              const result = evalScript(functionExpression, innerEnv);
+              if (result?.result !== undefined && !result?.result?.message) {
+                stateValue = result.result;
+              }
+            }
           }
+        } catch (e) {
+          // ignore?
+          console.warn('error evaluating text', { v, e });
         }
-      } catch (e) {
-        // ignore?
-        console.warn('error evaluating text', { v, e });
       }
     }
     if (stateValue === undefined) {
@@ -532,14 +690,16 @@ export const templatizeText = (
       }
     }
     let strValue = stateValue;
-    /* console.log({ strValue, typeOD: typeof stateValue }); */
-
-    if (Array.isArray(stateValue)) {
-      strValue = stateValue.map((v) => `"${v}"`).join(', ');
-    } else if (typeof stateValue === 'object') {
-      strValue = JSON.stringify(stateValue);
-    } else if (typeof stateValue === 'number') {
-      strValue = parseFloat(parseFloat(strValue).toString());
+    if (useFormattedText) {
+      if (Array.isArray(stateValue)) {
+        strValue = stateValue.map((v) => `"${v}"`).join(', ');
+      } else if (typeof stateValue === 'object') {
+        strValue = JSON.stringify(stateValue);
+      }
+    } else {
+      if (typeof stateValue === 'object' && !Array.isArray(stateValue)) {
+        strValue = JSON.stringify(stateValue);
+      }
     }
     return strValue;
   });
@@ -548,8 +708,73 @@ export const templatizeText = (
     templatizedText = templatizedText.replace(`{${v}}`, `${vals[index]}`);
   });
 
-  // support nested {} like {{variables.foo} * 3}
+  // support nested {}  like {{variables.foo} * 3}
   return templatizedText; // templatizeText(templatizedText, state, innerEnv);
+};
+
+export const checkExpressionsWithWrongBrackets = (value: string) => {
+  let originalValue = value;
+  const allexpression = extractAllExpressionsFromText(originalValue);
+  const lstEvaluatedExpression: Record<string, string> = {};
+  allexpression.forEach((expression) => {
+    const actualExpression = expression;
+    let result = expression.match(/{([^{^}]+)}/g) || [];
+    result = result.filter(
+      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
+    );
+    if (result?.length) {
+      const obj: Record<string, string> = {};
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace(result[i], 'obj' + i);
+      }
+      expression = expression.replace(/{/g, '(');
+      expression = expression.replace(/}/g, ')');
+      for (let i = 0; i < result?.length; i++) {
+        obj['obj' + i] = result[i];
+        expression = expression.replace('obj' + i, obj['obj' + i]);
+      }
+    }
+    lstEvaluatedExpression[actualExpression] = expression;
+  });
+  Object.keys(lstEvaluatedExpression).forEach((key) => {
+    originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
+  });
+  return originalValue;
+};
+
+export const formatExpression = (child: any): string => {
+  let updatedExpression = '';
+  //this section is to check the expression in CAPI-configData variables
+  if (child.key && typeof child.value === 'string') {
+    const evaluatedExp = checkExpressionsWithWrongBrackets(child.value);
+    if (evaluatedExp !== child.value) {
+      child.value = evaluatedExp;
+      updatedExpression = evaluatedExp;
+    }
+  } else {
+    //this section is to check the expression in text flow which can be in text flow component / MCQ options etc
+    let optionText = '';
+    if (child.tag === 'text') {
+      optionText = child.text;
+      const evaluatedExp = checkExpressionsWithWrongBrackets(optionText);
+      if (evaluatedExp !== optionText) {
+        updatedExpression = evaluatedExp;
+        child.text = evaluatedExp;
+      }
+    } else if (child?.children?.length) {
+      child.children.forEach((child: any) => {
+        updatedExpression = formatExpression(child);
+      });
+    } else if (Array.isArray(child)) {
+      child.forEach((child) => {
+        child.children.forEach((child: any) => {
+          updatedExpression = formatExpression(child);
+        });
+      });
+    }
+  }
+  return updatedExpression;
 };
 
 // for use by client side scripting evalution

@@ -1,31 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { valueOr } from 'utils/common';
 
 export interface TextEditorProps {
-  onEdit: (model: string) => void;
-  model: string;
-  showAffordances: boolean;
   editMode: boolean;
+  model: string;
+  label?: string;
+  showAffordances: boolean;
   size?: 'regular' | 'large';
   allowEmptyContents?: boolean;
-}
-
-export interface LabelledTextEditorProps extends TextEditorProps {
-  label: string;
+  onEdit: (model: string) => void;
 }
 
 const ESCAPE_KEYCODE = 27;
 const ENTER_KEYCODE = 13;
 
-export const LabelledTextEditor = (props: LabelledTextEditorProps) => {
-  return (
-    <div>
-      {props.label}: <TextEditor {...props} />
-    </div>
-  );
-};
-
 export const TextEditor = (props: TextEditorProps) => {
-  const { model, showAffordances, onEdit, editMode } = props;
+  const { editMode, model, label, showAffordances, onEdit } = props;
   const allowEmpty = props.allowEmptyContents === undefined ? true : props.allowEmptyContents;
   const [current, setCurrent] = useState(model);
   const [value, setValue] = useState(model);
@@ -82,7 +72,7 @@ export const TextEditor = (props: TextEditorProps) => {
     const inputClass = `form-control ${validity} ${size} flex-fill`;
 
     return (
-      <div data-slate-editor className="d-flex">
+      <div data-slate-editor className="d-flex flex-grow-1">
         <input
           type="text"
           className={inputClass}
@@ -132,7 +122,7 @@ export const TextEditor = (props: TextEditorProps) => {
             disabled={!editMode}
             className="btn btn-link btn-sm"
           >
-            Edit Title
+            {valueOr(label, 'Edit Title')}
           </button>
         )}
       </React.Fragment>

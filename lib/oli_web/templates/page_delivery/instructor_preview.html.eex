@@ -11,7 +11,7 @@
   }) %>
 <% else %>
   <%= render "_objectives.html", objectives: @objectives %>
-  <div>
+  <div class="content">
     <%= raw(@html) %>
   </div>
 <% end %>

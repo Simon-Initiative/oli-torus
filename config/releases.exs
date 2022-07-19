@@ -88,7 +88,8 @@ config :oli,
         System.get_env("BRANDING_LOGO", "/images/oli_torus_logo_dark.png")
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
-  ]
+  ],
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -133,9 +134,20 @@ rule_evaluator_provider =
 
 config :oli, :rule_evaluator,
   dispatcher: rule_evaluator_provider,
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
   aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
+
+variable_substitution_provider =
+  case System.get_env("VARIABLE_SUBSTITUTION_PROVIDER") do
+    nil -> Oli.Activities.Transformers.VariableSubstitution.NoOpImpl
+    provider -> Module.concat([Oli, Activities, Transformers, VariableSubstitution, provider])
+  end
+
+config :oli, :variable_substitution,
+  dispatcher: variable_substitution_provider,
+  aws_fn_name: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME", "eval"),
+  aws_region: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_REGION", "us-east-1"),
+  rest_endpoint_url: System.get_env("VARIABLE_SUBSTITUTION_REST_ENDPOINT_URL", "us-east-1")
 
 # Configure help
 # HELP_PROVIDER env var must be a string representing an existing provider module, such as "FreshdeskHelp"
@@ -218,6 +230,28 @@ config :oli, :auth_providers,
   author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
+
+# Configure libcluster for horizontal scaling
+# Take into account that different strategies could use different config options
+config :libcluster,
+  topologies: [
+    oli:
+      case System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip") do
+        "ClusterEC2.Strategy.Tags" = ec2_strategy ->
+          [
+            strategy:  Module.concat([ec2_strategy]),
+            config: [
+              ec2_tagname: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_NAME", ""),
+              ec2_tagvalue: System.get_env("LIBCLUSTER_EC2_STRATEGY_TAG_VALUE", ""),
+              app_prefix: System.get_env("LIBCLUSTER_EC2_STRATEGY_APP_PREFIX", "oli")
+            ]
+          ]
+        strategy ->
+          [
+            strategy: Module.concat([strategy])
+          ]
+      end
+  ]
 
 # ## Using releases (Elixir v1.9+)
 #

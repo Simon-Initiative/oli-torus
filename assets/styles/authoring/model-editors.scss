@@ -1,5 +1,5 @@
-@import "authoring/variables";
-@import "bootstrap";
+@import 'authoring/variables';
+@import 'bootstrap';
 
 .editors .structured-content,
 .rich-text-editor {
@@ -14,9 +14,10 @@
       position: relative;
       margin-bottom: 0;
       word-wrap: break-word;
-      overflow: hidden;
+      overflow: visible;
 
       .table-dropdown {
+        z-index: 1000;
         position: absolute;
         top: 5px;
         right: 8px;
@@ -70,16 +71,10 @@
   }
 
   .settings-input {
+    padding-top: 0 !important;
     text-align: center;
-    border: 0;
     width: 100%;
     height: auto;
     color: rgba($color: $body-color, $alpha: 0.68);
-    background: transparent;
-    outline: none;
-  }
-  .settings-input:active::placeholder,
-  .settings-input:focus::placeholder {
-    color: transparent;
   }
 }

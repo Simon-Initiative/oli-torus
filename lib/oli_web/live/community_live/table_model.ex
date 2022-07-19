@@ -1,9 +1,9 @@
 defmodule OliWeb.CommunityLive.TableModel do
   alias Oli.Groups.Community
-  alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
+  alias OliWeb.Common.Table.{ColumnSpec, Common, SortableTableModel}
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(communities) do
+  def new(communities, context) do
     SortableTableModel.new(
       rows: communities,
       column_specs: [
@@ -22,7 +22,7 @@ defmodule OliWeb.CommunityLive.TableModel do
         %ColumnSpec{
           name: :inserted_at,
           label: "Created",
-          render_fn: &SortableTableModel.render_inserted_at_column/3
+          render_fn: &Common.render_date/3
         },
         %ColumnSpec{
           name: :actions,
@@ -36,7 +36,10 @@ defmodule OliWeb.CommunityLive.TableModel do
         }
       ],
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{
+        context: context
+      }
     )
   end
 

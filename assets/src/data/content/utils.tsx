@@ -1,4 +1,4 @@
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { ModelElement } from 'data/content/model/elements/types';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
 import * as React from 'react';
@@ -7,13 +7,13 @@ import { Element, Range, Text } from 'slate';
 import { useFocused, useSelected, useSlate } from 'slate-react';
 import { StructuredContent } from './resource';
 
-export const useElementSelected = () => {
+export function useElementSelected() {
   const focused = useFocused();
   const selected = useSelected();
   const [ok, setOk] = React.useState(focused && selected);
   React.useEffect(() => setOk(focused && selected), [focused, selected]);
   return ok;
-};
+}
 
 export const useCollapsedSelection = () => {
   const editor = useSlate();
@@ -66,7 +66,7 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
     }
   }
 
-  return <i>Empty</i>;
+  return <i>No content</i>;
 }
 
 export const positionRect = ({

@@ -1,4 +1,4 @@
 import ActivityBank from './bank/ActivityBank';
-import { defineApplication } from './app';
+import { registerApplication } from './app';
 
-defineApplication(ActivityBank);
+registerApplication('ActivityBank', ActivityBank);

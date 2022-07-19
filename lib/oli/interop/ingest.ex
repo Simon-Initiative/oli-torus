@@ -4,6 +4,7 @@ defmodule Oli.Interop.Ingest do
   alias Oli.Interop.Scrub
   alias Oli.Resources.PageContent
   alias Oli.Utils.SchemaResolver
+  alias Oli.Resources.ContentMigrator
 
   @project_key "_project"
   @hierarchy_key "_hierarchy"
@@ -109,6 +110,7 @@ defmodule Oli.Interop.Ingest do
              create_project(project_details, as_author),
            {:ok, tag_map} <- create_tags(project, resource_map, as_author),
            {:ok, objective_map} <- create_objectives(project, resource_map, tag_map, as_author),
+           {:ok, bib_map} <- create_bibentries(project, resource_map, as_author),
            {:ok, {activity_map, _}} <-
              create_activities(project, resource_map, objective_map, tag_map, as_author),
            {:ok, {page_map, _}} <-
@@ -118,6 +120,7 @@ defmodule Oli.Interop.Ingest do
                activity_map,
                objective_map,
                tag_map,
+               bib_map,
                as_author
              ),
            {:ok, _} <- create_media(project, media_details),
@@ -171,6 +174,25 @@ defmodule Oli.Interop.Ingest do
     end)
   end
 
+  defp create_bibentries(project, resource_map, as_author) do
+    bibentries =
+      Map.keys(resource_map)
+      |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
+      |> Enum.filter(fn {_, content} -> Map.get(content, "type") == "Bibentry" end)
+
+    Repo.transaction(fn ->
+      case Enum.reduce_while(bibentries, %{}, fn {id, bibentry}, map ->
+             case create_bibentry(project, bibentry, as_author) do
+               {:ok, revision} -> {:cont, Map.put(map, id, revision)}
+               {:error, e} -> {:halt, {:error, e}}
+             end
+           end) do
+        {:error, e} -> Repo.rollback(e)
+        map -> map
+      end
+    end)
+  end
+
   defp create_activities(project, resource_map, objective_map, tag_map, as_author) do
     registration_map = get_registration_map()
 
@@ -201,7 +223,15 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Process each resource file of type "Page" to create pages
-  defp create_pages(project, resource_map, activity_map, objective_map, tag_map, as_author) do
+  defp create_pages(
+         project,
+         resource_map,
+         activity_map,
+         objective_map,
+         tag_map,
+         bib_map,
+         as_author
+       ) do
     {changes, pages} =
       Map.keys(resource_map)
       |> Enum.map(fn k -> {k, Map.get(resource_map, k)} end)
@@ -210,7 +240,15 @@ defmodule Oli.Interop.Ingest do
 
     Repo.transaction(fn ->
       case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
-             case create_page(project, page, activity_map, objective_map, tag_map, as_author) do
+             case create_page(
+                    project,
+                    page,
+                    activity_map,
+                    objective_map,
+                    tag_map,
+                    bib_map,
+                    as_author
+                  ) do
                {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
@@ -273,7 +311,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_activity_references(content, activity_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs} ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
       case e do
         %{"type" => "activity-reference", "activity_id" => original} = ref ->
           case retrieve(activity_map, original) do
@@ -298,7 +336,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_bank_selections(content, tag_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs} ->
+    PageContent.map_reduce(content, {:ok, []}, fn e, {status, invalid_refs}, _tr_context ->
       case e do
         %{"type" => "selection", "logic" => logic} = ref ->
           case logic do
@@ -341,12 +379,56 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
+  defp rewire_bib_refs(%{"type" => "content", "children" => _children} = content, bib_map) do
+    PageContent.map_reduce(content, {:ok, []}, fn i, {status, bibrefs}, _tr_context ->
+      case i do
+        %{"type" => "cite", "bibref" => bibref} = ref ->
+          bib_id = Map.get(Map.get(bib_map, bibref, %{resource_id: bibref}), :resource_id)
+          {Map.put(ref, "bibref", bib_id), {status, bibrefs ++ [bib_id]}}
+
+        other ->
+          {other, {status, bibrefs}}
+      end
+    end)
+  end
+
+  defp rewire_citation_references(content, bib_map) do
+    brefs =
+      Enum.reduce(Map.get(content, "bibrefs", []), [], fn k, acc ->
+        if Map.has_key?(bib_map, k) do
+          acc ++ [Map.get(Map.get(bib_map, k, %{id: k}), :resource_id)]
+        else
+          acc
+        end
+      end)
+
+    bcontent = Map.put(content, "bibrefs", brefs)
+
+    PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _tr_context ->
+      case e do
+        %{"type" => "content"} = ref ->
+          rewire_bib_refs(ref, bib_map)
+
+        other ->
+          {other, {status, bibrefs}}
+      end
+    end)
+    |> case do
+      {mapped, {:ok, _bibrefs}} ->
+        {:ok, mapped}
+
+      {_mapped, {:error, _bibrefs}} ->
+        {:error, {:rewire_citation_references, "error"}}
+    end
+  end
+
   # Create one page
-  defp create_page(project, page, activity_map, objective_map, tag_map, as_author) do
-    with content <- Map.get(page, "content"),
+  defp create_page(project, page, activity_map, objective_map, tag_map, bib_map, as_author) do
+    with {:ok, %{"content" => content} = page} <- maybe_migrate_resource_content(page, :page),
          :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
-         {:ok, content} <- rewire_bank_selections(content, tag_map) do
+         {:ok, content} <- rewire_bank_selections(content, tag_map),
+         {:ok, content} <- rewire_citation_references(content, bib_map) do
       graded = Map.get(page, "isGraded", false)
 
       %{
@@ -378,16 +460,6 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp validate_json(json, schema) do
-    case ExJsonSchema.Validator.validate(schema, json) do
-      :ok ->
-        :ok
-
-      {:error, errors} ->
-        {:error, {:invalid_json, schema, errors, json}}
-    end
-  end
-
   defp create_activity(
          project,
          activity,
@@ -396,8 +468,9 @@ defmodule Oli.Interop.Ingest do
          tag_map,
          objective_map
        ) do
-    with :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
-
+    with {:ok, %{"content" => content} = activity} <-
+           maybe_migrate_resource_content(activity, :activity),
+         :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
       title =
         case Map.get(activity, "title") do
           nil -> Map.get(activity, "subType")
@@ -415,7 +488,7 @@ defmodule Oli.Interop.Ingest do
         scope: scope,
         tags: transform_tags(activity, tag_map),
         title: title,
-        content: Map.get(activity, "content"),
+        content: content,
         author_id: as_author.id,
         objectives: process_activity_objectives(activity, objective_map),
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
@@ -423,6 +496,26 @@ defmodule Oli.Interop.Ingest do
         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
       }
       |> create_resource(project)
+    end
+  end
+
+  defp maybe_migrate_resource_content(resource, resource_type) do
+    case ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest) do
+      {:migrated, migrated} ->
+        {:ok, Map.put(resource, "content", migrated)}
+
+      {:skipped, _} ->
+        {:ok, resource}
+    end
+  end
+
+  defp validate_json(json, schema) do
+    case ExJsonSchema.Validator.validate(schema, json) do
+      :ok ->
+        :ok
+
+      {:error, errors} ->
+        {:error, {:invalid_json, schema, errors, json}}
     end
   end
 
@@ -456,6 +549,18 @@ defmodule Oli.Interop.Ingest do
       author_id: as_author.id,
       objectives: %{},
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("tag")
+    }
+    |> create_resource(project)
+  end
+
+  defp create_bibentry(project, bibentry, as_author) do
+    %{
+      tags: [],
+      title: Map.get(bibentry, "title", "empty bibentry"),
+      content: Map.get(bibentry, "content", %{}),
+      author_id: as_author.id,
+      objectives: %{},
+      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("bibentry")
     }
     |> create_resource(project)
   end
@@ -513,14 +618,17 @@ defmodule Oli.Interop.Ingest do
 
   # create the course hierarchy
   defp create_hierarchy(project, root_revision, page_map, tag_map, hierarchy_details, as_author) do
-    # Process top-level items and containers, add recursively add containers
+    # Process top-level items and containers, add recursively add container
     children =
       Map.get(hierarchy_details, "children")
       |> Enum.filter(fn c -> c["type"] == "item" || c["type"] == "container" end)
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
-          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, tag_map, c)
+          "item" ->
+            Map.get(page_map, Map.get(c, "idref")).resource_id
+
+          "container" ->
+            create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 
@@ -540,8 +648,12 @@ defmodule Oli.Interop.Ingest do
       Map.get(container, "children")
       |> Enum.map(fn c ->
         case Map.get(c, "type") do
-          "item" -> Map.get(page_map, Map.get(c, "idref")).resource_id
-          "container" -> create_container(project, page_map, as_author, tag_map, c)
+          "item" ->
+            p = Map.get(page_map, Map.get(c, "idref"))
+            p.resource_id
+
+          "container" ->
+            create_container(project, page_map, as_author, tag_map, c)
         end
       end)
 

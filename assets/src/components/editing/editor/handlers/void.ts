@@ -1,6 +1,6 @@
 import { Transforms, Range, Path, Editor } from 'slate';
 import { KeyboardEvent } from 'react';
-import { getNearestBlock } from 'components/editing/utils';
+import { getNearestBlock } from 'components/editing/slateUtils';
 import { ReactEditor } from 'slate-react';
 import { schema, SchemaConfig } from 'data/content/model/schema';
 import { Model } from 'data/content/model/elements/factories';

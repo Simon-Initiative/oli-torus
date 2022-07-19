@@ -9,6 +9,7 @@ defmodule Oli.Activities.ActivityMapEntry do
     :icon,
     :description,
     :friendlyName,
+    :petiteLabel,
     :slug,
     :globallyAvailable,
     enabledForProject: false
@@ -20,6 +21,7 @@ defmodule Oli.Activities.ActivityMapEntry do
         description: description,
         icon: icon,
         title: title,
+        petite_label: petite_label,
         authoring_element: authoring_element,
         delivery_element: delivery_element,
         globally_available: globally_available
@@ -30,6 +32,7 @@ defmodule Oli.Activities.ActivityMapEntry do
       friendlyName: title,
       description: description,
       authoringElement: authoring_element,
+      petiteLabel: petite_label,
       icon: icon,
       deliveryElement: delivery_element,
       globallyAvailable: globally_available,

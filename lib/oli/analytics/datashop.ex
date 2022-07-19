@@ -8,6 +8,8 @@ defmodule Oli.Analytics.Datashop do
   """
 
   import XmlBuilder
+  import Oli.Utils, only: [value_or: 2]
+
   alias Oli.Publishing
   alias Oli.Authoring.Course
   alias Oli.Delivery.Attempts.Core, as: Attempts
@@ -54,6 +56,23 @@ defmodule Oli.Analytics.Datashop do
     publication = Publishing.get_latest_published_publication_by_slug(project.slug)
     dataset_name = Utils.make_dataset_name(project.slug)
 
+    # Fetch context information such as hierarchy revisions, skill titles and
+    # registered activity slugs ahead of time and place them into the context
+
+    # a map of resource ids to published revision
+    hierarchy_map =
+      Publishing.get_published_resources_by_publication(publication.id)
+      |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
+      |> build_hierarchy_map(publication.root_resource_id)
+
+    activity_types =
+      Oli.Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.id, a) end)
+
+    skill_titles =
+      Oli.Publishing.get_published_objective_details(publication.id)
+      |> Enum.reduce(%{}, fn a, m -> Map.put(m, a.resource_id, a.title) end)
+
     Attempts.get_part_attempts_and_users(project.id)
     |> group_part_attempts_by_user_and_part
     |> Enum.map(fn {{email, sub, activity_slug, part_id}, part_attempts} ->
@@ -61,16 +80,20 @@ defmodule Oli.Analytics.Datashop do
         date: hd(part_attempts).activity_attempt.resource_attempt.inserted_at,
         email: email,
         sub: sub,
+        # datashop_session_id will be set to the latest part attempt datashop_session_id
+        # unless it is nil, then it will be set to a generated UUID. This will handle any
+        # part attempts that existed before this value was tracked in the part attempt record
+        datashop_session_id: value_or(hd(part_attempts).datashop_session_id, UUID.uuid4()),
         context_message_id: Utils.make_unique_id(activity_slug, part_id),
         problem_name: Utils.make_problem_name(activity_slug, part_id),
         dataset_name: dataset_name,
         part_attempt: hd(part_attempts),
+        records: part_attempts,
         publication: publication,
-        # a map of resource ids to published revision
-        hierarchy_map:
-          Publishing.get_published_resources_by_publication(publication.id)
-          |> Enum.reduce(%{}, fn pr, m -> Map.put(m, pr.resource_id, pr.revision) end)
-          |> build_hierarchy_map(publication.root_resource_id)
+        project: project,
+        hierarchy_map: hierarchy_map,
+        activity_types: activity_types,
+        skill_titles: skill_titles
       }
 
       [
@@ -85,15 +108,13 @@ defmodule Oli.Analytics.Datashop do
                   part_attempt: part_attempt,
                   skill_ids:
                     part_attempt.activity_attempt.revision.objectives[part_attempt.part_id] || [],
-                  total_hints_available:
-                    Utils.total_hints_available(get_part_from_attempt(part_attempt))
+                  total_hints_available: get_hints_for_part(part_attempt) |> length
                 }
               )
 
             hint_message_pairs =
               create_hint_message_pairs(
                 part_attempt,
-                get_part_from_attempt(part_attempt),
                 context
               )
 
@@ -111,13 +132,50 @@ defmodule Oli.Analytics.Datashop do
     end)
   end
 
+  # safely get the hints list from a part, returning an empty list if
+  # the part or the hints do not exist, or if hints is present but not a list
+  defp get_hints_for_part(part_attempt) do
+    case get_part_from_attempt(part_attempt) do
+      nil ->
+        []
+
+      map ->
+        case Map.get(map, "hints") do
+          nil -> []
+          hints when is_list(hints) -> hints
+          _ -> []
+        end
+    end
+  end
+
   defp group_part_attempts_by_user_and_part(part_attempts_and_users) do
-    part_attempts_and_users
-    |> Enum.group_by(
-      &{&1.user.email, &1.user.sub, &1.part_attempt.activity_attempt.revision.slug,
-       &1.part_attempt.part_id},
-      & &1.part_attempt
-    )
+    Enum.reduce(part_attempts_and_users, %{}, fn r, m ->
+      key = safely_build_key(r)
+
+      case Map.get(m, key) do
+        nil -> Map.put(m, key, [r.part_attempt])
+        records -> Map.put(m, key, [r.part_attempt | records])
+      end
+    end)
+    |> Enum.reduce(%{}, fn {k, v}, m -> Map.put(m, k, Enum.reverse(v)) end)
+    |> Enum.map(fn {k, v} -> {k, v} end)
+  end
+
+  defp safely_build_key(r) do
+    [
+      r.user.email,
+      r.user.sub,
+      r.part_attempt.activity_attempt.revision.slug,
+      r.part_attempt.part_id
+    ]
+    |> Enum.map(fn k ->
+      if is_nil(k) do
+        ""
+      else
+        k
+      end
+    end)
+    |> List.to_tuple()
   end
 
   # Wraps the messages inside a <tutor_related_message_sequence />, which is required by the
@@ -134,14 +192,18 @@ defmodule Oli.Analytics.Datashop do
     )
   end
 
-  defp create_hint_message_pairs(part_attempt, part, context) do
-    part_attempt.hints
+  defp create_hint_message_pairs(
+         part_attempt,
+         context
+       ) do
+    get_hints_for_part(part_attempt)
+    |> Enum.take(length(part_attempt.hints))
     |> Enum.with_index()
-    |> Enum.flat_map(fn {hint_id, hint_index} ->
+    |> Enum.flat_map(fn {hint_content, hint_index} ->
       context =
         Map.merge(context, %{
           current_hint_number: hint_index + 1,
-          hint_text: Utils.hint_text(part, hint_id)
+          hint_text: Utils.hint_text(hint_content)
         })
 
       [

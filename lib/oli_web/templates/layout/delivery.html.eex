@@ -11,15 +11,16 @@
     <link rel="icon" type="image/png" sizes="32x32" href="<%= favicons("favicon-32x32.png", assigns[:section]) %>">
     <link rel="manifest" href="/site.webmanifest">
 
-    <!-- This page supports both dark and light color schemes, defaults to light. -->
-    <meta name="color-scheme" content="light dark">
-
     <!-- Theme CSS (contains all bootstrap styles as well as custom styles for a specific theme) -->
-    <link id="delivery-theme-light" rel="stylesheet" href="/css/delivery_torus_light.css" media="(prefers-color-scheme: light)"/>
-    <link id="delivery-theme-dark" rel="stylesheet" href="/css/delivery_torus_dark.css" media="(prefers-color-scheme: dark)"/>
+    <link id="delivery-theme" rel="stylesheet" href="/css/delivery_default.css" />
 
-    <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <%= if dev_mode?() do %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.development.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"></script>
+    <% else %>
+      <script crossorigin src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+      <script crossorigin src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <% end %>
 
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.0.slim.min.js" integrity="sha256-MlusDLJIP1GRgLrOflUQtshyP0TwT/RHXsI1wWGnQhs=" crossorigin="anonymous"></script>
@@ -44,6 +45,12 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js" integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
+    <script>
+      window.cite = require('citation-js')
+    </script>
+
     <script>
     window.MathJax = window.MathJax || {
       tex: {
@@ -65,12 +72,17 @@
 
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
-    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
+    <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
+      <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
+    <% end %>
+    <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
+    <script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(@conn, "/js/keepalive.js") %>" data-type="user"></script>
   </head>
   <body>
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
-
+    <%= render OliWeb.LayoutView, "_pay_early.html", assigns %>
     <%= render OliWeb.LayoutView, "_delivery_header.html", assigns %>
 
     <main role="main" class="container">

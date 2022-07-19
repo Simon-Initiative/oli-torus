@@ -59,7 +59,7 @@ export const InputRefEditor = (props: InputRefProps) => {
       {...props.attributes}
       contentEditable={false}
       style={Object.assign(borderStyle, { display: 'inline-block' })}
-      onKeyPress={(e) => {
+      onKeyPress={(e: any) => {
         if (e.key === 'Enter') {
           action(e);
         }
@@ -67,7 +67,7 @@ export const InputRefEditor = (props: InputRefProps) => {
     >
       <HoverContainer
         content={
-          <Toolbar context={props.commandContext}>
+          <Toolbar context={props.commandContext} orientation="horizontal">
             <Toolbar.Group>
               {initCommands(input, inputRefContext.setInputType).map((desc, i) => (
                 <CommandButton description={desc} key={i} />

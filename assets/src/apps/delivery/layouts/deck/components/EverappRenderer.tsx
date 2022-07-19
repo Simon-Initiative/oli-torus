@@ -45,7 +45,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
 
   const handleEverappActivityReady = useCallback(async () => {
     if (!currentActivityTree) {
-      console.warn('READY BUT NO TREE????');
+      console.warn('[EverApp] READY BUT NO TREE????', props);
       return; // very bad!
     }
     const currentActivityIds = currentActivityTree.map((a) => a.id);
@@ -159,6 +159,7 @@ const EverappRenderer: React.FC<IEverappRendererProps> = (props) => {
           onActivityReady={handleEverappActivityReady}
           onRequestLatestState={handleRequestLatestState}
           adaptivityDomain="app"
+          isEverApp={true}
         />
       </div>
     </div>

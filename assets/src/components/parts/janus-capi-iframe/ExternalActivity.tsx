@@ -2,13 +2,14 @@ import { evaluateJsonObject, looksLikeJson, templatizeText } from 'adaptivity/sc
 import { Environment } from 'janus-script';
 import debounce from 'lodash/debounce';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
+import guid from 'utils/guid';
 import { CapiVariable, CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
   subscribeToNotification,
 } from '../../../apps/delivery/components/NotificationContext';
 import { contexts } from '../../../types/applicationContext';
-import { clone, parseBool, parseBoolean } from '../../../utils/common';
+import { clone, parseBool, parseBoolean, parseNumString } from '../../../utils/common';
 import { PartComponentProps } from '../types/parts';
 import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAPIRequestTypes';
 import { CapiIframeModel } from './schema';
@@ -48,8 +49,32 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
   const [simFrame, setSimFrame] = useState<HTMLIFrameElement>();
   const [frameSrc, setFrameSrc] = useState<string>('');
   const [frameCssClass, setFrameCssClass] = useState('');
+
+  const [questionId, setQuestionId] = useState('');
+  const [lessonId, setLessonId] = useState('');
+
   // these rely on being set every render and the "model" useState value being set
   const { src, title, allowScrolling, configData } = model;
+
+  // console.log('ExternalActivity', props, model);
+
+  const getInterestedVariable = (StateSnapshot: Record<string, any>, domain: string) => {
+    return Object.keys(StateSnapshot).reduce((collect: Record<string, any>, key) => {
+      if (key.indexOf(`${domain}.${id}.`) === 0) {
+        const value = StateSnapshot[key];
+        const typeOfValue = typeof value;
+        if (value === '[]') {
+          collect[key] = '';
+        } else if (typeOfValue === 'object') {
+          collect[key] = JSON.stringify(value);
+        } else {
+          collect[key] = value;
+        }
+      }
+      return collect;
+    }, {});
+  };
+
   useEffect(() => {
     const styleChanges: any = {};
     if (frameWidth !== undefined) {
@@ -133,6 +158,8 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         },
       ],
     });
+    setLessonId(initResult.context.currentLesson);
+    setQuestionId(initResult.context.currentActivity);
 
     // result of init has a state snapshot with latest (init state applied)
     writeCapiLog('INIT RESULT CAPI', initResult);
@@ -192,19 +219,20 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       setFrameSrc(sSrc);
     }
 
-    // INIT STATE also needs to take in all the sim values
+    // gather the changes with values only for my ID
     const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
       (collect: Record<string, any>, key) => {
-        const value = currentStateSnapshot[key];
-        const typeOfValue = typeof value;
-        if (value === '[]') {
-          collect[key] = '';
-        } else if (typeOfValue === 'object') {
-          collect[key] = JSON.stringify(value);
-        } else {
-          collect[key] = value;
+        if (key.indexOf(`${domain}.${id}.`) === 0) {
+          const value = currentStateSnapshot[key];
+          const typeOfValue = typeof value;
+          if (value === '[]') {
+            collect[key] = '';
+          } else if (typeOfValue === 'object') {
+            collect[key] = JSON.stringify(value);
+          } else {
+            collect[key] = value;
+          }
         }
-
         return collect;
       },
       {},
@@ -284,23 +312,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     }
 
     // INIT STATE also needs to take in all the sim values
-    const interestedSnapshot = Object.keys(currentStateSnapshot).reduce(
-      (collect: Record<string, any>, key) => {
-        if (key.indexOf(`${domain}.${id}.`) === 0) {
-          const value = currentStateSnapshot[key];
-          const typeOfValue = typeof value;
-          if (value === '[]') {
-            collect[key] = '';
-          } else if (typeOfValue === 'object') {
-            collect[key] = JSON.stringify(value);
-          } else {
-            collect[key] = value;
-          }
-        }
-        return collect;
-      },
-      {},
-    );
+    const interestedSnapshot = getInterestedVariable(currentStateSnapshot, domain);
     setInitState(interestedSnapshot);
     simLife.snapshot = currentStateSnapshot;
     setInitStateReceived(true);
@@ -395,7 +407,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     handshake: {
       // should be of type CapiHandshake
       requestToken: '',
-      authToken: props.id,
+      authToken: `${guid()}_${props.id}`,
       config: {},
     },
     init: false, // initial setup complete; this might be init state?
@@ -535,15 +547,25 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
               simLife.handshake.config = {
                 context: payload.mode,
                 questionId: payload.currentActivityId,
+                lessonId: payload.currentLessonId,
               };
               notifyConfigChange();
               // we only send the Init state variables.
               const currentStateSnapshot = payload.initStateFacts;
+
+              setLessonId(payload.currentLessonId);
+              setQuestionId(payload.currentActivityId);
+
               setInitStateBindToFacts(payload.initStateBindToFacts);
               setScreenContext(NotificationType.CONTEXT_CHANGED);
-              processInitStateVariable(currentStateSnapshot, simLife.domain);
-
-              setSimIsInitStatePassedOnce(false);
+              const interestedSnapshot = getInterestedVariable(
+                currentStateSnapshot,
+                simLife.domain,
+              );
+              if (interestedSnapshot && Object.keys(interestedSnapshot).length) {
+                processInitStateVariable(currentStateSnapshot, simLife.domain);
+                setSimIsInitStatePassedOnce(false);
+              }
             }
             break;
         }
@@ -572,6 +594,15 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
             typeof changedVar.value === 'number'
           ) {
             changedVar.type = CapiVariableTypes.NUMBER;
+          } else if (
+            changedVar.type === CapiVariableTypes.STRING &&
+            !Number.isNaN(changedVar.value)
+          ) {
+            const parsedValue = parseNumString(changedVar.value);
+            if (typeof parsedValue === 'number') {
+              changedVar.type = CapiVariableTypes.NUMBER;
+              changedVar.value = parsedValue;
+            }
           }
           mutableState.push(changedVar);
           hasDiff = true;
@@ -632,7 +663,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     simLife.handshake.requestToken = msgRequestToken;
 
     // taken from simcapi.js TODO move somewhere, use from settings
-    simLife.handshake.config = { context: context };
+    simLife.handshake.config = {
+      context: context,
+      lessonId,
+      questionId,
+    };
 
     // TODO: here in the handshake response we should send come config...
     sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
@@ -654,12 +689,19 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         const formatted: Record<string, any> = {};
         formatted[variable] = filterVars[variable];
         const value = formatted[variable].value;
-        if (typeof value === 'string') {
+        const isMathExpr = formatted[variable].type === CapiVariableTypes.MATH_EXPR;
+
+        if (typeof value === 'string' && !isMathExpr) {
           //we don't want to evaluate a JSON string
           const looksLikeJSON = looksLikeJson(value);
           formatted[variable].value = looksLikeJSON
             ? JSON.stringify(evaluateJsonObject(JSON.parse(value), scriptEnv))
-            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true);
+            : templatizeText(formatted[variable].value, simLife.snapshot, scriptEnv, true, false);
+        } else if (typeof value === 'string' && isMathExpr) {
+          if (value.search(/app\.|variables\.|stage\.|session\./) >= 0) {
+            // math expr could be like: 16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}} which does NOT need processing
+            formatted[variable].value = templatizeText(value, simLife.snapshot, scriptEnv, true);
+          }
         }
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       });
@@ -701,7 +743,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         value = JSON.stringify(val);
       }
       response.values.responseType = 'success';
-      response.values.value = value;
+      response.values.value = value?.length ? value : '[]';
       response.values.exists = exists;
     } catch (err) {
       response.values.responseType = 'error';
@@ -953,11 +995,11 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
           break;
 
         case JanusCAPIRequestTypes.SET_DATA_REQUEST:
-          handleSetData(data);
+          if (context !== contexts.REVIEW) handleSetData(data);
           break;
 
         case JanusCAPIRequestTypes.CHECK_REQUEST:
-          handleCheckRequest(data);
+          if (context !== contexts.REVIEW) handleCheckRequest(data);
           break;
 
         case JanusCAPIRequestTypes.RESIZE_PARENT_CONTAINER_REQUEST:
@@ -1060,14 +1102,22 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.VALUE_CHANGE, formatted);
       }
     });
+
+    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
     if (!simLife.init) {
-      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.INITIAL_SETUP_COMPLETE, {});
       handleBindToSim();
       simLife.init = true;
+    } else {
+      // not sure what the purpose of this is, but SS does it and it fixes some things (for now)
+      simLife.handshake.requestToken = `${props.id}_${guid()}`;
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, {});
     }
+
     setSimIsInitStatePassedOnce(true);
   }, [simLife, initState, simIsInitStatePassedOnce, initStateBindToFacts, screenContext]);
+
   const scrolling = allowScrolling ? 'yes' : 'no';
+
   return initStateReceived ? (
     <iframe
       data-janus-type={tagName}

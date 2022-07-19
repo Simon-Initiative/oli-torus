@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
-import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { makeHint } from 'components/activities/types';
 import { defaultActivityState } from 'data/activities/utils';
 

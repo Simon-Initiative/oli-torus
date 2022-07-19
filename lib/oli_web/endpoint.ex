@@ -57,6 +57,14 @@ defmodule OliWeb.Endpoint do
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
+  unless Mix.env() == :test do
+    plug(Oli.Plugs.SSL,
+      rewrite_on: [:x_forwarded_proto],
+      hsts: true,
+      log: false
+    )
+  end
+
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
@@ -64,7 +72,7 @@ defmodule OliWeb.Endpoint do
 
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user))
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-  plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_persistent_session")
+  plug(PowPersistentSession.Plug.Cookie)
 
   plug(OliWeb.Router)
 end

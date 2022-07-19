@@ -10,6 +10,7 @@ export interface CheckResults {
   score: number;
   outOf: number;
 }
+
 export interface AdaptivityState {
   isGoodFeedback: boolean;
   currentFeedbacks: any[];
@@ -82,8 +83,12 @@ const slice: Slice<AdaptivityState> = createSlice({
     ) {
       state.historyModeNavigation = action.payload.historyModeNavigation;
     },
-    setInitPhaseComplete(state) {
-      state.initPhaseComplete = Date.now();
+    setInitPhaseComplete(state, action: PayloadAction<boolean>) {
+      if (!action.payload) {
+        state.initPhaseComplete = null;
+      } else {
+        state.initPhaseComplete = Date.now();
+      }
     },
   },
 });

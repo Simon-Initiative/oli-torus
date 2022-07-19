@@ -1,5 +1,5 @@
 import React from 'react';
-import './Radio.scss';
+import { classNames } from 'utils/classNames';
 
 interface Props {
   className?: string;
@@ -8,7 +8,7 @@ interface Props {
 
 const Checked = ({ className, disabled }: Props) => (
   <input
-    className={`oli-radio flex-shrink-0 ${className || ''}`}
+    className={classNames(className, 'oli-radio', 'flex-shrink-0')}
     type="radio"
     checked
     disabled={disabled || false}

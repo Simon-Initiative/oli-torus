@@ -1,0 +1,20 @@
+{
+  "id": "oli_likert",
+  "friendlyName": "Likert",
+  "petiteLabel": "Likert",
+  "description": "A question type that collects input from one or more Likert scales",
+  "icon": "sliders-h",
+  "allowClientEvaluation": false,
+  "delivery": {
+    "element": "oli-likert-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-likert-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

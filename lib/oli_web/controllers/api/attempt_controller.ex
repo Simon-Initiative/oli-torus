@@ -408,11 +408,24 @@ defmodule OliWeb.Api.AttemptController do
         "section_slug" => section_slug,
         "activity_attempt_guid" => activity_attempt_guid,
         "part_attempt_guid" => attempt_guid,
-        "input" => input
+        "response" => input
       }) do
-    case ActivityEvaluation.evaluate_from_input(section_slug, activity_attempt_guid, [
-           %{attempt_guid: attempt_guid, input: input}
-         ]) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case ActivityEvaluation.evaluate_from_input(
+           section_slug,
+           activity_attempt_guid,
+           [
+             %{
+               attempt_guid: attempt_guid,
+               input: %StudentInput{
+                 files: Map.get(input, "files", []),
+                 input: Map.get(input, "input")
+               }
+             }
+           ],
+           datashop_session_id
+         ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -430,8 +443,20 @@ defmodule OliWeb.Api.AttemptController do
        responses: %{
          200 => {"Evaluation response", "application/json", UserStateUpdateResponse}
        }
-  def new_part(conn, %{"activity_attempt_guid" => _, "part_attempt_guid" => _attempt_guid}) do
-    json(conn, %{"type" => "success"})
+  def new_part(conn, %{
+        "activity_attempt_guid" => activity_attempt_guid,
+        "part_attempt_guid" => part_attempt_guid
+      }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
+    case Activity.reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
+      {:ok, attempt_state} ->
+        json(conn, %{"type" => "success", "attemptState" => attempt_state})
+
+      {:error, e} ->
+        {_, msg} = Oli.Utils.log_error("Could not reset part", e)
+        error(conn, 500, msg)
+    end
   end
 
   @doc """
@@ -501,12 +526,22 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "partInputs" => part_inputs
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     parsed =
       Enum.map(part_inputs, fn %{"attemptGuid" => attempt_guid, "response" => input} ->
-        %{attempt_guid: attempt_guid, input: %StudentInput{input: Map.get(input, "input")}}
+        %{
+          attempt_guid: attempt_guid,
+          input: %StudentInput{files: Map.get(input, "files", []), input: Map.get(input, "input")}
+        }
       end)
 
-    case ActivityEvaluation.evaluate_activity(section_slug, activity_attempt_guid, parsed) do
+    case ActivityEvaluation.evaluate_activity(
+           section_slug,
+           activity_attempt_guid,
+           parsed,
+           datashop_session_id
+         ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
 
@@ -531,6 +566,8 @@ defmodule OliWeb.Api.AttemptController do
         "activity_attempt_guid" => activity_attempt_guid,
         "evaluations" => client_evaluations
       }) do
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+
     client_evaluations =
       Enum.map(client_evaluations, fn %{
                                         "attemptGuid" => attempt_guid,
@@ -555,7 +592,8 @@ defmodule OliWeb.Api.AttemptController do
     case ActivityEvaluation.apply_client_evaluation(
            section_slug,
            activity_attempt_guid,
-           client_evaluations
+           client_evaluations,
+           datashop_session_id
          ) do
       {:ok, evaluations} ->
         json(conn, %{"type" => "success", "actions" => evaluations})
@@ -581,14 +619,54 @@ defmodule OliWeb.Api.AttemptController do
         } = params
       ) do
     seed_state_from_previous = Map.get(params, "seedResponsesWithPrevious", false)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    case Activity.reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous) do
+    case Activity.reset_activity(
+           section_slug,
+           activity_attempt_guid,
+           datashop_session_id,
+           seed_state_from_previous
+         ) do
       {:ok, {attempt_state, model}} ->
         json(conn, %{"type" => "success", "attemptState" => attempt_state, "model" => model})
 
       {:error, e} ->
         {_, msg} = Oli.Utils.log_error("Could not reset activity", e)
         error(conn, 500, msg)
+    end
+  end
+
+  def file_upload(conn, %{
+        "section_slug" => section_slug,
+        "activity_attempt_guid" => activity_guid,
+        "part_attempt_guid" => part_guid,
+        "file" => file,
+        "name" => name
+      }) do
+    case Base.decode64(file) do
+      {:ok, contents} ->
+        case Oli.Delivery.Attempts.Artifact.upload(
+               section_slug,
+               activity_guid,
+               part_guid,
+               name,
+               contents
+             ) do
+          {:ok, url} ->
+            json(conn, %{
+              result: "success",
+              url: url,
+              fileSize: byte_size(contents),
+              creationDate: :os.system_time(:millisecond)
+            })
+
+          {:error, error} ->
+            {_id, err_msg} = Oli.Utils.log_error("failed to add artifact", error)
+            error(conn, 400, err_msg)
+        end
+
+      _ ->
+        error(conn, 400, "invalid encoded file")
     end
   end
 

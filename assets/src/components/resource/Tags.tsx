@@ -7,6 +7,8 @@ import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/tags';
 import guid from 'utils/guid';
 
+import './Tags.scss';
+
 export type TagsProps = {
   tags: Tag[];
   selected: ResourceId[];
@@ -76,7 +78,6 @@ export const Tags = (props: TagsProps) => {
           options={props.tags}
           allowNew={true}
           newSelectionPrefix="Create new tag: "
-          selectHintOnEnter={true}
           labelKey="title"
           selected={asTags}
           placeholder="Select tags..."

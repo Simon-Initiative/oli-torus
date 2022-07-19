@@ -8,8 +8,8 @@ defmodule Oli.Delivery.Evaluation.Adaptive do
         %Part{} = _
       ) do
     {:ok,
-     %Oli.Delivery.Evaluation.Actions.StateUpdateActionResult{
-       type: "StateUpdateActionResult",
+     %Oli.Delivery.Evaluation.Actions.StateUpdateAction{
+       type: "StateUpdateAction",
        attempt_guid: attempt_guid,
        update: %{}
      }}

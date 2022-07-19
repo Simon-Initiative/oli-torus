@@ -17,7 +17,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
     DropTarget,
     EntryLive,
     OptionsModal,
-    DeleteModal
+    DeleteModal,
+    NotEmptyModal
   }
 
   alias OliWeb.Common.Hierarchy.MoveModal
@@ -95,7 +96,8 @@ defmodule OliWeb.Curriculum.ContainerLive do
            modal: nil,
            resources_being_edited: get_resources_being_edited(container.children, project.id),
            numberings: Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, project_slug),
-           dragging: nil
+           dragging: nil,
+           page_title: "Curriculum | " <> project.title
          )}
     end
   end
@@ -150,7 +152,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Curriculum")
+    |> assign(:page_title, "Curriculum | " <> socket.assigns.project.title)
     |> assign(:revision, nil)
   end
 
@@ -246,18 +248,33 @@ defmodule OliWeb.Curriculum.ContainerLive do
   def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
     %{container: container, project: project, author: author} = socket.assigns
 
-    assigns = %{
-      id: "delete_#{slug}",
-      revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
-      container: container,
-      project: project,
-      author: author
-    }
+    case Enum.find(socket.assigns.children, fn r -> r.slug == slug end) do
+      %{children: []} = item ->
+        proceed_with_deletion_warning(socket, container, project, author, item)
+
+      item ->
+        notify_not_empty(socket, container, project, author, item)
+    end
+  end
+
+  def handle_event("duplicate_page", %{"id" => page_id}, socket) do
+    %{container: container, project: project, author: author} = socket.assigns
+
+    socket =
+      case ContainerEditor.duplicate_page(container, page_id, author, project) do
+        {:ok, _result} ->
+          socket
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          socket
+            |> put_flash(:error, "Could not duplicate page")
+      end
 
     {:noreply,
-     assign(socket,
-       modal: %{component: DeleteModal, assigns: assigns}
-     )}
+      assign(socket,
+        numberings:
+          Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+    )}
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
@@ -297,6 +314,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("dismiss", _, socket) do
     {:noreply, socket}
   end
 
@@ -408,7 +429,10 @@ defmodule OliWeb.Curriculum.ContainerLive do
             }
 
           _ ->
-            %{"model" => []}
+            %{
+              "version" => "0.1.0",
+              "model" => []
+            }
         end,
       title:
         case type do
@@ -487,6 +511,36 @@ defmodule OliWeb.Curriculum.ContainerLive do
            socket.assigns.container.slug,
            %{view: view}
          )
+     )}
+  end
+
+  defp proceed_with_deletion_warning(socket, container, project, author, item) do
+    assigns = %{
+      id: "delete_#{item.slug}",
+      revision: item,
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: DeleteModal, assigns: assigns}
+     )}
+  end
+
+  defp notify_not_empty(socket, container, project, author, item) do
+    assigns = %{
+      id: "not_empty_#{item.slug}",
+      revision: item,
+      container: container,
+      project: project,
+      author: author
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: NotEmptyModal, assigns: assigns}
      )}
   end
 
@@ -649,9 +703,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
     # latest active publication_id would need to be tracked in the assigns and updated if a project is published.
     # Same thing applies to the :lock_released handler below.
     if Publishing.get_unpublished_publication_id!(project_id) == publication_id do
-      author =
-        Accounts.get_user!(author_id)
-        |> Repo.preload(:author)
+      author = Accounts.get_author(author_id)
 
       new_resources_being_edited = Map.put(resources_being_edited, resource_id, author)
       {:noreply, assign(socket, resources_being_edited: new_resources_being_edited)}

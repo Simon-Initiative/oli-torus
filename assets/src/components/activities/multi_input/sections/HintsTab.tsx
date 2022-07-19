@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { CognitiveHints } from 'components/activities/common/hints/authoring/HintsAuthoring';
 import { MultiInput, MultiInputSchema } from 'components/activities/multi_input/schema';
 import { partTitle } from 'components/activities/multi_input/utils';

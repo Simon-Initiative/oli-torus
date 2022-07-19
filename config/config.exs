@@ -25,6 +25,7 @@ config :oli,
   problematic_query_detection: :disabled,
   problematic_query_cost_threshold: 150,
   ecto_repos: [Oli.Repo],
+  prometheus_port: 9568,
   build: %{
     version: Mix.Project.config()[:version],
     sha: System.get_env("SHA", default_sha),
@@ -51,7 +52,8 @@ config :oli,
       ),
     favicons: System.get_env("BRANDING_FAVICONS_DIR", "/favicons")
   ],
-  payment_provider: System.get_env("PAYMENT_PROVIDER", "none")
+  payment_provider: System.get_env("PAYMENT_PROVIDER", "none"),
+  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2"))
 
 rule_evaluator_provider =
   case System.get_env("RULE_EVALUATOR_PROVIDER") do
@@ -61,9 +63,21 @@ rule_evaluator_provider =
 
 config :oli, :rule_evaluator,
   dispatcher: rule_evaluator_provider,
-  node_js_pool_size: String.to_integer(System.get_env("NODE_JS_POOL_SIZE", "2")),
   aws_fn_name: System.get_env("EVAL_LAMBDA_FN_NAME", "rules"),
   aws_region: System.get_env("EVAL_LAMBDA_REGION", "us-east-1")
+
+variable_substitution_provider =
+  case System.get_env("VARIABLE_SUBSTITUTION_PROVIDER") do
+    nil -> Oli.Activities.Transformers.VariableSubstitution.RestImpl
+    provider -> Module.concat([Oli, Activities, Transformers, VariableSubstitution, provider])
+  end
+
+config :oli, :variable_substitution,
+  dispatcher: variable_substitution_provider,
+  aws_fn_name: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_FN_NAME", "eval"),
+  aws_region: System.get_env("VARIABLE_SUBSTITUTION_LAMBDA_REGION", "us-east-1"),
+  rest_endpoint_url:
+    System.get_env("VARIABLE_SUBSTITUTION_REST_ENDPOINT_URL", "http://localhost:8000/sandbox")
 
 default_description = """
 The Open Learning Initiative enables research and experimentation with all aspects of the learning experience.
@@ -95,6 +109,9 @@ config :oli, :stripe_provider,
 
 # Configure database
 config :oli, Oli.Repo, migration_timestamps: [type: :timestamptz]
+
+# Config adapter for refreshing part_mapping
+config :oli, Oli.Publishing, refresh_adapter: Oli.Publishing.PartMappingRefreshAsync
 
 # Configures the endpoint
 config :oli, OliWeb.Endpoint,
@@ -203,6 +220,15 @@ config :oli, :auth_providers,
   author_github_client_secret: System.get_env("AUTHOR_GITHUB_CLIENT_SECRET", ""),
   user_github_client_id: System.get_env("USER_GITHUB_CLIENT_ID", ""),
   user_github_client_secret: System.get_env("USER_GITHUB_CLIENT_SECRET", "")
+
+# Configure libcluster for horizontal scaling
+# Take into account that different strategies could use different config options
+config :libcluster,
+  topologies: [
+    oli: [
+      strategy: Module.concat([System.get_env("LIBCLUSTER_STRATEGY", "Cluster.Strategy.Gossip")])
+    ]
+  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

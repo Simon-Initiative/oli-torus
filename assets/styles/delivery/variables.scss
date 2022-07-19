@@ -4,12 +4,12 @@
  * These along with any bootstrap variables can be overridden by a specific theme.
  * When creating a new variable, make sure you use !default so it can be overridden.
  **/
-@import "../../node_modules/bootstrap/scss/_functions.scss";
-@import "../../node_modules/bootstrap/scss/_variables.scss";
+@import '../../node_modules/bootstrap/scss/_functions.scss';
+@import '../../node_modules/bootstrap/scss/_variables.scss';
 
 /** OLI specific variables **/
 $code-color: rgba(0, 0, 0, 0.84) !default;
-$font-family-monospace: "Source Code Pro", "Courier New", Courier, monospace !default;
+$font-family-monospace: 'Source Code Pro', 'Courier New', Courier, monospace !default;
 
 $choice-selected-bg: lighten($primary, 42%) !default;
 $choice-selected-bg-hover: lighten($choice-selected-bg, 5%) !default;
@@ -29,12 +29,16 @@ $hints-color: $gray-700 !default;
 $hints-bg: $gray-200 !default;
 $hints-border: none !default;
 
-$content-purpose-example-color: lighten($blue, 30%) !default;
-$content-purpose-learnmore-color: lighten($teal, 30%) !default;
-$content-purpose-manystudentswonder-color: lighten($cyan, 20%) !default;
-$activity-purpose-checkpoint-color: lighten($blue, 20%) !default;
-$activity-purpose-didigetthis-color: lighten($purple, 20%) !default;
-$activity-purpose-learnbydoing-color: lighten($green, 20%) !default;
+$content-purpose-checkpoint-color: rgba(#0984e3, 0.75) !default;
+$content-purpose-didigetthis-color: rgba(#8e44ad, 0.75) !default;
+$content-purpose-example-color: rgba(#74b9ff, 0.75) !default;
+$content-purpose-labactivity-color: rgba(#fdcb6e, 0.75) !default;
+$content-purpose-learnbydoing-color: rgba(#00b894, 0.75) !default;
+$content-purpose-learnmore-color: rgba(#27ae60, 0.75) !default;
+$content-purpose-manystudentswonder-color: rgba(#42729b, 0.75) !default;
+$content-purpose-quiz-color: rgba(#3498db, 0.75) !default;
+$content-purpose-simulation-color: rgba(#ff7675, 0.75) !default;
+$content-survey-color: rgba(#22a6b3, 0.75) !default;
 
 $title-color: $gray-800 !default;
 
@@ -54,3 +58,43 @@ $z-overlay-2: 1050 !default;
 $z-overlay-3: 1100 !default;
 $z-overlay-4: 1150 !default;
 $z-highest: 10000 !default;
+
+// Export all theme SASS variables to CSS
+
+:root {
+  // Custom variable values only support SassScript inside `#{}`.
+  @each $color, $value in $colors {
+    --delivery-#{$color}: #{$value};
+  }
+
+  @each $color, $value in $theme-colors {
+    --delivery-#{$color}: #{$value};
+  }
+
+  @each $bp, $value in $grid-breakpoints {
+    --delivery-breakpoint-#{$bp}: #{$value};
+  }
+
+  // Use `inspect` for lists so that quoted items keep the quotes.
+  // See https://github.com/sass/sass/issues/2383#issuecomment-336349172
+  --delivery-font-family-sans-serif: #{inspect($font-family-sans-serif)};
+  --delivery-font-family-monospace: #{inspect($font-family-monospace)};
+
+  --delivery-gray-100: #{$gray-100};
+  --delivery-gray-200: #{$gray-200};
+  --delivery-gray-300: #{$gray-300};
+  --delivery-gray-400: #{$gray-400};
+  --delivery-gray-500: #{$gray-500};
+  --delivery-gray-600: #{$gray-600};
+  --delivery-gray-700: #{$gray-700};
+  --delivery-gray-800: #{$gray-800};
+  --delivery-gray-900: #{$gray-900};
+
+  --delivery-body-color: #{$body-color};
+  --delivery-body-bg: #{$body-bg};
+
+  --delivery-choice-selected-bg: #{$choice-selected-bg};
+  --delivery-choice-selected-bg-hover: #{$choice-selected-bg-hover};
+  --delivery-choice-selected-color: #{$choice-selected-color};
+  --delivery-choice-selected-border-color: #{$choice-selected-border-color};
+}

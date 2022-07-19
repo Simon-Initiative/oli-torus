@@ -25,9 +25,12 @@ export interface DeliveryProps {
   resourceAttemptGuid: string;
   activityGuidMapping: any;
   previewMode?: boolean;
+  isInstructor: boolean;
   enableHistory?: boolean;
   activityTypes?: any[];
   graded: boolean;
+  overviewURL: string;
+  finalizeGradedURL: string;
 }
 
 const Delivery: React.FC<DeliveryProps> = ({
@@ -43,8 +46,11 @@ const Delivery: React.FC<DeliveryProps> = ({
   activityGuidMapping,
   activityTypes = [],
   previewMode = false,
+  isInstructor = false,
   enableHistory = false,
   graded = false,
+  overviewURL = '',
+  finalizeGradedURL = '',
 }) => {
   const dispatch = useDispatch();
   const currentGroup = useSelector(selectCurrentGroup);
@@ -79,12 +85,15 @@ const Delivery: React.FC<DeliveryProps> = ({
         resourceAttemptState,
         activityGuidMapping,
         previewMode: !!previewMode,
+        isInstructor,
         activityTypes,
         enableHistory,
         showHistory: false,
         score: 0,
         graded,
         activeEverapp: 'none',
+        overviewURL,
+        finalizeGradedURL,
       }),
     );
   };

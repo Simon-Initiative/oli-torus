@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "moduleResolution": "node",
+    "removeComments": false,
+    "inlineSources": true,
+    "sourceMap": true,
+    "noEmitHelpers": false,
+    "alwaysStrict": true,
+    "isolatedModules": false,
+    "baseUrl": "./",
+    "types": ["node", "jest", "jquery"],
+    "paths": {
+      "*": ["src/*"]
+    },
+    "target": "es6",
+    "module": "es2015",
+    "declaration": true,
+    "outDir": "./sdk/dist"
+  },
+  "include": ["./src/components/activities/index.ts"],
+  "exclude": ["node_modules", "dist"]
+}

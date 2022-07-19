@@ -1,7 +1,7 @@
 <div class="workspace-header d-flex justify-content-between">
   <h3><%= @title %></h3>
-  <div>
+  <div class='d-flex flex-nowrap align-items-center'>
     <%= render OliWeb.SharedView, "_help_button.html", conn: @conn %>
-    <%= account_link @conn %>
+    <%= account_dropdown @conn %>
   </div>
 </div>

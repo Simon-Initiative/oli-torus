@@ -1,0 +1,19 @@
+{
+  "id": "oli_custom_dnd",
+  "friendlyName": "Custom Drag and Drop",
+  "petiteLabel": "DnD++",
+  "description": "A completely customizable drag and drop style question",
+  "icon": "hand-point-up",
+  "delivery": {
+    "element": "oli-custom-dnd-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-custom-dnd-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

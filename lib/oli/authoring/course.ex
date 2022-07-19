@@ -6,6 +6,7 @@ defmodule Oli.Authoring.Course do
   alias Oli.Authoring.{Collaborators, ProjectSearch}
   alias Oli.Authoring.Course.{Project, Family, ProjectResource}
   alias Oli.Groups.CommunityVisibility
+  alias Oli.Inventories
   alias Oli.Publishing
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
@@ -285,10 +286,13 @@ defmodule Oli.Authoring.Course do
   end
 
   defp default_project(title, family) do
+    default_publisher = Inventories.default_publisher()
+
     %{
       title: title,
       version: "1.0.0",
-      family_id: family.id
+      family_id: family.id,
+      publisher_id: default_publisher.id
     }
   end
 

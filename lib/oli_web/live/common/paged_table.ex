@@ -12,23 +12,28 @@ defmodule OliWeb.Common.PagedTable do
   prop sort, :event, default: "paged_table_sort"
   prop page_change, :event, default: "paged_table_page_change"
   prop selection_change, :event, default: "paged_table_selection_change"
+  prop show_bottom_paging, :boolean, default: true
 
   def render(assigns) do
     ~F"""
-    <div>
-      {#if @filter != ""}
-      <strong>Results filtered on &quot;{@filter}&quot;</strong>
-      {/if}
-      {#if @total_count > 0 and @total_count < @limit}
-        <div>Showing all results ({@total_count} total)</div>
-        {render_table(assigns)}
-      {#elseif @total_count > 0}
-        <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-        {render_table(assigns)}
-        <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
-      {#else}
-        <p>None exist</p>
-      {/if}
+      <div>
+        {#if @filter != ""}
+          <strong>Results filtered on &quot;{@filter}&quot;</strong>
+        {/if}
+
+        {#if @total_count > 0 and @total_count > @limit}
+          <Paging id="header_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          {render_table(assigns)}
+          {#if @show_bottom_paging}
+            <Paging id="footer_paging" total_count={@total_count} offset={@offset} limit={@limit} click={@page_change}/>
+          {/if}
+        {#elseif @total_count > 0}
+          <div>Showing all results ({@total_count} total)</div>
+          <br>
+          {render_table(assigns)}
+        {#else}
+          <p>None exist</p>
+        {/if}
       </div>
     """
   end

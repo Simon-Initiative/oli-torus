@@ -44,8 +44,9 @@ defmodule OliWeb.Common.Params do
         default_value
 
       value ->
+        value = String.to_existing_atom(value)
         case MapSet.new(valid) |> MapSet.member?(value) do
-          true -> String.to_existing_atom(value)
+          true -> value
           _ -> default_value
         end
     end

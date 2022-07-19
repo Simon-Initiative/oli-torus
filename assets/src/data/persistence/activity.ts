@@ -7,6 +7,8 @@ import {
 } from 'components/activities/types';
 import { ObjectiveMap } from 'data/content/activity';
 import { makeRequest } from './common';
+import { clone } from 'utils/common';
+import { fixObjectiveParts } from './objectives';
 
 export type ActivityUpdate = {
   title: string;
@@ -103,10 +105,15 @@ export const getBulkActivitiesForAuthoring = async (
   });
 };
 
-export const getActivityForDelivery = (sectionSlug: string, activityId: ResourceId) => {
+export const getActivityForDelivery = (
+  sectionSlug: string,
+  activityId: ResourceId,
+  isPreviewMode: boolean,
+) => {
   const params = {
     method: 'GET',
     url: `/storage/course/${sectionSlug}/resource/${activityId}`,
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   return makeRequest<Retrieved>(params);
@@ -115,11 +122,13 @@ export const getActivityForDelivery = (sectionSlug: string, activityId: Resource
 export const getBulkActivitiesForDelivery = async (
   sectionSlug: string,
   activityIds: ResourceId[],
+  isPreviewMode: boolean,
 ) => {
   const params = {
     method: 'POST',
     url: `/storage/course/${sectionSlug}/resource`,
     body: JSON.stringify({ resourceIds: activityIds }),
+    query: isPreviewMode ? { mode: 'preview' } : {},
   };
 
   const response = await makeRequest<BulkRetrieved>(params);
@@ -128,11 +137,13 @@ export const getBulkActivitiesForDelivery = async (
   }
 
   return response.results.map((result: Retrieved) => {
-    const { resourceId: id, title, content } = result;
+    const { resourceId: id, activityType, title, content, authoring } = result;
     return {
       id,
+      activityType,
       title,
       content,
+      authoring,
     };
   });
 };
@@ -176,6 +187,22 @@ export function bulkEdit(
   resource: ResourceId,
   updates: BulkActivityUpdate[],
 ) {
+  // Index "citation references" in the "content and authoring" and elevate them as top-level list
+  updates.forEach((u) => {
+    const citationRefs: string[] = [];
+
+    indexBibrefs(u.content, citationRefs);
+    if (u.authoring) {
+      indexBibrefs(u.authoring, citationRefs);
+    }
+    const { objectives } = fixObjectiveParts(u);
+    // make content mutable
+    const contentClone = clone(u.content);
+    contentClone.bibrefs = citationRefs;
+    u.content = contentClone;
+    u.objectives = objectives || {};
+  });
+
   const params = {
     method: 'PUT',
     body: JSON.stringify({ updates }),
@@ -185,6 +212,15 @@ export function bulkEdit(
   return makeRequest<Updated>(params);
 }
 
+function indexBibrefs(update: any, citationRefs: string[]) {
+  traverseContent(update, (key: string, value: any) => {
+    if (value && value.type === 'cite') {
+      // citationRefs.push({ id: value.bibref, type: 'bibref' });
+      citationRefs.push(value.bibref);
+    }
+  });
+}
+
 export function edit(
   project: ProjectSlug,
   resource: ResourceId,
@@ -192,14 +228,28 @@ export function edit(
   pendingUpdate: ActivityUpdate,
   releaseLock: boolean,
 ) {
-  const update = Object.assign({}, pendingUpdate, { releaseLock });
-  update.content = Object.assign({}, update.content);
+  let update = Object.assign({}, pendingUpdate, { releaseLock });
+  try {
+    update.content = Object.assign({}, update.content);
 
-  // Here we pull the "authoring" key out of "content" and elevate it
-  // as a top-level key
-  if (update.content.authoring !== undefined) {
-    update.authoring = update.content.authoring;
-    delete update.content.authoring;
+    // Here we pull the "authoring" key out of "content" and elevate it
+    // as a top-level key
+    if (update.content.authoring !== undefined) {
+      update.authoring = update.content.authoring;
+      delete update.content.authoring;
+    }
+
+    // Index "citation references" in the "content and authoring" and elevate them as top-level list
+    const citationRefs: string[] = [];
+    indexBibrefs(update.content, citationRefs);
+    if (update.authoring) {
+      indexBibrefs(update.authoring, citationRefs);
+    }
+    update.content.bibrefs = citationRefs;
+    update = fixObjectiveParts(update) as ActivityUpdate & { releaseLock: boolean };
+  } catch (e) {
+    console.error('activity::edit failed', e);
+    throw e;
   }
 
   const params = {
@@ -229,4 +279,13 @@ export function evaluate(model: ActivityModelSchema, partResponses: PartResponse
   };
 
   return makeRequest<Evaluated>(params);
+}
+
+function traverseContent(o: any, func: any) {
+  for (const i in o) {
+    func.apply(this, [i, o[i]]);
+    if (o[i] !== null && typeof o[i] == 'object') {
+      traverseContent(o[i], func);
+    }
+  }
 }

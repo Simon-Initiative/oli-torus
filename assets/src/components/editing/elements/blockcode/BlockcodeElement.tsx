@@ -1,36 +1,48 @@
-import React, { PropsWithChildren, useState, useEffect, useRef, Suspense } from 'react';
+import React, { PropsWithChildren, useEffect, useRef, Suspense, useState } from 'react';
 import { throttle } from 'lodash';
 import { onEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
-import { ReactEditor, useSlate } from 'slate-react';
-import { Editor } from 'slate';
 import * as monaco from 'monaco-editor';
 import { RefEditorInstance } from '@uiw/react-monacoeditor';
 import { isDarkMode, addDarkModeListener, removeDarkModeListener } from 'utils/browser';
 import { DropdownSelect, DropdownItem } from 'components/common/DropdownSelect';
+import './BlockcodeElement.scss';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 
-const getInitialModel = (model: ContentModel.Code) => {
-  const editor = useSlate();
-  // v2 -- code in code attr
-  if (model.code) return model.code;
+const isCodeV2Model = (model: any) => model.code !== undefined;
 
-  // v1 -- code is in code_line child elements
-  const code = Editor.string(editor, ReactEditor.findPath(editor, model));
-  return code;
+const migrateV1toV2 = (model: ContentModel.CodeV1) => {
+  const code = (model as ContentModel.CodeV1).children
+    .map((c) => c.children.map((t) => t.text).join(''))
+    .join('\n');
+
+  const updatedModel = model as any as ContentModel.CodeV2;
+  updatedModel.code = code;
+  updatedModel.children = [{ text: '' }];
+
+  return updatedModel;
+};
+
+const getInitialModel = (model: ContentModel.CodeV2 | ContentModel.CodeV1): ContentModel.CodeV2 => {
+  if (isCodeV2Model(model)) {
+    return model as ContentModel.CodeV2;
+  }
+
+  // v1 -- code is in code_line child elements, upgrade model to v2
+  return migrateV1toV2(model as ContentModel.CodeV1);
 };
 
 type CodeEditorProps = EditorProps<ContentModel.Code>;
 export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
   const editorContainer = useRef<HTMLDivElement>(null);
   const editorRef = useRef<RefEditorInstance>(null);
-  const [value] = useState(getInitialModel(props.model));
+  const [model] = useState(getInitialModel(props.model));
 
-  const onEdit = onEditModel(props.model);
+  const onEdit = onEditModel(model);
 
   const updateSize = (editor?: monaco.editor.IStandaloneCodeEditor) => {
     if (editor && editorContainer.current) {
@@ -95,7 +107,7 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
         <Suspense fallback={<div>Loading...</div>}>
           <MonacoEditor
             ref={editorRef}
-            value={value}
+            value={model.code}
             language={CodeLanguages.byPrettyName(props.model.language).monacoMode}
             options={{
               tabSize: 2,
@@ -103,16 +115,18 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
               minimap: { enabled: false },
               theme: isDarkMode() ? 'vs-dark' : 'vs-light',
             }}
-            onChange={(code) => {
-              onEdit({ code });
-            }}
+            onChange={(code) => onEdit({ code })}
             editorDidMount={editorDidMount}
           />
         </Suspense>
       </div>
 
       {props.children}
-      <CaptionEditor onEdit={(caption) => onEdit({ caption })} model={props.model} />
+      <CaptionEditor
+        onEdit={(caption) => onEdit({ caption })}
+        model={props.model}
+        commandContext={props.commandContext}
+      />
     </div>
   );
 };

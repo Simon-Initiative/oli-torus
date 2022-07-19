@@ -14,9 +14,13 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import * as React from 'react';
 import { RenderElementProps } from 'slate-react';
+import { CiteEditor } from '../elements/cite/CiteElement';
 import { CommandContext } from '../elements/commands/interfaces';
-import { ImageEditor } from '../elements/image/ImageElement';
+import { ImageEditor } from '../elements/image/block/ImageElement';
 import { EditorProps } from '../elements/interfaces';
+import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
+import { FormulaEditor } from '../elements/formula/FormulaEditor';
+import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -48,13 +52,27 @@ export function editorFor(
     case 'h6':
       return <h6 {...attributes}>{children}</h6>;
     case 'img':
-      return <ImageEditor {...(editorProps as EditorProps<ContentModel.Image>)} />;
+      return <ImageEditor {...(editorProps as EditorProps<ContentModel.ImageBlock>)} />;
+    case 'img_inline':
+      return <ImageInlineEditor {...(editorProps as EditorProps<ContentModel.ImageInline>)} />;
     case 'ol':
-      return <ol {...attributes}>{children}</ol>;
+      return (
+        <ol className={listClassName(model.style)} {...attributes}>
+          {children}
+        </ol>
+      );
     case 'ul':
-      return <ul {...attributes}>{children}</ul>;
+      return (
+        <ul className={listClassName(model.style)} {...attributes}>
+          {children}
+        </ul>
+      );
     case 'li':
       return <li {...attributes}>{children}</li>;
+    case 'callout':
+      return <CalloutEditor {...(editorProps as EditorProps<ContentModel.Callout>)} />;
+    case 'callout_inline':
+      return <InlineCalloutEditor {...(editorProps as EditorProps<ContentModel.CalloutInline>)} />;
     case 'blockquote':
       return <BlockQuoteEditor {...(editorProps as EditorProps<ContentModel.Blockquote>)} />;
     case 'youtube':
@@ -63,6 +81,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'cite':
+      return <CiteEditor {...(editorProps as EditorProps<ContentModel.Citation>)} />;
     case 'popup':
       return <PopupEditor {...(editorProps as EditorProps<ContentModel.Popup>)} />;
     case 'audio':
@@ -84,10 +104,20 @@ export function editorFor(
       return <span {...attributes}>Not implemented</span>;
     case 'input_ref':
       return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
+    case 'formula':
+    case 'formula_inline':
+      return (
+        <FormulaEditor
+          {...(editorProps as EditorProps<ContentModel.FormulaInline | ContentModel.FormulaBlock>)}
+        />
+      );
+
     default:
       return <span>{children}</span>;
   }
 }
+
+const listClassName = (style?: string): string | undefined => (style ? `list-${style}` : undefined);
 
 export function markFor(mark: Mark, children: any): JSX.Element {
   switch (mark) {

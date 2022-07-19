@@ -350,10 +350,23 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  @doc """
+  For a given project id, this retrieves part attempts and user information, for those part attempts
+  that are evaluated and that have snapshots defined. This is a key query for powering analytics
+  (mainly DataShop export), and thus is the reasoning why it is snapshot driven.
+
+  This impl is optimized so that it can be used even in very large datasets, where there might be
+  thousands or tens of thousands of part attempts.  One single massive query that attempted to
+  preload the activity attempt, the revision of the activity, the resource attempt and the
+  revision of the resource via a series of 'joins' would have an unnecessarily large payload due to the fact
+  that many attempts and certainly most revisions would be duplicates.   This approach here
+  makes a series of db requests, fetching the unique set of attempts and revisions necesarry to
+  then 'reconstruct' the preloaded attempt hierarchies.
+  """
   def get_part_attempts_and_users(project_id) do
-    Repo.all(
-      from(
-        project in Project,
+    # This is our base, reusable query designed to get the part attempts
+    core =
+      from project in Project,
         join: spp in SectionsProjectsPublications,
         on: spp.project_id == project.id,
         join: section in Section,
@@ -361,29 +374,102 @@ defmodule Oli.Delivery.Attempts.Core do
         join: project_resource in ProjectResource,
         on: project_resource.project_id == ^project_id,
         join: snapshot in Snapshot,
+        as: :snapshot,
         on:
           snapshot.section_id == section.id and
             snapshot.resource_id == project_resource.resource_id,
         join: part_attempt in PartAttempt,
+        as: :part_attempt,
         on: snapshot.part_attempt_id == part_attempt.id,
-        join: user in User,
-        on: snapshot.user_id == user.id,
-        # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
-            part_attempt.lifecycle_state == :evaluated,
-        select: %{part_attempt: part_attempt, user: user}
+            part_attempt.lifecycle_state == :evaluated
+
+    # Now get the resource attempt revision for those part attempts, distinctly, and
+    # create a map of their ids to the attempts
+    resource_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        join: r in Revision,
+        on: ra.revision_id == r.id,
+        distinct: true,
+        select: r
       )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    # Now get the resource attempts themselves, distincly, and create a map, while
+    # wiring into them the resource revisions fetched above
+    resource_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        distinct: true,
+        select: ra
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        # wire in the resource attempt revision, to simulate the preload
+        r = Map.put(r, :revision, Map.get(resource_attempt_revisions, r.revision_id))
+        Map.put(m, r.id, r)
+      end)
+
+    # Get the activity attempt revisions, distinctly.  Getting them distinctly is a potentially
+    # huge optimization if we imagine a course where there might only be ten activities, but that
+    # are taken 10,000 times by students.
+    activity_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: r in Revision,
+        on: a.revision_id == r.id,
+        distinct: true,
+        select: r
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    # Get the attempts, and wire in the activity revision and the resource attempt
+    activity_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        distinct: true,
+        select: a
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        r =
+          Map.put(r, :resource_attempt, Map.get(resource_attempts, r.resource_attempt_id))
+          |> Map.put(:revision, Map.get(activity_attempt_revisions, r.revision_id))
+
+        Map.put(m, r.id, r)
+      end)
+
+    # Now get the part attempts with user
+    from([snapshot: s, part_attempt: part_attempt] in core,
+      join: user in User,
+      on: s.user_id == user.id,
+      select: %{part_attempt: part_attempt, user: user}
     )
-    |> Enum.map(
-      &%{
-        user: &1.user,
+    |> Repo.all()
+    |> Enum.map(fn %{user: user, part_attempt: part_attempt} ->
+      # Wire in the activity attempt to each part attempt
+      %{
+        user: user,
         part_attempt:
-          Repo.preload(&1.part_attempt,
-            activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]
+          Map.put(
+            part_attempt,
+            :activity_attempt,
+            Map.get(activity_attempts, part_attempt.activity_attempt_id)
           )
       }
-    )
+    end)
   end
 
   def has_any_active_attempts?(resource_attempts) do

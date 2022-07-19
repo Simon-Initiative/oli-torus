@@ -257,12 +257,12 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
         requires_payment: true,
         amount: Money.new(:USD, 100),
         title: "1",
-        timezone: "1",
         registration_open: true,
         grace_period_days: 1,
         context_id: UUID.uuid4(),
         institution_id: map.institution.id,
-        base_project_id: map.project.id
+        base_project_id: map.project.id,
+        publisher_id: map.project.publisher_id
       })
 
     user1 = user_fixture(%{email_confirmed_at: Timex.now()}) |> Repo.preload(:platform_roles)
@@ -273,7 +273,6 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
         requires_payment: true,
         amount: Money.new(:USD, 100),
         title: "1",
-        timezone: "1",
         registration_open: true,
         has_grace_period: false,
         grace_period_days: 1,

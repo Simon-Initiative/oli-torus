@@ -12,7 +12,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   import Oli.Delivery.Attempts.Core
   alias Oli.Activities.Realizer.Query.Source
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Revision, PageContent}
   alias Oli.Activities.Transformers
   alias Oli.Delivery.ActivityProvider.Result
   alias Oli.Delivery.Attempts.PageLifecycle.{VisitContext}
@@ -22,7 +22,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   use a constant number of queries relative to the number of activities and parts.
   Returns {:ok, %ResourceAttempt{}}
   """
-  def create(%VisitContext{} = context) do
+  def create(%VisitContext{datashop_session_id: datashop_session_id} = context) do
     {resource_access_id, next_attempt_number} =
       case context.latest_resource_attempt do
         nil ->
@@ -36,11 +36,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
+    activity_groups = PageContent.activity_parent_groups(context.page_revision.content)
+
     %Result{
       errors: errors,
       revisions: activity_revisions,
       transformed_content: transformed_content,
-      unscored: unscored
+      unscored: unscored,
+      activity_to_source_selection_mapping: activity_to_source_selection_mapping
     } =
       context.activity_provider.(
         context.page_revision,
@@ -61,7 +64,15 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
            revision_id: context.page_revision.id
          }) do
       {:ok, resource_attempt} ->
-        bulk_create_attempts(resource_attempt, activity_revisions, unscored)
+        bulk_create_attempts(
+          resource_attempt,
+          activity_revisions,
+          activity_to_source_selection_mapping,
+          unscored,
+          activity_groups,
+          datashop_session_id
+        )
+
         {:ok, resource_attempt}
 
       error ->
@@ -76,21 +87,46 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   # 2. A query to fetch the newly created IDs and their corresponding resource_ids
   # 3. A final bulk insert query to create the part attempts
   #
-  defp bulk_create_attempts(resource_attempt, activity_revisions, unscored) do
+  defp bulk_create_attempts(
+         resource_attempt,
+         activity_revisions,
+         activity_to_source_selection_mapping,
+         unscored,
+         activity_groups,
+         datashop_session_id
+       ) do
     # Use a common timestamp for all insertions
     right_now =
       DateTime.utc_now()
       |> DateTime.truncate(:second)
 
     # Create the activity attempts, in bulk
-    Enum.map(activity_revisions, fn r ->
-      scoreable = !MapSet.member?(unscored, r.resource_id)
-      create_raw_activity_attempt(r, scoreable)
+    Enum.filter(activity_revisions, fn r -> !is_nil(r) end)
+    |> Transformers.apply_transforms()
+    |> Enum.zip(activity_revisions)
+    |> Enum.map(fn {transformation_result, revision} ->
+      %{group: group_id, survey: survey_id} =
+        case Map.get(activity_to_source_selection_mapping, revision.resource_id) do
+          nil -> Map.get(activity_groups, revision.resource_id)
+          selection_id -> Map.get(activity_groups, "bank_selection_#{selection_id}")
+        end
+
+      unscored = MapSet.member?(unscored, revision.resource_id)
+      scoreable = !unscored && !survey_id
+
+      case transformation_result do
+        {:ok, transformed_model} ->
+          create_raw_activity_attempt(revision, scoreable, transformed_model, group_id, survey_id)
+
+        {:error, e} ->
+          Logger.warning("Could not transform activity model #{Kernel.inspect(e)}")
+          create_raw_activity_attempt(revision, scoreable, nil, group_id, survey_id)
+      end
     end)
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
-    query_driven_part_attempt_creation(resource_attempt.id)
+    query_driven_part_attempt_creation(resource_attempt.id, datashop_session_id)
   end
 
   defp bulk_create_activity_attempts(raw_attempts, now, resource_attempt_id) do
@@ -105,10 +141,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   # This is the optimal way to bulk create part attempts: passing a query driven 'insert'
   # to the database, instead of passing the raw payload of each record to create.
-  defp query_driven_part_attempt_creation(resource_attempt_id) do
+  defp query_driven_part_attempt_creation(resource_attempt_id, datashop_session_id) do
     query = """
-      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
-      SELECT pm.part_id, a.id, gen_random_uuid(), now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
+      INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, datashop_session_id, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
+      SELECT pm.part_id, a.id, gen_random_uuid(), $2, now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
       'automatic'
        ELSE
        pm.grading_approach
@@ -118,7 +154,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       WHERE a.resource_attempt_id = $1;
     """
 
-    Repo.query!(query, [resource_attempt_id])
+    Repo.query!(query, [resource_attempt_id, datashop_session_id])
   end
 
   # If all of the transformed_model attrs are nil, we do not need to include them in
@@ -131,15 +167,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   end
 
   defp create_raw_activity_attempt(
-         %Revision{resource_id: resource_id, id: id, content: model},
-         scoreable
+         %Revision{resource_id: resource_id, id: id},
+         scoreable,
+         transformed_model,
+         group_id,
+         survey_id
        ) do
-    transformed_model =
-      case Transformers.apply_transforms(model) do
-        {:ok, t} -> t
-        _ -> nil
-      end
-
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
@@ -149,6 +182,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       transformed_model: transformed_model,
       scoreable: scoreable,
       lifecycle_state: :active,
+      group_id: group_id,
+      survey_id: survey_id,
       inserted_at: {:placeholder, :now},
       updated_at: {:placeholder, :now}
     }

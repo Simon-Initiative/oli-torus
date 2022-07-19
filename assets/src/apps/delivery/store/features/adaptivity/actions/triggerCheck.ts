@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
+import { clone } from 'utils/common';
 import { check, CheckResult, ScoringContext } from '../../../../../../adaptivity/rules-engine';
 import {
   applyState,
@@ -13,14 +14,19 @@ import {
   getValue,
 } from '../../../../../../adaptivity/scripting';
 import { createActivityAttempt } from '../../attempt/actions/createActivityAttempt';
-import { selectExtrinsicState, updateExtrinsicState } from '../../attempt/slice';
+import {
+  selectAll as selectAllAttempts,
+  selectExtrinsicState,
+  updateExtrinsicState,
+  upsertActivityAttemptState,
+} from '../../attempt/slice';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../groups/selectors/deck';
 import { selectPreviewMode, selectResourceAttemptGuid, selectSectionSlug } from '../../page/slice';
-import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 import AdaptivitySlice from '../name';
+import { setLastCheckResults, setLastCheckTriggered } from '../slice';
 
 export const triggerCheck = createAsyncThunk(
   `${AdaptivitySlice}/triggerCheck`,
@@ -86,9 +92,10 @@ export const triggerCheck = createAsyncThunk(
     // update redux first because we need to get the latest full extrnisic state to write to the server
     await dispatch(updateExtrinsicState({ state: extrinsicSnapshot }));
 
+    const extrnisicState = selectExtrinsicState(getState() as RootState);
     if (!isPreviewMode) {
-      // update the server with the latest changes
-      const extrnisicState = selectExtrinsicState(getState() as RootState);
+      // update the server with the latest changes to extrinsic state
+
       /* console.log('trigger check last min extrinsic state', {
         sectionSlug,
         resourceAttemptGuid,
@@ -102,83 +109,12 @@ export const triggerCheck = createAsyncThunk(
     let score = 0;
     let outOf = 0;
 
-    const scoringContext: ScoringContext = {
-      currentAttemptNumber: currentAttempt?.attemptNumber || 1,
-      maxAttempt: currentActivity.content.custom.maxAttempt || 0,
-      maxScore: currentActivity.content.custom.maxScore || 0,
-      trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
-      negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
-    };
-
-    // if preview mode, gather up all state and rules from redux
-    if (isPreviewMode) {
-      // need to get this fresh right now so it is the latest
+    // prepare state to send to the rules engine
+    {
+      // these were previously declared, but after above async calls they might have been updated, lets get them again
       const rootState = getState() as RootState;
       const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
       const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
-
-      const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
-      const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
-
-      const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
-      // custom rules can be provided via PreviewTools Adaptivity pane for specific rule triggering
-      const customRules = options.customRules || [];
-      const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
-
-      let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
-      if (!requiredVariables) {
-        // assume they are all required since authoring hasn't specified
-        requiredVariables = Object.keys(localizedSnapshot);
-      }
-      const checkSnapshot = Object.keys(localizedSnapshot).reduce((acc: any, key) => {
-        const isRequiredKey = requiredVariables.includes(key);
-        if (isRequiredKey) {
-          acc[key] = localizedSnapshot[key];
-        }
-        return acc;
-      }, {});
-
-      console.log('PRE CHECK RESULT', {
-        currentActivity,
-        currentRules,
-        localizedSnapshot,
-        requiredVariables,
-        checkSnapshot,
-      });
-      const check_call_result = (await check(
-        checkSnapshot,
-        rulesToCheck,
-        scoringContext,
-      )) as CheckResult;
-      checkResult = check_call_result.results;
-      isCorrect = check_call_result.correct;
-      score = check_call_result.score;
-      outOf = check_call_result.out_of;
-      console.log('CHECK RESULT', {
-        check_call_result,
-        currentActivity,
-        currentRules,
-        checkResult,
-        localizedSnapshot,
-        checkSnapshot,
-        currentActivityTreeAttempts,
-        currentAttempt,
-        currentActivityTree,
-      });
-    } else {
-      // need to get this fresh right now so it is the latest
-      const rootState = getState() as RootState;
-      const currentActivityTreeAttempts = selectCurrentActivityTreeAttemptState(rootState) || [];
-      const [currentAttempt] = currentActivityTreeAttempts.slice(-1);
-
-      if (!currentActivityAttemptGuid) {
-        console.error('not current attempt, cannot eval', { currentActivityAttemptGuid });
-        return;
-      }
-
-      // we have to send all the current activity attempt state to the server
-      // because the server doesn't know the current sequence id and will strip out
-      // all sequence ids from the path for these only
 
       const treeActivityIds = currentActivityTree.map((a) => a.id).reverse();
       const localizedSnapshot = getLocalizedStateSnapshot(treeActivityIds, defaultGlobalEnv);
@@ -217,37 +153,180 @@ export const triggerCheck = createAsyncThunk(
         },
       );
 
-      /* console.log('CHECKING', {
-        sectionSlug,
-        currentActivityTreeAttempts,
-        currentAttempt,
-        currentActivityTree,
-        localizedSnapshot,
-        partResponses,
-      }); */
+      if (isPreviewMode) {
+        // in preview mode we need to do the same logic that we do on the server (evaluate.ex)
+        const currentRules = JSON.parse(JSON.stringify(currentActivity?.authoring?.rules || []));
+        // custom rules can be provided via PreviewTools Adaptivity pane for specific rule triggering
+        const customRules = options.customRules || [];
+        const rulesToCheck = customRules.length > 0 ? customRules : currentRules;
 
-      const evalResult = await evalActivityAttempt(
-        sectionSlug,
-        currentActivityAttemptGuid,
-        partResponses,
-      );
+        let requiredVariables = currentActivity?.authoring?.variablesRequiredForEvaluation;
+        if (!requiredVariables) {
+          // assume they are all required since authoring hasn't specified
+          console.warn('No variables required for evaluation, assuming all are required');
+          requiredVariables = Object.keys(localizedSnapshot);
+        }
 
-      /* console.log('EVAL RESULT', { evalResult }); */
-      const resultData: CheckResult = (evalResult as any).result.actions;
-      checkResult = resultData.results;
-      isCorrect = resultData.correct;
-      score = resultData.score;
-      outOf = resultData.out_of;
+        const requiredActivities =
+          currentActivity?.authoring?.activitiesRequiredForEvaluation || [];
+
+        const allAttempts = selectAllAttempts(rootState);
+
+        // the server doesn't get the snapshot, instead it gets the part responses for the current submission
+        // and then can access any previous attempt information necessary to evaluate the rules
+
+        // checkSnapshot is: extrinsicState + other activity state + part responses
+        const otherActivityState = requiredActivities.reduce((acc: any, activityId: any) => {
+          // on the server, this must be found in the attempt state db
+          const activityAttempt = allAttempts.find((a) => a.activityId === activityId);
+          if (!activityAttempt) {
+            console.warn(
+              `Activity Attempt ${activityId} not found (building required activity state)`,
+            );
+            return acc;
+          }
+
+          activityAttempt.parts.forEach((part) => {
+            if (part.response) {
+              Object.keys(part.response).forEach((key) => {
+                const resItem = part.response[key];
+                // these are NOT expected to be "local" since they are coming from "other" activities
+                acc[resItem.path] = resItem.value;
+              });
+            }
+          });
+
+          return acc;
+        }, {});
+
+        const partResponseState = partResponses.reduce((acc: any, pr) => {
+          const input = pr.response?.input || {};
+          Object.keys(input).forEach((key) => {
+            const inputItem = input[key];
+            if (inputItem.path) {
+              const snapshotValue = localizedSnapshot[inputItem.path];
+              // the server will only have the path, doesn't know the current sequence id
+              // all inputs are considered "local" to the current attempt, so strip off any sequenceId from the path
+              let itemId = inputItem.path.split('|stage').slice(-1)[0];
+              if (itemId.startsWith('.')) {
+                itemId = `stage${itemId}`;
+              }
+              acc[itemId] = snapshotValue;
+            }
+          });
+          return acc;
+        }, {});
+
+        let checkSnapshot = { ...extrnisicState, ...otherActivityState, ...partResponseState };
+
+        // filter the keys of the snapshot to only include the ones that are required
+        checkSnapshot = Object.keys(checkSnapshot).reduce((acc: any, key) => {
+          if (requiredVariables.includes(key)) {
+            acc[key] = checkSnapshot[key];
+          }
+          return acc;
+        }, {});
+
+        const scoringContext: ScoringContext = {
+          currentAttemptNumber: currentAttempt?.attemptNumber || 1,
+          maxAttempt: currentActivity.content.custom.maxAttempt || 0,
+          maxScore: currentActivity.content.custom.maxScore || 0,
+          trapStateScoreScheme: currentActivity.content.custom.trapStateScoreScheme || false,
+          negativeScoreAllowed: currentActivity.content.custom.negativeScoreAllowed || false,
+          isManuallyGraded: currentActivity.authoring?.parts.some(
+            (p: any) => p.gradingApproach === 'manual',
+          ),
+        };
+
+        console.log('PRE CHECK RESULT (PREVIEW)', {
+          sectionSlug,
+          extrnisicState,
+          partResponses,
+          partResponseState,
+          otherActivityState,
+          allAttempts,
+          currentActivityTreeAttempts,
+          currentAttempt,
+          currentActivity,
+          currentRules,
+          localizedSnapshot,
+          checkSnapshot,
+          requiredActivities,
+          requiredVariables,
+        });
+
+        const check_call_result = (await check(
+          checkSnapshot,
+          rulesToCheck,
+          scoringContext,
+        )) as CheckResult;
+        checkResult = check_call_result.results;
+        isCorrect = check_call_result.correct;
+        score = check_call_result.score;
+        outOf = check_call_result.out_of;
+
+        console.log('POST CHECK RESULT (PREVIEW)', {
+          check_call_result,
+          currentActivity,
+          currentRules,
+          checkResult,
+          localizedSnapshot,
+          checkSnapshot,
+          currentActivityTreeAttempts,
+          currentAttempt,
+          currentActivityTree,
+        });
+      } else {
+        console.log('PRE CHECK RESULT (DD)', {
+          sectionSlug,
+          currentActivityTreeAttempts,
+          currentAttempt,
+          currentActivityTree,
+          localizedSnapshot,
+          partResponses,
+        });
+
+        const evalResult = await evalActivityAttempt(
+          sectionSlug,
+          currentActivityAttemptGuid,
+          partResponses,
+        );
+
+        const resultData: CheckResult = (evalResult as any).result.actions;
+        checkResult = resultData.results;
+        isCorrect = resultData.correct;
+        score = resultData.score;
+        outOf = resultData.out_of;
+
+        console.log('POST CHECK RESULT (DD)', {
+          currentActivity,
+          checkResult,
+          localizedSnapshot,
+          currentActivityTreeAttempts,
+          currentAttempt,
+          currentActivityTree,
+        });
+      }
     }
 
-    let attempt: any = currentAttempt;
+    // after the check is done, we need to update the activity attempt (in memory, on server it is already updated)
+
+    let attempt: any = clone(currentAttempt);
+
+    attempt.score = score;
+    attempt.outOf = outOf;
+    attempt.dateSubmitted = Date.now();
+    attempt.dateEvaluated = Date.now();
+
+    await dispatch(upsertActivityAttemptState({ attempt }));
+
     if (!isCorrect) {
       /* console.log('Incorrect, time for new attempt'); */
       const { payload: newAttempt } = await dispatch(
         createActivityAttempt({ sectionSlug, attemptGuid: currentActivityAttemptGuid }),
       );
       attempt = newAttempt;
-      const updateAttempt: ApplyStateOperation[] = [
+      const updateSessionAttempt: ApplyStateOperation[] = [
         {
           target: 'session.attemptNumber',
           operator: '=',
@@ -259,7 +338,7 @@ export const triggerCheck = createAsyncThunk(
           value: attempt.attemptNumber,
         },
       ];
-      bulkApplyState(updateAttempt, defaultGlobalEnv);
+      bulkApplyState(updateSessionAttempt, defaultGlobalEnv);
       // need to write attempt number to extrinsic state?
       // TODO: also get attemptNumber alwasy from the attempt and update scripting instead
     }

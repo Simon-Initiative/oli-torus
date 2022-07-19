@@ -1,0 +1,20 @@
+@import 'bootstrap';
+
+.choiceIcon {
+  width: 30px;
+  line-height: 1;
+  pointer-events: none;
+  cursor: default;
+}
+
+.removeButtonContainer {
+  @extend .d-flex;
+  @extend .justify-content-center;
+  width: 48px;
+}
+
+.addChoiceContainer {
+  padding-left: 32px;
+  @extend .d-flex;
+  @extend .align-items-center;
+}

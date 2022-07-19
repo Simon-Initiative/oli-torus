@@ -12,7 +12,7 @@ defmodule Oli.Registrar do
       end
     end)
     |> Enum.map(&Manifest.parse/1)
-    |> Enum.map(fn m ->
+    |> Enum.map(fn {:ok, m} ->
       m =
         if(MapSet.member?(global, m.id)) do
           Map.merge(m, %{global: true})

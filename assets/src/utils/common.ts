@@ -56,8 +56,7 @@ export const parseBoolean = (input: string | boolean | number): boolean =>
 export const isStringArray = (s: unknown): boolean =>
   typeof s === 'string' && s.charAt(0) === '[' && s.charAt(s.length - 1) === ']';
 
-export const looksLikeAnArray = (val: unknown): boolean =>
-  Array.isArray(val) || isStringArray(val) || (isString(val) && (val as string).includes(','));
+export const looksLikeAnArray = (val: unknown): boolean => Array.isArray(val) || isStringArray(val);
 
 // this function is needed because of getting some values like
 // [some, thing, silly] vs ["some", "thing", "silly"]
@@ -207,4 +206,73 @@ export const parseArrayWithoutStringConversion = (val: unknown): unknown[] => {
   // if we hit this, it was something WAY off
   const err = new Error('not a valid array');
   throw err;
+};
+
+export const batchedBuffer = (fn: any, ms: number) => {
+  let timer: any = null;
+  let buffer: any[] = [];
+  let batch: any = {};
+
+  const batchedFn = (batchedInput: any, ...nonBatchedInputs: any[]) => {
+    const myDeferred: any = { promise: null, resolve: null, reject: null };
+    const myPromise = new Promise((resolve, reject) => {
+      myDeferred.resolve = resolve;
+      myDeferred.reject = reject;
+    });
+    myDeferred.promise = myPromise;
+    buffer.push(myDeferred);
+
+    const topLevelKeys = Object.keys(batchedInput);
+    topLevelKeys.forEach((topKey: any) => {
+      batch[topKey] = { ...batch[topKey], ...batchedInput[topKey] };
+    });
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    timer = setTimeout(async () => {
+      const result = await fn(batch, ...nonBatchedInputs);
+      for (let i = 0; i < buffer.length; i++) {
+        buffer[i].resolve(result);
+      }
+      buffer = [];
+      batch = {};
+    }, ms);
+
+    return myDeferred.promise;
+  };
+
+  const teardown = () => {
+    for (let i = 0; i < buffer.length; i++) {
+      buffer[i].reject('cancelled');
+    }
+    clearTimeout(timer);
+    buffer = [];
+    batch = {};
+  };
+
+  return [batchedFn, teardown];
+};
+
+export const formatNumber = (number: number) => {
+  const arrNumber = number.toString().split('.');
+  const containsDecimal = arrNumber.length > 1;
+  if (!containsDecimal) {
+    return number;
+  }
+  const decimalNumber = arrNumber[1];
+  const leadingZerosInNumber = decimalNumber.toString().match(/\b0+/g);
+  let totalLeadingZerosInNumber = 0;
+  if (leadingZerosInNumber?.length) {
+    totalLeadingZerosInNumber = leadingZerosInNumber[0].length;
+  }
+
+  const modifiedNumber =
+    containsDecimal && totalLeadingZerosInNumber
+      ? Number(number).toFixed(totalLeadingZerosInNumber + 2)
+      : containsDecimal && decimalNumber.length > 2
+      ? Number(number).toFixed(2)
+      : number;
+
+  return modifiedNumber;
 };

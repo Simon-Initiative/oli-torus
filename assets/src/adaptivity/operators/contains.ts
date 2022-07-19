@@ -5,20 +5,44 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
     return false;
   }
 
+  // always read as: Does the INPUT contain the CONDITION?
+  /* console.log('containsOperator', { inputValue, conditionValue }); */
+
   if (looksLikeAnArray(conditionValue)) {
     const conditionArray = parseArray(conditionValue);
     if (looksLikeAnArray(inputValue)) {
       const inputArray = parseArray(inputValue);
       // if the input is an array, the condition array should contain every one of the input array values
-      return inputArray.every((item) => conditionArray.includes(item));
+      // does [1, 2, 3] contain [1, 3]?
+      return conditionArray.every((item) => inputArray.includes(item));
     } else {
-      return conditionArray.includes(inputValue);
+      // does 'abc' contain ['a', 'b']? (contains both, case insensitive)
+      return conditionArray.every((item) => {
+        if (isString(item)) {
+          return inputValue.toLocaleLowerCase().includes((item as string).toLocaleLowerCase());
+        } else {
+          return inputValue.includes(item);
+        }
+      });
     }
   }
 
-  if (isString(conditionValue)) {
-    if (isString(inputValue)) {
-      return conditionValue.toLocaleLowerCase().includes(inputValue.toLocaleLowerCase());
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // does ['a', 'b'] contain 'A'? (contains, case insensitive)
+    return inputArray.some((item) => {
+      if (isString(item)) {
+        return (item as string).toLocaleLowerCase().includes(conditionValue.toLocaleLowerCase());
+      }
+      return item === conditionValue;
+    });
+  }
+
+  if (isString(inputValue)) {
+    if (isString(conditionValue)) {
+      return inputValue.toLocaleLowerCase().includes(conditionValue.toLocaleLowerCase());
+    } else {
+      return inputValue.includes(conditionValue);
     }
   }
 
@@ -28,6 +52,7 @@ export const containsOperator = (inputValue: any, conditionValue: any) => {
 export const notContainsOperator = (inputValue: any, conditionValue: any) =>
   !containsOperator(inputValue, conditionValue);
 
+// contains any of means OR
 export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
   if (!conditionValue || !inputValue) {
     return false;
@@ -40,12 +65,33 @@ export const containsAnyOfOperator = (inputValue: any, conditionValue: any) => {
     // if the input is an array, the condition array should contain at least one of the input array values
     return inputArray.some((item) => conditionArray.includes(item));
   } else {
-    return conditionArray.includes(inputValue);
+    if (!isNaN(inputValue)) {
+      return conditionArray.includes(parseFloat(inputValue));
+    } else {
+      return conditionArray.some((v) => inputValue.toString().includes(v));
+    }
   }
 };
 
-export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) =>
-  !containsAnyOfOperator(inputValue, conditionValue);
+// not contains any of means AND
+export const notContainsAnyOfOperator = (inputValue: any, conditionValue: any) => {
+  if (!conditionValue || !inputValue) {
+    return false;
+  }
+  // the condition should always be an array, if it's a single value, it should be wrapped in an array
+  const conditionArray = parseArray(conditionValue);
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // if the input is an array, the input should not contain any of the conditionValues
+    return !inputArray.some((item) => conditionArray.includes(item));
+  } else {
+    if (!isNaN(inputValue)) {
+      return !conditionArray.includes(parseFloat(inputValue));
+    } else {
+      return !conditionArray.some((v) => inputValue.toString().includes(v));
+    }
+  }
+};
 
 export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
   // inputValue contains ONLY items in conditionValue
@@ -64,24 +110,47 @@ export const containsOnlyOperator = (inputValue: any, conditionValue: any) => {
   return updatedFacts.every((fact: any) => updatedValues.includes(fact));
 };
 
+// case sensitive version of containsOperator
 export const containsExactlyOperator = (inputValue: any, conditionValue: any) => {
   // inputValue is exactly equal to conditionValue
   if (!conditionValue || !inputValue) {
     return false;
   }
 
-  // We are parseNumString for the cases where inputValue contains numbers but the values contain strings or vice-versa
-  const updatedFacts = parseArray(inputValue);
-  const updatedValues = parseArray(conditionValue);
+  // always read as: Does the INPUT contain the CONDITION?
+  /* console.log('containsExactlyOperator', { inputValue, conditionValue }); */
 
-  if (Array.isArray(inputValue) && Array.isArray(conditionValue)) {
-    return (
-      updatedFacts.every((fact) => updatedValues.includes(fact)) &&
-      updatedFacts.length == updatedValues.length
-    );
-  } else {
-    return inputValue === conditionValue;
+  if (looksLikeAnArray(conditionValue)) {
+    const conditionArray = parseArray(conditionValue);
+    if (looksLikeAnArray(inputValue)) {
+      const inputArray = parseArray(inputValue);
+      // if the input is an array, the condition array should contain every one of the input array values
+      // does [1, 2, 3] contain [1, 3]?
+      return conditionArray.every((item) => inputArray.includes(item));
+    } else {
+      // does 'abc' contain ['a', 'b']? (contains both, case sensitive)
+      return conditionArray.every((item) => {
+        return inputValue.includes(item);
+      });
+    }
   }
+
+  if (looksLikeAnArray(inputValue)) {
+    const inputArray = parseArray(inputValue);
+    // does ['a', 'b'] contain 'A'? (contains, case insensitive)
+    return inputArray.some((item) => {
+      if (isString(item)) {
+        return (item as string).includes(conditionValue);
+      }
+      return item === conditionValue;
+    });
+  }
+
+  if (isString(inputValue)) {
+    return inputValue.includes(conditionValue);
+  }
+
+  return false;
 };
 
 export const notContainsExactlyOperator = (inputValue: any, conditionValue: any) =>

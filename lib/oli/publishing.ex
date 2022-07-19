@@ -9,7 +9,14 @@ defmodule Oli.Publishing do
   alias Oli.Delivery.Sections.Section
   alias Oli.Authoring.Course.ProjectResource
   alias Oli.Resources.{Revision, ResourceType}
-  alias Oli.Publishing.{Publication, PublishedResource}
+
+  alias Oli.Publishing.{
+    Publication,
+    PublishedResource,
+    PartMappingRefreshAdapter,
+    PartMappingRefreshAsync
+  }
+
   alias Oli.Institutions.Institution
   alias Oli.Authoring.Clone
   alias Oli.Publishing
@@ -17,6 +24,30 @@ defmodule Oli.Publishing do
   alias Oli.Authoring.Authors.AuthorProject
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Groups
+
+  @doc """
+  Returns true if editing this revision requires the creation of a new revision first.
+
+  A new revision is needed if there exists either:
+  1. A published resource record with this revision ID that pertains to a published publication for this project
+  2. A published resource record with this revision ID for a publication (published or not) for any other project.
+
+  """
+  def needs_new_revision_for_edit?(project_slug, resource_revision_id) do
+    query =
+      from pr in PublishedResource,
+        join: pub in Publication,
+        on: pr.publication_id == pub.id,
+        join: proj in Project,
+        on: proj.id == pub.project_id,
+        where:
+          (proj.slug != ^project_slug or
+             (proj.slug == ^project_slug and not is_nil(pub.published))) and
+            pr.revision_id == ^resource_revision_id,
+        select: count(pr.id)
+
+    Repo.one(query) > 0
+  end
 
   def get_publication_id_for_resource(section_slug, resource_id) do
     spp =
@@ -249,7 +280,9 @@ defmodule Oli.Publishing do
     from(
       project in Project,
       left_join: section in Section,
-      on: project.id == section.base_project_id and section.type == :blueprint,
+      on:
+        project.id == section.base_project_id and section.type == :blueprint and
+          section.status == :active,
       join: last_publication in subquery(last_publication_query()),
       on:
         last_publication.project_id == project.id or
@@ -491,16 +524,23 @@ defmodule Oli.Publishing do
 
   @doc """
   Updates a publication.
+
   ## Examples
       iex> update_publication(publication, %{field: new_value})
       {:ok, %Publication{}}
       iex> update_publication(publication, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
   """
-  def update_publication(%Publication{} = publication, attrs) do
+
+  def update_publication(
+        %Publication{} = publication,
+        attrs,
+        adapter \\ refresh_adapter()
+      ) do
     publication
     |> Publication.changeset(attrs)
     |> Repo.update()
+    |> adapter.maybe_refresh_part_mapping()
   end
 
   @doc """
@@ -512,7 +552,9 @@ defmodule Oli.Publishing do
       {:error, %Ecto.Changeset{}}
   """
   def delete_publication(%Publication{} = publication) do
-    Repo.delete(publication)
+    publication
+    |> Repo.delete()
+    |> refresh_adapter().maybe_refresh_part_mapping()
   end
 
   def get_published_objective_details(publication_id) do
@@ -565,15 +607,22 @@ defmodule Oli.Publishing do
       when is_list(publication_ids) do
     preload = Keyword.get(opts, :preload, [:resource, :revision, :publication])
 
-    from(pr in PublishedResource,
-      where: pr.publication_id in ^publication_ids,
-      preload: ^preload
-    )
+    PublishedResource
+    |> where([pr], pr.publication_id in ^publication_ids)
+    |> maybe_preload(preload)
     |> Repo.all()
   end
 
   def get_published_resources_by_publication(publication_id, opts) do
     get_published_resources_by_publication([publication_id], opts)
+  end
+
+  defp maybe_preload(query, preload) do
+    Enum.reduce(preload, query, fn rel_table, acc_query ->
+      acc_query
+      |> join(:left, [pr, ...], rel in assoc(pr, ^rel_table))
+      |> preload([pr, ..., rel], [{^rel_table, rel}])
+    end)
   end
 
   @doc """
@@ -749,9 +798,9 @@ defmodule Oli.Publishing do
       iex> publish_project(project)
       {:ok, %Publication{}}
   """
-  @spec publish_project(%Project{}, String.t()) ::
+  @spec publish_project(%Project{}, String.t(), PartMappingRefreshAdapter | nil) ::
           {:error, String.t()} | {:ok, %Publication{}}
-  def publish_project(project, description) do
+  def publish_project(project, description, refresh_adapter \\ refresh_adapter()) do
     Repo.transaction(fn ->
       with active_publication <- project_working_publication(project.slug),
            latest_published_publication <-
@@ -780,13 +829,17 @@ defmodule Oli.Publishing do
 
            # set the active publication to published
            {:ok, publication} <-
-             update_publication(active_publication, %{
-               published: now,
-               description: description,
-               edition: edition,
-               major: major,
-               minor: minor
-             }) do
+             update_publication(
+               active_publication,
+               %{
+                 published: now,
+                 description: description,
+                 edition: edition,
+                 major: major,
+                 minor: minor
+               },
+               refresh_adapter
+             ) do
         Oli.Authoring.Broadcaster.broadcast_publication(publication, project.slug)
 
         publication
@@ -951,6 +1004,7 @@ defmodule Oli.Publishing do
     title: the title of the resource
     slug: the slug of the revision
     part: the part name, or "attached" if pertaining to a page
+    scope: the scope of the activity
   }
   """
   def find_objective_attachments(resource_id, publication_id) do
@@ -959,7 +1013,7 @@ defmodule Oli.Publishing do
 
     sql = """
     select
-      revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
+      revisions.scope, revisions.id, revisions.resource_id, revisions.title, revisions.slug, part
     FROM revisions, jsonb_object_keys(revisions.objectives) p(part)
     WHERE
       revisions.id IN (SELECT revision_id
@@ -975,13 +1029,14 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     results
-    |> Enum.map(fn [id, resource_id, title, slug, part] ->
+    |> Enum.map(fn [scope, id, resource_id, title, slug, part] ->
       %{
         id: id,
         resource_id: resource_id,
         title: title,
         slug: slug,
-        part: part
+        part: part,
+        scope: scope
       }
     end)
   end
@@ -1090,5 +1145,20 @@ defmodule Oli.Publishing do
     {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
 
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
+  end
+
+  @doc """
+    Refreshes the part_mapping materialized view.
+    Since this operation is expensive, do not use perform it synchronously unless neccesary.
+  """
+  def refresh_part_mapping() do
+    Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
+  end
+
+  @spec refresh_adapter() :: PartMappingRefreshAdapter
+  defp refresh_adapter() do
+    :oli
+    |> Application.get_env(Oli.Publishing)
+    |> Keyword.get(:refresh_adapter, PartMappingRefreshAsync)
   end
 end

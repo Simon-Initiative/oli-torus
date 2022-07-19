@@ -3,33 +3,39 @@ import { ActivityEditorMap } from 'data/content/editors';
 import { getFriendlyName } from '../utils';
 import { ActivityEditContext } from 'data/content/activity';
 import * as Immutable from 'immutable';
+import { PageEditorContent } from 'data/editor/PageEditorContent';
+
+function determineIndex(index: number[], up: boolean) {
+  const lastIndex = index[index.length - 1];
+
+  const updatedLastIndex = up ? Math.min(9, lastIndex + 1) : Math.max(0, lastIndex - 1);
+
+  return index.splice(index.length - 1, 1, updatedLastIndex);
+}
 
 export const moveHandler =
   (
-    content: Immutable.OrderedMap<string, ResourceContent>,
-    onEditContentList: (content: Immutable.OrderedMap<string, ResourceContent>) => void,
+    content: PageEditorContent,
+    onEditContent: (content: PageEditorContent) => void,
     editorMap: ActivityEditorMap,
     activities: Immutable.Map<string, ActivityEditContext>,
     setAssistive: (s: string) => void,
   ) =>
   (key: string, up: boolean) => {
-    if (content.first<ResourceContent>().id === key && up) return;
+    if (content.first().id === key && up) return;
 
-    const item = content.get(key) as ResourceContent;
-    const index = content.keySeq().indexOf(key);
+    const item = content.find(key) as ResourceContent;
+    const index = content.findIndex((c) => c.id === key);
 
-    const prefix = content.delete(key).take(index + (up ? -1 : 1));
-    const suffix = content.delete(key).skip(index + (up ? -1 : 1));
+    const inserted = content.delete(key).insertAt(determineIndex(index, up), item);
 
-    const inserted = prefix.concat([[key, item]]).concat(suffix);
+    onEditContent(inserted);
 
-    onEditContentList(inserted);
-
-    const newIndex = inserted.keySeq().findIndex((k) => k === key);
+    const newFlattenedIndex = inserted.flattenedIndex(key);
     const desc =
       item.type === 'content'
         ? 'Content'
         : getFriendlyName(item as ActivityReference, editorMap, activities);
 
-    setAssistive(`Listbox. ${newIndex + 1} of ${content.size}. ${desc}.`);
+    setAssistive(`Listbox. ${newFlattenedIndex + 1} of ${content.count()}. ${desc}.`);
   };

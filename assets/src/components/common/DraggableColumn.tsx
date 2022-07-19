@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import {
   DragDropContext,
   Draggable as DraggableDND,
@@ -8,11 +8,27 @@ import {
   DropResult,
   NotDraggingStyle,
 } from 'react-beautiful-dnd';
+import { classNames } from 'utils/classNames';
 import guid from 'utils/guid';
-import './DraggableColumn.scss';
 
-const DragIndicator: React.FC = () => {
-  return <div className="material-icons draggableColumn__dragIndicator">drag_indicator</div>;
+import styles from './DraggableColumn.modules.scss';
+
+interface DragIndicatorProps
+  extends PropsWithChildren<{
+    isDragDisabled?: boolean;
+  }> {}
+const DragIndicator: React.FC<DragIndicatorProps> = ({ isDragDisabled }) => {
+  return (
+    <div
+      className={classNames(
+        styles.draggableColumnIndicator,
+        isDragDisabled && styles.disabled,
+        'material-icons',
+      )}
+    >
+      drag_indicator
+    </div>
+  );
 };
 interface ItemProps {
   id: string;
@@ -24,6 +40,7 @@ interface ItemProps {
   items?: any[];
   index?: number;
   displayOutline?: boolean;
+  isDragDisabled?: boolean;
 }
 const Item: React.FC<ItemProps> = ({
   id,
@@ -34,18 +51,22 @@ const Item: React.FC<ItemProps> = ({
   setItems = () => undefined,
   children,
   displayOutline,
+  isDragDisabled,
 }) => {
   return (
-    <DraggableDND draggableId={id} key={id} index={index}>
+    <DraggableDND draggableId={id} key={id} index={index} isDragDisabled={isDragDisabled ?? false}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
-          className={'draggableColumn__card' + (displayOutline ? ' draggableColumn__outlined' : '')}
+          className={classNames(
+            styles.draggableColumnCard,
+            displayOutline ? styles.draggableColumnOutlined : null,
+          )}
           style={getStyle(provided.draggableProps.style, snapshot)}
           aria-label={itemAriaLabel || 'Item ' + index}
-          onKeyDown={(e) => reorderByKey(e, index, items, item, setItems)}
+          onKeyDown={(e: any) => reorderByKey(e, index, items, item, setItems)}
         >
           {children(item, index)}
         </div>
@@ -66,7 +87,7 @@ export const Column: React.FC<ColumnProps> = ({ items, setItems, children, displ
         {(provided) => (
           <div
             {...provided.droppableProps}
-            className="draggableColumn__container"
+            className={styles.draggableColumnContainer}
             ref={provided.innerRef}
           >
             {React.Children.map(children, (c, index) =>
@@ -94,7 +115,7 @@ const getStyle = (
   style: DraggingStyle | NotDraggingStyle | undefined,
   snapshot: DraggableStateSnapshot,
 ) => {
-  const snapshotStyle = snapshot.draggingOver ? { 'pointer-events': 'none' } : {};
+  const snapshotStyle = snapshot.draggingOver ? ({ pointerEvents: 'none' } as any) : {};
   if (style?.transform) {
     const axisLockY = `translate(0px, ${style.transform.split(',').pop()}`;
     return {

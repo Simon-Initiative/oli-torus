@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     ResourceAttempt,
     ActivityAttempt
   }
+  alias Oli.Activities.Model
 
   def count_submitted_attempts(%Section{} = section) do
     case browse_submitted_attempts(
@@ -236,9 +237,15 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
     graded = activity_attempt.graded
     resource_attempt_guid = activity_attempt.resource_attempt_guid
 
+    activity_model = Core.select_model(activity_attempt)
+    normalization_strategy = case Model.parse(activity_model) do
+      {:ok, %Model{rules: []}} -> :normalize
+      _ -> :do_not_normalize
+    end
+
     Oli.Repo.transaction(fn _ ->
       with {:ok, finalized_part_attempts} <- finalize_part_attempts(activity_attempt, score_feedbacks_map),
-        {:ok, _} <- Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid, :normalize),
+        {:ok, _} <- Evaluate.rollup_part_attempt_evaluations(activity_attempt.attempt_guid, normalization_strategy),
         {:ok, _} <- to_attempt_guid(finalized_part_attempts) |> Oli.Delivery.Snapshots.queue_or_create_snapshot(section_slug),
         {:ok, _} <- maybe_finalize_resource_attempt(section, graded, resource_attempt_guid) do
           finalized_part_attempts
@@ -251,11 +258,13 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   defp finalize_part_attempts(activity_attempt, score_feedbacks_map) do
     part_attempts = Core.get_latest_part_attempts(activity_attempt.attempt_guid)
 
+    now = DateTime.utc_now()
+
     Enum.filter(part_attempts, fn pa -> pa.grading_approach == :manual and pa.lifecycle_state == :submitted end)
     |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
       case Map.get(score_feedbacks_map, pa.attempt_guid) do
         %{score: score, out_of: out_of, feedback: feedback} ->
-          case Core.update_part_attempt(pa, %{score: score, out_of: out_of, feedback: %{content: wrap_in_paragraphs(feedback)}}) do
+          case Core.update_part_attempt(pa, %{lifecycle_state: :evaluated, date_evaluated: now, score: score, out_of: out_of, feedback: %{content: wrap_in_paragraphs(feedback)}}) do
             {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
             e -> {:halt, e}
           end
@@ -268,8 +277,12 @@ defmodule Oli.Delivery.Attempts.ManualGrading do
   defp maybe_finalize_resource_attempt(_, false, resource_attempt_guid), do: {:ok, resource_attempt_guid}
 
   defp maybe_finalize_resource_attempt(section, true, resource_attempt_guid) do
-    Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(resource_attempt_guid)
-    |> maybe_initiate_grade_passback(section)
+    case Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_activities_to_resource_attempt(resource_attempt_guid) do
+      {:ok, %ResourceAttempt{lifecycle_state: :evaluated, resource_access_id: resource_access_id}} ->
+        Oli.Delivery.Attempts.PageLifecycle.Graded.roll_up_resource_attempts_to_access(section.slug, resource_access_id)
+        |> maybe_initiate_grade_passback(section)
+      e -> e
+    end
   end
 
   defp maybe_initiate_grade_passback({:ok, %ResourceAttempt{resource_access_id: resource_access_id}}, %Section{id: section_id, grade_passback_enabled: true}) do
