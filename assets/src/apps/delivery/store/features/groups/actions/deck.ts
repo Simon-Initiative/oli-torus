@@ -13,6 +13,7 @@ import {
   writePageAttemptState,
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
+import thunk from 'redux-thunk';
 import guid from 'utils/guid';
 import {
   ApplyStateOperation,
@@ -29,7 +30,7 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { selectHistoryNavigationActivity, setLessonEnd } from '../../adaptivity/slice';
+import { selectHistoryNavigationActivity, setInitPhaseComplete, setLessonEnd } from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
@@ -48,6 +49,7 @@ import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
+    thunkApi.dispatch(setInitPhaseComplete(false));
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
