@@ -153,7 +153,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       document.body.classList.remove('overflow-hidden');
     };
   }, [isAppVisible]);
-
   useEffect(() => {
     const appConfig = {
       paths: props.paths,
@@ -162,6 +161,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       revisionSlug: props.revisionSlug,
       partComponentTypes: props.partComponentTypes,
       activityTypes: props.activityTypes,
+      allObjectives: props.content.allObjectives || [],
     };
     dispatch(setInitialConfig(appConfig));
   }, [props]);

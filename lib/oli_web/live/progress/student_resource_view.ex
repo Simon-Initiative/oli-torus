@@ -1,6 +1,6 @@
 defmodule OliWeb.Progress.StudentResourceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias OliWeb.Common.{Breadcrumb, SessionContext}
+  alias OliWeb.Common.{Breadcrumb, SessionContext, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Surface.Components.Form
@@ -57,8 +57,14 @@ defmodule OliWeb.Progress.StudentResourceView do
 
             changeset =
               case resource_access do
-                nil -> nil
-                _ -> ResourceAccess.changeset(resource_access, %{})
+                nil ->
+                  nil
+
+                _ ->
+                  ResourceAccess.changeset(resource_access, %{
+                    # limit score decimals to two significant figures, rounding up
+                    score: Utils.format_score(resource_access.score)
+                  })
               end
 
             {:ok,
@@ -136,6 +142,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             <Field name={:score} class="form-label-group">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
               <NumberInput class="form-control" opts={disabled: !@is_editing}/>
+              <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
             </Field>
             <Field name={:out_of} class="form-label-group mb-4">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
@@ -230,6 +237,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       |> ensure_no_nil("out_of")
 
     case Core.update_resource_access(socket.assigns.resource_access, params) do
+      # Score is updated as provided, and it's formatted and rounded for display only
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
 
@@ -237,7 +245,7 @@ defmodule OliWeb.Progress.StudentResourceView do
          assign(socket,
            is_editing: false,
            resource_access: resource_access,
-           changeset: ResourceAccess.changeset(resource_access, %{})
+           changeset: ResourceAccess.changeset(resource_access, %{score: Utils.format_score(resource_access.score)})
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->
