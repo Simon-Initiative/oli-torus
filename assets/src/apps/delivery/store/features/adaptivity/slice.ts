@@ -83,8 +83,12 @@ const slice: Slice<AdaptivityState> = createSlice({
     ) {
       state.historyModeNavigation = action.payload.historyModeNavigation;
     },
-    setInitPhaseComplete(state) {
-      state.initPhaseComplete = Date.now();
+    setInitPhaseComplete(state, action: PayloadAction<boolean>) {
+      if (!action.payload) {
+        state.initPhaseComplete = null;
+      } else {
+        state.initPhaseComplete = Date.now();
+      }
     },
   },
 });
