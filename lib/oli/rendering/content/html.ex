@@ -90,6 +90,13 @@ defmodule Oli.Rendering.Content.Html do
 
   def img_inline(%Context{} = _context, _, _e), do: ""
 
+  def video(%Context{} = _context, _, attrs) do
+    {:safe, video_player} =
+      ReactPhoenix.ClientSide.react_component("Components.VideoPlayer", %{"video" => attrs})
+
+    video_player
+  end
+
   def youtube(%Context{} = context, _, %{"src" => src} = attrs) do
     iframe(
       context,

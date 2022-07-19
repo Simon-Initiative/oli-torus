@@ -20,9 +20,10 @@ type TopLevel =
   | (CodeV1 | CodeV2)
   | Blockquote
   | FormulaBlock
-  | Callout;
+  | Callout
+  | Video;
 
-type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock | Callout;
+type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock | Callout | Video;
 type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline | CalloutInline;
 
 type TextBlock = Paragraph | Heading;
@@ -106,6 +107,17 @@ interface Formula<typeIdentifier>
 
 export type FormulaBlock = Formula<'formula'>;
 export type FormulaInline = Formula<'formula_inline'>;
+export interface VideoSource {
+  url: string;
+  contenttype: string;
+}
+export interface Video extends SlateElement<VoidChildren> {
+  type: 'video';
+  poster?: string;
+  src: VideoSource[];
+  height?: number | string;
+  width?: number | string;
+}
 
 export interface YouTube extends SlateElement<VoidChildren> {
   type: 'youtube';
