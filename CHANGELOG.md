@@ -7,6 +7,7 @@
 ### Enhancements
 
 - Survey delivery support
+- Product ingestion support
 
 ## 0.20.0 (2022-06-30)
 

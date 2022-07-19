@@ -670,6 +670,10 @@ defmodule Oli.Delivery.Sections do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
+  # Creates a 'hierarchy definition' strictly from a a project and the recursive
+  # definition of containers starting with the root revision container.  This hierarchy
+  # definition is a map of resource ids to a list of the child resource ids, effectively
+  # the definition of the hierarchy.
   defp create_hierarchy_definition_from_project(
          published_resources_by_resource_id,
          revision,
@@ -696,11 +700,29 @@ defmodule Oli.Delivery.Sections do
   end
 
   @doc """
-  Create all section resources from the given section and publication using the
-  root resource's revision tree. Returns the root section resource record.
+  Create all section resources from the given section and publication and optional hierarchy definition.
+  The hierarchy definition is a map of resource ids to the list of directly contained children (referenced
+  by resource ids) for that parent.  The hierarchy definition must contain an entry for every container that will appear
+  in the course section resources.  An example of the hierarchy definition with the root (1) and three
+  top-level units (resource ids 2, 3, 4):
+
+  ```
+  %{
+    1 => [2, 3, 4],
+    2 => [5, 6, 7],
+    3 => [8, 9],
+    4 => [10]
+  }
+  ```
+
+  If the hierarchy definition argument is omitted, a default hierarchy definition will be generated from
+  the project's root revision and its children, recursively.
+
+  Returns the root section resource record.
+
   ## Examples
-      iex> create_section_resources(section)
-      {:ok, %Section{}}
+      iex> create_section_resources(section, publication, hierarchy_definition)
+      {:ok, %SectionResource{}}
   """
   def create_section_resources(
         %Section{} = section,
