@@ -76,7 +76,8 @@ defmodule Oli.Delivery.ActivityProvider do
       revisions: revisions,
       bib_revisions: bib_revisions,
       transformed_content: content,
-      unscored: unscored
+      unscored: unscored,
+      activity_to_source_selection_mapping: %{}
     }
   end
 
@@ -85,7 +86,7 @@ defmodule Oli.Delivery.ActivityProvider do
         %Source{} = source,
         resolver
       ) do
-    {errors, activities, model, _} = fulfill(model, source)
+    {errors, activities, model, _, activity_to_source_selection_mapping} = fulfill(model, source)
 
     only_revisions =
       resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
@@ -106,7 +107,8 @@ defmodule Oli.Delivery.ActivityProvider do
       revisions: only_revisions,
       bib_revisions: bib_revisions,
       transformed_content: Map.put(content, "model", Enum.reverse(model)),
-      unscored: MapSet.new()
+      unscored: MapSet.new(),
+      activity_to_source_selection_mapping: activity_to_source_selection_mapping
     }
   end
 
@@ -121,20 +123,27 @@ defmodule Oli.Delivery.ActivityProvider do
   # then do a final Enum.reverse to restore the correct order.  We do the same thing for the elements
   # within the transformed page model.
   defp fulfill(model, %Source{} = source) do
-    Enum.reduce(model, {[], [], [], source}, fn e, {errors, activities, model, source} ->
+    Enum.reduce(model, {[], [], [], source, %{}}, fn e,
+                                                     {errors, activities, model, source,
+                                                      selection_mapping} ->
       case e["type"] do
         "activity-reference" ->
-          {errors, [e["activity_id"] | activities], [e | model], source}
+          {errors, [e["activity_id"] | activities], [e | model], source, selection_mapping}
 
         "selection" ->
-          {:ok, %Selection{} = selection} = Selection.parse(e)
+          {:ok, %Selection{id: id} = selection} = Selection.parse(e)
 
           case Selection.fulfill(selection, source) do
             {:ok, %Result{} = result} ->
               reversed = Enum.reverse(result.rows)
 
+              selection_mapping =
+                Enum.reduce(reversed, selection_mapping, fn r, m ->
+                  Map.put(m, r.resource_id, id)
+                end)
+
               {errors, reversed ++ activities, replace_selection(e, reversed) ++ model,
-               merge_blacklist(source, result.rows)}
+               merge_blacklist(source, result.rows), selection_mapping}
 
             {:partial, %Result{} = result} ->
               missing = selection.count - result.rowCount
@@ -143,28 +152,33 @@ defmodule Oli.Delivery.ActivityProvider do
 
               reversed = Enum.reverse(result.rows)
 
+              selection_mapping =
+                Enum.reduce(reversed, selection_mapping, fn r, m ->
+                  Map.put(m, r.resource_id, id)
+                end)
+
               {[error | errors], reversed ++ activities, replace_selection(e, reversed) ++ model,
-               merge_blacklist(source, result.rows)}
+               merge_blacklist(source, result.rows), selection_mapping}
 
             e ->
               error = "Selection failed to fulfill with error: #{e}"
-              {[error | errors], activities, model, source}
+              {[error | errors], activities, model, source, selection_mapping}
           end
 
         "group" ->
           {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
           e = %{e | "children" => Enum.reverse(c_model)}
 
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source}
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source, selection_mapping}
 
         "survey" ->
           {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
           e = %{e | "children" => Enum.reverse(c_model)}
 
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source}
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source, selection_mapping}
 
         _ ->
-          {errors, activities, [e | model], source}
+          {errors, activities, [e | model], source, selection_mapping}
       end
     end)
   end
@@ -218,5 +232,4 @@ defmodule Oli.Delivery.ActivityProvider do
       | blacklisted_activity_ids: Enum.map(revisions, fn r -> r.resource_id end) ++ ids
     }
   end
-
 end
