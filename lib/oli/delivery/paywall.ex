@@ -245,10 +245,12 @@ defmodule Oli.Delivery.Paywall do
         {:ok, amount}
 
       [%Discount{type: :percentage, percentage: percentage}] ->
-        amount
-        |> Money.mult(round(percentage))
-        |> elem(1)
-        |> Money.div(100)
+        {:ok, discount_amount} = amount
+          |> Money.mult(round(percentage))
+          |> elem(1)
+          |> Money.div(100)
+
+        Money.sub(amount, discount_amount)
 
       [%Discount{amount: amount}] ->
         {:ok, amount}
