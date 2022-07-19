@@ -1,7 +1,8 @@
 import { LikertModelSchema, makeLikertChoice, makeLikertItem, LikertChoice } from './schema';
-import { makeStem, makeHint, makeChoice, makePart, Choice } from '../types';
+import { makeStem, makeHint, makePart } from '../types';
 
 import { Responses } from 'data/activities/model/responses';
+import { Maybe } from 'tsmonad';
 
 export const defaultLikertModel: () => LikertModelSchema = () => {
   const choiceA: LikertChoice = makeLikertChoice('Agree');
@@ -11,6 +12,7 @@ export const defaultLikertModel: () => LikertModelSchema = () => {
   return {
     stem: makeStem('Prompt (optional)'),
     choices: [choiceA, choiceB, choiceC],
+    orderDescending: false,
     items: [item1],
     authoring: {
       parts: [
@@ -21,8 +23,14 @@ export const defaultLikertModel: () => LikertModelSchema = () => {
           item1.id,
         ),
       ],
+      transformations: [],
       targeted: [],
       previewText: '',
     },
   };
+};
+
+export const getChoiceValue = (model: LikertModelSchema, i: number): number => {
+  // TODO: use optional custom value if it is specified
+  return model.orderDescending ? model.choices.length - i : i + 1;
 };

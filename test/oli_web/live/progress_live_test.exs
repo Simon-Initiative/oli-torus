@@ -26,32 +26,32 @@ defmodule OliWeb.ProgressLiveTest do
       conn: conn,
       section: section,
       resource: resource,
-      user: user
+      student: student
     } do
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{user.id}%2F#{resource.id}&section=#{section.slug}"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&section=#{section.slug}"
 
       {:error, {:redirect, %{to: ^redirect_path}}} =
-        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
     end
   end
 
   describe "user cannot access when is logged in as an author but is not a system admin" do
     setup [:author_conn, :create_resource]
 
-    test "redirects to section enroll page when accessing the student resource view", %{
+    test "redirects to new session when accessing the student resource view", %{
       conn: conn,
       section: section,
       resource: resource,
-      user: user
+      student: student
     } do
-      conn = get(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+      conn = get(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
       redirect_path =
-        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{user.id}%2F#{resource.id}&amp;section=#{section.slug}"
+        "/session/new?request_path=%2Fsections%2F#{section.slug}%2Fprogress%2F#{student.id}%2F#{resource.id}&amp;section=#{section.slug}"
 
       assert conn
-             |> get(live_view_student_resource_route(section.slug, user.id, resource.id))
+             |> get(live_view_student_resource_route(section.slug, student.id, resource.id))
              |> html_response(302) =~
                "<html><body>You are being <a href=\"#{redirect_path}\">redirected</a>.</body></html>"
     end
@@ -60,18 +60,90 @@ defmodule OliWeb.ProgressLiveTest do
   describe "student resource" do
     setup [:admin_conn, :create_resource]
 
-    test "loads student resource progress data correctly", %{
+    test "renders resource progress page correctly", %{
       conn: conn,
       section: section,
       resource: resource,
-      user: user
+      student: student
     } do
-      {:ok, view, _html} =
-        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+      {:ok, _view, html} =
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
-      html = render(view)
       assert html =~ "Details"
       assert html =~ "Attempt History"
+    end
+
+    scores_expected_format = %{
+      7.239 => 7.24,
+      4.876 => 4.88,
+      5.22222 => 5.22,
+      6.10 => 6.10,
+      4 => 4.0,
+      0.0 => 0.0,
+      0 => 0.0,
+    }
+
+    for {score, expected_score} <- scores_expected_format do
+      @score score
+      @expected_score expected_score
+
+      test "loads student progress score correctly for #{score}", %{
+        conn: conn,
+        section: section,
+        resource: resource,
+        student: student
+      } do
+
+        insert(:resource_access, user: student, resource: resource, section: section, score: @score, out_of: 10.0)
+
+        {:ok, view, _html} =
+          live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
+
+        assert view
+          |> element("input[name=\"resource_access[score]\"]")
+          |> render =~ "value=\"#{@expected_score}\""
+      end
+    end
+
+    test "loads attempt history score correctly", %{
+      conn: conn,
+      section: section,
+      resource: resource,
+      revision: revision,
+      student: student
+    } do
+      first_attempt = %{score: 5.2222, formatted: 5.22}
+      second_attempt = %{score: 4.876, formatted: 4.88}
+      third_attempt =  %{score: 7.239, formatted: 7.24}
+      out_of = 10.0
+
+      resource_access = insert(:resource_access, user: student, resource: resource, section: section, score: third_attempt.score, out_of: out_of)
+
+      date_now = DateTime.utc_now()
+
+      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: first_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
+        date_submitted: date_now, date_evaluated: date_now)
+      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: second_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
+        date_submitted: date_now, date_evaluated: date_now)
+      insert(:resource_attempt, revision: revision, resource_access: resource_access, score: third_attempt.score, out_of: out_of, lifecycle_state: "evaluated",
+        date_submitted: date_now, date_evaluated: date_now)
+
+      {:ok, view, _html} =
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
+
+      assert view
+        |> element("li[data-phx-component=\"1\"]")
+        |> render =~ "#{first_attempt.formatted} / #{out_of}"
+
+      assert view
+        |> element("li[data-phx-component=\"2\"]")
+        |> render =~ "#{second_attempt.formatted} / #{out_of}"
+
+      assert view
+        |> element("li[data-phx-component=\"3\"]")
+        |> render =~ "#{third_attempt.formatted} / #{out_of}"
+
+      assert true
     end
   end
 
@@ -95,10 +167,10 @@ defmodule OliWeb.ProgressLiveTest do
     test "student view", %{
       conn: conn,
       section: section,
-      user: user
+      student: student
     } do
       {:ok, _view, html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id))
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id))
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
@@ -108,15 +180,15 @@ defmodule OliWeb.ProgressLiveTest do
     test "student resource view", %{
       conn: conn,
       section: section,
-      user: user,
+      student: student,
       resource: resource
     } do
       {:ok, _view, html} =
-        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
       assert html =~ "View Resource Progress"
     end
   end
@@ -142,10 +214,10 @@ defmodule OliWeb.ProgressLiveTest do
     test "student view", %{
       conn: conn,
       section: section,
-      user: user
+      student: student
     } do
       {:ok, _view, html} =
-        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id))
+        live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id))
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
@@ -156,29 +228,29 @@ defmodule OliWeb.ProgressLiveTest do
     test "student resource view", %{
       conn: conn,
       section: section,
-      user: user,
+      student: student,
       resource: resource
     } do
       {:ok, _view, html} =
-        live(conn, live_view_student_resource_route(section.slug, user.id, resource.id))
+        live(conn, live_view_student_resource_route(section.slug, student.id, resource.id))
 
       assert html =~ "<nav class=\"breadcrumb-bar"
       refute html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)}\""
       assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section.slug)}\""
-      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, user.id)}\""
+      assert html =~ "<a href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentView, section.slug, student.id)}\""
       assert html =~ "View Resource Progress"
     end
   end
 
   def create_resource(_context) do
-    user = insert(:user)
-    project = insert(:project, authors: [user.author])
+    instructor = insert(:user)
+    project = insert(:project, authors: [instructor.author])
     section = insert(:section, type: :enrollable)
 
     section_project_publication =
       insert(:section_project_publication, %{section: section, project: project})
 
-    revision = insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"))
+    revision = insert(:revision, resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"), graded: true)
 
     section_resource = insert(:section_resource, %{
       section: section,
@@ -192,13 +264,14 @@ defmodule OliWeb.ProgressLiveTest do
       resource: revision.resource,
       revision: revision,
       publication: section_project_publication.publication,
-      author: user.author
+      author: instructor.author
     })
 
-    {:ok, section: section, resource: revision.resource, user: user}
+    student = insert(:user)
+    {:ok, section: section, resource: revision.resource, revision: revision, instructor: instructor, student: student}
   end
 
-  defp setup_instructor_session(%{conn: conn, user: user, section: section}) do
+  defp setup_instructor_session(%{conn: conn, instructor: user, section: section}) do
     {:ok, user} =
       Accounts.update_user(user, %{can_create_sections: true, independent_learner: true})
     {:ok, instructor} =

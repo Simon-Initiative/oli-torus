@@ -8,6 +8,7 @@ defmodule OliWeb.PageDeliveryView do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
   alias Oli.Resources.Revision
+  alias OliWeb.Common.Utils
 
   import Oli.Utils, only: [value_or: 2]
 

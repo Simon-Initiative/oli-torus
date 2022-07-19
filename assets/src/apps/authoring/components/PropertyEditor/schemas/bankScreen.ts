@@ -11,6 +11,7 @@ export interface BankPropsModel {
   height: number;
   palette: any;
   customCssClass: string;
+  objectives?: number[];
 }
 
 const BankPropsSchema: JSONSchema7 = {

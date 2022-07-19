@@ -35,7 +35,7 @@ defmodule OliWeb.Progress.PageAttemptSummary do
       <a href={Routes.instructor_review_path(OliWeb.Endpoint, :review_attempt, @section.slug, @attempt.attempt_guid)}>
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
-          <span>{@attempt.score} / {@attempt.out_of}</span>
+          <span>{Utils.format_score(@attempt.score)} / {@attempt.out_of}</span>
         </div>
         <p class="mb-1 text-muted">Submitted: {Utils.render_date(@attempt, :date_evaluated, @context)} ({Utils.render_relative_date(@attempt, :date_evaluated, @context)})</p>
         <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, @attempt.date_evaluated)}.</small>

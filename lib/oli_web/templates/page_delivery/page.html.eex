@@ -14,11 +14,11 @@ window.userToken = "<%= assigns[:user_token] %>";
     <div class="mb-2">
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
@@ -26,7 +26,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     </div>
     <div class="row">
       <div class="col-sm-3">Points:</div>
-      <div><%= @resource_attempt.score %> out of <%= @resource_attempt.out_of %> </div>
+      <div><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
     </div>
     </div>
   <% end %>
@@ -35,11 +35,11 @@ window.userToken = "<%= assigns[:user_token] %>";
     <h3>Awaiting Instructor Grading</h3>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= OliWeb.Common.Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
     </div>
     </div>
   <% end %>

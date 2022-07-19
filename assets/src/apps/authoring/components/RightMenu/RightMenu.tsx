@@ -173,12 +173,30 @@ const RightMenu: React.FC<any> = () => {
           : transformScreenSchematoModel(properties);
         /* console.log('Screen Property Change...', { properties, modelChanges }); */
         const { title, ...screenModelChanges } = modelChanges;
+        const objectives = modelChanges.objectives || [];
+
         const screenChanges = {
           ...currentActivity?.content?.custom,
           ...screenModelChanges,
         };
         const cloneActivity = clone(currentActivity);
         cloneActivity.content.custom = screenChanges;
+
+        if (objectives.length === 0) {
+          // Potentially removing all objectives, clear them out
+          cloneActivity.objectives = {};
+        } else if (currentActivity.authoring.parts.length > 0) {
+          // Adding objectives, and we have an existing part to attach them to.
+          cloneActivity.objectives = {
+            [currentActivity.authoring.parts[0].id]: objectives,
+          };
+        } else {
+          // Adding objectives, but there are no parts to attach them to, saveActivity.ts will create a __default part for us
+          cloneActivity.objectives = {
+            __default: objectives,
+          };
+        }
+
         if (title) {
           cloneActivity.title = title;
         }

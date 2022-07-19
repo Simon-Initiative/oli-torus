@@ -1,14 +1,14 @@
 import React from 'react';
-import { Choice, ChoiceId, PartId } from 'components/activities/types';
+import { Choice, ChoiceId, makeContent, PartId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
-import { LikertItem } from '../schema';
+import { LikertItem, LikertModelSchema } from '../schema';
 import './LikertTable.scss';
 import { toSimpleText } from 'components/editing/slateUtils';
+import { getChoiceValue } from '../utils';
 
 interface Props {
-  items: LikertItem[];
-  choices: Choice[];
+  model: LikertModelSchema;
   isSelected: (itemId: PartId, choiceId: ChoiceId) => boolean;
   onSelect: (itemId: PartId, choiceId: ChoiceId) => void;
   disabled: boolean;
@@ -21,13 +21,14 @@ const needItemColumn = (items: LikertItem[]) => {
 };
 
 export const LikertTable: React.FC<Props> = ({
-  items,
-  choices,
+  model,
   isSelected,
   onSelect,
   disabled = false,
   context,
 }) => {
+  const { choices, items, orderDescending } = model;
+
   return (
     <table className="likertTable">
       <thead>
@@ -54,13 +55,24 @@ export const LikertTable: React.FC<Props> = ({
                   type="radio"
                   checked={isSelected(item.id, choice.id)}
                   disabled={disabled}
-                  onClick={() => onSelect(item.id, choice.id)}
+                  onChange={() => onSelect(item.id, choice.id)}
                 />
               </td>
             ))}
           </tr>
         ))}
       </tbody>
+      {/* footer row with choice values. Use th cells to match header style */}
+      <tfoot>
+        <tr>
+          {needItemColumn(items) && <th />}
+          {choices.map((choice, i) => (
+            <th key={'foot-' + i}>
+              <p>{getChoiceValue(model, i).toString()}</p>
+            </th>
+          ))}
+        </tr>
+      </tfoot>
     </table>
   );
 };
