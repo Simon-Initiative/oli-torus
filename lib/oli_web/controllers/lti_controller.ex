@@ -364,7 +364,7 @@ defmodule OliWeb.LtiController do
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
     case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-      {institution, _registration, _deployment} ->
+      {institution, registration, _deployment} ->
         lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
         # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
@@ -420,7 +420,7 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  {:ok, _section} = update_section_details(context_title, section, lti_params)
+                  {:ok, _section} = update_section_details(context_title, section, lti_params, registration)
                 end
 
                 # sign current user in and redirect to home page
@@ -441,11 +441,11 @@ defmodule OliWeb.LtiController do
     Sections.enroll(user_id, section_id, context_roles)
   end
 
-  defp update_section_details(context_title, section, lti_params) do
+  defp update_section_details(context_title, section, lti_params, registration) do
     Sections.update_section(section, %{
       title: context_title,
       grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-      line_items_service_url: AGS.get_line_items_url(lti_params),
+      line_items_service_url: AGS.get_line_items_url(lti_params, registration),
       nrps_enabled: NRPS.nrps_enabled?(lti_params),
       nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
     })

@@ -25,7 +25,7 @@ defmodule Oli.Delivery do
     # guard against creating a new section if one already exists
     case Sections.get_section_from_lti_params(lti_params) do
       nil ->
-        {institution, _registration, deployment} =
+        {institution, registration, deployment} =
           Institutions.get_institution_registration_deployment(
             lti_params["iss"],
             lti_params["aud"],
@@ -36,12 +36,12 @@ defmodule Oli.Delivery do
         {create_fn, id} =
           case source_id do
             "publication:" <> publication_id ->
-              {&create_from_publication/5, String.to_integer(publication_id)}
+              {&create_from_publication/6, String.to_integer(publication_id)}
 
             "product:" <> product_id ->
-              {&create_from_product/5, String.to_integer(product_id)}
+              {&create_from_product/6, String.to_integer(product_id)}
           end
-        create_fn.(id, user, institution, lti_params, deployment)
+        create_fn.(id, user, institution, lti_params, deployment, registration)
 
       section ->
         # a section already exists, redirect to index
@@ -49,7 +49,7 @@ defmodule Oli.Delivery do
     end
   end
 
-  defp create_from_product(product_id, user, institution, lti_params, deployment) do
+  defp create_from_product(product_id, user, institution, lti_params, deployment, registration) do
     Repo.transaction(fn ->
       blueprint = Oli.Delivery.Sections.get_section!(product_id)
 
@@ -73,7 +73,7 @@ defmodule Oli.Delivery do
           amount: amount,
           pay_by_institution: blueprint.pay_by_institution,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params),
+          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
@@ -83,7 +83,7 @@ defmodule Oli.Delivery do
     end)
   end
 
-  defp create_from_publication(publication_id, user, institution, lti_params, deployment) do
+  defp create_from_publication(publication_id, user, institution, lti_params, deployment, registration) do
     Repo.transaction(fn ->
       publication = Publishing.get_publication!(publication_id)
 
@@ -96,7 +96,7 @@ defmodule Oli.Delivery do
           base_project_id: publication.project_id,
           lti_1p3_deployment_id: deployment.id,
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-          line_items_service_url: AGS.get_line_items_url(lti_params),
+          line_items_service_url: AGS.get_line_items_url(lti_params, registration),
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
           nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
         })
