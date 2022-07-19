@@ -13,7 +13,6 @@ import {
   writePageAttemptState,
 } from 'data/persistence/state/intrinsic';
 import { ResourceId } from 'data/types';
-import thunk from 'redux-thunk';
 import guid from 'utils/guid';
 import {
   ApplyStateOperation,
@@ -30,13 +29,17 @@ import {
   setActivities,
   setCurrentActivityId,
 } from '../../activities/slice';
-import { selectHistoryNavigationActivity, setInitPhaseComplete, setLessonEnd } from '../../adaptivity/slice';
+import {
+  selectHistoryNavigationActivity,
+  setInitPhaseComplete,
+  setLessonEnd,
+} from '../../adaptivity/slice';
 import { loadActivityAttemptState, updateExtrinsicState } from '../../attempt/slice';
 import {
   selectActivityTypes,
+  selectIsInstructor,
   selectNavigationSequence,
   selectPreviewMode,
-  selectIsInstructor,
   selectResourceAttemptGuid,
   selectSectionSlug,
   setScore,
