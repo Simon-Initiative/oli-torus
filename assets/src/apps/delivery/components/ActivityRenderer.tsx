@@ -488,6 +488,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
   };
 
   const notifyContextChanged = async () => {
+    /* console.log('notifyContextChanged called'); */
     // even though ActivityRenderer still lives inside the main react app ecosystem
     // it can't logically access the "localized" version of the state snapshot
     // because this is a single activity and doesn't know about Layout (Deck View) behavior
@@ -515,12 +516,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   };
 
+  const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
+
   useEffect(() => {
-    if (!initPhaseComplete || !ref.current) {
+    if (!initPhaseComplete || !ref.current || lastInitPhaseHandledTimestamp >= initPhaseComplete) {
       return;
     }
+    /* console.log('ActivityRenderer useEffect HANDLED:', {
+      initPhaseComplete,
+      lastInitPhaseHandledTimestamp,
+    }); */
+    setLastInitPhaseHandledTimestamp(initPhaseComplete);
     notifyContextChanged();
-  }, [initPhaseComplete]);
+  }, [initPhaseComplete, lastInitPhaseHandledTimestamp]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
   const mutateChanges = useSelector(selectLastMutateChanges);
