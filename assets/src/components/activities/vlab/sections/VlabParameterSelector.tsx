@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MultiInputActions } from 'components/activities/vlab/actions';
 import { friendlyVlabParameter } from 'components/activities/vlab/utils';
 import { VlabValue, VlabSchema } from 'components/activities/vlab/schema';

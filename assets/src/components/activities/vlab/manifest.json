@@ -1,6 +1,7 @@
 {
   "id": "oli_vlab",
   "friendlyName": "Virtual Lab",
+  "petiteLabel": "Vlab",
   "description": "A chemistry virtual lab activity",
   "icon": "input",
   "delivery": {
