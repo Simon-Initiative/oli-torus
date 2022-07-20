@@ -515,12 +515,19 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     }
   };
 
+  const [lastInitPhaseHandledTimestamp, setLastInitPhaseHandledTimestamp] = useState(Date.now());
+
   useEffect(() => {
-    if (!initPhaseComplete || !ref.current) {
+    if (!initPhaseComplete || !ref.current || lastInitPhaseHandledTimestamp >= initPhaseComplete) {
       return;
     }
+    /* console.log('ActivityRenderer useEffect HANDLED:', {
+      initPhaseComplete,
+      lastInitPhaseHandledTimestamp,
+    }); */
+    setLastInitPhaseHandledTimestamp(initPhaseComplete);
     notifyContextChanged();
-  }, [initPhaseComplete]);
+  }, [initPhaseComplete, lastInitPhaseHandledTimestamp]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
   const mutateChanges = useSelector(selectLastMutateChanges);
