@@ -166,7 +166,7 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
         data.palette.fillAlpha || '100'
       })`;
     } else if (data.palette.backgroundColor) {
-      backgroundColor = chroma(data.palette.backgroundColor).rgba().join(',');
+      backgroundColor = data.palette.backgroundColor;
     }
 
     const schemaPalette = {

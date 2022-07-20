@@ -6,6 +6,12 @@
 
 ### Enhancements
 
+## 0.21.1 (2022-07-19)
+
+### Bug Fixes
+
+- Fix an with activity bank selections
+
 ## 0.21.0 (2022-07-15)
 
 ### Bug Fixes

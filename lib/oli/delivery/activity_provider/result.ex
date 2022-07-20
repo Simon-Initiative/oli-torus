@@ -4,6 +4,7 @@ defmodule Oli.Delivery.ActivityProvider.Result do
     :revisions,
     :bib_revisions,
     :unscored,
-    :transformed_content
+    :transformed_content,
+    :activity_to_source_selection_mapping
   ]
 end
