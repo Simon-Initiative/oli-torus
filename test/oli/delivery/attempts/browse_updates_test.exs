@@ -1,4 +1,4 @@
-defmodule Oli.Delivery.Attempts.BrwoseUpdatesTest do
+defmodule Oli.Delivery.Attempts.BrowseUpdatesTest do
   use Oli.DataCase
 
   alias Oli.Delivery.Attempts.Core, as: Attempts
