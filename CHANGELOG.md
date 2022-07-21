@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where underlined and strikethrough text were not being rendered
+
 ### Enhancements
 
 ## 0.21.2 (2022-07-20)
