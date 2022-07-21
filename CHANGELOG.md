@@ -4,12 +4,6 @@
 
 ### Bug Fixes
 
-### Enhancements
-
-## 0.21.3 (2022-07-21)
-
-### Bug Fixes
-
 - Fix an issue where guest user_id is blank in datashop export
 
 ## 0.21.2 (2022-07-20)
