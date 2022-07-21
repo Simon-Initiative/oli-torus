@@ -198,28 +198,17 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Given a section (blueprint or enrollable), calculate the cost to use it for
-  a specific institution, taking into account any product-wide and product-specific discounts
-  this instituttion has.
+    Given a section (blueprint) calculate the cost to use it for
+    a specific institution, taking into account any product-wide and product-specific discounts
+    this instituttion has.
 
-  Returns {:ok, %Money{}} or {:error, reason}
+      Returns {:ok, %Money{}} or {:error, reason}
   """
-  def calculate_product_cost(
-        %Section{requires_payment: false},
-        _
-      ),
-      do: {:ok, Money.new(:USD, 0)}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, amount: amount},
-        nil
-      ),
-      do: {:ok, amount}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, id: id, amount: amount},
-        %Institution{id: institution_id}
-      ) do
+  @spec section_cost_from_product(%Section{}, %Institution{}) :: {:ok, %Money{}} | {:error, any}
+   def section_cost_from_product(
+    %Section{requires_payment: true, id: id, amount: amount},
+    %Institution{id: institution_id}
+  ) do
     discounts =
       from(d in Discount,
         where:
@@ -256,6 +245,9 @@ defmodule Oli.Delivery.Paywall do
         {:ok, amount}
     end
   end
+
+  def section_cost_from_product(%Section{requires_payment: true, amount: amount}, nil), do: {:ok, amount}
+  def section_cost_from_product(%Section{requires_payment: false}, _), do: {:ok, Money.new(:USD, 0)}
 
   @doc """
   Redeems a payment code for a given course section.

@@ -1,6 +1,8 @@
 defmodule Oli.Delivery.Paywall.Providers.Stripe do
   import Oli.HTTP
 
+  require Logger
+
   alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
 
@@ -42,7 +44,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
 
   @doc """
   Creates a Stripe payment intent for an amount to pay by a user for enrollment
-  in a section for a particular product.
+  in a section for a particular section.
 
   After successful intent creation, this function creates a "pending" payment within Torus.
   This is done primarily as a safeguard measure, since it allows verfication later
@@ -51,8 +53,9 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
   attempt is real is to call out to the Stripe API to verify the intent. This approach avoids
   that network call.
   """
-  def create_intent(%Money{} = amount, %User{} = user, %Section{} = section, %Section{} = product) do
-    {stripe_value, stripe_currency} = convert_amount(amount)
+  @spec create_intent(%Section{}, %User{}) :: {:ok, any} | {:error, any}
+  def create_intent(section, user) do
+    {stripe_value, stripe_currency} = convert_amount(section.amount)
 
     # if the user has an email address, we include it so Stipe will send receipt
     receipt_email = if user.email, do: %{receipt_email: user.email}, else: %{}
@@ -68,40 +71,43 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
       )
       |> URI.encode_query()
 
-    private_secret = Application.fetch_env!(:oli, :stripe_provider)[:private_secret]
+    headers = fn private_secret ->
+      [
+        Authorization: "Bearer #{private_secret}",
+        "Content-Type": "application/x-www-form-urlencoded"
+      ]
+    end
 
-    headers = [
-      Authorization: "Bearer #{private_secret}",
-      "Content-Type": "application/x-www-form-urlencoded"
-    ]
+    attrs = fn intent ->
+      %{
+        type: :direct,
+        generation_date: DateTime.utc_now(),
+        amount: section.amount,
+        provider_payload: intent,
+        provider_id: intent["id"],
+        provider_type: :stripe,
+        section_id: section.id
+      }
+    end
 
-    case http().post(
-           "https://api.stripe.com/v1/payment_intents",
-           body,
-           headers
-         ) do
-      {:ok, %{status_code: 200, body: body}} ->
-        intent = Poison.decode!(body)
-
-        %{"id" => id} = intent
-
-        attrs = %{
-          type: :direct,
-          generation_date: DateTime.utc_now(),
-          amount: amount,
-          provider_payload: intent,
-          provider_id: id,
-          provider_type: :stripe,
-          section_id: product.id
-        }
-
-        case Oli.Delivery.Paywall.create_pending_payment(user, section, attrs) do
-          {:ok, _} -> {:ok, intent}
-          e -> e
-        end
-
-      _ ->
+    with {:ok, [_, {:private_secret, private_secret}]} <-
+           Application.fetch_env(:oli, :stripe_provider),
+         {:ok, %{status_code: 200, body: body}} <-
+           http().post(
+             "https://api.stripe.com/v1/payment_intents",
+             body,
+             headers.(private_secret)
+           ),
+         {:ok, intent} <- Poison.decode(body),
+         {:ok, _} <- Oli.Delivery.Paywall.create_pending_payment(user, section, attrs.(intent)) do
+      {:ok, intent}
+    else
+      {:ok, %HTTPoison.Response{} = response} ->
+        Logger.error("Failed request to Stripe payment intents, response: #{inspect(response)}")
         {:error, "Could not create stripe intent"}
+
+      error ->
+        error
     end
   end
 
