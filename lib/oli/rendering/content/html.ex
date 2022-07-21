@@ -14,30 +14,6 @@ defmodule Oli.Rendering.Content.Html do
 
   @behaviour Oli.Rendering.Content
 
-  def example(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
-  end
-
-  def learn_more(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
-  end
-
-  def manystudentswonder(%Context{} = _context, next, _) do
-    [
-      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
-      next.(),
-      "</div></div>\n"
-    ]
-  end
-
   def callout(%Oli.Rendering.Context{} = _context, next, _) do
     ["<span class=\"callout-block\">", next.(), "</span>\n"]
   end
@@ -424,6 +400,30 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
+  def example(%Context{} = _context, next, _) do
+    [
+      ~s|<div class="content-purpose example"><div class="content-purpose-label">Example</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
+  end
+
+  def learn_more(%Context{} = _context, next, _) do
+    [
+      ~s|<div class="content-purpose learnmore"><div class="content-purpose-label">Learn more</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
+  end
+
+  def manystudentswonder(%Context{} = _context, next, _) do
+    [
+      ~s|<div class="content-purpose manystudentswonder"><div class="content-purpose-label">Many Students Wonder</div><div class="content-purpose-content">|,
+      next.(),
+      "</div></div>\n"
+    ]
+  end
+
   def escape_xml!(text) do
     case HTML.html_escape(text) do
       {:safe, result} -> result
@@ -458,8 +458,8 @@ defmodule Oli.Rendering.Content.Html do
       text,
       fn mark, acc ->
         case mark do
-          "underline" -> "<span style=\"text-decoration: underline;\"}></span>"
-          "strikethrough" -> "<span style=\"text-decoration: line-through;\"}></span>"
+          "underline" -> ~s|<span style="text-decoration: underline;">#{acc}</span>|
+          "strikethrough" -> ~s|<span style="text-decoration: line-through;">#{acc}</span>|
           _ -> "<#{mark}>#{acc}</#{mark}>"
         end
       end
