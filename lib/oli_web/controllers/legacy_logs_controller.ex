@@ -7,7 +7,7 @@ defmodule OliWeb.LegacyLogsController do
 
     doc = case Map.get(conn.assigns, :raw_body) do
       nil ->
-        {:ok, raw_body, conn} = Plug.Conn.read_body(conn, length: 20_000_000)
+        {:ok, raw_body, _conn} = Plug.Conn.read_body(conn, length: 20_000_000)
         raw_body
       raw_body -> raw_body
     end
