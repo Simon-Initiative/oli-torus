@@ -16,6 +16,8 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Editing.PageEditor
   alias Oli.Repo
   alias Oli.Authoring.Broadcaster
+  alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Activities
 
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
@@ -263,6 +265,83 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
         e
     end
   end
+
+  @doc """
+    Duplicates a page within its project.
+    A true deep-copy of all the content is made. Resources and Revisions are created instead of simply referenced.
+  """
+  def duplicate_page(
+        %Revision{} = container,
+        page_id,
+        %Author{} = author,
+        %Project{} = project
+      ) do
+    original_page =
+      Resources.get_revision!(page_id)
+      |> Map.from_struct()
+
+    new_page_attrs =
+      original_page
+      |> Map.drop([:slug, :inserted_at, :updated_at, :resource_id, :resource])
+      |> Map.put(:title, "Copy of #{original_page.title}")
+      |> Map.put(:content, nil)
+
+    Repo.transaction(fn ->
+      with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
+           {:ok, model_duplicated_activities} <-
+            deep_copy_activities(
+               original_page.content["model"],
+               project.slug,
+               author
+             ),
+           new_content <- %{original_page.content | "model" => Enum.reverse(model_duplicated_activities)},
+           {:ok, updated_revision} <- Resources.update_revision(created_revision, %{content: new_content}) do
+        updated_revision
+      else
+        {:error, e} -> Repo.rollback(e)
+      end
+    end)
+  end
+
+  defp deep_copy_activities(model, project_slug, author) do
+    Enum.reduce_while(model, {:ok, []}, fn activity, {:ok, acc} ->
+      case deep_copy_activity(activity, project_slug, author) do
+        {:ok, new_activity} -> {:cont, {:ok, [new_activity | acc]}}
+        {:error, _} = err -> {:halt, err}
+      end
+    end)
+  end
+
+  defp deep_copy_activity(%{"type" => "activity-reference"} = item, project_slug, author) do
+    activity_revision = AuthoringResolver.from_resource_id(project_slug, item["activity_id"])
+
+    activity_type = Activities.get_registration(activity_revision.activity_type_id)
+
+    case ActivityEditor.create(
+           project_slug,
+           activity_type.slug,
+           author,
+           activity_revision.content,
+           [],
+           "embedded",
+           activity_revision.title,
+           activity_revision.objectives
+         ) do
+      {:ok, {revision, _}} ->
+        {:ok,
+         %{
+           "id" => item["id"],
+           "type" => "activity-reference",
+           "children" => [],
+           "activity_id" => revision.resource_id
+         }}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
 
   defp remove_from_container(container, project_slug, revision, author) do
     # Create a change that removes the child

@@ -160,8 +160,16 @@ defmodule Oli.Rendering.Content.Html do
     ["<td>", next.(), "</td>\n"]
   end
 
+  def ol(%Context{} = _context, next, %{"style" => style}) do
+    ["<ol class=\"list-#{style}\">", next.(), "</ol>\n"]
+  end
+
   def ol(%Context{} = _context, next, _) do
     ["<ol>", next.(), "</ol>\n"]
+  end
+
+  def ul(%Context{} = _context, next, %{"style" => style}) do
+    ["<ul class=\"list-#{style}\">", next.(), "</ul>\n"]
   end
 
   def ul(%Context{} = _context, next, _) do

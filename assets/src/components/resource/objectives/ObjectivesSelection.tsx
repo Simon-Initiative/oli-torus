@@ -20,7 +20,7 @@ export type ObjectivesProps = {
   editMode: boolean;
   projectSlug: ProjectSlug;
   onEdit: (objectives: ResourceId[]) => void;
-  onRegisterNewObjective: (objective: Objective) => void;
+  onRegisterNewObjective?: (objective: Objective) => void;
 };
 
 // Custom filterBy function for the Typeahead. This allows searches to
@@ -80,6 +80,8 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
   const asObjectives = selected.map((s) => map.get(s) as Objective);
 
+  const allowNewObjective = !!onRegisterNewObjective;
+
   return (
     <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
@@ -94,7 +96,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-                if (result.result === 'success') {
+                if (result.result === 'success' && onRegisterNewObjective) {
                   onRegisterNewObjective({
                     id: result.resourceId,
                     title: createdObjective.title,
@@ -139,7 +141,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
           }
         }}
         options={props.objectives}
-        allowNew={true}
+        allowNew={allowNewObjective}
         newSelectionPrefix="Create new objective: "
         labelKey="title"
         selected={asObjectives}

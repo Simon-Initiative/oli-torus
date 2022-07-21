@@ -15,22 +15,19 @@ defmodule OliWeb.InstitutionControllerTest do
     country_code: "some country_code",
     institution_email: "some institution_email",
     institution_url: "some institution_url",
-    name: "some name",
-    timezone: "some timezone"
+    name: "some name"
   }
   @update_attrs %{
     country_code: "some updated country_code",
     institution_email: "some updated institution_email",
     institution_url: "some updated institution_url",
-    name: "some updated name",
-    timezone: "some updated timezone"
+    name: "some updated name"
   }
   @invalid_attrs %{
     country_code: nil,
     institution_email: nil,
     institution_url: nil,
-    name: nil,
-    timezone: nil
+    name: nil
   }
 
   setup [:create_institution]

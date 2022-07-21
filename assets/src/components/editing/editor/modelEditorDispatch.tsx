@@ -57,9 +57,17 @@ export function editorFor(
     case 'img_inline':
       return <ImageInlineEditor {...(editorProps as EditorProps<ContentModel.ImageInline>)} />;
     case 'ol':
-      return <ol {...attributes}>{children}</ol>;
+      return (
+        <ol className={listClassName(model.style)} {...attributes}>
+          {children}
+        </ol>
+      );
     case 'ul':
-      return <ul {...attributes}>{children}</ul>;
+      return (
+        <ul className={listClassName(model.style)} {...attributes}>
+          {children}
+        </ul>
+      );
     case 'li':
       return <li {...attributes}>{children}</li>;
     case 'callout':
@@ -110,6 +118,8 @@ export function editorFor(
       return <span>{children}</span>;
   }
 }
+
+const listClassName = (style?: string): string | undefined => (style ? `list-${style}` : undefined);
 
 export function markFor(mark: Mark, children: any): JSX.Element {
   switch (mark) {

@@ -40,7 +40,6 @@ defmodule Oli.TestHelpers do
       |> Enum.into(%{
         open_and_free: false,
         registration_open: true,
-        timezone: "US/Eastern",
         title: "some title",
         context_id: "context_id"
       })
@@ -111,8 +110,7 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "institution@example.edu",
         institution_url: "institution.example.edu",
-        name: "Example Institution",
-        timezone: "US/Eastern"
+        name: "Example Institution"
       })
 
     {:ok, institution} = Institutions.create_institution(params)
@@ -128,7 +126,6 @@ defmodule Oli.TestHelpers do
         country_code: "US",
         institution_email: "example@example.edu",
         institution_url: "institution.example.edu",
-        timezone: "US/Eastern",
         issuer: "https://institution.example.edu",
         client_id: "1000000000001",
         key_set_url: "some key_set_url",
@@ -444,7 +441,6 @@ defmodule Oli.TestHelpers do
         Map.merge(
           %{
             title: title,
-            timezone: "1",
             registration_open: true,
             context_id: UUID.uuid4(),
             institution_id:
@@ -577,6 +573,61 @@ defmodule Oli.TestHelpers do
     %{publication: publication, project: project}
   end
 
+  def section_with_assessment(_context) do
+    project = insert(:project)
+
+    # Graded page revision
+    page_revision =
+      insert(:revision,
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        title: "Progress test revision",
+        graded: true
+      )
+
+    # Associate nested graded page to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
+
+    # root container
+    container_resource = insert(:resource)
+
+    # Associate root container to the project
+    insert(:project_resource, %{project_id: project.id, resource_id: container_resource.id})
+
+    container_revision =
+      insert(:revision, %{
+        resource: container_resource,
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [page_revision.resource.id],
+        content: %{},
+        deleted: false,
+        slug: "root_container",
+        title: "Root Container"
+      })
+
+    # Publication of project with root container
+    publication =
+      insert(:publication, %{project: project, root_resource_id: container_resource.id})
+
+    # Publish root container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: container_resource,
+      revision: container_revision
+    })
+
+    # Publish nested page resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: page_revision.resource,
+      revision: page_revision
+    })
+
+    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true)
+    {:ok, section} = Sections.create_section_resources(section, publication)
+    {:ok, section: section, page_revision: page_revision}
+  end
+
   def enroll_user_to_section(user, section, role) do
     Sections.enroll(user.id, section.id, [
       ContextRoles.get_role(role)
@@ -584,7 +635,7 @@ defmodule Oli.TestHelpers do
   end
 
   def set_timezone(%{conn: conn}) do
-    conn = Plug.Test.init_test_session(conn, %{local_tz: "America/New_York"})
+    conn = Plug.Test.init_test_session(conn, %{browser_timezone: "America/New_York"})
 
     {:ok, conn: conn, context: SessionContext.init(conn)}
   end

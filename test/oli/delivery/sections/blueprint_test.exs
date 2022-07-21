@@ -25,7 +25,6 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -55,7 +54,6 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -143,7 +141,6 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         Sections.create_section(%{
           type: :blueprint,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -158,7 +155,6 @@ defmodule Oli.Delivery.Sections.BlueprintTest do
         Sections.create_section(%{
           type: :blueprint,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,

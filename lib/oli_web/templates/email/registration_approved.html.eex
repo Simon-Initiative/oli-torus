@@ -31,7 +31,7 @@
                               </tr>
                               <tr>
                                   <td align="center" valign="top">
-                                      <%= @institution.country_code %> - <%= @institution.timezone %>
+                                      <%= @institution.country_code %>
                                   </td>
                               </tr>
                           </table>

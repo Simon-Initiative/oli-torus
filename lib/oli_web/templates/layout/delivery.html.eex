@@ -45,7 +45,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/highlight.min.js" integrity="sha512-IaaKO80nPNs5j+VLxd42eK/7sYuXQmr+fyywCNA0e+C6gtQnuCXNtORe9xR4LqGPz5U9VpH+ff41wKs/ZmC3iA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    
+
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/citation-js"></script>
     <script>
       window.cite = require('citation-js')
@@ -73,7 +73,7 @@
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/components.js") %>"></script>
-    <%= unless Plug.Conn.get_session(@conn, "local_tz") do %>
+    <%= unless Plug.Conn.get_session(@conn, "browser_timezone") do %>
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>

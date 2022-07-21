@@ -257,6 +257,26 @@ defmodule OliWeb.Curriculum.ContainerLive do
     end
   end
 
+  def handle_event("duplicate_page", %{"id" => page_id}, socket) do
+    %{container: container, project: project, author: author} = socket.assigns
+
+    socket =
+      case ContainerEditor.duplicate_page(container, page_id, author, project) do
+        {:ok, _result} ->
+          socket
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          socket
+            |> put_flash(:error, "Could not duplicate page")
+      end
+
+    {:noreply,
+      assign(socket,
+        numberings:
+          Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+    )}
+  end
+
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
     %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
 

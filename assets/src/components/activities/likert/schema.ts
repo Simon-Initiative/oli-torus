@@ -7,6 +7,7 @@ import {
   RichText,
   makeChoice,
   makeStem,
+  Transformation,
 } from '../types';
 import { ID } from 'data/content/model/other';
 import { Maybe } from 'tsmonad';
@@ -16,12 +17,12 @@ export class LikertChoice implements Choice {
   id: ID;
   content: RichText;
   // set only if using non-default value:
-  value: Maybe<string>;
+  value: Maybe<number>;
 }
 
 export const makeLikertChoice: (s: string) => LikertChoice = (text) => {
   const choice: any = makeChoice(text);
-  choice.value = Maybe.nothing;
+  choice.value = Maybe.nothing();
   return choice;
 };
 
@@ -44,10 +45,12 @@ export const makeLikertItem: (s: string) => LikertItem = (text) => {
 export interface LikertModelSchema extends ActivityModelSchema {
   stem: Stem;
   choices: LikertChoice[];
+  orderDescending: boolean;
   items: LikertItem[];
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];
+    transformations: Transformation[];
     previewText: string;
   };
 }

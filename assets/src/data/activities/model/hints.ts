@@ -17,14 +17,14 @@ interface Hints extends Omit<List<Hint>, 'addOne' | 'removeOne'> {
   removeOne: (id: string) => (model: any, post: PostUndoable) => void;
 }
 
-export const HINTS_BY_PART_PATH = (partId: string) => `$..parts[?(@.id==${partId})].hints`;
+export const HINTS_BY_PART_PATH = (partId: string) => `$..parts[?(@.id=='${partId}')].hints`;
 
 export const Hints: Hints = {
   path: PATH,
   ...List<Hint>(PATH),
 
   byPart: (model, partId) =>
-    Operations.apply(model, Operations.find(`$..parts[?(@.id==${partId})].hints`)),
+    Operations.apply(model, Operations.find(`$..parts[?(@.id=='${partId}')].hints`)),
 
   // Native OLI activities split out hints into three types:
   // a. (0-1) Deer in headlights (re-explain the problem for students who don't understand the prompt)

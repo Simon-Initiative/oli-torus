@@ -150,10 +150,11 @@ defmodule Oli.Analytics.Common do
         where: project.slug == ^project_slug,
         join: snapshot in Snapshot,
         on: snapshot.project_id == project.id,
-        group_by: [snapshot.objective_id, snapshot.user_id],
+        group_by: [snapshot.objective_id, snapshot.user_id, snapshot.activity_id],
         select: %{
           objective_id: snapshot.objective_id,
           user_id: snapshot.user_id,
+          activity_id: snapshot.activity_id,
           is_eventually_correct: fragment("bool_or(?)", snapshot.correct),
           is_first_try_correct:
             fragment("bool_or(? is true and ? = 1)", snapshot.correct, snapshot.attempt_number)
@@ -172,7 +173,7 @@ defmodule Oli.Analytics.Common do
                 correctness.is_eventually_correct
               )
             ) /
-              count(correctness.user_id),
+             fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id),
           first_try_correct_ratio:
             sum(
               fragment(
@@ -180,7 +181,7 @@ defmodule Oli.Analytics.Common do
                 correctness.is_first_try_correct
               )
             ) /
-              count(correctness.user_id)
+              fragment("count(distinct (?,?))", correctness.user_id, correctness.activity_id)
         }
       )
 

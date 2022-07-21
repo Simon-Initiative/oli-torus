@@ -1,13 +1,23 @@
-import { setShowScoringOverview } from 'apps/authoring/store/app/slice';
+import { selectAllObjectivesMap, setShowScoringOverview } from 'apps/authoring/store/app/slice';
 import { savePage } from 'apps/authoring/store/page/actions/savePage';
 import { selectState, updatePage } from 'apps/authoring/store/page/slice';
-import { selectAllActivities } from 'apps/delivery/store/features/activities/slice';
+import { IActivity, selectAllActivities } from 'apps/delivery/store/features/activities/slice';
 import { selectSequence } from 'apps/delivery/store/features/groups/selectors/deck';
 import { debounce } from 'lodash';
 import React, { Fragment, useCallback, useEffect } from 'react';
 import { FormControl, InputGroup, Modal, Table } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
+import { Objective } from '../../../../data/content/objective';
+
+interface ScoredActivity {
+  sequenceId: number;
+  sequenceName: string;
+  resourceId: number;
+  maxScore: number;
+  scoreType: string;
+  objectives: Record<string, Objective>;
+}
 
 const ScoringOverview: React.FC<{
   onClose?: () => void;
@@ -18,7 +28,7 @@ const ScoringOverview: React.FC<{
   const allActivities = useSelector(selectAllActivities);
   const sequence = useSelector(selectSequence);
 
-  const [scoredActivities, setScoredActivities] = React.useState([]);
+  const [scoredActivities, setScoredActivities] = React.useState<ScoredActivity[]>([]);
 
   useEffect(() => {
     if (!sequence || !allActivities) {
@@ -60,6 +70,7 @@ const ScoringOverview: React.FC<{
           sequenceId: sequenceItem.custom.sequenceId,
           sequenceName: sequenceItem.custom.sequenceName,
           resourceId: sequenceItem.resourceId,
+          objectives: activity.objectives,
           maxScore: scoringMax,
           scoreType,
         });
@@ -140,7 +151,7 @@ const ScoringOverview: React.FC<{
   }, [page]);
 
   useEffect(() => {
-    const sum = scoredActivities.reduce((acc: number, activity: any) => {
+    const sum = scoredActivities.reduce((acc: number, activity: ScoredActivity) => {
       return acc + activity.maxScore;
     }, 0);
     setScoreSum(sum);
@@ -160,7 +171,7 @@ const ScoringOverview: React.FC<{
 
   return (
     <Fragment>
-      <Modal show={true} size="lg" onHide={handleClose}>
+      <Modal show={true} size="xl" onHide={handleClose}>
         <Modal.Header closeButton={true}>
           <h3 className="modal-title">Scoring Overview</h3>
         </Modal.Header>
@@ -171,6 +182,7 @@ const ScoringOverview: React.FC<{
                 <th>Screen</th>
                 <th>Max Score</th>
                 <th>Method</th>
+                <th>Objectives</th>
               </tr>
             </thead>
             <tbody>
@@ -180,11 +192,14 @@ const ScoringOverview: React.FC<{
                     <td>{activity.sequenceName}</td>
                     <td>{activity.maxScore}</td>
                     <td>{activity.scoreType}</td>
+                    <td>
+                      <LearningObjectivesList activity={activity} />
+                    </td>
                   </tr>
                 ))}
               {(!scoredActivities || !scoredActivities.length) && (
                 <tr>
-                  <td colSpan={3}>None</td>
+                  <td colSpan={4}>None</td>
                 </tr>
               )}
             </tbody>
@@ -206,6 +221,24 @@ const ScoringOverview: React.FC<{
         </Modal.Body>
       </Modal>
     </Fragment>
+  );
+};
+
+const LearningObjectivesList: React.FC<{ activity: IActivity }> = ({ activity }) => {
+  const objectiveMap = useSelector(selectAllObjectivesMap);
+  const allObjectives = Object.values(activity.objectives || {}).flat();
+  if (allObjectives.length === 0) {
+    return null;
+  }
+  return (
+    <ul className="list-unstyled">
+      {allObjectives.map((objectiveId: number) => {
+        const objectiveLabel = objectiveMap[objectiveId]
+          ? objectiveMap[objectiveId].title
+          : `Unknown Objective ${objectiveId}`;
+        return <li key={objectiveId}>{objectiveLabel}</li>;
+      })}
+    </ul>
   );
 };
 

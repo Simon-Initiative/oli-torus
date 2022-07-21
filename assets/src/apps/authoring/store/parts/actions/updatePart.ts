@@ -91,8 +91,10 @@ export const updatePart = createAsyncThunk(
     // TODO: payload.changes is Partial<Part>
     merge(partDef, payload.changes);
 
-    authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
-    authorPart.outOf = partDef.custom.maxScore || 1;
+    if (authorPart) {
+      authorPart.gradingApproach = partDef.custom.requiresManualGrading ? 'manual' : 'automatic';
+      authorPart.outOf = partDef.custom.maxScore || 1;
+    }
 
     await dispatch(saveActivity({ activity: activityClone, undoable: false }));
 

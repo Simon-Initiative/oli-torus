@@ -123,6 +123,13 @@ defmodule Oli.Resources.PageContent do
                survey: ensure_number_is_string(survey_id)
              })}
 
+          %{"type" => "selection", "id" => id} ->
+            {el,
+             Map.put_new(activity_groups, "bank_selection_#{id}", %{
+               group: ensure_number_is_string(group_id),
+               survey: ensure_number_is_string(survey_id)
+             })}
+
           _ ->
             {el, activity_groups}
         end

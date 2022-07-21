@@ -23,7 +23,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Resources.Revision
   alias Oli.Utils.BibUtils
   alias Oli.Resources.PageContent
-  alias OliWeb.Common.SessionContext
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
@@ -213,9 +212,10 @@ defmodule OliWeb.PageDeliveryController do
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     if Sections.is_enrolled?(user.id, section_slug) do
-      PageContext.create_for_visit(section, revision_slug, user)
+      PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
       |> render_page(conn, section_slug, user, false)
     else
       render(conn, "not_authorized.html")
@@ -231,7 +231,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
 
     if Sections.is_instructor?(user, section_slug) do
-      PageContext.create_for_visit(section, revision.slug, user)
+      PageContext.create_for_visit(section, revision.slug, user, nil)
       |> render_page(conn, section_slug, user, true)
     else
       render(conn, "not_authorized.html")
@@ -343,8 +343,6 @@ defmodule OliWeb.PageDeliveryController do
          _,
          _
        ) do
-    session_context = SessionContext.init(conn)
-
     section = conn.assigns.section
 
     # Only consider graded attempts
@@ -392,7 +390,6 @@ defmodule OliWeb.PageDeliveryController do
       Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
 
     render(conn, "prologue.html", %{
-      session_context: session_context,
       summary: summary,
       section_slug: section_slug,
       scripts: Activities.get_activity_scripts(),
@@ -513,7 +510,6 @@ defmodule OliWeb.PageDeliveryController do
   # This case handles :in_progress and :revised progress states, in addition to
   # handling review mode
   defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
-    session_context = SessionContext.init(conn)
     section = conn.assigns.section
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
@@ -564,7 +560,6 @@ defmodule OliWeb.PageDeliveryController do
       conn,
       "page.html",
       %{
-        session_context: session_context,
         context: context,
         page: context.page,
         review_mode: context.review_mode,
@@ -602,6 +597,7 @@ defmodule OliWeb.PageDeliveryController do
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
     activity_provider = &Oli.Delivery.ActivityProvider.provide/3
 
@@ -616,6 +612,7 @@ defmodule OliWeb.PageDeliveryController do
           case PageLifecycle.start(
                  revision_slug,
                  section_slug,
+                 datashop_session_id,
                  user.id,
                  activity_provider
                ) do
@@ -676,8 +673,9 @@ defmodule OliWeb.PageDeliveryController do
       }) do
     user = conn.assigns.current_user
     section = conn.assigns.section
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    case PageLifecycle.finalize(section_slug, attempt_guid) do
+    case PageLifecycle.finalize(section_slug, attempt_guid, datashop_session_id) do
       {:ok, %ResourceAccess{id: id}} ->
         Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker.create(section.id, id, :inline)
 
@@ -706,7 +704,8 @@ defmodule OliWeb.PageDeliveryController do
 
   def after_finalized(conn, section_slug, revision_slug, attempt_guid, user) do
     section = conn.assigns.section
-    context = PageContext.create_for_visit(section, revision_slug, user)
+    datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
+    context = PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 

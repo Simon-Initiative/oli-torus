@@ -19,26 +19,22 @@ interface CustomFieldProps {
 }
 
 export const FieldTemplate: React.FC<any> = (props) => {
-  return (
-    <>
-      {!props.hidden ? (
-        <Form.Group className="mb-0">
-          <div>{props.children}</div>
-          <div>
-            {props.rawHelp && props.rawErrors?.length < 1 && (
-              <Form.Text
-                className={props.rawErrors?.length > 0 ? 'text-danger' : 'text-muted'}
-                id={props.id}
-              >
-                {props.rawHelp}
-              </Form.Text>
-            )}
-          </div>
-        </Form.Group>
-      ) : (
-        <></>
-      )}
-    </>
+  return !props.hidden ? (
+    <Form.Group className="mb-0">
+      <div>{props.children}</div>
+      <div>
+        {props.rawHelp && props.rawErrors?.length < 1 && (
+          <Form.Text
+            className={props.rawErrors?.length > 0 ? 'text-danger' : 'text-muted'}
+            id={props.id}
+          >
+            {props.rawHelp}
+          </Form.Text>
+        )}
+      </div>
+    </Form.Group>
+  ) : (
+    <></>
   );
 };
 
