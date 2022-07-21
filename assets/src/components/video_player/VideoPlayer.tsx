@@ -1,5 +1,6 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { Video } from '../../data/content/model/elements/types';
+
 import {
   BigPlayButton,
   Player,
@@ -16,10 +17,7 @@ import { PlayButton } from './VideoPlayButton';
 import { FullScreenButton } from './VideoFullScreenButton';
 
 const isValidSize = (video: Video) =>
-  video.width &&
-  video.height &&
-  parseInt(video.width as string, 10) > 0 &&
-  parseInt(video.height as string, 10) > 0;
+  video.width && video.height && video.width > 0 && video.height > 0;
 
 export const VideoPlayer: React.FC<{ video: Video }> = React.memo(({ video }) => {
   const sizeAttributes = isValidSize(video)

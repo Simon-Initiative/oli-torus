@@ -45,8 +45,8 @@ const toDimension = (val: undefined | string | number): number | undefined => {
 export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps) => {
   const [poster, setPoster] = useState(model.poster);
   const [src, setSrc] = useState(model.src);
-  const [width, setWidth] = useState(model.width);
-  const [height, setHeight] = useState(model.height);
+  const [width, setWidth] = useState(String(model.width));
+  const [height, setHeight] = useState(String(model.height));
 
   // Curried function to remove a video source from the src list.
   const removeSrc = useCallback(

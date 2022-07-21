@@ -133,8 +133,8 @@ export interface Video extends SlateElement<VoidChildren> {
   type: 'video';
   poster?: string;
   src: VideoSource[];
-  height?: number | string;
-  width?: number | string;
+  height?: number;
+  width?: number;
 }
 
 export interface YouTube extends SlateElement<VoidChildren> {
