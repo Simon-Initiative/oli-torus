@@ -41,6 +41,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
     end
   end
 
+  @moduletag :capture_log
   describe "create_intent/4" do
     setup [:setup_conn]
 

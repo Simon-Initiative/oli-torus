@@ -8,6 +8,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
 
   @zero_decimal_currencies ~w"bif clp djf gnf jpy kmf krw mga pyg rwf ugx vnd vuv xaf xof xpf"
   @zero_decimal_currencies_set MapSet.new(@zero_decimal_currencies)
+  @payment_intents_url "https://api.stripe.com/v1/payment_intents"
 
   @doc """
   Converts an ex_money amount to a valid Stripe value and
@@ -94,7 +95,7 @@ defmodule Oli.Delivery.Paywall.Providers.Stripe do
            Application.fetch_env(:oli, :stripe_provider),
          {:ok, %{status_code: 200, body: body}} <-
            http().post(
-             "https://api.stripe.com/v1/payment_intents",
+             @payment_intents_url,
              body,
              headers.(private_secret)
            ),
