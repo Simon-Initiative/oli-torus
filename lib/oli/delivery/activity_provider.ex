@@ -166,16 +166,22 @@ defmodule Oli.Delivery.ActivityProvider do
           end
 
         "group" ->
-          {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
+          {c_errors, c_activities, c_model, source, group_selection_mapping} =
+            fulfill(e["children"], source)
+
           e = %{e | "children" => Enum.reverse(c_model)}
 
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source, selection_mapping}
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source,
+           Map.merge(selection_mapping, group_selection_mapping)}
 
         "survey" ->
-          {c_errors, c_activities, c_model, source} = fulfill(e["children"], source)
+          {c_errors, c_activities, c_model, source, survey_selection_mapping} =
+            fulfill(e["children"], source)
+
           e = %{e | "children" => Enum.reverse(c_model)}
 
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source, selection_mapping}
+          {c_errors ++ errors, c_activities ++ activities, [e | model], source,
+           Map.merge(selection_mapping, survey_selection_mapping)}
 
         _ ->
           {errors, activities, [e | model], source, selection_mapping}
