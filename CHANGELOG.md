@@ -4,6 +4,8 @@
 
 ### Bug Fixes
 
+- Fix an issue where scroll wheel changes the value of numeric input
+
 ### Enhancements
 
 ## 0.21.2 (2022-07-20)
