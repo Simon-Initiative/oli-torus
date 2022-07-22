@@ -19,7 +19,10 @@ defmodule Oli.Institutions do
       [%Institution{}, ...]
   """
   def list_institutions do
-    Repo.all(Institution)
+    from(i in Institution,
+      where: i.status != :deleted
+    )
+    |> Repo.all()
   end
 
   @doc """
@@ -75,18 +78,6 @@ defmodule Oli.Institutions do
     institution
     |> Institution.changeset(attrs)
     |> Repo.update()
-  end
-
-  @doc """
-  Deletes a institution.
-  ## Examples
-      iex> delete_institution(institution)
-      {:ok, %Institution{}}
-      iex> delete_institution(institution)
-      {:error, %Ecto.Changeset{}}
-  """
-  def delete_institution(%Institution{} = institution) do
-    Repo.delete(institution)
   end
 
   @doc """
@@ -320,6 +311,21 @@ defmodule Oli.Institutions do
   end
 
   @doc """
+  Returns true if the institution with a given id has any associated deployments
+  """
+  def institution_has_communities?(institution_id) do
+    count =
+      from(c in Oli.Groups.CommunityInstitution, where: c.institution_id == ^institution_id)
+      |> Repo.aggregate(:count)
+
+    if count > 0 do
+      true
+    else
+      false
+    end
+  end
+
+  @doc """
   Creates a deployment.
 
   ## Examples
@@ -523,7 +529,9 @@ defmodule Oli.Institutions do
 
     case Repo.all(
            from(i in Institution,
-             where: like(i.institution_url, ^normalized_url),
+             where:
+               ilike(i.institution_url, ^normalized_url) and
+                 i.status != :deleted,
              select: i,
              order_by: i.id
            )
@@ -605,7 +613,7 @@ defmodule Oli.Institutions do
 
     Repo.all(
       from(i in Institution,
-        where: ilike(i.name, ^q)
+        where: ilike(i.name, ^q) and i.status != :deleted
       )
     )
   end

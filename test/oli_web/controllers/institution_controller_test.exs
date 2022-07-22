@@ -7,6 +7,7 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Lti.Tool.Registration
   alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.PendingRegistration
@@ -50,7 +51,7 @@ defmodule OliWeb.InstitutionControllerTest do
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert redirected_to(conn) == Routes.static_page_path(conn, :index)
+      assert redirected_to(conn) == Routes.institution_path(conn, :index)
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -112,17 +113,14 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "delete institution" do
-    test "deletes chosen institution", %{conn: conn, author: author, institution: institution} do
+    test "deletes chosen institution", %{conn: conn, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
 
-      assert_error_sent(404, fn ->
-        conn =
-          recycle(conn)
-          |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      institution_id = institution.id
 
-        get(conn, Routes.institution_path(conn, :show, institution))
-      end)
+      assert %Institution{id: ^institution_id} =
+               Institutions.get_institution_by!(%{status: :deleted})
     end
   end
 
