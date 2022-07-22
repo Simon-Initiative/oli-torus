@@ -9,6 +9,8 @@
 
 ### Enhancements
 
+- Product ingestion support
+
 ## 0.21.2 (2022-07-20)
 
 ### Bug Fixes
