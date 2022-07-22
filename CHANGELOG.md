@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Fix an issue where underlined and strikethrough text were not being rendered
+- Fix an issue where guest user_id is blank in datashop export
 
 ### Enhancements
 

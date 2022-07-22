@@ -166,7 +166,7 @@ defmodule Oli.Delivery.AttemptsSubmissionTest do
         PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
       assert user2_page_context.progress_state == :not_started
-      assert Enum.count(user2_page_context.resource_attempts) == 0
+      assert Enum.empty?(user2_page_context.resource_attempts)
 
       {:ok,
        %Oli.Delivery.Attempts.PageLifecycle.AttemptState{
