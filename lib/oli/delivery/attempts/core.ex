@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
@@ -255,6 +256,57 @@ defmodule Oli.Delivery.Attempts.Core do
           a.user_id in ^student_ids and s.slug == ^section_slug and s.status == :active and
             r.graded == true,
         select: a
+      )
+    )
+  end
+
+  @doc """
+    Retrieves all graded resource access where the last lms grade sync failed
+    for a given section.
+
+    `[
+      %{
+        id: 21390,
+        resource_id: 1234,
+        user_id: 558,
+        user_name: "Some user name",
+        page_title: "Some page title"
+      },
+      ...
+    ]`
+  """
+  def get_failed_grade_sync_resource_accesses_for_section(section_slug) do
+    Repo.all(
+      from(
+        resource_access in ResourceAccess,
+        join: section in assoc(resource_access, :section),
+        join: user in assoc(resource_access, :user),
+        join: section_project_publication in assoc(section, :section_project_publications),
+        join: published_resource in PublishedResource,
+        on: section_project_publication.publication_id == published_resource.publication_id,
+        join: revision in Revision,
+        on: revision.id == published_resource.revision_id and revision.resource_id == resource_access.resource_id,
+        where:
+          section.slug == ^section_slug and
+          section.status == :active and
+          revision.deleted == false and
+          revision.graded == true and
+          (not is_nil(resource_access.last_grade_update_id) and
+            resource_access.last_grade_update_id != resource_access.last_successful_grade_update_id),
+        select: %{
+          id: resource_access.id,
+          resource_id: resource_access.resource_id,
+          user_id: user.id,
+          user_name: user.name,
+          page_title: revision.title
+        },
+        group_by: [
+          resource_access.id,
+          resource_access.resource_id,
+          user.id,
+          user.name,
+          revision.title
+        ]
       )
     )
   end
