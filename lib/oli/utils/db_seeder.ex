@@ -6,7 +6,7 @@ defmodule Oli.Seeder do
   alias Oli.Repo
   alias Oli.Accounts.{SystemRole, ProjectRole, Author}
   alias Oli.Institutions.Institution
-  alias Oli.Delivery.Attempts.Core.{ResourceAccess}
+  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Activities
   alias Oli.Activities.Model.Part
   alias Oli.Authoring.Authors.{AuthorProject, ProjectRole}
@@ -22,6 +22,9 @@ defmodule Oli.Seeder do
   alias Oli.Qa.Reviews
   alias Oli.Activities
   alias Oli.Delivery.Gating
+  alias Oli.Delivery.Attempts.PageLifecycle
+  alias Oli.Utils.Seeder.StudentAttemptSeed
+  alias Oli.Delivery.Attempts.ActivityLifecycle.Evaluate
 
   def base_project_with_resource(author) do
     {:ok, family} =
@@ -229,7 +232,8 @@ defmodule Oli.Seeder do
   end
 
   def add_adaptive_page(
-        %{project: project, publication: publication, author: author, container: container} = seed,
+        %{project: project, publication: publication, author: author, container: container} =
+          seed,
         activity_resource_tag \\ :adaptive_resource,
         activity_revision_tag \\ :adaptive_revision,
         page_resource_tag \\ :adaptive_page_resource,
@@ -718,7 +722,102 @@ defmodule Oli.Seeder do
     end
   end
 
-  def ensure_published(publication_id) do
+  def finalize_graded_attempt(map, datashop_session_id, tag \\ nil, selector_tags \\ %{}) do
+    section_tag = Map.get(selector_tags, :section, :section)
+    attempt_tag = Map.get(selector_tags, :attempt, :attempt)
+
+    {:ok, %ResourceAccess{} = resource_access} =
+      PageLifecycle.finalize(map[section_tag], map[attempt_tag].attempt_guid, datashop_session_id)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, resource_access)
+    end
+  end
+
+  def simulate_student_attempt(map, %StudentAttemptSeed{
+        user: user,
+        datashop_session_id: datashop_session_id,
+        resource: resource,
+        activity: activity,
+        get_part_inputs: get_part_inputs,
+        transformed_model: transformed_model,
+        resource_attempt_tag: resource_attempt_tag,
+        activity_attempt_tag: activity_attempt_tag,
+        part_attempt_tag: part_attempt_tag
+      }) do
+    map =
+      map
+      |> create_resource_attempt(
+        %{attempt_number: 1},
+        user,
+        resource,
+        resource_attempt_tag
+      )
+      |> create_activity_attempt(
+        %{
+          attempt_number: 1,
+          transformed_model: transformed_model,
+          lifecycle_state: :active
+        },
+        activity,
+        resource_attempt_tag,
+        activity_attempt_tag
+      )
+      |> create_part_attempt(
+        %{
+          attempt_number: 1,
+          grading_approach: :automatic,
+          lifecycle_state: :active
+        },
+        %Part{
+          id: "1",
+          responses: [],
+          hints: [],
+          grading_approach: :automatic
+        },
+        activity_attempt_tag,
+        part_attempt_tag
+      )
+
+    section_slug = Map.get(map, :section).slug
+    activity_attempt_guid = Map.get(map, activity_attempt_tag).attempt_guid
+    part_attempt_guid = Map.get(map, part_attempt_tag).attempt_guid
+
+    part_inputs = get_part_inputs.(part_attempt_guid)
+
+    {:ok, _} =
+      Evaluate.evaluate_from_input(
+        section_slug,
+        activity_attempt_guid,
+        part_inputs,
+        datashop_session_id
+      )
+
+    map
+  end
+
+  def publish_project(
+        map,
+        project_tag \\ :project,
+        description \\ "some changes made",
+        tag \\ nil
+      ) do
+    {:ok, published_publication} = Publishing.publish_project(map[project_tag], description)
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, published_publication)
+    end
+  end
+
+  def ensure_published(%{publication: publication} = map) do
+    {:ok, pub} = ensure_published(publication.id)
+
+    Map.put(map, :publication, pub)
+  end
+
+  def ensure_published(publication_id) when is_integer(publication_id) do
     case Repo.get(Publication, publication_id) do
       nil ->
         true
@@ -866,6 +965,25 @@ defmodule Oli.Seeder do
           email: "jane#{System.unique_integer([:positive])}@platform.example.edu",
           locale: "en-US",
           independent_learner: false,
+          age_verified: true
+        },
+        attrs
+      )
+      |> Repo.insert()
+
+    case tag do
+      nil -> map
+      t -> Map.put(map, t, user)
+    end
+  end
+
+  def add_guest_user(map, attrs, tag \\ nil) do
+    {:ok, user} =
+      User.noauth_changeset(
+        %User{
+          sub: UUID.uuid4(),
+          guest: true,
+          independent_learner: true,
           age_verified: true
         },
         attrs
