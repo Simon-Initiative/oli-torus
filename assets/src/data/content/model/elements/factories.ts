@@ -27,6 +27,7 @@ import {
   FormulaSubTypes,
   Callout,
   CalloutInline,
+  Video,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -55,6 +56,8 @@ export const Model = {
   ol: () => create<OrderedList>({ type: 'ol', children: [Model.li()] }),
 
   ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
+
+  video: () => create<Video>({ type: 'video', src: [] }),
 
   youtube: (src?: string) => create<YouTube>({ type: 'youtube', src }),
 

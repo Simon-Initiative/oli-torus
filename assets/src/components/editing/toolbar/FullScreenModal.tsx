@@ -1,7 +1,7 @@
 import React, { PropsWithChildren } from 'react';
 
 type Props = PropsWithChildren<{
-  children: JSX.Element;
+  children: React.ReactNode;
   onDone: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
   onCancel: (event: React.MouseEvent<HTMLSpanElement, MouseEvent>) => void;
 }>;
