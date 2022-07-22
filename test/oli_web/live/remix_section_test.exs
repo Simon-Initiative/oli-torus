@@ -9,10 +9,10 @@ defmodule OliWeb.RemixSectionLiveTest do
   alias Oli.Delivery.Sections
   alias Oli.Accounts
 
-  describe "remix section live test" do
+  describe "remix section user handling" do
     setup [:setup_session]
 
-    test "remix section mount as open and free", %{
+    test "mount as open and free", %{
       conn: conn,
       admin: admin,
       map: %{
@@ -39,7 +39,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
-    test "remix section mount as instructor", %{
+    test "mount as instructor", %{
       conn: conn,
       map: %{
         section_1: section_1,
@@ -58,7 +58,7 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
 
-    test "remix section mount as product manager", %{
+    test "mount as product manager", %{
       conn: conn
     } do
       # create a product
@@ -89,6 +89,142 @@ defmodule OliWeb.RemixSectionLiveTest do
       assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
       assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
     end
+
+    test "mount as admin", %{
+      conn: conn,
+      map: %{
+        section_1: section_1,
+        unit1_container: unit1_container,
+        revision1: revision1,
+        revision2: revision2
+      },
+      admin: admin
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      assert view |> element("#entry-#{unit1_container.revision.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision1.resource_id}") |> has_element?()
+      assert view |> element("#entry-#{revision2.resource_id}") |> has_element?()
+    end
+
+    test "saving redirects instructor correctly", %{
+      conn: conn,
+      map: %{
+        section_1: section
+      }
+    } do
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirect(view, Routes.page_delivery_path(conn, :index, section.slug))
+    end
+
+    test "saving redirects open and free correctly", %{
+      conn: conn,
+      admin: admin,
+      map: %{
+        oaf_section_1: oaf_section_1
+      }
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get(
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
+
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirect(view, OliWeb.OpenAndFreeView.get_path([:admin, :show, oaf_section_1]))
+    end
+
+    test "saving redirects product manager correctly", %{
+      conn: conn
+    } do
+      # create a product
+      %{
+        prod1: prod1,
+        author: product_author,
+        publication: publication,
+      } =
+        Seeder.base_project_with_resource2()
+        |> Seeder.create_product(%{title: "My 1st product", amount: Money.new(:USD, 100)}, :prod1)
+
+      {:ok, _prod} = Sections.create_section_resources(prod1, publication)
+
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(
+          product_author,
+          OliWeb.Pow.PowHelpers.get_pow_config(:author)
+        )
+
+      conn =
+        get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, prod1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirect(
+        view,
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, prod1.slug)
+      )
+    end
+
+    test "saving redirects admin correctly", %{
+      conn: conn,
+      map: %{
+        section_1: section_1,
+      },
+      admin: admin
+    } do
+      conn =
+        Plug.Test.init_test_session(conn, %{})
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+        |> get(Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, section_1.slug))
+
+      {:ok, view, _html} = live(conn)
+
+      render_hook(view, "reorder", %{"sourceIndex" => "0", "dropIndex" => "2"})
+
+      view
+      |> element("#save")
+      |> render_click()
+
+      assert_redirected(
+        view,
+        Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, section_1.slug) <>
+          "/overview"
+      )
+    end
+  end
+
+  describe "remix section live test" do
+    setup [:setup_session]
 
     test "remix section navigation", %{
       conn: conn,
@@ -157,19 +293,23 @@ defmodule OliWeb.RemixSectionLiveTest do
         Plug.Test.init_test_session(conn, %{})
         |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
 
-      {:ok, view, _html} = live(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug))
+      {:ok, view, _html} =
+        live(
+          conn,
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, oaf_section_1.slug)
+        )
 
       assert view
-        |> element(".curriculum-entries > div:nth-child(2)")
-        |> render() =~ "#{latest1.title}"
+             |> element(".curriculum-entries > div:nth-child(2)")
+             |> render() =~ "#{latest1.title}"
 
       assert view
-        |> element(".curriculum-entries > div:nth-child(4)")
-        |> render() =~ "#{latest2.title}"
+             |> element(".curriculum-entries > div:nth-child(4)")
+             |> render() =~ "#{latest2.title}"
 
       assert view
-        |> element(".curriculum-entries > div:nth-child(6)")
-        |> render() =~ "#{unit1_container.revision.title}"
+             |> element(".curriculum-entries > div:nth-child(6)")
+             |> render() =~ "#{unit1_container.revision.title}"
 
       # click add materials and assert is listing units first
       view
@@ -177,20 +317,22 @@ defmodule OliWeb.RemixSectionLiveTest do
       |> render_click()
 
       view
-      |> element(".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]")
+      |> element(
+        ".hierarchy > div:first-child > button[phx-click=\"HierarchyPicker.select_publication\"]"
+      )
       |> render_click()
 
       assert view
-        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
-        |> render() =~ "#{unit1_container.revision.title}"
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(1)")
+             |> render() =~ "#{unit1_container.revision.title}"
 
       assert view
-        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
-        |> render() =~ "#{latest1.title}"
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(2)")
+             |> render() =~ "#{latest1.title}"
 
       assert view
-        |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
-        |> render() =~ "#{latest2.title}"
+             |> element(".hierarchy > div[id^=\"hierarchy_item_\"]:nth-child(3)")
+             |> render() =~ "#{latest2.title}"
     end
   end
 

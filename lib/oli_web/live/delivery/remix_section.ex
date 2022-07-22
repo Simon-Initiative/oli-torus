@@ -25,6 +25,19 @@ defmodule OliWeb.Delivery.RemixSection do
   alias Oli.Publishing
   alias Oli.Publishing.PublishedResource
   alias OliWeb.Sections.Mount
+  alias Oli.Delivery.Sections.Section
+
+  defp redirect_after_save(:instructor, %Section{slug: slug}),
+    do: Routes.page_delivery_path(OliWeb.Endpoint, :index, slug)
+
+  defp redirect_after_save(:open_and_free, section),
+    do: OliWeb.OpenAndFreeView.get_path([:admin, :show, section])
+
+  defp redirect_after_save(:admin, %Section{slug: slug}, socket),
+    do: Routes.live_path(socket, OliWeb.Sections.OverviewView, slug)
+
+  defp redirect_after_save(:product_creator, %Section{slug: slug}, socket),
+    do: Routes.live_path(socket, OliWeb.Products.DetailsView, slug)
 
   def set_breadcrumbs(type, section) do
     type
@@ -76,8 +89,6 @@ defmodule OliWeb.Delivery.RemixSection do
   def mount_as_instructor(socket, section, %{"current_user_id" => current_user_id} = _session) do
     current_user = Accounts.get_user!(current_user_id, preload: [:platform_roles, :author])
 
-    redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
-
     section =
       section
       |> Repo.preload(:institution)
@@ -89,16 +100,14 @@ defmodule OliWeb.Delivery.RemixSection do
 
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:user, section),
-      section: section,
-      redirect_after_save: redirect_after_save,
-      available_publications: available_publications
+          section: section,
+          redirect_after_save: redirect_after_save(:instructor, section),
+          available_publications: available_publications
     )
   end
 
   def mount_as_instructor(socket, section, %{"current_author_id" => current_author_id} = _session) do
     author = Accounts.get_author!(current_author_id)
-
-    redirect_after_save = Routes.page_delivery_path(OliWeb.Endpoint, :index, section.slug)
 
     section =
       section
@@ -111,7 +120,7 @@ defmodule OliWeb.Delivery.RemixSection do
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:user, section),
       section: section,
-      redirect_after_save: redirect_after_save,
+      redirect_after_save: redirect_after_save(:admin, section, socket),
       available_publications: available_publications
     )
   end
@@ -121,14 +130,11 @@ defmodule OliWeb.Delivery.RemixSection do
         section,
         _session
       ) do
-    redirect_after_save = OliWeb.OpenAndFreeView.get_path([:admin, :show, section])
-
     # only permit authoring admin level access
-
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:admin, section),
       section: section,
-      redirect_after_save: redirect_after_save,
+      redirect_after_save: redirect_after_save(:open_and_free, section),
       available_publications: Publishing.all_available_publications()
     )
   end
@@ -139,14 +145,13 @@ defmodule OliWeb.Delivery.RemixSection do
         %{"current_author_id" => current_author_id} = _session
       ) do
     current_author = Accounts.get_author!(current_author_id)
-    redirect_after_save = Routes.live_path(socket, OliWeb.Products.DetailsView, section.slug)
 
     if Oli.Delivery.Sections.Blueprint.is_author_of_blueprint?(section.slug, current_author_id) or
          Accounts.is_admin?(current_author) do
       init_state(socket,
         breadcrumbs: set_breadcrumbs(:user, section),
         section: section,
-        redirect_after_save: redirect_after_save,
+        redirect_after_save: redirect_after_save(:product_creator, section, socket),
         available_publications: Publishing.all_available_publications()
       )
     else
@@ -324,7 +329,6 @@ defmodule OliWeb.Delivery.RemixSection do
 
     Sections.rebuild_section_curriculum(section, hierarchy, pinned_project_publications)
     Oli.Delivery.PreviousNextIndex.rebuild(section)
-
     {:noreply, redirect(socket, to: redirect_after_save)}
   end
 
