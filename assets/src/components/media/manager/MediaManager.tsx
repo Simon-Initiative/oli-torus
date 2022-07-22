@@ -11,6 +11,7 @@ import { relativeToNow } from 'utils/date';
 import { uploadFiles } from './upload';
 
 import './MediaManager.scss';
+import { VideoUploadWarning } from './VideoUploadWarning';
 
 const PAGELOAD_TRIGGER_MARGIN_PX = 100;
 const MAX_NAME_LENGTH = 26;
@@ -19,7 +20,7 @@ const PAGE_LOADING_MESSAGE = 'Hang on while we load your items...';
 export const MIMETYPE_FILTERS = {
   IMAGE: ['image/jpeg', 'image/png', 'image/tiff', 'image/gif'],
   AUDIO: ['audio/mpeg', 'audio/wav', 'audio/mid', 'audio/mp4'],
-  VIDEO: ['video/mp4'],
+  VIDEO: ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg', 'video/quicktime'],
   HTML: ['text/html'],
   CSV: ['text/csv'],
   ALL: undefined,
@@ -121,6 +122,7 @@ export interface MediaManagerState {
   showDetails: boolean;
   error: Maybe<string>;
   filteredMimeTypes: string[] | undefined;
+  uploading: boolean;
 }
 
 /**
@@ -142,6 +144,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       showDetails: true,
       error: Maybe.nothing<string>(),
       filteredMimeTypes: props.mimeFilter,
+      uploading: false,
     };
 
     this.onScroll = this.onScroll.bind(this);
@@ -253,6 +256,7 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       fileList.push(files[i]);
     }
 
+    this.setState({ uploading: true });
     // sequentially upload files one at a time, then reload the media page
     uploadFiles(this.props.projectSlug, fileList)
       .then((result: any) => {
@@ -276,7 +280,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           })
           .then(() => this.setState({ error: Maybe.nothing<string>() }));
       })
-      .catch((e: Error) => this.setState({ error: Maybe.just(e.message) }));
+      .catch((e: Error) => this.setState({ error: Maybe.just(e.message) }))
+      .finally(() => this.setState({ uploading: false }));
   }
 
   onChangeLayout(newLayout: LAYOUTS) {
@@ -600,6 +605,19 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     return filtersAreSame(filteredMimeTypes, type) ? 'active' : '';
   };
 
+  renderUploadingState = () => {
+    const { uploading } = this.state;
+    if (!uploading) {
+      return null;
+    }
+
+    return (
+      <div className="media-loading">
+        <h1>Uploading File</h1>
+      </div>
+    );
+  };
+
   render() {
     const { className, mimeFilter, media } = this.props;
     const { searchText, layout, orderBy, order } = this.state;
@@ -612,6 +630,8 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     return (
       <div className={`media-manager ${className || ''}`}>
         {this.renderError()}
+        {this.renderUploadingState()}
+        {this.props.mimeFilter === MIMETYPE_FILTERS.VIDEO && <VideoUploadWarning />}
         <div className="media-toolbar">
           <input
             id={id}
@@ -701,9 +721,11 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
             >
               Audio
             </li>
-            <li className="video d-flex flex-column">
+            <li
+              className={this.mimeTypeFilter(MIMETYPE_FILTERS.VIDEO)}
+              onClick={() => this.displayMediaOfType(MIMETYPE_FILTERS.VIDEO)}
+            >
               <span>Video</span>
-              <small>Managed by YouTube</small>
             </li>
           </ol>
           <div className="media-content">

@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 
+- Fix an issue where guest user_id is blank in datashop export
 - Allow insertion of tables, iframes and all other elements in stem, choices and feedback
 
 ### Enhancements

@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
   UnorderedList,
+  Video,
   Webpage,
   YouTube,
 } from 'data/content/model/elements/types';
@@ -48,6 +49,7 @@ import {
   MathJaxLatexFormula,
   MathJaxMathMLFormula,
 } from '../../../components/common/MathJaxFormula';
+import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
 
@@ -163,6 +165,11 @@ export class HtmlParser implements WriterImpl {
       />
     );
   }
+
+  video(context: WriterContext, next: Next, attrs: Video) {
+    return <VideoPlayer video={attrs} />;
+  }
+
   youtube(context: WriterContext, next: Next, attrs: YouTube) {
     if (!attrs.src) return <></>;
 
