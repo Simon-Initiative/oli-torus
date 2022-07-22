@@ -42,7 +42,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       errors: errors,
       revisions: activity_revisions,
       transformed_content: transformed_content,
-      unscored: unscored
+      unscored: unscored,
+      activity_to_source_selection_mapping: activity_to_source_selection_mapping
     } =
       context.activity_provider.(
         context.page_revision,
@@ -66,6 +67,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         bulk_create_attempts(
           resource_attempt,
           activity_revisions,
+          activity_to_source_selection_mapping,
           unscored,
           activity_groups,
           datashop_session_id
@@ -88,6 +90,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp bulk_create_attempts(
          resource_attempt,
          activity_revisions,
+         activity_to_source_selection_mapping,
          unscored,
          activity_groups,
          datashop_session_id
@@ -102,7 +105,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> Transformers.apply_transforms()
     |> Enum.zip(activity_revisions)
     |> Enum.map(fn {transformation_result, revision} ->
-      %{group: group_id, survey: survey_id} = Map.get(activity_groups, revision.resource_id)
+      %{group: group_id, survey: survey_id} =
+        case Map.get(activity_to_source_selection_mapping, revision.resource_id) do
+          nil -> Map.get(activity_groups, revision.resource_id)
+          selection_id -> Map.get(activity_groups, "bank_selection_#{selection_id}")
+        end
+
       unscored = MapSet.member?(unscored, revision.resource_id)
       scoreable = !unscored && !survey_id
 

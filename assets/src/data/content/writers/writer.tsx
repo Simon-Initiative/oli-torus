@@ -21,6 +21,7 @@ export interface WriterImpl {
   calloutInline: ElementWriter;
   img: ElementWriter;
   img_inline: ElementWriter;
+  video: ElementWriter;
   youtube: ElementWriter;
   iframe: ElementWriter;
   audio: ElementWriter;
@@ -117,6 +118,8 @@ export class ContentWriter {
         return impl.img(context, next, content);
       case 'img_inline':
         return impl.img_inline(context, next, content);
+      case 'video':
+        return impl.video(context, next, content);
       case 'youtube':
         return impl.youtube(context, next, content);
       case 'iframe':
