@@ -40,6 +40,9 @@
         },
         {
           "$ref": "#/$defs/blockquote"
+        },
+        {
+          "$ref": "#/$defs/video"
         }
       ]
     },
@@ -65,6 +68,9 @@
         },
         {
           "$ref": "#/$defs/callout"
+        },
+        {
+          "$ref": "#/$defs/video"
         }
       ]
     },
@@ -851,6 +857,41 @@
       "items": {
         "$ref": "#"
       }
+    },
+    "video": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "video"
+        },
+        "poster": {
+          "type": "string"
+        },
+        "src": {
+          "type": "array",
+          "items": {
+            "url": {
+              "type": "string"
+            },
+            "contenttype": {
+              "type": "string"
+            }
+          }
+        },
+        "height": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": ["type", "src"]
     }
   }
 }

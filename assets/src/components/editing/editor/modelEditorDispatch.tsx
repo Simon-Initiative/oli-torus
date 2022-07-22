@@ -21,6 +21,7 @@ import { EditorProps } from '../elements/interfaces';
 import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 import { FormulaEditor } from '../elements/formula/FormulaEditor';
 import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
+import { VideoEditor } from '../elements/video/VideoEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -111,7 +112,8 @@ export function editorFor(
           {...(editorProps as EditorProps<ContentModel.FormulaInline | ContentModel.FormulaBlock>)}
         />
       );
-
+    case 'video':
+      return <VideoEditor {...(editorProps as EditorProps<ContentModel.Video>)} />;
     default:
       return <span>{children}</span>;
   }
