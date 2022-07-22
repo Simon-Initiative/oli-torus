@@ -71,6 +71,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[image with missing src] "]
   end
 
+  def video(%Context{} = _context, _, _) do
+    ["[video]"]
+  end
+
   def youtube(%Context{} = _context, _, %{"src" => src}) do
     ["[youtube with src #{src}] "]
   end

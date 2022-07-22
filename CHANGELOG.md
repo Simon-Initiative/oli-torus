@@ -5,8 +5,13 @@
 ### Bug Fixes
 
 - Fix an issue where scroll wheel changes the value of numeric input
+- Fix an issue where underlined and strikethrough text were not being rendered
+- Fix an issue where guest user_id is blank in datashop export
+- Allow insertion of tables, iframes and all other elements in stem, choices and feedback
 
 ### Enhancements
+
+- Product ingestion support
 
 ## 0.21.2 (2022-07-20)
 

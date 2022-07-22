@@ -670,12 +670,59 @@ defmodule Oli.Delivery.Sections do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
+  # Creates a 'hierarchy definition' strictly from a a project and the recursive
+  # definition of containers starting with the root revision container.  This hierarchy
+  # definition is a map of resource ids to a list of the child resource ids, effectively
+  # the definition of the hierarchy.
+  defp create_hierarchy_definition_from_project(
+         published_resources_by_resource_id,
+         revision,
+         definition
+       ) do
+    child_revisions =
+      Enum.map(revision.children, fn id -> published_resources_by_resource_id[id].revision end)
+
+    Enum.reduce(
+      child_revisions,
+      Map.put(
+        definition,
+        revision.resource_id,
+        Enum.map(child_revisions, fn r -> r.resource_id end)
+      ),
+      fn revision, definition ->
+        create_hierarchy_definition_from_project(
+          published_resources_by_resource_id,
+          revision,
+          definition
+        )
+      end
+    )
+  end
+
   @doc """
-  Create all section resources from the given section and publication using the
-  root resource's revision tree. Returns the root section resource record.
+  Create all section resources from the given section and publication and optional hierarchy definition.
+  The hierarchy definition is a map of resource ids to the list of directly contained children (referenced
+  by resource ids) for that parent.  The hierarchy definition must contain an entry for every container that will appear
+  in the course section resources.  An example of the hierarchy definition with the root (1) and three
+  top-level units (resource ids 2, 3, 4):
+
+  ```
+  %{
+    1 => [2, 3, 4],
+    2 => [5, 6, 7],
+    3 => [8, 9],
+    4 => [10]
+  }
+  ```
+
+  If the hierarchy definition argument is omitted, a default hierarchy definition will be generated from
+  the project's root revision and its children, recursively.
+
+  Returns the root section resource record.
+
   ## Examples
-      iex> create_section_resources(section)
-      {:ok, %Section{}}
+      iex> create_section_resources(section, publication, hierarchy_definition)
+      {:ok, %SectionResource{}}
   """
   def create_section_resources(
         %Section{} = section,
@@ -683,17 +730,33 @@ defmodule Oli.Delivery.Sections do
           id: publication_id,
           root_resource_id: root_resource_id,
           project_id: project_id
-        } = publication
+        } = publication,
+        hierarchy_definition \\ nil
       ) do
     Repo.transaction(fn ->
       published_resources_by_resource_id = published_resources_map(publication.id)
 
+      %PublishedResource{revision: root_revision} =
+        published_resources_by_resource_id[root_resource_id]
+
+      # If a custom hierarchy_definition was supplied, use it, otherwise
+      # use the hierarchy defined by the project
+      hierarchy_definition =
+        case hierarchy_definition do
+          nil ->
+            create_hierarchy_definition_from_project(
+              published_resources_by_resource_id,
+              root_revision,
+              %{}
+            )
+
+          other ->
+            other
+        end
+
       numbering_tracker = Numbering.init_numbering_tracker()
       level = 0
       processed_ids = []
-
-      %PublishedResource{revision: root_revision} =
-        published_resources_by_resource_id[root_resource_id]
 
       {root_section_resource_id, _numbering_tracker, processed_ids} =
         create_section_resource(
@@ -703,7 +766,8 @@ defmodule Oli.Delivery.Sections do
           processed_ids,
           root_revision,
           level,
-          numbering_tracker
+          numbering_tracker,
+          hierarchy_definition
         )
 
       processed_ids = [root_resource_id | processed_ids]
@@ -738,14 +802,17 @@ defmodule Oli.Delivery.Sections do
          processed_ids,
          revision,
          level,
-         numbering_tracker
+         numbering_tracker,
+         hierarchy_definition
        ) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
+    children = Map.get(hierarchy_definition, revision.resource_id, [])
+
     {children, numbering_tracker, processed_ids} =
       Enum.reduce(
-        revision.children,
+        children,
         {[], numbering_tracker, processed_ids},
         fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
           %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
@@ -758,7 +825,8 @@ defmodule Oli.Delivery.Sections do
               processed_ids,
               child,
               level + 1,
-              numbering_tracker
+              numbering_tracker,
+              hierarchy_definition
             )
 
           {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
@@ -1491,7 +1559,6 @@ defmodule Oli.Delivery.Sections do
         %Section{start_date: start_date, end_date: end_date} = section,
         context
       ) do
-
     start_date = FormatDateTime.convert_datetime(start_date, context)
     end_date = FormatDateTime.convert_datetime(end_date, context)
 
