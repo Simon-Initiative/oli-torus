@@ -151,3 +151,7 @@ config :appsignal, :config, active: false
 # Configure AWS
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1")
+
+config :ex_aws, :hackney_opts,
+  follow_redirect: true,
+  recv_timeout: 200_000

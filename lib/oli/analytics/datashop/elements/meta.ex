@@ -9,7 +9,7 @@ defmodule Oli.Analytics.Datashop.Elements.Meta do
   """
   import XmlBuilder
 
-  def setup(%{date: date, sub: sub, datashop_session_id: datashop_session_id, email: nil}),
+  def setup(%{date: date, sub: sub, datashop_session_id: datashop_session_id, email: ""}),
     do: setup(%{date: date, user_id: sub, datashop_session_id: datashop_session_id})
 
   def setup(%{date: date, datashop_session_id: datashop_session_id, email: email}),

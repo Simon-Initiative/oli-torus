@@ -185,4 +185,10 @@ export const schema: Schema = {
     isTopLevel: false,
     validChildren: {},
   },
+  video: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
 };

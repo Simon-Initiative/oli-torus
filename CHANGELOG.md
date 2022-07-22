@@ -4,9 +4,24 @@
 
 ### Bug Fixes
 
+- Fix an issue where guest user_id is blank in datashop export
+- Allow insertion of tables, iframes and all other elements in stem, choices and feedback
+
 ### Enhancements
 
 - Product ingestion support
+
+## 0.21.2 (2022-07-20)
+
+### Bug Fixes
+
+- Fix a problem with handling groups and surveys
+
+## 0.21.1 (2022-07-19)
+
+### Bug Fixes
+
+- Fix a problem with activity bank selections
 
 ## 0.21.0 (2022-07-15)
 

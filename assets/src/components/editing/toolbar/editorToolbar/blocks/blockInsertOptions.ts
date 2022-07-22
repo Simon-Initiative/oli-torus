@@ -12,11 +12,13 @@ import { insertWebpage } from 'components/editing/elements/webpage/webpageAction
 import { insertYoutube } from 'components/editing/elements/youtube/youtubeActions';
 import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertCallout } from '../../../elements/callout/calloutActions';
+import { insertVideo } from '../../../elements/video/videoActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
   insertCodeblock,
   insertImage(onRequestMedia),
+  insertVideo,
   insertYoutube,
   insertAudio(onRequestMedia),
   insertWebpage,
@@ -43,6 +45,7 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
       return [
         insertCodeblock,
         insertImage(onRequestMedia),
+        insertVideo,
         ytCmdDesc,
         insertAudio(onRequestMedia),
         insertFormula,
