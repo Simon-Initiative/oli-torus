@@ -161,12 +161,15 @@ export const transformScreenModeltoSchema = (activity?: IActivity) => {
     }
 
     let backgroundColor = `rgba(255, 255, 255, 100)`;
-    if (data.palette.fillColor || data.palette.fillColor === 0) {
-      backgroundColor = `rgba(${chroma(data.palette.fillColor).rgb().join(',')},${
-        data.palette.fillAlpha || '100'
-      })`;
-    } else if (data.palette.backgroundColor) {
-      backgroundColor = data.palette.backgroundColor;
+
+    if (!data.palette.useHTMLProps) {
+      if (data.palette.backgroundColor) {
+        backgroundColor = data.palette.backgroundColor;
+      } else if (data.palette.fillColor || data.palette.fillColor === 0) {
+        backgroundColor = `rgba(${chroma(data.palette.fillColor).rgb().join(',')},${
+          data.palette.fillAlpha || '100'
+        })`;
+      }
     }
 
     const schemaPalette = {
