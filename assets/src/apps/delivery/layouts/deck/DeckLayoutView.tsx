@@ -209,15 +209,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
     sharedActivityPromise = { promise, resolve, reject };
 
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
     currentActivityTree.forEach((activity) => {
-      // layers already might be there
-      // TODO: do I need to reset ever???
-      if (!sharedActivityInit.has(activity.id)) {
+      // need to leave the layers as already initialized assuming they are already initialized
+      // but the current screen should always be false, sometimes we come back to a screen as a new initialization
+      if (!sharedActivityInit.has(activity.id) || activity.id === currentActivity.id) {
+        /* console.log(
+          '[AllActivitiesInit] SETTING INIT FALSE FOR: ',
+          activity.id,
+          currentActivity.id,
+        ); */
         sharedActivityInit.set(activity.id, false);
       }
     });
 
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -252,8 +258,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return () => {
       clearTimeout(timeout);
       sharedActivityPromise = null;
+      if (historyModeNavigation) {
+        console.log('[AllActivitiesInit] historyModeNavigation is ON, clearing sharedActivityInit');
+        sharedActivityInit.clear();
+      }
     };
-  }, [currentActivityTree]);
+  }, [currentActivityTree, historyModeNavigation]);
 
   useEffect(() => {
     // clear the body classes in prep for the real classes
@@ -276,33 +286,38 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const resolve = await dispatch(initializeActivity(currentActivity.resourceId));
   }, [currentActivityTree]);
 
-  const handleActivityReady = async (activityId: string | number, attemptGuid: string) => {
-    sharedActivityInit.set(activityId, true);
-    // BS: this is init state phase (mostly) and it needs to run AFTER every part
-    // has already saved its "default" values or else the init state rules will just
-    // get overwritten by them saving the default value
-    //
-    /* console.log('DECK HANDLE READY', {
+  const handleActivityReady = useCallback(
+    async (activityId: string | number, attemptGuid: string) => {
+      sharedActivityInit.set(activityId, true);
+      // BS: this is init state phase (mostly) and it needs to run AFTER every part
+      // has already saved its "default" values or else the init state rules will just
+      // get overwritten by them saving the default value
+      //
+      /* console.log('DECK HANDLE READY', {
       activityId,
       attemptGuid,
       currentActivityTree,
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
     }); */
-    if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-      await initCurrentActivity();
-      const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-      sharedActivityPromise.resolve({
-        snapshot: getLocalizedStateSnapshot(currentActivityIds),
-        context: {
-          currentLesson,
-          currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
-        },
-      });
-      dispatch(setInitPhaseComplete(true));
-    }
-    return sharedActivityPromise.promise;
-  };
+      if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
+        await initCurrentActivity();
+        const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+        const context = {
+          snapshot: getLocalizedStateSnapshot(currentActivityIds),
+          context: {
+            currentLesson,
+            currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+            mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
+          },
+        };
+        console.log('DECK HANDLE READY (ALL ACTIVITIES DONE INIT)', { context });
+        sharedActivityPromise.resolve(context);
+        dispatch(setInitPhaseComplete(true));
+      }
+      return sharedActivityPromise.promise;
+    },
+    [currentActivityTree, initCurrentActivity],
+  );
 
   const handleActivitySave = async (
     activityId: string | number,
