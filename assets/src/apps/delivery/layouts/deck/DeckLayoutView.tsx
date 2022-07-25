@@ -209,15 +209,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
     sharedActivityPromise = { promise, resolve, reject };
 
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
     currentActivityTree.forEach((activity) => {
-      // layers already might be there
-      // TODO: do I need to reset ever???
-      if (!sharedActivityInit.has(activity.id)) {
+      // need to leave the layers as already initialized assuming they are already initialized
+      // but the current screen should always be false, sometimes we come back to a screen as a new initialization
+      if (!sharedActivityInit.has(activity.id) || activity.id === currentActivity.id) {
+        /* console.log(
+          '[AllActivitiesInit] SETTING INIT FALSE FOR: ',
+          activity.id,
+          currentActivity.id,
+        ); */
         sharedActivityInit.set(activity.id, false);
       }
     });
 
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
