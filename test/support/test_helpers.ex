@@ -299,7 +299,7 @@ defmodule Oli.TestHelpers do
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
       |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
 
-    {:ok, conn: conn}
+    {:ok, conn: conn, instructor: instructor}
   end
 
   def author_conn(%{conn: conn}) do
@@ -623,7 +623,7 @@ defmodule Oli.TestHelpers do
       revision: page_revision
     })
 
-    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true)
+    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true, type: :enrollable)
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, section: section, page_revision: page_revision}
   end

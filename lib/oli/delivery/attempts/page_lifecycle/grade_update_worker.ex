@@ -278,4 +278,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
     end
     |> track(:not_synced, nil, resource_access, type, job, section)
   end
+
+  def get_jobs() do
+    Repo.all(from(j in Oban.Job, where: j.queue == "grades"))
+  end
 end
