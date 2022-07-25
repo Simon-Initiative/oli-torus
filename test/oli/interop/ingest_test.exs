@@ -74,7 +74,9 @@ defmodule Oli.Interop.IngestTest do
       |> verify_export()
     end
 
-    test "ingest/1 processes the digest files and creates a course", %{author: author} do
+    test "ingest/1 processes the digest files and creates a course and a product", %{
+      author: author
+    } do
       {:ok, p} =
         simulate_unzipping()
         |> Ingest.process(author)
@@ -99,8 +101,8 @@ defmodule Oli.Interop.IngestTest do
 
       # verify correct number of hierarchy elements were created
       containers = Oli.Publishing.get_unpublished_revisions_by_type(project.slug, "container")
-      # 1 defined in the course, plus 1 for the root
-      assert length(containers) == 1 + 1
+      # 2 defined in the course, plus 1 for the root
+      assert length(containers) == 2 + 1
 
       # verify correct number of practice pages were created
       practice_pages =
@@ -159,6 +161,17 @@ defmodule Oli.Interop.IngestTest do
         Enum.filter(activities, fn p -> p.title == "MCQ Sidre Pour Height" end) |> hd
 
       assert tagged_activity.tags == [tag.resource_id]
+
+      # verify that the product was created
+      product = Oli.Repo.get_by!(Oli.Delivery.Sections.Section, base_project_id: project.id)
+      refute is_nil(product)
+      assert product.type == :blueprint
+      assert product.title == "This is a product"
+
+      product_root =
+        Oli.Repo.get!(Oli.Delivery.Sections.SectionResource, product.root_section_resource_id)
+
+      assert Enum.count(product_root.children) == 2
     end
 
     test "returns :invalid_digest error when digest is invalid", %{author: author} do

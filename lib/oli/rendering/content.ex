@@ -11,9 +11,6 @@ defmodule Oli.Rendering.Content do
   @type next :: (() -> String.t())
   @type children :: [%{}]
 
-  @callback example(%Context{}, next, %{}) :: [any()]
-  @callback learn_more(%Context{}, next, %{}) :: [any()]
-  @callback manystudentswonder(%Context{}, next, %{}) :: [any()]
   @callback text(%Context{}, %{}) :: [any()]
   @callback p(%Context{}, next, %{}) :: [any()]
   @callback h1(%Context{}, next, %{}) :: [any()]
@@ -53,6 +50,14 @@ defmodule Oli.Rendering.Content do
   @callback cite(%Context{}, next, %{}) :: [any()]
 
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
+
+  @doc """
+  DEPRECATED these content types are no longer used but remain here for backwards compatibility.
+  Purpose specific content is now handled by using a Group with a purpose.
+  """
+  @callback example(%Context{}, next, %{}) :: [any()]
+  @callback learn_more(%Context{}, next, %{}) :: [any()]
+  @callback manystudentswonder(%Context{}, next, %{}) :: [any()]
 
   @doc """
   Renders an Oli content element that contains children.

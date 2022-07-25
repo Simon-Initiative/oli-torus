@@ -127,7 +127,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
   This creates the "section" record and "section resource" records to mirror
   the current published structure of the course project hierarchy.
   """
-  def create_blueprint(base_project_slug, title) do
+  def create_blueprint(base_project_slug, title, hierarchy_definition \\ nil) do
     Repo.transaction(fn _ ->
       case Oli.Authoring.Course.get_project_by_slug(base_project_slug) do
         nil ->
@@ -158,7 +158,7 @@ defmodule Oli.Delivery.Sections.Blueprint do
               publication =
                 Oli.Publishing.get_latest_published_publication_by_slug(base_project_slug)
 
-              case Sections.create_section_resources(blueprint, publication) do
+              case Sections.create_section_resources(blueprint, publication, hierarchy_definition) do
                 {:ok, section} -> section
                 {:error, e} -> Repo.rollback(e)
               end
