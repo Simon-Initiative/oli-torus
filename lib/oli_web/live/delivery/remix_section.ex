@@ -31,7 +31,7 @@ defmodule OliWeb.Delivery.RemixSection do
     do: Routes.page_delivery_path(OliWeb.Endpoint, :index, slug)
 
   defp redirect_after_save(:open_and_free, section),
-    do: OliWeb.OpenAndFreeView.get_path([:admin, :show, section])
+    do: Routes.admin_open_and_free_path(OliWeb.Endpoint, :show, section)
 
   defp redirect_after_save(:admin, %Section{slug: slug}, socket),
     do: Routes.live_path(socket, OliWeb.Sections.OverviewView, slug)
