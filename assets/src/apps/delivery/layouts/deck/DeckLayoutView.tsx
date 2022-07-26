@@ -289,7 +289,9 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       sharedActivityInit: Array.from(sharedActivityInit.entries()),
     }); */
     if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-      await initCurrentActivity();
+      if (!historyModeNavigation) {
+        await initCurrentActivity();
+      }
       const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
       sharedActivityPromise.resolve({
         snapshot: getLocalizedStateSnapshot(currentActivityIds),

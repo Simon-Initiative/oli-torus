@@ -527,7 +527,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       lastInitPhaseHandledTimestamp,
     }); */
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
-    notifyContextChanged();
+    if (!historyModeNavigation) {
+      notifyContextChanged();
+    }
   }, [initPhaseComplete, lastInitPhaseHandledTimestamp, notifyContextChanged]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
