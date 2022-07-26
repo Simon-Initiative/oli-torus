@@ -15,6 +15,7 @@ defmodule Oli.Institutions.PendingRegistration do
     field :auth_token_url, :string
     field :auth_login_url, :string
     field :auth_server, :string
+    field :line_items_service_domain, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -33,7 +34,8 @@ defmodule Oli.Institutions.PendingRegistration do
       :key_set_url,
       :auth_token_url,
       :auth_login_url,
-      :auth_server
+      :auth_server,
+      :line_items_service_domain
     ])
     |> validate_required([
       :name,
@@ -67,7 +69,8 @@ defmodule Oli.Institutions.PendingRegistration do
       :key_set_url,
       :auth_token_url,
       :auth_login_url,
-      :auth_server
+      :auth_server,
+      :line_items_service_domain
     ])
   end
 

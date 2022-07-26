@@ -12,7 +12,8 @@ defmodule OliWeb.RegistrationControllerTest do
     auth_token_url: "some auth_token_url",
     client_id: "some client_id",
     issuer: "some issuer",
-    key_set_url: "some key_set_url"
+    key_set_url: "some key_set_url",
+    line_items_service_domain: "some line_items_service_domain"
   }
   @update_attrs %{
     auth_login_url: "some updated auth_login_url",
@@ -20,7 +21,8 @@ defmodule OliWeb.RegistrationControllerTest do
     auth_token_url: "some updated auth_token_url",
     client_id: "some updated client_id",
     issuer: "some updated issuer",
-    key_set_url: "some updated key_set_url"
+    key_set_url: "some updated key_set_url",
+    line_items_service_domain: "some updated line_items_service_domain"
   }
   @invalid_attrs %{
     auth_login_url: nil,
@@ -28,7 +30,8 @@ defmodule OliWeb.RegistrationControllerTest do
     auth_token_url: nil,
     client_id: nil,
     issuer: nil,
-    key_set_url: nil
+    key_set_url: nil,
+    line_items_service_domain: nil
   }
 
   describe "new registration" do
