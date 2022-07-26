@@ -49,6 +49,8 @@ import { selectCurrentActivityTree, selectSequence } from '../selectors/deck';
 import { getNextQBEntry, getParentBank } from './navUtils';
 import { SequenceBank, SequenceEntry, SequenceEntryType } from './sequence';
 
+import { applyState, getValue } from '../../../../../../adaptivity/scripting';
+
 export const initializeActivity = createAsyncThunk(
   `${GroupsSlice}/deck/initializeActivity`,
   async (activityId: ResourceId, thunkApi) => {
@@ -446,6 +448,24 @@ export const navigateToActivity = createAsyncThunk(
     }
     if (navError) {
       throw new Error(navError);
+    }
+    const currentActivityTree = selectCurrentActivityTree(rootState);
+    if (!currentActivityTree || !currentActivityTree.length) {
+      throw new Error('No Activity Tree, something very wrong!');
+    }
+    const [currentActivity] = currentActivityTree.slice(-1);
+    const trackingStampKey = `session.visitTimestamps.${currentActivity.id}`;
+    const isActivityAlreadyVisited = !!getValue(trackingStampKey, defaultGlobalEnv);
+    // don't update the time if student is revisiting that page
+    if (!isActivityAlreadyVisited) {
+      // looks like SS captures the date when we leave the page so we will capture the time here for tracking history
+      // update the scripting
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: trackingStampKey,
+        operator: '=',
+        value: Date.now(),
+      };
+      applyState(targetVisitTimeStampOp, defaultGlobalEnv);
     }
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
