@@ -140,7 +140,9 @@ export const getSequenceLineage = (
 };
 
 export const getSequenceInstance = () => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const currentSequenceId = useSelector(selectCurrentSequenceId);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const sequence = useSelector(selectSequence);
   return findInSequence(sequence, currentSequenceId);
 };
