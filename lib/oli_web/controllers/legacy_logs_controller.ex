@@ -5,7 +5,13 @@ defmodule OliWeb.LegacyLogsController do
 
   def process(conn, _params) do
 
-    doc = Map.get(conn.assigns, :raw_body)
+    doc = case Map.get(conn.assigns, :raw_body) do
+      nil ->
+        {:ok, raw_body, _conn} = Plug.Conn.read_body(conn, length: 20_000_000)
+        raw_body
+      raw_body -> raw_body
+    end
+
     activity_attempt_guid = to_string(xpath(doc, ~x"//*/@external_object_id"))
     action = to_string(xpath(doc, ~x"//*/@action_id"))
 
