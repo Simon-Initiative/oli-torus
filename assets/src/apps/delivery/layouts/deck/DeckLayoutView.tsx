@@ -294,13 +294,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // get overwritten by them saving the default value
       //
       /* console.log('DECK HANDLE READY', {
-      activityId,
-      attemptGuid,
-      currentActivityTree,
-      sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    }); */
+        activityId,
+        attemptGuid,
+        currentActivityTree,
+        sharedActivityInit: Array.from(sharedActivityInit.entries()),
+      }); */
+
       if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-        await initCurrentActivity();
+        if (!historyModeNavigation) {
+          await initCurrentActivity();
+        }
         const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
         const context = {
           snapshot: getLocalizedStateSnapshot(currentActivityIds),
@@ -316,7 +319,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
       return sharedActivityPromise.promise;
     },
-    [currentActivityTree, initCurrentActivity],
+    [currentActivityTree, initCurrentActivity, historyModeNavigation],
   );
 
   const handleActivitySave = async (
