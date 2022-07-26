@@ -117,8 +117,6 @@ const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
         value: Date.now(),
       };
       applyState(targetVisitTimeStampOp, defaultGlobalEnv);
-
-      console.log(targetVisitTimeStampOp);
     }
 
     dispatch(navigateToActivity(activityId));
