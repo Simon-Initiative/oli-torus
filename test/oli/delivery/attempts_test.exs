@@ -463,27 +463,30 @@ defmodule Oli.Delivery.AttemptsTest do
     end
 
     test "get graded resource accesses where the last lms sync failed" do
-      user = insert(:user)
+      user1 = insert(:user)
+      user2 = insert(:user)
 
       {:ok, section: section, page_revision: page_revision} = section_with_assessment(%{})
       last_successful_grade_update = insert(:lms_grade_update)
       last_grade_update = insert(:lms_grade_update)
 
-      resource_access = insert(:resource_access,
-        user: user,
+      insert(:resource_access,
+        user: user1,
         section: section,
         resource: page_revision.resource,
         last_successful_grade_update_id: last_successful_grade_update.id,
         last_grade_update_id: last_grade_update.id
       )
 
-      assert [%{
-        id: resource_access.id,
-        page_title: page_revision.title,
-        resource_id: page_revision.resource.id,
-        user_id: user.id,
-        user_name: user.name
-      }] == Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)
+      insert(:resource_access,
+        user: user2,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: nil,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      assert length(Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)) == 2
     end
 
     test "get latest attempt - activity attempts", %{

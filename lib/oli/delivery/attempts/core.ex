@@ -292,7 +292,8 @@ defmodule Oli.Delivery.Attempts.Core do
           revision.deleted == false and
           revision.graded == true and
           (not is_nil(resource_access.last_grade_update_id) and
-            resource_access.last_grade_update_id != resource_access.last_successful_grade_update_id),
+            (is_nil(resource_access.last_successful_grade_update_id) or
+              resource_access.last_grade_update_id != resource_access.last_successful_grade_update_id)),
         select: %{
           id: resource_access.id,
           resource_id: resource_access.resource_id,
