@@ -3,6 +3,7 @@ import { useFocused, useSelected, useSlate } from 'slate-react';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { DropdownMenu } from './TableDropdownMenu';
+import { cellAttributes } from './table-util';
 
 export const TdEditor = (props: EditorProps<ContentModel.TableData>) => {
   const editor = useSlate();
@@ -13,7 +14,7 @@ export const TdEditor = (props: EditorProps<ContentModel.TableData>) => {
     selected && focused ? <DropdownMenu editor={editor} model={props.model} /> : null;
 
   return (
-    <td {...props.attributes}>
+    <td {...props.attributes} {...cellAttributes(props.model)}>
       {maybeMenu}
       {props.children}
     </td>

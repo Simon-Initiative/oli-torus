@@ -4,6 +4,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
 import { useSlate } from 'slate-react';
+import { ContentTable } from '../../../ContentTable';
 
 interface Props extends EditorProps<ContentModel.Table> {}
 export const TableEditor = (props: Props) => {
@@ -14,9 +15,9 @@ export const TableEditor = (props: Props) => {
 
   return (
     <div {...props.attributes} className="table-editor">
-      <table>
+      <ContentTable model={props.model}>
         <tbody>{props.children}</tbody>
-      </table>
+      </ContentTable>
       <CaptionEditor
         onEdit={(caption) => onEdit({ caption })}
         model={props.model}

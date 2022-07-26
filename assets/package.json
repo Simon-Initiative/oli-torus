@@ -13,7 +13,7 @@
     "lint": "eslint --quiet \"src/**/*.ts*\"",
     "format": "eslint --fix --quiet \"src/**/*.ts*\"",
     "test": "jest",
-    "test:watch": "jest --watch -o",
+    "test:watch": "jest --watch -o --coverage=false",
     "type-coverage": "type-coverage",
     "sdk-docs": "npx typedoc --tsconfig tsconfig.sdk.json --plugin typedoc-plugin-markdown  --out typedocs src/components/activities/index.ts"
   },
