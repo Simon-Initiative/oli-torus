@@ -128,8 +128,8 @@ defmodule OliWeb.LegacySuperactivityController do
       |> Repo.preload([:context_roles])
 
     project = Sections.get_project_by_section_resource(section.id, activity_attempt.resource_id)
-    path = "media/" <> project.slug
-    web_content_url = "https://#{Application.fetch_env!(:oli, :media_url)}/#{path}/"
+    path = "super_media/" <> project.slug
+    web_content_url = "https://#{host}/#{path}/"
 
     host_url = "https://#{host}"
 
