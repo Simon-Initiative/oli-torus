@@ -319,7 +319,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       }
       return sharedActivityPromise.promise;
     },
-    [currentActivityTree, initCurrentActivity],
+    [currentActivityTree, initCurrentActivity, historyModeNavigation],
   );
 
   const handleActivitySave = async (
