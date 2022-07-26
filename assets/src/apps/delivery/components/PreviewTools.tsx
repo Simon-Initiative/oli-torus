@@ -7,6 +7,12 @@ import { navigateToActivity } from '../store/features/groups/actions/deck';
 import Adaptivity from './preview-tools/Adaptivity';
 import Inspector from './preview-tools/Inspector';
 import ScreenSelector from './preview-tools/ScreenSelector';
+import {
+  applyState,
+  getValue,
+  defaultGlobalEnv,
+  ApplyStateOperation,
+} from '../../../adaptivity/scripting';
 
 // Title Component
 interface TitleProps {
@@ -99,6 +105,22 @@ const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
 
   // Navigates to Activity
   const navigate = (activityId: any) => {
+    const trackingStampKey = `session.visitTimestamps.${currentActivity?.id}`;
+    const isActivityAlreadyVisited = !!getValue(trackingStampKey, defaultGlobalEnv);
+    // don't update the time if student is revisiting that page
+    if (!isActivityAlreadyVisited) {
+      // looks like SS captures the date when we leave the page so we will capture the time here for tracking history
+      // update the scripting
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: trackingStampKey,
+        operator: '=',
+        value: Date.now(),
+      };
+      applyState(targetVisitTimeStampOp, defaultGlobalEnv);
+
+      console.log(targetVisitTimeStampOp);
+    }
+
     dispatch(navigateToActivity(activityId));
   };
 
