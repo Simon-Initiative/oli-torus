@@ -533,7 +533,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       lastInitPhaseHandledTimestamp,
     }); */
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
-    if (!historyModeNavigation) {
+    // context change should only be needed for things loaded by parents that are still around
+    /* console.log('AR notifyContextChanged', currentActivityId !== activity.id); */
+    if (!historyModeNavigation && currentActivityId !== activity.id) {
       notifyContextChanged();
     }
   }, [
@@ -541,6 +543,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     lastInitPhaseHandledTimestamp,
     notifyContextChanged,
     historyModeNavigation,
+    currentActivityId,
   ]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
