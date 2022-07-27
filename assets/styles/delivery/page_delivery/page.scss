@@ -102,12 +102,12 @@ h1.title {
 }
 
 .rolled-up-objectives {
-  margin: 10px;
-  margin-top: 20px;
-  padding: 10px;
+  margin: 20px 10px;
+  padding: 16px;
   background-color: $objectives-background;
   color: $objectives-text;
-  border-radius: 3px;
+  border: 2px solid $objectives-border-color;
+  border-radius: 4px;
 
   .label {
     font-size: 1.2em;

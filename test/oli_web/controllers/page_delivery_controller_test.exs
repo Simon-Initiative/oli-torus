@@ -550,6 +550,54 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Course Overview"
       refute html_response(conn, 200) =~ "Manage Section"
     end
+
+    test "page renders learning objectives in ungraded pages but not graded, except for review mode",
+         %{
+           user: user,
+           conn: conn,
+           section: section,
+           page_revision: graded_page_revision,
+           ungraded_page_revision: ungraded_page_revision
+         } do
+      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_learner)])
+
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page, section.slug, graded_page_revision.slug))
+
+      assert html_response(conn, 200) =~ "When you are ready to begin, you may"
+
+      # now start the graded attempt
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :start_attempt, section.slug, graded_page_revision.slug)
+        )
+
+      # verify the redirection
+      assert html_response(conn, 302) =~ "redirected"
+      redir_path = redirected_to(conn, 302)
+
+      # and then the rendering of the graded page, which should not show learning objectives
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+
+      conn = get(conn, redir_path)
+      assert not String.contains?(html_response(conn, 200), "Learning Objectives")
+
+      # now access an ungraded page, which should show learning objectives
+      conn =
+        recycle(conn)
+        |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
+        |> get(Routes.page_delivery_path(conn, :page, section.slug, ungraded_page_revision.slug))
+
+      assert html_response(conn, 200) =~ "Learning Objectives"
+      assert html_response(conn, 200) =~ "objective one"
+    end
   end
 
   describe "independent learner page_delivery_controller" do
@@ -1008,7 +1056,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       )
       |> Seeder.add_adaptive_page()
 
-    attrs = %{
+    graded_attrs = %{
       graded: true,
       max_attempts: 1,
       title: "page1",
@@ -1024,7 +1072,23 @@ defmodule OliWeb.PageDeliveryControllerTest do
       objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
     }
 
-    map = Seeder.add_page(map, attrs, :page)
+    ungraded_attrs = %{
+      graded: false,
+      title: "ungraded page",
+      content: %{
+        "model" => [
+          %{
+            "type" => "activity-reference",
+            "purpose" => "None",
+            "activity_id" => Map.get(map, :activity).resource.id
+          }
+        ]
+      },
+      objectives: %{"attached" => [Map.get(map, :o1).resource.id]}
+    }
+
+    map = Seeder.add_page(map, graded_attrs, :page)
+    map = Seeder.add_page(map, ungraded_attrs, :ungraded_page)
 
     {:ok, publication} = Oli.Publishing.publish_project(map.project, "some changes")
 
@@ -1059,7 +1123,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
      publication: map.publication,
      section: map.section,
      revision: map.revision1,
-     page_revision: map.page.revision}
+     page_revision: map.page.revision,
+     ungraded_page_revision: map.ungraded_page.revision}
   end
 
   defp setup_independent_learner_section(_) do
