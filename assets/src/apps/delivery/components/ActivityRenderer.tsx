@@ -451,11 +451,17 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       }
 
       const hasNavigationToDifferentActivity = hasNavigation(lastCheckResults);
-      if (!hasNavigationToDifferentActivity || isEverApp) {
+      if ((!hasNavigationToDifferentActivity || isEverApp) && !historyModeNavigation) {
         notifyCheckComplete(lastCheckResults);
       }
     }
-  }, [checkInProgress, lastCheckResults, lastCheckTriggered, lastCheckHandledTimestamp]);
+  }, [
+    checkInProgress,
+    lastCheckResults,
+    lastCheckTriggered,
+    lastCheckHandledTimestamp,
+    historyModeNavigation,
+  ]);
 
   // BS: it might not should know about this currentActivityId, though in other layouts maybe (single view)
   // maybe it will just be the same and never actually change.
@@ -527,7 +533,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
       lastInitPhaseHandledTimestamp,
     }); */
     setLastInitPhaseHandledTimestamp(initPhaseComplete);
-    if (!historyModeNavigation) {
+    // context change should only be needed for things loaded by parents that are still around
+    /* console.log('AR notifyContextChanged', currentActivityId !== activity.id); */
+    if (!historyModeNavigation && currentActivityId !== activity.id) {
       notifyContextChanged();
     }
   }, [
@@ -535,6 +543,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     lastInitPhaseHandledTimestamp,
     notifyContextChanged,
     historyModeNavigation,
+    currentActivityId,
   ]);
 
   const mutationTriggered = useSelector(selectLastMutateTriggered);
