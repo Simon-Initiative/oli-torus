@@ -215,6 +215,42 @@ defmodule OliWeb.LtiControllerTest do
       assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
     end
 
+    test "launch successful when aud claim is a list", %{
+      conn: conn,
+      registration: registration
+    } do
+      platform_jwk = jwk_fixture()
+
+      Oli.Test.MockHTTP
+      |> expect(:get, 2, mock_keyset_endpoint("some key_set_url", platform_jwk))
+
+      state = "some-state"
+      conn = Plug.Test.init_test_session(conn, state: state)
+
+      custom_header = %{"kid" => platform_jwk.kid}
+      signer = Joken.Signer.create("RS256", %{"pem" => platform_jwk.pem}, custom_header)
+
+      claims =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> Map.delete("iss")
+        |> Map.delete("aud")
+
+      {:ok, claims} =
+        Joken.Config.default_claims(iss: registration.issuer)
+        |> Joken.Config.add_claim("aud", fn -> [registration.client_id] end)
+        |> Joken.generate_claims(claims)
+
+      {:ok, id_token, _claims} = Joken.encode_and_sign(claims, signer)
+
+      conn = post(conn, Routes.lti_path(conn, :launch, %{state: state, id_token: id_token}))
+
+      assert redirected_to(conn) == Routes.delivery_path(conn, :index)
+
+      # ensure lti params are cached and id is stored in session
+      assert get_session(conn, :lti_params_id) != nil
+      assert %LtiParams{} = LtiParams.get_lti_params(get_session(conn, :lti_params_id))
+    end
+
     test "launch successful for valid params with no email", %{
       conn: conn,
       registration: registration

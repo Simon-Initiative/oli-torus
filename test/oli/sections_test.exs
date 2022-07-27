@@ -241,6 +241,27 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
+    test "get_section_from_lti_params/1 returns the section from the given lti params when aud claim is a list", %{
+      section: section,
+      institution: institution
+    } do
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
+
+      {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
+
+      lti_params =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> put_in(["iss"], registration.issuer)
+        |> put_in(["aud"], [registration.client_id])
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+      assert Sections.get_section_from_lti_params(lti_params).id == section.id
+    end
+
     test "create_section/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_attrs)
     end
