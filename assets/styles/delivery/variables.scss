@@ -59,6 +59,10 @@ $z-overlay-3: 1100 !default;
 $z-overlay-4: 1150 !default;
 $z-highest: 10000 !default;
 
+$objectives-text: $black !default;
+$objectives-background: lighten($cyan, 35%) !default;
+$objectives-border-color: lighten($cyan, 30%) !default;
+
 // Export all theme SASS variables to CSS
 
 :root {

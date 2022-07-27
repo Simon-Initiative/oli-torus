@@ -68,7 +68,8 @@ defmodule Oli.InstitutionsTest do
     test "update_institution/2 updates the institution successfully" do
       institution = insert(:institution)
 
-      {:ok, updated_institution} = Institutions.update_institution(institution, %{name: "new_name"})
+      {:ok, updated_institution} =
+        Institutions.update_institution(institution, %{name: "new_name"})
 
       assert institution.id == updated_institution.id
       assert updated_institution.name == "new_name"
@@ -77,18 +78,13 @@ defmodule Oli.InstitutionsTest do
     test "update_institution/2 does not update the institution when there is an invalid field" do
       institution = insert(:institution)
 
-      {:error, changeset} = Institutions.update_institution(institution, %{research_consent: "invalid"})
+      {:error, changeset} =
+        Institutions.update_institution(institution, %{research_consent: "invalid"})
+
       {error, _} = changeset.errors[:research_consent]
 
       refute changeset.valid?
       assert error =~ "is invalid"
-    end
-
-    test "delete_institution/1 deletes the institution" do
-      institution = insert(:institution)
-      assert {:ok, _deleted_institution} = Institutions.delete_institution(institution)
-
-      assert_raise Ecto.NoResultsError, fn -> Institutions.get_institution!(institution.id) end
     end
 
     test "change_institution/1 returns a institution changeset" do

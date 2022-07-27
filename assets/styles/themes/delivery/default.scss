@@ -41,8 +41,9 @@ html.authoring .content-block .delivery {
   $body-bg: $white;
   $body-color: $gray-900;
 
-  $objectives-text: black;
-  $objectives-background: hsl(178, 70%, 79%);
+  $objectives-text: $black;
+  $objectives-background: lighten($cyan, 35%);
+  $objectives-border-color: lighten($cyan, 30%);
 
   // Auth providers buttons
 
@@ -266,8 +267,9 @@ html.authoring.dark .content-block .delivery {
   $hints-color: $gray-200;
   $hints-bg: $gray-700;
 
-  $objectives-text: white;
-  $objectives-background: hsl(178, 64%, 27%);
+  $objectives-text: $white;
+  $objectives-background: darken($cyan, 35%);
+  $objectives-border-color: darken($cyan, 30%);
 
   // Auth providers buttons
 

@@ -92,7 +92,7 @@ defmodule OliWeb.InstitutionController do
       {:ok, _institution} ->
         conn
         |> put_flash(:info, "Institution created")
-        |> redirect(to: Routes.static_page_path(conn, :index))
+        |> redirect(to: Routes.institution_path(conn, :index))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_institution_page(conn, "new.html",
@@ -147,20 +147,30 @@ defmodule OliWeb.InstitutionController do
   end
 
   def delete(conn, %{"id" => id}) do
-    if Institutions.institution_has_deployments?(id) do
-      conn
-      |> put_flash(
-        :error,
-        "Institution with deployments cannot be deleted. Please move or delete all associated deployments and try again"
-      )
-      |> redirect(to: Routes.institution_path(conn, :show, id))
-    else
-      institution = Institutions.get_institution!(id)
-      {:ok, _institution} = Institutions.delete_institution(institution)
+    cond do
+      Institutions.institution_has_deployments?(id) ->
+        conn
+        |> put_flash(
+          :error,
+          "Institution with deployments cannot be deleted. Please move or delete all associated deployments and try again"
+        )
+        |> redirect(to: Routes.institution_path(conn, :show, id))
 
-      conn
-      |> put_flash(:info, "Institution deleted")
-      |> redirect(to: Routes.institution_path(conn, :index))
+      Institutions.institution_has_communities?(id) ->
+        conn
+        |> put_flash(
+          :error,
+          "Institution with communities cannot be deleted. Please move or delete all associated communities and try again"
+        )
+        |> redirect(to: Routes.institution_path(conn, :show, id))
+
+      true ->
+        institution = Institutions.get_institution!(id)
+        {:ok, _institution} = Institutions.update_institution(institution, %{status: :deleted})
+
+        conn
+        |> put_flash(:info, "Institution deleted")
+        |> redirect(to: Routes.institution_path(conn, :index))
     end
   end
 
