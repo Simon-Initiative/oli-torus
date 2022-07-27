@@ -55,7 +55,7 @@ defmodule Oli.Lti.LtiParams do
   """
   def create_or_update_lti_params(params, user_id \\ nil) do
     issuer = params["iss"]
-    client_id = params["aud"]
+    client_id = peek_client_id(params)
     sub = params["sub"]
     deployment_id = params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
     context_id = params["https://purl.imsglobal.org/spec/lti/claim/context"]["id"]
@@ -118,4 +118,8 @@ defmodule Oli.Lti.LtiParams do
     )
     |> Repo.all()
   end
+
+  def peek_client_id(%{"aud" => [client_id|_]}), do: client_id
+  def peek_client_id(%{"aud" => client_id}), do: client_id
+  def peek_client_id(_), do: nil
 end
