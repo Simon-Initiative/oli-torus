@@ -465,7 +465,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => registration.issuer,
-            "aud" => registration.client_id,
+            "aud" => [registration.client_id],
             "sub" => student.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -483,7 +483,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => registration.issuer,
-            "aud" => registration.client_id,
+            "aud" => [registration.client_id],
             "sub" => student_no_section.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -501,7 +501,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => deployment_no_rc.registration.issuer,
-            "aud" => deployment_no_rc.registration.client_id,
+            "aud" => [deployment_no_rc.registration.client_id],
             "sub" => student.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -520,7 +520,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => deployment_no_rc.registration.issuer,
-            "aud" => deployment_no_rc.registration.client_id,
+            "aud" => [deployment_no_rc.registration.client_id],
             "sub" => instructor.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -539,7 +539,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => registration.issuer,
-            "aud" => registration.client_id,
+            "aud" => [registration.client_id],
             "sub" => instructor.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -557,7 +557,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => registration.issuer,
-            "aud" => registration.client_id,
+            "aud" => [registration.client_id],
             "sub" => instructor_no_section.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{
@@ -575,7 +575,7 @@ defmodule OliWeb.DeliveryControllerTest do
         cache_lti_params(
           %{
             "iss" => registration.issuer,
-            "aud" => registration.client_id,
+            "aud" => [registration.client_id],
             "sub" => student_instructor_no_section.sub,
             "exp" => Timex.now() |> Timex.add(Timex.Duration.from_hours(1)) |> Timex.to_unix(),
             "https://purl.imsglobal.org/spec/lti/claim/context" => %{

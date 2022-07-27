@@ -4,6 +4,7 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Institutions
+  alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
 
@@ -15,7 +16,7 @@ defmodule Oli.Delivery do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(
         lti_params["iss"],
-        lti_params["aud"],
+        LtiParams.peek_client_id(lti_params),
         lti_params[@deployment_claims])
 
     Publishing.retrieve_visible_sources(user, institution)
@@ -28,7 +29,7 @@ defmodule Oli.Delivery do
         {institution, registration, deployment} =
           Institutions.get_institution_registration_deployment(
             lti_params["iss"],
-            lti_params["aud"],
+            LtiParams.peek_client_id(lti_params),
             lti_params[@deployment_claims]
           )
 
