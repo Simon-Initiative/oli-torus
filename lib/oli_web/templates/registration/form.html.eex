@@ -47,6 +47,13 @@
     <%= error_tag f, :auth_server %>
   </div>
 
+  <div class="form-label-group">
+    <%= text_input f, :line_items_service_domain, class: "form-control " <> error_class(f, :line_items_service_domain, "is-invalid"),
+      placeholder: "Line items service domain", autofocus: focusHelper(f, :line_items_service_domain) %>
+    <%= label f, :line_items_service_domain, "Line items service domain", class: "control-label" %>
+    <%= error_tag f, :line_items_service_domain %>
+  </div>
+
   <div>
     <%= submit "Save", class: "btn btn-md btn-primary btn-block" %>
     <%= link "Cancel", to: value_or(assigns[:cancel_path], Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.RegistrationsView)), class: "btn btn-md btn-outline-secondary btn-block mt-3" %>

@@ -262,7 +262,8 @@ defmodule Oli.Factory do
       client_id: sequence("some client_id"),
       issuer: "some issuer",
       key_set_url: "some key_set_url",
-      tool_jwk_id: nil
+      tool_jwk_id: nil,
+      line_items_service_domain: "some line_items_service_domain"
     }
   end
 
