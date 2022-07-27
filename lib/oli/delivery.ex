@@ -57,7 +57,7 @@ defmodule Oli.Delivery do
       # TODO: we may need to move this to AFTER a remix if the cost calculation factors
       # in the percentage project usage
       amount =
-        case Oli.Delivery.Paywall.calculate_product_cost(blueprint, institution) do
+        case Oli.Delivery.Paywall.section_cost_from_product(blueprint, institution) do
           {:ok, amount} -> amount
           _ -> blueprint.amount
         end

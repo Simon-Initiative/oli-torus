@@ -4,7 +4,7 @@ defmodule OliWeb.PaymentProviders.StripeController do
   import Oli.Utils
   import OliWeb.Api.Helpers
 
-  alias Oli.Delivery.{Paywall, Sections}
+  alias Oli.Delivery.Sections
   alias Oli.Delivery.Paywall.Providers.Stripe
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -112,29 +112,27 @@ defmodule OliWeb.PaymentProviders.StripeController do
       # Lookup the section, determine the product, and determine the cost. For security
       # reasons, we *always* calculate cost on the server instead of allowing the client
       # to pass the cost along to the server.
-      with {:ok, section} <- Sections.get_section_by_slug(section_slug) |> trap_nil(),
-           {:ok, section} <- Oli.Repo.preload(section, [:institution, :blueprint]) |> trap_nil(),
-           {:ok, product} <- determine_product(section),
-           {:ok, amount} <- Paywall.calculate_product_cost(product, section.institution) do
-        # Now ask Stripe to create a payment intent, which also results in a %Payment record
-        # created in the system but in a "pending" state
-        case Stripe.create_intent(amount, user, section, product) do
-          {:ok, %{"client_secret" => client_secret, "id" => id}} ->
-            Logger.debug("StripeController:init_intent ended", %{
-              intent_id: id,
-              section_slug: section_slug,
-              user_id: user.id
-            })
+      case Sections.get_section_by_slug(section_slug) |> trap_nil() do
+        {:ok, section} ->
+          # Now ask Stripe to create a payment intent, which also results in a %Payment record
+          # created in the system but in a "pending" state
+          case Stripe.create_intent(section, user) do
+            {:ok, %{"client_secret" => client_secret, "id" => id}} ->
+              Logger.debug("StripeController:init_intent ended", %{
+                intent_id: id,
+                section_slug: section_slug,
+                user_id: user.id
+              })
 
-            json(conn, %{clientSecret: client_secret})
+              json(conn, %{clientSecret: client_secret})
 
-          e ->
-            {_, msg} = Oli.Utils.log_error("StripeController:init_intent failed.", e)
-            error(conn, 500, msg)
-        end
-      else
-        e ->
-          Logger.error("StripeController could not init intent", e)
+            e ->
+              {_, msg} = Oli.Utils.log_error("StripeController:init_intent failed.", e)
+              error(conn, 500, msg)
+          end
+
+        _ ->
+          Logger.error("StripeController could not init intent")
           error(conn, 400, "client error")
       end
     else
@@ -143,16 +141,6 @@ defmodule OliWeb.PaymentProviders.StripeController do
       )
 
       error(conn, 401, "unauthorized, this user is not enrolled in this section")
-    end
-  end
-
-  # Determines the product to apply a payment to.  If a section was not created
-  # from a product, the product is the section itself.
-  defp determine_product(section) do
-    if is_nil(section.blueprint_id) do
-      {:ok, section}
-    else
-      {:ok, section.blueprint}
     end
   end
 end

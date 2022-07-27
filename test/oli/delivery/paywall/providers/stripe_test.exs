@@ -41,11 +41,12 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
     end
   end
 
+  @moduletag :capture_log
   describe "create_intent/4" do
     setup [:setup_conn]
 
     test "intent creation succeeds",
-         %{section: section, product: product, user1: user} do
+         %{section: section, user1: user} do
       expected_body =
         %{
           amount: 10000,
@@ -64,20 +65,20 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, _intent1} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, _intent1} = Stripe.create_intent(section, user)
 
       pending_payment = Paywall.get_provider_payment(:stripe, "test_id")
       assert pending_payment
       refute pending_payment.application_date
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
-      assert pending_payment.section_id == product.id
+      assert pending_payment.section_id == section.id
       assert pending_payment.provider_type == :stripe
       assert pending_payment.provider_id == "test_id"
     end
 
     test "intent creation fails when stripe fails",
-         %{section: section, product: product, user1: user} do
+         %{section: section, user1: user} do
       MockHTTP
       |> expect(:post, fn @stripe_payments_intents_url, _body, @expected_headers ->
         {:ok,
@@ -87,11 +88,11 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       end)
 
       assert {:error, "Could not create stripe intent"} ==
-               Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+               Stripe.create_intent(section, user)
     end
 
     test "multiple intent creation succeeds when first is not finalized",
-         %{section: section, product: product, user1: user} do
+         %{section: section, user1: user} do
       MockHTTP
       |> expect(:post, fn @stripe_payments_intents_url, _body, @expected_headers ->
         {:ok,
@@ -101,7 +102,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, _intent1} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, _intent1} = Stripe.create_intent(section, user)
 
       MockHTTP
       |> expect(:post, fn @stripe_payments_intents_url, _body, @expected_headers ->
@@ -112,7 +113,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, _intent2} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, _intent2} = Stripe.create_intent(section, user)
 
       assert is_nil(Paywall.get_provider_payment(:stripe, "test_id"))
 
@@ -121,13 +122,13 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       refute pending_payment.application_date
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
-      assert pending_payment.section_id == product.id
+      assert pending_payment.section_id == section.id
       assert pending_payment.provider_type == :stripe
       assert pending_payment.provider_id == "second_id"
     end
 
     test "multiple intent creation fails when first is finalized",
-         %{section: section, product: product, user1: user} do
+         %{section: section, user1: user} do
       MockHTTP
       |> expect(:post, fn @stripe_payments_intents_url, _body, @expected_headers ->
         {:ok,
@@ -137,7 +138,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, intent1} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, intent1} = Stripe.create_intent(section, user)
       pending_payment = Paywall.get_provider_payment(:stripe, "test_id")
       assert {:ok, _} = Stripe.finalize_payment(intent1)
 
@@ -150,8 +151,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      assert {:error, {:payment_already_exists}} =
-               Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      assert {:error, {:payment_already_exists}} = Stripe.create_intent(section, user)
 
       finalized = Paywall.get_provider_payment(:stripe, "test_id")
       assert finalized
@@ -165,7 +165,6 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
 
     test "finalization succeeds", %{
       section: section,
-      product: product,
       user1: user,
       enrollment: enrollment
     } do
@@ -178,7 +177,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, intent} = Stripe.create_intent(section, user)
 
       pending_payment = Paywall.get_provider_payment(:stripe, "test_id")
       assert pending_payment
@@ -186,7 +185,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       assert is_nil(pending_payment.enrollment_id)
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
-      assert pending_payment.section_id == product.id
+      assert pending_payment.section_id == section.id
       assert pending_payment.provider_type == :stripe
       assert pending_payment.provider_id == "test_id"
 
@@ -199,7 +198,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       assert finalized.application_date
       assert finalized.pending_section_id == section.id
       assert finalized.pending_user_id == user.id
-      assert finalized.section_id == product.id
+      assert finalized.section_id == section.id
       assert finalized.provider_type == :stripe
       assert finalized.provider_id == "test_id"
 
@@ -228,7 +227,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
                Stripe.finalize_payment(%{"id" => "a_made_up_intent_id"})
     end
 
-    test "double finalization fails", %{section: section, product: product, user1: user} do
+    test "double finalization fails", %{section: section, user1: user} do
       MockHTTP
       |> expect(:post, fn @stripe_payments_intents_url, _body, @expected_headers ->
         {:ok,
@@ -238,7 +237,7 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
          }}
       end)
 
-      {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, intent} = Stripe.create_intent(section, user)
       assert {:ok, _} = Stripe.finalize_payment(intent)
 
       assert {:error, "Payment already finalized"} = Stripe.finalize_payment(intent)
@@ -288,7 +287,6 @@ defmodule Oli.Delivery.Paywall.Providers.StripeTest do
       Sections.enroll(user1.id, section.id, [ContextRoles.get_role(:context_learner)])
 
     %{
-      product: product,
       section: section,
       map: map,
       user1: user1,

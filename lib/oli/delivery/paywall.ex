@@ -198,45 +198,28 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Given a section (blueprint or enrollable), calculate the cost to use it for
-  a specific institution, taking into account any product-wide and product-specific discounts
-  this instituttion has.
+    Given a section (blueprint) calculate the cost to use it for
+    a specific institution, taking into account any product-wide and product-specific discounts
+    this institution has.
 
-  Returns {:ok, %Money{}} or {:error, reason}
+      Returns {:ok, %Money{}} or {:error, reason}
   """
-  def calculate_product_cost(
-        %Section{requires_payment: false},
-        _
-      ),
-      do: {:ok, Money.new(:USD, 0)}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, amount: amount},
-        nil
-      ),
-      do: {:ok, amount}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, id: id, amount: amount},
-        %Institution{id: institution_id}
-      ) do
+  @spec section_cost_from_product(%Section{}, %Institution{}) :: {:ok, %Money{}} | {:error, any}
+   def section_cost_from_product(
+    %Section{requires_payment: true, id: id, amount: amount},
+    %Institution{id: institution_id}
+  ) do
     discounts =
       from(d in Discount,
-        where:
-          (is_nil(d.section_id) and d.institution_id == ^institution_id) or
-            (d.section_id == ^id and d.institution_id == ^institution_id),
+        where: d.institution_id == ^institution_id and (is_nil(d.section_id)) or (d.section_id == ^id),
         select: d
       )
       |> Repo.all()
 
     # Remove any institution-wide discounts if an institution and section specific discount exists
-    discounts =
-      case Enum.any?(discounts, fn d -> !is_nil(d.section_id) end) do
-        true ->
-          Enum.filter(discounts, fn d -> !is_nil(d.section_id) end)
-
-        false ->
-          discounts
+    discounts = case Enum.filter(discounts, fn d -> !is_nil(d.section_id) end) do
+        [] -> discounts
+        filtered_discounts -> filtered_discounts
       end
 
     # Now calculate the product cost, taking into account a discount
@@ -256,6 +239,9 @@ defmodule Oli.Delivery.Paywall do
         {:ok, amount}
     end
   end
+
+  def section_cost_from_product(%Section{requires_payment: true, amount: amount}, nil), do: {:ok, amount}
+  def section_cost_from_product(%Section{requires_payment: false}, _), do: {:ok, Money.new(:USD, 0)}
 
   @doc """
   Redeems a payment code for a given course section.
