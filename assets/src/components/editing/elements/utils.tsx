@@ -18,7 +18,7 @@ export function updateModel<T extends ContentModel.ModelElement>(
   Transforms.setNodes(editor, changes, { at: path });
 }
 
-export const useEditModel = <T extends ContentModel.ModelElement>(model: T) => {
+export const useEditModelCallback = <T extends ContentModel.ModelElement>(model: T) => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const editor = useSlate();
 
