@@ -11,6 +11,8 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
 
+  import Oli.Factory
+
   describe "creating the attempt tree records" do
     setup do
       content1 = %{
@@ -441,6 +443,50 @@ defmodule Oli.Delivery.AttemptsTest do
         Attempts.get_graded_resource_access_for_context(section.slug, [user1.id, user2.id])
 
       assert length(accesses_both) == length(accesses1) + length(accesses2)
+    end
+
+    test "get graded resource accesses where the last lms sync failed - returns empty when no failed sync exists" do
+      user = insert(:user)
+
+      {:ok, section: section, page_revision: page_revision} = section_with_assessment(%{})
+      last_grade_update = insert(:lms_grade_update)
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      assert [] == Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)
+    end
+
+    test "get graded resource accesses where the last lms sync failed" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+
+      {:ok, section: section, page_revision: page_revision} = section_with_assessment(%{})
+      last_successful_grade_update = insert(:lms_grade_update)
+      last_grade_update = insert(:lms_grade_update)
+
+      insert(:resource_access,
+        user: user1,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_successful_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      insert(:resource_access,
+        user: user2,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: nil,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      assert length(Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)) == 2
     end
 
     test "get latest attempt - activity attempts", %{

@@ -144,10 +144,11 @@ defmodule OliWeb.Sections.OverviewView do
               {/if}
             </a>
           </li>
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View all Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
           {#if !@section.open_and_free}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}>Manage LMS Gradebook</a></li>
+            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)}>View Grades that failed to sync</a></li>
             {#if @is_lms_or_system_admin}
               <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, @section.slug)}>Observe grade updates in real-time</a></li>
             {/if}

@@ -782,6 +782,7 @@ defmodule OliWeb.Router do
 
     live("/:section_slug/grades/lms", Grades.GradesLive)
     live("/:section_slug/grades/lms_grade_updates", Grades.BrowseUpdatesView)
+    live("/:section_slug/grades/failed", Grades.FailedGradeSyncLive)
     live("/:section_slug/grades/observe", Grades.ObserveGradeUpdatesView)
     live("/:section_slug/grades/gradebook", Grades.GradebookView)
     live("/:section_slug/scoring", ManualGrading.ManualGradingView)
