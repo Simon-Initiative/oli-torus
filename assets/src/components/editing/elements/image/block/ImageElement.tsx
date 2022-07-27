@@ -1,5 +1,5 @@
 import React from 'react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModel } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
@@ -12,7 +12,7 @@ import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 export const ImageEditor = (props: Props) => {
   const selected = useElementSelected();
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModel(props.model);
 
   if (props.model.src === undefined) return <ImagePlaceholder {...props} />;
 
