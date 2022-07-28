@@ -451,12 +451,47 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     };
   }, [dispatch]);
 
+  const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
+
+  useEffect(() => {
+    setLocalActivityTree((currentLocalTree: any) => {
+      if (!currentActivityTree) {
+        return null;
+      }
+
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
+      if (!currentLocalTree) {
+        return currentActivityTree
+          ? currentActivityTree.map((activity) => ({
+              ...activity,
+              activityKey: historyModeNavigation
+                ? `${activity.id}_${currentActivity.id}_history`
+                : activity.id,
+            }))
+          : null;
+      }
+
+      const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
+      // if the current and current local are the same, then we don't need to do anything
+      if (currentLocalActivity.id === currentActivity.id) {
+        return currentLocalTree;
+      }
+      return currentActivityTree.map((activity) => ({
+        ...activity,
+        activityKey: historyModeNavigation
+          ? `${activity.id}_${currentActivity.id}_history`
+          : activity.id,
+      }));
+    });
+  }, [currentActivityTree, historyModeNavigation]);
+
   const renderActivities = useCallback(() => {
-    if (!currentActivityTree || !currentActivityTree.length) {
+    if (!localActivityTree || !localActivityTree.length) {
       return <div>loading...</div>;
     }
 
-    const actualCurrentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const actualCurrentActivity = localActivityTree[localActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
     const styles: CSSProperties = {
       width: config?.width || lessonStyles.width,
@@ -502,22 +537,22 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // attempts are being constantly updated, if we are not careful it will re-render the activity
     // too many times. instead we want to only send the "initial" attempt state
     // activities should then keep track of updates internally and if needed request updates
-    const activities = currentActivityTree.map((activity) => {
+    const activities = localActivityTree.map((activity: any) => {
       const attempt = currentActivityAttemptTree?.find(
         (a) => a?.activityId === activity.resourceId,
       );
       if (!attempt) {
-        console.error('could not find attempt state for ', activity);
+        // this will happen but I think it should be OK because it will call this method again
+        // when the attempt tree is updated, and next time it will have the state
+        /* console.warn('could not find attempt state for ', activity.id); */
         return;
+      } else {
+        /* console.log('found attempt state for ', activity.id); */
       }
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      const activityKey = historyModeNavigation
-        ? `${activity.id}_${currentActivity.id}_history`
-        : activity.id;
 
       return (
         <ActivityRenderer
-          key={activityKey}
+          key={activity.activityKey}
           activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
@@ -537,12 +572,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     );
   }, [
     currentActivityAttemptTree,
-    currentActivityTree,
+    localActivityTree,
     handleActivityReady,
     handleActivityRequestLatestState,
     handleActivitySavePart,
     handleActivitySubmitPart,
-    historyModeNavigation,
     lessonStyles.width,
   ]);
 

@@ -143,7 +143,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       }, {}),
     );
 
-    console.log('INIT AD', { props, sharedAttemptStateMap, sharedInitMap });
+    console.log('INIT AD', { activityId, props, sharedAttemptStateMap, sharedInitMap });
     sharedAttemptStateMap.set(activityId, props.state);
 
     setInit(true);

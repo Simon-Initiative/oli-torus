@@ -599,7 +599,9 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   useEffect(() => {
     defaultGlobalEnv.addListener('change', handleStateChangeEvents);
+    console.log('ActivityRenderer mounting', activity.id);
     return () => {
+      console.log('ActivityRenderer unmounting', activity.id);
       defaultGlobalEnv.removeListener('change', handleStateChangeEvents);
     };
   }, [activity.id]);
