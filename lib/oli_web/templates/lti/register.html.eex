@@ -121,6 +121,7 @@
                     $('.auth_token_url').val(full_url(config, 'auth_token'));
                     $('.auth_login_url').val(full_url(config, 'auth_login'));
                     $('.auth_server').val(full_url(config, 'auth_server'));
+                    $('.line_items_service_domain').val(full_url(config, 'line_items_service_domain'));
                   }
                 } else {
                   // hide #suggestion-msg and reset config values
@@ -132,6 +133,7 @@
                   $('.auth_token_url').val('');
                   $('.auth_login_url').val('');
                   $('.auth_server').val('');
+                  $('.line_items_service_domain').val('');
                 }
               })
             </script>
@@ -173,6 +175,13 @@
                   placeholder: "Auth Server URL", required: true, autofocus: focusHelper(f, :auth_server) %>
                 <%= label f, :auth_server, "Auth Server URL", class: "control-label" %>
                 <%= error_tag f, :auth_server %>
+              </div>
+
+              <div class="form-label-group">
+                <%= text_input f, :line_items_service_domain, class: "line_items_service_domain form-control " <> error_class(f, :line_items_service_domain, "is-invalid"),
+                  placeholder: "Line items service domain", autofocus: focusHelper(f, :line_items_service_domain) %>
+                <%= label f, :line_items_service_domain, "Line items service domain", class: "control-label" %>
+                <%= error_tag f, :line_items_service_domain %>
               </div>
 
             </div>

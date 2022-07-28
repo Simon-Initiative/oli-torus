@@ -394,16 +394,16 @@ defmodule Oli.Delivery.PaywallTest do
       %{institution: map.institution, free: free, paid: paid, section: section}
     end
 
-    test "calculate_product_cost/2 correctly works when no discounts present", %{
+    test "section_cost_from_product/2 correctly works when no discounts present", %{
       free: free,
       paid: paid,
       institution: institution
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.calculate_product_cost(free, institution)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, institution)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution)
     end
 
-    test "calculate_product_cost/2 correctly applies fixed amount discounts",
+    test "section_cost_from_product/2 correctly applies fixed amount discounts",
          %{
            paid: paid,
            institution: institution
@@ -417,7 +417,7 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 90)
         })
 
-      assert {:ok, Money.new(:USD, 90)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution)
 
       Paywall.create_discount(%{
         institution_id: institution.id,
@@ -427,7 +427,7 @@ defmodule Oli.Delivery.PaywallTest do
         amount: Money.new(:USD, 80)
       })
 
-      assert {:ok, Money.new(:USD, 80)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 80)} == Paywall.section_cost_from_product(paid, institution)
     end
 
     percentage_discounts = [
@@ -445,7 +445,7 @@ defmodule Oli.Delivery.PaywallTest do
       @expected_amount expected_amount
 
       # amount from paid is #Money<:USD, 100>
-      test "calculate_product_cost/2 correctly applies percentage discount for #{discount}",
+      test "section_cost_from_product/2 correctly applies percentage discount for #{discount}",
           %{
             paid: paid,
             institution: institution
@@ -459,22 +459,22 @@ defmodule Oli.Delivery.PaywallTest do
             amount: Money.new(:USD, @expected_amount)
           })
 
-        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.calculate_product_cost(paid, institution)
+        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.section_cost_from_product(paid, institution)
       end
     end
 
-    test "calculate_product_cost/2 correctly works when no institution present", %{
+    test "section_cost_from_product/2 correctly works when no institution present", %{
       free: free,
       paid: paid
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.calculate_product_cost(free, nil)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(paid, nil)
+      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, nil)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, nil)
     end
 
-    test "calculate_product_cost/2 correctly works when given an enrollable section", %{
+    test "section_cost_from_product/2 correctly works when given an enrollable section", %{
       section: section
     } do
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(section, nil)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(section, nil)
     end
   end
 

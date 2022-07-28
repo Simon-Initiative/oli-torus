@@ -205,9 +205,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert render(view) =~ "View and manage student grades and progress"
 
       assert has_element?(
-               view,
-               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, section.slug)}\"]"
-             )
+        view,
+        "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, section.slug)}\"]",
+        "View all Grades"
+      )
 
       assert has_element?(
                view,
@@ -218,6 +219,12 @@ defmodule OliWeb.Sections.OverviewLiveTest do
                view,
                "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, section.slug)}\"]"
              )
+
+      assert has_element?(
+        view,
+        "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, section.slug)}\"]",
+        "View Grades that failed to sync"
+      )
     end
 
     test "unlink section from lms", %{conn: conn, section: section} do

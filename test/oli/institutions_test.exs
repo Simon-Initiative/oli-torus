@@ -110,7 +110,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: "some auth_token_url",
       client_id: "some client_id",
       issuer: "some issuer",
-      key_set_url: "some key_set_url"
+      key_set_url: "some key_set_url",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @update_attrs %{
       auth_login_url: "some updated auth_login_url",
@@ -118,7 +119,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: "some updated auth_token_url",
       client_id: "some updated client_id",
       issuer: "some updated issuer",
-      key_set_url: "some updated key_set_url"
+      key_set_url: "some updated key_set_url",
+      line_items_service_domain: "some updated line_items_service_domain"
     }
     @invalid_attrs %{
       auth_login_url: nil,
@@ -126,7 +128,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: nil,
       client_id: nil,
       issuer: nil,
-      key_set_url: nil
+      key_set_url: nil,
+      line_items_service_domain: nil
     }
 
     test "list_registrations/0 returns all registrations", %{registration: registration} do
@@ -161,6 +164,7 @@ defmodule Oli.InstitutionsTest do
       assert registration.client_id == "some client_id"
       assert registration.issuer == "some other issuer"
       assert registration.key_set_url == "some key_set_url"
+      assert registration.line_items_service_domain == "some line_items_service_domain"
     end
 
     test "create_registration/1 with invalid data returns error changeset" do
@@ -179,6 +183,7 @@ defmodule Oli.InstitutionsTest do
       assert registration.client_id == "some updated client_id"
       assert registration.issuer == "some updated issuer"
       assert registration.key_set_url == "some updated key_set_url"
+      assert registration.line_items_service_domain == "some updated line_items_service_domain"
     end
 
     test "update_registration/2 with invalid data returns error changeset", %{
@@ -305,7 +310,8 @@ defmodule Oli.InstitutionsTest do
       key_set_url: "some key_set_url",
       auth_token_url: "some auth_token_url",
       auth_login_url: "some auth_login_url",
-      auth_server: "some auth_server"
+      auth_server: "some auth_server",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @update_attrs %{
       name: "some updated institution",
@@ -317,7 +323,8 @@ defmodule Oli.InstitutionsTest do
       key_set_url: "some updated key_set_url",
       auth_token_url: "some updated auth_token_url",
       auth_login_url: "some updated auth_login_url",
-      auth_server: "some updated auth_server"
+      auth_server: "some updated auth_server",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @invalid_attrs %{
       name: nil,
@@ -329,7 +336,8 @@ defmodule Oli.InstitutionsTest do
       key_set_url: nil,
       auth_token_url: nil,
       auth_login_url: nil,
-      auth_server: nil
+      auth_server: nil,
+      line_items_service_domain: nil
     }
 
     test "list_pending_registrations/0 returns all pending_registrations", %{
@@ -476,7 +484,8 @@ defmodule Oli.InstitutionsTest do
           key_set_url: "new key_set_url",
           auth_token_url: "new auth_token_url",
           auth_login_url: "new auth_login_url",
-          auth_server: "new auth_server"
+          auth_server: "new auth_server",
+          line_items_service_domain: "new line_items_service_domain"
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =
@@ -507,7 +516,8 @@ defmodule Oli.InstitutionsTest do
           key_set_url: "new key_set_url",
           auth_token_url: "new auth_token_url",
           auth_login_url: "new auth_login_url",
-          auth_server: "new auth_server"
+          auth_server: "new auth_server",
+          line_items_service_domain: "new line_items_service_domain"
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =

@@ -7,7 +7,8 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended"
+    "plugin:prettier/recommended",
+    "plugin:react-hooks/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -26,5 +27,10 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-empty-interface": 0,
     "@typescript-eslint/no-empty-function": 0
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   }
 }

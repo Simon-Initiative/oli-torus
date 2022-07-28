@@ -131,7 +131,8 @@ defmodule Oli.TestHelpers do
         key_set_url: "some key_set_url",
         auth_token_url: "some auth_token_url",
         auth_login_url: "some auth_login_url",
-        auth_server: "some auth_server"
+        auth_server: "some auth_server",
+        line_items_service_domain: "some line_items_service_domain"
       })
 
     {:ok, pending_registration} = Institutions.create_pending_registration(params)
@@ -148,7 +149,8 @@ defmodule Oli.TestHelpers do
         auth_token_url: "some auth_token_url",
         client_id: "some client_id",
         issuer: "some issuer",
-        key_set_url: "some key_set_url"
+        key_set_url: "some key_set_url",
+        line_items_service_domain: "some line_items_service_domain"
       })
 
     {:ok, registration} = Institutions.create_registration(params)
@@ -299,7 +301,7 @@ defmodule Oli.TestHelpers do
       |> Pow.Plug.assign_current_user(instructor, OliWeb.Pow.PowHelpers.get_pow_config(:user))
       |> LtiSession.put_session_lti_params(lti_param_ids.instructor)
 
-    {:ok, conn: conn}
+    {:ok, conn: conn, instructor: instructor}
   end
 
   def author_conn(%{conn: conn}) do
@@ -623,7 +625,7 @@ defmodule Oli.TestHelpers do
       revision: page_revision
     })
 
-    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true)
+    section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true, type: :enrollable)
     {:ok, section} = Sections.create_section_resources(section, publication)
     {:ok, section: section, page_revision: page_revision}
   end

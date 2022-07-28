@@ -45,6 +45,11 @@
         </tr>
 
         <tr>
+        <td><strong>Line items service domain:</strong></td>
+        <td><%= @registration.line_items_service_domain %></td>
+        </tr>
+
+        <tr>
         <td><strong>Deployments:</strong></td>
         <td>
             <%= for deployment <- @registration.deployments do %>

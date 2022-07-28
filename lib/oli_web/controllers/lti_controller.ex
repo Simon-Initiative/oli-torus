@@ -360,7 +360,7 @@ defmodule OliWeb.LtiController do
 
   defp handle_valid_lti_1p3_launch(conn, lti_params) do
     issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
+    client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
     case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do

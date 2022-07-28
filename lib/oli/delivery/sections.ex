@@ -10,8 +10,8 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Oli.Lti.Tool.Deployment
-  alias Oli.Lti.Tool.Registration
+  alias Oli.Lti.Tool.{Deployment, Registration}
+  alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
@@ -468,7 +468,7 @@ defmodule Oli.Delivery.Sections do
       |> Map.get("id")
 
     issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
+    client_id = LtiParams.peek_client_id(lti_params)
 
     Repo.all(
       from(s in Section,

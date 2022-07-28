@@ -234,7 +234,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
       refute pending_payment.application_date
       assert pending_payment.pending_section_id == section.id
       assert pending_payment.pending_user_id == user.id
-      assert pending_payment.section_id == product.id
+      assert pending_payment.section_id == section.id
       assert pending_payment.provider_type == :stripe
       assert pending_payment.provider_id == "test_id"
     end
@@ -286,7 +286,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
          }}
       end)
 
-      {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, section)
+      {:ok, intent} = Stripe.create_intent(section, user)
 
       conn =
         post(conn, Routes.stripe_path(conn, :success), %{
@@ -334,7 +334,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
          }}
       end)
 
-      {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, product)
+      {:ok, intent} = Stripe.create_intent(section, user)
 
       conn =
         post(conn, Routes.stripe_path(conn, :success), %{
@@ -350,7 +350,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
       assert finalized.application_date
       assert finalized.pending_section_id == section.id
       assert finalized.pending_user_id == user.id
-      assert finalized.section_id == product.id
+      assert finalized.section_id == section.id
       assert finalized.provider_type == :stripe
       assert finalized.provider_id == "test_id"
     end
@@ -371,7 +371,7 @@ defmodule OliWeb.PaymentProviders.StripeControllerTest do
          }}
       end)
 
-      {:ok, intent} = Stripe.create_intent(Money.new(:USD, 100), user, section, section)
+      {:ok, intent} = Stripe.create_intent(section, user)
       assert {:ok, _} = Stripe.finalize_payment(intent)
 
       conn =

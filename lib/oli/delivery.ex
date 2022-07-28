@@ -4,6 +4,7 @@ defmodule Oli.Delivery do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Institutions
+  alias Oli.Lti.LtiParams
   alias Oli.Publishing
   alias Oli.Repo
 
@@ -15,7 +16,7 @@ defmodule Oli.Delivery do
     {institution, _registration, _deployment} =
       Institutions.get_institution_registration_deployment(
         lti_params["iss"],
-        lti_params["aud"],
+        LtiParams.peek_client_id(lti_params),
         lti_params[@deployment_claims])
 
     Publishing.retrieve_visible_sources(user, institution)
@@ -28,7 +29,7 @@ defmodule Oli.Delivery do
         {institution, registration, deployment} =
           Institutions.get_institution_registration_deployment(
             lti_params["iss"],
-            lti_params["aud"],
+            LtiParams.peek_client_id(lti_params),
             lti_params[@deployment_claims]
           )
 
@@ -57,7 +58,7 @@ defmodule Oli.Delivery do
       # TODO: we may need to move this to AFTER a remix if the cost calculation factors
       # in the percentage project usage
       amount =
-        case Oli.Delivery.Paywall.calculate_product_cost(blueprint, institution) do
+        case Oli.Delivery.Paywall.section_cost_from_product(blueprint, institution) do
           {:ok, amount} -> amount
           _ -> blueprint.amount
         end

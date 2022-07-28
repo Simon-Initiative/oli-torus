@@ -98,9 +98,10 @@ defmodule OliWeb.Grades.ObserveGradeUpdatesView do
     {:ok, table_model} = ObserveTableModel.new(updates)
 
     {:noreply,
-     assign(socket,
-       table_model: table_model,
-       total_count: Enum.count(updates)
-     )}
+      assign(socket,
+        updates: updates,
+        table_model: table_model,
+        total_count: Enum.count(updates)
+      )}
   end
 end
