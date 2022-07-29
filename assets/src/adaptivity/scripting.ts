@@ -222,6 +222,9 @@ export const getExpressionStringForValue = (
     // val = convertExponentialToDecimal(val);
     val = parseFloat(val);
     if (val === '') {
+      // TODO: Figure out the intent here.
+      // If val == '' then parseFloat will return NaN before it
+      // hits this block, so we'll never get here.
       val = 'null';
     }
   }
