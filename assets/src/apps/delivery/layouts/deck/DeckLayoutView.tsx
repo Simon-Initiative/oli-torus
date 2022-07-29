@@ -431,22 +431,41 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     };
   }, [dispatch]);
 
-  const localActivityTree = useMemo(() => {
-    if (!currentActivityTree) {
-      return null;
-    }
+  const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
 
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+  useEffect(() => {
+    setLocalActivityTree((currentLocalTree: any) => {
+      if (!currentActivityTree) {
+        return null;
+      }
 
-    return currentActivityTree
-      ? currentActivityTree.map((activity) => ({
-          ...activity,
-          activityKey: historyModeNavigation
-            ? `${activity.id}_${currentActivity.id}_history`
-            : activity.id,
-        }))
-      : null;
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
+      if (!currentLocalTree) {
+        return currentActivityTree
+          ? currentActivityTree.map((activity) => ({
+              ...activity,
+              activityKey: historyModeNavigation
+                ? `${activity.id}_${currentActivity.id}_history`
+                : activity.id,
+            }))
+          : null;
+      }
+
+      const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
+      // if the current and current local are the same, then we don't need to do anything
+      if (currentLocalActivity.id === currentActivity.id) {
+        return currentLocalTree;
+      }
+      return currentActivityTree.map((activity) => ({
+        ...activity,
+        activityKey: historyModeNavigation
+          ? `${activity.id}_${currentActivity.id}_history`
+          : activity.id,
+      }));
+    });
   }, [currentActivityTree, historyModeNavigation]);
+
   const renderActivities = useCallback(() => {
     if (!localActivityTree || !localActivityTree.length) {
       return <div>loading...</div>;
