@@ -451,7 +451,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     };
   }, [dispatch]);
 
-   const localActivityTree = useMemo(() => {
+  const localActivityTree = useMemo(() => {
     if (!currentActivityTree) {
       return null;
     }
