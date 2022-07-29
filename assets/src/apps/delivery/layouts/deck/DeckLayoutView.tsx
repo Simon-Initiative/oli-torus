@@ -172,8 +172,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
     // some screens go in loop
     // Don't do anything id enableHistory/historyModeNavigation is ON
-
-    if (!historyModeNavigation && currentActivityTree) {
+    // Commenting out this code for now. As we handled this case via authoring changes.
+    /*  if (!historyModeNavigation && currentActivityTree) {
       const globalSnapshot = getEnvState(defaultGlobalEnv);
       // this is firing after some initial part saves and wiping out what we have just set
       // maybe we don't need to write the local versions ever?? instead just whenever anything
@@ -183,12 +183,12 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
         (key: string) =>
           key.indexOf('stage.') === 0 || key.indexOf(`${currentActivity.id}|stage.`) === 0,
-      ); /*
-      console.log('REMOVING STATE VALUES: ', idsToBeRemoved); */
+      );
+      console.log('REMOVING STATE VALUES: ', idsToBeRemoved);
       if (idsToBeRemoved.length) {
-        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
+        //removeStateValues(defaultGlobalEnv, idsToBeRemoved);
       }
-    }
+    } */
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
