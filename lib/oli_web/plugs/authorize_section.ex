@@ -2,8 +2,8 @@ defmodule Oli.Plugs.AuthorizeSection do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias Lti_1p3.Tool.ContextRoles
   alias Oli.Accounts.SystemRole
+  alias Oli.Delivery.Sections
 
   @admin_role_id SystemRole.role_id() |> Map.get(:admin)
 
@@ -29,5 +29,5 @@ defmodule Oli.Plugs.AuthorizeSection do
   end
 
   defp is_instructor?(conn),
-    do: ContextRoles.has_role?(conn.assigns[:current_user], conn.path_params["section_slug"], ContextRoles.get_role(:context_instructor))
+    do: Sections.is_instructor?(conn.assigns[:current_user], conn.path_params["section_slug"])
 end
