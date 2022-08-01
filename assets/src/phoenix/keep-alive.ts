@@ -16,11 +16,15 @@
  * More Info: https://github.com/danschultzer/pow/issues/271
  * https://elixirforum.com/t/get-user-id-with-pow-from-session-for-live-view/24206/4
  */
+
+// Wait time set to 15 min which is the deafult time set by Pow to renew sessions (session_ttl_renewal)
+const waitTime = 900000 // 15 minutes in ms
+
 if (!window.keepAlive) {
   window.keepAlive = () => {
-    const scriptTag = document.getElementById('keep-alive');
-    const userType = scriptTag ? scriptTag.getAttribute('data-type') : 'user';
-    const keepAliveUrl = `${userType == 'author' ? '/authoring' : ''}/keep-alive`;
+    // Check for which template (delivery or authoring) we're in
+    const is_authoring = $("#layout-id").data("layout-id") === "authoring";
+    const keepAliveUrl = `${is_authoring ? '/authoring' : ''}/keep-alive`;
 
     const wait = (ms: number) => {
       return () =>
@@ -30,7 +34,7 @@ if (!window.keepAlive) {
     };
 
     fetch(keepAliveUrl)
-      .then(wait(60 * 1000 /*ms*/))
+      .then(wait(waitTime))
       .then(window.keepAlive);
   };
 
