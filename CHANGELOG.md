@@ -4,6 +4,12 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+## 0.21.3 (2022-08-02)
+
+### Bug Fixes
+
 - Fix an issue where scroll wheel changes the value of numeric input
 - Fix an issue where underlined and strikethrough text were not being rendered
 - Fix an issue where guest user_id is blank in datashop export
