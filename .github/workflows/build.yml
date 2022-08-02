@@ -71,7 +71,7 @@ jobs:
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
 
       - name: Install node_module dependencies 📦
-        run: yarn --cwd assets --frozen-lockfile
+        run: cd assets && yarn --frozen-lockfile
 
       - name: ▶️ Run integration tests
         run: |
@@ -103,7 +103,7 @@ jobs:
           node-version: "16.13.2"
 
       - name: Install node_module dependencies 📦
-        run: yarn --cwd assets --frozen-lockfile
+        run: cd assets && yarn --frozen-lockfile
 
       - name: 🤖 Auto Format
         run: yarn --cwd assets run format
@@ -141,7 +141,7 @@ jobs:
         run: mix deps.get
 
       - name: Install node_module dependencies 📦
-        run: yarn --cwd assets --frozen-lockfile
+        run: cd assets && yarn --frozen-lockfile
 
       - name: 🧹 Lint
         run: yarn --cwd assets run lint
