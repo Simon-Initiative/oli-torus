@@ -26,7 +26,6 @@ defmodule OliWeb.LayoutView do
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
   alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Delivery.Sections
-  alias OliWeb.Router.Helpers, as: Routes
 
   def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
   def show_pay_early(_), do: false
