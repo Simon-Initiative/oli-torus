@@ -103,10 +103,10 @@ jobs:
           node-version: "16.13.2"
 
       - name: Install node_module dependencies 📦
-        run: yarn --frozen-lockfile
+        run: yarn --cwd assets --frozen-lockfile
 
       - name: 🤖 Auto Format
-        run: npm run format
+        run: yarn --cwd assets run format
 
       - name: ✅ Commit
         uses: EndBug/add-and-commit@v9
