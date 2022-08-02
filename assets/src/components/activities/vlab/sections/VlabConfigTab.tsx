@@ -25,8 +25,8 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 <input
                   type="text"
                   name="config"
-                  value={model.configuration[config]}
-                  onChange={(e) => dispatch(MultiInputActions.setVlabConfiguration(e.target.value))}
+                  value={model.assignmentPath}
+                  onChange={(e) => dispatch(MultiInputActions.setAssignmentPath(e.target.value))}
                 />
                 {config}
               </label>

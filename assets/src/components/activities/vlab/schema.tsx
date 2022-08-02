@@ -34,10 +34,6 @@ export interface VlabValue extends Identifiable {
   parameter: string;
 }
 
-export interface VlabConfiguration {
-  assignmentPath: string;
-}
-
 export type VlabInputType = 'dropdown' | 'text' | 'numeric' | 'vlabvalue';
 export const vlabInputTypes: VlabInputType[] = ['dropdown', 'text', 'numeric', 'vlabvalue'];
 
@@ -61,7 +57,10 @@ export interface VlabSchema extends ActivityModelSchema {
   choices: Choice[];
   // The actual student-answerable inputs, designated by their type
   inputs: VlabInput[];
-  configuration: VlabConfiguration[];
+  assignmentPath: string;
+  assignment: string;
+  configuration: string;
+  reactions: string;
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];

@@ -101,7 +101,7 @@ export const MultiInputComponent: React.FC = () => {
     }
   };
 
-  const emptyPartInputs = model.inputs.reduce((acc:any, input:any) => {
+  const emptyPartInputs = model.inputs.reduce((acc: any, input: any) => {
     acc[input.partId] = [''];
     return acc;
   }, {} as PartInputs);
@@ -187,7 +187,7 @@ export const MultiInputComponent: React.FC = () => {
   };
 
   const onVlabLoad = () => {
-    const assignment = model.configuration['assignmentPath'];
+    const assignment = model.assignmentPath;
     document.getElementById('vlab').contentWindow.loadAssignment(assignment);
   };
 

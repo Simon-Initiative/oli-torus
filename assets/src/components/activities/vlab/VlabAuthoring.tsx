@@ -21,6 +21,8 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { WrappedMonaco } from '../common/variables/WrappedMonaco';
+import { MultiInputActions } from 'components/activities/vlab/actions';
 
 const store = configureStore();
 
@@ -66,6 +68,28 @@ export const MultiInputComponent = () => {
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Hints">
             <HintsTab input={input} index={index} />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Assgnmt">
+            <div className="alert alert-info" role="alert">
+              Enter the assignment text here. From assignment.json
+            </div>
+            <WrappedMonaco
+              model={model.assignment}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editAssignment(s))}
+            />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Config">
+            <div className="alert alert-info" role="alert">
+              Configuration settings. From configuration.json
+            </div>
+            <WrappedMonaco
+              model={model.configuration}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editConfiguration(s))}
+            />
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Dynamic Variables">
             <VariableEditorOrNot

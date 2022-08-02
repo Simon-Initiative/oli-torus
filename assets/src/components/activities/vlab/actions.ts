@@ -70,6 +70,22 @@ export const MultiInputActions = {
     };
   },
 
+  editAssignment(assignment: string) {
+    return (model: VlabSchema) => {
+      model.assignment = assignment;
+    };
+  },
+  editConfiguration(configuration: string) {
+    return (model: VlabSchema) => {
+      model.configuration = configuration;
+    };
+  },
+  editReactions(reactions: string) {
+    return (model: VlabSchema) => {
+      model.reactions = reactions;
+    };
+  },
+
   addMissingParts(operations: Operation[]) {
     return (model: VlabSchema) => {
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
@@ -206,9 +222,9 @@ export const MultiInputActions = {
     };
   },
 
-  setVlabConfiguration(settings) {
+  setAssignmentPath(path: string) {
     return (model: VlabSchema) => {
-      model.configuration = { assignmentPath: settings };
+      model.assignmentPath = path;
     };
   },
 

@@ -41,7 +41,10 @@ export const defaultModel = (): VlabSchema => {
     stem: multiInputStem(input),
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
-    configuration: [],
+    assignmentPath: 'default',
+    assignment: '',
+    configuration: '',
+    reactions: '',
     authoring: {
       parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
       targeted: [],
