@@ -71,7 +71,7 @@ jobs:
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
 
       - name: Install node_module dependencies 📦
-        run: cd assets && yarn --frozen-lockfile
+        run: yarn --cwd assets --frozen-lockfile
 
       - name: ▶️ Run integration tests
         run: |
@@ -87,12 +87,44 @@ jobs:
           path: test-results
           if-no-files-found: ignore
 
+  ts-auto-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: 🔧 Configure
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.13.2"
+
+      - name: Install node_module dependencies 📦
+        run: yarn --frozen-lockfile
+
+      - name: 🤖 Auto Format
+        run: npm run format
+
+      - name: ✅ Commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "*.ts"
+          message: Auto format
+          committer_name: Simon Bot (GitHub Actions)
+          committer_email: actions@github.com
+
   ts-build-test:
     runs-on: ubuntu-latest
 
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🔧 Configure
         uses: actions/setup-node@v1
@@ -109,13 +141,13 @@ jobs:
         run: mix deps.get
 
       - name: Install node_module dependencies 📦
-        run: cd assets && yarn --frozen-lockfile
+        run: yarn --cwd assets --frozen-lockfile
 
       - name: 🧹 Lint
-        run: cd assets && npm run lint
+        run: yarn --cwd assets run lint
 
       - name: 🔨 Build
-        run: cd assets && npm run deploy
+        run: yarn --cwd assets run deploy
 
       - name: ⚙️ Test
-        run: cd assets && npm run test
+        run: yarn --cwd assets run test
