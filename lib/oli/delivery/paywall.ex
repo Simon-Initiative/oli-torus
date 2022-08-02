@@ -211,8 +211,9 @@ defmodule Oli.Delivery.Paywall do
   ) do
     discounts =
       from(d in Discount,
-        where: (d.institution_id == ^institution_id and is_nil(d.section_id))  # Institution-wide discounts
-          or (d.section_id == ^id and d.institution_id == ^institution_id), # Section-specific discounts for the given institution
+        where: d.institution_id == ^institution_id and
+          (is_nil(d.section_id) or # Institution-wide discounts
+          d.section_id == ^id),  # Section-specific discounts for the given institution
         select: d
       )
       |> Repo.all()
