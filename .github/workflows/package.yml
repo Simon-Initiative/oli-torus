@@ -61,7 +61,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 🔧 Configure
+      - name: 🔧 Setup
         uses: actions/setup-node@v1
         with:
           node-version: "16.13.2"
