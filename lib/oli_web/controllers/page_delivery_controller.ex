@@ -599,7 +599,7 @@ defmodule OliWeb.PageDeliveryController do
     section = conn.assigns.section
     datashop_session_id = Plug.Conn.get_session(conn, :datashop_session_id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/4
 
     if Sections.is_enrolled?(user.id, section_slug) do
       # We must check gating conditions here to account for gates that activated after
