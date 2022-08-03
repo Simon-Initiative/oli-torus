@@ -394,9 +394,12 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   abstract render(mountPoint: HTMLDivElement, props: DeliveryElementProps<T>): void;
 
   connectedCallback() {
-    this.appendChild(this.mountPoint);
-    this.render(this.mountPoint, this.props());
-    this.connected = true;
+    // need to skip a cycle to let old elements handle disconnect in LiveView
+    setTimeout(() => {
+      this.appendChild(this.mountPoint);
+      this.render(this.mountPoint, this.props());
+      this.connected = true;
+    }, 0);
   }
 
   attributeChangedCallback(_name: any, _oldValue: any, _newValue: any) {
