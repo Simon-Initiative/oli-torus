@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelected, useFocused } from 'slate-react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
@@ -50,7 +50,7 @@ export const YouTubeEditor = (props: YouTubeProps) => {
   const fullSrc =
     'https://www.youtube.com/embed/' + (props.model.src || CUTE_OTTERS) + '?' + parameters;
 
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   const borderStyle =
     focused && selected
