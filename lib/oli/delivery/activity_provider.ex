@@ -194,6 +194,17 @@ defmodule Oli.Delivery.ActivityProvider do
       Selection.parse(model_component)
       |> decrement_for_prototypes(fulfillment_state.prototypes_by_selection)
 
+    existing_for_this_selection =
+      Map.get(fulfillment_state.prototypes_by_selection, id, [])
+      |> Enum.map(fn p -> p.revision end)
+
+    fulfillment_state =
+      Map.put(
+        fulfillment_state,
+        :source,
+        merge_blacklist(fulfillment_state.source, existing_for_this_selection)
+      )
+
     # handle the case that existing prototypes for this selection completely decrement
     # the count down to zero
     if selection.count == 0 do

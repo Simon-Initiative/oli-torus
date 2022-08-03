@@ -3,7 +3,7 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
   alias Oli.Delivery.ActivityProvider
   alias Oli.Activities.Realizer.Query.Source
-  alias Oli.Delivery.ActivityProvider.Result
+  alias Oli.Delivery.ActivityProvider.{Result, AttemptPrototype}
 
   defp index_of(prototypes, list) do
     collection = MapSet.new(list)
@@ -286,6 +286,113 @@ defmodule Oli.Delivery.ActivityProviderTest do
                  "source-selection" => "2"
                }
              ] = model
+    end
+
+    test "completely constraining a selection via existing prototypes", %{
+      activity1: activity1,
+      page: page,
+      publication: publication,
+      section: section,
+      o1: o1
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "2"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes
+      } =
+        ActivityProvider.provide(
+          %{page.revision | content: content},
+          source,
+          [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 0
+      assert length(prototypes) == 1
+      assert Enum.at(prototypes, 0).revision.id == activity1.revision.id
+    end
+
+    test "partially constraining a selection via existing prototypes", %{
+      activity1: activity1,
+      activity2: activity2,
+      activity3: activity3,
+      page: page,
+      publication: publication,
+      section: section,
+      o1: o1
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 3,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "2"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes
+      } =
+        ActivityProvider.provide(
+          %{page.revision | content: content},
+          source,
+          [
+            %AttemptPrototype{revision: activity1.revision, selection_id: "2"},
+            %AttemptPrototype{revision: activity2.revision, selection_id: "2"}
+          ],
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 0
+      assert length(prototypes) == 3
+
+      index1 = index_of(prototypes, [activity1.revision.resource_id])
+      index2 = index_of(prototypes, [activity2.revision.resource_id])
+      index3 = index_of(prototypes, [activity3.revision.resource_id])
+
+      assert MapSet.new([index1, index2, index3]) |> MapSet.size() == 3
+      refute is_nil(index1)
+      refute is_nil(index2)
+      refute is_nil(index3)
     end
 
     test "fulfilling multiple statics and selections", %{
