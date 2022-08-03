@@ -14,6 +14,7 @@
 - Fix an issue where underlined and strikethrough text were not being rendered
 - Fix an issue where guest user_id is blank in datashop export
 - Allow insertion of tables, iframes and all other elements in stem, choices and feedback
+- Change 'Submit Assessment' button to 'Submit'
 
 ### Enhancements
 
