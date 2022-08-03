@@ -1,9 +1,7 @@
 import * as React from 'react';
 import ModalSelection, { sizes } from 'components/modal/ModalSelection';
 // eslint-disable-next-line
-interface ModalMediaEditor {
-
-}
+interface ModalMediaEditor {}
 
 export interface ModalMediaEditorProps {
   onInsert: (model: any) => void;

@@ -1,16 +1,16 @@
 {
-    "id": "janus_fill_blanks",
-    "friendlyName": "Fill in the Blanks",
-    "description": "A configurable Fill in the Blanks component.",
-    "icon": "icon-part-fib.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-fill-blanks",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-fill-blanks",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_fill_blanks",
+  "friendlyName": "Fill in the Blanks",
+  "description": "A configurable Fill in the Blanks component.",
+  "icon": "icon-part-fib.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-fill-blanks",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-fill-blanks",
+    "entry": "./authoring-entry.ts"
+  }
 }
