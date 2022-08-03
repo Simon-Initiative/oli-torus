@@ -87,7 +87,7 @@ jobs:
           path: test-results
           if-no-files-found: ignore
 
-  ts-auto-format:
+  ts-build-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -120,37 +120,9 @@ jobs:
       - name: ✅ Commit
         uses: EndBug/add-and-commit@v9
         with:
-          add: "*.ts"
           message: Auto format
           committer_name: Simon Bot (GitHub Actions)
           committer_email: actions@github.com
-
-  ts-build-test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 🛎️ Checkout
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-
-      - name: 🔧 Configure
-        uses: actions/setup-node@v1
-        with:
-          node-version: "16.13.2"
-
-      - name: 🧪 Setup elixir
-        uses: erlef/setup-elixir@v1
-        with:
-          elixir-version: 1.13.2 # Define the elixir version [required]
-          otp-version: 24.0 # Define the OTP version [required]
-
-      - name: ⬇️ Install elixir dependencies
-        run: mix deps.get
-
-      - name: Install node_module dependencies 📦
-        run: cd assets && yarn --frozen-lockfile
 
       - name: 🧹 Lint
         run: yarn --cwd assets run lint
