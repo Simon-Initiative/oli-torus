@@ -11,11 +11,18 @@ import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
 
+const percentageWidth = /^[0-9]+%$/;
+
 const cssWidth = (width: number | string | undefined) => {
   if (!width) return undefined;
-  if (typeof width === 'number') return width; // Numbers are fine, they imply pixels
+  if (typeof width === 'number') return width;
+  if (typeof width !== 'string') return undefined;
 
-  const pixels = parseInt(width, 10);
+  if (percentageWidth.test(width)) {
+    return width;
+  }
+
+  const pixels = parseFloat(width);
   if (isNaN(pixels)) return undefined;
   return pixels;
 };
