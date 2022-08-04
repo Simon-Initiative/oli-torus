@@ -188,7 +188,7 @@ defmodule OliWeb.Progress.StudentResourceView do
 
         {#if @revision.graded}
           <p>If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:</p>
-          <button class="btn btn-primary" type="button" :on-click="create_access_record">Create Access Record</button>
+          <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
         {/if}
 
       </Group>

@@ -62,11 +62,15 @@ defmodule OliWeb.Progress.StudentView do
               )
               |> Enum.reduce(%{}, fn r, m ->
                 # limit score decimals to two significant figures, rounding up
-                r = Map.put(r, :score, format_score(r.score))
+                r =
+                  case r.score do
+                    nil -> r
+                    _ -> Map.put(r, :score, format_score(r.score))
+                  end
+
                 Map.put(m, r.resource_id, r)
               end)
 
-            IO.inspect(resource_accesses)
             hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
             page_nodes =

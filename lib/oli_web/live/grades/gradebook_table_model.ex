@@ -62,7 +62,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           true ->
             ~F"""
             <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-              <span>Never Visited</span>
+              <span class="text-muted">Never Visited</span>
             </a>
             """
 
@@ -76,7 +76,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
           true ->
             ~F"""
             <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
-              <span>Never Finished</span>
+              <span>Not Finished</span>
             </a>
             """
 
