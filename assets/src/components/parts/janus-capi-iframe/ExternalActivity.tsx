@@ -16,16 +16,6 @@ import { CapiIframeModel } from './schema';
 
 const externalActivityMap: Map<string, any> = new Map();
 let context = 'VIEWER';
-const getExternalActivityMap = () => {
-  const result: any = {};
-
-  externalActivityMap.forEach((value, key) => {
-    // TODO: cut out functions?
-    result[key] = value;
-  });
-
-  return result;
-};
 
 const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) => {
   const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
@@ -615,11 +605,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       });
       if (hasDiff) {
         setInternalState(mutableState);
-        mutableState.forEach((element) => {
-          if (element.id.indexOf(`stage.${id}.`) === 0) {
-            externalActivityMap.set(`${simLife.ownerActivityId}|${element.id}`, element);
-          }
-        });
       }
     }
     return mutableState;
@@ -736,11 +721,17 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       if (!props.onGetData) {
         return;
       }
-      const val = await props.onGetData({ simId, key, id });
-      let value = val;
-      const exists = val !== undefined;
-      if (exists && typeof val !== 'string') {
-        value = JSON.stringify(val);
+      let value = externalActivityMap.get(`${id}|${key}`);
+      let exists = value !== undefined;
+      //if the key does not exits in Map then we need to go to Server
+      if (!value) {
+        let val = await props.onGetData({ simId, key, id });
+        value = val;
+        exists = val !== undefined;
+        if (exists && typeof val !== 'string') {
+          value = JSON.stringify(val);
+        }
+        externalActivityMap.set(`${id}|${key}`, value);
       }
       response.values.responseType = 'success';
       response.values.value = value?.length ? value : '[]';
@@ -811,6 +802,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
         return;
       }
       const obj = value;
+      externalActivityMap.set(`${id}|${key}`, obj);
       await props.onSetData({ simId, key, value: obj, id });
       response.values.responseType = 'success';
       response.values.value = value;
