@@ -85,6 +85,21 @@ export const MultiInputActions = {
       model.reactions = reactions;
     };
   },
+  editSolutions(solutions: string) {
+    return (model: VlabSchema) => {
+      model.solutions = solutions;
+    };
+  },
+  editSpecies(species: string) {
+    return (model: VlabSchema) => {
+      model.species = species;
+    };
+  },
+  editSpectra(spectra: string) {
+    return (model: VlabSchema) => {
+      model.spectra = spectra;
+    };
+  },
 
   addMissingParts(operations: Operation[]) {
     return (model: VlabSchema) => {

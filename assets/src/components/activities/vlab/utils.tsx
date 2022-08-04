@@ -42,9 +42,12 @@ export const defaultModel = (): VlabSchema => {
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
     assignmentPath: 'default',
-    assignment: '',
-    configuration: '',
-    reactions: '',
+    assignment: DEFAULT_ASSIGNMENT,
+    configuration: DEFAULT_CONFIGURATION,
+    reactions: DEFAULT_REACTIONS,
+    solutions: DEFAULT_SOLUTIONS,
+    species: DEFAULT_SPECIES,
+    spectra: DEFAULT_SPECTRA,
     authoring: {
       parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
       targeted: [],
@@ -280,3 +283,190 @@ function matchInputsToInputRefs(model: VlabSchema) {
   });
   return model;
 }
+
+const DEFAULT_ASSIGNMENT = '{ "assignmentText": "Assignment name" }';
+const DEFAULT_CONFIGURATION = `
+{
+  "title": "Stoichiometric Ratios",
+  "solutionViewers": [
+    {
+      "id": "solutionProperties",
+      "displayDefault": true,
+      "args": {
+        "honorSignificantFigures": false
+      }
+    },
+    {
+      "id": "aqueous",
+      "displayDefault": true,
+      "args": {
+        "unitsToggleEnabled": true
+      }
+    },
+    {
+      "id": "solid",
+      "displayDefault": false,
+      "args": {
+        "unitsToggleEnabled": true
+      }
+    },
+    {
+      "id": "spectrometer",
+      "displayDefault": false
+    },
+    {
+      "id": "particleView",
+      "displayDefault": true
+    },
+    {
+      "id": "thermometer",
+      "displayDefault": true
+    },
+    {
+      "id": "pH",
+      "displayDefault": true
+    },
+    {
+      "id": "vesselTrackingControl",
+      "displayDefault": false
+    }
+  ],
+  "transfer": ["precise", "significantFigures", "realistic"]
+}
+`;
+const DEFAULT_REACTIONS = `
+{
+  "REACTIONS": {
+    "REACTION": [
+      {
+        "SPECIES_REF": [
+          {
+            "id": "0", 
+            "coefficient": "1"
+          }, 
+          {
+            "id": "1", 
+            "coefficient": "-1"
+          }, 
+          {
+            "id": "2", 
+            "coefficient": "-1"
+          }
+        ]
+      }, 
+      {
+        "SPECIES_REF": [
+          {
+            "id": "5", 
+            "coefficient": "1"
+          }, 
+          {
+            "id": "3", 
+            "coefficient": "-1"
+          }, 
+          {
+            "id": "4", 
+            "coefficient": "-1"
+          }
+        ]
+      } 
+    ]
+  }
+}
+`;
+const DEFAULT_SOLUTIONS = `
+{
+  "FILESYSTEM": {
+    "DIRECTORY": [
+     {
+        "name": "stockroom", 
+        "SOLUTION": [
+          {
+            "name": "Distilled H<sub>2</sub>O", 
+            "description": "Distilled Water", 
+            "volume": "3.0", 
+            "vessel": "3LCarboy", 
+            "species": [
+               {
+                  "id": "0"
+               }
+            ]
+          },       
+          {
+            "name": "0.154 M NaCl", 
+            "description": "Sodium Chloride", 
+            "volume": "0.2", 
+            "species": [
+               {
+                  "id": "0"
+               }, 
+               {
+                  "id": "3", 
+                  "amount": "0.0308"
+               }, 
+               {
+                  "id": "4", 
+                  "amount": "0.0308"
+               }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+`;
+const DEFAULT_SPECIES = `
+{
+ "SPECIES_LIST": {
+  "SPECIES": [
+      {
+        "id": "0", 
+        "name": "H<sub>2</sub>O", 
+        "enthalpy": "-285.83", 
+        "entropy": "69.91", 
+        "state": "l", 
+        "molecularWeight": "18.016"
+      }, 
+      {
+        "id": "1", 
+        "name": "H<sup>+</sup>", 
+        "enthalpy": "0.0", 
+        "entropy": "0.0", 
+        "molecularWeight": "1.008"
+      }, 
+      {
+        "id": "2", 
+        "name": "OH<sup>-</sup>", 
+        "enthalpy": "-229.99", 
+        "entropy": "-10.75", 
+        "molecularWeight": "17.008"
+      }, 
+      {
+        "id": "3", 
+        "name": "Na<sup>+</sup>", 
+        "enthalpy": "-240.12", 
+        "entropy": "59.0", 
+        "molecularWeight": "22.99"
+      }, 
+      {
+        "id": "4", 
+        "name": "Cl<sup>-</sup>", 
+        "enthalpy": "-167.58999999999997", 
+        "entropy": "56.5", 
+        "molecularWeight": "35.45"
+      }, 
+      {
+        "id": "5", 
+        "name": "NaCl", 
+        "enthalpy": "-411.2", 
+        "entropy": "72.1", 
+        "state": "s", 
+        "molecularWeight": "58.44", 
+        "density": "2.16"
+     } 
+    ]
+  }
+}
+`;
+const DEFAULT_SPECTRA = '{ "SPECTRA_LIST": { "SPECIES": [] } }';

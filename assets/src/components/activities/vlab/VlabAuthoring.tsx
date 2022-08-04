@@ -91,6 +91,50 @@ export const MultiInputComponent = () => {
               onEdit={(s) => dispatch(MultiInputActions.editConfiguration(s))}
             />
           </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="React">
+            <div className="alert alert-info" role="alert">
+              Reactions from reactions.json
+            </div>
+            <WrappedMonaco
+              model={model.reactions}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editReactions(s))}
+            />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Solutions">
+            <div className="alert alert-info" role="alert">
+              Solutions from solutions.json
+            </div>
+            <WrappedMonaco
+              model={model.solutions}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editSolutions(s))}
+            />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Species">
+            <div className="alert alert-info" role="alert">
+              Species from species.json
+            </div>
+            <WrappedMonaco
+              model={model.species}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editSpecies(s))}
+            />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Spectra">
+            <div className="alert alert-info" role="alert">
+              Spectra from spectra.json
+            </div>
+            <WrappedMonaco
+              model={model.spectra}
+              editMode={editMode}
+              language="javascript"
+              onEdit={(s) => dispatch(MultiInputActions.editSpectra(s))}
+            />
+          </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Dynamic Variables">
             <VariableEditorOrNot
               editMode={editMode}
