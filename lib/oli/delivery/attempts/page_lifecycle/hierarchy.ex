@@ -161,11 +161,17 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
+    create_part_attempts(prototypes, previous_attempt, resource_attempt, datashop_session_id)
+  end
+
+  defp create_part_attempts(prototypes, previous_attempt, resource_attempt, datashop_session_id) do
+    # Handle the case that at least one of the prototypes require inheriting their state from a previous attempt
     if Enum.any?(prototypes, fn p -> p.inherit_state_from_previous end) do
       revision_ids =
         Enum.filter(prototypes, fn p -> p.inherit_state_from_previous end)
         |> Enum.map(fn p -> p.revision.id end)
 
+      # Create the attempts that require inherited state
       create_part_attempts_with_state(
         previous_attempt.id,
         resource_attempt.id,
@@ -173,6 +179,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         datashop_session_id
       )
 
+      # Create the rest of the attempts
       query_driven_part_attempt_creation(
         resource_attempt.id,
         datashop_session_id,
@@ -233,6 +240,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
          revision_ids,
          datashop_session_id
        ) do
+    # This is unfortunately a multi-step process.
+    # 1. Collect the state (aka the response) from the previous attempt for the activities requested,
+    #    arranging it into a map keyed by activity attempt revision id to lists of part attempt information
     previous_state_by_revision_id =
       Repo.all(
         from(aa1 in ActivityAttempt,
@@ -263,6 +273,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
     now = DateTime.utc_now()
 
+    # 2. Retrieve the activity attempt ids and revision ids for the same matching collection of
+    #    activity revisions from the *current resource attempt*.  These are the activity attempts
+    #    that we need to create part attempt records for
     insert_payload =
       Repo.all(
         from(aa1 in ActivityAttempt,
@@ -272,6 +285,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           select: %{id: aa1.id, revision_id: aa1.revision_id}
         )
       )
+      # 3. Pair together the response from the previous attempt with the activity attempt id
+      #    from the current attempt to create bulk insert payloads for these new part attempt records
       |> Enum.reduce([], fn %{id: id, revision_id: revision_id}, all ->
         case Map.get(previous_state_by_revision_id, revision_id) do
           nil ->
@@ -300,6 +315,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         end
       end)
 
+    # 4. Now simply insert these new records
     Repo.insert_all("part_attempts", insert_payload)
   end
 
@@ -394,7 +410,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> results_to_activity_map
   end
 
-  def get_correct_attempts(resource_attempt_id) do
+  # Retrieve the activity attempts that were "correct" for a given resource attempt. This
+  # assumes that this is a graded page (given that this is being used only for powering
+  # targeted retake mode), thus is does nothing to ensure that it is retrieving the "latest"
+  # activity attempt for each activity - as there is only ever one per activity per graded
+  # resource attempt.
+  defp get_correct_attempts(resource_attempt_id) do
     Repo.all(
       from(aa1 in ActivityAttempt,
         join: r in assoc(aa1, :revision),

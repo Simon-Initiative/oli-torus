@@ -12,8 +12,8 @@ defmodule Oli.Delivery.ActivityProvider do
   Realizes and resolves activities in a page.
 
   For advanced delivery pages this impl finds all activity-reference instances from within the entire
-  nested tree of the content model.  For basic delivery, we only need to look at the top-level model
-  collection, but do need to look for selections as well as static activity-reference instances.
+  nested tree of the content model.  For basic delivery, we traverse the entire hierarchy of the page
+  content, tracking groups and surveys, and processing selections as well as static activity-reference instances.
 
   Activities are realized in different ways, depending on the type of reference. First, a static
   reference to an activity (via "activity-reference") is simply resolved to the correct published
@@ -26,13 +26,18 @@ defmodule Oli.Delivery.ActivityProvider do
   (which later then drive rendering).
 
   Returns a %Oli.Delivery.ActivityProvider.Result{}, which contains a list of any errors, the provided
-  activity revisions, a MapSet of those revision resource ids that are to be unscored
-  activities and the transformed page model.
+  activity attempt prototypes, and the transformed page model.
+
+  Parameters for provide are:
+  1. The page revision that we are providing activities for
+  2. The source through which we provide activities
+  3. A list of pre-existing attempt prototypes that constrain the activity realization
+  4. The resolver to use
   """
   def provide(
         %Revision{content: %{"advancedDelivery" => true} = content},
         %Source{} = source,
-        _,
+        _constraining_atttempt_prototypes,
         resolver
       ) do
     refs =
@@ -90,13 +95,13 @@ defmodule Oli.Delivery.ActivityProvider do
   def provide(
         %Revision{content: %{"model" => model} = content},
         %Source{} = source,
-        existing_attempt_prototypes,
+        constraining_atttempt_prototypes,
         resolver
       ) do
     %{
       prototypes: prototypes,
       errors: errors
-    } = fulfill(model, source, existing_attempt_prototypes)
+    } = fulfill(model, source, constraining_atttempt_prototypes)
 
     prototypes_with_revisions = resolve_activity_ids(source.section_slug, prototypes, resolver)
 
@@ -111,6 +116,7 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
+    # See if at least one of the realized prototypes came from an activity selection
     has_selection = Enum.any?(prototypes_with_revisions, fn p -> !is_nil(p.selection_id) end)
 
     %ProviderResult{
@@ -118,6 +124,7 @@ defmodule Oli.Delivery.ActivityProvider do
       prototypes: prototypes_with_revisions,
       bib_revisions: bib_revisions,
       unscored: MapSet.new(),
+      # A slight optimization, we only transform the content if there is at least one activity selection
       transformed_content:
         if has_selection do
           transform_content(content, prototypes_with_revisions)
@@ -133,10 +140,6 @@ defmodule Oli.Delivery.ActivityProvider do
   # In order to prevent multiple selections on the page potentially realizing the same activity more
   # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
-  #
-  # Note: To optimize performance we prepend all activity ids and revisions as we pass through, and
-  # then do a final Enum.reverse to restore the correct order.  We do the same thing for the elements
-  # within the transformed page model.
   defp fulfill(model, %Source{} = source, existing_attempt_prototypes) do
     # Create a map of selection ids to a list of their existing prototypes
     prototypes_by_selection = build_prototypes_by_selection_map(existing_attempt_prototypes)
@@ -153,7 +156,7 @@ defmodule Oli.Delivery.ActivityProvider do
       prototypes: [],
       source: source,
 
-      # These are here merely for optimizing access to existing prototypes
+      # These are here as context merely for optimizing access to existing prototypes
       prototypes_by_selection: prototypes_by_selection,
       prototypes_by_activity_id: prototypes_by_activity_id
     }
@@ -194,21 +197,13 @@ defmodule Oli.Delivery.ActivityProvider do
       Selection.parse(model_component)
       |> decrement_for_prototypes(fulfillment_state.prototypes_by_selection)
 
-    existing_for_this_selection =
-      Map.get(fulfillment_state.prototypes_by_selection, id, [])
-      |> Enum.map(fn p -> p.revision end)
+    # Add any existing prototypes to the prototypes list for this selection and to the blacklist
+    fulfillment_state = add_existing_for_selection(fulfillment_state, id)
 
-    fulfillment_state =
-      Map.put(
-        fulfillment_state,
-        :source,
-        merge_blacklist(fulfillment_state.source, existing_for_this_selection)
-      )
-
-    # handle the case that existing prototypes for this selection completely decrement
+    # Handle the case that existing prototypes for this selection completely decrement
     # the count down to zero
     if selection.count == 0 do
-      add_existing_for_selection(fulfillment_state, id)
+      fulfillment_state
     else
       # We need to draw some number of activities from the bank
       case Selection.fulfill(selection, fulfillment_state.source) do
@@ -220,7 +215,6 @@ defmodule Oli.Delivery.ActivityProvider do
           fulfillment_state
           |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
           |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
-          |> add_existing_for_selection(id)
 
         {:partial, %Result{} = result} ->
           missing = selection.count - result.rowCount
@@ -236,7 +230,6 @@ defmodule Oli.Delivery.ActivityProvider do
           |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
           |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
           |> Map.put(:errors, [error | fulfillment_state.errors])
-          |> add_existing_for_selection(id)
 
         e ->
           error = "Selection failed to fulfill with error: #{e}"

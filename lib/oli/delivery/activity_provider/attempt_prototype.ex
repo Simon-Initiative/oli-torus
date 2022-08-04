@@ -1,4 +1,12 @@
 defmodule Oli.Delivery.ActivityProvider.AttemptPrototype do
+  @moduledoc """
+  An attempt prototype represents a template, or a blueprint, that the system
+  uses to create actual activity attempts.
+
+  AttemptPrototype is a fundamental unit of currency between the ActivityProvider
+  and client code that uses it.
+  """
+
   alias Oli.Delivery.Attempts.Core.{
     ActivityAttempt
   }
