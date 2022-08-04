@@ -725,7 +725,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       let exists = value !== undefined;
       //if the key does not exits in Map then we need to go to Server
       if (!value) {
-        let val = await props.onGetData({ simId, key, id });
+        const val = await props.onGetData({ simId, key, id });
         value = val;
         exists = val !== undefined;
         if (exists && typeof val !== 'string') {
