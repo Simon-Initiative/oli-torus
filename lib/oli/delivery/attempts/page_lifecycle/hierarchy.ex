@@ -36,6 +36,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           {attempt.resource_access_id, attempt.attempt_number + 1}
       end
 
+    constraining_attempt_prototypes = construct_attempt_prototypes(context)
+
     %Result{
       errors: errors,
       prototypes: prototypes,
@@ -49,7 +51,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           section_slug: context.section_slug,
           publication_id: context.publication_id
         },
-        [],
+        constraining_attempt_prototypes,
         Oli.Publishing.DeliveryResolver
       )
 
@@ -76,6 +78,28 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
         error
     end
   end
+
+  defp construct_attempt_prototypes(%VisitContext{latest_resource_attempt: nil}), do: []
+
+  defp construct_attempt_prototypes(%VisitContext{
+         latest_resource_attempt: latest_resource_attempt,
+         page_revision: %Revision{retake_mode: :targeted} = page_revision
+       }) do
+    # If the page has changed revisions between attempts, we do not allow previous
+    # correct attempts to manifest as constraining prototypes.  The issue here is that
+    # it is possible that referenced activities or selection counts have changed. We could
+    # make this step more robust by diffing all the referenced activities and selections.
+    if latest_resource_attempt.revision_id == page_revision.id do
+      get_correct_attempts(latest_resource_attempt.id)
+      |> Enum.map(fn attempt ->
+        Oli.Delivery.ActivityProvider.AttemptPrototype.from_attempt(attempt)
+      end)
+    else
+      []
+    end
+  end
+
+  defp construct_attempt_prototypes(_), do: []
 
   # Instead of one insertion query for every part attempt and one insertion query for
   # every activity attempt, this implementation does the same with exactly three queries:
@@ -137,10 +161,25 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
     |> optimize_transformed_model()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
-    query_driven_part_attempt_creation(resource_attempt.id, datashop_session_id)
-
     if Enum.any?(prototypes, fn p -> p.inherit_state_from_previous end) do
-      inherit_part_attempt_state(previous_attempt.id, prototypes)
+      revision_ids =
+        Enum.filter(prototypes, fn p -> p.inherit_state_from_previous end)
+        |> Enum.map(fn p -> p.revision.id end)
+
+      create_part_attempts_with_state(
+        previous_attempt.id,
+        resource_attempt.id,
+        revision_ids,
+        datashop_session_id
+      )
+
+      query_driven_part_attempt_creation(
+        resource_attempt.id,
+        datashop_session_id,
+        revision_ids
+      )
+    else
+      query_driven_part_attempt_creation(resource_attempt.id, datashop_session_id)
     end
   end
 
@@ -156,7 +195,23 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
 
   # This is the optimal way to bulk create part attempts: passing a query driven 'insert'
   # to the database, instead of passing the raw payload of each record to create.
-  defp query_driven_part_attempt_creation(resource_attempt_id, datashop_session_id) do
+  defp query_driven_part_attempt_creation(
+         resource_attempt_id,
+         datashop_session_id,
+         excluding_revision_ids \\ nil
+       ) do
+    exclude_clause =
+      case excluding_revision_ids do
+        nil ->
+          ""
+
+        revision_ids ->
+          " and not a.revision_id in (" <>
+            (revision_ids
+             |> Enum.map(fn id -> "#{id}" end)
+             |> Enum.join(",")) <> ")"
+      end
+
     query = """
       INSERT INTO part_attempts(part_id, activity_attempt_id, attempt_guid, datashop_session_id, inserted_at, updated_at, hints, attempt_number, lifecycle_state, grading_approach)
       SELECT pm.part_id, a.id, gen_random_uuid(), $2, now(), now(), '{}'::varchar[], 1, 'active', (CASE WHEN pm.grading_approach IS NULL THEN
@@ -166,30 +221,86 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
        END)
       FROM activity_attempts as a
       LEFT JOIN part_mapping as pm on a.revision_id = pm.revision_id
-      WHERE a.resource_attempt_id = $1;
+      WHERE a.resource_attempt_id = $1 #{exclude_clause};
     """
 
     Repo.query!(query, [resource_attempt_id, datashop_session_id])
   end
 
-  defp inherit_part_attempt_state(resource_attempt_id, prototypes) do
-    query = """
-      UPDATE part_attempts
-      SET response = previous.response
-      FROM (
-        SELECT pa.part_id, pa.response, aa.id,
-        FROM part_attempts as pa
-        LEFT JOIN activity_attempts as aa on pa.activity_attempt_id = aa.id
-        LEFT JOIN resource_attempts as ra on aa.resource_attempt_id = ra.id
-        WHERE ra.id = $1 and aa.revision_id in ($2)) as previous
-     WHERE part_attempts.activity_attempt_id = previous.id and part_attempts.part_id = previous.part_id
-    """
+  defp create_part_attempts_with_state(
+         previous_resource_id,
+         current_resource_id,
+         revision_ids,
+         datashop_session_id
+       ) do
+    previous_state_by_revision_id =
+      Repo.all(
+        from(aa1 in ActivityAttempt,
+          left_join: aa2 in ActivityAttempt,
+          on:
+            aa1.resource_id == aa2.resource_id and aa1.id < aa2.id and
+              aa1.resource_attempt_id == aa2.resource_attempt_id,
+          join: pa1 in PartAttempt,
+          on: aa1.id == pa1.activity_attempt_id,
+          left_join: pa2 in PartAttempt,
+          on:
+            aa1.id == pa2.activity_attempt_id and pa1.part_id == pa2.part_id and pa1.id < pa2.id and
+              pa1.activity_attempt_id == pa2.activity_attempt_id,
+          where:
+            aa1.resource_attempt_id == ^previous_resource_id and is_nil(aa2.id) and is_nil(pa2.id) and
+              aa1.revision_id in ^revision_ids,
+          select: %{
+            response: pa1.response,
+            part_id: pa1.part_id,
+            revision_id: aa1.revision_id,
+            grading_approach: pa1.grading_approach
+          }
+        )
+      )
+      |> Enum.reduce(%{}, fn row, m ->
+        Map.put(m, row.revision_id, [row | Map.get(m, row.revision_id, [])])
+      end)
 
-    revision_ids =
-      Enum.filter(prototypes, fn p -> p.inherit_state_from_previous end)
-      |> Enum.map(fn p -> p.revision.id end)
+    now = DateTime.utc_now()
 
-    Repo.query!(query, [resource_attempt_id, revision_ids])
+    insert_payload =
+      Repo.all(
+        from(aa1 in ActivityAttempt,
+          where:
+            aa1.resource_attempt_id == ^current_resource_id and
+              aa1.revision_id in ^revision_ids,
+          select: %{id: aa1.id, revision_id: aa1.revision_id}
+        )
+      )
+      |> Enum.reduce([], fn %{id: id, revision_id: revision_id}, all ->
+        case Map.get(previous_state_by_revision_id, revision_id) do
+          nil ->
+            all
+
+          parts ->
+            Enum.map(parts, fn %{
+                                 response: response,
+                                 part_id: part_id,
+                                 grading_approach: grading_approach
+                               } ->
+              [
+                part_id: part_id,
+                response: response,
+                activity_attempt_id: id,
+                attempt_guid: UUID.uuid4(),
+                datashop_session_id: datashop_session_id,
+                inserted_at: now,
+                updated_at: now,
+                hints: [],
+                attempt_number: 1,
+                lifecycle_state: "active",
+                grading_approach: Atom.to_string(grading_approach)
+              ]
+            end) ++ all
+        end
+      end)
+
+    Repo.insert_all("part_attempts", insert_payload)
   end
 
   # If all of the transformed_model attrs are nil, we do not need to include them in
@@ -281,6 +392,18 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       )
     )
     |> results_to_activity_map
+  end
+
+  def get_correct_attempts(resource_attempt_id) do
+    Repo.all(
+      from(aa1 in ActivityAttempt,
+        join: r in assoc(aa1, :revision),
+        where:
+          aa1.resource_attempt_id == ^resource_attempt_id and aa1.score == aa1.out_of and
+            aa1.score > 0.0,
+        preload: [revision: r]
+      )
+    )
   end
 
   def full_hierarchy(resource_attempt) do

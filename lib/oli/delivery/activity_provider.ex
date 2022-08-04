@@ -281,7 +281,8 @@ defmodule Oli.Delivery.ActivityProvider do
       activity_id: activity_reference["activity_id"],
       survey_id: survey_id,
       group_id: group_id,
-      selection_id: nil
+      selection_id: nil,
+      inherit_state_from_previous: false
     }
   end
 
@@ -290,7 +291,8 @@ defmodule Oli.Delivery.ActivityProvider do
       revision: revision,
       survey_id: survey_id,
       group_id: group_id,
-      selection_id: selection_id
+      selection_id: selection_id,
+      inherit_state_from_previous: false
     }
   end
 

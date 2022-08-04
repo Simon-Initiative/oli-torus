@@ -46,6 +46,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
         |> Seeder.add_objective("objective one", :o1)
         |> Seeder.add_activity(%{title: "one", content: content1}, :a1)
         |> Seeder.add_activity(%{title: "two", content: content2}, :a2)
+        |> Seeder.add_activity(%{title: "three", content: content1, scope: :banked}, :a3)
+        |> Seeder.add_activity(%{title: "three", content: content1, scope: :banked}, :a3)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
 
