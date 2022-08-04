@@ -125,7 +125,7 @@ jobs:
           committer_email: actions@github.com
 
       - name: 🧹 Lint
-        run: yarn --cwd assets run prettier && yarn --cwd assets run lint
+        run: cd assets && yarn run prettier && yarn run lint
 
       - name: 🔨 Build
         run: yarn --cwd assets run deploy
