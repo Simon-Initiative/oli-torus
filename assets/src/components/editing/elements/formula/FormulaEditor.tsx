@@ -1,5 +1,5 @@
 import React from 'react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { Formula } from '../../../common/Formula';
@@ -9,7 +9,7 @@ import { modalActions } from '../../../../actions/modal';
 
 interface Props extends EditorProps<ContentModel.FormulaBlock | ContentModel.FormulaInline> {}
 export const FormulaEditor = (props: Props) => {
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   if (props.model.src === undefined)
     return (

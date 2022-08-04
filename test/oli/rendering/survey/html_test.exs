@@ -69,7 +69,7 @@ defmodule Oli.Content.Survey.HtmlTest do
                ~s|<div id="1855946510" class="survey"><div class="survey-label">Survey</div><div class="survey-content">|
 
       assert rendered_html_string =~
-               ~s|<p>Please complete the following survey:</p>\n<oli-multiple-choice-delivery id=\"activity_1\" class="activity-container" graded="false" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}" mode="delivery"|
+               ~s|<p>Please complete the following survey:</p>\n<oli-multiple-choice-delivery activity_id=\"activity_1\" class="activity-container" graded="false" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}" mode="delivery"|
 
       assert rendered_html_string =~
                ~s|survey_id="1855946510"></oli-multiple-choice-delivery>|

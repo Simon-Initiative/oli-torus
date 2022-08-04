@@ -1,5 +1,5 @@
 import React from 'react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import { Video } from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 
@@ -13,7 +13,7 @@ interface Props extends EditorProps<Video> {}
 
 export const VideoEditor = (props: Props) => {
   const { model } = props;
-  const onEdit = onEditModel(model);
+  const onEdit = useEditModelCallback(model);
   const selected = useElementSelected();
 
   if (!model.src || model.src.length === 0) {

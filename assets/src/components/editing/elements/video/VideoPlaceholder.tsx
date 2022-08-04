@@ -1,5 +1,5 @@
 import React from 'react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { Placeholder } from 'components/editing/elements/common/Placeholder';
@@ -9,7 +9,7 @@ import { selectVideo } from './videoActions';
 
 interface Props extends EditorProps<ContentModel.Video> {}
 export function VideoPlaceholder(props: Props) {
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   const onSelectVideo = () =>
     selectVideo(props.commandContext.projectSlug, props.model.src[0]?.url).then((selection) =>
