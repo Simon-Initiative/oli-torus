@@ -10,6 +10,16 @@ import { ImagePlaceholder } from 'components/editing/elements/image/block/ImageP
 import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
+
+const cssWidth = (width: number | string | undefined) => {
+  if (!width) return undefined;
+  if (typeof width === 'number') return width; // Numbers are fine, they imply pixels
+
+  const pixels = parseInt(width, 10);
+  if (isNaN(pixels)) return undefined;
+  return pixels;
+};
+
 export const ImageEditor = (props: Props) => {
   const selected = useElementSelected();
   const onEdit = useEditModelCallback(props.model);
@@ -34,7 +44,10 @@ export const ImageEditor = (props: Props) => {
       >
         <div>
           <Resizable show={selected} onResize={({ width, height }) => onEdit({ width, height })}>
-            <img src={props.model.src} style={{ maxWidth: props.model.width ?? '100%' }} />
+            <img
+              src={props.model.src}
+              style={{ maxWidth: cssWidth(props.model.width) ?? '100%' }}
+            />
           </Resizable>
         </div>
       </HoverContainer>
