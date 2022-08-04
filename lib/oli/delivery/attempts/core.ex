@@ -285,15 +285,18 @@ defmodule Oli.Delivery.Attempts.Core do
         join: published_resource in PublishedResource,
         on: section_project_publication.publication_id == published_resource.publication_id,
         join: revision in Revision,
-        on: revision.id == published_resource.revision_id and revision.resource_id == resource_access.resource_id,
+        on:
+          revision.id == published_resource.revision_id and
+            revision.resource_id == resource_access.resource_id,
         where:
           section.slug == ^section_slug and
-          section.status == :active and
-          revision.deleted == false and
-          revision.graded == true and
-          (not is_nil(resource_access.last_grade_update_id) and
-            (is_nil(resource_access.last_successful_grade_update_id) or
-              resource_access.last_grade_update_id != resource_access.last_successful_grade_update_id)),
+            section.status == :active and
+            revision.deleted == false and
+            revision.graded == true and
+            (not is_nil(resource_access.last_grade_update_id) and
+               (is_nil(resource_access.last_successful_grade_update_id) or
+                  resource_access.last_grade_update_id !=
+                    resource_access.last_successful_grade_update_id)),
         select: %{
           id: resource_access.id,
           resource_id: resource_access.resource_id,
@@ -389,7 +392,7 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_resource_accesses(section_slug, user_id) do
     Repo.all(
       from(a in ResourceAccess,
-        join: ra in ResourceAttempt,
+        left_join: ra in ResourceAttempt,
         on: a.id == ra.resource_access_id,
         join: s in Section,
         on: a.section_id == s.id,
