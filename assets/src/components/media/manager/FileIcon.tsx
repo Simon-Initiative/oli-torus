@@ -111,7 +111,11 @@ export const FileIcon: React.StatelessComponent<FileIconProps> = ({
                   y="26.5"
                   fontFamily="HelveticaNeue-Bold"
                   // eslint-disable-next-line
-                    fontSize="72" fill="#FFFFFF">{extension.toUpperCase()}</tspan>
+                  fontSize="72"
+                  fill="#FFFFFF"
+                >
+                  {extension.toUpperCase()}
+                </tspan>
               </text>
             </g>
           ) : null}

@@ -70,8 +70,8 @@ jobs:
       - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
 
-      - name: Install node_module dependencies 📦
-        run: cd assets && yarn --frozen-lockfile
+      - name: 📦 Install node_module dependencies
+        run: yarn --cwd assets --frozen-lockfile
 
       - name: ▶️ Run integration tests
         run: |
@@ -93,6 +93,9 @@ jobs:
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: 🔧 Configure
         uses: actions/setup-node@v1
@@ -108,14 +111,24 @@ jobs:
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
 
-      - name: Install node_module dependencies 📦
-        run: cd assets && yarn --frozen-lockfile
+      - name: 📦 Install node_module dependencies
+        run: yarn --cwd assets --frozen-lockfile
+
+      - name: 🤖 Auto Format
+        run: yarn --cwd assets run format
+
+      - name: ✅ Commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: Auto format
+          committer_name: Simon Bot (GitHub Actions)
+          committer_email: actions@github.com
 
       - name: 🧹 Lint
-        run: cd assets && npm run lint
+        run: yarn --cwd assets run prettier && yarn --cwd assets run lint
 
       - name: 🔨 Build
-        run: cd assets && npm run deploy
+        run: yarn --cwd assets run deploy
 
       - name: ⚙️ Test
-        run: cd assets && npm run test
+        run: yarn --cwd assets run test
