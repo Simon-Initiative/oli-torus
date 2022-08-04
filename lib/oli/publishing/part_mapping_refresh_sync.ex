@@ -1,5 +1,6 @@
 defmodule Oli.Publishing.PartMappingRefreshSync do
   alias Oli.Publishing.PartMappingRefreshAdapter
+  alias Oli.Publishing.PartMappingRefreshWorker
 
   @type ecto_publication_operation :: PartMappingRefreshAdapter.ecto_publication_operation()
 
@@ -12,7 +13,7 @@ defmodule Oli.Publishing.PartMappingRefreshSync do
   @impl PartMappingRefreshAdapter
   @spec maybe_refresh_part_mapping(ecto_publication_operation) :: ecto_publication_operation
   def maybe_refresh_part_mapping({:ok, _publication} = operation_result) do
-    Oli.Publishing.refresh_part_mapping()
+    PartMappingRefreshWorker.perform_now()
     operation_result
   end
 

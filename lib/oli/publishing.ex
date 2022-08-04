@@ -1147,14 +1147,6 @@ defmodule Oli.Publishing do
     Enum.map(results, fn [slug, title] -> %{slug: slug, title: title} end)
   end
 
-  @doc """
-    Refreshes the part_mapping materialized view.
-    Since this operation is expensive, do not use perform it synchronously unless neccesary.
-  """
-  def refresh_part_mapping() do
-    Repo.query("REFRESH MATERIALIZED VIEW CONCURRENTLY part_mapping")
-  end
-
   @spec refresh_adapter() :: PartMappingRefreshAdapter
   defp refresh_adapter() do
     :oli
