@@ -100,12 +100,6 @@ defmodule OliWeb.LegacySuperactivityController do
     end
   end
 
-  def file_not_found(conn, _params) do
-    conn
-    |> put_status(404)
-    |> text("File Not Found")
-  end
-
   defp fetch_context(host, user, attempt_guid, datashop_session_id) do
     activity_attempt =
       Attempts.get_activity_attempt_by(attempt_guid: attempt_guid)
@@ -127,8 +121,7 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_enrollment(section.slug, user.id)
       |> Repo.preload([:context_roles])
 
-    project = Sections.get_project_by_section_resource(section.id, activity_attempt.resource_id)
-    path = "super_media/" <> project.slug
+    path = "super_media"
     web_content_url = "https://#{host}/#{path}/"
 
     host_url = "https://#{host}"

@@ -199,17 +199,6 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.AuthorizeCommunity)
   end
 
-  pipeline :superactivity do
-    plug Plug.Static,
-      at: "/superactivity",
-      from: System.get_env("SUPER_ACTIVITY_FOLDER", "priv/superactivity")
-  end
-
-  scope "/superactivity", OliWeb do
-    pipe_through :superactivity
-    get "/*path", LegacySuperactivityController, :file_not_found
-  end
-
   ### HELPERS ###
 
   defp put_pow_mailer_layout(conn, layout), do: put_private(conn, :pow_mailer_layout, layout)

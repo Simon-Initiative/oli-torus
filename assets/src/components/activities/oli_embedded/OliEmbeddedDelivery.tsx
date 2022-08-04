@@ -22,7 +22,7 @@ interface Context {
   part_ids: string;
 }
 
-const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
+const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
   const {
     state: activityState,
     surveyId,
@@ -66,6 +66,10 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
     })
       .then((response) => response.json())
       .then((json) => {
+        console.log(JSON.stringify(json));
+        console.log(JSON.stringify(activityState));
+        // console.log(JSON.stringify(props));
+        configDefaults(json);
         setContext(json);
       })
       .catch((error) => {
@@ -78,6 +82,43 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
   // @ts-ignore
   window.adjustIframeHeight = (i, f) => {
     // No-op. Here for backward compatibility
+  };
+
+  const configDefaults = (context: Context) => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.workbookConfig = {
+      userGUID: context.user_guid,
+      sessionGuid: '1958e2f50a0000562295c9a569354ab5',
+      contextGuid: activityState.attemptGuid,
+      dataSet: 'none',
+      syllabusURI: 'none',
+      sectionTitle: 'none',
+      isGuestSection: false,
+      pageContextGuid: 'none',
+      pageActivityGuid: 'none',
+      wbkContextGuid: 'none',
+      wbkActivityGuid: 'none',
+      isStandalone: false,
+      isSupplement: false,
+      enableAuthorWidget: false,
+      authToken: 'none',
+      logService: '/jcourse/dashboard/log/server',
+      courseKey: 'none',
+      pageNumber: 1,
+      unit: 'some unit',
+      unit_nr: 1,
+      module: 'some module',
+      module_nr: 1,
+      section: 'section title',
+      userGroup: 'none',
+    };
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.AZ = {
+      d: { courseKey: 'key1', pageNumber: 1 },
+    };
   };
 
   return (
