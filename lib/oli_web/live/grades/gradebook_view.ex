@@ -51,6 +51,19 @@ defmodule OliWeb.Grades.GradebookView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
+        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+
+        Oli.Utils.FlameGraph.create(
+          fn -> Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug) end,
+          :hierarchy
+        )
+
+        graded_pages =
+          hierarchy
+          |> Oli.Delivery.Hierarchy.flatten()
+          |> Enum.filter(fn node -> node.revision.graded end)
+          |> Enum.map(fn node -> node.revision end)
+
         enrollments =
           Sections.browse_enrollments(
             section,
@@ -61,18 +74,16 @@ defmodule OliWeb.Grades.GradebookView do
 
         total_count = determine_total(enrollments)
 
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-        graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
-
         resource_accesses = fetch_resource_accesses(enrollments, section)
 
         {:ok, table_model} =
-          GradebookTableModel.new(enrollments, graded_pages, resource_accesses, section, false)
+          GradebookTableModel.new(
+            enrollments,
+            graded_pages,
+            resource_accesses,
+            section,
+            false
+          )
 
         {:ok,
          assign(socket,
@@ -99,7 +110,7 @@ defmodule OliWeb.Grades.GradebookView do
     student_ids = Enum.map(enrollments, fn user -> user.id end)
 
     Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
-      section.slug,
+      section.id,
       student_ids
     )
   end
