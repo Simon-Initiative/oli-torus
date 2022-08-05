@@ -41,6 +41,7 @@ export const defaultModel = (): VlabSchema => {
     stem: multiInputStem(input),
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
+    assignmentSource: 'builtIn',
     assignmentPath: 'default',
     assignment: DEFAULT_ASSIGNMENT,
     configuration: DEFAULT_CONFIGURATION,

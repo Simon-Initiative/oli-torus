@@ -237,6 +237,12 @@ export const MultiInputActions = {
     };
   },
 
+  setAssignmentSource(source: string) {
+    return (model: VlabSchema) => {
+      model.assignmentSource = source;
+    };
+  },
+
   setAssignmentPath(path: string) {
     return (model: VlabSchema) => {
       model.assignmentPath = path;

@@ -187,17 +187,20 @@ export const MultiInputComponent: React.FC = () => {
   };
 
   const onVlabLoad = () => {
-    //const assignment = model.assignmentPath;
-    //document.getElementById('vlab').contentWindow.loadAssignment(assignment);
-    const assignmentJSON = {
-      assignment: JSON.parse(model.assignment),
-      configuration: JSON.parse(model.configuration),
-      reactions: JSON.parse(model.reactions),
-      solutions: JSON.parse(model.solutions),
-      species: JSON.parse(model.species),
-      spectra: JSON.parse(model.spectra),
-    };
-    document.getElementById('vlab').contentWindow.loadAssignmentJSON(assignmentJSON);
+    if (model.assignmentSource === 'builtIn') {
+      const assignment = model.assignmentPath;
+      document.getElementById('vlab').contentWindow.loadAssignment(assignment);
+    } else {
+      const assignmentJSON = {
+        assignment: JSON.parse(model.assignment),
+        configuration: JSON.parse(model.configuration),
+        reactions: JSON.parse(model.reactions),
+        solutions: JSON.parse(model.solutions),
+        species: JSON.parse(model.species),
+        spectra: JSON.parse(model.spectra),
+      };
+      document.getElementById('vlab').contentWindow.loadAssignmentJSON(assignmentJSON);
+    }
   };
 
   const writerContext = defaultWriterContext({

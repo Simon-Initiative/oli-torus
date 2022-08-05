@@ -57,6 +57,7 @@ export interface VlabSchema extends ActivityModelSchema {
   choices: Choice[];
   // The actual student-answerable inputs, designated by their type
   inputs: VlabInput[];
+  assignmentSource: string;
   assignmentPath: string;
   assignment: string;
   configuration: string;
