@@ -28,7 +28,7 @@ export function readGlobal(keys: string[] | null = null) {
 
   const result = makeRequest<ExtrinsicRead>(params);
 
-  console.log('GET DATA FROM STATE', { keys, params, result });
+  /* console.log('GET DATA FROM STATE', { keys, params, result }); */
 
   return result;
 }
@@ -124,7 +124,7 @@ export function upsertGlobal(keyValues: KeyValues) {
 
   const result = makeRequest<ExtrinsicDelete>(params);
 
-  console.log('UPSERT DATA TO STATE', { params, result });
+  /* console.log('UPSERT DATA TO STATE', { params, result }); */
 
   return result;
 }
