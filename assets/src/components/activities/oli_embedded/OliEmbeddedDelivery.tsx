@@ -66,9 +66,6 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     })
       .then((response) => response.json())
       .then((json) => {
-        console.log(JSON.stringify(json));
-        console.log(JSON.stringify(activityState));
-        // console.log(JSON.stringify(props));
         configDefaults(json);
         setContext(json);
       })
