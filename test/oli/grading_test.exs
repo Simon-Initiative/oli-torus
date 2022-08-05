@@ -1,7 +1,10 @@
 defmodule Oli.GradingTest do
   use Oli.DataCase
 
+  import Oli.Factory
+
   alias Oli.Grading
+  alias Lti_1p3.Tool.Services.AGS.Score
 
   describe "grading" do
     defp set_resources_as_graded(%{revision1: revision1, revision2: revision2} = map) do
@@ -204,6 +207,17 @@ defmodule Oli.GradingTest do
       csv = Grading.export_csv(section) |> Enum.join("")
 
       assert expected_csv == csv
+    end
+
+    test "to score parses correctly" do
+      resource_access = insert(:resource_access)
+
+      %Score{
+        activityProgress: "Completed",
+        comment: "Score default comment",
+        gradingProgress: "FullyGraded",
+        userId: "some_sub"
+      } = Grading.to_score("some_sub", resource_access)
     end
   end
 end

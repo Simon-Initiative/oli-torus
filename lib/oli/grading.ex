@@ -94,7 +94,7 @@ defmodule Oli.Grading do
       timestamp: timestamp,
       scoreGiven: resource_access.score,
       scoreMaximum: resource_access.out_of,
-      comment: "",
+      comment: "Score default comment",
       activityProgress: "Completed",
       gradingProgress: "FullyGraded",
       userId: sub
