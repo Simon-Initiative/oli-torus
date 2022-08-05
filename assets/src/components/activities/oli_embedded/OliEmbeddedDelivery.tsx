@@ -22,7 +22,7 @@ interface Context {
   part_ids: string;
 }
 
-const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
+const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
   const {
     state: activityState,
     surveyId,
