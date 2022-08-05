@@ -53,11 +53,6 @@ defmodule OliWeb.Grades.GradebookView do
       {type, _, section} ->
         hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
-        Oli.Utils.FlameGraph.create(
-          fn -> Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug) end,
-          :hierarchy
-        )
-
         graded_pages =
           hierarchy
           |> Oli.Delivery.Hierarchy.flatten()

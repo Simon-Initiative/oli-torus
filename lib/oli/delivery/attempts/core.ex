@@ -232,7 +232,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: r.id == pr.revision_id,
         join: a in ResourceAccess,
-        on: r.resource_id == a.resource_id,
+        on: r.resource_id == a.resource_id and a.section_id == spp.section_id,
         where: spp.section_id == ^section_id and r.graded == true,
         select: a
       )
@@ -247,7 +247,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: r.id == pr.revision_id,
         join: a in ResourceAccess,
-        on: r.resource_id == a.resource_id,
+        on: r.resource_id == a.resource_id and a.section_id == spp.section_id,
         where: spp.section_id == ^section_id and r.graded == true and a.user_id in ^user_ids,
         select: a
       )
