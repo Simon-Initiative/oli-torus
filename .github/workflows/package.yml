@@ -4,13 +4,11 @@ on:
     branches:
       - master
       - hotfix-* # include hotfix branches
-    tags:
-      - package # manually trigger a package build (no deployment)
-      - deploy-test # manually trigger build and deploy to test
-      - deploy-loadtest # manually trigger build and deploy to loadtest
+  # manually trigger a package build from the Actions tab
+  workflow_dispatch:
 
 jobs:
-  package-deploy:
+  package:
     runs-on: ubuntu-latest
 
     outputs:
@@ -27,7 +25,7 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/deploy-loadtest$ ]] ; then echo loadtest.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
+          echo "::set-output name=deploy_host::$(echo tokamak.oli.cmu.edu)"
           echo "::set-output name=workspace::$GITHUB_WORKSPACE"
 
       - name: 📦 Package
@@ -52,18 +50,6 @@ jobs:
           AWS_REGION: "us-east-2"
           SOURCE_DIR: "oli-torus-releases"
 
-      - name: 🚢💰 Deploy to test using SSH
-        uses: fifsky/ssh-action@master
-        if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest' }}
-        with:
-          command: |
-            cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
-          host: ${{ steps.info.outputs.deploy_host }}
-          user: simon-bot
-          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
-          port: 44067
-
   docs:
     runs-on: ubuntu-latest
     # only deploy docs if the workflow is running on the master branch
@@ -75,7 +61,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: 🔧 Configure
+      - name: 🔧 Setup
         uses: actions/setup-node@v1
         with:
           node-version: "16.13.2"
@@ -113,12 +99,24 @@ jobs:
 
   deployment:
     runs-on: ubuntu-latest
-    needs: package-deploy
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/tags/deploy-test' || github.ref == 'refs/tags/deploy-loadtest'
+    needs: package
+    if: github.ref == 'refs/heads/master'
 
     environment:
-      name: ${{ needs.package-deploy.outputs.deploy_host }}
-      url: ${{ needs.package-deploy.outputs.deploy_host }}
+      name: ${{ needs.package.outputs.deploy_host }}
+      url: ${{ needs.package.outputs.deploy_host }}
 
     steps:
-      - run: echo "deploying ${{ github.sha }}"
+      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
+
+      - name: 🚢💰 Deploy to test using SSH
+        uses: fifsky/ssh-action@master
+        if: ${{ github.ref == 'refs/heads/master' }}
+        with:
+          command: |
+            cd /torus
+            sh deploy.sh -r ${{ github.ref }} ${{ needs.package.outputs.app_version }} ${{ needs.package.outputs.sha_short }}
+          host: ${{ needs.package.outputs.deploy_host }}
+          user: simon-bot
+          key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
+          port: 44067

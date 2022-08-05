@@ -63,7 +63,12 @@ defmodule OliWeb.Progress.StudentResourceView do
                 _ ->
                   ResourceAccess.changeset(resource_access, %{
                     # limit score decimals to two significant figures, rounding up
-                    score: Utils.format_score(resource_access.score)
+                    score:
+                      if is_nil(resource_access.score) do
+                        nil
+                      else
+                        Utils.format_score(resource_access.score)
+                      end
                   })
               end
 
@@ -179,7 +184,13 @@ defmodule OliWeb.Progress.StudentResourceView do
         <ReadOnly label="Resource" value={@revision.title}/>
       </Group>
       <Group label="Attempt History" description="">
-        The student has not yet accessed this course resource
+        <p>The student has not yet accessed this course resource.</p>
+
+        {#if @revision.graded}
+          <p>If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:</p>
+          <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
+        {/if}
+
       </Group>
     </Groups>
     """
@@ -203,6 +214,15 @@ defmodule OliWeb.Progress.StudentResourceView do
       |> ResourceAccess.changeset(params)
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("create_access_record", _, socket) do
+    section = socket.assigns.section
+    user = socket.assigns.user
+    revision = socket.assigns.revision
+
+    {:ok, resource_access} = Core.track_access(revision.resource_id, section.id, user.id)
+    {:noreply, assign(socket, resource_access: resource_access)}
   end
 
   def handle_event("passback", _, socket) do
@@ -245,7 +265,10 @@ defmodule OliWeb.Progress.StudentResourceView do
          assign(socket,
            is_editing: false,
            resource_access: resource_access,
-           changeset: ResourceAccess.changeset(resource_access, %{score: Utils.format_score(resource_access.score)})
+           changeset:
+             ResourceAccess.changeset(resource_access, %{
+               score: Utils.format_score(resource_access.score)
+             })
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->

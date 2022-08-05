@@ -61,8 +61,13 @@ defmodule OliWeb.Progress.StudentView do
                 user_id
               )
               |> Enum.reduce(%{}, fn r, m ->
-                 # limit score decimals to two significant figures, rounding up
-                r = Map.put(r, :score, format_score(r.score))
+                # limit score decimals to two significant figures, rounding up
+                r =
+                  case r.score do
+                    nil -> r
+                    _ -> Map.put(r, :score, format_score(r.score))
+                  end
+
                 Map.put(m, r.resource_id, r)
               end)
 

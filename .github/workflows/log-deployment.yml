@@ -1,4 +1,4 @@
-# This workflow triggers Jira to log deployment infomratino to issues mentioned in commits and pull requests
+# This workflow triggers Jira to log deployment information to issues mentioned in commits and pull requests
 
 name: Log Deployment for Jira
 
@@ -14,11 +14,11 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         type: environment
         required: true
       environment_url:
-        description: 'Environment URL'
+        description: "Environment URL"
         required: false
         type: string
 
