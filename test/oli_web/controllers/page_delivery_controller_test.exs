@@ -164,13 +164,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       redir_path = redirected_to(conn, 302)
 
       # and then the rendering of the page, which should contain a button
-      # that says 'Submit Assessment'
+      # that says 'Submit Answers'
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ "Submit Assessment"
+      assert html_response(conn, 200) =~ "Submit Answers"
 
       # fetch the resource attempt and part attempt that will have been created
       [attempt] = Oli.Repo.all(ResourceAttempt)
@@ -271,13 +271,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       redir_path = redirected_to(conn, 302)
 
       # and then the rendering of the page, which should contain a button
-      # that says 'Submit Assessment'
+      # that says 'Submit Answers'
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ "Submit Assessment"
+      assert html_response(conn, 200) =~ "Submit Answers"
 
       # fetch the resource attempt and part attempt that will have been created
       [attempt] = Oli.Repo.all(ResourceAttempt)
@@ -321,7 +321,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
-      assert html_response(conn, 200) =~ "Submit Assessment"
+      assert html_response(conn, 200) =~ "Submit Answers"
 
       # Submit the assessment
       conn =
@@ -347,7 +347,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
 
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
       assert html_response(conn, 200) =~ "This is now ungraded"
-      refute html_response(conn, 200) =~ "Submit Assessment"
+      refute html_response(conn, 200) =~ "Submit Answers"
     end
 
     test "changing a page from ungraded to graded shows the prologue even with an ungraded attempt present",
@@ -390,7 +390,7 @@ defmodule OliWeb.PageDeliveryControllerTest do
       # Visit the page in its ungraded state, thus generating a resource attempt
       conn = get(conn, Routes.page_delivery_path(conn, :page, section.slug, page_revision.slug))
       assert html_response(conn, 200) =~ "This is now ungraded"
-      refute html_response(conn, 200) =~ "Submit Assessment"
+      refute html_response(conn, 200) =~ "Submit Answers"
 
       # Now change the page to graded and issue a publication
       toggle_graded = %{graded: true, title: "This is now graded"}
@@ -443,13 +443,13 @@ defmodule OliWeb.PageDeliveryControllerTest do
       redir_path = redirected_to(conn, 302)
 
       # and then the rendering of the page, which should contain a button
-      # that says 'Submit Assessment'
+      # that says 'Submit Answers'
       conn =
         recycle(conn)
         |> Pow.Plug.assign_current_user(user, OliWeb.Pow.PowHelpers.get_pow_config(:user))
 
       conn = get(conn, redir_path)
-      assert html_response(conn, 200) =~ "Submit Assessment"
+      assert html_response(conn, 200) =~ "Submit Answers"
     end
 
     test "page with content breaks renders pagination controls", %{

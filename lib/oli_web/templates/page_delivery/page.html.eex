@@ -57,7 +57,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if @graded && @activity_count > 0 && @review_mode == false do %>
   <div class="d-flex align-items-center justify-content-center">
-    <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg text-center" %>
+    <%= link "Submit Answers", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg text-center" %>
   </div>
 <% end %>
 

@@ -1,16 +1,16 @@
 {
-    "id": "janus_navigation_button",
-    "friendlyName": "Navigation Button",
-    "description": "A button that can trigger check events, used to control navigation.",
-    "icon": "icon-part-navButton.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-navigation-button",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-navigation-button",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_navigation_button",
+  "friendlyName": "Navigation Button",
+  "description": "A button that can trigger check events, used to control navigation.",
+  "icon": "icon-part-navButton.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-navigation-button",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-navigation-button",
+    "entry": "./authoring-entry.ts"
+  }
 }
