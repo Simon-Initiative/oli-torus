@@ -3,7 +3,21 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
   alias Oli.Delivery.ActivityProvider
   alias Oli.Activities.Realizer.Query.Source
-  alias Oli.Delivery.ActivityProvider.Result
+  alias Oli.Delivery.ActivityProvider.{Result, AttemptPrototype}
+
+  defp index_of(prototypes, list) do
+    collection = MapSet.new(list)
+    Enum.find_index(prototypes, fn p -> MapSet.member?(collection, p.revision.resource_id) end)
+  end
+
+  defp index_of_except(prototypes, list, except) do
+    collection = MapSet.new(list)
+
+    Enum.with_index(prototypes)
+    |> Enum.find_index(fn {p, index} ->
+      index != except and MapSet.member?(collection, p.revision.resource_id)
+    end)
+  end
 
   describe "fulfilling static activity references with adaptive page" do
     setup do
@@ -97,32 +111,23 @@ defmodule Oli.Delivery.ActivityProviderTest do
         section_slug: section.slug
       }
 
-      %Result{errors: errors, revisions: activity_revisions} =
+      %Result{errors: errors, prototypes: prototypes} =
         ActivityProvider.provide(
           page.revision,
           source,
+          [],
           Oli.Publishing.DeliveryResolver
         )
 
       assert length(errors) == 0
 
-      assert length(activity_revisions) == 2
-      assert Enum.at(activity_revisions, 0).resource_id == activity1.revision.resource_id
-      assert Enum.at(activity_revisions, 1).resource_id == activity2.revision.resource_id
+      assert length(prototypes) == 2
+      assert Enum.at(prototypes, 0).revision.resource_id == activity1.revision.resource_id
+      assert Enum.at(prototypes, 1).revision.resource_id == activity2.revision.resource_id
     end
   end
 
   describe "fulfilling selections" do
-    defp assert_one_of(resource_id, tag_collection) do
-      present =
-        case(Enum.find(tag_collection, nil, fn t -> t.revision.resource_id == resource_id end)) do
-          nil -> false
-          _ -> true
-        end
-
-      assert present == true
-    end
-
     setup do
       content = %{
         "stem" => "1",
@@ -240,26 +245,38 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       %Result{
         errors: errors,
-        revisions: activity_revisions,
+        prototypes: prototypes,
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
+          [],
           Oli.Publishing.DeliveryResolver
         )
 
       assert length(errors) == 0
 
-      assert length(activity_revisions) == 2
-      assert Enum.at(activity_revisions, 0).resource_id == activity6.revision.resource_id
-      assert_one_of(Enum.at(activity_revisions, 1).resource_id, [activity1, activity2, activity3])
+      assert length(prototypes) == 2
+
+      index6 = index_of(prototypes, [activity6.revision.resource_id])
+
+      other =
+        index_of(prototypes, [
+          activity1.revision.resource_id,
+          activity2.revision.resource_id,
+          activity3.revision.resource_id
+        ])
+
+      refute index6 == other
+      refute is_nil(other)
+      refute is_nil(index6)
 
       model = Map.get(transformed_content, "model")
       assert length(model) == 2
 
       static_id = activity6.revision.resource_id
-      banked_id = Enum.at(activity_revisions, 1).resource_id
+      banked_id = Enum.at(prototypes, other).revision.resource_id
 
       assert [
                %{"type" => "activity-reference", "activity_id" => ^static_id},
@@ -269,6 +286,113 @@ defmodule Oli.Delivery.ActivityProviderTest do
                  "source-selection" => "2"
                }
              ] = model
+    end
+
+    test "completely constraining a selection via existing prototypes", %{
+      activity1: activity1,
+      page: page,
+      publication: publication,
+      section: section,
+      o1: o1
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 1,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "2"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes
+      } =
+        ActivityProvider.provide(
+          %{page.revision | content: content},
+          source,
+          [%AttemptPrototype{revision: activity1.revision, selection_id: "2"}],
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 0
+      assert length(prototypes) == 1
+      assert Enum.at(prototypes, 0).revision.id == activity1.revision.id
+    end
+
+    test "partially constraining a selection via existing prototypes", %{
+      activity1: activity1,
+      activity2: activity2,
+      activity3: activity3,
+      page: page,
+      publication: publication,
+      section: section,
+      o1: o1
+    } do
+      content = %{
+        "model" => [
+          %{
+            "type" => "selection",
+            "count" => 3,
+            "purpose" => "none",
+            "logic" => %{
+              "conditions" => %{
+                "fact" => "objectives",
+                "operator" => "contains",
+                "value" => [o1.revision.resource_id]
+              }
+            },
+            "id" => "2"
+          }
+        ]
+      }
+
+      source = %Source{
+        publication_id: publication.id,
+        blacklisted_activity_ids: [],
+        section_slug: section.slug
+      }
+
+      %Result{
+        errors: errors,
+        prototypes: prototypes
+      } =
+        ActivityProvider.provide(
+          %{page.revision | content: content},
+          source,
+          [
+            %AttemptPrototype{revision: activity1.revision, selection_id: "2"},
+            %AttemptPrototype{revision: activity2.revision, selection_id: "2"}
+          ],
+          Oli.Publishing.DeliveryResolver
+        )
+
+      assert length(errors) == 0
+      assert length(prototypes) == 3
+
+      index1 = index_of(prototypes, [activity1.revision.resource_id])
+      index2 = index_of(prototypes, [activity2.revision.resource_id])
+      index3 = index_of(prototypes, [activity3.revision.resource_id])
+
+      assert MapSet.new([index1, index2, index3]) |> MapSet.size() == 3
+      refute is_nil(index1)
+      refute is_nil(index2)
+      refute is_nil(index3)
     end
 
     test "fulfilling multiple statics and selections", %{
@@ -331,49 +455,44 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       %Result{
         errors: errors,
-        revisions: activity_revisions,
-        transformed_content: transformed_content
+        prototypes: prototypes
       } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
+          [],
           Oli.Publishing.DeliveryResolver
         )
 
       assert length(errors) == 0
+      assert length(prototypes) == 4
 
-      assert length(activity_revisions) == 4
-      assert Enum.at(activity_revisions, 0).resource_id == activity6.revision.resource_id
-      assert_one_of(Enum.at(activity_revisions, 1).resource_id, [activity1, activity2, activity3])
-      assert Enum.at(activity_revisions, 2).resource_id == activity7.revision.resource_id
-      assert_one_of(Enum.at(activity_revisions, 3).resource_id, [activity1, activity2, activity3])
+      index6 = index_of(prototypes, [activity6.revision.resource_id])
+      index7 = index_of(prototypes, [activity7.revision.resource_id])
+
+      other =
+        index_of(prototypes, [
+          activity1.revision.resource_id,
+          activity2.revision.resource_id,
+          activity3.revision.resource_id
+        ])
+
+      other2 =
+        index_of_except(
+          prototypes,
+          [
+            activity1.revision.resource_id,
+            activity2.revision.resource_id,
+            activity3.revision.resource_id
+          ],
+          other
+        )
+
+      assert MapSet.new([index6, index7, other, other2]) |> MapSet.size() == 4
 
       # This verifies that the second selection cannot pick an activity that the first selection did
-      refute Enum.at(activity_revisions, 1).resource_id ==
-               Enum.at(activity_revisions, 3).resource_id
-
-      model = Map.get(transformed_content, "model")
-      assert length(model) == 4
-
-      static_id1 = activity6.revision.resource_id
-      banked_id1 = Enum.at(activity_revisions, 1).resource_id
-      static_id2 = activity7.revision.resource_id
-      banked_id2 = Enum.at(activity_revisions, 3).resource_id
-
-      assert [
-               %{"type" => "activity-reference", "activity_id" => ^static_id1},
-               %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id1,
-                 "source-selection" => "2"
-               },
-               %{"type" => "activity-reference", "activity_id" => ^static_id2},
-               %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id2,
-                 "source-selection" => "4"
-               }
-             ] = model
+      refute Enum.at(prototypes, other).revision.resource_id ==
+               Enum.at(prototypes, other2).revision.resource_id
     end
 
     test "ensures subsequent selections are constrained via implicit blacklist", %{
@@ -424,51 +543,56 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       %Result{
         errors: errors,
-        revisions: activity_revisions,
+        prototypes: prototypes,
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
+          [],
           Oli.Publishing.DeliveryResolver
         )
 
       assert length(errors) == 0
 
-      assert length(activity_revisions) == 3
-      assert_one_of(Enum.at(activity_revisions, 0).resource_id, [activity1, activity2, activity3])
-      assert_one_of(Enum.at(activity_revisions, 1).resource_id, [activity1, activity2, activity3])
-      assert_one_of(Enum.at(activity_revisions, 2).resource_id, [activity1, activity2, activity3])
+      assert length(prototypes) == 3
 
-      # This verifies that the second selection cannot pick an activity that the first selection did.
-      # The activity provider internal logic prevents this.
-      refute Enum.at(activity_revisions, 2).resource_id ==
-               Enum.at(activity_revisions, 0).resource_id or
-               Enum.at(activity_revisions, 2).resource_id ==
-                 Enum.at(activity_revisions, 1).resource_id
+      activities = [
+        activity1.revision.resource_id,
+        activity2.revision.resource_id,
+        activity3.revision.resource_id
+      ]
+
+      index1 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index1).revision.resource_id != a end)
+
+      index2 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index2).revision.resource_id != a end)
+
+      index3 = index_of(prototypes, activities)
+
+      refute is_nil(index1)
+      refute is_nil(index2)
+      refute is_nil(index3)
+
+      assert MapSet.new([index1, index2, index3]) |> MapSet.size() == 3
 
       model = Map.get(transformed_content, "model")
       assert length(model) == 3
 
-      banked_id1 = Enum.at(activity_revisions, 0).resource_id
-      banked_id2 = Enum.at(activity_revisions, 1).resource_id
-      banked_id3 = Enum.at(activity_revisions, 2).resource_id
-
       assert [
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id1,
-                 "source-selection" => "2"
+                 "type" => "activity-reference"
                },
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id2,
-                 "source-selection" => "2"
+                 "type" => "activity-reference"
                },
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id3,
-                 "source-selection" => "4"
+                 "type" => "activity-reference"
                }
              ] = model
     end
@@ -522,12 +646,13 @@ defmodule Oli.Delivery.ActivityProviderTest do
 
       %Result{
         errors: errors,
-        revisions: activity_revisions,
+        prototypes: prototypes,
         transformed_content: transformed_content
       } =
         ActivityProvider.provide(
           %{page.revision | content: content},
           source,
+          [],
           Oli.Publishing.DeliveryResolver
         )
 
@@ -538,40 +663,44 @@ defmodule Oli.Delivery.ActivityProviderTest do
                "Selection failed to fulfill completely with 1 missing activities"
              )
 
-      assert length(activity_revisions) == 3
-      assert_one_of(Enum.at(activity_revisions, 0).resource_id, [activity1, activity2, activity3])
-      assert_one_of(Enum.at(activity_revisions, 1).resource_id, [activity1, activity2, activity3])
-      assert_one_of(Enum.at(activity_revisions, 2).resource_id, [activity1, activity2, activity3])
+      assert length(prototypes) == 3
 
-      # This verifies that the second selection cannot pick an activity that the first selection did.
-      # The activity provider internal logic prevents this.
-      refute Enum.at(activity_revisions, 2).resource_id ==
-               Enum.at(activity_revisions, 0).resource_id or
-               Enum.at(activity_revisions, 2).resource_id ==
-                 Enum.at(activity_revisions, 1).resource_id
+      activities = [
+        activity1.revision.resource_id,
+        activity2.revision.resource_id,
+        activity3.revision.resource_id
+      ]
+
+      index1 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index1).revision.resource_id != a end)
+
+      index2 = index_of(prototypes, activities)
+
+      activities =
+        Enum.filter(activities, fn a -> Enum.at(prototypes, index2).revision.resource_id != a end)
+
+      index3 = index_of(prototypes, activities)
+
+      refute is_nil(index1)
+      refute is_nil(index2)
+      refute is_nil(index3)
+
+      assert MapSet.new([index1, index2, index3]) |> MapSet.size() == 3
 
       model = Map.get(transformed_content, "model")
       assert length(model) == 3
 
-      banked_id1 = Enum.at(activity_revisions, 0).resource_id
-      banked_id2 = Enum.at(activity_revisions, 1).resource_id
-      banked_id3 = Enum.at(activity_revisions, 2).resource_id
-
       assert [
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id1,
-                 "source-selection" => "2"
+                 "type" => "activity-reference"
                },
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id2,
-                 "source-selection" => "2"
+                 "type" => "activity-reference"
                },
                %{
-                 "type" => "activity-reference",
-                 "activity_id" => ^banked_id3,
-                 "source-selection" => "4"
+                 "type" => "activity-reference"
                }
              ] = model
     end

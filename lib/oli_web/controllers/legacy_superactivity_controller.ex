@@ -127,8 +127,7 @@ defmodule OliWeb.LegacySuperactivityController do
       Sections.get_enrollment(section.slug, user.id)
       |> Repo.preload([:context_roles])
 
-    project = Sections.get_project_by_section_resource(section.id, activity_attempt.resource_id)
-    path = "super_media/" <> project.slug
+    path = "super_media"
     web_content_url = "https://#{host}/#{path}/"
 
     host_url = "https://#{host}"

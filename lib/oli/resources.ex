@@ -309,6 +309,7 @@ defmodule Oli.Resources do
           recommended_attempts: previous_revision.recommended_attempts,
           time_limit: previous_revision.time_limit,
           scope: previous_revision.scope,
+          retake_mode: previous_revision.retake_mode,
           tags: previous_revision.tags
         },
         convert_strings_to_atoms(attrs)

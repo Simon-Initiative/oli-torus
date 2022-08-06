@@ -5,10 +5,9 @@
 // default values that could be overriden in i18n() construct
 const defaults = {
   domain: 'messages',
-  locale: (document !== undefined
-    ? document.documentElement.getAttribute('lang') : false) || 'en',
+  locale: (document !== undefined ? document.documentElement.getAttribute('lang') : false) || 'en',
   plural_func: (n: any) => {
-    return { nplurals: 2, plural: (n !== 1) ? 1 : 0 };
+    return { nplurals: 2, plural: n !== 1 ? 1 : 0 };
   },
   ctxt_delimiter: String.fromCharCode(4), // \u0004
 };
@@ -17,7 +16,7 @@ const defaults = {
 const _ = {
   isObject: (obj: any) => {
     const type = typeof obj;
-    return type === 'function' || type === 'object' && !!obj;
+    return type === 'function' || (type === 'object' && !!obj);
   },
   isArray: (obj: any) => {
     return toString.call(obj) === '[object Array]';
@@ -38,15 +37,17 @@ const ctxtDelimiter = defaults.ctxt_delimiter;
 const strfmt = function (fmt: any) {
   const args = arguments;
 
-  return fmt
-    // put space after double % to prevent placeholder replacement of such matches
-    .replace(/%%/g, '%% ')
-    // replace placeholders
-    .replace(/%(\d+)/g, (str: any, p1: any) => {
-      return args[p1];
-    })
-    // replace double % and space with single %
-    .replace(/%% /g, '%');
+  return (
+    fmt
+      // put space after double % to prevent placeholder replacement of such matches
+      .replace(/%%/g, '%% ')
+      // replace placeholders
+      .replace(/%(\d+)/g, (str: any, p1: any) => {
+        return args[p1];
+      })
+      // replace double % and space with single %
+      .replace(/%% /g, '%')
+  );
 };
 
 const removeContext = function (str: any) {
@@ -76,7 +77,9 @@ const getPluralFunc = function (pluralForm: any) {
   // taken from https://github.com/Orange-OpenSource/gettext.js/blob/master/lib.gettext.js
   // plural forms list available here
   // http://localization-guide.readthedocs.org/en/latest/l10n/pluralforms.html
-  const pfRe = new RegExp('^\\s*nplurals\\s*=\\s*[0-9]+\\s*;\\s*plural\\s*=\\s*(?:\\s|[-\\?\\|&=!<>+*/%:;n0-9_\(\)])+');
+  const pfRe = new RegExp(
+    '^\\s*nplurals\\s*=\\s*[0-9]+\\s*;\\s*plural\\s*=\\s*(?:\\s|[-\\?\\|&=!<>+*/%:;n0-9_()])+',
+  );
 
   if (!pfRe.test(pluralForm)) {
     throw new Error(`The plural form "${pluralForm}" is not valid`);
@@ -87,9 +90,12 @@ const getPluralFunc = function (pluralForm: any) {
   // taken from https://github.com/Orange-OpenSource/gettext.js/blob/master/lib.gettext.js
   // TODO: should test if https://github.com/soney/jsep present and use it if so
   // tslint:disable-next-line
-  return new Function('n',
-    'var plural, nplurals; ' + pluralForm +
-    ' return { nplurals: nplurals, plural: (plural === true ? 1 : (plural ? plural : 0)) };');
+  return new Function(
+    'n',
+    'var plural, nplurals; ' +
+      pluralForm +
+      ' return { nplurals: nplurals, plural: (plural === true ? 1 : (plural ? plural : 0)) };',
+  );
 };
 
 // Proper translation function that handle plurals and directives
@@ -98,8 +104,10 @@ const getPluralFunc = function (pluralForm: any) {
 const t = function (messages: any, n: any, options: any) {
   // Singular is very easy, just pass dictionnary message through strfmt
   if (!options.plural_form) {
-    return strfmt.apply(undefined,
-      [removeContext(messages[0])].concat(Array.prototype.slice.call(arguments, 3)));
+    return strfmt.apply(
+      undefined,
+      [removeContext(messages[0])].concat(Array.prototype.slice.call(arguments, 3)),
+    );
   }
   let plural;
 
@@ -118,13 +126,18 @@ const t = function (messages: any, n: any, options: any) {
   }
 
   // If there is a problem with plurals, fallback to singular one
-  if (plural.plural === undefined || plural.plural > plural.nplurals
-    || messages.length <= plural.plural) {
+  if (
+    plural.plural === undefined ||
+    plural.plural > plural.nplurals ||
+    messages.length <= plural.plural
+  ) {
     plural.plural = 0;
   }
 
-  return strfmt.apply(undefined,
-    [removeContext(messages[plural.plural]), n].concat(Array.prototype.slice.call(arguments, 3)));
+  return strfmt.apply(
+    undefined,
+    [removeContext(messages[plural.plural]), n].concat(Array.prototype.slice.call(arguments, 3)),
+  );
 };
 
 export function setMessages(domain: any, locale: any, messages: any, pf: any) {
@@ -156,13 +169,20 @@ export function loadJSON(jsonDataP: any, domain: any) {
   }
 
   if (!jsonData[''] || !jsonData['']['language'] || !jsonData['']['plural-forms']) {
-    throw new Error('Wrong JSON, it must have an empty key ("") with "language" and "plural-forms" information');
+    throw new Error(
+      'Wrong JSON, it must have an empty key ("") with "language" and "plural-forms" information',
+    );
   }
 
   const headers = jsonData[''];
   delete jsonData[''];
 
-  return setMessages(domain || defaults.domain, headers['language'], jsonData, headers['plural-forms']);
+  return setMessages(
+    domain || defaults.domain,
+    headers['language'],
+    jsonData,
+    headers['plural-forms'],
+  );
 }
 
 export function setLocale(loc: any) {
@@ -180,21 +200,28 @@ export function textdomain(d: any) {
 }
 
 export function gettext(msgid: any) {
-  return dcnpgettext.apply(undefined,
+  return dcnpgettext.apply(
+    undefined,
     [undefined, undefined, msgid, undefined, undefined].concat(
-      Array.prototype.slice.call(arguments, 1)));
+      Array.prototype.slice.call(arguments, 1),
+    ),
+  );
 }
 
 export function ngettext(msgid: any, msgidPlural: any, n: any) {
-  return dcnpgettext.apply(undefined,
-    [undefined, undefined, msgid, msgidPlural, n].concat(
-      Array.prototype.slice.call(arguments, 3)));
+  return dcnpgettext.apply(
+    undefined,
+    [undefined, undefined, msgid, msgidPlural, n].concat(Array.prototype.slice.call(arguments, 3)),
+  );
 }
 
 export function pgettext(msgctxt: any, msgid: any) {
-  return dcnpgettext.apply(undefined,
+  return dcnpgettext.apply(
+    undefined,
     [undefined, msgctxt, msgid, undefined, undefined].concat(
-      Array.prototype.slice.call(arguments, 2)));
+      Array.prototype.slice.call(arguments, 2),
+    ),
+  );
 }
 
 export function dcnpgettext(d: any, msgctxt: any, msgid: any, msgidPlural: any, n: any) {
@@ -236,14 +263,19 @@ export function dcnpgettext(d: any, msgctxt: any, msgid: any, msgidPlural: any, 
 
   // Singular form
   if (!msgidPlural) {
-    return t.apply(undefined, [[translation], n, options].concat(
-      Array.prototype.slice.call(arguments, 5)));
+    return t.apply(
+      undefined,
+      [[translation], n, options].concat(Array.prototype.slice.call(arguments, 5)),
+    );
   }
 
   // Plural one
   options.plural_form = true;
-  return t.apply(undefined,
+  return t.apply(
+    undefined,
     [exist ? translation : [msgid, msgidPlural], n, options].concat(
-      Array.prototype.slice.call(arguments, 5)));
+      Array.prototype.slice.call(arguments, 5),
+    ),
+  );
 }
 /*eslint-enable */

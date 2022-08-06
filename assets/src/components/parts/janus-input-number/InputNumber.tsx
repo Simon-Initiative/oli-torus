@@ -1,5 +1,12 @@
 import debounce from 'lodash/debounce';
-import React, { CSSProperties, ReactEventHandler, useCallback, useEffect, useState } from 'react';
+import React, {
+  CSSProperties,
+  ReactEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { CapiVariableTypes } from '../../../adaptivity/capi';
 import {
   NotificationType,
@@ -11,25 +18,93 @@ import { PartComponentProps } from '../types/parts';
 import './InputNumber.scss';
 import { InputNumberModel } from './schema';
 
-const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
-  const [state, setState] = useState<any[]>(Array.isArray(props.state) ? props.state : []);
-  const [model, setModel] = useState<any>(Array.isArray(props.model) ? props.model : {});
-  const [ready, setReady] = useState<boolean>(false);
-  const id: string = props.id;
+/**
+ * If you pass in a string, return the JSON.parse, otherwise return the same value.
+ *
+ * maybeParseJson('{"a": 1}') => {a: 1}
+ * maybeParseJson({"a": 1}) => {a: 1}
+ *
+ */
+const maybeParseJson = (value: any) => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (err) {
+      // bad json, what do?
+      console.error("Couldn't parse JSON to number input", value, err);
+    }
+  }
 
+  return value;
+};
+
+const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = ({
+  id,
+  model: inputModel,
+  notify,
+  onSave,
+  onInit,
+  onReady,
+  onResize,
+}) => {
+  //const debugRef = useRef(props);
+  const model = useMemo(() => maybeParseJson(inputModel), [inputModel]);
+
+  const [ready, setReady] = useState<boolean>(false);
   const [inputNumberValue, setInputNumberValue] = useState<string | number>('');
   const [enabled, setEnabled] = useState(true);
-  const [cssClass, setCssClass] = useState('');
 
-  const initialize = useCallback(async (pModel) => {
+  const {
+    x,
+    y,
+    z,
+    width,
+    minValue,
+    maxValue,
+    unitsLabel,
+    label,
+    showLabel,
+    showIncrementArrows,
+    prompt = '',
+  } = model;
+
+  /**
+   * Given a value, return either a number or an empty string, the value will be between
+   * minValue and maxValue inclusive.
+   *
+   * sanitizeValue(1) => 1
+   * sanitizeValue(1.2) => 1
+   * sanitizeValue('1') => 1
+   * sanitizeValue('1.2') => 1.2
+   * sanitizeValue('buffalo') => ''
+   * sanitizeValue(null) => ''
+   * sanitizeValue(undefined) => ''
+   * sanitizeValue('') => ''
+   *
+   * minValue=0, maxValue=10
+   * sanitizeValue(11) => 10
+   * sanitizeValue(-1) => 0
+   *
+   */
+  const sanitizeValue = useCallback(
+    (value: number | string | null | undefined): number | string => {
+      let val = isNaN(parseFloat(String(value))) ? '' : parseFloat(String(value));
+
+      if (minValue !== maxValue && val !== '') {
+        val = !isNaN(maxValue) ? Math.min(val as number, maxValue) : val;
+        val = !isNaN(minValue) ? Math.max(val as number, minValue) : val;
+      }
+      return val;
+    },
+    [minValue, maxValue],
+  );
+
+  const initialize = useCallback(async () => {
     // set defaults
-    const dEnabled = typeof pModel.enabled === 'boolean' ? pModel.enabled : enabled;
+    const dEnabled = typeof model.enabled === 'boolean' ? model.enabled : true;
     setEnabled(dEnabled);
 
-    const dCssClass = pModel.customCssClass || '';
-    setCssClass(dCssClass);
-
-    const initResult = await props.onInit({
+    const initResult = await onInit({
       id,
       responses: [
         {
@@ -45,7 +120,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         {
           key: 'customCssClass',
           type: CapiVariableTypes.STRING,
-          value: dCssClass,
+          value: model.customCssClass || '',
         },
       ],
     });
@@ -60,19 +135,26 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     if (sValue !== undefined) {
       setInputNumberValue(sValue);
     }
-    const sCssClass = currentStateSnapshot[`stage.${id}.customCssClass`];
-    if (sCssClass !== undefined) {
-      setCssClass(sCssClass);
-    }
+
     //Instead of hardcoding REVIEW, we can make it an global interface and then importa that here.
     if (initResult.context.mode === contexts.REVIEW) {
       setEnabled(false);
     }
-    setReady(true);
-  }, []);
+    setReady((currentValue) => {
+      if (currentValue) {
+        console.warn(
+          'InputNumber was previously initialized, but initialize was called again. This is probably a bug and would be caused by one of these props changing: id, onInit, onReady, model',
+          { id, model },
+        );
+      }
+      return true;
+    });
+
+    onReady({ id, responses: [] });
+  }, [id, onInit, onReady, model]);
 
   useEffect(() => {
-    if (!props.notify) {
+    if (!notify) {
       return;
     }
     const notificationsHandled = [
@@ -102,10 +184,6 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
               if (sValue !== undefined) {
                 setInputNumberValue(sValue);
               }
-              const sCssClass = changes[`stage.${id}.customCssClass`];
-              if (sCssClass !== undefined) {
-                setCssClass(sCssClass);
-              }
             }
             break;
           case NotificationType.CONTEXT_CHANGED:
@@ -120,10 +198,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
               if (sValue !== undefined) {
                 setInputNumberValue(sValue);
               }
-              const sCssClass = initStateFacts[`stage.${id}.customCssClass`];
-              if (sCssClass !== undefined) {
-                setCssClass(sCssClass);
-              }
+
               if (payload.mode === contexts.REVIEW) {
                 setEnabled(false);
               }
@@ -131,7 +206,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
             break;
         }
       };
-      const unsub = subscribeToNotification(props.notify, notificationType, handler);
+      const unsub = subscribeToNotification(notify, notificationType, handler);
       return unsub;
     });
     return () => {
@@ -139,55 +214,11 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
         unsub();
       });
     };
-  }, [props.notify]);
+  }, [id, notify]);
 
   useEffect(() => {
-    let pModel;
-    let pState;
-    if (typeof props?.model === 'string') {
-      try {
-        pModel = JSON.parse(props.model);
-        setModel(pModel);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (typeof props?.state === 'string') {
-      try {
-        pState = JSON.parse(props.state);
-        setState(pState);
-      } catch (err) {
-        // bad json, what do?
-      }
-    }
-    if (!pModel) {
-      return;
-    }
-    initialize(pModel);
-  }, [props]);
-
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    props.onReady({ id, responses: [] });
-  }, [ready]);
-
-  const {
-    x,
-    y,
-    z,
-    width,
-    height,
-    minValue,
-    maxValue,
-    customCssClass,
-    unitsLabel,
-    label,
-    showLabel,
-    showIncrementArrows,
-    prompt = '',
-  } = model;
+    initialize();
+  }, [initialize]);
 
   const inputNumberDivStyles: CSSProperties = {
     top: y,
@@ -195,6 +226,7 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     zIndex: z,
     width,
   };
+
   const inputNumberCompStyles: CSSProperties = {
     width: '100%',
   };
@@ -204,49 +236,39 @@ const InputNumber: React.FC<PartComponentProps<InputNumberModel>> = (props) => {
     if (width !== undefined) {
       styleChanges.width = { value: width as number };
     }
-    props.onResize({ id: `${id}`, settings: styleChanges });
-  }, [width]);
+    onResize({ id: `${id}`, settings: styleChanges });
+  }, [id, width, onResize]);
+
+  const saveInputText = useCallback(
+    (val: number) => {
+      onSave({
+        id: `${id}`,
+        responses: [
+          {
+            key: 'value',
+            type: CapiVariableTypes.NUMBER,
+            value: val,
+          },
+        ],
+      });
+    },
+    [id, onSave],
+  );
 
   const debouncetime = 300;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debounceSave = useCallback(
     debounce((val) => {
       saveInputText(val);
     }, debouncetime),
-    [],
+    [saveInputText],
   );
 
-  const saveInputText = (val: number) => {
-    props.onSave({
-      id: `${id}`,
-      responses: [
-        {
-          key: 'value',
-          type: CapiVariableTypes.NUMBER,
-          value: val,
-        },
-      ],
-    });
-  };
-
   const handleOnChange: ReactEventHandler<HTMLInputElement> = (event) => {
-    const val = (event.target as HTMLInputElement).value;
+    const val = sanitizeValue((event.target as HTMLInputElement).value);
     setInputNumberValue(val);
+    debounceSave(val);
   };
-
-  useEffect(() => {
-    let val = isNaN(parseFloat(String(inputNumberValue)))
-      ? ''
-      : parseFloat(String(inputNumberValue));
-    if (minValue !== maxValue && val !== '') {
-      val = !isNaN(maxValue) ? Math.min(val as number, maxValue) : val;
-      val = !isNaN(minValue) ? Math.max(val as number, minValue) : val;
-    }
-    if (val !== inputNumberValue) {
-      setInputNumberValue(val);
-    } else {
-      debounceSave(val);
-    }
-  }, [inputNumberValue]);
 
   return ready ? (
     <div data-janus-type={tagName} style={inputNumberDivStyles} className={`number-input`}>

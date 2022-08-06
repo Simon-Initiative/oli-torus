@@ -463,6 +463,24 @@ defmodule Oli.Delivery.PaywallTest do
       end
     end
 
+    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions", %{
+      institution: institution_a,
+      paid: paid
+    } do
+      Paywall.create_discount(%{
+        institution_id: institution_a.id,
+        section_id: nil,
+        type: :fixed_amount,
+        percentage: 0,
+        amount: Money.new(:USD, 90)
+      })
+
+      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution_a)
+
+      institution_b = insert(:institution)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution_b)
+    end
+
     test "section_cost_from_product/2 correctly works when no institution present", %{
       free: free,
       paid: paid

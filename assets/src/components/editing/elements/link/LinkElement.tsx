@@ -1,5 +1,5 @@
 import { EditorProps } from 'components/editing/elements/interfaces';
-import { InlineChromiumBugfix, onEditModel } from 'components/editing/elements/utils';
+import { InlineChromiumBugfix, useEditModelCallback } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import * as ContentModel from 'data/content/model/elements/types';
@@ -18,7 +18,7 @@ export interface Props extends EditorProps<ContentModel.Hyperlink> {}
 export const LinkEditor = (props: Props) => {
   const selected = useSelected();
   const isOpen = React.useCallback(() => selected, [selected]);
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   return (
     <a

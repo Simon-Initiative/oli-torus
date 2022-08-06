@@ -1,19 +1,37 @@
 name: Deploy
 
 on:
-  push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'              # production release tags vX.Y.Z
-      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
+  # run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: "Deploy Target"
+        required: true
+        default: "tokamak.oli.cmu.edu"
+        type: choice
+        options:
+          - tokamak.oli.cmu.edu
+          - loadtest.oli.cmu.edu
+          - proton.oli.cmu.edu
+
+  # disable auto deploy on tag for now
+  # push:
+  #   tags:
+  #     - 'v[0-9]+.[0-9]+.[0-9]+'              # production release tags vX.Y.Z
+  #     - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'     # release candidate tags vX.Y.Z-rc1
+  #
 
 jobs:
-  deploy-release:
+  deployment:
     runs-on: ubuntu-latest
+
+    environment:
+      name: ${{ github.event.inputs.deploy_target }}
+      url: ${{ github.event.inputs.deploy_target }}
 
     outputs:
       app_version: ${{ steps.info.outputs.app_version }}
       sha_short: ${{ steps.info.outputs.sha_short }}
-      deploy_host: ${{ steps.info.outputs.deploy_host }}
 
     steps:
       - name: 🛎️ Checkout
@@ -24,7 +42,8 @@ jobs:
         run: |
           echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
           echo "::set-output name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')"
-          echo "::set-output name=deploy_host::$(if [[ ${{ github.event.ref }} =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]] ; then echo proton.oli.cmu.edu ; else echo tokamak.oli.cmu.edu ; fi)"
+
+      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ github.event.inputs.deploy_target }}"
 
       - name: 🚢💰 Deploy using SSH
         uses: fifsky/ssh-action@master
@@ -32,18 +51,7 @@ jobs:
           command: |
             cd /torus
             sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
-          host: ${{ steps.info.outputs.deploy_host }}
+          host: ${{ github.event.inputs.deploy_target }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
-
-  deployment:
-    runs-on: ubuntu-latest
-    needs: deploy-release
-
-    environment:
-      name: ${{ needs.deploy-release.outputs.deploy_host }}
-      url: ${{ needs.deploy-release.outputs.deploy_host }}
-
-    steps:
-      - run: echo "deploying ${{ github.sha }}"

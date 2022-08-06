@@ -1,10 +1,10 @@
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CitationEditor } from 'components/editing/elements/cite/CitationEditor';
-import { InlineChromiumBugfix, onEditModel, updateModel } from 'components/editing/elements/utils';
+import { InlineChromiumBugfix, updateModel } from 'components/editing/elements/utils';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import * as ContentModel from 'data/content/model/elements/types';
-import React, { useState } from 'react';
+import React from 'react';
 import { useSelected, useSlate } from 'slate-react';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { createButtonCommandDesc } from '../commands/commandFactories';

@@ -46,6 +46,8 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
         |> Seeder.add_objective("objective one", :o1)
         |> Seeder.add_activity(%{title: "one", content: content1}, :a1)
         |> Seeder.add_activity(%{title: "two", content: content2}, :a2)
+        |> Seeder.add_activity(%{title: "three", content: content1, scope: :banked}, :a3)
+        |> Seeder.add_activity(%{title: "three", content: content1, scope: :banked}, :a3)
         |> Seeder.add_user(%{}, :user1)
         |> Seeder.add_user(%{}, :user2)
 
@@ -77,7 +79,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.HierarchyTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id = UUID.uuid4()
 
       {:ok, resource_attempt} =

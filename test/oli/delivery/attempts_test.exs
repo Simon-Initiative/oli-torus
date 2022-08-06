@@ -78,7 +78,7 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id = UUID.uuid4()
 
       refute Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
@@ -146,7 +146,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id = UUID.uuid4()
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
@@ -201,7 +201,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
@@ -378,7 +378,7 @@ defmodule Oli.Delivery.AttemptsTest do
       graded_page: %{revision: revision},
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id_user1 = UUID.uuid4()
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
@@ -407,7 +407,7 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id_user1 = UUID.uuid4()
       datashop_session_id_user2 = UUID.uuid4()
 
@@ -486,7 +486,8 @@ defmodule Oli.Delivery.AttemptsTest do
         last_grade_update_id: last_grade_update.id
       )
 
-      assert length(Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)) == 2
+      assert length(Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)) ==
+               2
     end
 
     test "get latest attempt - activity attempts", %{
@@ -538,7 +539,7 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
       datashop_session_id_user1 = UUID.uuid4()
 
       PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)

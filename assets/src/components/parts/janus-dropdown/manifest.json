@@ -1,16 +1,16 @@
 {
-    "id": "janus_dropdown",
-    "friendlyName": "Dropdown",
-    "description": "Displays a Dropdown",
-    "icon": "icon-part-dropdown.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-dropdown",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-dropdown",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_dropdown",
+  "friendlyName": "Dropdown",
+  "description": "Displays a Dropdown",
+  "icon": "icon-part-dropdown.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-dropdown",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-dropdown",
+    "entry": "./authoring-entry.ts"
+  }
 }

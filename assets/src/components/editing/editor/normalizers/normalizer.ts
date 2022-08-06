@@ -39,6 +39,7 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
           return;
         }
       }
+
       spacesNormalize(editor, node, path);
       blockNormalize(editor, node, path);
       codeNormalize(editor, node, path);
