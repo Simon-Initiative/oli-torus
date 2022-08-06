@@ -100,8 +100,8 @@ type VoidChildren = Text[];
 
 interface BaseImage extends SlateElement<VoidChildren> {
   src?: string;
-  height?: number;
-  width?: number;
+  height?: number | string;
+  width?: number | string;
   alt?: string;
 }
 export interface ImageBlock extends BaseImage {
