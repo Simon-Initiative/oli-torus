@@ -114,6 +114,12 @@ defmodule Oli.Rendering.Content.Html do
     missing_media_src(context, e)
   end
 
+  defp tableBorderClass(%{"border" => "hidden"}), do: "table-borderless"
+  defp tableBorderClass(_), do: ""
+
+  defp tableRowClass(%{"rowstyle" => "alternating"}), do: "table-striped"
+  defp tableRowClass(_), do: ""
+
   def table(%Context{} = context, next, attrs) do
     caption =
       case attrs do
@@ -121,19 +127,51 @@ defmodule Oli.Rendering.Content.Html do
         _ -> ""
       end
 
-    ["<table>#{caption}", next.(), "</table>\n"]
+    [
+      "<table class='#{tableBorderClass(attrs)} #{tableRowClass(attrs)}'>#{caption}",
+      next.(),
+      "</table>\n"
+    ]
   end
 
   def tr(%Context{} = _context, next, _) do
     ["<tr>", next.(), "</tr>\n"]
   end
 
-  def th(%Context{} = _context, next, _) do
-    ["<th>", next.(), "</th>\n"]
+  defp maybeColSpan(%{"colspan" => colspan}) do
+    " colspan='#{colspan}'"
   end
 
-  def td(%Context{} = _context, next, _) do
-    ["<td>", next.(), "</td>\n"]
+  defp maybeColSpan(_) do
+    ""
+  end
+
+  defp maybeRowSpan(%{"rowspan" => rowspan}) do
+    " rowspan='#{rowspan}'"
+  end
+
+  defp maybeRowSpan(_) do
+    ""
+  end
+
+  defp maybeTextAlign(%{"align" => alignment}) do
+    " class='text-#{alignment}'"
+  end
+
+  defp maybeTextAlign(_) do
+    ""
+  end
+
+  defp maybeAlign(attrs) do
+    maybeColSpan(attrs) <> maybeRowSpan(attrs) <> maybeTextAlign(attrs)
+  end
+
+  def th(%Context{} = _context, next, attrs) do
+    ["<th#{maybeAlign(attrs)}>", next.(), "</th>\n"]
+  end
+
+  def td(%Context{} = _context, next, attrs) do
+    ["<td#{maybeAlign(attrs)}>", next.(), "</td>\n"]
   end
 
   def ol(%Context{} = _context, next, %{"style" => style}) do

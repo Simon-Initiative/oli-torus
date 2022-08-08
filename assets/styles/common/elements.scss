@@ -53,6 +53,14 @@
     }
   }
 
+  .table-borderless {
+    border: 0;
+    tr,
+    td {
+      border: 0;
+    }
+  }
+
   img.d-block {
     margin-bottom: 1.5em;
   }
