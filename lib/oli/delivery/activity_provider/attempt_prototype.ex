@@ -19,6 +19,11 @@ defmodule Oli.Delivery.ActivityProvider.AttemptPrototype do
     :survey_id,
     :group_id,
     :selection_id,
+    :score,
+    :out_of,
+    :lifecycle_state,
+    :date_submitted,
+    :date_evaluated,
     :inherit_state_from_previous
   ]
 
@@ -31,6 +36,11 @@ defmodule Oli.Delivery.ActivityProvider.AttemptPrototype do
       survey_id: attempt.survey_id,
       group_id: attempt.group_id,
       selection_id: attempt.selection_id,
+      score: attempt.score,
+      out_of: attempt.out_of,
+      lifecycle_state: attempt.lifecycle_state,
+      date_submitted: attempt.date_submitted,
+      date_evaluated: attempt.date_evaluated,
       inherit_state_from_previous: true
     }
   end

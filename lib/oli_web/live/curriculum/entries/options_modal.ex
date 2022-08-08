@@ -85,6 +85,17 @@ defmodule OliWeb.Curriculum.OptionsModal do
                         placeholder: "Scoring Strategy" %>
                     <small id="scoringStrategy" class="form-text text-muted">The scoring strategy determines how to calculate the final grade book score across all attempts.</small>
                   </div>
+
+                  <div class="form-group">
+                    <%= label f, "Retake Mode" %>
+                    <%= select f, :retake_mode, [{"Normal: Students answer all questions in each attempt", :normal}, {"Targeted: Students answer only incorrect questions from previous attempts", :targeted}],
+                        class: "custom-select",
+                        disabled: is_disabled(changeset, revision) or !@revision.graded,
+                        class: "form-control",
+                        aria_describedby: "retakeMode",
+                        placeholder: "Retake Mode" %>
+                    <small id="retakeMode" class="form-text text-muted">The retake mode determines how subsequent attempts are presented to students.</small>
+                  </div>
                 <% end %>
               </div>
               <div class="modal-footer">
