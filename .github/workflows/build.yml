@@ -127,6 +127,7 @@ jobs:
 
   ts-build-test:
     runs-on: ubuntu-latest
+    needs: auto-format
 
     steps:
       - name: 🛎️ Checkout
