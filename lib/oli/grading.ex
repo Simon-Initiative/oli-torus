@@ -171,7 +171,7 @@ defmodule Oli.Grading do
     students = fetch_students(section.slug)
 
     # create a map of all resource accesses, keyed off resource id
-    resource_accesses = fetch_resource_accesses(section.slug)
+    resource_accesses = fetch_resource_accesses(section.id)
 
     # build gradebook map - for each user in the section, create a gradebook row. Using
     # resource_accesses, create a list of gradebook scores leaving scores null if they do not exist
@@ -284,9 +284,8 @@ defmodule Oli.Grading do
     |> Enum.map(fn e -> e.user end)
   end
 
-
-  def fetch_resource_accesses(section_slug) do
-    Attempts.get_graded_resource_access_for_context(section_slug)
+  def fetch_resource_accesses(section_id) do
+    Attempts.get_graded_resource_access_for_context(section_id)
     |> Enum.reduce(%{}, fn resource_access, acc ->
       case acc[resource_access.resource_id] do
         nil ->

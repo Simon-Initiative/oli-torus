@@ -393,7 +393,7 @@ defmodule Oli.Delivery.AttemptsTest do
         )
 
       access =
-        Attempts.get_graded_resource_access_for_context(section.slug)
+        Attempts.get_graded_resource_access_for_context(section.id)
         |> Enum.filter(fn a -> a.resource_id == revision.resource_id && a.user_id == user1.id end)
         |> hd
 
@@ -433,14 +433,14 @@ defmodule Oli.Delivery.AttemptsTest do
           activity_provider
         )
 
-      accesses1 = Attempts.get_graded_resource_access_for_context(section.slug, [user1.id])
+      accesses1 = Attempts.get_graded_resource_access_for_context(section.id, [user1.id])
       assert Enum.all?(accesses1, fn a -> a.user_id == user1.id end)
 
-      accesses2 = Attempts.get_graded_resource_access_for_context(section.slug, [user2.id])
+      accesses2 = Attempts.get_graded_resource_access_for_context(section.id, [user2.id])
       assert Enum.all?(accesses2, fn a -> a.user_id == user2.id end)
 
       accesses_both =
-        Attempts.get_graded_resource_access_for_context(section.slug, [user1.id, user2.id])
+        Attempts.get_graded_resource_access_for_context(section.id, [user1.id, user2.id])
 
       assert length(accesses_both) == length(accesses1) + length(accesses2)
     end
