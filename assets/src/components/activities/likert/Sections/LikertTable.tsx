@@ -20,7 +20,8 @@ const needItemColumn = (items: LikertItem[]) => {
   return items.length > 1 || toSimpleText(items[0].content).trim() != '';
 };
 
-export const LikertTable: React.FC<Props> = ({  model,
+export const LikertTable: React.FC<Props> = ({
+  model,
   isSelected,
   onSelect,
   disabled = false,
