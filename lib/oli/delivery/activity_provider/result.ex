@@ -1,10 +1,9 @@
 defmodule Oli.Delivery.ActivityProvider.Result do
   defstruct [
     :errors,
-    :revisions,
+    :prototypes,
     :bib_revisions,
     :unscored,
-    :transformed_content,
-    :activity_to_source_selection_mapping
+    :transformed_content
   ]
 end

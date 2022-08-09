@@ -17,6 +17,7 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
     field(:transformed_model, :map, default: nil)
     field(:group_id, :string, default: nil)
     field(:survey_id, :string, default: nil)
+    field(:selection_id, :string, default: nil)
 
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:revision, Oli.Resources.Revision)
@@ -53,7 +54,10 @@ defmodule Oli.Delivery.Attempts.Core.ActivityAttempt do
       :transformed_model,
       :resource_attempt_id,
       :resource_id,
-      :revision_id
+      :revision_id,
+      :group_id,
+      :survey_id,
+      :selection_id
     ])
     |> validate_required([
       :attempt_guid,

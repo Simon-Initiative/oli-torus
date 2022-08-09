@@ -125,7 +125,7 @@ defmodule OliWeb.ResourceController do
 
       revision ->
         %Oli.Delivery.ActivityProvider.Result{
-          revisions: activity_revisions,
+          prototypes: prototypes,
           bib_revisions: bib_references,
           transformed_content: transformed_content
         } =
@@ -136,6 +136,7 @@ defmodule OliWeb.ResourceController do
               section_slug: project_slug,
               publication_id: Oli.Publishing.project_working_publication(project_slug).id
             },
+            [],
             Oli.Publishing.AuthoringResolver
           )
 
@@ -147,7 +148,7 @@ defmodule OliWeb.ResourceController do
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
                   revision,
-                  activity_revisions,
+                  Enum.map(prototypes, fn p -> p.revision end),
                   AuthoringResolver,
                   project_slug
                 ),
