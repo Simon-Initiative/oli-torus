@@ -97,8 +97,7 @@ jobs:
         id: check_token
         env:
           SIMON_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-        run: |
-        echo "::set-output name=available::${{ env.SIMON_TOKEN != '' }}"
+        run: echo "::set-output name=available::${{ env.SIMON_TOKEN != '' }}"
 
   auto-format:
     runs-on: ubuntu-latest
