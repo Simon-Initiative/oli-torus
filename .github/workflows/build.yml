@@ -88,7 +88,7 @@ jobs:
           if-no-files-found: ignore
 
   check-simon-token:
-    name: check if SIMON_BOT_PERSONAL_ACCESS_TOKEN is set in github secrets
+    name: check simon-bot access token
     runs-on: ubuntu-latest
     outputs:
       available: ${{ steps.check_token.outputs.available }}
