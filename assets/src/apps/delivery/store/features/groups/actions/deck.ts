@@ -165,18 +165,15 @@ export const initializeActivity = createAsyncThunk(
     const globalSnapshot = getEnvState(defaultGlobalEnv);
     const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
     const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
-    // don't update the time if student is revisiting that page
-    if (!isActivityAlreadyVisited) {
-      // looks like SS captures the date when we leave the page but it should
-      // show in the history as soon as we visit but it does not show the timestamp
-      // so we will capture the time on trigger check
-      const targetVisitTimeStampOp: ApplyStateOperation = {
-        target: trackingStampKey,
-        operator: '=',
-        value: 0,
-      };
-      sessionOps.push(targetVisitTimeStampOp);
-    }
+    // looks like SS captures the date when we leave the page but it should
+    // show in the history as soon as we visit but it does not show the timestamp
+    // so we will capture the time on trigger check
+    const targetVisitTimeStampOp: ApplyStateOperation = {
+      target: trackingStampKey,
+      operator: '=',
+      value: 0,
+    };
+    sessionOps.push(targetVisitTimeStampOp);
 
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
@@ -529,6 +526,21 @@ export const loadActivities = createAsyncThunk(
     const states: ActivityState[] = activities
       .map((a) => a?.state)
       .filter((s) => s !== undefined) as ActivityState[];
+
+    // when resuming a session, we want to reset the current part attempt values
+    const shouldResume = states.some((attempt: any) => attempt.dateEvaluated !== null);
+    if (shouldResume) {
+      const snapshot = getEnvState(defaultGlobalEnv);
+      const resumeId = snapshot['session.resume'];
+      const currentResumeActivityAttempt = models.filter((model: any) => model.id === resumeId);
+      if (currentResumeActivityAttempt?.length) {
+        states.forEach((state) => {
+          if (state.attemptGuid === currentResumeActivityAttempt[0]?.attemptGuid) {
+            state.parts.forEach((part) => (part.response = []));
+          }
+        });
+      }
+    }
 
     thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
     thunkApi.dispatch(setActivities({ activities: models }));
