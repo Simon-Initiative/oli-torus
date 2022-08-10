@@ -104,6 +104,9 @@ jobs:
     needs: check-simon-token
 
     steps:
+      - name: Info
+        run: if ${{ needs.check-simon-token.available }} ; then echo "Running auto format job..." ; else echo "No simon token. Skipping auto format." ; fi"
+
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
         if: ${{ needs.check-simon-token.available }}
