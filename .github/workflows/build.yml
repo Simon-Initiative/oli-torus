@@ -87,11 +87,23 @@ jobs:
           path: test-results
           if-no-files-found: ignore
 
+  check-simon-token:
+    name: check if SIMON_BOT_PERSONAL_ACCESS_TOKEN is set in github secrets
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check_token.outputs.available }}
+    steps:
+      - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
+        id: check_token
+        env:
+          SIMON_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+        run: |
+        echo "::set-output name=available::${{ env.SIMON_TOKEN != '' }}"
+
   auto-format:
     runs-on: ubuntu-latest
-    env:
-      simon_token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-    if: ${{ env.simon_token }}
+    needs: check-simon-token
+    if: ${{ needs.check-simon-token.available }}
 
     steps:
       - name: 🛎️ Checkout
