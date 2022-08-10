@@ -89,7 +89,9 @@ jobs:
 
   auto-format:
     runs-on: ubuntu-latest
-    if: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+    env:
+      simon_token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+    if: ${{ env.simon_token }}
 
     steps:
       - name: 🛎️ Checkout
