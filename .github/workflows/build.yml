@@ -87,12 +87,27 @@ jobs:
           path: test-results
           if-no-files-found: ignore
 
+  check-simon-token:
+    name: check simon-bot access token
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check_token.outputs.available }}
+    steps:
+      - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
+        id: check_token
+        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
+
   auto-format:
     runs-on: ubuntu-latest
+    needs: check-simon-token
 
     steps:
+      - name: Info
+        run: if ${{ needs.check-simon-token.outputs.available }} ; then echo "Running auto format job..." ; else echo "No simon token. Skipping auto format." ; fi
+
       - name: 🛎️ Checkout
         uses: actions/checkout@v3
+        if: ${{ needs.check-simon-token.outputs.available }}
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
@@ -100,26 +115,32 @@ jobs:
 
       - name: 🔧 Configure
         uses: actions/setup-node@v1
+        if: ${{ needs.check-simon-token.outputs.available }}
         with:
           node-version: "16.13.2"
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
+        if: ${{ needs.check-simon-token.outputs.available }}
         with:
           elixir-version: 1.13.2 # Define the elixir version [required]
           otp-version: 24.0 # Define the OTP version [required]
 
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
+        if: ${{ needs.check-simon-token.outputs.available }}
 
       - name: 📦 Install node_module dependencies
         run: yarn --cwd assets --frozen-lockfile
+        if: ${{ needs.check-simon-token.outputs.available }}
 
       - name: 🤖 Auto format
         run: yarn --cwd assets run format
+        if: ${{ needs.check-simon-token.outputs.available }}
 
       - name: ✅ Commit
         uses: EndBug/add-and-commit@v9
+        if: ${{ needs.check-simon-token.outputs.available }}
         with:
           message: Auto format
           committer_name: Simon Bot (GitHub Actions)
