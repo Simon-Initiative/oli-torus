@@ -530,20 +530,19 @@ export const loadActivities = createAsyncThunk(
       .map((a) => a?.state)
       .filter((s) => s !== undefined) as ActivityState[];
 
-    // when resuming a session, we want to reset the current attempt values
+    // when resuming a session, we want to reset the current part attempt values
     const shouldResume = states.some((attempt: any) => attempt.dateEvaluated !== null);
     if (shouldResume) {
       const snapshot = getEnvState(defaultGlobalEnv);
       const resumeId = snapshot['session.resume'];
       const currentResumeActivityAttempt = models.filter((model: any) => model.id === resumeId);
-      const currentResumeActivityAttemptId = currentResumeActivityAttempt?.length
-        ? currentResumeActivityAttempt[0]?.attemptGuid
-        : '';
-      states.forEach((state) => {
-        if (state.attemptGuid === currentResumeActivityAttemptId) {
-          state.parts.forEach((part) => (part.response = []));
-        }
-      });
+      if (currentResumeActivityAttempt?.length) {
+        states.forEach((state) => {
+          if (state.attemptGuid === currentResumeActivityAttempt[0]?.attemptGuid) {
+            state.parts.forEach((part) => (part.response = []));
+          }
+        });
+      }
     }
 
     thunkApi.dispatch(loadActivityAttemptState({ attempts: states }));
