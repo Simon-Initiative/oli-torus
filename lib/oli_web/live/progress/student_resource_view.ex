@@ -63,7 +63,12 @@ defmodule OliWeb.Progress.StudentResourceView do
                 _ ->
                   ResourceAccess.changeset(resource_access, %{
                     # limit score decimals to two significant figures, rounding up
-                    score: Utils.format_score(resource_access.score)
+                    score:
+                      if is_nil(resource_access.score) do
+                        nil
+                      else
+                        Utils.format_score(resource_access.score)
+                      end
                   })
               end
 
