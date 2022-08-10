@@ -95,9 +95,7 @@ jobs:
     steps:
       - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
         id: check_token
-        env:
-          SIMON_TOKEN: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
-        run: echo "::set-output name=available::${{ env.SIMON_TOKEN != '' }}"
+        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ]; ; then echo true ; else echo false ; fi)"
 
   auto-format:
     runs-on: ubuntu-latest
