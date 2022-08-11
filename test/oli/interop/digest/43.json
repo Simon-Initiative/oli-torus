@@ -7,6 +7,19 @@
             "children": [
               {
                 "text": "Here is an edit"
+              },
+              {
+                "type": "cite",
+                "children": [
+                  {
+                    "text": "[citation]"
+                  }
+                ],
+                "id": "Kluver_1939",
+                "bibref": "241064652"
+              },
+              {
+                "text": " example"
               }
             ],
             "id": "2483274500",
