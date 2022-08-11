@@ -16,8 +16,7 @@ interface Props {
 }
 
 // only include item column if more than one item or single item is non-blank
-const needItemColumn = (items: LikertItem[]) => {
-  return items.length > 1 || toSimpleText(items[0].content).trim() != '';
+const needItemColumn = (items: LikertItem[]) => {  return items.length > 1 || toSimpleText(items[0].content).trim() != '';
 };
 
 export const LikertTable: React.FC<Props> = ({
