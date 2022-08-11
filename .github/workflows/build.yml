@@ -111,7 +111,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: 🔧 Configure
         uses: actions/setup-node@v1
