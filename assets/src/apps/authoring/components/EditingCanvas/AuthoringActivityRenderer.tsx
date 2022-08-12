@@ -78,7 +78,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     if (notificationStream?.stamp) {
       sendNotify(notificationStream.type, notificationStream.payload);
     }
-  }, [activityModel.activityType, activityModel.authoring, notificationStream, sendNotify]);
+  }, [notificationStream]);
 
   useEffect(() => {
     if (!activityModel.authoring || !activityModel.activityType) {
@@ -138,21 +138,11 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     setIsReady(true);
 
     return () => {
+      /* console.log('AAR: unmounting'); */
       document.removeEventListener('customEvent', customEventHandler);
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
-  }, [
-    activityModel.activityType,
-    activityModel.authoring,
-    dispatch,
-    elementProps.id,
-    onCancelConfigurePart,
-    onConfigurePart,
-    onCopyPart,
-    onPartChangePosition,
-    onSaveConfigurePart,
-    onSelectPart,
-  ]);
+  }, [elementProps.id]);
 
   if (!activityModel.authoring || !activityModel.activityType) {
     console.warn('Bad Activity Data', activityModel);
