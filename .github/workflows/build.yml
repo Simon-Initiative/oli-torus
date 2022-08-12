@@ -96,20 +96,7 @@ jobs:
     steps:
       - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
         id: check_token
-        run: |
-          if [[ "${{ secrets.CONTAINER_REPO }}" != "" && \
-                "${{ secrets.CONTAINER_REGISTRY }}" != "" && \
-                "${{ secrets.CONTAINER_REGISTRY_USERNAME }}" != "" && \
-                "${{ secrets.CONTAINER_REGISTRY_PASSWORD }}" != "" ]]; \
-          then
-            echo "Secrets to use a container registry were configured in the repo"
-            echo "::set-output name=have_secrets::true"
-          else
-            echo "Secrets to use a container registry were not configured in the repo"
-            echo "::set-output name=have_secrets::false"
-          fi
-
-          echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
+        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
 
   auto-format:
     name: Auto format and lint
