@@ -114,6 +114,18 @@ defmodule Oli.Interop.IngestTest do
       # verify that every practice page has a content attribute with a model
       assert Enum.all?(practice_pages, fn p -> Map.has_key?(p.content, "model") end)
 
+      # verify that citations are rewired correctly
+      page_with_citation = Enum.filter(practice_pages, fn p -> p.title == "Feedback" end) |> hd
+      citation = Enum.at(page_with_citation.content["model"], 0)
+        |> Map.get("children")
+        |> Enum.at(0)
+        |> Map.get("children")
+        |> Enum.at(1)
+
+      bib_entries = Oli.Publishing.get_unpublished_revisions(project, [Map.get(citation, "bibref")])
+
+      assert length(bib_entries) == 1
+
       # verify that the page that had a link to another page had that link rewired correctly
       src = Enum.filter(practice_pages, fn p -> p.title == "Introduction" end) |> hd
 

@@ -162,4 +162,8 @@ defmodule Oli.Resources.PageContent do
     )
     |> then(fn {_, result} -> result end)
   end
+
+  def bibliography_rewire(%{"children" => _children} = item, acc, map_fn) do
+    item_with_children(item, acc, map_fn, %TraversalContext{})
+  end
 end
