@@ -15,11 +15,57 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
   const { model, dispatch, editMode } = useAuthoringElementContext<VlabSchema>();
   const assignmentList = [
     'default',
+    'chemvlab/IV/IV_dilute_saline/',
+    'chemvlab/IV/IV_iodine_12/',
+    'chemvlab/IV/IV_iodine_18/',
+    'chemvlab/IV/IV_make_glucose/',
+    'chemvlab/IV/IV_make_glucose2/',
+    'chemvlab/IV/IV_make_saline/',
     'chemvlab/stoichiometry/Activity1_a/',
     'chemvlab/stoichiometry/Activity1_b/',
     'chemvlab/stoichiometry/Activity2_a/',
     'chemvlab/stoichiometry/Activity2_b/',
     'chemvlab/stoichiometry/Activity2_c/',
+    'chemvlab/stoichiometry/Activity3_a/',
+    'chemvlab/stoichiometry/Activity3_b/',
+    'chemvlab/stoichiometry/Activity3_c/',
+    'chemvlab/stoichiometry/Activity3_d/',
+    'chemvlab/stoichiometry/Activity3_e/',
+    'chemvlab/stoichiometry/Activity4_a/',
+    'chemvlab/stoichiometry/Activity4_b/',
+    'chemvlab/stoichiometry/Activity4_c/',
+    'chemvlab/stoichiometry/Activity4_d/',
+    'chemvlab/stoichiometry/chloride_ga/',
+    'chemvlab/stoichiometry/chloride_precip/',
+    'chemvlab/stoichiometry/lead_ga/',
+    'chemvlab/stoichiometry/lead_precip/',
+    'chemvlab/thermodynamics/Cobalt/',
+    'chemvlab/thermodynamics/Hotcold1/',
+    'chemvlab/thermodynamics/Hotcold2/',
+    'chemvlab/thermodynamics/Solar1/',
+    'chemvlab/thermodynamics/Solar2/',
+    'chemvlab/thermodynamics/Swim1/',
+    'chemvlab/thermodynamics/Swim2/',
+    'chemvlab/thermodynamics/Swim3/',
+    'chemvlab/thermodynamics/Swim4/',
+    'chemvlab/thermodynamics/Swim5/',
+    'chemvlab/thermodynamics/Swim6/',
+    'chemvlab/thermodynamics/Swim7/',
+    'chemvlab/thermodynamics/Thiocyanate',
+    'colligative/bp_elevation/',
+    'colligative/vapor_pressure/',
+    'iron_thiocyanate/',
+    'kinetics/iodide_persulfate/',
+    'kinetics/k1/',
+    'kinetics/k2/',
+    'kinetics/k3/',
+    'kinetics/k4equilibrium/',
+    'metals/',
+    'MolarityDensity/dilution/',
+    'MolarityDensity/sucrose/',
+    'Redox/redox/',
+    'Redox/redox2/',
+    'solubility/',
   ];
 
   return (
@@ -93,7 +139,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   onEdit={(s) => dispatch(MultiInputActions.editAssignment(s))}
                 />
               </TabbedNavigation.Tab>
-              <TabbedNavigation.Tab label="React">
+              <TabbedNavigation.Tab label="Reactions">
                 <div className="alert alert-info" role="alert">
                   Reactions from reactions.json
                 </div>

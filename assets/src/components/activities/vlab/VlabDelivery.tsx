@@ -87,7 +87,6 @@ export const MultiInputComponent: React.FC = () => {
               }
             });
           }
-          console.log('SelectedFlask reported value for ' + param + ' = ' + value + '.');
           dispatch(
             activityDeliverySlice.actions.setStudentInputForPart({
               partId: input.partId,
@@ -96,8 +95,6 @@ export const MultiInputComponent: React.FC = () => {
           );
         }
       });
-    } else {
-      console.log('Vlab XML parse error. Nothing selected on the workbench?');
     }
   };
 
@@ -217,7 +214,7 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <iframe id="vlab" className="vlab-holder" src="/vlab/index.html" onLoad={onVlabLoad} />
+        <iframe id="vlab" className="vlab-holder" src="/vlab/vlab.html" onLoad={onVlabLoad} />
         <StemDelivery
           className="form-inline"
           stem={(uiState.model as MultiInputSchema).stem}

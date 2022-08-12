@@ -14,22 +14,30 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
   const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
   return (
     <>
-      <div>The currently selected parameter is {friendlyVlabParameter(props.input.parameter)}.</div>
-      {paramList.map((param, i) => (
-        <div key={i}>
-          <label>
-            <input
-              type="radio"
-              name="vlparam"
-              value={param}
-              checked={param === props.input.parameter}
-              onChange={() => dispatch(MultiInputActions.setVlabParameter(props.input.id, param))}
-            />
-            {friendlyVlabParameter(param)}
-          </label>
-        </div>
-      ))}
       <div>
+        <p>
+          Choose the property of the selected vessel that is to be tested. For the properties moles,
+          mass, molarity and concetration, you must also supply the relevant species ID.
+        </p>
+      </div>
+      <div className="form-check">
+        {paramList.map((param, i) => (
+          <div key={i}>
+            <label className="form-check-label">
+              <input
+                className="form-check-input"
+                type="radio"
+                name="vlparam"
+                value={param}
+                checked={param === props.input.parameter}
+                onChange={() => dispatch(MultiInputActions.setVlabParameter(props.input.id, param))}
+              />
+              {friendlyVlabParameter(param)}
+            </label>
+          </div>
+        ))}
+      </div>
+      <div className="form-label-group">
         <label>
           <input
             type="text"

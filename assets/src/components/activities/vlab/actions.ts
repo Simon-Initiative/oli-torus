@@ -1,12 +1,6 @@
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
-import {
-  Dropdown,
-  VlabInput,
-  VlabSchema,
-  VlabInputType,
-  VlabConfiguration,
-} from 'components/activities/vlab/schema';
+import { Dropdown, VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
 import {
   Choice,
   ChoiceId,
