@@ -355,18 +355,6 @@
                 "$ref": "#/$defs/inline"
               },
               {
-                "$ref": "#/$defs/code-v1"
-              },
-              {
-                "$ref": "#/$defs/code-v2"
-              },
-              {
-                "$ref": "#/$defs/blockquote"
-              },
-              {
-                "$ref": "#/$defs/media"
-              },
-              {
                 "$ref": "#/$defs/list"
               }
             ]
