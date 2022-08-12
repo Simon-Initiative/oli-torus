@@ -71,6 +71,7 @@ export class HtmlParser implements WriterImpl {
       code: (e) => <code>{e}</code>,
       sub: (e) => <sub>{e}</sub>,
       sup: (e) => <sup>{e}</sup>,
+      term: (e) => <span className="term">{e}</span>,
       underline: (e) => <span style={{ textDecoration: 'underline' }}>{e}</span>,
       strikethrough: (e) => <span style={{ textDecoration: 'line-through' }}>{e}</span>,
     };
