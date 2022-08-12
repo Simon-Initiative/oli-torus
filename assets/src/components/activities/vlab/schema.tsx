@@ -47,7 +47,7 @@ export const VlabInputTypeFriendly = (type: VlabInputType): string =>
     }[type],
   ).valueOr(assertNever(type));
 
-export type VlabParameter = 'volume' | 'temp';
+// export type VlabParameter = 'volume' | 'temp';
 
 export interface VlabSchema extends ActivityModelSchema {
   stem: Stem;

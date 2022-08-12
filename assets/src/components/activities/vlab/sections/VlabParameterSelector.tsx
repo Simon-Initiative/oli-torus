@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { MultiInputActions } from 'components/activities/vlab/actions';
+import { VlabActions } from 'components/activities/vlab/actions';
 import { friendlyVlabParameter } from 'components/activities/vlab/utils';
 import { VlabValue, VlabSchema } from 'components/activities/vlab/schema';
 import React from 'react';
@@ -30,7 +30,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
                 name="vlparam"
                 value={param}
                 checked={param === props.input.parameter}
-                onChange={() => dispatch(MultiInputActions.setVlabParameter(props.input.id, param))}
+                onChange={() => dispatch(VlabActions.setVlabParameter(props.input.id, param))}
               />
               {friendlyVlabParameter(param)}
             </label>
@@ -49,7 +49,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
               props.input.parameter === 'pH'
             }
             onChange={(e) =>
-              dispatch(MultiInputActions.setVlabSpecies(props.input.id, e.target.value))
+              dispatch(VlabActions.setVlabSpecies(props.input.id, e.target.value))
             }
           />
           Species ID

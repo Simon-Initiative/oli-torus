@@ -6,7 +6,7 @@ import { HintsDeliveryConnected } from 'components/activities/common/hints/deliv
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { MultiInputSchema } from 'components/activities/vlab/schema';
+import { VlabSchema } from 'components/activities/vlab/schema';
 import { Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
@@ -37,7 +37,7 @@ export const MultiInputComponent: React.FC = () => {
     onSaveActivity,
     onResetActivity,
     model,
-  } = useDeliveryElementContext<MultiInputSchema>();
+  } = useDeliveryElementContext<VlabSchema>();
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
@@ -133,7 +133,7 @@ export const MultiInputComponent: React.FC = () => {
   }
 
   const toggleHints = (id: string) => {
-    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    const input = getByUnsafe((uiState.model as VlabSchema).inputs, (x) => x.id === id);
     setHintsShown((hintsShown) =>
       hintsShown.includes(input.partId)
         ? hintsShown.filter((id) => id !== input.partId)
@@ -142,7 +142,7 @@ export const MultiInputComponent: React.FC = () => {
   };
 
   const inputs = new Map(
-    (uiState.model as MultiInputSchema).inputs.map((input) => [
+    (uiState.model as VlabSchema).inputs.map((input) => [
       input.id,
       {
         input:
@@ -150,7 +150,7 @@ export const MultiInputComponent: React.FC = () => {
             ? {
                 id: input.id,
                 inputType: input.inputType,
-                options: (uiState.model as MultiInputSchema).choices
+                options: (uiState.model as VlabSchema).choices
                   .filter((c) => input.choiceIds.includes(c.id))
                   .map((choice) => ({
                     value: choice.id,
@@ -165,7 +165,7 @@ export const MultiInputComponent: React.FC = () => {
   );
 
   const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    const input = getByUnsafe((uiState.model as VlabSchema).inputs, (x) => x.id === id);
     const value = e.target.value;
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
@@ -217,7 +217,7 @@ export const MultiInputComponent: React.FC = () => {
         <iframe id="vlab" className="vlab-holder" src="/vlab/vlab.html" onLoad={onVlabLoad} />
         <StemDelivery
           className="form-inline"
-          stem={(uiState.model as MultiInputSchema).stem}
+          stem={(uiState.model as VlabSchema).stem}
           context={writerContext}
         />
         <GradedPointsConnected />
@@ -239,8 +239,8 @@ export const MultiInputComponent: React.FC = () => {
 };
 
 // Defines the web component, a simple wrapper over our React component above
-export class VlabDelivery extends DeliveryElement<MultiInputSchema> {
-  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MultiInputSchema>) {
+export class VlabDelivery extends DeliveryElement<VlabSchema> {
+  render(mountPoint: HTMLDivElement, props: DeliveryElementProps<VlabSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
     ReactDOM.render(
       <Provider store={store}>

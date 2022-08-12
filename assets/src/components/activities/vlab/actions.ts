@@ -23,7 +23,7 @@ import { Descendant, Editor, Element, Operation } from 'slate';
 import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
-export const MultiInputActions = {
+export const VlabActions = {
   editStemAndPreviewText(content: Descendant[], editor: Editor, operations: Operation[]) {
     return (model: VlabSchema, post: PostUndoable) => {
       const removedInputRefs = elementsRemoved<InputRef>(operations, 'input_ref');
@@ -53,14 +53,14 @@ export const MultiInputActions = {
         return;
       }
 
-      MultiInputActions.addMissingParts(operations)(model);
-      MultiInputActions.removeExtraParts(operations)(model, post);
+      VlabActions.addMissingParts(operations)(model);
+      VlabActions.removeExtraParts(operations)(model, post);
       StemActions.editStemAndPreviewText(content)(model);
 
       // Reorder parts and inputs by new editor model
       const inputRefIds = elementsOfType<InputRef>(editor, 'input_ref').map(({ id }) => id);
-      MultiInputActions.reorderInputs(inputRefIds)(model);
-      MultiInputActions.reorderPartsByInputs()(model);
+      VlabActions.reorderInputs(inputRefIds)(model);
+      VlabActions.reorderPartsByInputs()(model);
     };
   },
 
@@ -98,7 +98,7 @@ export const MultiInputActions = {
   addMissingParts(operations: Operation[]) {
     return (model: VlabSchema) => {
       elementsAdded<InputRef>(operations, 'input_ref').forEach((inputRef) =>
-        MultiInputActions.addPart(inputRef.id)(model),
+        VlabActions.addPart(inputRef.id)(model),
       );
     };
   },
@@ -109,7 +109,7 @@ export const MultiInputActions = {
       const clonedStem = clone(model.stem);
       const clonedPreviewText = clone(model.authoring.previewText);
       removedInputRefs.forEach((inputRef) =>
-        MultiInputActions.removePart(inputRef.id, clonedStem, clonedPreviewText)(model, post),
+        VlabActions.removePart(inputRef.id, clonedStem, clonedPreviewText)(model, post),
       );
     };
   },
@@ -193,8 +193,8 @@ export const MultiInputActions = {
       const part = getPartById(model, input.partId);
 
       if (input.inputType === 'dropdown') {
-        MultiInputActions.removeTargetedMappingsForPart(part)(model);
-        MultiInputActions.removeChoicesForInput(input)(model);
+        VlabActions.removeTargetedMappingsForPart(part)(model);
+        VlabActions.removeChoicesForInput(input)(model);
       }
 
       if (type === 'dropdown') {
@@ -283,8 +283,8 @@ export const MultiInputActions = {
       const part = getPartById(model, input.partId);
 
       if (input.inputType === 'dropdown') {
-        MultiInputActions.removeTargetedMappingsForPart(part)(model);
-        MultiInputActions.removeChoicesForInput(input)(model);
+        VlabActions.removeTargetedMappingsForPart(part)(model);
+        VlabActions.removeChoicesForInput(input)(model);
       }
 
       Operations.applyAll(model, [

@@ -1,6 +1,6 @@
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
 import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
-import { MultiInputSchema } from 'components/activities/vlab/schema';
+import { VlabSchema } from 'components/activities/vlab/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
 // import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
@@ -21,13 +21,11 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
-import { WrappedMonaco } from '../common/variables/WrappedMonaco';
-import { MultiInputActions } from 'components/activities/vlab/actions';
 
 const store = configureStore();
 
 export const MultiInputComponent = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<MultiInputSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<VlabSchema>();
   const [editor, setEditor] = React.useState<(ReactEditor & Editor) | undefined>();
   const [selectedInputRef, setSelectedInputRef] = React.useState<InputRef | undefined>(undefined);
 
@@ -85,8 +83,8 @@ export const MultiInputComponent = () => {
   );
 };
 
-export class VlabAuthoring extends AuthoringElement<MultiInputSchema> {
-  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<MultiInputSchema>) {
+export class VlabAuthoring extends AuthoringElement<VlabSchema> {
+  render(mountPoint: HTMLDivElement, props: AuthoringElementProps<VlabSchema>) {
     ReactDOM.render(
       <Provider store={store}>
         <AuthoringElementProvider {...props}>

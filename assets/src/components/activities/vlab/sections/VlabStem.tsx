@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { MultiInputActions } from 'components/activities/vlab/actions';
+import { VlabActions } from 'components/activities/vlab/actions';
 import { VlabSchema } from 'components/activities/vlab/schema';
 import { InputRefToolbar } from 'components/activities/multi_input/sections/InputRefToolbar';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
@@ -21,7 +21,7 @@ export const VlabStem: React.FC<Props> = (props) => {
   const commandContext: CommandContext = {
     projectSlug,
     inputRefContext: {
-      setInputType: (id, type) => dispatch(MultiInputActions.setInputType(id, type)),
+      setInputType: (id, type) => dispatch(VlabActions.setInputType(id, type)),
       inputs: new Map(model.inputs.map((v) => [v.id, v])),
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,
@@ -34,7 +34,7 @@ export const VlabStem: React.FC<Props> = (props) => {
         normalizerContext={{ whitelist: ['input_ref'] }}
         value={model.stem.content}
         onEdit={(content, editor, operations) => {
-          dispatch(MultiInputActions.editStemAndPreviewText(content, editor, operations));
+          dispatch(VlabActions.editStemAndPreviewText(content, editor, operations));
           if (elementsRemoved(operations, 'input_ref').length > 0) {
             props.setSelectedInputRef(undefined);
           }

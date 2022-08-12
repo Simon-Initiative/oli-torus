@@ -1,5 +1,5 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { MultiInputActions } from 'components/activities/vlab/actions';
+import { VlabActions } from 'components/activities/vlab/actions';
 import { VlabSchema } from 'components/activities/vlab/schema';
 import { Card } from 'components/misc/Card';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
@@ -81,7 +81,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 name="assignmentSource"
                 value="builtIn"
                 checked={model.assignmentSource === 'builtIn'}
-                onChange={() => dispatch(MultiInputActions.setAssignmentSource('builtIn'))}
+                onChange={() => dispatch(VlabActions.setAssignmentSource('builtIn'))}
               />
               Choose Assignment from Built-in List
             </label>
@@ -94,7 +94,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 name="assignmentSource"
                 value="fromJSON"
                 checked={model.assignmentSource === 'fromJSON'}
-                onChange={() => dispatch(MultiInputActions.setAssignmentSource('fromJSON'))}
+                onChange={() => dispatch(VlabActions.setAssignmentSource('fromJSON'))}
               />
               Create Assignment from Custom JSON
             </label>
@@ -105,7 +105,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                 <select
                   className="custom-select mr-2 form-control form-control-sm"
                   value={model.assignmentPath}
-                  onChange={(e) => dispatch(MultiInputActions.setAssignmentPath(e.target.value))}
+                  onChange={(e) => dispatch(VlabActions.setAssignmentPath(e.target.value))}
                 >
                   {assignmentList.map((assignment, i) => (
                     <option value={assignment} key={i}>
@@ -125,7 +125,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.configuration}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editConfiguration(s))}
+                  onEdit={(s) => dispatch(VlabActions.editConfiguration(s))}
                 />
               </TabbedNavigation.Tab>
               <TabbedNavigation.Tab label="Assgnmt">
@@ -136,7 +136,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.assignment}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editAssignment(s))}
+                  onEdit={(s) => dispatch(VlabActions.editAssignment(s))}
                 />
               </TabbedNavigation.Tab>
               <TabbedNavigation.Tab label="Reactions">
@@ -147,7 +147,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.reactions}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editReactions(s))}
+                  onEdit={(s) => dispatch(VlabActions.editReactions(s))}
                 />
               </TabbedNavigation.Tab>
               <TabbedNavigation.Tab label="Solutions">
@@ -158,7 +158,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.solutions}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editSolutions(s))}
+                  onEdit={(s) => dispatch(VlabActions.editSolutions(s))}
                 />
               </TabbedNavigation.Tab>
               <TabbedNavigation.Tab label="Species">
@@ -169,7 +169,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.species}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editSpecies(s))}
+                  onEdit={(s) => dispatch(VlabActions.editSpecies(s))}
                 />
               </TabbedNavigation.Tab>
               <TabbedNavigation.Tab label="Spectra">
@@ -180,7 +180,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
                   model={model.spectra}
                   editMode={editMode}
                   language="javascript"
-                  onEdit={(s) => dispatch(MultiInputActions.editSpectra(s))}
+                  onEdit={(s) => dispatch(VlabActions.editSpectra(s))}
                 />
               </TabbedNavigation.Tab>
             </TabbedNavigation.Tabs>
