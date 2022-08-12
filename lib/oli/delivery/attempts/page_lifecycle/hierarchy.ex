@@ -158,7 +158,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       end)
 
     Enum.map(prototypes, fn prototype -> create_raw_activity_attempt(prototype) end)
-    |> optimize_transformed_model()
+    |> optimize_raw_attempts()
     |> bulk_create_activity_attempts(right_now, resource_attempt.id)
 
     create_part_attempts(prototypes, previous_attempt, resource_attempt, datashop_session_id)
@@ -261,8 +261,12 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
               aa1.revision_id in ^revision_ids,
           select: %{
             response: pa1.response,
+            score: pa1.score,
+            out_of: pa1.out_of,
+            feedback: pa1.feedback,
             part_id: pa1.part_id,
             revision_id: aa1.revision_id,
+            lifecycle_state: pa1.lifecycle_state,
             grading_approach: pa1.grading_approach
           }
         )
@@ -295,6 +299,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
           parts ->
             Enum.map(parts, fn %{
                                  response: response,
+                                 score: score,
+                                 out_of: out_of,
+                                 feedback: feedback,
+                                 lifecycle_state: lifecycle_state,
                                  part_id: part_id,
                                  grading_approach: grading_approach
                                } ->
@@ -306,9 +314,24 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
                 datashop_session_id: datashop_session_id,
                 inserted_at: now,
                 updated_at: now,
+                score: score,
+                out_of: out_of,
+                feedback: feedback,
+                lifecycle_state: Atom.to_string(lifecycle_state),
+                date_evaluated:
+                  if lifecycle_state == :evaluated do
+                    now
+                  else
+                    nil
+                  end,
+                date_submitted:
+                  if lifecycle_state == :evaluated or lifecycle_state == :submitted do
+                    now
+                  else
+                    nil
+                  end,
                 hints: [],
                 attempt_number: 1,
-                lifecycle_state: "active",
                 grading_approach: Atom.to_string(grading_approach)
               ]
             end) ++ all
@@ -320,22 +343,77 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   end
 
   # If all of the transformed_model attrs are nil, we do not need to include them in
-  # the query, as they will be set to nil by default
-  defp optimize_transformed_model(raw_attempts) do
-    case Enum.all?(raw_attempts, fn a -> is_nil(a.transformed_model) end) do
-      true -> Enum.map(raw_attempts, fn a -> Map.delete(a, :transformed_model) end)
-      _ -> raw_attempts
+  # the query, as they will be set to nil by default.  Similar logic for the group of
+  # lifecycle state, score, out_of, date_submitted and date_evaluated - when all
+  # entries have lifecycle_state equal to :active.  We also optimize away each of
+  # survey_id, group_id, and selection_id
+  defp optimize_raw_attempts(raw_attempts) do
+    raw_attempts =
+      case Enum.all?(raw_attempts, fn a -> is_nil(a.transformed_model) end) do
+        true -> Enum.map(raw_attempts, fn a -> Map.delete(a, :transformed_model) end)
+        _ -> raw_attempts
+      end
+
+    raw_attempts =
+      case Enum.all?(raw_attempts, fn a -> a.lifecycle_state == :active end) do
+        true ->
+          Enum.map(raw_attempts, fn a ->
+            Map.delete(a, :lifecycle_state)
+            |> Map.delete(:score)
+            |> Map.delete(:out_of)
+            |> Map.delete(:date_submitted)
+            |> Map.delete(:date_evaluated)
+          end)
+
+        _ ->
+          raw_attempts
+      end
+
+    raw_attempts =
+      case Enum.all?(raw_attempts, fn a -> is_nil(a.group_id) end) do
+        true ->
+          Enum.map(raw_attempts, fn a ->
+            Map.delete(a, :group_id)
+          end)
+
+        _ ->
+          raw_attempts
+      end
+
+    raw_attempts =
+      case Enum.all?(raw_attempts, fn a -> is_nil(a.selection_id) end) do
+        true ->
+          Enum.map(raw_attempts, fn a ->
+            Map.delete(a, :selection_id)
+          end)
+
+        _ ->
+          raw_attempts
+      end
+
+    case Enum.all?(raw_attempts, fn a -> is_nil(a.survey_id) end) do
+      true ->
+        Enum.map(raw_attempts, fn a ->
+          Map.delete(a, :survey_id)
+        end)
+
+      _ ->
+        raw_attempts
     end
   end
 
-  defp create_raw_activity_attempt(%AttemptPrototype{
-         revision: %Revision{resource_id: resource_id, id: id},
-         scoreable: scoreable,
-         transformed_model: transformed_model,
-         group_id: group_id,
-         survey_id: survey_id,
-         selection_id: selection_id
-       }) do
+  defp create_raw_activity_attempt(
+         %AttemptPrototype{
+           revision: %Revision{resource_id: resource_id, id: id},
+           scoreable: scoreable,
+           transformed_model: transformed_model,
+           group_id: group_id,
+           survey_id: survey_id,
+           selection_id: selection_id,
+           score: score,
+           out_of: out_of
+         } = prototype
+       ) do
     %{
       resource_attempt_id: {:placeholder, :resource_attempt_id},
       attempt_guid: UUID.uuid4(),
@@ -344,7 +422,16 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
       resource_id: resource_id,
       transformed_model: transformed_model,
       scoreable: scoreable,
-      lifecycle_state: :active,
+      lifecycle_state:
+        if is_nil(prototype.lifecycle_state) do
+          :active
+        else
+          prototype.lifecycle_state
+        end,
+      date_submitted: prototype.date_submitted,
+      date_evaluated: prototype.date_evaluated,
+      score: score,
+      out_of: out_of,
       group_id: group_id,
       survey_id: survey_id,
       selection_id: selection_id,

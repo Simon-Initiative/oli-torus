@@ -6,15 +6,13 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 export const EvaluationConnected: React.FC = () => {
-  const { graded, mode, surveyId, writerContext } = useDeliveryElementContext();
+  const { surveyId, writerContext } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
 
   return (
     <>
       <Evaluation
-        shouldShow={
-          isEvaluated(uiState) && (!graded || mode === 'review') && surveyId === undefined
-        }
+        shouldShow={isEvaluated(uiState) && surveyId === undefined}
         attemptState={uiState.attemptState}
         context={writerContext}
       />
