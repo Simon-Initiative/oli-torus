@@ -2,7 +2,7 @@ import React from 'react';
 
 interface Props {
   onChange: React.ChangeEventHandler<HTMLInputElement>;
-  value: string | number;
+  value: string;
   disabled?: boolean;
   placeholder?: string;
 }

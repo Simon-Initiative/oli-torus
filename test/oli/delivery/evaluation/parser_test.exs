@@ -30,4 +30,9 @@ defmodule Oli.Delivery.Evaluation.ParserTest do
   test "fails on unknown function" do
     assert {:error, _} = parse("!attemptNumber > 1")
   end
+
+  test "parses is operator and processes escaped curly brackets" do
+    assert {:ok, {:is, :input, "some string with escaped curly brackets here } and here { "}} ==
+             parse("input is {some string with escaped curly brackets here \\} and here \\{ }")
+  end
 end

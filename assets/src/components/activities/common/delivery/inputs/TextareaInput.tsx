@@ -2,7 +2,7 @@ import React from 'react';
 
 interface Props {
   onChange: React.ChangeEventHandler<HTMLTextAreaElement>;
-  value: string | number;
+  value: string;
   rows?: number;
   cols?: number;
   disabled?: boolean;

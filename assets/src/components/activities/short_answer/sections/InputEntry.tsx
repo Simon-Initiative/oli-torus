@@ -1,4 +1,5 @@
 import {
+  unescapeInput,
   makeRule,
   parseInputFromRule,
   parseOperatorFromRule,
@@ -10,7 +11,8 @@ import { useState } from 'react';
 import React from 'react';
 import { NumericInput } from 'components/activities/short_answer/sections/NumericInput';
 import { TextInput } from 'components/activities/short_answer/sections/TextInput';
-
+import { MathInput } from 'components/activities/short_answer/sections/MathInput';
+import { valueOr } from 'utils/common';
 interface InputProps {
   inputType: InputType;
   response: Response;
@@ -29,12 +31,15 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
   };
 
   const shared = {
-    state: { operator, input },
+    state: { operator, input: unescapeInput(valueOr(input, '')) },
     setState: onEditRule,
   };
 
   if (inputType === 'numeric') {
     return <NumericInput {...shared} />;
+  }
+  if (inputType === 'math') {
+    return <MathInput {...shared} />;
   }
   return <TextInput {...shared} />;
 };

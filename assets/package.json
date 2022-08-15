@@ -41,6 +41,7 @@
     "json-rules-engine": "^6.0.1",
     "json-schema": "^0.4.0",
     "jsonpath": "^1.1.1",
+    "mathlive": "^0.77.0",
     "monaco-editor": "^0.32.1",
     "nprogress": "^0.2.0",
     "phoenix": "file:../deps/phoenix",

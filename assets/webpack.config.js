@@ -179,6 +179,32 @@ module.exports = (env, options) => ({
         include: MONACO_DIR,
         use: ['file-loader'],
       },
+      // load fonts, specifically for MathLive
+      {
+        test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'fonts/',
+            },
+          },
+        ],
+      },
+      // load sounds, specifically for MathLive
+      {
+        test: /\.wav$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'sounds/',
+            },
+          },
+        ],
+      },
       {
         test: /\.[s]?css$/,
         include: SHADOW_DOM_ENABLED,
