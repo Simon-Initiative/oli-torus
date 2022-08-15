@@ -52,6 +52,9 @@ defmodule Oli.Resources.Revision do
 
     has_many :warnings, Oli.Qa.Warning
 
+    field(:total_count, :integer, virtual: true)
+    field(:page_type, :string, virtual: true)
+
     timestamps(type: :utc_datetime)
   end
 
