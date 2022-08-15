@@ -61,7 +61,8 @@ defmodule Oli.Resources.PageBrowse do
           dynamic(
             [rev, _, _, _],
             fragment(
-              "NOT (?->>'advancedDelivery' = true)",
+              "?->>'advancedDelivery' = 'false' OR NOT (? \\? 'advancedDelivery')",
+              rev.content,
               rev.content
             )
           )
@@ -69,7 +70,7 @@ defmodule Oli.Resources.PageBrowse do
           dynamic(
             [rev, _, _, _],
             fragment(
-              "?->>'advancedDelivery' = true",
+              "?->>'advancedDelivery' = 'true'",
               rev.content
             )
           )

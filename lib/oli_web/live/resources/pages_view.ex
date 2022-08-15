@@ -7,7 +7,7 @@ defmodule OliWeb.Resources.PagesView do
   import Oli.Authoring.Editing.Utils
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
   alias Oli.Resources.PageBrowse
   alias OliWeb.Common.Table.SortableTableModel
   alias Oli.Resources.PageBrowseOptions
@@ -24,6 +24,8 @@ defmodule OliWeb.Resources.PagesView do
   @limit 25
 
   defp limit, do: @limit
+  defp graded_opts, do: [{true, "Graded"}, {false, "Practice"}]
+  defp type_opts, do: [{true, "Regular"}, {false, "Adaptive"}]
 
   @default_options %PageBrowseOptions{
     basic: nil,
@@ -132,9 +134,35 @@ defmodule OliWeb.Resources.PagesView do
     {render_modal(assigns)}
     <div>
 
-      <div class="d-flex justify-content-between">
-        <TextSearch id="text-search"/>
-      </div>
+      <FilterBox
+        card_header_text="Browse All Pages"
+        card_body_text=""
+        table_model={@table_model}
+        show_sort={false}
+        show_more_opts={true}>
+        <TextSearch id="text-search" text={@options.text_search}/>
+
+        <:extra_opts>
+
+          <form :on-change="change_graded" class="d-flex">
+            <select name="graded" id="select_graded" class="custom-select custom-select mr-2">
+              <option value="" selected>Grading Type</option>
+              {#for {value, str} <- graded_opts()}
+                <option value={Kernel.to_string(value)} selected={@options.graded == value}>{str}</option>
+              {/for}
+            </select>
+          </form>
+
+          <form :on-change="change_type" class="d-flex">
+            <select name="type" id="select_type" class="custom-select custom-select mr-2">
+              <option value="" selected>Page Type</option>
+              {#for {value, str} <- type_opts()}
+                <option value={Kernel.to_string(value)} selected={@options.basic == value}>{str}</option>
+              {/for}
+            </select>
+          </form>
+        </:extra_opts>
+      </FilterBox>
 
       <div class="mb-3"/>
 
@@ -161,13 +189,23 @@ defmodule OliWeb.Resources.PagesView do
                sort_by: socket.assigns.table_model.sort_by_spec.name,
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
-               text_search: socket.assigns.options.text_search
+               text_search: socket.assigns.options.text_search,
+               basic: socket.assigns.options.basic,
+               graded: socket.assigns.options.graded
              },
              changes
            )
          ),
        replace: true
      )}
+  end
+
+  def handle_event("change_graded", %{"graded" => graded}, socket) do
+    patch_with(socket, %{graded: graded})
+  end
+
+  def handle_event("change_type", %{"type" => basic}, socket) do
+    patch_with(socket, %{basic: basic})
   end
 
   def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
