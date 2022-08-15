@@ -108,7 +108,7 @@ export const makeRule = (operator: RuleOperator, input: string | [string, string
       case 'regex':
         return matchRule(input);
       case 'equals':
-        return isRule(input);
+        return equalsRule(input);
     }
   }
 
