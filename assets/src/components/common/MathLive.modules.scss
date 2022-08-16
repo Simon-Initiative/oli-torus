@@ -8,10 +8,18 @@
     border-radius: 0.25rem;
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   }
+}
 
-  &:global(.disabled) {
-    math-field {
-      background-color: #e9ecef;
-    }
+.disabled {
+  math-field {
+    background-color: #e9ecef;
+  }
+}
+
+.inline {
+  display: inline-flex;
+
+  math-field {
+    min-width: 200px;
   }
 }

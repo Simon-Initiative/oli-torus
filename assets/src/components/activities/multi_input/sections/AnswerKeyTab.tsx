@@ -18,17 +18,25 @@ import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { makeResponse, Response, RichText } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
-import { containsRule, eqRule } from 'data/activities/model/rules';
+import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
+const defaultRuleForInputType = (inputType: string | undefined) => {
+  switch (inputType) {
+    case 'numeric':
+      return eqRule('');
+    case 'math':
+      return equalsRule('');
+    case 'text':
+    default:
+      return containsRule('');
+  }
+};
+
 export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
   ResponseActions.addResponse(
-    makeResponse(
-      input.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
-      0,
-      '',
-    ),
+    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
     input.partId,
   );
 

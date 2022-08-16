@@ -46,13 +46,12 @@ export function isOperator(s: string): s is RuleOperator {
 }
 
 export const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
+export const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
 
-export const unescapeInput = (s: string | [string, string]): string | [string, string] =>
-  typeof s === 'string'
-    ? unescapeSingleInput(s)
-    : [unescapeSingleInput(s[0]), unescapeSingleInput(s[1])];
-
-const unescapeSingleInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+export const unescapeSingleOrMultipleInputs = (
+  s: string | [string, string],
+): string | [string, string] =>
+  typeof s === 'string' ? unescapeInput(s) : [unescapeInput(s[0]), unescapeInput(s[1])];
 
 // text
 export const equalsRule = (input: string) => `input equals {${input}}`;
@@ -132,7 +131,7 @@ export const parseInputFromRule = (rule: string) =>
   });
 
 export const parseSingleInput = (rule: string) =>
-  unescapeInput(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}'))) as string;
+  unescapeInput(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}')));
 
 export const parseOperatorFromRule = (rule: string): RuleOperator => {
   switch (true) {
@@ -143,7 +142,7 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
       return 'contains';
     case rule.includes('like'):
       return 'regex';
-    case rule.includes('is'):
+    case rule.includes('equals'):
       return 'equals';
 
     // numeric

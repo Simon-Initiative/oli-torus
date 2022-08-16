@@ -32,7 +32,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
   op_gt = ascii_char([?>]) |> optional(string(" ")) |> replace(:gt) |> label(">")
   op_eq = ascii_char([?=]) |> optional(string(" ")) |> replace(:eq) |> label("=")
   op_like = string("like") |> optional(string(" ")) |> replace(:like) |> label("like")
-  op_equals = string("equals") |> optional(string(" ")) |> replace(:is) |> label("equals")
+  op_equals = string("equals") |> optional(string(" ")) |> replace(:equals) |> label("equals")
 
   op_contains =
     string("contains") |> optional(string(" ")) |> replace(:contains) |> label("contains")

@@ -58,7 +58,18 @@ export const friendlyType = (type: MultiInputType) => {
   if (type === 'dropdown') {
     return 'Dropdown';
   }
-  return `Input (${type === 'numeric' ? 'Number' : 'Text'})`;
+
+  switch (type) {
+    case 'numeric':
+      return 'Number';
+
+    case 'math':
+      return 'Math';
+
+    case 'text':
+    default:
+      return 'Text';
+  }
 };
 
 export const partTitle = (input: MultiInput, index: number) => (

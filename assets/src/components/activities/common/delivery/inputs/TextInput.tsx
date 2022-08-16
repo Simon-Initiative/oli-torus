@@ -1,10 +1,10 @@
 import React from 'react';
 
 interface Props {
-  onChange: React.ChangeEventHandler<HTMLInputElement>;
   value: string;
   disabled?: boolean;
   placeholder?: string;
+  onChange: (value: string) => void;
 }
 export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placeholder }) => {
   return (
@@ -13,7 +13,7 @@ export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placehol
       type="text"
       aria-label="answer submission textbox"
       className="form-control"
-      onChange={onChange}
+      onChange={(e) => onChange(e.target.value)}
       value={value}
       disabled={typeof disabled === 'boolean' ? disabled : false}
     />

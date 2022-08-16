@@ -25,10 +25,18 @@ export interface MathLiveProps {
   value?: string;
   // initialValue is a LaTex string which is first displayed when the component renders
   initialValue?: string;
+  inline?: boolean;
   onChange?: (value: string) => void;
 }
 
-export const MathLive = ({ className, options, value, initialValue, onChange }: MathLiveProps) => {
+export const MathLive = ({
+  className,
+  options,
+  value,
+  initialValue,
+  inline,
+  onChange,
+}: MathLiveProps) => {
   const ref = useRef<HTMLDivElement>(null);
   const mfe = useRef<MathfieldElement | null>(null);
 
@@ -75,7 +83,12 @@ export const MathLive = ({ className, options, value, initialValue, onChange }: 
   return (
     <div
       ref={ref}
-      className={classNames(styles.mathLive, className, options?.readOnly && 'disabled')}
+      className={classNames(
+        styles.mathLive,
+        className,
+        options?.readOnly && styles.disabled,
+        inline && styles.inline,
+      )}
     ></div>
   );
 };

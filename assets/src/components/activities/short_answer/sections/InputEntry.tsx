@@ -1,5 +1,5 @@
 import {
-  unescapeInput,
+  unescapeSingleOrMultipleInputs,
   makeRule,
   parseInputFromRule,
   parseOperatorFromRule,
@@ -31,7 +31,7 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
   };
 
   const shared = {
-    state: { operator, input: unescapeInput(valueOr(input, '')) },
+    state: { operator, input: unescapeSingleOrMultipleInputs(valueOr(input, '')) },
     setState: onEditRule,
   };
 

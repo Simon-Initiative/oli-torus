@@ -22,5 +22,6 @@ export const initCommands = (
     makeCommand('Dropdown', 'dropdown'),
     makeCommand('Text', 'text'),
     makeCommand('Number', 'numeric'),
+    makeCommand('Math', 'math'),
   ];
 };
