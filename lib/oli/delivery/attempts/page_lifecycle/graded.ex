@@ -111,9 +111,10 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       }) do
     # Collect all of the part attempt guids for all of the activities that
     # get finalized
+
     part_attempt_guids = finalize_activities(resource_attempt, datashop_session_id)
 
-    case roll_up_activities_to_resource_attempt(resource_attempt.attempt_guid) do
+    case roll_up_activities_to_resource_attempt(resource_attempt) do
       {:ok, %ResourceAttempt{lifecycle_state: :evaluated}} ->
         case roll_up_resource_attempts_to_access(
                section_slug,
@@ -147,7 +148,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
   def finalize(_), do: {:error, {:already_submitted}}
 
   defp finalize_activities(resource_attempt, datashop_session_id) do
-    Enum.map(resource_attempt.activity_attempts, fn a ->
+    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+
+    Enum.map(activity_attempts, fn a ->
       # some activities will finalize themselves ahead of a graded page
       # submission.  so we only submit those that are still yet to be finalized, and
       # that are scoreable
@@ -161,15 +164,24 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     |> Enum.map(fn part_attempt -> part_attempt.attempt_guid end)
   end
 
-  def roll_up_activities_to_resource_attempt(resource_attempt_guid) do
-    # It is necessary to refetch the resource attempt so that we have the latest view
-    # of the activity attempts, given that they have just undergone evaluation.
-    resource_attempt = get_resource_attempt_by(attempt_guid: resource_attempt_guid)
+  def roll_up_activities_to_resource_attempt(resource_attempt_guid)
+      when is_binary(resource_attempt_guid) do
+    get_resource_attempt(attempt_guid: resource_attempt_guid)
+    |> Oli.Repo.preload(:revision)
+    |> roll_up_activities_to_resource_attempt
+  end
 
-    if is_evaluated?(resource_attempt) do
-      apply_evaluation(resource_attempt)
+  def roll_up_activities_to_resource_attempt(resource_attempt) do
+    # It is necessary to refetch the resource attempt so that we have the latest view
+    # of its state, and to separately fetch the list of most recent attempts for each
+    # activity.
+
+    activity_attempts = get_latest_activity_attempts(resource_attempt.id)
+
+    if is_evaluated?(activity_attempts) do
+      apply_evaluation(resource_attempt, activity_attempts)
     else
-      if is_submitted?(resource_attempt) do
+      if is_submitted?(activity_attempts) do
         apply_submission(resource_attempt)
       else
         {:ok, resource_attempt}
@@ -177,9 +189,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp apply_evaluation(resource_attempt) do
+  defp apply_evaluation(resource_attempt, activity_attempts) do
     {score, out_of} =
-      resource_attempt.activity_attempts
+      activity_attempts
       |> Enum.filter(fn activity_attempt -> activity_attempt.scoreable end)
       |> Enum.reduce({0, 0}, &aggregation_reducer/2)
       |> override_out_of(resource_attempt.revision.content)
@@ -211,14 +223,14 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
     end
   end
 
-  defp is_evaluated?(resource_attempt) do
-    Enum.all?(resource_attempt.activity_attempts, fn aa ->
+  defp is_evaluated?(activity_attempts) do
+    Enum.all?(activity_attempts, fn aa ->
       aa.lifecycle_state == :evaluated or !aa.scoreable
     end)
   end
 
-  defp is_submitted?(resource_attempt) do
-    Enum.all?(resource_attempt.activity_attempts, fn aa ->
+  defp is_submitted?(activity_attempts) do
+    Enum.all?(activity_attempts, fn aa ->
       aa.lifecycle_state == :evaluated or aa.lifecycle_state == :submitted or !aa.scoreable
     end)
   end

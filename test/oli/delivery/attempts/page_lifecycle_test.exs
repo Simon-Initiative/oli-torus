@@ -90,7 +90,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycleTest do
         lifecycle_state: :active,
         part_id: "1"
       },
-      %Part{id: "1", responses: [], hints: [], grading_approach: :manual},
+      %Part{id: "1", responses: [], hints: [], grading_approach: :automatic},
       activity_attempt_tag
     )
   end
