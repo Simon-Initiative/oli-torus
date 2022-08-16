@@ -723,7 +723,8 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
     const actualExpression = expression;
     let result = expression.match(/{([^{^}]+)}/g) || [];
     result = result.filter(
-      (expression) => expression.search(/app\.|variables\.|stage\.|session\./) !== -1,
+      (expression) =>
+        expression.search(/^[^\s]+app\.|^[^\s]+variables\.|^[^\s]+stage\.|^[^\s]+session\./) !== -1,
     );
     if (result?.length) {
       const obj: Record<string, string> = {};
@@ -737,8 +738,8 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
         obj['obj' + i] = result[i];
         expression = expression.replace('obj' + i, obj['obj' + i]);
       }
+      lstEvaluatedExpression[actualExpression] = expression;
     }
-    lstEvaluatedExpression[actualExpression] = expression;
   });
   Object.keys(lstEvaluatedExpression).forEach((key) => {
     originalValue = originalValue.replace(key, lstEvaluatedExpression[key]);
