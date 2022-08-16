@@ -116,7 +116,7 @@ describe('multi input question - default (with text input)', () => {
     fireEvent.click(screen.getByText('Add targeted feedback'));
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
-    expect(responses[1]).toHaveProperty('rule', 'input contains {another answer}');
+    expect(responses[1]).toHaveProperty('rule', 'input contains {}');
     expect(responses[1]).toHaveProperty('score', 0);
   });
 
