@@ -115,7 +115,7 @@ jobs:
       - name: 🔧 Configure
         uses: actions/setup-node@v1
         with:
-          node-version: "16.13.2"
+          node-version: "16.14.2"
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
@@ -153,7 +153,7 @@ jobs:
       - name: 🔧 Configure
         uses: actions/setup-node@v1
         with:
-          node-version: "16.13.2"
+          node-version: "16.14.2"
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
