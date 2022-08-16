@@ -4,7 +4,6 @@ defmodule OliWeb.Curriculum.DeleteModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Editing.ContainerEditor
 
   def render(%{revision: revision} = assigns) do
@@ -51,9 +50,11 @@ defmodule OliWeb.Curriculum.DeleteModal do
     case container do
       nil ->
         result =
-          Repo.transaction(fn ->
-            revision = AuthoringResolver.from_revision_slug(project.slug, revision.slug)
-            ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+          Oli.Repo.transaction(fn ->
+            revision =
+              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
+
+            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
           end)
 
         case result do
