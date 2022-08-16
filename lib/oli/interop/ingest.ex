@@ -533,7 +533,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp rewire_bib_refs(%{"type" => "content", "children" => _children} = content, bib_map) do
-    PageContent.map_reduce(content, {:ok, []}, fn i, {status, bibrefs}, _tr_context ->
+    PageContent.bibliography_rewire(content, {:ok, []}, fn i, {status, bibrefs}, _tr_context ->
       case i do
         %{"type" => "cite", "bibref" => bibref} = ref ->
           bib_id = Map.get(Map.get(bib_map, bibref, %{resource_id: bibref}), :resource_id)
