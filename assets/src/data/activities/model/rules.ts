@@ -85,8 +85,6 @@ export const nbtwRule = (left: string, right: string) => invertRule(btwRule(left
 
 export const makeRule = (operator: RuleOperator, input: string | [string, string]) => {
   if (typeof input === 'string') {
-    input = escapeInput(input);
-
     switch (operator) {
       case 'gt':
         return gtRule(input);
@@ -111,13 +109,11 @@ export const makeRule = (operator: RuleOperator, input: string | [string, string
     }
   }
 
-  const [leftInput, rightInput] = [escapeInput(input[0]), escapeInput(input[1])];
-
   switch (operator) {
     case 'btw':
-      return btwRule(leftInput, rightInput);
+      return btwRule(input[0], input[1]);
     case 'nbtw':
-      return nbtwRule(leftInput, rightInput);
+      return nbtwRule(input[0], input[1]);
   }
   throw new Error('Could not make numeric rule for operator ' + operator + ' and input ' + input);
 };
