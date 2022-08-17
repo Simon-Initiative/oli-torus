@@ -139,6 +139,8 @@ export function markFor(mark: Mark, children: any): JSX.Element {
       return <sub>{children}</sub>;
     case 'sup':
       return <sup>{children}</sup>;
+    case 'term':
+      return <span className="term">{children}</span>;
     case 'strikethrough':
       return <span style={{ textDecoration: 'line-through' }}>{children}</span>;
     case 'underline':

@@ -56,11 +56,19 @@ const inlineCodeDesc = toggleFormat({
   precondition: (editor) => !isActive(editor, ['code']),
 });
 
+const termDesc = toggleFormat({
+  icon: 'menu_book',
+  mark: 'term',
+  description: 'Term',
+  precondition: (editor) => !isActive(editor, ['term']),
+});
+
 export const additionalFormattingOptions = [
   underLineDesc,
   strikethroughDesc,
   inlineCodeDesc,
   subscriptDesc,
   superscriptDesc,
+  termDesc,
   citationCmdDesc,
 ];
