@@ -1010,7 +1010,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       unit_one_revision: unit_one_revision
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision))
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision)
+        )
 
       assert html_response(conn, 403) =~ "Not authorized"
     end
@@ -1020,7 +1024,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
 
       assert html_response(conn, 403) =~ "Not authorized"
     end
@@ -1038,14 +1043,29 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, section.slug)
     end
 
+    test "index preview redirects ok when section slug ends with 'preview'", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, updated_section} = Sections.update_section(section, %{slug: "test_slug_preview"})
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, updated_section.slug))
+
+      assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, updated_section.slug)
+    end
+
     test "container preview redirects ok", %{
       conn: conn,
       section: section,
       unit_one_revision: unit_one_revision
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision))
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision)
+        )
 
-      assert redirected_to(conn) == Routes.page_delivery_path(conn, :container, section.slug, unit_one_revision)
+      assert redirected_to(conn) ==
+               Routes.page_delivery_path(conn, :container, section.slug, unit_one_revision)
     end
 
     test "page preview redirects ok", %{
@@ -1053,9 +1073,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
 
-      assert redirected_to(conn) == Routes.page_delivery_path(conn, :page, section.slug, page_revision)
+      assert redirected_to(conn) ==
+               Routes.page_delivery_path(conn, :page, section.slug, page_revision)
     end
   end
 
@@ -1084,10 +1106,21 @@ defmodule OliWeb.PageDeliveryControllerTest do
       conn: conn,
       user: user
     } do
-      {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} = section_with_assessment(%{})
+      {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
       enroll_user_to_section(user, section, :context_instructor)
 
-      conn = get(conn, Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision.slug))
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(
+            conn,
+            :container_preview,
+            section.slug,
+            unit_one_revision.slug
+          )
+        )
 
       # Unit title
       assert html_response(conn, 200) =~ "The first unit"
@@ -1098,7 +1131,8 @@ defmodule OliWeb.PageDeliveryControllerTest do
       revision: revision,
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
 
       # page title
       assert html_response(conn, 200) =~ "Page one (Preview)"
@@ -1109,10 +1143,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       map: %{adaptive_page_revision: revision},
       section: section
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
 
       assert html_response(conn, 200) =~
-        "<div data-react-class=\"Components.Delivery\" data-react-props=\""
+               "<div data-react-class=\"Components.Delivery\" data-react-props=\""
     end
 
     test "page preview - do not show the prologue when is graded", %{
@@ -1120,7 +1155,11 @@ defmodule OliWeb.PageDeliveryControllerTest do
       section: section,
       page_revision: page_revision
     } do
-      conn = get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug))
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
+        )
 
       refute html_response(conn, 200) =~ "This is a <strong>scored</strong> page"
       refute html_response(conn, 200) =~ "Start Attempt"

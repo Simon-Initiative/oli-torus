@@ -17,15 +17,17 @@ defmodule Oli.Plugs.AuthorizeSectionPreview do
     cond do
       Sections.is_instructor?(user, section_slug) ->
         conn
+
       not is_nil(user) and Sections.is_enrolled?(user.id, section_slug) ->
         redirect_path =
           conn
           |> current_path()
-          |> String.replace("preview/", "")
+          |> String.replace("/preview/", "/")
 
         conn
         |> redirect(to: redirect_path)
         |> halt()
+
       true ->
         conn
         |> put_view(OliWeb.PageDeliveryView)
