@@ -1,11 +1,11 @@
 import React from 'react';
 
 interface Props {
-  onChange: React.ChangeEventHandler<HTMLTextAreaElement>;
-  value: string | number;
+  value: string;
   rows?: number;
   cols?: number;
   disabled?: boolean;
+  onChange: (value: string) => void;
 }
 export const TextareaInput: React.FC<Props> = (props) => {
   return (
@@ -14,7 +14,7 @@ export const TextareaInput: React.FC<Props> = (props) => {
       rows={typeof props.rows === 'number' ? props.rows : 5}
       cols={typeof props.rows === 'number' ? props.cols : 80}
       className="form-control"
-      onChange={props.onChange}
+      onChange={(e) => props.onChange(e.target.value)}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
     ></textarea>

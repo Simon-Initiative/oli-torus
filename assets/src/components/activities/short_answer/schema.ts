@@ -1,8 +1,8 @@
 import { Part, Transformation, ActivityModelSchema, Stem } from '../types';
 
-export type InputType = 'text' | 'numeric' | 'textarea';
+export type InputType = 'text' | 'numeric' | 'textarea' | 'math';
 export const isInputType = (s: string): s is InputType =>
-  ['text', 'numeric', 'textarea'].includes(s);
+  ['text', 'numeric', 'textarea', 'math'].includes(s);
 
 export interface ShortAnswerModelSchema extends ActivityModelSchema {
   stem: Stem;

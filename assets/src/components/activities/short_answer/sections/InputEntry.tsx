@@ -10,11 +10,23 @@ import { useState } from 'react';
 import React from 'react';
 import { NumericInput } from 'components/activities/short_answer/sections/NumericInput';
 import { TextInput } from 'components/activities/short_answer/sections/TextInput';
+import { MathInput } from 'components/activities/short_answer/sections/MathInput';
+import { valueOr } from 'utils/common';
 
 interface InputProps {
   inputType: InputType;
   response: Response;
   onEditResponseRule: (id: string, rule: string) => void;
+}
+
+interface SingleState {
+  operator: RuleOperator;
+  input: string;
+}
+
+interface RangeState {
+  operator: RuleOperator;
+  input: [string, string];
 }
 
 export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }) => {
@@ -28,13 +40,13 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
     onEditResponseRule(response.id, makeRule(inputState.operator, inputState.input));
   };
 
-  const shared = {
-    state: { operator, input },
-    setState: onEditRule,
-  };
+  const state = { operator, input: valueOr(input, '') };
 
   if (inputType === 'numeric') {
-    return <NumericInput {...shared} />;
+    return <NumericInput state={state as RangeState} setState={onEditRule} />;
   }
-  return <TextInput {...shared} />;
+  if (inputType === 'math') {
+    return <MathInput state={state as SingleState} setState={onEditRule} />;
+  }
+  return <TextInput state={state as SingleState} setState={onEditRule} />;
 };

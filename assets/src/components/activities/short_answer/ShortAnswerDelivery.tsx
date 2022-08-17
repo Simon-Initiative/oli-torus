@@ -29,19 +29,21 @@ import { Manifest } from 'components/activities/types';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Maybe } from 'tsmonad';
+import { MathInput } from '../common/delivery/inputs/MathInput';
 
 type InputProps = {
   input: string;
-  onChange: (input: any) => void;
   inputType: InputType;
   isEvaluated: boolean;
   isSubmitted: boolean;
+  onChange: (value: string) => void;
 };
 
 const Input = (props: InputProps) => {
+  const value = valueOr(props.input, '');
   const shared = {
-    onChange: (e: React.ChangeEvent<any>) => props.onChange(e.target.value),
-    value: valueOr(props.input, ''),
+    onChange: (value: string) => props.onChange(value),
+    value,
     disabled: props.isEvaluated || props.isSubmitted,
   };
 
@@ -52,6 +54,8 @@ const Input = (props: InputProps) => {
       return <TextInput {...shared} />;
     case 'textarea':
       return <TextareaInput {...shared} />;
+    case 'math':
+      return <MathInput {...shared} onChange={(v) => props.onChange(v)} />;
     default:
       assertNever(props.inputType);
   }

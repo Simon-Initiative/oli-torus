@@ -1,10 +1,10 @@
 import React, { createRef } from 'react';
 
 interface Props {
-  onChange: React.ChangeEventHandler<HTMLInputElement>;
-  value: string | number;
+  value: string;
   disabled?: boolean;
   placeholder?: string;
+  onChange: (value: string) => void;
 }
 export const NumericInput: React.FC<Props> = (props) => {
   const input = createRef<HTMLInputElement>();
@@ -19,7 +19,7 @@ export const NumericInput: React.FC<Props> = (props) => {
       type="number"
       aria-label="answer submission textbox"
       className="form-control"
-      onChange={props.onChange}
+      onChange={(e) => props.onChange(e.target.value)}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       onWheel={handleScrollWheelChange}

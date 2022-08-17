@@ -1,13 +1,18 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import React from 'react';
-import { isOperator, RuleOperator } from 'data/activities/model/rules';
+import { escapeInput, isOperator, RuleOperator, unescapeInput } from 'data/activities/model/rules';
 
-const SimpleNumericInput: React.FC<InputProps> = ({ state, setState }) => {
+interface SimpleNumericInputState {
+  operator: RuleOperator;
+  input: string;
+}
+
+interface SimpleNumericInputProps extends InputProps {
+  state: SimpleNumericInputState;
+}
+
+const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
-
-  if (isRangeOperator(state.operator) || typeof state.input !== 'string') {
-    return null;
-  }
 
   return (
     <input
@@ -15,19 +20,24 @@ const SimpleNumericInput: React.FC<InputProps> = ({ state, setState }) => {
       type="number"
       className="form-control"
       onChange={(e) => {
-        setState({ input: e.target.value, operator: state.operator });
+        setState({ input: escapeInput(e.target.value), operator: state.operator });
       }}
-      value={state.input}
+      value={unescapeInput(state.input)}
     />
   );
 };
 
-const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
-  const { editMode } = useAuthoringElementContext();
+interface RangeNumericInputState {
+  operator: RuleOperator;
+  input: [string, string];
+}
 
-  if (!isRangeOperator(state.operator) || typeof state.input === 'string') {
-    return null;
-  }
+interface RangeNumericInputProps extends InputProps {
+  state: RangeNumericInputState;
+}
+
+const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }) => {
+  const { editMode } = useAuthoringElementContext();
 
   return (
     <div className="d-flex flex-column d-md-flex flex-md-row align-items-center">
@@ -36,10 +46,10 @@ const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
         type="number"
         className="form-control"
         onChange={(e) => {
-          const newValue = [e.target.value, state.input[1]] as [string, string];
+          const newValue = [escapeInput(e.target.value), state.input[1]] as [string, string];
           setState({ input: newValue, operator: state.operator });
         }}
-        value={state.input[0]}
+        value={unescapeInput(state.input[0])}
       />
       <div className="mx-1">and</div>
       <input
@@ -48,10 +58,10 @@ const RangeNumericInput: React.FC<InputProps> = ({ state, setState }) => {
         type="number"
         className="form-control"
         onChange={(e) => {
-          const newValue = [state.input[0], e.target.value] as [string, string];
+          const newValue = [state.input[0], escapeInput(e.target.value)] as [string, string];
           setState({ input: newValue, operator: state.operator });
         }}
-        value={state.input[1]}
+        value={unescapeInput(state.input[1])}
       />
     </div>
   );
@@ -61,6 +71,7 @@ interface State {
   operator: RuleOperator;
   input: string | [string, string];
 }
+
 interface InputProps {
   setState: (s: State) => void;
   state: State;
@@ -69,11 +80,6 @@ const isRangeOperator = (op: RuleOperator) => op === 'btw' || op === 'nbtw';
 
 export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
   const { editMode } = useAuthoringElementContext();
-
-  const shared = {
-    state,
-    setState,
-  };
 
   return (
     <div className="d-flex flex-column flex-md-row mb-2">
@@ -106,8 +112,11 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
           </option>
         ))}
       </select>
-      <RangeNumericInput {...shared} />
-      <SimpleNumericInput {...shared} />
+      {isRangeOperator(state.operator) ? (
+        <RangeNumericInput state={state as RangeNumericInputState} setState={setState} />
+      ) : (
+        <SimpleNumericInput state={state as SimpleNumericInputState} setState={setState} />
+      )}
     </div>
   );
 };
