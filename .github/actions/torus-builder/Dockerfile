@@ -26,6 +26,7 @@ RUN mix local.rebar --force
 # install node
 RUN yum install -y gcc-c++ make
 RUN curl -sL https://rpm.nodesource.com/setup_16.x | bash -
+RUN yum --enablerepo=nodesource clean metadata
 RUN yum install -y nodejs
 RUN npm install -g yarn
 
