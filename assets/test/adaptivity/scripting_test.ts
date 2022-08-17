@@ -720,6 +720,18 @@ describe('Scripting Interface', () => {
       script = checkExpressionsWithWrongBrackets(exppression);
       expect(script).toBe('{round({stage.a.value}*({stage.b.value}*{stage.c.value}))}');
 
+      exppression = '{this is a normal stage. This is not expression}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(exppression);
+
+      exppression = '{this is a normal session.<mark></mark> This is not expression}';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(exppression);
+
+      exppression = '{this is a normal app. }';
+      script = checkExpressionsWithWrongBrackets(exppression);
+      expect(script).toBe(exppression);
+
       exppression =
         '{q:1468628289959:468|stage.exercise.value}+{q:1468628289415:435|stage.BMR.value}+{q:1468628289959:468|stage.TEF.value}';
       script = checkExpressionsWithWrongBrackets(exppression);
