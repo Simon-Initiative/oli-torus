@@ -49,6 +49,8 @@ import {
   MathJaxLatexFormula,
   MathJaxMathMLFormula,
 } from '../../../components/common/MathJaxFormula';
+import { ContentTable } from '../../../components/ContentTable';
+import { cellAttributes } from '../../../components/editing/elements/table/table-util';
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
@@ -208,10 +210,10 @@ export class HtmlParser implements WriterImpl {
         : new ContentWriter().render(context, attrs.caption, new HtmlParser()));
 
     return (
-      <table>
+      <ContentTable model={attrs}>
         {attrs.caption ? <caption>{caption}</caption> : undefined}
         {next()}
-      </table>
+      </ContentTable>
     );
   }
   callout(context: WriterContext, next: Next) {
@@ -225,11 +227,12 @@ export class HtmlParser implements WriterImpl {
   tr(context: WriterContext, next: Next, _x: TableRow) {
     return <tr>{next()}</tr>;
   }
-  th(context: WriterContext, next: Next, _x: TableHeader) {
-    return <th>{next()}</th>;
+
+  th(context: WriterContext, next: Next, attrs: TableHeader) {
+    return <th {...cellAttributes(attrs)}>{next()}</th>;
   }
-  td(context: WriterContext, next: Next, _x: TableData) {
-    return <td>{next()}</td>;
+  td(context: WriterContext, next: Next, attrs: TableData) {
+    return <td {...cellAttributes(attrs)}>{next()}</td>;
   }
   ol(context: WriterContext, next: Next, item: OrderedList) {
     return item.style ? <ol className={`list-${item.style}`}>{next()}</ol> : <ol>{next()}</ol>;

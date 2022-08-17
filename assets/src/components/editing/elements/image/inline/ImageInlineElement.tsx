@@ -1,5 +1,5 @@
 import React from 'react';
-import { elementBorderStyle, onEditModel } from 'components/editing/elements/utils';
+import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useElementSelected } from 'data/content/utils';
@@ -8,7 +8,7 @@ import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 interface Props extends EditorProps<ContentModel.ImageInline> {}
 export const ImageInlineEditor = (props: Props) => {
   const selected = useElementSelected();
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   return (
     <span {...props.attributes} onMouseDown={(e) => e.stopPropagation()}>

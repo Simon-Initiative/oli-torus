@@ -224,40 +224,27 @@ defmodule Oli.Delivery.Attempts.Core do
 
   `[%ResourceAccess{}, ...]`
   """
-  def get_graded_resource_access_for_context(section_slug) do
-    Repo.all(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: spp in SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id,
-        join: r in Revision,
-        on: pr.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status == :active and r.graded == true,
-        select: a
-      )
-    )
+  def get_graded_resource_access_for_context(section_id) do
+    graded_resource_access_for_context(section_id)
+    |> Repo.all()
   end
 
-  def get_graded_resource_access_for_context(section_slug, student_ids) do
-    Repo.all(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: spp in SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id,
-        join: r in Revision,
-        on: pr.revision_id == r.id,
-        where:
-          a.user_id in ^student_ids and s.slug == ^section_slug and s.status == :active and
-            r.graded == true,
-        select: a
-      )
+  def get_graded_resource_access_for_context(section_id, user_ids) do
+    graded_resource_access_for_context(section_id)
+    |> where([_, _, _, a], a.user_id in ^user_ids)
+    |> Repo.all()
+  end
+
+  # base query, intended to be composable for the above two uses
+  defp graded_resource_access_for_context(section_id) do
+    SectionsProjectsPublications
+    |> join(:left, [spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:left, [_, pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:left, [spp, _, r], a in ResourceAccess,
+      on: r.resource_id == a.resource_id and a.section_id == spp.section_id
     )
+    |> where([spp, _, r, _], spp.section_id == ^section_id and r.graded == true)
+    |> select([_, _, _, a], a)
   end
 
   @doc """
@@ -285,15 +272,18 @@ defmodule Oli.Delivery.Attempts.Core do
         join: published_resource in PublishedResource,
         on: section_project_publication.publication_id == published_resource.publication_id,
         join: revision in Revision,
-        on: revision.id == published_resource.revision_id and revision.resource_id == resource_access.resource_id,
+        on:
+          revision.id == published_resource.revision_id and
+            revision.resource_id == resource_access.resource_id,
         where:
           section.slug == ^section_slug and
-          section.status == :active and
-          revision.deleted == false and
-          revision.graded == true and
-          (not is_nil(resource_access.last_grade_update_id) and
-            (is_nil(resource_access.last_successful_grade_update_id) or
-              resource_access.last_grade_update_id != resource_access.last_successful_grade_update_id)),
+            section.status == :active and
+            revision.deleted == false and
+            revision.graded == true and
+            (not is_nil(resource_access.last_grade_update_id) and
+               (is_nil(resource_access.last_successful_grade_update_id) or
+                  resource_access.last_grade_update_id !=
+                    resource_access.last_successful_grade_update_id)),
         select: %{
           id: resource_access.id,
           resource_id: resource_access.resource_id,
@@ -389,7 +379,7 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_resource_accesses(section_slug, user_id) do
     Repo.all(
       from(a in ResourceAccess,
-        join: ra in ResourceAttempt,
+        left_join: ra in ResourceAttempt,
         on: a.id == ra.resource_access_id,
         join: s in Section,
         on: a.section_id == s.id,

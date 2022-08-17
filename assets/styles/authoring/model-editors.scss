@@ -16,6 +16,11 @@
       word-wrap: break-word;
       overflow: visible;
 
+      th,
+      td {
+        position: relative;
+      }
+
       .table-dropdown {
         z-index: 1000;
         position: absolute;
@@ -23,6 +28,8 @@
         right: 8px;
         user-select: none;
         float: right;
+        display: 'flex';
+        flex-direction: row;
 
         button.dropdown-toggle {
           padding: 5px 2px;
@@ -33,6 +40,7 @@
           border: 1px solid $gray-500;
           border-radius: 2px;
         }
+
         button.dropdown-toggle::after {
           color: $gray-500;
           margin: 0;

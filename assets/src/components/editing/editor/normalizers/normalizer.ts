@@ -38,13 +38,13 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
           Transforms.wrapNodes(editor, Model.p(), { at: path });
           return;
         }
-      } else {
-        spacesNormalize(editor, node, path);
-        blockNormalize(editor, node, path);
-        codeNormalize(editor, node, path);
-        listNormalize(editor, node, path);
-        tableNormalize(editor, node, path);
       }
+
+      spacesNormalize(editor, node, path);
+      blockNormalize(editor, node, path);
+      codeNormalize(editor, node, path);
+      listNormalize(editor, node, path);
+      tableNormalize(editor, node, path);
     } catch (e) {
       // tslint:disable-next-line
       console.error(e);

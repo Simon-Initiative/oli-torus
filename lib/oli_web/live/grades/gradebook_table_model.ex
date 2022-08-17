@@ -1,5 +1,4 @@
 defmodule OliWeb.Grades.GradebookTableModel do
-
   use Surface.LiveComponent
 
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
@@ -7,7 +6,7 @@ defmodule OliWeb.Grades.GradebookTableModel do
   alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias OliWeb.Router.Helpers, as: Routes
 
-  def new(enrollments, graded_pages, resource_accesses, section) do
+  def new(enrollments, graded_pages, resource_accesses, section, show_all_links) do
     by_user =
       Enum.reduce(resource_accesses, %{}, fn ra, m ->
         case Map.has_key?(m, ra.user_id) do
@@ -46,7 +45,8 @@ defmodule OliWeb.Grades.GradebookTableModel do
       rows: rows,
       column_specs: column_specs,
       event_suffix: "",
-      id_field: [:id]
+      id_field: [:id],
+      data: %{show_all_links: show_all_links}
     )
   end
 
@@ -58,11 +58,31 @@ defmodule OliWeb.Grades.GradebookTableModel do
     case Map.get(row, resource_id) do
       # Indicates that this student has never visited this resource
       nil ->
-        ""
+        case assigns.show_all_links do
+          true ->
+            ~F"""
+            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+              <span class="text-muted">Never Visited</span>
+            </a>
+            """
+
+          _ ->
+            ""
+        end
 
       # Indicates that this student has visited, but not completed this assessment
       %ResourceAccess{score: nil, out_of: nil} ->
-        ""
+        case assigns.show_all_links do
+          true ->
+            ~F"""
+            <a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Progress.StudentResourceView, row.section.slug, row.id, resource_id)}>
+              <span>Not Finished</span>
+            </a>
+            """
+
+          _ ->
+            ""
+        end
 
       # We have a rolled-up grade from at least one attempt
       %ResourceAccess{} = resource_access ->

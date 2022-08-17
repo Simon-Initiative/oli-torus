@@ -30,7 +30,7 @@ type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
 type List = OrderedList | UnorderedList;
 type MediaBlock = ImageBlock | YouTube | Audio | Webpage;
-type TableCell = TableHeader | TableData;
+export type TableCell = TableHeader | TableData;
 
 type HeadingChildren = Text[];
 export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]> {
@@ -100,8 +100,8 @@ type VoidChildren = Text[];
 
 interface BaseImage extends SlateElement<VoidChildren> {
   src?: string;
-  height?: number;
-  width?: number;
+  height?: number | string;
+  width?: number | string;
   alt?: string;
 }
 export interface ImageBlock extends BaseImage {
@@ -168,9 +168,13 @@ export interface Webpage extends SlateElement<VoidChildren> {
   display?: string;
 }
 
+export type TableRowStyle = 'alternating' | 'plain';
+export type TableBorderStyle = 'solid' | 'hidden';
 export interface Table extends SlateElement<TableRow[]> {
   type: 'table';
   caption?: Caption;
+  border?: TableBorderStyle;
+  rowstyle?: TableRowStyle;
 }
 
 export interface Math extends SlateElement<MathLine[]> {
@@ -203,10 +207,16 @@ export interface TableRow extends SlateElement<TableCell[]> {
 type TableCellChildren = (Paragraph | ImageBlock | YouTube | Audio | Math)[];
 export interface TableHeader extends SlateElement<TableCellChildren> {
   type: 'th';
+  colspan?: number;
+  rowspan?: number;
+  align?: string;
 }
 
 export interface TableData extends SlateElement<TableCellChildren> {
   type: 'td';
+  colspan?: number;
+  rowspan?: number;
+  align?: string;
 }
 
 export interface ListItem extends SlateElement<(List | Text)[]> {

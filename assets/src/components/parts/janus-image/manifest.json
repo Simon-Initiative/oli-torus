@@ -3,7 +3,7 @@
   "friendlyName": "Image",
   "description": "Displays an image from a url.",
   "icon": "icon-part-image.svg",
-    "author": "Project Janus Team",
+  "author": "Project Janus Team",
   "global": true,
   "delivery": {
     "element": "janus-image",

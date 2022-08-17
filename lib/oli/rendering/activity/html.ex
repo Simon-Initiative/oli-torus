@@ -79,12 +79,12 @@ defmodule Oli.Rendering.Activity.Html do
           case mode do
             :instructor_preview ->
               [
-                ~s|<#{tag} id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
+                ~s|<#{tag} activity_id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
 
             _ ->
               [
-                ~s|<#{tag} id=\"#{activity_html_id}\" class="activity-container" graded="#{graded}" state="#{state}" model="#{model_json}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
+                ~s|<#{tag} activity_id=\"#{activity_html_id}\" class="activity-container" graded="#{graded}" state="#{state}" model="#{model_json}" mode="#{mode}" user_id="#{user.id}" section_slug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}" #{maybe_group_id(group_id)}#{maybe_survey_id(survey_id)}></#{tag}>\n|
               ]
           end
 

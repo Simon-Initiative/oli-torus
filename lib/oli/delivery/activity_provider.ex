@@ -5,14 +5,15 @@ defmodule Oli.Delivery.ActivityProvider do
   alias Oli.Resources.Revision
   alias Oli.Resources.PageContent
   alias Oli.Delivery.ActivityProvider.Result, as: ProviderResult
+  alias Oli.Delivery.ActivityProvider.AttemptPrototype
   alias Oli.Utils.BibUtils
 
   @doc """
   Realizes and resolves activities in a page.
 
   For advanced delivery pages this impl finds all activity-reference instances from within the entire
-  nested tree of the content model.  For basic delivery, we only need to look at the top-level model
-  collection, but do need to look for selections as well as static activity-reference instances.
+  nested tree of the content model.  For basic delivery, we traverse the entire hierarchy of the page
+  content, tracking groups and surveys, and processing selections as well as static activity-reference instances.
 
   Activities are realized in different ways, depending on the type of reference. First, a static
   reference to an activity (via "activity-reference") is simply resolved to the correct published
@@ -25,12 +26,18 @@ defmodule Oli.Delivery.ActivityProvider do
   (which later then drive rendering).
 
   Returns a %Oli.Delivery.ActivityProvider.Result{}, which contains a list of any errors, the provided
-  activity revisions, a MapSet of those revision resource ids that are to be unscored
-  activities and the transformed page model.
+  activity attempt prototypes, and the transformed page model.
+
+  Parameters for provide are:
+  1. The page revision that we are providing activities for
+  2. The source through which we provide activities
+  3. A list of pre-existing attempt prototypes that constrain the activity realization
+  4. The resolver to use
   """
   def provide(
         %Revision{content: %{"advancedDelivery" => true} = content},
         %Source{} = source,
+        _constraining_atttempt_prototypes,
         resolver
       ) do
     refs =
@@ -73,28 +80,35 @@ defmodule Oli.Delivery.ActivityProvider do
 
     %ProviderResult{
       errors: [],
-      revisions: revisions,
+      prototypes:
+        Enum.map(revisions, fn r ->
+          %AttemptPrototype{
+            revision: r
+          }
+        end),
       bib_revisions: bib_revisions,
       transformed_content: content,
-      unscored: unscored,
-      activity_to_source_selection_mapping: %{}
+      unscored: unscored
     }
   end
 
   def provide(
         %Revision{content: %{"model" => model} = content},
         %Source{} = source,
+        constraining_atttempt_prototypes,
         resolver
       ) do
-    {errors, activities, model, _, activity_to_source_selection_mapping} = fulfill(model, source)
+    %{
+      prototypes: prototypes,
+      errors: errors
+    } = fulfill(model, source, constraining_atttempt_prototypes)
 
-    only_revisions =
-      resolve_activity_ids(source.section_slug, activities, resolver) |> Enum.reverse()
+    prototypes_with_revisions = resolve_activity_ids(source.section_slug, prototypes, resolver)
 
     bib_revisions =
       BibUtils.assemble_bib_entries(
         content,
-        only_revisions,
+        Enum.map(prototypes_with_revisions, fn p -> p.revision end),
         fn r -> Map.get(r.content, "bibrefs", []) end,
         source.section_slug,
         resolver
@@ -102,13 +116,21 @@ defmodule Oli.Delivery.ActivityProvider do
       |> Enum.with_index(1)
       |> Enum.map(fn {revision, ordinal} -> BibUtils.serialize_revision(revision, ordinal) end)
 
+    # See if at least one of the realized prototypes came from an activity selection
+    has_selection = Enum.any?(prototypes_with_revisions, fn p -> !is_nil(p.selection_id) end)
+
     %ProviderResult{
       errors: errors,
-      revisions: only_revisions,
+      prototypes: prototypes_with_revisions,
       bib_revisions: bib_revisions,
-      transformed_content: Map.put(content, "model", Enum.reverse(model)),
       unscored: MapSet.new(),
-      activity_to_source_selection_mapping: activity_to_source_selection_mapping
+      # A slight optimization, we only transform the content if there is at least one activity selection
+      transformed_content:
+        if has_selection do
+          transform_content(content, prototypes_with_revisions)
+        else
+          content
+        end
     }
   end
 
@@ -118,116 +140,252 @@ defmodule Oli.Delivery.ActivityProvider do
   # In order to prevent multiple selections on the page potentially realizing the same activity more
   # than once, we update the blacklisted activity ids within the source as we proceed through the
   # collection of activity references.
-  #
-  # Note: To optimize performance we prepend all activity ids and revisions as we pass through, and
-  # then do a final Enum.reverse to restore the correct order.  We do the same thing for the elements
-  # within the transformed page model.
-  defp fulfill(model, %Source{} = source) do
-    Enum.reduce(model, {[], [], [], source, %{}}, fn e,
-                                                     {errors, activities, model, source,
-                                                      selection_mapping} ->
-      case e["type"] do
-        "activity-reference" ->
-          {errors, [e["activity_id"] | activities], [e | model], source, selection_mapping}
+  defp fulfill(model, %Source{} = source, existing_attempt_prototypes) do
+    # Create a map of selection ids to a list of their existing prototypes
+    prototypes_by_selection = build_prototypes_by_selection_map(existing_attempt_prototypes)
 
-        "selection" ->
-          {:ok, %Selection{id: id} = selection} = Selection.parse(e)
+    # Create a map of activity id (aka resource id) to its existing prototype
+    prototypes_by_activity_id =
+      Enum.reduce(existing_attempt_prototypes, %{}, fn p, m ->
+        Map.put(m, p.revision.resource_id, p)
+      end)
 
-          case Selection.fulfill(selection, source) do
-            {:ok, %Result{} = result} ->
-              reversed = Enum.reverse(result.rows)
+    fulfillment_state = %{
+      # These are the three items that we update throughout do_fulfill
+      errors: [],
+      prototypes: [],
+      source: source,
 
-              selection_mapping =
-                Enum.reduce(reversed, selection_mapping, fn r, m ->
-                  Map.put(m, r.resource_id, id)
-                end)
+      # These are here as context merely for optimizing access to existing prototypes
+      prototypes_by_selection: prototypes_by_selection,
+      prototypes_by_activity_id: prototypes_by_activity_id
+    }
 
-              {errors, reversed ++ activities, replace_selection(e, reversed) ++ model,
-               merge_blacklist(source, result.rows), selection_mapping}
+    Enum.reduce(model, fulfillment_state, fn e, state -> do_fulfill(state, e, nil, nil) end)
+  end
 
-            {:partial, %Result{} = result} ->
-              missing = selection.count - result.rowCount
+  defp do_fulfill(
+         fulfillment_state,
+         %{"type" => "activity-reference"} = model_component,
+         group_id,
+         survey_id
+       ) do
+    # Create a new attempt prototype, or use an existing one if present for this activity id
+    prototype =
+      case Map.get(fulfillment_state.prototypes_by_activity_id, model_component["activity_id"]) do
+        nil ->
+          reference_to_prototype(model_component, group_id, survey_id)
 
-              error = "Selection failed to fulfill completely with #{missing} missing activities"
-
-              reversed = Enum.reverse(result.rows)
-
-              selection_mapping =
-                Enum.reduce(reversed, selection_mapping, fn r, m ->
-                  Map.put(m, r.resource_id, id)
-                end)
-
-              {[error | errors], reversed ++ activities, replace_selection(e, reversed) ++ model,
-               merge_blacklist(source, result.rows), selection_mapping}
-
-            e ->
-              error = "Selection failed to fulfill with error: #{e}"
-              {[error | errors], activities, model, source, selection_mapping}
-          end
-
-        "group" ->
-          {c_errors, c_activities, c_model, source, group_selection_mapping} =
-            fulfill(e["children"], source)
-
-          e = %{e | "children" => Enum.reverse(c_model)}
-
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source,
-           Map.merge(selection_mapping, group_selection_mapping)}
-
-        "survey" ->
-          {c_errors, c_activities, c_model, source, survey_selection_mapping} =
-            fulfill(e["children"], source)
-
-          e = %{e | "children" => Enum.reverse(c_model)}
-
-          {c_errors ++ errors, c_activities ++ activities, [e | model], source,
-           Map.merge(selection_mapping, survey_selection_mapping)}
-
-        _ ->
-          {errors, activities, [e | model], source, selection_mapping}
+        existing_prototype ->
+          # update an existing one to make sure it tracks the latest survey and group context
+          existing_prototype
+          |> Map.put(:survey_id, survey_id)
+          |> Map.put(:group_id, group_id)
       end
+
+    fulfillment_state
+    |> Map.put(:prototypes, [prototype | Map.get(fulfillment_state, :prototypes)])
+  end
+
+  defp do_fulfill(
+         fulfillment_state,
+         %{"type" => "selection"} = model_component,
+         group_id,
+         survey_id
+       ) do
+    {:ok, %Selection{id: id} = selection} =
+      Selection.parse(model_component)
+      |> decrement_for_prototypes(fulfillment_state.prototypes_by_selection)
+
+    # Add any existing prototypes to the prototypes list for this selection and to the blacklist
+    fulfillment_state = add_existing_for_selection(fulfillment_state, id)
+
+    # Handle the case that existing prototypes for this selection completely decrement
+    # the count down to zero
+    if selection.count == 0 do
+      fulfillment_state
+    else
+      # We need to draw some number of activities from the bank
+      case Selection.fulfill(selection, fulfillment_state.source) do
+        {:ok, %Result{} = result} ->
+          new_prototypes =
+            Enum.reverse(result.rows)
+            |> Enum.map(fn r -> revision_to_prototype(r, group_id, survey_id, id) end)
+
+          fulfillment_state
+          |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
+          |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+
+        {:partial, %Result{} = result} ->
+          missing = selection.count - result.rowCount
+
+          error = "Selection failed to fulfill completely with #{missing} missing activities"
+
+          new_prototypes =
+            Enum.map(result.rows, fn r ->
+              revision_to_prototype(r, group_id, survey_id, id)
+            end)
+
+          fulfillment_state
+          |> Map.put(:prototypes, new_prototypes ++ fulfillment_state.prototypes)
+          |> Map.put(:source, merge_blacklist(fulfillment_state.source, result.rows))
+          |> Map.put(:errors, [error | fulfillment_state.errors])
+
+        e ->
+          error = "Selection failed to fulfill with error: #{e}"
+
+          fulfillment_state
+          |> Map.put(:errors, [error | fulfillment_state.errors])
+      end
+    end
+  end
+
+  defp do_fulfill(fulfillment_state, %{"type" => "group"} = model_component, _, survey_id) do
+    Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+      do_fulfill(s, c, model_component["id"], survey_id)
     end)
   end
 
-  # At this point "activities" is a list whose entries are either activity_ids or revisions, now
-  # we must resolve the revisions of all the entires that are simply activity ids,
-  # replacing them in the list with the resolved revision.
+  defp do_fulfill(fulfillment_state, %{"type" => "survey"} = model_component, group_id, _) do
+    Enum.reduce(model_component["children"], fulfillment_state, fn c, s ->
+      do_fulfill(s, c, group_id, model_component["id"])
+    end)
+  end
 
-  # Returns a list of revisions.
-  defp resolve_activity_ids(section_slug, activities, resolver) do
+  defp do_fulfill(fulfillment_state, _, _, _) do
+    fulfillment_state
+  end
+
+  defp add_existing_for_selection(fulfillment_state, selection_id) do
+    prototypes =
+      fulfillment_state.prototypes_by_selection
+      |> Map.get(selection_id, [])
+
+    fulfillment_state
+    |> Map.put(:prototypes, prototypes ++ fulfillment_state.prototypes)
+    |> Map.put(
+      :source,
+      merge_blacklist(fulfillment_state.source, Enum.map(prototypes, fn p -> p.revision end))
+    )
+  end
+
+  defp reference_to_prototype(activity_reference, group_id, survey_id) do
+    %AttemptPrototype{
+      activity_id: activity_reference["activity_id"],
+      survey_id: survey_id,
+      group_id: group_id,
+      selection_id: nil,
+      inherit_state_from_previous: false
+    }
+  end
+
+  defp revision_to_prototype(revision, group_id, survey_id, selection_id) do
+    %AttemptPrototype{
+      revision: revision,
+      survey_id: survey_id,
+      group_id: group_id,
+      selection_id: selection_id,
+      inherit_state_from_previous: false
+    }
+  end
+
+  # decrement the selection count by the size of any activity attempts prototypes
+  # supplied for this selection. As a safeguard, be careful to never let a count go negative.
+  defp decrement_for_prototypes(
+         {:ok, %Selection{id: id, count: count} = selection},
+         prototypes_by_selection
+       ) do
+    decrement = Map.get(prototypes_by_selection, id, []) |> Enum.count()
+
+    new_count =
+      if decrement > count do
+        0
+      else
+        count - decrement
+      end
+
+    {:ok, %{selection | count: new_count}}
+  end
+
+  # At this point "prototypes" is a list of prototypes, some of which might need
+  # to have a revision fetched.
+  # Returns a list of prototypes.
+  defp resolve_activity_ids(section_slug, prototypes, resolver) do
     activity_ids =
-      Enum.filter(activities, fn a ->
-        case a do
-          %Revision{id: _} -> false
-          _ -> true
-        end
-      end)
+      Enum.filter(prototypes, fn p -> !is_nil(p.activity_id) end)
+      |> Enum.map(fn p -> p.activity_id end)
 
     map =
       resolver.from_resource_id(section_slug, activity_ids)
       |> Enum.reduce(%{}, fn rev, m -> Map.put(m, rev.resource_id, rev) end)
 
-    Enum.map(activities, fn a ->
-      case a do
-        %Revision{id: _} -> a
-        id -> Map.get(map, id)
+    Enum.map(prototypes, fn p ->
+      case p.revision do
+        nil -> %{p | revision: Map.get(map, p.activity_id)}
+        _ -> p
       end
     end)
   end
 
+  defp build_prototypes_by_selection_map(prototypes) do
+    Enum.reduce(prototypes, %{}, fn p, m ->
+      case p.selection_id do
+        nil -> m
+        id -> Map.put(m, id, Map.get(m, id, []) ++ [p])
+      end
+    end)
+  end
+
+  # Replace all bank selections with activity-references that represent the fulfilled
+  # activities for those selections
+  defp transform_content(content, prototypes) do
+    prototypes_by_selection = build_prototypes_by_selection_map(prototypes)
+
+    mapped_model =
+      transform_content_helper(content["model"], prototypes_by_selection) |> List.flatten()
+
+    Map.put(content, "model", mapped_model)
+  end
+
+  defp transform_content_helper(model_component, prototypes_by_selection)
+       when is_list(model_component) do
+    Enum.map(model_component, fn component ->
+      transform_content_helper(component, prototypes_by_selection)
+    end)
+  end
+
+  defp transform_content_helper(
+         %{"type" => "selection", "id" => id} = selection,
+         prototypes_by_selection
+       ) do
+    Map.get(prototypes_by_selection, id)
+    |> Enum.map(fn prototype -> replace_with_reference(selection, prototype.revision) end)
+  end
+
+  defp transform_content_helper(
+         %{"type" => kind, "children" => children} = component,
+         prototypes_by_selection
+       )
+       when kind in ["group", "survey"] do
+    children = transform_content_helper(children, prototypes_by_selection) |> List.flatten()
+    Map.put(component, "children", children)
+  end
+
+  defp transform_content_helper(other, _) do
+    other
+  end
+
   # Takes a JSON selection element as a map and returns a list of activity-reference
   # JSON elements that represent which activities fulfilled the selection.
-  defp replace_selection(selection_element, revisions) do
-    Enum.map(revisions, fn r ->
-      %{
-        "type" => "activity-reference",
-        "id" => Oli.Utils.uuid(),
-        "activity_id" => r.resource_id,
-        "purpose" => Map.get(selection_element, "purpose", ""),
-        "children" => [],
-        "source-selection" => selection_element["id"]
-      }
-    end)
+  defp replace_with_reference(selection_element, revision) do
+    %{
+      "type" => "activity-reference",
+      "id" => Oli.Utils.uuid(),
+      "activity_id" => revision.resource_id,
+      "purpose" => Map.get(selection_element, "purpose", ""),
+      "children" => [],
+      "source-selection" => selection_element["id"]
+    }
   end
 
   # Merge the blacklisted activity ids of the given source with the resource ids of the

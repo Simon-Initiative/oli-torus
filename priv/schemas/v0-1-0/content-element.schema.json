@@ -507,6 +507,12 @@
         "caption": {
           "type": ["string", "array"]
         },
+        "border": {
+          "enum": ["hidden", "solid"]
+        },
+        "rowstyle": {
+          "enum": ["plain", "alternating"]
+        },
         "children": {
           "type": "array",
           "items": {
@@ -547,6 +553,16 @@
         "type": {
           "const": "th"
         },
+        "colspan": {
+          "type": "number"
+        },
+        "rowspan": {
+          "type": "number"
+        },
+        "align": {
+          "enum": ["left", "center", "right"]
+        },
+
         "children": {
           "type": "array",
           "items": {
@@ -561,6 +577,15 @@
       "properties": {
         "type": {
           "const": "td"
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "rowspan": {
+          "type": "number"
+        },
+        "align": {
+          "enum": ["left", "center", "right"]
         },
         "children": {
           "type": "array",

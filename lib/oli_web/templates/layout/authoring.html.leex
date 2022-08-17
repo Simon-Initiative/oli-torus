@@ -55,24 +55,7 @@
       window.cite = require('citation-js')
     </script>
 
-    <script>
-    window.MathJax = {
-      tex: {
-        inlineMath: [ ["\\(","\\)"] ],
-        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-        processEscapes: true,
-        packages: ['base', 'ams', 'noerrors', 'noundefined']
-      },
-      options: {
-        ignoreHtmlClass: 'tex2jax_ignore',
-        processHtmlClass: 'tex2jax_process'
-      },
-      loader: {
-        load: ['[tex]/noerrors']
-      }
-    };
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" id="MathJax-script"></script>
+    <%= OliWeb.Common.MathJaxScript.render(@conn) %>
 
     <%= csrf_meta_tag() %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
@@ -81,9 +64,9 @@
       <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/timezone.js") %>"></script>
     <% end %>
     <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/dark.js") %>"></script>
-    <script id="keep-alive" type="text/javascript" src="<%= Routes.static_path(@conn, "/js/keepalive.js") %>" data-type="author"></script>
   </head>
   <body>
+    <input type="hidden" id="layout-id" data-layout-id="authoring">
 
     <%= live_render(@conn, OliWeb.SystemMessageLive.ShowView) %>
 

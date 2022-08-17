@@ -204,6 +204,7 @@ export interface ActivityModelSchema {
   activityType?: any;
   id?: string; // maybe slug
   bibrefs?: string[];
+  activity_id?: string;
 }
 
 /**

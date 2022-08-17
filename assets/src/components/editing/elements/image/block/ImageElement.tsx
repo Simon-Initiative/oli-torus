@@ -1,5 +1,5 @@
 import React from 'react';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
@@ -10,9 +10,26 @@ import { ImagePlaceholder } from 'components/editing/elements/image/block/ImageP
 import { ImageSettings } from 'components/editing/elements/image/ImageSettings';
 
 interface Props extends EditorProps<ContentModel.ImageBlock> {}
+
+const percentageWidth = /^[0-9]+%$/;
+
+const cssWidth = (width: number | string | undefined) => {
+  if (!width) return undefined;
+  if (typeof width === 'number') return width;
+  if (typeof width !== 'string') return undefined;
+
+  if (percentageWidth.test(width)) {
+    return width;
+  }
+
+  const pixels = parseFloat(width);
+  if (isNaN(pixels)) return undefined;
+  return pixels;
+};
+
 export const ImageEditor = (props: Props) => {
   const selected = useElementSelected();
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   if (props.model.src === undefined) return <ImagePlaceholder {...props} />;
 
@@ -34,7 +51,10 @@ export const ImageEditor = (props: Props) => {
       >
         <div>
           <Resizable show={selected} onResize={({ width, height }) => onEdit({ width, height })}>
-            <img src={props.model.src} style={{ maxWidth: props.model.width ?? '100%' }} />
+            <img
+              src={props.model.src}
+              style={{ maxWidth: cssWidth(props.model.width) ?? '100%' }}
+            />
           </Resizable>
         </div>
       </HoverContainer>

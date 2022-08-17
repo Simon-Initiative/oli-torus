@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, useEffect, useRef, Suspense, useState } from 'react';
 import { throttle } from 'lodash';
-import { onEditModel } from 'components/editing/elements/utils';
+import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
@@ -42,7 +42,7 @@ export const CodeEditor = (props: PropsWithChildren<CodeEditorProps>) => {
   const editorRef = useRef<RefEditorInstance>(null);
   const [model] = useState(getInitialModel(props.model));
 
-  const onEdit = onEditModel(model);
+  const onEdit = useEditModelCallback(model);
 
   const updateSize = (editor?: monaco.editor.IStandaloneCodeEditor) => {
     if (editor && editorContainer.current) {

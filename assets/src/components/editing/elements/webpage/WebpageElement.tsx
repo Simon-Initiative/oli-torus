@@ -1,5 +1,5 @@
 import React from 'react';
-import { elementBorderStyle, onEditModel } from 'components/editing/elements/utils';
+import { elementBorderStyle, useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { CaptionEditor } from 'components/editing/elements/common/settings/CaptionEditor';
@@ -10,7 +10,7 @@ import { WebpageSettings } from 'components/editing/elements/webpage/WebpageSett
 export interface Props extends EditorProps<ContentModel.Webpage> {}
 export const WebpageEditor = (props: Props) => {
   const selected = useElementSelected();
-  const onEdit = onEditModel(props.model);
+  const onEdit = useEditModelCallback(props.model);
 
   return (
     <div {...props.attributes} className="webpage-editor">

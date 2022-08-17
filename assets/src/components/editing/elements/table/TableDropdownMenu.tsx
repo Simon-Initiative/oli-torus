@@ -1,24 +1,38 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { ReactEditor } from 'slate-react';
 import { Transforms, Editor, Path, Element } from 'slate';
-import { TableData, TableHeader, TableRow } from 'data/content/model/elements/types';
+import {
+  Table,
+  TableBorderStyle,
+  TableCell,
+  TableData,
+  TableHeader,
+  TableRow,
+  TableRowStyle,
+} from 'data/content/model/elements/types';
 import { Model } from 'data/content/model/elements/factories';
+import {
+  canExpandCellRight,
+  canExpandDown,
+  canSplitCell,
+  expandCellDown,
+  expandCellRight,
+  splitCell,
+} from './table-cell-merge-operations';
 
 // Dropdown menu that appears in each table cell.
 interface Props {
   editor: Editor;
-  model: TableData | TableHeader;
+  model: TableCell;
 }
-export const DropdownMenu = (props: Props) => {
-  const ref = useRef();
-  const { editor, model } = props;
 
-  // There has to be a better way to do this.
-  useEffect(() => {
-    if (ref !== null && ref.current !== null) {
-      (window.$('.dropdown-toggle') as any).dropdown();
+export const DropdownMenu: React.FC<Props> = ({ editor, model }) => {
+  const ref = useCallback((reference: HTMLButtonElement) => {
+    if (reference) {
+      // TODO - probably be nice to get rid of the jquery dependency for a dropdown.
+      (window.$(reference) as any).dropdown();
     }
-  });
+  }, []);
 
   const onToggleHeader = () => {
     const path = ReactEditor.findPath(editor, model);
@@ -111,9 +125,53 @@ export const DropdownMenu = (props: Props) => {
     Transforms.removeNodes(editor, { at: path });
   };
 
+  const onBorderStyle = useCallback(
+    (style: TableBorderStyle) => (_event: any) => {
+      const [tableEntry] = Editor.nodes(editor, {
+        match: (n) => Element.isElement(n) && n.type === 'table',
+      });
+      if (!tableEntry) return;
+
+      const [, path] = tableEntry;
+      Transforms.setNodes<Table>(editor, { border: style }, { at: path });
+    },
+    [editor],
+  );
+
+  const onRowStyle = useCallback(
+    (style: TableRowStyle) => (_event: any) => {
+      const [tableEntry] = Editor.nodes(editor, {
+        match: (n) => Element.isElement(n) && n.type === 'table',
+      });
+      if (!tableEntry) return;
+
+      const [, path] = tableEntry;
+      Transforms.setNodes<Table>(editor, { rowstyle: style }, { at: path });
+    },
+    [editor],
+  );
+
+  const toggleAlignment = useCallback(
+    (alignment: string) => (_event: any) => {
+      const [cellEntry] = Editor.nodes(editor, {
+        match: (n) => Element.isElement(n) && (n.type === 'td' || n.type === 'th'),
+      });
+      if (!cellEntry) return;
+
+      const [, path] = cellEntry;
+      Transforms.setNodes<TableData | TableHeader>(editor, { align: alignment }, { at: path });
+    },
+    [editor],
+  );
+
+  const canMergeDown = canExpandDown(editor);
+  const canMergeRight = canExpandCellRight(editor);
+  const canSplit = canSplitCell(editor);
+
   return (
-    <div ref={ref as any} className="dropdown table-dropdown" contentEditable={false}>
+    <div className="dropdown table-dropdown" contentEditable={false}>
       <button
+        ref={ref}
         type="button"
         className="dropdown-toggle btn"
         data-reference="parent"
@@ -127,6 +185,72 @@ export const DropdownMenu = (props: Props) => {
         <button type="button" className="dropdown-item" onClick={onToggleHeader}>
           Toggle Header
         </button>
+        <div className="dropdown-divider"></div>
+
+        <h6 className="dropdown-header">Border</h6>
+
+        <button type="button" className="dropdown-item" onClick={onBorderStyle('solid')}>
+          Solid
+        </button>
+
+        <button type="button" className="dropdown-item" onClick={onBorderStyle('hidden')}>
+          Hidden
+        </button>
+
+        <div className="dropdown-divider"></div>
+
+        <h6 className="dropdown-header">Row Style</h6>
+
+        <button type="button" className="dropdown-item" onClick={onRowStyle('plain')}>
+          Plain
+        </button>
+
+        <button type="button" className="dropdown-item" onClick={onRowStyle('alternating')}>
+          Alternating Stripes
+        </button>
+
+        <div className="dropdown-divider"></div>
+        <h6 className="dropdown-header">Split / Merge</h6>
+        <button
+          disabled={!canMergeRight}
+          type="button"
+          className="dropdown-item"
+          onClick={() => expandCellRight(editor)}
+        >
+          Merge Right
+        </button>
+        <button
+          disabled={!canMergeDown}
+          type="button"
+          className="dropdown-item"
+          onClick={() => expandCellDown(editor)}
+        >
+          Merge Down
+        </button>
+
+        <button
+          disabled={!canSplit}
+          type="button"
+          className="dropdown-item"
+          onClick={() => splitCell(editor)}
+        >
+          Split Cell
+        </button>
+
+        <div className="dropdown-divider"></div>
+        <h6 className="dropdown-header">Alignment</h6>
+
+        <div className="ml-3 btn-group btn-group-toggle">
+          <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('left')}>
+            <i className="material-icons-outlined">format_align_left</i>
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('center')}>
+            <i className="material-icons-outlined">format_align_center</i>
+          </button>
+          <button className="btn btn-sm btn-secondary" onClick={toggleAlignment('right')}>
+            <i className="material-icons-outlined">format_align_right</i>
+          </button>
+        </div>
 
         <div className="dropdown-divider"></div>
 
