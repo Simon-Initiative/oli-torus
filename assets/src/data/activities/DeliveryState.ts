@@ -17,12 +17,11 @@ import {
   Success,
   FileMetaData,
 } from 'components/activities/types';
-import { SurveyEventDetails } from 'components/misc/SurveyControls';
+import * as Events from 'data/events';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
-import { isObjectBindingPattern } from 'typescript';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -447,7 +446,8 @@ export const listenForParentSurveySubmit = (
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
+
+    document.addEventListener(Events.Registry.SurveySubmit, (e) => {
       // check if this activity belongs to the survey being submitted
       if (e.detail.id === surveyId) {
         dispatch(submit(onSubmitActivity));
@@ -463,7 +463,7 @@ export const listenForParentSurveyReset = (
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
+    document.addEventListener(Events.Registry.SurveySubmit, (e) => {
       // check if this activity belongs to the survey being reset
       if (e.detail.id === surveyId) {
         dispatch(resetAction(onResetActivity, partInputs));

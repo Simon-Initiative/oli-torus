@@ -1,26 +1,19 @@
 import React, { useState } from 'react';
+import * as Events from 'data/events';
 
 export interface SurveyControlsProps {
   id: string;
   isSubmitted: boolean;
 }
 
-export interface SurveyEventDetails {
-  id: string;
-}
-
 export const SurveyControls = ({ id, isSubmitted }: SurveyControlsProps) => {
   const [submitted, setSubmitted] = useState(isSubmitted);
   const onSubmit = () => {
-    document.dispatchEvent(
-      new CustomEvent<SurveyEventDetails>('oli-survey-submit', { detail: { id } }),
-    );
+    Events.dispatch(Events.Registry.SurveySubmit, Events.makeSurveySubmitEvent({ id }));
     setSubmitted(true);
   };
   const onReset = () => {
-    document.dispatchEvent(
-      new CustomEvent<SurveyEventDetails>('oli-survey-reset', { detail: { id } }),
-    );
+    Events.dispatch(Events.Registry.SurveyReset, Events.makeSurveyResetEvent({ id }));
     setSubmitted(false);
   };
 
