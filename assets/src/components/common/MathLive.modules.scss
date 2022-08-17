@@ -1,0 +1,25 @@
+.mathLive {
+  math-field {
+    padding: 0.5em;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+}
+
+.disabled {
+  math-field {
+    background-color: #e9ecef;
+  }
+}
+
+.inline {
+  display: inline-flex;
+
+  math-field {
+    min-width: 200px;
+  }
+}

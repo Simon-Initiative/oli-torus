@@ -3,6 +3,7 @@ import { DropdownInput } from 'components/activities/common/delivery/inputs/Drop
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
+import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
 import {
   Audio,
@@ -315,8 +316,7 @@ export class HtmlParser implements WriterImpl {
     }
 
     const shared = {
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        inputRefContext.onChange(inputRef.id, e),
+      onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',
@@ -337,6 +337,8 @@ export class HtmlParser implements WriterImpl {
         return withHints(<NumericInput {...shared} />);
       case 'text':
         return withHints(<TextInput {...shared} />);
+      case 'math':
+        return withHints(<MathInput {...shared} inline />);
       case 'dropdown':
         return withHints(
           <DropdownInput

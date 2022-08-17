@@ -90,7 +90,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
     |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
-      case update_part_attempt(pa, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()}) do
+      case update_part_attempt(pa, %{
+             lifecycle_state: :submitted,
+             date_submitted: DateTime.utc_now()
+           }) do
         {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
         e -> {:halt, e}
       end

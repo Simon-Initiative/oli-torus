@@ -105,9 +105,9 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
-  const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
-    const value = e.target.value;
+
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
         partId: input.partId,

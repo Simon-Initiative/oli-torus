@@ -180,6 +180,7 @@ export const MultiInputActions = {
         dropdown: Responses.forMultipleChoice(choices[0].id),
         text: Responses.forTextInput(),
         numeric: Responses.forNumericInput(),
+        math: Responses.forMathInput(),
       }[type];
 
       input.inputType = type;
