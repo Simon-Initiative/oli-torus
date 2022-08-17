@@ -724,7 +724,9 @@ export const checkExpressionsWithWrongBrackets = (value: string) => {
     let result = expression.match(/{([^{^}]+)}/g) || [];
     result = result.filter(
       (expression) =>
-        expression.search(/^[^\s]+app\.|^[^\s]+variables\.|^[^\s]+stage\.|^[^\s]+session\./) !== -1,
+        expression.search(
+          /app\.[a-zA-Z0-9_.-]|variables\.[a-zA-Z0-9_.-]|stage\.[a-zA-Z0-9._-]|session\.[a-zA-Z0-9_.-]/,
+        ) !== -1,
     );
     if (result?.length) {
       const obj: Record<string, string> = {};
