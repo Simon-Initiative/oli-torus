@@ -100,7 +100,7 @@ defmodule Oli.Resources.PageBrowse do
         total_count: fragment("count(*) OVER()"),
         page_type:
           fragment(
-            "case when ?->>'advancedDelivery' = 'true' then 'Advanced' else 'Regular' end",
+            "case when ?->>'advancedDelivery' = 'true' then 'Adaptive' else 'Regular' end",
             rev.content
           )
       })
@@ -114,7 +114,7 @@ defmodule Oli.Resources.PageBrowse do
             [rev, _, _, _],
             {^direction,
              fragment(
-               "case when ?->>'advancedDelivery' = 'true' then 'Advanced' else 'Regular' end",
+               "case when ?->>'advancedDelivery' = 'true' then 'Adaptive' else 'Regular' end",
                rev.content
              )}
           )
