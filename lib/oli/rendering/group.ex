@@ -20,7 +20,14 @@ defmodule Oli.Rendering.Group do
         %{"type" => "group", "id" => id, "children" => children} = element,
         writer
       ) do
-    next = fn -> writer.elements(%Context{context | group_id: id}, children) end
+    hide_pagination_controls = Map.get(element, "hidePaginationControls", false)
+
+    next = fn ->
+      writer.elements(
+        %Context{context | group_id: id, hide_pagination_controls: hide_pagination_controls},
+        children
+      )
+    end
 
     writer.group(context, next, element)
   end

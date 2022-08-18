@@ -40,7 +40,8 @@ defmodule Oli.Rendering.Elements.Html do
     if br_count > 0 do
       {:safe, pagination_controls} =
         ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
-          forId: for_id(context)
+          forId: for_id(context),
+          hideControls: context.hide_pagination_controls
         })
 
       [

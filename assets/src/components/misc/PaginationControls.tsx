@@ -6,6 +6,7 @@ import * as Events from 'data/events';
 
 export interface PaginationControlsProps {
   forId: string;
+  hideControls?: boolean;
 }
 
 type Page = List<Element>;
@@ -70,7 +71,7 @@ export const PaginationControls = (props: PaginationControlsProps) => {
   return (
     <div className={styles.paginationControls} ref={controls}>
       <div className="flex-grow-1"></div>
-      <ul className="pagination">
+      <ul className="pagination" style={{ display: props.hideControls ? 'none' : 'inline-block' }}>
         <li className={classNames('page-item', previousDisabled ? 'disabled' : '')}>
           <button
             className="page-link"
