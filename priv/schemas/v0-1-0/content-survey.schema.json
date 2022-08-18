@@ -14,9 +14,6 @@
     "title": {
       "type": "string"
     },
-    "hidePaginationControls": {
-      "type": "boolean"
-    },
     "children": {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }

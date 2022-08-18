@@ -3,10 +3,11 @@ import { List } from 'immutable';
 import styles from './PaginationControls.modules.scss';
 import { classNames } from 'utils/classNames';
 import * as Events from 'data/events';
+import { PaginationMode } from 'data/content/resource';
 
 export interface PaginationControlsProps {
   forId: string;
-  hideControls?: boolean;
+  paginationMode: PaginationMode;
 }
 
 type Page = List<Element>;
@@ -50,55 +51,68 @@ export const PaginationControls = (props: PaginationControlsProps) => {
             );
           }
         }
-
         setPages(pages);
       }
     }
   }, [controls]);
 
   useEffect(() => {
-    hideAll();
+    if (props.paginationMode === 'normal') {
+      hideAll();
+    }
     show(active);
   }, [pages, active]);
 
   const onSelectPage = (pageIndex: number) => {
-    setActive(Math.min(pages.count() - 1, Math.max(0, pageIndex)));
+    setActive(Math.max(0, pageIndex));
   };
 
   const previousDisabled = active === 0;
   const nextDisabled = active === pages.count() - 1;
 
   return (
-    <div className={styles.paginationControls} ref={controls}>
-      <div className="flex-grow-1"></div>
-      <ul className="pagination" style={{ display: props.hideControls ? 'none' : 'inline-block' }}>
-        <li className={classNames('page-item', previousDisabled ? 'disabled' : '')}>
-          <button
-            className="page-link"
-            onClick={() => onSelectPage(active - 1)}
-            disabled={previousDisabled}
-          >
-            Previous
-          </button>
-        </li>
-        {pages.map((p, i) => (
-          <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
-            <button className="page-link" onClick={() => onSelectPage(i)}>
-              {i + 1}
-            </button>
-          </li>
-        ))}
-        <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
-          <button
-            className="page-link"
-            onClick={() => onSelectPage(active + 1)}
-            disabled={nextDisabled}
-          >
+    <>
+      <div className="d-flex justify-content-center">
+        {props.paginationMode === 'manualReveal' && active !== pages.toArray().length - 1 ? (
+          <button className="btn btn-primary" onClick={() => onSelectPage(active + 1)}>
             Next
           </button>
-        </li>
-      </ul>
-      <div className="flex-grow-1"></div>
-    </div>
+        ) : null}
+      </div>
+      <div className={styles.paginationControls} ref={controls}>
+        <div className="flex-grow-1"></div>
+        <ul
+          className="pagination"
+          style={{ visibility: props.paginationMode !== 'normal' ? 'hidden' : 'visible' }}
+        >
+          <li className={classNames('page-item', previousDisabled ? 'disabled' : '')}>
+            <button
+              className="page-link"
+              onClick={() => onSelectPage(active - 1)}
+              disabled={previousDisabled}
+            >
+              Previous
+            </button>
+          </li>
+          {pages.map((p, i) => (
+            <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
+              <button className="page-link" onClick={() => onSelectPage(i)}>
+                {i + 1}
+              </button>
+            </li>
+          ))}
+          <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
+            <button
+              className="page-link"
+              onClick={() => onSelectPage(active + 1)}
+              disabled={nextDisabled}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+        <div className="flex-grow-1"></div>
+      </div>
+    </>
   );
 };

@@ -10,6 +10,7 @@ import {
 import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
+import { PaginationModes } from './PaginationModes';
 
 interface GroupBlockProps {
   editMode: boolean;
@@ -33,13 +34,6 @@ export const GroupBlock = ({
   const onEditPurpose = (purpose: string) => {
     onEdit(Object.assign(contentItem, { purpose }));
   };
-  const onEditPaginationDisplay = (_e: any) => {
-    const hidePaginationControls =
-      contentItem.hidePaginationControls === undefined || !contentItem.hidePaginationControls
-        ? true
-        : false;
-    onEdit(Object.assign(contentItem, { hidePaginationControls }));
-  };
 
   // a purpose can only be set if no parents have a purpose or no children have purpose
   const canEditPurpose =
@@ -54,17 +48,11 @@ export const GroupBlock = ({
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
         {contentBreaksExist ? (
-          <div>
-            <input
-              type="checkbox"
-              defaultChecked={
-                contentItem.hidePaginationControls !== undefined &&
-                contentItem.hidePaginationControls
-              }
-              onChange={(v: any) => onEditPaginationDisplay(v)}
-            />
-            <label className="ml-2 mr-4">Hide pagination controls</label>
-          </div>
+          <PaginationModes
+            onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
+            editMode={editMode}
+            mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
+          />
         ) : null}
         <Purpose
           purpose={contentItem.purpose}

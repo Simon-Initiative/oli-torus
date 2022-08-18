@@ -204,12 +204,14 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
+export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
+
 export interface GroupContent {
   type: 'group';
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
-  hidePaginationControls?: boolean;
+  paginationMode?: PaginationMode;
   children: Immutable.List<ResourceContent>;
 }
 
@@ -217,7 +219,6 @@ export interface SurveyContent {
   type: 'survey';
   id: string;
   title: string | undefined;
-  hidePaginationControls?: boolean;
   children: Immutable.List<ResourceContent>;
 }
 

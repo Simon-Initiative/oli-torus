@@ -120,6 +120,17 @@ export const activityDeliverySlice = createSlice({
       if (action.payload.actions.length > 0) {
         const { score, out_of } = calculateNewScore(action);
 
+        if (action.payload.actions[0].type === 'FeedbackAction') {
+          if (action.payload.actions[0].show_page !== null) {
+            const forId = state.attemptState.groupId as string;
+            const index = action.payload.actions[0].show_page;
+            Events.dispatch(
+              Events.Registry.ShowContentPage,
+              Events.makeShowContentPage({ forId, index }),
+            );
+          }
+        }
+
         state.attemptState = {
           ...state.attemptState,
           score,

@@ -12,7 +12,8 @@ defmodule Oli.Activities.State.ActivityState do
     :score,
     :outOf,
     :hasMoreAttempts,
-    :parts
+    :parts,
+    :groupId
   ]
 
   @derive Jason.Encoder
@@ -25,7 +26,8 @@ defmodule Oli.Activities.State.ActivityState do
     :score,
     :outOf,
     :hasMoreAttempts,
-    :parts
+    :parts,
+    :groupId
   ]
 
   @spec from_attempt(
@@ -59,7 +61,8 @@ defmodule Oli.Activities.State.ActivityState do
       score: attempt.score,
       outOf: attempt.out_of,
       hasMoreAttempts: has_more_attempts,
-      parts: parts
+      parts: parts,
+      groupId: attempt.group_id
     }
   end
 
@@ -73,6 +76,7 @@ defmodule Oli.Activities.State.ActivityState do
       score: nil,
       outOf: nil,
       hasMoreAttempts: true,
+      groupId: nil,
       parts:
         Enum.map(transformed_model["authoring"]["parts"], fn p ->
           %Oli.Activities.State.PartState{

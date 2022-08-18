@@ -41,7 +41,7 @@ defmodule Oli.Rendering.Elements.Html do
       {:safe, pagination_controls} =
         ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
           forId: for_id(context),
-          hideControls: context.hide_pagination_controls
+          paginationMode: context.pagination_mode
         })
 
       [

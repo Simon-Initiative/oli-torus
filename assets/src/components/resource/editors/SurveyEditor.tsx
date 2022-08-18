@@ -40,10 +40,6 @@ export const SurveyEditor = ({
     onEdit(updatedContent);
   };
 
-  const contentBreaksExist = contentItem.children
-    .toArray()
-    .some((v: ResourceContent) => v.type === 'break');
-
   return (
     <SurveyBlock
       editMode={editMode}
@@ -51,7 +47,6 @@ export const SurveyEditor = ({
       canRemove={canRemove}
       onRemove={onRemove}
       onEdit={onEdit}
-      contentBreaksExist={contentBreaksExist}
     >
       {contentItem.children.map((c, childIndex) => {
         const onRemoveChild = () =>
@@ -88,7 +83,7 @@ export const SurveyEditor = ({
               editorMap,
               canRemove,
               featureFlags,
-              contentBreaksExist,
+              contentBreaksExist: false,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemoveChild,

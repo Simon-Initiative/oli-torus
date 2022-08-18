@@ -20,11 +20,9 @@ defmodule Oli.Rendering.Survey do
         %{"type" => "survey", "id" => id, "children" => children} = element,
         writer
       ) do
-    hide_pagination_controls = Map.get(element, "hidePaginationControls", false)
-
     next = fn ->
       writer.elements(
-        %Context{context | survey_id: id, hide_pagination_controls: hide_pagination_controls},
+        %Context{context | survey_id: id, pagination_mode: "normal"},
         children
       )
     end

@@ -322,6 +322,8 @@ export interface ActivityState {
    */
   hasMoreHints: boolean;
   snapshot?: any;
+
+  groupId: null | string;
 }
 
 /**
@@ -477,6 +479,7 @@ export interface FeedbackAction extends IsAction {
   out_of: number;
   score: number;
   feedback: Feedback;
+  show_page: number | null;
 }
 
 /**
