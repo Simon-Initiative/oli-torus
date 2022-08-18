@@ -51,6 +51,7 @@ export const SurveyEditor = ({
       canRemove={canRemove}
       onRemove={onRemove}
       onEdit={onEdit}
+      contentBreaksExist={contentBreaksExist}
     >
       {contentItem.children.map((c, childIndex) => {
         const onRemoveChild = () =>

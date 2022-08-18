@@ -149,8 +149,6 @@ export class InlineActivityEditor extends React.Component<
       authoringcontext: JSON.stringify({ contentBreaksExist }),
     };
 
-    console.log(webComponentProps.authoringcontext);
-
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 

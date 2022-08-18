@@ -209,6 +209,7 @@ export interface GroupContent {
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
+  hidePaginationControls?: boolean;
   children: Immutable.List<ResourceContent>;
 }
 
@@ -216,6 +217,7 @@ export interface SurveyContent {
   type: 'survey';
   id: string;
   title: string | undefined;
+  hidePaginationControls?: boolean;
   children: Immutable.List<ResourceContent>;
 }
 

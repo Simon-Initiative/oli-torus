@@ -10,6 +10,7 @@ interface SurveyBlockProps {
   editMode: boolean;
   contentItem: SurveyContent;
   canRemove: boolean;
+  contentBreaksExist: boolean;
   onEdit: (item: SurveyContent) => void;
   onRemove: () => void;
 }
@@ -18,11 +19,19 @@ export const SurveyBlock = ({
   contentItem,
   canRemove,
   children,
+  contentBreaksExist,
   onEdit,
   onRemove,
 }: PropsWithChildren<SurveyBlockProps>) => {
   const onEditTitle = (title: string) => {
     onEdit(Object.assign(contentItem, { title }));
+  };
+  const onEditPaginationDisplay = (_e: any) => {
+    const hidePaginationControls =
+      contentItem.hidePaginationControls === undefined || !contentItem.hidePaginationControls
+        ? true
+        : false;
+    onEdit(Object.assign(contentItem, { hidePaginationControls }));
   };
 
   return (
@@ -41,6 +50,19 @@ export const SurveyBlock = ({
             editMode={editMode}
           />
           <div className="flex-grow-1"></div>
+          {contentBreaksExist ? (
+            <div>
+              <input
+                type="checkbox"
+                defaultChecked={
+                  contentItem.hidePaginationControls !== undefined &&
+                  contentItem.hidePaginationControls
+                }
+                onChange={(v: any) => onEditPaginationDisplay(v)}
+              />
+              <label className="ml-2 mr-4">Hide pagination controls</label>
+            </div>
+          ) : null}
           <DeleteButton className="ml-2" editMode={editMode && canRemove} onClick={onRemove} />
         </div>
         <div>{children}</div>

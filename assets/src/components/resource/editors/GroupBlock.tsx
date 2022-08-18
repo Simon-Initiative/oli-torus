@@ -16,6 +16,7 @@ interface GroupBlockProps {
   contentItem: GroupContent;
   parents: ResourceContent[];
   canRemove: boolean;
+  contentBreaksExist: boolean;
   onEdit: (contentItem: GroupContent) => void;
   onRemove: () => void;
 }
@@ -24,12 +25,20 @@ export const GroupBlock = ({
   contentItem,
   parents,
   canRemove,
+  contentBreaksExist,
   children,
   onEdit,
   onRemove,
 }: PropsWithChildren<GroupBlockProps>) => {
   const onEditPurpose = (purpose: string) => {
     onEdit(Object.assign(contentItem, { purpose }));
+  };
+  const onEditPaginationDisplay = (_e: any) => {
+    const hidePaginationControls =
+      contentItem.hidePaginationControls === undefined || !contentItem.hidePaginationControls
+        ? true
+        : false;
+    onEdit(Object.assign(contentItem, { hidePaginationControls }));
   };
 
   // a purpose can only be set if no parents have a purpose or no children have purpose
@@ -44,6 +53,19 @@ export const GroupBlock = ({
     >
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
+        {contentBreaksExist ? (
+          <div>
+            <input
+              type="checkbox"
+              defaultChecked={
+                contentItem.hidePaginationControls !== undefined &&
+                contentItem.hidePaginationControls
+              }
+              onChange={(v: any) => onEditPaginationDisplay(v)}
+            />
+            <label className="ml-2 mr-4">Hide pagination controls</label>
+          </div>
+        ) : null}
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}
