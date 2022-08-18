@@ -1,0 +1,62 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "entropy": "69.91", 
+            "name": "H<sub>2</sub>O", 
+            "state": "l", 
+            "enthalpy": "-285.83", 
+            "density": "1.000", 
+            "specificHeat": "1.000", 
+            "molecularWeight": "18.01534", 
+            "unitActivity": "true", 
+            "id": "0"
+         }, 
+         {
+            "entropy": "0.0", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "id": "1"
+         }, 
+         {
+            "entropy": "-10.75", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "id": "2"
+         }, 
+         {
+            "entropy": "360.2", 
+            "name": "Glucose", 
+            "state": "s", 
+            "enthalpy": "-2226.1", 
+            "molecularWeight": "180.18", 
+            "density": "1.25", 
+            "specificHeat": "0.2", 
+            "id": "3"
+         }, 
+         {
+            "entropy": "372.6", 
+            "name": "Glucose<sub>(aq)</sub>", 
+            "state": "aq", 
+            "enthalpy": "-2224.1", 
+            "molecularWeight": "180.18", 
+            "density": "1.25", 
+            "id": "4"
+         }, 
+        {
+            "id": "5", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+            "molecularWeight": "22.99"
+         }, 
+        {
+            "id": "6", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.58999999999997", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }
+      ]
+   }
+}

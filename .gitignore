@@ -62,9 +62,6 @@ npm-debug.log
 /assets/styles/themes/delivery/custom/*
 !/assets/styles/themes/delivery/custom/README.md
 
-# Ignore static Vlab files
-/assets/static/vlab/
-
 oli.env
 postgres.env
 /assets/test-results/

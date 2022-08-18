@@ -1,0 +1,69 @@
+[
+  {
+    "category": "Laboratorio básico",
+    "assignments":[
+      {
+        "name": "Laboratorio básico",
+        "author": "Mike Karabinos, Jordi Cuadros",
+        "description": "Contiene las especies, reacciones y soluciones disponibles en el almacén básico del Laboratorio Virtual.",
+        "path": "default"
+      }
+    ]
+  },
+  {
+    "category": "Soluciones y concentraciones",
+    "assignments":[
+      {
+        "name": "Cola de calidad",
+        "author": "Jordi Cuadros",
+        "description": "Se han detectado tres muestras defectuosas de un refresco de cola. ¿Podrías identificar cuáles?",
+        "path": "molarity/cola_es"
+      }
+    ]
+  },
+  {
+    "category": "Estequiometría",
+    "assignments":[
+      {
+        "name": "El oráculo",
+        "author": "Donovan Lange, Jordi Cuadros",
+        "description": "Problema de reactivos limitantes que pone a prueba el razonamiento de los estudiantes en este fundamental principio.",
+        "path": "stoichiometry/oracleES"
+      },
+      {
+        "name": "Permanganato",
+        "author": "Jordi Cuadros, Francesc Broto",
+        "description": "Determinación de la pureza de una muestra de permanganato potásico.",
+        "path": "stoichiometry/kmno4col_es"
+      },
+      {
+        "name": "Permanganato por valoración redox",
+        "author": "Jordi Cuadros, Francesc Broto",
+        "description": "Determinación de la pureza de una muestra de permanganato potásico por valoración.",
+        "path": "stoichiometry/kmno4_es"
+      }
+    ]
+  },
+  {
+    "category": "Equilibrio químico",
+    "assignments":[
+      {
+        "name": "Complejos de cobalto",
+        "author": "Bob Belford, Jordi Cuadros",
+        "description": "Un experimento que estudia los complejos de cobalto y el principio de Le Chatelier.",
+        "path": "equilibrium/cobaltES"
+      }
+    ]
+  },
+  {
+    "category": "Termoquímica",
+    "assignments":[
+      {
+        "name": "De camping",
+        "author": "Tim Palucka, Dave Yaron, Jordi Cuadros",
+        "description": "Determina la entalpía de una reacción.",
+        "path": "thermochemistry/thermoQ1ES"
+      }
+    ]
+  }
+]

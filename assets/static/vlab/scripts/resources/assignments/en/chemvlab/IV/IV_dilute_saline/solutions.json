@@ -1,0 +1,42 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+              
+               
+             {
+                  "name": "0.154 M NaCl", 
+                  "description": "Sodium Chloride", 
+                  "volume": "0.2", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.0308"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.0308"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

@@ -1,0 +1,40 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.1M HCl", 
+                  "description": "0.1 Molar Hydrochloric Acid", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.01"
+                     }, 
+                     {
+                        "id": "1", 
+                        "amount": "0.01"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

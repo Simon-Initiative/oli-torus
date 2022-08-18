@@ -1,0 +1,58 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "entropy": "69.91", 
+            "name": "H<sub>2</sub>O", 
+            "state": "l", 
+            "enthalpy": "-285.83", 
+            "density": "1.000", 
+            "molecularWeight": "18.01534", 
+            "unitActivity": "true", 
+            "id": "0"
+         }, 
+         {
+            "entropy": "0.0", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "id": "1"
+         }, 
+         {
+            "entropy": "-10.75", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "id": "2"
+         }, 
+         {
+            "entropy": "0", 
+            "name": "Metal 1", 
+            "state": "s", 
+            "enthalpy": "0", 
+            "molecularWeight": "107.868", 
+            "density": "10.5", 
+            "specificHeat": "0.0562", 
+            "id": "3"
+         }, 
+         {
+            "entropy": "0", 
+            "name": "Metal 2", 
+            "state": "s", 
+            "enthalpy": "0", 
+            "molecularWeight": "102.905", 
+            "density": "12.4", 
+            "specificHeat": "0.0580", 
+            "id": "4"
+         }, 
+         {
+            "entropy": "0", 
+            "name": "Metal 3", 
+            "state": "s", 
+            "enthalpy": "0", 
+            "molecularWeight": "195.09", 
+            "density": "21.45", 
+            "specificHeat": "0.0317", 
+            "id": "5"
+         }
+      ]
+   }
+}

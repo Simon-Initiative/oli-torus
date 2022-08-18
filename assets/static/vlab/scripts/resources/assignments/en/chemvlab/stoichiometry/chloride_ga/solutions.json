@@ -1,0 +1,58 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Sample 1", 
+                  "description": "water sample", 
+                  "vessel": "500mLFlask",
+                  "volume": "0.25", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.001500"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.001500"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.05 M AgNO<sub>3</sub>", 
+                  "description": "silver nitrate", 
+                  "volume": "0.15", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "12", 
+                        "amount": "0.0075"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.0075"
+                     }
+                  ]
+               }            ]
+         }
+      ]
+   }
+}

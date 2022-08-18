@@ -1,0 +1,40 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Sample 1", 
+                  "description": "A solution of copper(II) hydroxide", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.126"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.063"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

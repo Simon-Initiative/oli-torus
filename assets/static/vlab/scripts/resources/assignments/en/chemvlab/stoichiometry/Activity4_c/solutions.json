@@ -1,0 +1,92 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M Octane", 
+                  "description": "1M Solution of Octane in water", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M Q-4000", 
+                  "description": "1M Solution of Q-4000", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": ".1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M R-760", 
+                  "description": "1M Solution of R-760", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": ".1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M S-400", 
+                  "description": "1M Solution of S-400", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "8", 
+                        "amount": ".1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M X-630", 
+                  "description": "1M Solution of X-630", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": ".1"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

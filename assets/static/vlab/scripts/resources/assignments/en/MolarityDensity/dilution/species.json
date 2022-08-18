@@ -1,0 +1,29 @@
+{
+  "SPECIES_LIST": {
+    "SPECIES": [
+      {
+        "id": "0",
+        "name": "H<sub>2</sub>O",
+        "enthalpy": "-285.83",
+        "entropy": "69.91",
+        "state": "l"
+      },
+      {
+        "id": "1",
+        "name": "H<sup>+</sup>",
+        "enthalpy": "0.0",
+        "entropy": "0.0"
+      },
+      {
+        "id": "2",
+        "name": "OH<sup>-</sup>",
+        "enthalpy": "-229.99",
+        "entropy": "-10.75"
+      },
+      {
+        "id": "3",
+        "name": "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>"
+      }
+    ]
+  }
+}
