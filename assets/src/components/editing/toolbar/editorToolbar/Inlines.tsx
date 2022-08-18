@@ -38,13 +38,13 @@ export const Inlines = (_props: Props) => {
   });
 
   return (
-    <Toolbar.VerticalGroup>
+    <Toolbar.Group>
       {basicFormattingOptions}
       <DropdownButton description={seeMoreInlineOptions}>
         {moreInlineOptions.map((desc, i) => (
           <DescriptiveButton key={i} description={desc} />
         ))}
       </DropdownButton>
-    </Toolbar.VerticalGroup>
+    </Toolbar.Group>
   );
 };

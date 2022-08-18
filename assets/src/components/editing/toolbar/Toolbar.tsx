@@ -4,7 +4,6 @@ import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/hook
 
 interface Props {
   context: CommandContext;
-  orientation: 'vertical' | 'horizontal';
 }
 export const Toolbar = (props: PropsWithChildren<Props>) => {
   const [submenu, setSubmenu] = React.useState<React.MutableRefObject<HTMLButtonElement> | null>(
@@ -23,7 +22,7 @@ export const Toolbar = (props: PropsWithChildren<Props>) => {
 
   return (
     <ToolbarContext.Provider value={context}>
-      <div className={'editorToolbar__' + props.orientation}>{props.children}</div>
+      <div className={'editorToolbar'}>{props.children}</div>
     </ToolbarContext.Provider>
   );
 };
@@ -33,8 +32,3 @@ const Group = (props: PropsWithChildren<GroupProps>) => (
   <div className="editorToolbar__group">{props.children}</div>
 );
 Toolbar.Group = Group;
-
-const VerticalGroup = (props: PropsWithChildren<GroupProps>) => (
-  <div className="editorToolbar__verticalGroup">{props.children}</div>
-);
-Toolbar.VerticalGroup = VerticalGroup;

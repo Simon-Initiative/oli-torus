@@ -69,13 +69,11 @@ export function getContentDescription(content: StructuredContent): JSX.Element {
   return <i>No content</i>;
 }
 
-export const positionRect = ({
-  position,
-  childRect,
-  popoverRect,
-  padding,
-  align,
-}: PopoverState): DOMRect => {
+export const positionRect = (
+  { position, align, childRect, popoverRect, padding }: PopoverState,
+  reposition?: boolean,
+  parent?: HTMLElement | null,
+): DOMRect => {
   const targetMidX = childRect.left + childRect.width / 2;
   const targetMidY = childRect.top + childRect.height / 2;
   const { width, height } = popoverRect;
@@ -108,6 +106,31 @@ export const positionRect = ({
       if (align === 'start') left += childRect.left;
       if (align === 'end') left += childRect.right - width;
       break;
+  }
+
+  // reposition to follow if scrolled off screen
+  if (position === 'top' && reposition && parent) {
+    // a constant offset value to account for the header and other items at the top of the scroll view
+    const TOP_SCROLL_OFFSET = 130;
+
+    const parentRect = parent.getBoundingClientRect();
+
+    // we use childRect to determine position from left since the structured content editor
+    // has wide padding (to enable proper selection from empty margin space) and we want the
+    // toolbar to appear above the actual content
+    left = window.scrollX + childRect.left;
+
+    // the normal resting position of the toolbar is at the top of the slate editor
+    // (adjusted for the height of the toolbar and padding)
+    top = window.scrollY + parentRect.top - height - padding;
+
+    // here we check to see if the view is scrolled past the top of the editor and if so
+    // then we adjust the position the toolbar relative to the top of the window so it is
+    // always in view
+    const topAdjustedScrollPos = parentRect.top - TOP_SCROLL_OFFSET;
+    if (topAdjustedScrollPos < 0) {
+      top = top - topAdjustedScrollPos + Math.min(0, parentRect.bottom - TOP_SCROLL_OFFSET);
+    }
   }
 
   return {

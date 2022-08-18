@@ -8,19 +8,10 @@
   display: inline-flex;
 
   background: white;
-
-  &__horizontal {
-    flex-direction: row;
-    display: inline-flex;
-    border-top: 1px solid black;
-    border-bottom: 1px solid black;
-  }
-  &__vertical {
-    flex-direction: column;
-    display: inline-flex;
-    border-right: 1px solid black;
-    border-left: 1px solid black;
-  }
+  flex-direction: row;
+  display: inline-flex;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
 
   &__group {
     background: white;
@@ -34,21 +25,6 @@
   }
   &__group:last-of-type {
     border-right: 1px solid black;
-  }
-
-  &__verticalGroup {
-    background: white;
-    border-top: 1px solid black;
-
-    display: flex;
-    flex-direction: column;
-    .editorToolbar__button:first-of-type,
-    .editorToolbar__button:last-of-type {
-      flex-basis: 42px;
-    }
-  }
-  &__verticalGroup:last-of-type {
-    border-bottom: 1px solid black;
   }
 
   &__dropdownGroup {

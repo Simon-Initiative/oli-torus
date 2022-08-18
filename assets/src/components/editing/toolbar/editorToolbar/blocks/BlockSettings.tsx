@@ -33,7 +33,7 @@ export const BlockSettings = (_props: BlockSettingProps) => {
   };
 
   if (component[type] !== undefined) {
-    return <Toolbar.VerticalGroup>{(component[type] as any)()}</Toolbar.VerticalGroup>;
+    return <Toolbar.Group>{(component[type] as any)()}</Toolbar.Group>;
   }
   return null;
 };
