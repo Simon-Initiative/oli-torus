@@ -204,6 +204,7 @@ export const VlabActions = {
 
       if (type === 'vlabvalue') {
         (input as VlabInput).parameter = 'volume';
+        (input as VlabInput).species = '';
       }
 
       part.responses = {

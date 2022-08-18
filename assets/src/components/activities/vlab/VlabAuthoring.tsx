@@ -3,7 +3,6 @@ import { shuffleAnswerChoiceSetting } from 'components/activities/common/authori
 import { VlabSchema } from 'components/activities/vlab/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
-// import { MultiInputStem } from 'components/activities/multi_input/sections/MultiInputStem';
 import { VlabStem } from 'components/activities/vlab/sections/VlabStem';
 import { QuestionTab } from 'components/activities/vlab/sections/QuestionTab';
 import { VlabConfigTab } from 'components/activities/vlab/sections/VlabConfigTab';

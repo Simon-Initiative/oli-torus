@@ -1,4 +1,3 @@
-import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
 import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
 import { VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
 import {
@@ -18,12 +17,7 @@ import React from 'react';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 
-export const multiInputOptions: SelectOption<'text' | 'numeric'>[] = [
-  { value: 'numeric', displayValue: 'Number' },
-  { value: 'text', displayValue: 'Text' },
-];
-
-export const multiInputStem = (input: InputRef) => ({
+export const vlabStem = (input: InputRef) => ({
   id: guid(),
   content: [
     {
@@ -38,7 +32,7 @@ export const defaultModel = (): VlabSchema => {
   const input = Model.inputRef();
 
   return {
-    stem: multiInputStem(input),
+    stem: vlabStem(input),
     choices: [],
     inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
     assignmentSource: 'builtIn',

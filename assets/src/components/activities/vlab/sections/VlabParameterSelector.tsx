@@ -11,7 +11,7 @@ interface Props {
 const paramList = ['volume', 'temp', 'pH', 'moles', 'mass', 'molarity', 'concentration'];
 
 export const VlabParameterSelector: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
+  const { dispatch } = useAuthoringElementContext<VlabSchema>();
   return (
     <>
       <div>
@@ -48,9 +48,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
               props.input.parameter === 'temp' ||
               props.input.parameter === 'pH'
             }
-            onChange={(e) =>
-              dispatch(VlabActions.setVlabSpecies(props.input.id, e.target.value))
-            }
+            onChange={(e) => dispatch(VlabActions.setVlabSpecies(props.input.id, e.target.value))}
           />
           Species ID
         </label>

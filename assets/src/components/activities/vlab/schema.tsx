@@ -9,8 +9,6 @@ import {
   ChoiceId,
 } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
-import { Maybe } from 'tsmonad';
-import { assertNever } from 'utils/common';
 
 export type VlabInput = Dropdown | FillInTheBlank | VlabValue;
 export type VlabInputDelivery =
@@ -30,24 +28,11 @@ export interface FillInTheBlank extends Identifiable {
 export interface VlabValue extends Identifiable {
   inputType: 'numeric';
   partId: string;
-  species?: string;
+  species: string;
   parameter: string;
 }
 
 export type VlabInputType = 'dropdown' | 'text' | 'numeric' | 'vlabvalue';
-export const vlabInputTypes: VlabInputType[] = ['dropdown', 'text', 'numeric', 'vlabvalue'];
-
-export const VlabInputTypeFriendly = (type: VlabInputType): string =>
-  Maybe.maybe(
-    {
-      dropdown: 'Dropdown',
-      numeric: 'Number',
-      text: 'Text',
-      vlabvalue: 'Vlab Value',
-    }[type],
-  ).valueOr(assertNever(type));
-
-// export type VlabParameter = 'volume' | 'temp';
 
 export interface VlabSchema extends ActivityModelSchema {
   stem: Stem;
