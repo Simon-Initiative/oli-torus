@@ -111,6 +111,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :authorize_section_preview do
+    plug(Oli.Plugs.AuthorizeSectionPreview)
+  end
+
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug :delivery
@@ -747,6 +751,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
+      :authorize_section_preview,
       :delivery_and_admin,
       :pow_email_layout
     ])

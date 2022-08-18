@@ -26,45 +26,6 @@ defmodule OliWeb.PageDeliveryController do
 
   plug(Oli.Plugs.AuthorizeSection when action in [:export_enrollments, :export_gradebook])
 
-  def index_preview(conn, %{"section_slug" => section_slug}) do
-    user = conn.assigns.current_user
-
-    # We only allow access to preview mode if the user is logged in as an instructor
-    # enrolled in the course section.  If the user is enrolled as a student,
-    # we want to redirect out of this mode to render the page in regular delivery mode.
-
-    if Sections.is_enrolled?(user.id, section_slug) do
-      if Sections.has_instructor_role?(user, section_slug) do
-        case Sections.get_section_by(slug: section_slug)
-             |> Oli.Repo.preload([:base_project, :root_section_resource]) do
-          nil ->
-            render(conn, "error.html")
-
-          section ->
-            hierarchy = Resolver.full_hierarchy(section.slug)
-
-            render(conn, "index.html",
-              title: section.title,
-              description: section.description,
-              section_slug: section_slug,
-              hierarchy: hierarchy,
-              display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-              preview_mode: true,
-              page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-              container_link_url:
-                &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
-            )
-        end
-      else
-        # Any attempt by a student to enter preview mode is simply ignored and redirect back to
-        # regular delivery mode
-        redirect(conn, to: Routes.page_delivery_path(conn, :index, section_slug))
-      end
-    else
-      render(conn, "not_authorized.html")
-    end
-  end
-
   def index(conn, %{"section_slug" => section_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -99,12 +60,6 @@ defmodule OliWeb.PageDeliveryController do
           render(conn, "not_authorized.html")
       end
     end
-  end
-
-  def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
-    conn
-    |> assign(:preview_mode, true)
-    |> container(%{"section_slug" => section_slug, "revision_slug" => revision_slug})
   end
 
   def container(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
@@ -182,33 +137,6 @@ defmodule OliWeb.PageDeliveryController do
     end
   end
 
-  def page_preview(
-        conn,
-        %{
-          "section_slug" => section_slug,
-          "revision_slug" => revision_slug
-        }
-      ) do
-    user = conn.assigns.current_user
-
-    # We only allow access to preview mode if the user is logged in as an or instructor
-    # enrolled in the course section. If the user is enrolled as a student,
-    # we want to redirect out of this mode to render the page in regular delivery mode.
-
-    if Sections.is_enrolled?(user.id, section_slug) do
-      if Sections.has_instructor_role?(user, section_slug) do
-        revision = Resolver.from_revision_slug(section_slug, revision_slug)
-        render_preview_mode(conn, section_slug, revision)
-      else
-        # Any attempt by a student to enter preview mode is simply ignored and redirect back to
-        # regular delivery mode
-        redirect(conn, to: Routes.page_delivery_path(conn, :page, section_slug, revision_slug))
-      end
-    else
-      render(conn, "not_authorized.html")
-    end
-  end
-
   def page(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
     section = conn.assigns.section
@@ -220,116 +148,6 @@ defmodule OliWeb.PageDeliveryController do
     else
       render(conn, "not_authorized.html")
     end
-  end
-
-  defp render_preview_mode(
-         conn,
-         section_slug,
-         %{content: %{"advancedDelivery" => true}} = revision
-       ) do
-    user = conn.assigns.current_user
-    section = conn.assigns.section
-
-    if Sections.is_instructor?(user, section_slug) do
-      PageContext.create_for_visit(section, revision.slug, user, nil)
-      |> render_page(conn, section_slug, user, true)
-    else
-      render(conn, "not_authorized.html")
-    end
-  end
-
-  defp render_preview_mode(conn, section_slug, revision) do
-    section = conn.assigns.section
-
-    type_by_id =
-      Activities.list_activity_registrations()
-      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
-
-    activity_ids =
-      Oli.Resources.PageContent.flat_filter(revision.content, fn item ->
-        item["type"] == "activity-reference"
-      end)
-      |> Enum.map(fn %{"activity_id" => id} -> id end)
-
-    {:ok, {previous, next, current}, _} =
-      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
-
-    activity_map =
-      Resolver.from_resource_id(section_slug, activity_ids)
-      |> Enum.map(fn rev ->
-        type = Map.get(type_by_id, rev.activity_type_id)
-
-        %ActivitySummary{
-          id: rev.resource_id,
-          script: type.authoring_script,
-          attempt_guid: nil,
-          state: nil,
-          lifecycle_state: :active,
-          model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
-          delivery_element: type.delivery_element,
-          authoring_element: type.authoring_element,
-          graded: revision.graded,
-          bib_refs: Map.get(rev.content, "bibrefs", [])
-        }
-      end)
-      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
-
-    summaries = if activity_map != nil, do: Map.values(activity_map), else: []
-
-    bib_entrys =
-      BibUtils.assemble_bib_entries(
-        revision.content,
-        summaries,
-        fn r -> Map.get(r, :bib_refs, []) end,
-        section_slug,
-        Resolver
-      )
-      |> Enum.with_index(1)
-      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
-
-    all_activities = Activities.list_activity_registrations()
-
-    render_context = %Context{
-      user: conn.assigns.current_user,
-      section_slug: section_slug,
-      revision_slug: revision.slug,
-      mode: :instructor_preview,
-      activity_map: activity_map,
-      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
-      bib_app_params: bib_entrys,
-      submitted_surveys: %{}
-    }
-
-    html = Page.render(render_context, revision.content, Page.Html)
-
-    conn = put_root_layout(conn, {OliWeb.LayoutView, "page.html"})
-
-    render(
-      conn,
-      "instructor_preview.html",
-      %{
-        summary: %{title: section.title},
-        section_slug: section_slug,
-        scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
-        preview_mode: true,
-        previous_page: previous,
-        next_page: next,
-        current_page: current,
-        title: revision.title,
-        html: html,
-        objectives: [],
-        section: section,
-        revision: revision,
-        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-        container_link_url:
-          &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
-        resource_slug: revision.slug,
-        display_curriculum_item_numbering: section.display_curriculum_item_numbering,
-        bib_app_params: %{
-          bibReferences: bib_entrys
-        }
-      }
-    )
   end
 
   defp render_page(
@@ -593,6 +411,177 @@ defmodule OliWeb.PageDeliveryController do
       }
     )
   end
+
+  # ----------------------------------------------------------
+  # PREVIEW
+
+  def index_preview(conn, %{"section_slug" => section_slug}) do
+    section = conn.assigns.section
+
+    render(conn, "index.html",
+      title: section.title,
+      description: section.description,
+      section_slug: section_slug,
+      hierarchy: Resolver.full_hierarchy(section.slug),
+      display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+      preview_mode: true,
+      page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+      container_link_url:
+        &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+    )
+  end
+
+  def container_preview(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
+    conn
+    |> assign(:preview_mode, true)
+    |> container(%{"section_slug" => section_slug, "revision_slug" => revision_slug})
+  end
+
+  def page_preview(
+    conn,
+    %{
+      "section_slug" => section_slug,
+      "revision_slug" => revision_slug
+    }
+  ) do
+    user = conn.assigns.current_user
+
+    case Resolver.from_revision_slug(section_slug, revision_slug) do
+      %{content: %{"advancedDelivery" => true}} = revision ->
+        activity_types = Activities.activities_for_section()
+
+        conn
+        |> put_root_layout({OliWeb.LayoutView, "chromeless.html"})
+        |> put_view(OliWeb.ResourceView)
+        |> render("advanced_page_preview.html",
+          additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
+          activity_types: activity_types,
+          scripts: Activities.get_activity_scripts(:delivery_script),
+          part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
+          user: user,
+          project_slug: section_slug,
+          title: revision.title,
+          preview_mode: true,
+          display_curriculum_item_numbering: true,
+          app_params: %{
+            activityTypes: activity_types,
+            resourceId: revision.resource_id,
+            sectionSlug: section_slug,
+            userId: user.id,
+            pageSlug: revision.slug,
+            pageTitle: revision.title,
+            content: revision.content,
+            graded: revision.graded,
+            resourceAttemptState: nil,
+            resourceAttemptGuid: nil,
+            activityGuidMapping: nil,
+            previousPageURL: nil,
+            nextPageURL: nil,
+            previewMode: true,
+            isInstructor: true
+          }
+        )
+      revision -> render_page_preview(conn, section_slug, revision)
+    end
+  end
+
+  defp render_page_preview(conn, section_slug, revision) do
+    section = conn.assigns.section
+
+    {:ok, {previous, next, current}, _} =
+      Oli.Delivery.PreviousNextIndex.retrieve(section, revision.resource_id)
+
+    type_by_id =
+      Activities.list_activity_registrations()
+      |> Enum.reduce(%{}, fn e, m -> Map.put(m, e.id, e) end)
+
+    activity_ids =
+      revision.content
+      |> Oli.Resources.PageContent.flat_filter(fn item ->
+        item["type"] == "activity-reference"
+      end)
+      |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    activity_map =
+      section_slug
+      |> Resolver.from_resource_id(activity_ids)
+      |> Enum.map(fn rev ->
+        type = Map.get(type_by_id, rev.activity_type_id)
+
+        %ActivitySummary{
+          id: rev.resource_id,
+          script: type.authoring_script,
+          attempt_guid: nil,
+          state: nil,
+          lifecycle_state: :active,
+          model: Jason.encode!(rev.content) |> Oli.Delivery.Page.ActivityContext.encode(),
+          delivery_element: type.delivery_element,
+          authoring_element: type.authoring_element,
+          graded: revision.graded,
+          bib_refs: Map.get(rev.content, "bibrefs", [])
+        }
+      end)
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    all_activities = Activities.list_activity_registrations()
+
+    summaries = if activity_map != nil, do: Map.values(activity_map), else: []
+
+    bib_entrys =
+      revision.content
+      |> BibUtils.assemble_bib_entries(
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        Resolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
+
+    render_context = %Context{
+      user: conn.assigns.current_user,
+      section_slug: section_slug,
+      revision_slug: revision.slug,
+      mode: :instructor_preview,
+      activity_map: activity_map,
+      activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
+      bib_app_params: bib_entrys,
+      submitted_surveys: %{}
+    }
+
+    html = Page.render(render_context, revision.content, Page.Html)
+
+    conn
+    |> put_root_layout({OliWeb.LayoutView, "page.html"})
+    |> render(
+      "instructor_preview.html",
+      %{
+        summary: %{title: section.title},
+        section_slug: section_slug,
+        scripts: Enum.map(all_activities, fn a -> a.authoring_script end),
+        preview_mode: true,
+        previous_page: previous,
+        next_page: next,
+        current_page: current,
+        title: revision.title,
+        html: html,
+        objectives: [],
+        section: section,
+        revision: revision,
+        page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
+        container_link_url:
+          &Routes.page_delivery_path(conn, :container_preview, section_slug, &1),
+        resource_slug: revision.slug,
+        display_curriculum_item_numbering: section.display_curriculum_item_numbering,
+        bib_app_params: %{
+          bibReferences: bib_entrys
+        }
+      }
+    )
+  end
+
+  # ----------------------------------------------------------
+  # END PREVIEW
 
   def start_attempt(conn, %{"section_slug" => section_slug, "revision_slug" => revision_slug}) do
     user = conn.assigns.current_user
