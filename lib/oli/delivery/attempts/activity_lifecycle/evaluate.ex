@@ -90,7 +90,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
     |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
-      case update_part_attempt(pa, %{lifecycle_state: :submitted, date_submitted: DateTime.utc_now()}) do
+      case update_part_attempt(pa, %{
+             lifecycle_state: :submitted,
+             date_submitted: DateTime.utc_now()
+           }) do
         {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
         e -> {:halt, e}
       end
@@ -693,16 +696,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       Enum.reduce(part_inputs, part_attempts_map, fn part_input, map ->
         pa = Map.get(map, part_input.attempt_guid)
 
-        if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-             pa.grading_approach == :automatic do
-          Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
-        else
+        unless is_nil(pa) do
           if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-               pa.grading_approach == :manual do
-            Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
+               pa.grading_approach == :automatic do
+            Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
           else
-            map
+            if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
+                 pa.grading_approach == :manual do
+              Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
+            else
+              map
+            end
           end
+        else
+          Logger.info(
+            "Part attempt with GUID #{part_input.attempt_guid} was not found in part attempts map"
+          )
+
+          map
         end
       end)
       |> Map.values()
