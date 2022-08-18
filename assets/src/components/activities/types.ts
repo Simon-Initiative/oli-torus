@@ -425,6 +425,11 @@ export interface Response extends Identifiable {
    * Feedback to assign if this response matches.
    */
   feedback: Feedback;
+
+  /**
+   * Optional, show a page by index when this response is evaluated.
+   */
+  showPage?: number;
 }
 
 /**

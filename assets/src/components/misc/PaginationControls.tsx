@@ -2,12 +2,15 @@ import React, { useEffect, useState, useRef } from 'react';
 import { List } from 'immutable';
 import styles from './PaginationControls.modules.scss';
 import { classNames } from 'utils/classNames';
+import * as Events from 'data/events';
 
-export interface PaginationControlsProps {}
+export interface PaginationControlsProps {
+  forId: string;
+}
 
 type Page = List<Element>;
 
-export const PaginationControls = (_props: PaginationControlsProps) => {
+export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(List<Page>());
   const [active, setActive] = useState(0);
@@ -19,6 +22,15 @@ export const PaginationControls = (_props: PaginationControlsProps) => {
   const show = (pageIndex: number) => {
     pages.get(pageIndex)?.forEach((el) => el.classList.add(styles.show));
   };
+
+  useEffect(() => {
+    document.addEventListener(Events.Registry.ShowContentPage, (e) => {
+      // check if this activity belongs to the survey being reset
+      if (e.detail.forId === props.forId) {
+        onSelectPage(e.detail.index);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const parentElement = controls?.current?.parentElement?.parentElement;

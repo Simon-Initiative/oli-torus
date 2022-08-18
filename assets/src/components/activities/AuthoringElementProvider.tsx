@@ -8,6 +8,7 @@ import { AuthoringElementProps } from './AuthoringElement';
 export interface AuthoringElementState<T> {
   projectSlug: string;
   editMode: boolean;
+  authoringContext: any;
   onRequestMedia: (request: MediaItemRequest) => Promise<string | boolean>;
   dispatch: (action: (model: T, post: PostUndoable) => any) => T;
   model: T;
@@ -27,6 +28,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   editMode,
   children,
   model,
+  authoringContext,
   onPostUndoable,
   onRequestMedia,
   onEdit,
@@ -38,7 +40,7 @@ export const AuthoringElementProvider: React.FC<AuthoringElementProps<ActivityMo
   };
   return (
     <AuthoringElementContext.Provider
-      value={{ projectSlug, editMode, dispatch, model, onRequestMedia }}
+      value={{ projectSlug, editMode, dispatch, model, onRequestMedia, authoringContext }}
     >
       {children}
       <ModalDisplay />

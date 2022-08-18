@@ -2,14 +2,21 @@ export interface SurveyDetails {
   id: string;
 }
 
+export interface ShowContentPage {
+  forId: string;
+  index: number;
+}
+
 export interface TorusEventMap {
   'oli-survey-submit': CustomEvent<SurveyDetails>;
   'oli-survey-reset': CustomEvent<SurveyDetails>;
+  'oli-show-content-page': CustomEvent<ShowContentPage>;
 }
 
 export enum Registry {
   SurveySubmit = 'oli-survey-submit',
   SurveyReset = 'oli-survey-reset',
+  ShowContentPage = 'oli-show-content-page',
 }
 
 export function makeSurveySubmitEvent(detail: SurveyDetails) {
@@ -18,6 +25,10 @@ export function makeSurveySubmitEvent(detail: SurveyDetails) {
 
 export function makeSurveyResetEvent(detail: SurveyDetails) {
   return new CustomEvent(Registry.SurveyReset, { detail });
+}
+
+export function makeShowContentPage(detail: ShowContentPage) {
+  return new CustomEvent(Registry.ShowContentPage, { detail });
 }
 
 declare global {

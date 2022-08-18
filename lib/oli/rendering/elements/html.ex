@@ -36,10 +36,12 @@ defmodule Oli.Rendering.Elements.Html do
     Error.render(context, element, error, Error.Html)
   end
 
-  def paginate({rendered, br_count}) do
+  def paginate(%Context{} = context, {rendered, br_count}) do
     if br_count > 0 do
       {:safe, pagination_controls} =
-        ReactPhoenix.ClientSide.react_component("Components.PaginationControls")
+        ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
+          forId: for_id(context)
+        })
 
       [
         ~s|<div class="paginated">|,
@@ -53,4 +55,8 @@ defmodule Oli.Rendering.Elements.Html do
       rendered
     end
   end
+
+  defp for_id(%Context{survey_id: nil, group_id: nil, page_id: id}), do: id
+  defp for_id(%Context{survey_id: nil, group_id: id}), do: id
+  defp for_id(%Context{survey_id: id}), do: id
 end
