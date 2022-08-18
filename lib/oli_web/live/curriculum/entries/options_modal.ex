@@ -4,7 +4,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
@@ -123,7 +122,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
   end
 
   defp save_revision(socket, revision_params) do
-    %{container: container, project: project, revision: revision} = socket.assigns
+    %{redirect_url: redirect_url, project: project, revision: revision} = socket.assigns
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
@@ -133,7 +132,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
            :info,
            "#{resource_type_label(revision) |> String.capitalize()} options saved"
          )
-         |> push_redirect(to: Routes.container_path(socket, :index, project.slug, container.slug))}
+         |> push_redirect(to: redirect_url)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}

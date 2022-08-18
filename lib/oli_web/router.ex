@@ -384,6 +384,8 @@ defmodule OliWeb.Router do
 
     live("/:project_id/curriculum/", Curriculum.ContainerLive, :index)
 
+    live("/:project_id/pages/", Resources.PagesView)
+
     # Review/QA
     live("/:project_id/review", Qa.QaLive)
 
