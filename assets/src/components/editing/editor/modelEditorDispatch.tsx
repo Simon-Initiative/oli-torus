@@ -22,6 +22,7 @@ import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 import { FormulaEditor } from '../elements/formula/FormulaEditor';
 import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
 import { VideoEditor } from '../elements/video/VideoEditor';
+import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -105,6 +106,8 @@ export function editorFor(
       return <span {...attributes}>Not implemented</span>;
     case 'input_ref':
       return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
+    case 'definition':
+      return <DefinitionEditor {...(editorProps as EditorProps<ContentModel.Definition>)} />;
     case 'formula':
     case 'formula_inline':
       return (

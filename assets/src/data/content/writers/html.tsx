@@ -12,6 +12,8 @@ import {
   CodeLine,
   CodeV1,
   CodeV2,
+  Definition as DefinitionModel,
+  DefinitionPronunciation as DefinitionPronunciationModel,
   FormulaBlock,
   FormulaInline,
   HeadingFive,
@@ -55,6 +57,8 @@ import { cellAttributes } from '../../../components/editing/elements/table/table
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
+import { Definition } from '../../../components/common/Definition';
+import { DefinitionPronunciation } from '../../../components/common/DefinitionPronunciation';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -125,6 +129,46 @@ export class HtmlParser implements WriterImpl {
   }
   h6(context: WriterContext, next: Next, _x: HeadingSix) {
     return <h6>{next()}</h6>;
+  }
+
+  definitionMeaning(context: WriterContext, next: Next, _: any) {
+    return <li className="meaning">{next()}</li>;
+  }
+
+  definitionTranslation(context: WriterContext, next: Next, _: any) {
+    return <span className="translation">{next()} </span>;
+  }
+
+  definitionPronunciation(
+    context: WriterContext,
+    next: Next,
+    pronunciation: DefinitionPronunciationModel,
+  ) {
+    return <DefinitionPronunciation pronunciation={pronunciation} next={next} />;
+  }
+
+  definition(context: WriterContext, next: Next, definition: DefinitionModel) {
+    const writer = new ContentWriter();
+
+    // Need to use a ContentWriter to recursively render the parts of the definition
+    const meanings =
+      definition.meanings && writer.render(context, definition.meanings, new HtmlParser());
+
+    const pronunciation =
+      definition.pronunciation &&
+      writer.render(context, definition.pronunciation, new HtmlParser());
+
+    const translations =
+      definition.translations && writer.render(context, definition.translations, new HtmlParser());
+
+    return (
+      <Definition
+        definition={definition}
+        meanings={meanings}
+        pronunciation={pronunciation}
+        translations={translations}
+      />
+    );
   }
 
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {

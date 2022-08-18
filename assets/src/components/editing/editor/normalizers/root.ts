@@ -15,6 +15,7 @@ export const normalize = (editor: Editor, node: Editor, _path: Path) => {
       mode: 'highest',
       at: Editor.start(editor, []),
     });
+    console.warn('Normalizing content: Inserted paragraph at start of document');
     return;
   }
   if (!isBlockText(last)) {
@@ -22,6 +23,7 @@ export const normalize = (editor: Editor, node: Editor, _path: Path) => {
       mode: 'highest',
       at: Editor.end(editor, []),
     });
+    console.warn('Normalizing content: Inserted paragraph at end of document');
     return;
   }
 };

@@ -101,7 +101,7 @@ span.term {
     @extend .ml-4;
   }
   div.float-md-left,
-  div.float-md-right {
+  dv.float-md-right {
     max-width: 410px;
     img.float-md-right,
     img.float-md-left,
@@ -133,6 +133,65 @@ span.term {
   .webpage-wrapper iframe {
     @extend .embed-responsive-item;
   }
+
+  .definition {
+    .term {
+      color: $green;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .meanings-empty {
+      display: none;
+    }
+
+    .meanings-single {
+      display: inline;
+      padding-left: 3px;
+      li {
+        list-style: none;
+        display: inline;
+        p {
+          display: inline;
+        }
+      }
+    }
+
+    .meanings {
+      p {
+        margin-bottom: 5px;
+      }
+    }
+
+    .meaning {
+      margin-bottom: 0px;
+    }
+    .translation {
+      font-style: italic;
+    }
+
+    .play-button {
+      position: relative;
+      top: 4px;
+      font-size: 16px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .translation,
+    .pronunciation,
+    .pronunciation-player {
+      p {
+        display: inline;
+      }
+    }
+
+    .pronunciation-player {
+      text-decoration: underline;
+      color: $link-color;
+      cursor: pointer;
+    }
+  } // .definition
 
   .callout-inline,
   .formula-inline {

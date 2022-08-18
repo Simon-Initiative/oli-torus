@@ -25,6 +25,7 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
       if (Element.isElement(node) && restrictedElements.has(node.type)) {
         if (!context.whitelist?.includes(node.type)) {
           Transforms.removeNodes(editor, { at: path });
+          console.warn('Normalizing content: removed restricted element', node.type);
           return;
         }
       }
@@ -36,6 +37,7 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
         // Handle text nodes at the top level - they should be paragraphs.
         if (Text.isText(node)) {
           Transforms.wrapNodes(editor, Model.p(), { at: path });
+          console.warn('Normalizing content: wrapped top level text node in paragraph');
           return;
         }
       }

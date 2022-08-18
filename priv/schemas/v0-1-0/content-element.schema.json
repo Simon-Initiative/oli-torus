@@ -43,6 +43,9 @@
         },
         {
           "$ref": "#/$defs/video"
+        },
+        {
+          "$ref": "#/$defs/definition"
         }
       ]
     },
@@ -884,6 +887,92 @@
       "type": "array",
       "items": {
         "$ref": "#"
+      }
+    },
+
+    "meaning-content": {
+      "anyOf": [
+        { "$ref": "#/$defs/media" },
+        { "$ref": "#/$defs/block" },
+        { "$ref": "#/$defs/text-block" }
+      ]
+    },
+
+    "definition-pronunciation": {
+      "properties": {
+        "type": {
+          "const": "pronunciation"
+        },
+        "src": {
+          "type": "string"
+        },
+        "contenttype": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        }
+      }
+    },
+    "definition-translation": {
+      "properties": {
+        "type": {
+          "const": "translation"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        }
+      }
+    },
+    "definition-meaning": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "meaning"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/meaning-content"
+          }
+        }
+      }
+    },
+    "definition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "definition"
+        },
+        "term": {
+          "type": "string"
+        },
+        "pronunciation": {
+          "$ref": "#/$defs/definition-pronunciation"
+        },
+        "translations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-translation"
+          }
+        },
+        "meanings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-meaning"
+          }
+        },
+
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#" }
+        }
       }
     },
     "video": {

@@ -13,6 +13,7 @@ import { insertYoutube } from 'components/editing/elements/youtube/youtubeAction
 import { insertFormula } from '../../../elements/formula/formulaActions';
 import { insertCallout } from '../../../elements/callout/calloutActions';
 import { insertVideo } from '../../../elements/video/videoActions';
+import { insertDefinition } from '../../../elements/definition/definitionActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -24,6 +25,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertWebpage,
   insertFormula,
   insertCallout,
+  insertDefinition,
 ];
 
 interface Opts {
