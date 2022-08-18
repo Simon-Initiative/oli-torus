@@ -6,7 +6,6 @@ import { getCorrectResponse, getIncorrectResponse } from 'data/activities/model/
 import { ShowPage } from './ShowPage';
 
 import React from 'react';
-import { valHooks } from 'jquery';
 
 interface Props {
   partId: string;
@@ -56,27 +55,29 @@ export const SimpleFeedback: React.FC<Props> = ({ children, partId }) => {
         feedback={correctResponse.feedback}
         update={(_id, content) => updateFeedback(correctResponse.id, content as RichText)}
         placeholder="Encourage students or explain why the answer is correct"
-      />
-      {authoringContext.contentBreaksExist ? (
-        <ShowPage
-          editMode={editMode}
-          index={correctResponse.showPage}
-          onChange={(v) => updateShowPage(correctResponse.id, v)}
-        />
-      ) : null}
+      >
+        {authoringContext.contentBreaksExist ? (
+          <ShowPage
+            editMode={editMode}
+            index={correctResponse.showPage}
+            onChange={(v) => updateShowPage(correctResponse.id, v)}
+          />
+        ) : null}
+      </FeedbackCard>
       <FeedbackCard
         title="Feedback for incorrect answers"
         feedback={incorrectResponse.feedback}
         update={(_id, content) => updateFeedback(incorrectResponse.id, content as RichText)}
         placeholder="Enter catch-all feedback for incorrect answers"
-      />
-      {authoringContext.contentBreaksExist ? (
-        <ShowPage
-          editMode={editMode}
-          index={incorrectResponse.showPage}
-          onChange={(v) => updateShowPage(incorrectResponse.id, v)}
-        />
-      ) : null}
+      >
+        {authoringContext.contentBreaksExist ? (
+          <ShowPage
+            editMode={editMode}
+            index={incorrectResponse.showPage}
+            onChange={(v) => updateShowPage(incorrectResponse.id, v)}
+          />
+        ) : null}
+      </FeedbackCard>
     </>
   );
 };

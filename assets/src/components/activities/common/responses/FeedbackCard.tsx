@@ -10,7 +10,8 @@ export const FeedbackCard: React.FC<{
   title: React.ReactNode;
   update: (id: ID, content: Descendant[]) => void;
   placeholder?: string;
-}> = ({ title, feedback, update, placeholder }) => {
+  children: any;
+}> = ({ title, feedback, update, placeholder, children }) => {
   return (
     <Card.Card>
       <Card.Title>{title}</Card.Title>
@@ -20,6 +21,7 @@ export const FeedbackCard: React.FC<{
           value={feedback.content}
           onEdit={(content) => update(feedback.id, content)}
         />
+        {children}
       </Card.Content>
     </Card.Card>
   );

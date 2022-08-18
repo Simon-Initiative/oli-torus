@@ -23,12 +23,12 @@ export const ResponseCard: React.FC<Props> = (props) => {
         </div>
       </Card.Title>
       <Card.Content>
-        {props.children}
         <RichTextEditorConnected
           placeholder="Explain why the student might have arrived at this answer"
           value={props.response.feedback.content}
           onEdit={(content) => props.updateFeedback(props.response.id, content)}
         />
+        {props.children}
       </Card.Content>
     </Card.Card>
   );
