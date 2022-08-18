@@ -96,7 +96,7 @@ defmodule Oli.Resources.PageBrowseTest do
 
       # Verify sorting by the virtual page_type attr works
       pages = browse(project, offset: 0, limit: 5, direction: :asc, field: :page_type)
-      assert hd(pages).page_type == "Advanced"
+      assert hd(pages).page_type == "Adaptive"
       pages = browse(project, offset: 0, limit: 5, direction: :desc, field: :page_type)
       assert hd(pages).page_type == "Regular"
 
