@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- Add support for inline 'term' markup
+
 ## 0.21.3 (2022-08-05)
 
 ### Bug Fixes
