@@ -68,10 +68,8 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
         return newPosition;
       }}
       content={
-        <div className="hovering-toolbar" onMouseDown={preventMouseDown}>
-          <div className="btn-group btn-group-sm" role="group">
-            {props.content}
-          </div>
+        <div className="hover-container" onMouseDown={preventMouseDown}>
+          {props.content}
         </div>
       }
     >

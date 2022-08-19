@@ -1,6 +1,7 @@
 import React, { PropsWithChildren } from 'react';
 import { CommandContext } from '../elements/commands/interfaces';
 import { ToolbarContext, ToolbarContextT } from 'components/editing/toolbar/hooks/useToolbar';
+import styles from './Toolbar.modules.scss';
 
 interface Props {
   context: CommandContext;
@@ -22,13 +23,13 @@ export const Toolbar = (props: PropsWithChildren<Props>) => {
 
   return (
     <ToolbarContext.Provider value={context}>
-      <div className={'editorToolbar'}>{props.children}</div>
+      <div className={styles.toolbar}>{props.children}</div>
     </ToolbarContext.Provider>
   );
 };
 
 interface GroupProps {}
 const Group = (props: PropsWithChildren<GroupProps>) => (
-  <div className="editorToolbar__group">{props.children}</div>
+  <div className={styles.toolbarGroup}>{props.children}</div>
 );
 Toolbar.Group = Group;
