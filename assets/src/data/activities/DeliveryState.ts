@@ -4,6 +4,7 @@ import {
   RequestHintResponse,
   ResetActivityResponse,
   PartActivityResponse,
+  ActivityContext,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
@@ -35,8 +36,7 @@ export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
   model: ActivityModelSchema;
-  sectionSlug: string;
-  pageAttemptGuid: string;
+  activityContext: ActivityContext;
   attemptState: ActivityState;
   partState: Record<
     PartId,
@@ -132,7 +132,12 @@ export const activityDeliverySlice = createSlice({
               Events.makeShowContentPage({ forId, index }),
             );
 
-            updatePaginationState(state.sectionSlug, state.pageAttemptGuid, forId, index);
+            updatePaginationState(
+              state.activityContext.sectionSlug,
+              state.activityContext.pageAttemptGuid,
+              forId,
+              index,
+            );
           }
         }
 
@@ -233,8 +238,8 @@ export const activityDeliverySlice = createSlice({
     updateModel(state, action: PayloadAction<ActivityModelSchema>) {
       state.model = action.payload;
     },
-    updateSectionSlug(state, action: PayloadAction<string>) {
-      state.sectionSlug = action.payload;
+    updateActivityContext(state, action: PayloadAction<ActivityContext>) {
+      state.activityContext = action.payload;
     },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
       Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
@@ -402,12 +407,12 @@ export const initializeState =
     state: ActivityState,
     initialPartInputs: PartInputs,
     model: ActivityModelSchema,
-    sectionSlug: string | undefined,
+    activityContext: ActivityContext,
   ): AppThunk =>
   async (dispatch, _getState) => {
     dispatch(slice.actions.initializePartState(state));
     dispatch(slice.actions.updateModel(model));
-    dispatch(slice.actions.updateSectionSlug(sectionSlug as string));
+    dispatch(slice.actions.updateActivityContext(activityContext));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({
@@ -462,7 +467,7 @@ export const setSelection =
   };
 
 export const listenForParentSurveySubmit = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   dispatch: Dispatch<any>,
   onSubmitActivity: (
     attemptGuid: string,
@@ -481,7 +486,7 @@ export const listenForParentSurveySubmit = (
   );
 
 export const listenForParentSurveyReset = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   dispatch: Dispatch<any>,
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
   partInputs?: PartInputs,

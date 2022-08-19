@@ -40,7 +40,7 @@ export const OrderingComponent: React.FC = () => {
   } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-  const { surveyId, sectionSlug } = context;
+  const { surveyId } = context;
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
@@ -72,7 +72,7 @@ export const OrderingComponent: React.FC = () => {
           [DEFAULT_PART_ID]: model.choices.map((c) => c.id),
         }),
         model,
-        sectionSlug,
+        context,
       ),
     );
 

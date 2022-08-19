@@ -63,7 +63,7 @@ export const MultiInputComponent: React.FC = () => {
             }, {} as PartInputs),
         }),
         model,
-        sectionSlug,
+        context,
       ),
     );
   }, []);

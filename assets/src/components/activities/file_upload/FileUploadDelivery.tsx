@@ -54,7 +54,7 @@ const getFilesFromState = (state: ActivityDeliveryState) => {
 };
 
 const listenForParentSurveySubmit = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   dispatch: Dispatch<any>,
   onSubmitActivity: (
     attemptGuid: string,
@@ -264,7 +264,7 @@ export const FileUploadComponent: React.FC = () => {
           }),
         }),
         model,
-        sectionSlug,
+        context,
       ),
     );
   }, []);

@@ -38,7 +38,7 @@ export const CustomDnDComponent: React.FC = () => {
     onResetPart,
     onSubmitPart,
   } = useDeliveryElementContext<CustomDnDSchema>();
-  const { surveyId, sectionSlug } = context;
+  const { surveyId } = context;
   const initialState = state.parts.reduce((m: any, p) => {
     if (p.response !== null) {
       m[p.partId] = p.response.input;
@@ -65,7 +65,7 @@ export const CustomDnDComponent: React.FC = () => {
           }),
         }),
         model,
-        sectionSlug,
+        context,
       ),
     );
   }, []);

@@ -53,8 +53,8 @@ export interface ActivityContext {
   graded: boolean;
   sectionSlug: string;
   userId: number;
-  groupId: string;
-  surveyId: string;
+  groupId: string | null;
+  surveyId: string | null;
   bibParams: any;
   pageAttemptGuid: string;
 }

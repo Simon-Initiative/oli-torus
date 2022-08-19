@@ -71,7 +71,7 @@ export const ShortAnswerComponent: React.FC = () => {
     onResetActivity,
   } = useDeliveryElementContext<ShortAnswerModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
-  const { surveyId, sectionSlug } = context;
+  const { surveyId } = context;
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export const ShortAnswerComponent: React.FC = () => {
           }),
         }),
         model,
-        sectionSlug,
+        context,
       ),
     );
   }, []);

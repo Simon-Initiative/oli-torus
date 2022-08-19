@@ -38,12 +38,12 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-  const { surveyId, sectionSlug } = context;
+  const { surveyId } = context;
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model, sectionSlug));
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 
   // First render initializes state
