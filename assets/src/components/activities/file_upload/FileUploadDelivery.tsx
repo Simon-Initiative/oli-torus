@@ -40,8 +40,8 @@ import { getReadableFileSizeString, fileName } from './utils';
 import { RemoveButton } from '../common/authoring/removeButton/RemoveButton';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
 import { defaultMaxFileSize } from './utils';
-import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { Dispatch } from '@reduxjs/toolkit';
+import * as Events from 'data/events';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');
@@ -63,12 +63,15 @@ const listenForParentSurveySubmit = (
 ) =>
   maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
-      // check if this activity belongs to the survey being submitted
-      if (e.detail.id === surveyId) {
-        dispatch(submitFiles(onSubmitActivity, getFilesFromState));
-      }
-    }),
+    document.addEventListener(
+      Events.Registry.SurveySubmit,
+      (e: CustomEvent<Events.SurveyDetails>) => {
+        // check if this activity belongs to the survey being submitted
+        if (e.detail.id === surveyId) {
+          dispatch(submitFiles(onSubmitActivity, getFilesFromState));
+        }
+      },
+    ),
   );
 
 const Preview: React.FC<{ file: FileMetaData; fileSpec: FileSpec }> = ({ file }) => {
@@ -239,20 +242,12 @@ const FileSubmission: React.FC<{
 };
 
 export const FileUploadComponent: React.FC = () => {
-  const {
-    model,
-    state,
-    surveyId,
-    sectionSlug,
-    graded,
-    onResetActivity,
-    onSubmitActivity,
-    onSavePart,
-  } = useDeliveryElementContext<FileUploadSchema>();
+  const { model, state, context, onResetActivity, onSubmitActivity, onSavePart } =
+    useDeliveryElementContext<FileUploadSchema>();
 
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-
+  const { surveyId, sectionSlug, graded } = context;
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
@@ -269,6 +264,7 @@ export const FileUploadComponent: React.FC = () => {
           }),
         }),
         model,
+        sectionSlug,
       ),
     );
   }, []);
@@ -286,7 +282,7 @@ export const FileUploadComponent: React.FC = () => {
 
         <FileSubmission
           sectionSlug={sectionSlug as any}
-          model={uiState.model}
+          model={uiState.model as any}
           state={state}
           onSavePart={(a, p, s) => dispatch(savePart(DEFAULT_PART_ID, s, onSavePart))}
         />

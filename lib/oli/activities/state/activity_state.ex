@@ -36,7 +36,11 @@ defmodule Oli.Activities.State.ActivityState do
           Oli.Activities.Model.t()
         ) ::
           %Oli.Activities.State.ActivityState{}
-  def from_attempt(%ActivityAttempt{} = attempt, part_attempts, %Model{} = model) do
+  def from_attempt(
+        %ActivityAttempt{} = attempt,
+        part_attempts,
+        %Model{} = model
+      ) do
     # Create the part states, and where we encounter parts from the model
     # that do not have an attempt we create the default state
     attempt_map = Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.part_id, p) end)

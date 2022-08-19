@@ -4,10 +4,14 @@ import styles from './PaginationControls.modules.scss';
 import { classNames } from 'utils/classNames';
 import * as Events from 'data/events';
 import { PaginationMode } from 'data/content/resource';
+import { updatePaginationState } from 'data/persistence/pagination';
 
 export interface PaginationControlsProps {
   forId: string;
   paginationMode: PaginationMode;
+  sectionSlug: string;
+  pageAttemptGuid: string;
+  initiallyVisible: number[];
 }
 
 type Page = List<Element>;
@@ -51,6 +55,18 @@ export const PaginationControls = (props: PaginationControlsProps) => {
             );
           }
         }
+
+        // Set the visibility of our initial state
+        props.initiallyVisible.forEach((index) => {
+          pages.get(index)?.forEach((el) => el.classList.add(styles.show));
+        });
+        const maxItem = props.initiallyVisible.reduce((p, c) => {
+          if (p > c) {
+            return p;
+          }
+          return c;
+        }, 0);
+        setActive(maxItem);
         setPages(pages);
       }
     }
@@ -74,7 +90,18 @@ export const PaginationControls = (props: PaginationControlsProps) => {
     <>
       <div className="d-flex justify-content-center">
         {props.paginationMode === 'manualReveal' && active !== pages.toArray().length - 1 ? (
-          <button className="btn btn-primary" onClick={() => onSelectPage(active + 1)}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              onSelectPage(active + 1);
+              updatePaginationState(
+                props.sectionSlug,
+                props.pageAttemptGuid,
+                props.forId,
+                active + 1,
+              );
+            }}
+          >
             Next
           </button>
         ) : null}
@@ -104,7 +131,9 @@ export const PaginationControls = (props: PaginationControlsProps) => {
           <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
             <button
               className="page-link"
-              onClick={() => onSelectPage(active + 1)}
+              onClick={() => {
+                onSelectPage(active + 1);
+              }}
               disabled={nextDisabled}
             >
               Next

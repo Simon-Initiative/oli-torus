@@ -32,15 +32,15 @@ import { OrderingSchema } from './schema';
 export const OrderingComponent: React.FC = () => {
   const {
     model,
+    context,
     state: activityState,
-    surveyId,
     onSubmitActivity,
     onResetActivity,
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-
+  const { surveyId, sectionSlug } = context;
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
@@ -72,6 +72,7 @@ export const OrderingComponent: React.FC = () => {
           [DEFAULT_PART_ID]: model.choices.map((c) => c.id),
         }),
         model,
+        sectionSlug,
       ),
     );
 

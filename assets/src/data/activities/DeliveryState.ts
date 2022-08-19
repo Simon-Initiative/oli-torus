@@ -17,6 +17,7 @@ import {
   Success,
   FileMetaData,
 } from 'components/activities/types';
+import { updatePaginationState } from 'data/persistence/pagination';
 import * as Events from 'data/events';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
@@ -34,6 +35,8 @@ export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
   model: ActivityModelSchema;
+  sectionSlug: string;
+  pageAttemptGuid: string;
   attemptState: ActivityState;
   partState: Record<
     PartId,
@@ -128,6 +131,8 @@ export const activityDeliverySlice = createSlice({
               Events.Registry.ShowContentPage,
               Events.makeShowContentPage({ forId, index }),
             );
+
+            updatePaginationState(state.sectionSlug, state.pageAttemptGuid, forId, index);
           }
         }
 
@@ -227,6 +232,9 @@ export const activityDeliverySlice = createSlice({
     },
     updateModel(state, action: PayloadAction<ActivityModelSchema>) {
       state.model = action.payload;
+    },
+    updateSectionSlug(state, action: PayloadAction<string>) {
+      state.sectionSlug = action.payload;
     },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
       Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
@@ -390,10 +398,16 @@ export const submitFiles =
   };
 
 export const initializeState =
-  (state: ActivityState, initialPartInputs: PartInputs, model: ActivityModelSchema): AppThunk =>
+  (
+    state: ActivityState,
+    initialPartInputs: PartInputs,
+    model: ActivityModelSchema,
+    sectionSlug: string | undefined,
+  ): AppThunk =>
   async (dispatch, _getState) => {
     dispatch(slice.actions.initializePartState(state));
     dispatch(slice.actions.updateModel(model));
+    dispatch(slice.actions.updateSectionSlug(sectionSlug as string));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({

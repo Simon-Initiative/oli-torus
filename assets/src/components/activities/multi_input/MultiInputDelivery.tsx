@@ -30,15 +30,14 @@ import { configureStore } from 'state/store';
 export const MultiInputComponent: React.FC = () => {
   const {
     state: activityState,
-    surveyId,
-    sectionSlug,
-    bibParams,
+    context,
     onSubmitActivity,
     onSaveActivity,
     onResetActivity,
     model,
   } = useDeliveryElementContext<MultiInputSchema>();
 
+  const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
@@ -64,6 +63,7 @@ export const MultiInputComponent: React.FC = () => {
             }, {} as PartInputs),
         }),
         model,
+        sectionSlug,
       ),
     );
   }, []);

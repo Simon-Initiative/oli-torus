@@ -1,3 +1,4 @@
+import { ActivityEditContext } from 'data/content/activity';
 import { EventEmitter } from 'events';
 import { valueOr } from 'utils/common';
 import {
@@ -48,16 +49,21 @@ export interface PartActivityResponse extends Success {
   attemptState: PartState;
 }
 
+export interface ActivityContext {
+  graded: boolean;
+  sectionSlug: string;
+  userId: number;
+  groupId: string;
+  surveyId: string;
+  bibParams: any;
+  pageAttemptGuid: string;
+}
+
 /**
  * Delivery web component properties made available via the
  * `render` method.
  */
 export interface DeliveryElementProps<T extends ActivityModelSchema> {
-  /**
-   * Whether the activity is operating within the context of a graded page.
-   */
-  graded: boolean;
-
   /**
    * The model of the activity, pruned to remove the authoring specific portion.
    */
@@ -69,31 +75,14 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   state: ActivityState;
 
   /**
+   * The larger context that this activity operates within.
+   */
+  context: ActivityContext;
+
+  /**
    * The current delivery mode.
    */
   mode: DeliveryMode;
-
-  /**
-   * The unique id of the course section.
-   */
-  sectionSlug?: string;
-
-  bibParams?: any;
-
-  /**
-   * The unique id of the student user.
-   */
-  userId: number;
-
-  /**
-   * Unique group id that the activity belongs to
-   */
-  groupId?: string;
-
-  /**
-   * Unique survey id that the activity belongs to
-   */
-  surveyId?: string;
 
   /**
    * @ignore
@@ -319,35 +308,19 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
   props(): DeliveryElementProps<T> {
     // required
     const model = JSON.parse(this.getAttribute('model') as any);
-    const graded = JSON.parse(this.getAttribute('graded') as any);
+    const context = JSON.parse(this.getAttribute('context') as any) as ActivityContext;
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
-
-    // optional
     const mode = valueOr(this.getAttribute('mode'), 'delivery') as DeliveryMode;
-    const sectionSlug = valueOr(this.getAttribute('section_slug'), undefined);
-    const userId = this.getAttribute('user_id') as any;
-    const groupId = valueOr(this.getAttribute('group_id'), undefined);
-    const surveyId = valueOr(this.getAttribute('survey_id'), undefined);
-
-    let bibParams = valueOr(this.getAttribute('bib_params'), undefined);
-    if (bibParams) {
-      bibParams = JSON.parse(atob(bibParams));
-    }
 
     this.review = mode === 'review';
 
     return {
-      graded,
       model,
       state,
+      context,
       mode,
-      sectionSlug,
-      userId,
-      groupId,
-      surveyId,
       notify: this._notify,
       mountPoint: this.mountPoint,
-      bibParams,
       onWriteUserState: this.onSetData,
       onReadUserState: this.onGetData,
       onRequestHint: this.onRequestHint,
@@ -369,15 +342,17 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     partAttemptGuid: string | undefined,
     payload?: any,
   ) {
+    const props = this.props();
+
     return {
       bubbles: true,
       detail: {
         payload,
-        sectionSlug: this.props().sectionSlug,
+        sectionSlug: props.context.sectionSlug,
         attemptGuid,
         partAttemptGuid,
         continuation,
-        props: this.props(),
+        props,
       },
     };
   }
