@@ -70,7 +70,7 @@ defmodule Oli.Activities.State.ActivityState do
     }
   end
 
-  def create_preview_state(transformed_model) do
+  def create_preview_state(transformed_model, group_id \\ nil) do
     %Oli.Activities.State.ActivityState{
       attemptGuid: UUID.uuid4(),
       attemptNumber: 1,
@@ -80,7 +80,7 @@ defmodule Oli.Activities.State.ActivityState do
       score: nil,
       outOf: nil,
       hasMoreAttempts: true,
-      groupId: nil,
+      groupId: group_id,
       parts:
         Enum.map(transformed_model["authoring"]["parts"], fn p ->
           %Oli.Activities.State.PartState{

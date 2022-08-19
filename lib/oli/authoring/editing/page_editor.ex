@@ -316,6 +316,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
 
+    # Get a mapping of the activities to their parent groups. We need to set this
+    # correctly so that client-side pagination automation works
+    group_mapping = Oli.Resources.PageContent.activity_parent_groups(content)
+
     if length(found_activities) != 0 do
       # get a view of all current registered activity types
       registrations = Activities.list_activity_registrations()
@@ -351,7 +355,11 @@ defmodule Oli.Authoring.Editing.PageEditor do
          # the activity type this revision pertains to
          type = Map.get(reg_map, activity_type_id)
 
-         state = ActivityState.create_preview_state(transformed)
+         state =
+           ActivityState.create_preview_state(
+             transformed,
+             Map.get(group_mapping, resource_id).group
+           )
 
          %ActivitySummary{
            id: resource_id,
