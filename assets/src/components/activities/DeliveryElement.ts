@@ -1,4 +1,3 @@
-import { ActivityEditContext } from 'data/content/activity';
 import { EventEmitter } from 'events';
 import { valueOr } from 'utils/common';
 import {

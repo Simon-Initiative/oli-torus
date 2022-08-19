@@ -31,7 +31,7 @@ type Evaluation = {
 };
 
 const listenForParentSurveySubmit = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   onRun: () => void,
   onSubmit: () => void,
 ) =>
@@ -49,7 +49,7 @@ const listenForParentSurveySubmit = (
     ),
   );
 
-const listenForParentSurveyReset = (surveyId: string | undefined, onReset: () => void) =>
+const listenForParentSurveyReset = (surveyId: string | null, onReset: () => void) =>
   maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
     document.addEventListener(

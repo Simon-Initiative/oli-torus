@@ -155,7 +155,7 @@ export const createGroup = (
   id: guid(),
   children,
   layout: 'vertical',
-  purpose: 'none',
+  purpose: 'didigetthis',
 });
 
 export const createSurvey = (

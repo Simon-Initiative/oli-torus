@@ -83,7 +83,12 @@ defmodule Oli.Rendering.Activity.Html do
             surveyId: survey_id,
             groupId: group_id,
             bibParams: bib_params,
-            pageAttemptGuid: resource_attempt.attempt_guid
+            pageAttemptGuid:
+              if is_nil(resource_attempt) do
+                ""
+              else
+                resource_attempt.attempt_guid
+              end
           }
           |> Poison.encode!()
           |> HtmlEntities.encode()
