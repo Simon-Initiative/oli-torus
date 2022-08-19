@@ -3,7 +3,6 @@ defmodule Oli.Rendering.Activity.Html do
   Implements the Html writer for activity rendering
   """
   import Oli.Utils
-  import Oli.Rendering.Activity.Common
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Error
