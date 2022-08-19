@@ -536,21 +536,6 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert html_response(conn, 200) =~ "Manage Section"
     end
 
-    test "index preview do not show manage section button when accessing as instructor", %{
-      conn: conn,
-      user: user,
-      section: section
-    } do
-      Sections.enroll(user.id, section.id, [ContextRoles.get_role(:context_instructor)])
-
-      conn =
-        conn
-        |> get(Routes.page_delivery_path(conn, :index_preview, section.slug))
-
-      assert html_response(conn, 200) =~ "Course Overview"
-      refute html_response(conn, 200) =~ "Manage Section"
-    end
-
     test "page renders learning objectives in ungraded pages but not graded, except for review mode",
          %{
            user: user,
@@ -1006,6 +991,191 @@ defmodule OliWeb.PageDeliveryControllerTest do
       assert response(conn, 200) =~
                "Cost: Free\r\nDiscount By Institution: 10.0%\r\n\r\nStudent name,Student email,Enrolled on\r\n#{user.name},#{user.email},\"#{FormatDateTime.date(enrollment.inserted_at)}\"\r\n"
     end
+  end
+
+  describe "preview redirects to not authorized when not logged in" do
+    setup [:section_with_assessment]
+
+    test "index preview redirects ok", %{
+      conn: conn,
+      section: section
+    } do
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+
+      assert html_response(conn, 403) =~ "Not authorized"
+    end
+
+    test "container preview redirects ok", %{
+      conn: conn,
+      section: section,
+      unit_one_revision: unit_one_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision)
+        )
+
+      assert html_response(conn, 403) =~ "Not authorized"
+    end
+
+    test "page preview redirects ok", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
+
+      assert html_response(conn, 403) =~ "Not authorized"
+    end
+  end
+
+  describe "preview redirects to student view when is enrolled" do
+    setup [:setup_lti_session, :section_with_assessment, :enroll_as_student]
+
+    test "index preview redirects ok", %{
+      conn: conn,
+      section: section
+    } do
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+
+      assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, section.slug)
+    end
+
+    test "index preview redirects ok when section slug ends with 'preview'", %{
+      conn: conn,
+      section: section
+    } do
+      {:ok, updated_section} = Sections.update_section(section, %{slug: "test_slug_preview"})
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, updated_section.slug))
+
+      assert redirected_to(conn) == Routes.page_delivery_path(conn, :index, updated_section.slug)
+    end
+
+    test "container preview redirects ok", %{
+      conn: conn,
+      section: section,
+      unit_one_revision: unit_one_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :container_preview, section.slug, unit_one_revision)
+        )
+
+      assert redirected_to(conn) ==
+               Routes.page_delivery_path(conn, :container, section.slug, unit_one_revision)
+    end
+
+    test "page preview redirects ok", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision))
+
+      assert redirected_to(conn) ==
+               Routes.page_delivery_path(conn, :page, section.slug, page_revision)
+    end
+  end
+
+  describe "preview" do
+    setup [:setup_lti_session, :enroll_as_instructor]
+
+    test "index preview - renders ok", %{
+      conn: conn,
+      section: section
+    } do
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+
+      assert html_response(conn, 200) =~ "Course Overview"
+    end
+
+    test "index preview - do not show manage section button", %{
+      conn: conn,
+      section: section
+    } do
+      conn = get(conn, Routes.page_delivery_path(conn, :index_preview, section.slug))
+
+      refute html_response(conn, 200) =~ "Manage Section"
+    end
+
+    test "container preview - renders ok", %{
+      conn: conn,
+      user: user
+    } do
+      {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: _page_revision} =
+        section_with_assessment(%{})
+
+      enroll_user_to_section(user, section, :context_instructor)
+
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(
+            conn,
+            :container_preview,
+            section.slug,
+            unit_one_revision.slug
+          )
+        )
+
+      # Unit title
+      assert html_response(conn, 200) =~ "The first unit"
+    end
+
+    test "page preview - renders ok", %{
+      conn: conn,
+      revision: revision,
+      section: section
+    } do
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
+
+      # page title
+      assert html_response(conn, 200) =~ "Page one (Preview)"
+    end
+
+    test "page preview - adaptive renders ok", %{
+      conn: conn,
+      map: %{adaptive_page_revision: revision},
+      section: section
+    } do
+      conn =
+        get(conn, Routes.page_delivery_path(conn, :page_preview, section.slug, revision.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.Delivery\" data-react-props=\""
+    end
+
+    test "page preview - do not show the prologue when is graded", %{
+      conn: conn,
+      section: section,
+      page_revision: page_revision
+    } do
+      conn =
+        get(
+          conn,
+          Routes.page_delivery_path(conn, :page_preview, section.slug, page_revision.slug)
+        )
+
+      refute html_response(conn, 200) =~ "This is a <strong>scored</strong> page"
+      refute html_response(conn, 200) =~ "Start Attempt"
+      # page title
+      assert html_response(conn, 200) =~ "page1 (Preview)"
+    end
+  end
+
+  defp enroll_as_student(%{section: section, user: user}) do
+    enroll_user_to_section(user, section, :context_learner)
+    []
+  end
+
+  defp enroll_as_instructor(%{section: section, user: user}) do
+    enroll_user_to_section(user, section, :context_instructor)
+    []
   end
 
   defp setup_lti_session(%{conn: conn}) do
