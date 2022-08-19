@@ -280,7 +280,13 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           })
           .then(() => this.setState({ error: Maybe.nothing<string>() }));
       })
-      .catch((e: Error) => this.setState({ error: Maybe.just(e.message) }))
+      .catch((e: Error | string) => {
+        if (typeof e === 'string') {
+          this.setState({ error: Maybe.just(e) });
+        } else {
+          this.setState({ error: Maybe.just(e.message) });
+        }
+      })
       .finally(() => this.setState({ uploading: false }));
   }
 
@@ -572,7 +578,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
     return error.caseOf({
       just: (error) => (
         <div className="alert alert-danger fade show" role="alert">
-          {error}
+          Error: Could not upload file.
+          <br />
+          <i>{error}</i>
         </div>
       ),
       nothing: () => null,
