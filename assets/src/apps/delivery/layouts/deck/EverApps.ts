@@ -2,6 +2,7 @@ import { clone } from 'utils/common';
 import { ActivityState } from 'components/activities/types';
 
 export const everAppActivityState: ActivityState = {
+  groupId: null,
   attemptGuid: 'preview_2946819616',
   attemptNumber: 1,
   dateEvaluated: null,
