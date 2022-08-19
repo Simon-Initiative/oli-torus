@@ -275,8 +275,6 @@ export interface PartState {
  * and a specific activity instance.
  */
 export interface ActivityState {
-  pageAttemptGuid: string;
-
   /**
    * Resource id of the activity that this attempt pertains to.
    */

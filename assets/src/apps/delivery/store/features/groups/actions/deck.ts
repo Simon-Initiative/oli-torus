@@ -518,6 +518,7 @@ export const loadActivities = createAsyncThunk(
         parts: partAttempts,
         hasMoreAttempts: result.hasMoreAttempts || true,
         hasMoreHints: result.hasMoreHints || true,
+        groupId: null,
       };
       return { model: activityModel, state: attemptState };
     });

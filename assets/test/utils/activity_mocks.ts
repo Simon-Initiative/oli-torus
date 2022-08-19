@@ -35,7 +35,6 @@ export const attemptState: ActivityState = {
   hasMoreAttempts: true,
   hasMoreHints: true,
   groupId: null,
-  pageAttemptGuid: 'guid',
 };
 
 const feedbackAction: Action = {
@@ -86,6 +85,7 @@ export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringEleme
   const model = initialModel;
   return {
     projectSlug: '',
+    authoringContext: { contentBreaksExist: false },
     editMode: true,
     model,
     onPostUndoable: jest.fn(),

@@ -258,7 +258,7 @@ describe('PageEditorContent', () => {
           ],
           id: expect.any(String),
           layout: 'vertical',
-          purpose: 'none',
+          purpose: 'didigetthis',
           type: 'group',
         },
       ],

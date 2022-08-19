@@ -115,5 +115,6 @@ export const defaultActivityState = (model: ActivityModelSchema): ActivityState 
     hasMoreAttempts: true,
     parts,
     hasMoreHints: false,
+    groupId: null,
   };
 };
