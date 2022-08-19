@@ -124,19 +124,25 @@ export const activityDeliverySlice = createSlice({
         const { score, out_of } = calculateNewScore(action);
 
         if (action.payload.actions[0].type === 'FeedbackAction') {
-          if (action.payload.actions[0].show_page !== null) {
+          const toShow: number[] = action.payload.actions
+            .filter((a: FeedbackAction) => a.show_page !== null)
+            .map((a: FeedbackAction) => a.show_page) as number[];
+
+          if (toShow.length > 0) {
             const forId = state.attemptState.groupId as string;
-            const index = action.payload.actions[0].show_page;
-            Events.dispatch(
-              Events.Registry.ShowContentPage,
-              Events.makeShowContentPage({ forId, index }),
+
+            toShow.forEach((index: number) =>
+              Events.dispatch(
+                Events.Registry.ShowContentPage,
+                Events.makeShowContentPage({ forId, index }),
+              ),
             );
 
             updatePaginationState(
               state.activityContext.sectionSlug,
               state.activityContext.pageAttemptGuid,
               forId,
-              index,
+              toShow,
             );
           }
         }

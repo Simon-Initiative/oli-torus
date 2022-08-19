@@ -94,12 +94,9 @@ export const PaginationControls = (props: PaginationControlsProps) => {
             className="btn btn-primary"
             onClick={() => {
               onSelectPage(active + 1);
-              updatePaginationState(
-                props.sectionSlug,
-                props.pageAttemptGuid,
-                props.forId,
+              updatePaginationState(props.sectionSlug, props.pageAttemptGuid, props.forId, [
                 active + 1,
-              );
+              ]);
             }}
           >
             Next

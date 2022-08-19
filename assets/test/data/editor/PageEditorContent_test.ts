@@ -336,7 +336,7 @@ describe('PageEditorContent', () => {
           ],
           id: guid(),
           layout: 'vertical',
-          purpose: 'none',
+          purpose: 'didigetthis',
           type: 'group',
         },
       ],

@@ -35,6 +35,7 @@ export const attemptState: ActivityState = {
   hasMoreAttempts: true,
   hasMoreHints: true,
   groupId: null,
+  pageAttemptGuid: 'guid',
 };
 
 const feedbackAction: Action = {

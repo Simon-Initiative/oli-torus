@@ -21,6 +21,15 @@ describe('multiple choice delivery', () => {
       model,
       activitySlug: 'activity-slug',
       state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
+      context: {
+        graded: false,
+        surveyId: null,
+        groupId: null,
+        userId: 0,
+        pageAttemptGuid: '',
+        sectionSlug: '',
+        bibParams: [],
+      },
       graded: false,
       preview: false,
     };
