@@ -5,6 +5,7 @@ export type Mark =
   | 'del'
   | 'var'
   | 'code'
+  | 'term'
   | 'sub'
   | 'sup'
   | 'underline'
@@ -17,6 +18,7 @@ export enum Marks {
   'del',
   'var',
   'code',
+  'term',
   'sub',
   'sup',
   'underline',

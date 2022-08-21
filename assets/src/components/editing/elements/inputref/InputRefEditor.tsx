@@ -6,11 +6,11 @@ import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
-import { initCommands } from 'components/editing/elements/inputref/inputrefActions';
+import { initCommands } from 'components/editing/elements/inputref/actions';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 
-export interface InputRefProps extends EditorProps<ContentModel.InputRef> {}
-export const InputRefEditor = (props: InputRefProps) => {
+export interface InputRefEditorProps extends EditorProps<ContentModel.InputRef> {}
+export const InputRefEditor = (props: InputRefEditorProps) => {
   const { inputRefContext } = props.commandContext;
 
   const focused = useFocused();

@@ -15,6 +15,9 @@
       <a class="dropdown-item" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a>
       <a class="dropdown-item" href="<%= Routes.bibliography_path(@conn, :index, @project.slug) %>">Bibliography</a>
       <a class="dropdown-item" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.PagesView, @project.slug) %>">All Pages</a>
+
      </div>
   </div>
 

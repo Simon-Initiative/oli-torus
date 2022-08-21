@@ -572,7 +572,7 @@ defmodule Oli.TestHelpers do
       }
     )
 
-    %{publication: publication, project: project}
+    %{publication: publication, project: project, unit_one_revision: unit_one_revision}
   end
 
   def section_with_assessment(_context) do
@@ -589,6 +589,26 @@ defmodule Oli.TestHelpers do
     # Associate nested graded page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: page_revision.resource.id})
 
+    unit_one_resource = insert(:resource)
+
+    # Associate unit to the project
+    insert(:project_resource, %{
+      resource_id: unit_one_resource.id,
+      project_id: project.id
+    })
+
+    unit_one_revision =
+      insert(:revision, %{
+        objectives: %{},
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
+        children: [],
+        content: %{"model" => []},
+        deleted: false,
+        title: "The first unit",
+        resource: unit_one_resource,
+        slug: "first_unit"
+      })
+
     # root container
     container_resource = insert(:resource)
 
@@ -600,7 +620,7 @@ defmodule Oli.TestHelpers do
         resource: container_resource,
         objectives: %{},
         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("container"),
-        children: [page_revision.resource.id],
+        children: [unit_one_resource.id, page_revision.resource.id],
         content: %{},
         deleted: false,
         slug: "root_container",
@@ -618,6 +638,13 @@ defmodule Oli.TestHelpers do
       revision: container_revision
     })
 
+    # Publish nested container resource
+    insert(:published_resource, %{
+      publication: publication,
+      resource: unit_one_resource,
+      revision: unit_one_revision
+    })
+
     # Publish nested page resource
     insert(:published_resource, %{
       publication: publication,
@@ -627,7 +654,8 @@ defmodule Oli.TestHelpers do
 
     section = insert(:section, base_project: project, context_id: UUID.uuid4(), open_and_free: true, registration_open: true, type: :enrollable)
     {:ok, section} = Sections.create_section_resources(section, publication)
-    {:ok, section: section, page_revision: page_revision}
+
+    {:ok, section: section, unit_one_revision: unit_one_revision, page_revision: page_revision}
   end
 
   def enroll_user_to_section(user, section, role) do

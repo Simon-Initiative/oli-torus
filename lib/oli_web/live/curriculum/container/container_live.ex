@@ -213,7 +213,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
     assigns = %{
       id: "options_#{slug}",
-      container: container,
+      redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: Enum.find(socket.assigns.children, fn r -> r.slug == slug end),
       project: project
     }
@@ -267,14 +267,14 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
         {:error, %Ecto.Changeset{} = _changeset} ->
           socket
-            |> put_flash(:error, "Could not duplicate page")
+          |> put_flash(:error, "Could not duplicate page")
       end
 
     {:noreply,
-      assign(socket,
-        numberings:
-          Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-    )}
+     assign(socket,
+       numberings:
+         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
+     )}
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
@@ -517,6 +517,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   defp proceed_with_deletion_warning(socket, container, project, author, item) do
     assigns = %{
       id: "delete_#{item.slug}",
+      redirect_url: Routes.container_path(socket, :index, project.slug, container.slug),
       revision: item,
       container: container,
       project: project,

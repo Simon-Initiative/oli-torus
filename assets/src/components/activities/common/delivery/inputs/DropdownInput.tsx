@@ -4,8 +4,8 @@ import React from 'react';
 interface Props {
   selected: any;
   options: SelectOption[];
-  onChange: React.ChangeEventHandler<HTMLSelectElement>;
   disabled?: boolean;
+  onChange: (value: string) => void;
 }
 export const DropdownInput: React.FC<Props> = (props) => {
   const options = [
@@ -18,7 +18,7 @@ export const DropdownInput: React.FC<Props> = (props) => {
 
   return (
     <select
-      onChange={props.onChange}
+      onChange={(e) => props.onChange(e.target.value)}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       className="custom-select"
       style={{ flexBasis: '160px', width: '160px' }}

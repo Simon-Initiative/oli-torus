@@ -4,7 +4,6 @@ defmodule OliWeb.Curriculum.DeleteModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Editing.ContainerEditor
 
   def render(%{revision: revision} = assigns) do
@@ -40,22 +39,56 @@ defmodule OliWeb.Curriculum.DeleteModal do
   end
 
   def handle_event("delete", %{"slug" => slug}, socket) do
-    %{container: container, project: project, author: author, revision: revision} = socket.assigns
+    %{
+      container: container,
+      project: project,
+      author: author,
+      revision: revision,
+      redirect_url: redirect_url
+    } = socket.assigns
 
-    case ContainerEditor.remove_child(container, project, author, slug) do
-      {:ok, _} ->
-        {:noreply,
-         push_patch(socket,
-           to: Routes.container_path(socket, :index, project.slug, container.slug)
-         )}
+    case container do
+      nil ->
+        result =
+          Oli.Repo.transaction(fn ->
+            revision =
+              Oli.Publishing.AuthoringResolver.from_revision_slug(project.slug, revision.slug)
 
-      {:error, _} ->
-        {:noreply,
-         put_flash(
-           socket,
-           :error,
-           "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
-         )}
+            Oli.Publishing.ChangeTracker.track_revision(project.slug, revision, %{deleted: true})
+          end)
+
+        case result do
+          {:ok, _} ->
+            {:noreply,
+             push_patch(socket,
+               to: redirect_url
+             )}
+
+          _ ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )}
+        end
+
+      _ ->
+        case ContainerEditor.remove_child(container, project, author, slug) do
+          {:ok, _} ->
+            {:noreply,
+             push_patch(socket,
+               to: redirect_url
+             )}
+
+          {:error, _} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               "Could not delete #{resource_type_label(revision)} \"#{revision.title}\""
+             )}
+        end
     end
   end
 end

@@ -39,4 +39,5 @@ export const shortAnswerOptions: SelectOption<InputType>[] = [
   { value: 'numeric', displayValue: 'Number' },
   { value: 'text', displayValue: 'Short Text' },
   { value: 'textarea', displayValue: 'Paragraph' },
+  { value: 'math', displayValue: 'Math' },
 ];

@@ -15,7 +15,7 @@ defmodule Oli.Delivery.Evaluation.Rule do
   end
 
   @doc """
-  Parses a rule and returns `{:ok, tree}` when succesful, where `tree`
+  Parses a rule and returns `{:ok, tree}` when successful, where `tree`
   is a series of nested tuples representing the parsed clauses in prefix notation, where
   the first tuple entry is the operation, the second is the left hand side
   operand and the third is the right hand side operand. An example:
@@ -52,6 +52,13 @@ defmodule Oli.Delivery.Evaluation.Rule do
     String.contains?(
       String.downcase(eval(lhs, context)),
       String.downcase(rhs)
+    )
+  end
+
+  defp eval({:equals, lhs, rhs}, context) do
+    String.equivalent?(
+      eval(lhs, context),
+      rhs
     )
   end
 

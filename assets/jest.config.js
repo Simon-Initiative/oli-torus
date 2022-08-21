@@ -9,6 +9,8 @@ module.exports = {
     '^utils/(.*)': '<rootDir>/src/utils/$1',
     '\\.[s]css': 'identity-obj-proxy',
     'monaco-editor': '<rootDir>/__mocks__/monaco.mock.js',
+    // necessary for jest to handle non-js file imports by mapping to an empty module
+    '\\.(css|scss|wav)$': '<rootDir>/__mocks__/empty.mock.js',
   },
   transform: {
     '^.+\\.tsx?$': 'ts-jest',

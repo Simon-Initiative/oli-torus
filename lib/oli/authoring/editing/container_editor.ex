@@ -289,13 +289,17 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     Repo.transaction(fn ->
       with {:ok, created_revision} <- add_new(container, new_page_attrs, author, project),
            {:ok, model_duplicated_activities} <-
-            deep_copy_activities(
+             deep_copy_activities(
                original_page.content["model"],
                project.slug,
                author
              ),
-           new_content <- %{original_page.content | "model" => Enum.reverse(model_duplicated_activities)},
-           {:ok, updated_revision} <- Resources.update_revision(created_revision, %{content: new_content}) do
+           new_content <- %{
+             original_page.content
+             | "model" => Enum.reverse(model_duplicated_activities)
+           },
+           {:ok, updated_revision} <-
+             Resources.update_revision(created_revision, %{content: new_content}) do
         updated_revision
       else
         {:error, e} -> Repo.rollback(e)
@@ -303,7 +307,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end)
   end
 
-  defp deep_copy_activities(model, project_slug, author) do
+  def deep_copy_activities(model, project_slug, author) do
     Enum.reduce_while(model, {:ok, []}, fn activity, {:ok, acc} ->
       case deep_copy_activity(activity, project_slug, author) do
         {:ok, new_activity} -> {:cont, {:ok, [new_activity | acc]}}
@@ -312,7 +316,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end)
   end
 
-  defp deep_copy_activity(%{"type" => "activity-reference"} = item, project_slug, author) do
+  def deep_copy_activity(%{"type" => "activity-reference"} = item, project_slug, author) do
     activity_revision = AuthoringResolver.from_resource_id(project_slug, item["activity_id"])
 
     activity_type = Activities.get_registration(activity_revision.activity_type_id)
@@ -341,7 +345,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
     end
   end
 
-  defp deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
+  def deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
 
   defp remove_from_container(container, project_slug, revision, author) do
     # Create a change that removes the child

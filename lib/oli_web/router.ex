@@ -111,6 +111,10 @@ defmodule OliWeb.Router do
     plug(Oli.Plugs.EnforceEnrollAndPaywall)
   end
 
+  pipeline :authorize_section_preview do
+    plug(Oli.Plugs.AuthorizeSectionPreview)
+  end
+
   # Ensure that we have a logged in user
   pipeline :delivery_protected do
     plug :delivery
@@ -379,6 +383,8 @@ defmodule OliWeb.Router do
     live("/:project_id/curriculum/:container_slug", Curriculum.ContainerLive, :index)
 
     live("/:project_id/curriculum/", Curriculum.ContainerLive, :index)
+
+    live("/:project_id/pages/", Resources.PagesView)
 
     # Review/QA
     live("/:project_id/review", Qa.QaLive)
@@ -747,6 +753,7 @@ defmodule OliWeb.Router do
     pipe_through([
       :browser,
       :require_section,
+      :authorize_section_preview,
       :delivery_and_admin,
       :pow_email_layout
     ])

@@ -49,7 +49,8 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    length: 20_000_000,
+    # 512mb is the max body size our file-upload client code can generate.
+    length: 512_000_000,
     json_decoder: Phoenix.json_library(),
     body_reader: {OliWeb.CacheBodyReader, :read_body, []}
   )

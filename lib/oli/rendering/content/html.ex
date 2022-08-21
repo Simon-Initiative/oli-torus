@@ -482,6 +482,7 @@ defmodule Oli.Rendering.Content.Html do
       "mark" => "mark",
       "del" => "del",
       "var" => "var",
+      "term" => "term",
       "code" => "code",
       "sub" => "sub",
       "sup" => "sup",
@@ -503,6 +504,7 @@ defmodule Oli.Rendering.Content.Html do
       text,
       fn mark, acc ->
         case mark do
+          "term" -> ~s|<span class="term">#{acc}</span>|
           "underline" -> ~s|<span style="text-decoration: underline;">#{acc}</span>|
           "strikethrough" -> ~s|<span style="text-decoration: line-through;">#{acc}</span>|
           _ -> "<#{mark}>#{acc}</#{mark}>"

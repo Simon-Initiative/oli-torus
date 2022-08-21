@@ -497,6 +497,7 @@ export interface SubmissionAction extends IsAction {
 export interface Part extends Identifiable {
   responses: Response[];
   hints: Hint[];
+  explanation?: Feedback;
   scoringStrategy: ScoringStrategy;
   gradingApproach?: GradingApproach;
   outOf?: null | number;

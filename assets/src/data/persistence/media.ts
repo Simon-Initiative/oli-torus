@@ -26,7 +26,11 @@ export function encodeFile(file: File): Promise<string> {
       reader.addEventListener(
         'load',
         () => {
-          if (reader.result !== null) {
+          if (reader.result === '') {
+            // Max string-size in V8 is 512mb, if your base64 string is bigger than that,
+            // file-reader will return an empty string here
+            reject('failed to encode');
+          } else if (reader.result !== null) {
             resolve((reader.result as string).substr((reader.result as string).indexOf(',') + 1));
           } else {
             reject('failed to encode');

@@ -1,7 +1,7 @@
 import { AudioEditor } from 'components/editing/elements/audio/AudioElement';
 import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeElement';
 import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
-import { InputRefEditor } from 'components/editing/elements/inputref/InputrefElement';
+import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
 import { LinkEditor } from 'components/editing/elements/link/LinkElement';
 import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
 import { TableEditor } from 'components/editing/elements/table/TableElement';
@@ -139,6 +139,8 @@ export function markFor(mark: Mark, children: any): JSX.Element {
       return <sub>{children}</sub>;
     case 'sup':
       return <sup>{children}</sup>;
+    case 'term':
+      return <span className="term">{children}</span>;
     case 'strikethrough':
       return <span style={{ textDecoration: 'line-through' }}>{children}</span>;
     case 'underline':

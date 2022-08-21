@@ -352,7 +352,10 @@
           "items": {
             "anyOf": [
               {
-                "$ref": "#"
+                "$ref": "#/$defs/inline"
+              },
+              {
+                "$ref": "#/$defs/list"
               }
             ]
           }
