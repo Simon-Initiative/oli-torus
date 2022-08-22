@@ -22,7 +22,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
 
   def evaluate(%Part{} = part, %EvaluationContext{} = context) do
     case Enum.reduce(part.responses, {context, nil, 0, 0}, &consider_response/2) do
-      {_, %Response{feedback: feedback, score: score}, _, out_of} ->
+      {_, %Response{feedback: feedback, score: score, show_page: show_page}, _, out_of} ->
         {:ok,
          %FeedbackAction{
            type: "FeedbackAction",
@@ -31,6 +31,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            feedback: feedback,
            attempt_guid: context.part_attempt_guid,
            error: nil,
+           show_page: show_page,
            part_id: part.id
          }}
 
@@ -54,6 +55,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            feedback: ParseUtils.default_content_item("Incorrect"),
            attempt_guid: context.part_attempt_guid,
            error: nil,
+           show_page: nil,
            part_id: part.id
          }}
 

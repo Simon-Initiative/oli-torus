@@ -10,12 +10,14 @@ import {
 import { Purpose } from 'components/content/Purpose';
 import { classNames } from 'utils/classNames';
 import styles from './ContentBlock.modules.scss';
+import { PaginationModes } from './PaginationModes';
 
 interface GroupBlockProps {
   editMode: boolean;
   contentItem: GroupContent;
   parents: ResourceContent[];
   canRemove: boolean;
+  contentBreaksExist: boolean;
   onEdit: (contentItem: GroupContent) => void;
   onRemove: () => void;
 }
@@ -24,6 +26,7 @@ export const GroupBlock = ({
   contentItem,
   parents,
   canRemove,
+  contentBreaksExist,
   children,
   onEdit,
   onRemove,
@@ -44,6 +47,13 @@ export const GroupBlock = ({
     >
       <div className={styles.groupBlockHeader}>
         <div className="flex-grow-1"></div>
+        {contentBreaksExist ? (
+          <PaginationModes
+            onEdit={(paginationMode) => onEdit(Object.assign(contentItem, { paginationMode }))}
+            editMode={editMode}
+            mode={contentItem.paginationMode === undefined ? 'normal' : contentItem.paginationMode}
+          />
+        ) : null}
         <Purpose
           purpose={contentItem.purpose}
           editMode={editMode}

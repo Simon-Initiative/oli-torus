@@ -20,7 +20,14 @@ defmodule Oli.Rendering.Group do
         %{"type" => "group", "id" => id, "children" => children} = element,
         writer
       ) do
-    next = fn -> writer.elements(%Context{context | group_id: id}, children) end
+    pagination_mode = Map.get(element, "paginationMode", "normal")
+
+    next = fn ->
+      writer.elements(
+        %Context{context | group_id: id, pagination_mode: pagination_mode},
+        children
+      )
+    end
 
     writer.group(context, next, element)
   end

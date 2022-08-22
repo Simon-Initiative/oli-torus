@@ -353,6 +353,7 @@ defmodule OliWeb.PageDeliveryController do
           user
         end,
       section_slug: section_slug,
+      resource_attempt: hd(context.resource_attempts),
       mode:
         if context.review_mode do
           :review

@@ -115,6 +115,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     parts: [],
     hasMoreAttempts: true,
     hasMoreHints: true,
+    groupId: null,
   };
 
   const partState: PartState = {

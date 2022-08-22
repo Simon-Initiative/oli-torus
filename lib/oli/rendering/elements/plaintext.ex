@@ -36,5 +36,5 @@ defmodule Oli.Rendering.Elements.Plaintext do
     Error.render(context, element, error, Error.Plaintext)
   end
 
-  def paginate({rendered, _br_count}), do: rendered
+  def paginate(_id, {rendered, _br_count}), do: rendered
 end

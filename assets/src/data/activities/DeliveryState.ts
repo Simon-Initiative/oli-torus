@@ -4,6 +4,7 @@ import {
   RequestHintResponse,
   ResetActivityResponse,
   PartActivityResponse,
+  ActivityContext,
 } from 'components/activities/DeliveryElement';
 import {
   ActivityState,
@@ -17,12 +18,12 @@ import {
   Success,
   FileMetaData,
 } from 'components/activities/types';
-import { SurveyEventDetails } from 'components/misc/SurveyControls';
+import { updatePaginationState } from 'data/persistence/pagination';
+import * as Events from 'data/events';
 import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
-import { isObjectBindingPattern } from 'typescript';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -35,6 +36,7 @@ export type PartInputs = Record<PartId, StudentInput>;
 
 export interface ActivityDeliveryState {
   model: ActivityModelSchema;
+  activityContext: ActivityContext;
   attemptState: ActivityState;
   partState: Record<
     PartId,
@@ -120,6 +122,30 @@ export const activityDeliverySlice = createSlice({
     activitySubmissionReceived(state, action: PayloadAction<EvaluationResponse>) {
       if (action.payload.actions.length > 0) {
         const { score, out_of } = calculateNewScore(action);
+
+        if (action.payload.actions[0].type === 'FeedbackAction') {
+          const toShow: number[] = action.payload.actions
+            .filter((a: FeedbackAction) => a.show_page !== null)
+            .map((a: FeedbackAction) => a.show_page) as number[];
+
+          if (toShow.length > 0) {
+            const forId = state.attemptState.groupId as string;
+
+            toShow.forEach((index: number) =>
+              Events.dispatch(
+                Events.Registry.ShowContentPage,
+                Events.makeShowContentPage({ forId, index }),
+              ),
+            );
+
+            updatePaginationState(
+              state.activityContext.sectionSlug,
+              state.activityContext.pageAttemptGuid,
+              forId,
+              toShow,
+            );
+          }
+        }
 
         state.attemptState = {
           ...state.attemptState,
@@ -217,6 +243,9 @@ export const activityDeliverySlice = createSlice({
     },
     updateModel(state, action: PayloadAction<ActivityModelSchema>) {
       state.model = action.payload;
+    },
+    updateActivityContext(state, action: PayloadAction<ActivityContext>) {
+      state.activityContext = action.payload;
     },
     hideHintsForPart(state, action: PayloadAction<PartId>) {
       Maybe.maybe(state.partState[action.payload]).lift((partState) => (partState.hintsShown = []));
@@ -380,10 +409,16 @@ export const submitFiles =
   };
 
 export const initializeState =
-  (state: ActivityState, initialPartInputs: PartInputs, model: ActivityModelSchema): AppThunk =>
+  (
+    state: ActivityState,
+    initialPartInputs: PartInputs,
+    model: ActivityModelSchema,
+    activityContext: ActivityContext,
+  ): AppThunk =>
   async (dispatch, _getState) => {
     dispatch(slice.actions.initializePartState(state));
     dispatch(slice.actions.updateModel(model));
+    dispatch(slice.actions.updateActivityContext(activityContext));
     state.parts.forEach((partState) => {
       dispatch(
         slice.actions.setHintsShownForPart({
@@ -438,7 +473,7 @@ export const setSelection =
   };
 
 export const listenForParentSurveySubmit = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   dispatch: Dispatch<any>,
   onSubmitActivity: (
     attemptGuid: string,
@@ -447,7 +482,8 @@ export const listenForParentSurveySubmit = (
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
+
+    document.addEventListener(Events.Registry.SurveySubmit, (e) => {
       // check if this activity belongs to the survey being submitted
       if (e.detail.id === surveyId) {
         dispatch(submit(onSubmitActivity));
@@ -456,14 +492,14 @@ export const listenForParentSurveySubmit = (
   );
 
 export const listenForParentSurveyReset = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   dispatch: Dispatch<any>,
   onResetActivity: (attemptGuid: string) => Promise<ResetActivityResponse>,
   partInputs?: PartInputs,
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
+    document.addEventListener(Events.Registry.SurveySubmit, (e) => {
       // check if this activity belongs to the survey being reset
       if (e.detail.id === surveyId) {
         dispatch(resetAction(onResetActivity, partInputs));

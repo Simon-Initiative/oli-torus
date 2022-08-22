@@ -30,7 +30,7 @@ import { LikertTable } from './Sections/LikertTable';
 const LikertComponent: React.FC = () => {
   const {
     state: activityState,
-    surveyId,
+    context,
     model,
     writerContext,
     onSubmitActivity,
@@ -46,9 +46,9 @@ const LikertComponent: React.FC = () => {
   }, {} as PartInputs);
 
   useEffect(() => {
-    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptySelectionMap);
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model));
+    listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptySelectionMap);
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 
   // First render initializes state

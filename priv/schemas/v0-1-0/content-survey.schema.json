@@ -9,10 +9,7 @@
       "const": "survey"
     },
     "id": {
-      "type": [
-        "integer",
-        "string"
-      ]
+      "type": ["integer", "string"]
     },
     "title": {
       "type": "string"
@@ -21,9 +18,5 @@
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }
   },
-  "required": [
-    "type",
-    "id",
-    "children"
-  ]
+  "required": ["type", "id", "children"]
 }

@@ -1,7 +1,7 @@
 defmodule Oli.Activities.Model.Response do
-  defstruct [:id, :rule, :score, :feedback]
+  defstruct [:id, :rule, :score, :feedback, :show_page]
 
-  def parse(%{"id" => id, "rule" => rule, "score" => score, "feedback" => feedback}) do
+  def parse(%{"id" => id, "rule" => rule, "score" => score, "feedback" => feedback} = response) do
     case Oli.Activities.Model.Feedback.parse(feedback) do
       {:ok, feedback} ->
         {:ok,
@@ -9,7 +9,8 @@ defmodule Oli.Activities.Model.Response do
            id: id,
            rule: rule,
            score: score,
-           feedback: feedback
+           feedback: feedback,
+           show_page: Map.get(response, "showPage", nil)
          }}
 
       error ->

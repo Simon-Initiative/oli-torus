@@ -17,6 +17,7 @@ export const ActivityEditor = ({
   allObjectives,
   allTags,
   canRemove,
+  contentBreaksExist,
   onEditActivity,
   onRemove,
   onPostUndoable,
@@ -49,6 +50,7 @@ export const ActivityEditor = ({
           activityId={activity.activityId}
           title={activity.title}
           banked={false}
+          contentBreaksExist={contentBreaksExist}
           canRemove={canRemove}
           onRemove={onRemove}
           onEdit={(update: EditorUpdate) => onEditActivity(activity.activitySlug, update)}

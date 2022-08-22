@@ -65,13 +65,13 @@ export const ShortAnswerComponent: React.FC = () => {
   const {
     model,
     state: activityState,
-    surveyId,
+    context,
     onSubmitActivity,
     onSaveActivity,
     onResetActivity,
   } = useDeliveryElementContext<ShortAnswerModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
-
+  const { surveyId } = context;
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -90,6 +90,7 @@ export const ShortAnswerComponent: React.FC = () => {
           }),
         }),
         model,
+        context,
       ),
     );
   }, []);

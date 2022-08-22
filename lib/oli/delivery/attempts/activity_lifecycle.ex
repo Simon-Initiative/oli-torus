@@ -137,6 +137,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                    attempt_number: attempt_count + 1,
                    transformed_model: model_to_store,
                    resource_id: activity_attempt.resource_id,
+                   group_id: activity_attempt.group_id,
                    revision_id: revision.id,
                    resource_attempt_id: activity_attempt.resource_attempt_id
                  }) do

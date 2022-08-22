@@ -7,6 +7,7 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import {
   Dropdown,
   FillInTheBlank,
@@ -44,7 +45,8 @@ interface Props {
   input: MultiInput;
 }
 export const AnswerKeyTab: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
+  const { model, dispatch, authoringContext, editMode } =
+    useAuthoringElementContext<MultiInputSchema>();
 
   if (props.input.inputType === 'dropdown') {
     const choices = model.choices.filter((choice) =>
@@ -103,6 +105,15 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             response={response}
             onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
           />
+          {authoringContext.contentBreaksExist ? (
+            <ShowPage
+              editMode={editMode}
+              index={response.showPage}
+              onChange={(showPage: any) =>
+                dispatch(ResponseActions.editShowPage(response.id, showPage))
+              }
+            />
+          ) : null}
         </ResponseCard>
       ))}
       <AuthoringButtonConnected

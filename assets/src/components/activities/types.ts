@@ -322,6 +322,8 @@ export interface ActivityState {
    */
   hasMoreHints: boolean;
   snapshot?: any;
+
+  groupId: null | string;
 }
 
 /**
@@ -425,6 +427,11 @@ export interface Response extends Identifiable {
    * Feedback to assign if this response matches.
    */
   feedback: Feedback;
+
+  /**
+   * Optional, show a page by index when this response is evaluated.
+   */
+  showPage?: number;
 }
 
 /**
@@ -472,6 +479,7 @@ export interface FeedbackAction extends IsAction {
   out_of: number;
   score: number;
   feedback: Feedback;
+  show_page: number | null;
 }
 
 /**
