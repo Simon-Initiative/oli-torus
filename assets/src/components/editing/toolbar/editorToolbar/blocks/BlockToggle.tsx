@@ -21,14 +21,14 @@ export const BlockToggle = ({ blockInsertOptions }: BlockToggleProps) => {
 
   if (blockInsertOptions.length === 0) return null;
   return (
-    <Toolbar.VerticalGroup>
-      <DropdownButton description={activeBlockDesc}>
+    <Toolbar.Group>
+      <DropdownButton description={activeBlockDesc} showDropdownArrow={true}>
         {toggleTextTypes
           .filter((type) => !type.active?.(editor))
           .map((desc, i) => (
             <DescriptiveButton key={i} description={desc} />
           ))}
       </DropdownButton>
-    </Toolbar.VerticalGroup>
+    </Toolbar.Group>
   );
 };

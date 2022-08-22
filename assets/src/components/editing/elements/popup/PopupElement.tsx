@@ -60,7 +60,7 @@ export const PopupEditor = (props: Props) => {
       align="start"
       isOpen={isOpen}
       content={
-        <Toolbar context={props.commandContext} orientation="horizontal">
+        <Toolbar context={props.commandContext}>
           <Toolbar.Group>
             <CommandButton
               description={createButtonCommandDesc({

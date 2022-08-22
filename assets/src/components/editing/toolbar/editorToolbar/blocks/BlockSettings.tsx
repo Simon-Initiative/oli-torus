@@ -6,7 +6,7 @@ import {
   headingTypeDescs,
 } from 'components/editing/elements/heading/headingActions';
 import {
-  listSettings,
+  listSettingButtonGroups,
   orderedListStyleCommands,
   unorderedListStyleCommands,
 } from 'components/editing/elements/list/listActions';
@@ -29,11 +29,11 @@ export const BlockSettings = (_props: BlockSettingProps) => {
   const component: Record<string, (() => JSX.Element) | undefined> = {
     Heading,
     List,
-    'Code (Block)': CodeBlock,
+    'Code Block': CodeBlock,
   };
 
   if (component[type] !== undefined) {
-    return <Toolbar.VerticalGroup>{(component[type] as any)()}</Toolbar.VerticalGroup>;
+    return <Toolbar.Group>{(component[type] as any)()}</Toolbar.Group>;
   }
   return null;
 };
@@ -46,10 +46,16 @@ function List() {
 
   return (
     <>
-      {listSettings.map((desc, i) => (
-        <CommandButton key={i} description={desc} />
+      {listSettingButtonGroups.map((group, j) => (
+        <Toolbar.ButtonGroup key={j}>
+          {group.map((desc, i) => (
+            <CommandButton key={i} description={desc} />
+          ))}
+        </Toolbar.ButtonGroup>
       ))}
-      <ListStyleToggle listStyleOptions={formatOptions} />
+      <Toolbar.ButtonGroup key="list-style">
+        <ListStyleToggle listStyleOptions={formatOptions} />
+      </Toolbar.ButtonGroup>
     </>
   );
 }
@@ -58,11 +64,13 @@ function Heading() {
   const editor = useSlate();
 
   return (
-    <DropdownButton description={headingLevelDesc(editor)}>
-      {headingTypeDescs.map((desc, i) => (
-        <CommandButton key={i} description={desc} />
-      ))}
-    </DropdownButton>
+    <Toolbar.ButtonGroup>
+      <DropdownButton description={headingLevelDesc(editor)}>
+        {headingTypeDescs.map((desc, i) => (
+          <CommandButton key={i} description={desc} />
+        ))}
+      </DropdownButton>
+    </Toolbar.ButtonGroup>
   );
 }
 
@@ -92,10 +100,12 @@ function CodeBlock() {
     });
 
   return (
-    <DropdownButton description={codeLanguageDesc(editor)}>
-      {CodeLanguages.all().map(({ prettyName }, i) => (
-        <DescriptiveButton key={i} description={switchLanguage(prettyName)} />
-      ))}
-    </DropdownButton>
+    <Toolbar.ButtonGroup>
+      <DropdownButton description={codeLanguageDesc(editor)}>
+        {CodeLanguages.all().map(({ prettyName }, i) => (
+          <DescriptiveButton key={i} description={switchLanguage(prettyName)} />
+        ))}
+      </DropdownButton>
+    </Toolbar.ButtonGroup>
   );
 }

@@ -1,7 +1,10 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import {
-  toggleFormat,
   additionalFormattingOptions,
+  boldDesc,
+  italicDesc,
+  underLineDesc,
+  inlineCodeDesc,
 } from 'components/editing/elements/marks/toggleMarkActions';
 import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
 import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
@@ -16,11 +19,9 @@ import { insertInlineCallout } from '../../elements/callout/calloutActions';
 
 interface Props {}
 export const Inlines = (_props: Props) => {
-  const basicFormattingOptions = [
-    toggleFormat({ icon: 'format_bold', mark: 'strong', description: 'Bold' }),
-    toggleFormat({ icon: 'format_italic', mark: 'em', description: 'Italic' }),
-    linkCmd,
-  ].map((desc, i) => <CommandButton key={i} description={desc} />);
+  const basicFormattingOptions = [boldDesc, italicDesc, inlineCodeDesc, linkCmd].map((desc, i) => (
+    <CommandButton key={i} description={desc} />
+  ));
 
   const inlineInsertions = [
     insertPopup,
@@ -38,13 +39,13 @@ export const Inlines = (_props: Props) => {
   });
 
   return (
-    <Toolbar.VerticalGroup>
+    <Toolbar.Group>
       {basicFormattingOptions}
-      <DropdownButton description={seeMoreInlineOptions}>
+      <DropdownButton description={seeMoreInlineOptions} showDropdownArrow={false}>
         {moreInlineOptions.map((desc, i) => (
           <DescriptiveButton key={i} description={desc} />
         ))}
       </DropdownButton>
-    </Toolbar.VerticalGroup>
+    </Toolbar.Group>
   );
 };

@@ -11,20 +11,25 @@ interface ContentBlockProps {
   onRemove: (key: string) => void;
 }
 
-export const ContentBlock = (props: PropsWithChildren<ContentBlockProps>) => {
-  return (
-    <div
-      id={`resource-editor-${props.contentItem.id}`}
-      className={classNames(styles.contentBlock, 'content-block')}
-    >
-      <div className={styles.contentBlockHeader}>
-        <div className="flex-grow-1"></div>
-        <DeleteButton
-          editMode={props.editMode && props.canRemove}
-          onClick={() => props.onRemove(props.contentItem.id)}
-        />
+export const ContentBlock = React.forwardRef<HTMLDivElement, PropsWithChildren<ContentBlockProps>>(
+  (props, ref) => {
+    return (
+      <div
+        id={`resource-editor-${props.contentItem.id}`}
+        ref={ref}
+        className={classNames(styles.contentBlock, 'content-block')}
+      >
+        <div className={styles.contentBlockHeader}>
+          <div className="flex-grow-1"></div>
+          <DeleteButton
+            editMode={props.editMode && props.canRemove}
+            onClick={() => props.onRemove(props.contentItem.id)}
+          />
+        </div>
+        <div>{props.children}</div>
       </div>
-      <div>{props.children}</div>
-    </div>
-  );
-};
+    );
+  },
+);
+
+ContentBlock.displayName = 'ContentBlock';

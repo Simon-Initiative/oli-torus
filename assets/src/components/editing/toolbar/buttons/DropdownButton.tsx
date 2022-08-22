@@ -5,14 +5,20 @@ import React, { PropsWithChildren } from 'react';
 import { Popover } from 'react-tiny-popover';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
+import { valueOr } from 'utils/common';
+import styles from '../Toolbar.modules.scss';
 
 interface Props {
   description: CommandDescription;
+  showDropdownArrow?: boolean;
 }
+
 export const DropdownButton = (props: PropsWithChildren<Props>) => {
   const thisDropdown = React.useRef<HTMLButtonElement | null>(null);
   const toolbar = useToolbar();
   const editor = useSlate();
+
+  const showDropdownArrow = valueOr(props.showDropdownArrow, true);
 
   const isOpen = !!thisDropdown.current && toolbar.submenu?.current === thisDropdown.current;
 
@@ -30,20 +36,21 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       onClickOutside={toolbar.closeSubmenus}
       isOpen={isOpen}
       padding={8}
-      positions={['right']}
+      positions={['bottom']}
       reposition={true}
       align={'start'}
-      content={<div className="editorToolbar__dropdownGroup">{props.children}</div>}
+      content={<div className={styles.dropdownGroup}>{props.children}</div>}
     >
       <button
         className={classNames(
-          'editorToolbar__button',
-          'editorToolbar__button--dropdown',
-          props.description.active?.(editor) && 'active',
+          styles.toolbarButton,
+          styles.dropdownButton,
+          props.description.active?.(editor) && styles.active,
         )}
         onClick={onClick}
       >
         <ButtonContent {...props} />
+        {showDropdownArrow && <span className="material-icons">keyboard_arrow_down</span>}
       </button>
     </Popover>
   );
