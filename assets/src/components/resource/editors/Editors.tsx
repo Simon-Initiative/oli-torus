@@ -67,7 +67,7 @@ export const Editors = (props: EditorsProps) => {
 
   const allObjectives = props.objectives.toArray();
   const allTags = props.allTags.toArray();
-  const canRemove = content.canDelete();
+  const canRemove = editMode;
 
   const editors = content.model.map((contentItem, index) => {
     const onEdit = (contentItem: ResourceContent) =>
