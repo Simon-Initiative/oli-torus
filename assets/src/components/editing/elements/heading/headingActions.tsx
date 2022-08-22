@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
 import { switchType } from 'components/editing/elements/commands/toggleTextTypes';

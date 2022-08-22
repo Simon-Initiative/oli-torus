@@ -34,9 +34,9 @@ export const EditorToolbar = (props: Props) => {
       }
       content={
         <Toolbar context={props.context}>
+          <Inlines />
           <BlockToggle blockInsertOptions={props.insertOptions} />
           <BlockSettings />
-          <Inlines />
           <BlockInsertMenu blockInsertOptions={props.insertOptions} />
         </Toolbar>
       }

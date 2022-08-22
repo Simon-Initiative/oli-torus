@@ -33,3 +33,9 @@ const Group = (props: PropsWithChildren<GroupProps>) => (
   <div className={styles.toolbarGroup}>{props.children}</div>
 );
 Toolbar.Group = Group;
+
+interface ButtonGroupProps {}
+const ButtonGroup = (props: PropsWithChildren<ButtonGroupProps>) => (
+  <div className={styles.toolbarButtonGroup}>{props.children}</div>
+);
+Toolbar.ButtonGroup = ButtonGroup;

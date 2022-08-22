@@ -129,45 +129,49 @@ export const orderedListStyleCommands = OrderedListStyles.filter(notLatinOption)
     }),
 );
 
-export const listSettings = [
-  createButtonCommandDesc({
-    icon: 'format_list_bulleted',
-    description: 'Unordered List',
-    active: (editor) => isActive(editor, ['ul']),
-    execute: (_ctx, editor) => {
-      const [, at] = [...Editor.nodes(editor)][1];
-      Transforms.setNodes(
-        editor,
-        { type: 'ul', style: undefined },
-        { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'all' },
-      );
-    },
-  }),
-  createButtonCommandDesc({
-    icon: 'format_list_numbered',
-    description: 'Ordered List',
-    active: (editor) => isActive(editor, ['ol']),
-    execute: (_ctx, editor) => {
-      const [, at] = [...Editor.nodes(editor)][1];
-      Transforms.setNodes(
-        editor,
-        { type: 'ol', style: undefined },
-        { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'all' },
-      );
-    },
-  }),
-  createButtonCommandDesc({
-    icon: 'format_indent_decrease',
-    description: 'Outdent',
-    active: (_e) => false,
-    execute: (_ctx, editor) => handleOutdent(editor),
-  }),
-  createButtonCommandDesc({
-    icon: 'format_indent_increase',
-    description: 'Indent',
-    active: (_e) => false,
-    execute: (_ctx, editor) => handleIndent(editor),
-  }),
+export const listSettingButtonGroups = [
+  [
+    createButtonCommandDesc({
+      icon: 'format_list_bulleted',
+      description: 'Unordered List',
+      active: (editor) => isActive(editor, ['ul']),
+      execute: (_ctx, editor) => {
+        const [, at] = [...Editor.nodes(editor)][1];
+        Transforms.setNodes(
+          editor,
+          { type: 'ul', style: undefined },
+          { at, match: (e) => Element.isElement(e) && e.type === 'ol', mode: 'all' },
+        );
+      },
+    }),
+    createButtonCommandDesc({
+      icon: 'format_list_numbered',
+      description: 'Ordered List',
+      active: (editor) => isActive(editor, ['ol']),
+      execute: (_ctx, editor) => {
+        const [, at] = [...Editor.nodes(editor)][1];
+        Transforms.setNodes(
+          editor,
+          { type: 'ol', style: undefined },
+          { at, match: (e) => Element.isElement(e) && e.type === 'ul', mode: 'all' },
+        );
+      },
+    }),
+  ],
+  [
+    createButtonCommandDesc({
+      icon: 'format_indent_decrease',
+      description: 'Outdent',
+      active: (_e) => false,
+      execute: (_ctx, editor) => handleOutdent(editor),
+    }),
+    createButtonCommandDesc({
+      icon: 'format_indent_increase',
+      description: 'Indent',
+      active: (_e) => false,
+      execute: (_ctx, editor) => handleIndent(editor),
+    }),
+  ],
 ];
 
 const isList = (e: Element): boolean => ['ul', 'ol'].indexOf(e.type) !== -1;

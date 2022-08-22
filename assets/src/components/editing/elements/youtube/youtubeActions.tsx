@@ -70,7 +70,7 @@ export function selectYoutube(): Promise<string | null> {
 
     const selection = (
       <ModalSelection
-        title="Insert Webpage"
+        title="Insert YouTube"
         onInsert={() => {
           dismiss();
           resolve(selected.src ? selected.src : '');
