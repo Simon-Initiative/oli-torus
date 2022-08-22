@@ -119,13 +119,6 @@ export class PageEditorContent extends Immutable.Record(defaultParams()) {
   }
 
   /**
-   * @returns true if an item can be deleted from the model
-   */
-  canDelete() {
-    return this.model.size > 1;
-  }
-
-  /**
    * @returns the first resource content item
    */
   first() {
