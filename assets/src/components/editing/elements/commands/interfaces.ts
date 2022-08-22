@@ -6,7 +6,7 @@ import { Editor } from 'slate';
 // For toolbar buttons
 export type CommandDescription = {
   type: 'CommandDesc';
-  icon: (editor: Editor) => string | JSX.Element;
+  icon: (editor: Editor) => string;
   command: Command;
   description: (editor: Editor) => string;
   // active: is the item in the cursor's selection
