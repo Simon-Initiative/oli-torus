@@ -16,7 +16,7 @@ interface SettingsProps {
 }
 export const VideoSettings = (props: SettingsProps) => {
   return (
-    <Toolbar context={props.commandContext} orientation="horizontal">
+    <Toolbar context={props.commandContext}>
       <Toolbar.Group>
         <SettingsButton
           projectSlug={props.commandContext.projectSlug}

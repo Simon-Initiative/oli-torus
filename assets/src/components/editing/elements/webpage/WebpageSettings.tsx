@@ -15,7 +15,7 @@ interface SettingsProps {
 }
 export const WebpageSettings = (props: SettingsProps) => {
   return (
-    <Toolbar context={props.commandContext} orientation="horizontal">
+    <Toolbar context={props.commandContext}>
       <Toolbar.Group>
         <CommandButton
           description={createButtonCommandDesc({
