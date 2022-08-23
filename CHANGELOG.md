@@ -3,10 +3,21 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.21.4 (2022-08-23)
+
+### Bug Fixes
+
+- Fix an issue where content cant be removed if there is only one top-level element
 
 ### Enhancements
 
 - Add support for inline 'term' markup
+- Add support for branching activities and page automation
+- Improve toolbar styles and usability
+- Add ability to browse all pages in a course project
+- Add Math input question type
 
 ## 0.21.3 (2022-08-05)
 
