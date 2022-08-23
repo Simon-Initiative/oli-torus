@@ -20,7 +20,12 @@ defmodule Oli.Rendering.Survey do
         %{"type" => "survey", "id" => id, "children" => children} = element,
         writer
       ) do
-    next = fn -> writer.elements(%Context{context | survey_id: id}, children) end
+    next = fn ->
+      writer.elements(
+        %Context{context | survey_id: id, pagination_mode: "normal"},
+        children
+      )
+    end
 
     writer.survey(context, next, element)
   end

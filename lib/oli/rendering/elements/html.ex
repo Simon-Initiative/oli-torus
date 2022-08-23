@@ -36,10 +36,16 @@ defmodule Oli.Rendering.Elements.Html do
     Error.render(context, element, error, Error.Html)
   end
 
-  def paginate({rendered, br_count}) do
+  def paginate(%Context{} = context, {rendered, br_count}) do
     if br_count > 0 do
       {:safe, pagination_controls} =
-        ReactPhoenix.ClientSide.react_component("Components.PaginationControls")
+        ReactPhoenix.ClientSide.react_component("Components.PaginationControls", %{
+          forId: for_id(context),
+          paginationMode: context.pagination_mode,
+          sectionSlug: context.section_slug,
+          pageAttemptGuid: page_attempt_guid(context.resource_attempt),
+          initiallyVisible: extract_for(context.resource_attempt, for_id(context))
+        })
 
       [
         ~s|<div class="paginated">|,
@@ -53,4 +59,24 @@ defmodule Oli.Rendering.Elements.Html do
       rendered
     end
   end
+
+  defp for_id(%Context{survey_id: nil, group_id: nil, page_id: id}), do: id
+  defp for_id(%Context{survey_id: nil, group_id: id}), do: id
+  defp for_id(%Context{survey_id: id}), do: id
+
+  defp extract_for(nil, _), do: []
+
+  defp extract_for(resource_attempt, id) do
+    case resource_attempt.state do
+      nil ->
+        []
+
+      state ->
+        Map.get(state, "paginationState", %{})
+        |> Map.get(id, [])
+    end
+  end
+
+  defp page_attempt_guid(nil), do: ""
+  defp page_attempt_guid(resource_attempt), do: resource_attempt.attempt_guid
 end

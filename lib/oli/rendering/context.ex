@@ -18,6 +18,7 @@ defmodule Oli.Rendering.Context do
             resource_attempt: nil,
             group_id: nil,
             survey_id: nil,
+            pagination_mode: "normal",
             bib_app_params: [],
             submitted_surveys: %{}
 end

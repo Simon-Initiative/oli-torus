@@ -1,9 +1,9 @@
+import React, { PropsWithChildren, useCallback, useEffect, useState, useRef } from 'react';
 import { useMousedown } from 'components/misc/resizable/useMousedown';
 import { positionRect } from 'data/content/utils';
-import React, { PropsWithChildren, useCallback, useEffect, useState } from 'react';
 import { Popover, PopoverAlign, PopoverPosition } from 'react-tiny-popover';
 import { Editor } from 'slate';
-import { useSlate } from 'slate-react';
+import { ReactEditor, useSlate } from 'slate-react';
 
 const offscreenRect = { top: -5000, left: -5000 };
 
@@ -11,12 +11,14 @@ interface Props {
   isOpen: boolean | ((editor: Editor) => boolean);
   content: JSX.Element;
   position?: PopoverPosition;
+  reposition?: boolean;
   align?: PopoverAlign;
   relativeTo?: HTMLElement | (() => HTMLElement | undefined);
   style?: React.CSSProperties;
 }
 export const HoverContainer = (props: PropsWithChildren<Props>) => {
   const editor = useSlate();
+
   const mousedown = useMousedown();
   const [position, setPosition] = useState(offscreenRect);
   const isOpen = typeof props.isOpen === 'function' ? props.isOpen(editor) : props.isOpen;
@@ -37,13 +39,8 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
   return (
     <Popover
       isOpen
-      padding={12}
-      reposition={false}
+      reposition={props.reposition}
       contentLocation={(state) => {
-        // Setting state in render is bad practice, but react-tiny-popover is
-        // bugged and nudges the popover position even if you don't want
-        // it to change.
-
         const childRect =
           (props.relativeTo
             ? typeof props.relativeTo === 'function'
@@ -53,21 +50,26 @@ export const HoverContainer = (props: PropsWithChildren<Props>) => {
 
         if (mousedown) return position;
 
-        const newPosition = positionRect({
-          ...state,
-          position: props.position || 'bottom',
-          align: props.align || 'start',
-          childRect,
-        });
+        const newPosition = positionRect(
+          {
+            ...state,
+            position: props.position || 'bottom',
+            align: props.align || 'start',
+            childRect,
+          },
+          props.reposition,
+          ReactEditor.toDOMNode(editor, editor),
+        );
 
+        // setting state in render is bad practice, but react-tiny-popover nudges the popover
+        // position even if you don't want it to change.
         if (newPosition !== position) setPosition(newPosition);
+
         return newPosition;
       }}
       content={
-        <div className="hovering-toolbar" onMouseDown={preventMouseDown}>
-          <div className="btn-group btn-group-sm" role="group">
-            {props.content}
-          </div>
+        <div className="hover-container" onMouseDown={preventMouseDown}>
+          {props.content}
         </div>
       }
     >

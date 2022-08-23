@@ -54,6 +54,13 @@ $content-purpose-simulation-color: rgba(#ff7675, 0.75) !default;
 $content-purpose-walkthrough-color: rgba(#536d86, 0.75) !default;
 $content-survey-color: rgba(#22a6b3, 0.75) !default;
 
+$toolbar-bg: #f8f9fb !default;
+$toolbar-color: #6b7281 !default;
+$toolbar-border-color: #e5e6e8 !default;
+$toolbar-group-separator-color: #edeef0 !default;
+$toolbar-active-bg: #6b7281 !default;
+$toolbar-active-color: #f8f9fb !default;
+
 // Export all theme SASS variables to CSS
 & {
   // Custom variable values only support SassScript inside `#{}`.
@@ -114,14 +121,21 @@ $content-survey-color: rgba(#22a6b3, 0.75) !default;
   --authoring-reposition-target: #{$reposition-target};
   --authoring-dropdown-menu: #{$dropdown-menu};
 
-  --content-purpose-checkpoint-color: var(#{$content-purpose-checkpoint-color});
-  --content-purpose-didigetthis-color: var(#{$content-purpose-didigetthis-color});
-  --content-purpose-example-color: var(#{$content-purpose-example-color});
-  --content-purpose-labactivity-color: var(#{$content-purpose-labactivity-color});
-  --content-purpose-learnbydoing-color: var(#{$content-purpose-learnbydoing-color});
-  --content-purpose-learnmore-color: var(#{$content-purpose-learnmore-color});
-  --content-purpose-manystudentswonder-color: var(#{$content-purpose-manystudentswonder-color});
-  --content-purpose-quiz-color: var(#{$content-purpose-quiz-color});
-  --content-purpose-simulation-color: var(#{$content-purpose-simulation-color});
-  --content-purpose-walkthrough-color: var(#{$content-purpose-walkthrough-color});
+  --content-purpose-checkpoint-color: #{$content-purpose-checkpoint-color};
+  --content-purpose-didigetthis-color: #{$content-purpose-didigetthis-color};
+  --content-purpose-example-color: #{$content-purpose-example-color};
+  --content-purpose-labactivity-color: #{$content-purpose-labactivity-color};
+  --content-purpose-learnbydoing-color: #{$content-purpose-learnbydoing-color};
+  --content-purpose-learnmore-color: #{$content-purpose-learnmore-color};
+  --content-purpose-manystudentswonder-color: #{$content-purpose-manystudentswonder-color};
+  --content-purpose-quiz-color: #{$content-purpose-quiz-color};
+  --content-purpose-simulation-color: #{$content-purpose-simulation-color};
+  --content-purpose-walkthrough-color: #{$content-purpose-walkthrough-color};
+
+  --authoring-toolbar-bg: #{$toolbar-bg};
+  --authoring-toolbar-color: #{$toolbar-color};
+  --authoring-toolbar-group-separator-color: #{$toolbar-group-separator-color};
+  --authoring-toolbar-border-color: #{$toolbar-border-color};
+  --authoring-toolbar-active-bg: #{$toolbar-active-bg};
+  --authoring-toolbar-active-color: #{$toolbar-active-color};
 }

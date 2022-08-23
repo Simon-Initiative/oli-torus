@@ -18,8 +18,8 @@ export function useDeliveryElementContext<T>() {
 }
 export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
   const writerContext = defaultWriterContext({
-    sectionSlug: props.sectionSlug,
-    bibParams: props.bibParams,
+    sectionSlug: props.context.sectionSlug,
+    bibParams: props.context.bibParams,
   });
 
   return (

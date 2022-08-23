@@ -21,8 +21,8 @@ import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { DeliveryElementProvider } from '../DeliveryElementProvider';
-import { SurveyEventDetails } from 'components/misc/SurveyControls';
 import { maybe } from 'tsmonad';
+import * as Events from 'data/events';
 
 type Evaluation = {
   score: number;
@@ -31,30 +31,36 @@ type Evaluation = {
 };
 
 const listenForParentSurveySubmit = (
-  surveyId: string | undefined,
+  surveyId: string | null,
   onRun: () => void,
   onSubmit: () => void,
 ) =>
   maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-submit', (e: CustomEvent<SurveyEventDetails>) => {
-      // check if this activity belongs to the survey being submitted
-      if (e.detail.id === surveyId) {
-        onRun();
-        onSubmit();
-      }
-    }),
+    document.addEventListener(
+      Events.Registry.SurveySubmit,
+      (e: CustomEvent<Events.SurveyDetails>) => {
+        // check if this activity belongs to the survey being submitted
+        if (e.detail.id === surveyId) {
+          onRun();
+          onSubmit();
+        }
+      },
+    ),
   );
 
-const listenForParentSurveyReset = (surveyId: string | undefined, onReset: () => void) =>
+const listenForParentSurveyReset = (surveyId: string | null, onReset: () => void) =>
   maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener('oli-survey-reset', (e: CustomEvent<SurveyEventDetails>) => {
-      // check if this activity belongs to the survey being reset
-      if (e.detail.id === surveyId) {
-        onReset();
-      }
-    }),
+    document.addEventListener(
+      Events.Registry.SurveyReset,
+      (e: CustomEvent<Events.SurveyDetails>) => {
+        // check if this activity belongs to the survey being reset
+        if (e.detail.id === surveyId) {
+          onReset();
+        }
+      },
+    ),
   );
 
 // eslint-disable-next-line
@@ -80,8 +86,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
   const isEvaluated = attemptState.score !== null;
 
   const writerContext = defaultWriterContext({
-    sectionSlug: props.sectionSlug,
-    bibParams: props.bibParams,
+    sectionSlug: props.context.sectionSlug,
+    bibParams: props.context.bibParams,
   });
 
   // tslint:disable-next-line:prefer-array-literal
@@ -119,8 +125,8 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
 
   // effect hook to initiate fetching of resources, executes once on first render
   useEffect(() => {
-    listenForParentSurveySubmit(props.surveyId, onRun, onSubmit);
-    listenForParentSurveyReset(props.surveyId, onReset);
+    listenForParentSurveySubmit(props.context.surveyId, onRun, onSubmit);
+    listenForParentSurveyReset(props.context.surveyId, onReset);
 
     resourceURLs.map((url, i) => {
       url.endsWith('csv') ? loadCSV(url, i) : loadImage(url, i);
@@ -261,14 +267,14 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     <Evaluation key="evaluation" attemptState={attemptState} context={writerContext} />
   ) : null;
 
-  const reset = isEvaluated && !props.graded && props.surveyId === undefined && (
+  const reset = isEvaluated && !props.context.graded && props.context.surveyId === undefined && (
     <div className="d-flex">
       <div className="flex-fill"></div>
       <Reset hasMoreAttempts={attemptState.hasMoreAttempts} onClick={onReset} />
     </div>
   );
 
-  const ungradedDetails = props.graded
+  const ungradedDetails = props.context.graded
     ? null
     : [
         evaluationSummary,
@@ -321,7 +327,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
     return solution ? solnRef.current : resultRef.current;
   };
 
-  const maybeSubmitButton = !model.isExample && props.surveyId === undefined && (
+  const maybeSubmitButton = !model.isExample && props.context.surveyId === undefined && (
     <button
       className="btn btn-primary mt-2 float-right"
       disabled={isEvaluated || !ranCode}
@@ -360,7 +366,7 @@ const ImageCoding = (props: ImageCodingDeliveryProps) => {
           <canvas ref={solnRef} style={{ display: 'none' }} height="0" width="0" />
         </div>
 
-        {!model.isExample && props.surveyId === undefined && ungradedDetails}
+        {!model.isExample && props.context.surveyId === undefined && ungradedDetails}
       </div>
       {reset}
     </div>

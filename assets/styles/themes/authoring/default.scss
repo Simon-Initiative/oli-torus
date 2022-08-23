@@ -304,6 +304,13 @@ html.authoring.dark {
   $github-button-background-color: $black;
   $github-button-font-color: $white;
 
+  $toolbar-bg: #3e3f44;
+  $toolbar-color: #dee2f3;
+  $toolbar-border-color: #55565d;
+  $toolbar-group-separator-color: #55565d;
+  $toolbar-active-bg: #dee2f3;
+  $toolbar-active-color: #3e3f44;
+
   ////////////////////////////////////////////////////////////////////////////////////
   // IMPORTANT: DO NOT MODIFY IMPORT
   // This import is required and must always be after the last variable
@@ -482,61 +489,6 @@ html.authoring.dark {
       .selected {
         background-color: lighten($color: $body-bg, $amount: 30%);
       }
-    }
-  }
-
-  // Editor toolbar
-  .editorToolbar {
-    border-top: 1px solid $body-color;
-    border-bottom: 1px solid $body-color;
-    background: $gray-400;
-
-    &__group {
-      background: $gray-400;
-      border-left: 1px solid $body-color;
-    }
-    &__group:last-of-type {
-      border-right: 1px solid $body-color;
-    }
-
-    &__dropdownGroup {
-      border: 1px solid $body-color;
-      background: $gray-400;
-    }
-
-    &__button {
-      background: $gray-400;
-
-      &--descriptive {
-        &:hover {
-          color: $primary;
-        }
-        &:focus,
-        &:active {
-          border: 2px solid $primary;
-        }
-      }
-
-      &Indicator {
-        &:hover {
-          color: $primary;
-        }
-        &:focus,
-        &:active {
-          border: 2px solid $primary;
-        }
-      }
-    }
-
-    &__button.active {
-      .editorToolbar__buttonIndicator {
-        background-color: $body-color;
-        color: $body-bg;
-      }
-    }
-    &__button--descriptive.active {
-      background-color: $body-color;
-      color: $body-bg;
     }
   }
 

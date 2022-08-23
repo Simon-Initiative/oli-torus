@@ -8,11 +8,11 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 export const GradedPointsConnected: React.FC = () => {
-  const { graded, surveyId } = useDeliveryElementContext();
+  const { graded, surveyId } = useDeliveryElementContext().context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   return (
     <GradedPoints
-      shouldShow={uiState.attemptState.score !== null && graded && surveyId === undefined}
+      shouldShow={uiState.attemptState.score !== null && graded && surveyId === null}
       icon={isCorrect(uiState.attemptState) ? <Checkmark /> : <Cross />}
       attemptState={uiState.attemptState}
     />

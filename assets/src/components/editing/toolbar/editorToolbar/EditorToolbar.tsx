@@ -16,26 +16,27 @@ import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/B
 interface Props {
   context: CommandContext;
   insertOptions: CommandDescription[];
-  orientation: 'horizontal' | 'vertical';
 }
+
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
 
   return (
     <HoverContainer
       isOpen={isOpen}
-      position="left"
+      position="top"
       align="start"
+      reposition={true}
       relativeTo={() =>
         getHighestTopLevel(editor)
           .bind((node) => safeToDOMNode(editor, node))
           .valueOr<any>(undefined)
       }
       content={
-        <Toolbar context={props.context} orientation={props.orientation}>
+        <Toolbar context={props.context}>
+          <Inlines />
           <BlockToggle blockInsertOptions={props.insertOptions} />
           <BlockSettings />
-          <Inlines />
           <BlockInsertMenu blockInsertOptions={props.insertOptions} />
         </Toolbar>
       }

@@ -9,16 +9,13 @@
       "const": "group"
     },
     "id": {
-      "type": [
-        "integer",
-        "string"
-      ]
+      "type": ["integer", "string"]
     },
     "layout": {
-      "enum": [
-        "vertical",
-        "deck"
-      ]
+      "enum": ["vertical", "deck"]
+    },
+    "paginationMode": {
+      "enum": ["normal", "manualReveal", "automatedReveal"]
     },
     "purpose": {
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
@@ -27,10 +24,5 @@
       "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }
   },
-  "required": [
-    "type",
-    "layout",
-    "purpose",
-    "children"
-  ]
+  "required": ["type", "layout", "purpose", "children"]
 }

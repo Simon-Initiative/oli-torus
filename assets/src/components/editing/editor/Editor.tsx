@@ -113,11 +113,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       >
         {props.children}
 
-        <EditorToolbar
-          orientation="vertical"
-          context={props.commandContext}
-          insertOptions={props.toolbarInsertDescs}
-        />
+        <EditorToolbar context={props.commandContext} insertOptions={props.toolbarInsertDescs} />
 
         <Editable
           style={props.style}

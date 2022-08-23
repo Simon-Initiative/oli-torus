@@ -34,6 +34,18 @@ defmodule Oli.Activities.ParseUtilsTest do
              ])
   end
 
+  test "has_content?/1 correctly detects when there's no content in a string keyed model inside content" do
+    no_content = %{
+      content: %{
+        "model" => [
+          %{"children" => [%{"text" => ""}], "type" => "p"}
+        ]
+      }
+    }
+
+    refute ParseUtils.has_content?(no_content)
+  end
+
   test "has_content?/1 correctly detects when there's content" do
     has_content1 = %{
       content: %{

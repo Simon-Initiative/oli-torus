@@ -155,7 +155,7 @@ export const createGroup = (
   id: guid(),
   children,
   layout: 'vertical',
-  purpose: 'none',
+  purpose: 'didigetthis',
 });
 
 export const createSurvey = (
@@ -204,11 +204,14 @@ export interface ActivityReference {
 
 export type GroupLayout = 'vertical' | 'deck';
 
+export type PaginationMode = 'normal' | 'manualReveal' | 'automatedReveal';
+
 export interface GroupContent {
   type: 'group';
   id: string;
   layout: GroupLayout; // TODO define layout types
   purpose: string;
+  paginationMode?: PaginationMode;
   children: Immutable.List<ResourceContent>;
 }
 

@@ -20,6 +20,7 @@ export interface ActivityEditorProps extends ActivityEditContext {
   allTags: Tag[];
   banked: boolean;
   canRemove: boolean;
+  contentBreaksExist: boolean;
   customToolbarItems?: React.ComponentType;
   onEdit: (state: EditorUpdate) => void;
   onPostUndoable: (undoable: Undoable) => void;
@@ -134,7 +135,7 @@ export class InlineActivityEditor extends React.Component<
   }
 
   render() {
-    const { authoringElement } = this.props;
+    const { authoringElement, contentBreaksExist } = this.props;
 
     const onTitleEdit = (title: string) => {
       this.update({ title });
@@ -145,7 +146,9 @@ export class InlineActivityEditor extends React.Component<
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),
       projectslug: this.props.projectSlug,
+      authoringcontext: JSON.stringify({ contentBreaksExist }),
     };
+
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 

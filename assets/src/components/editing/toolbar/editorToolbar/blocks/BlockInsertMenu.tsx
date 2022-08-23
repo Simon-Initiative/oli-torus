@@ -5,6 +5,7 @@ import { DropdownButton } from 'components/editing/toolbar/buttons/DropdownButto
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
+import { CommandButton } from '../../buttons/CommandButton';
 
 export const insertItemDropdown = createButtonCommandDesc({
   icon: 'add',
@@ -18,17 +19,24 @@ interface Props {
 }
 export const BlockInsertMenu = ({ blockInsertOptions }: Props) => {
   const editor = useSlate();
+
   if (blockInsertOptions.length === 0) return null;
 
+  const filtered = blockInsertOptions.filter((desc) => desc.command.precondition(editor));
+  const [priorityInsertOptions, remainingInsertOptions] = [filtered.slice(0, 2), filtered.slice(2)];
+
   return (
-    <Toolbar.VerticalGroup>
-      <DropdownButton description={insertItemDropdown}>
-        {blockInsertOptions
-          .filter((desc) => desc.command.precondition(editor))
-          .map((desc, i) => (
+    <Toolbar.Group>
+      {priorityInsertOptions.map((desc, i) => (
+        <CommandButton key={i} description={desc} />
+      ))}
+      {remainingInsertOptions.length > 0 && (
+        <DropdownButton description={insertItemDropdown} showDropdownArrow={false}>
+          {remainingInsertOptions.map((desc, i) => (
             <DescriptiveButton key={i} description={desc} />
           ))}
-      </DropdownButton>
-    </Toolbar.VerticalGroup>
+        </DropdownButton>
+      )}
+    </Toolbar.Group>
   );
 };

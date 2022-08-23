@@ -67,7 +67,7 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
     >
       <HoverContainer
         content={
-          <Toolbar context={props.commandContext} orientation="horizontal">
+          <Toolbar context={props.commandContext}>
             <Toolbar.Group>
               {initCommands(input, inputRefContext.setInputType).map((desc, i) => (
                 <CommandButton description={desc} key={i} />

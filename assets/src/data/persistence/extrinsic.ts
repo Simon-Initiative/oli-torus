@@ -157,6 +157,34 @@ export function upsertSection(slug: SectionSlug, keyValues: KeyValues) {
   return makeRequest<ExtrinsicDelete>(params);
 }
 
+export function readAttempt(slug: SectionSlug, attemptGuid: string, keys: string[] | null = null) {
+  const params = {
+    method: 'GET',
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}` + toKeyParams(keys),
+  };
+
+  return makeRequest<ExtrinsicRead>(params);
+}
+
+export function deleteAttempt(slug: SectionSlug, attemptGuid: string, keys: string[]) {
+  const params = {
+    method: 'DELETE',
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}` + toKeyParams(keys),
+  };
+
+  return makeRequest<ExtrinsicRead>(params);
+}
+
+export function upsertAttempt(slug: SectionSlug, attemptGuid: string, keyValues: KeyValues) {
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify(keyValues),
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}`,
+  };
+
+  return makeRequest<ExtrinsicDelete>(params);
+}
+
 // Take a list of string key names and turn it into the form expected by
 // Phoenix: foo[]=bar&foo[]=baz&foo[]=qux.
 function toKeyParams(keys: string[] | null = null) {

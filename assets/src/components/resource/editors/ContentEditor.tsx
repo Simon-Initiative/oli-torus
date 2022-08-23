@@ -21,6 +21,7 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
     onEdit,
     onAddItem,
   } = editorProps;
+
   return (
     <ContentBlock {...editorProps}>
       <StructuredContentEditor

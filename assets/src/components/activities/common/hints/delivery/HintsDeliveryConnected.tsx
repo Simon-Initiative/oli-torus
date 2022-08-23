@@ -15,7 +15,8 @@ interface Props {
   shouldShow?: boolean;
 }
 export const HintsDeliveryConnected: React.FC<Props> = (props) => {
-  const { graded, surveyId, writerContext, onRequestHint } = useDeliveryElementContext<HasHints>();
+  const { context, writerContext, onRequestHint } = useDeliveryElementContext<HasHints>();
+  const { graded, surveyId } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
 
@@ -26,7 +27,7 @@ export const HintsDeliveryConnected: React.FC<Props> = (props) => {
         !isEvaluated(uiState) &&
         !isSubmitted(uiState) &&
         !graded &&
-        surveyId === undefined
+        surveyId === null
       }
       onClick={() => dispatch(requestHint(props.partId, onRequestHint))}
       hints={uiState.partState[props.partId]?.hintsShown || []}

@@ -83,6 +83,7 @@ export const SurveyEditor = ({
               editorMap,
               canRemove,
               featureFlags,
+              contentBreaksExist: false,
               onEdit: onEditChild,
               onEditActivity,
               onRemove: onRemoveChild,

@@ -16,10 +16,10 @@ import { insertVideo } from '../../../elements/video/videoActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
-  insertCodeblock,
   insertImage(onRequestMedia),
-  insertVideo,
   insertYoutube,
+  insertCodeblock,
+  insertVideo,
   insertAudio(onRequestMedia),
   insertWebpage,
   insertFormula,
@@ -43,10 +43,10 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
       return [];
     case 'small':
       return [
-        insertCodeblock,
         insertImage(onRequestMedia),
-        insertVideo,
         ytCmdDesc,
+        insertVideo,
+        insertCodeblock,
         insertAudio(onRequestMedia),
         insertFormula,
         insertCallout,

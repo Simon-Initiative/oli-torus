@@ -2,12 +2,21 @@ import React, { useEffect, useState, useRef } from 'react';
 import { List } from 'immutable';
 import styles from './PaginationControls.modules.scss';
 import { classNames } from 'utils/classNames';
+import * as Events from 'data/events';
+import { PaginationMode } from 'data/content/resource';
+import { updatePaginationState } from 'data/persistence/pagination';
 
-export interface PaginationControlsProps {}
+export interface PaginationControlsProps {
+  forId: string;
+  paginationMode: PaginationMode;
+  sectionSlug: string;
+  pageAttemptGuid: string;
+  initiallyVisible: number[];
+}
 
 type Page = List<Element>;
 
-export const PaginationControls = (_props: PaginationControlsProps) => {
+export const PaginationControls = (props: PaginationControlsProps) => {
   const controls = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState(List<Page>());
   const [active, setActive] = useState(0);
@@ -19,6 +28,15 @@ export const PaginationControls = (_props: PaginationControlsProps) => {
   const show = (pageIndex: number) => {
     pages.get(pageIndex)?.forEach((el) => el.classList.add(styles.show));
   };
+
+  useEffect(() => {
+    document.addEventListener(Events.Registry.ShowContentPage, (e) => {
+      // check if this activity belongs to the survey being reset
+      if (e.detail.forId === props.forId) {
+        onSelectPage(e.detail.index);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const parentElement = controls?.current?.parentElement?.parentElement;
@@ -38,54 +56,89 @@ export const PaginationControls = (_props: PaginationControlsProps) => {
           }
         }
 
+        // Set the visibility of our initial state
+        props.initiallyVisible.forEach((index) => {
+          pages.get(index)?.forEach((el) => el.classList.add(styles.show));
+        });
+        const maxItem = props.initiallyVisible.reduce((p, c) => {
+          if (p > c) {
+            return p;
+          }
+          return c;
+        }, 0);
+        setActive(maxItem);
         setPages(pages);
       }
     }
   }, [controls]);
 
   useEffect(() => {
-    hideAll();
+    if (props.paginationMode === 'normal') {
+      hideAll();
+    }
     show(active);
   }, [pages, active]);
 
   const onSelectPage = (pageIndex: number) => {
-    setActive(Math.min(pages.count() - 1, Math.max(0, pageIndex)));
+    setActive(Math.max(0, pageIndex));
   };
 
   const previousDisabled = active === 0;
   const nextDisabled = active === pages.count() - 1;
 
   return (
-    <div className={styles.paginationControls} ref={controls}>
-      <div className="flex-grow-1"></div>
-      <ul className="pagination">
-        <li className={classNames('page-item', previousDisabled ? 'disabled' : '')}>
+    <>
+      <div className="d-flex justify-content-center">
+        {props.paginationMode === 'manualReveal' && active !== pages.toArray().length - 1 ? (
           <button
-            className="page-link"
-            onClick={() => onSelectPage(active - 1)}
-            disabled={previousDisabled}
-          >
-            Previous
-          </button>
-        </li>
-        {pages.map((p, i) => (
-          <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
-            <button className="page-link" onClick={() => onSelectPage(i)}>
-              {i + 1}
-            </button>
-          </li>
-        ))}
-        <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
-          <button
-            className="page-link"
-            onClick={() => onSelectPage(active + 1)}
-            disabled={nextDisabled}
+            className="btn btn-primary"
+            onClick={() => {
+              onSelectPage(active + 1);
+              updatePaginationState(props.sectionSlug, props.pageAttemptGuid, props.forId, [
+                active + 1,
+              ]);
+            }}
           >
             Next
           </button>
-        </li>
-      </ul>
-      <div className="flex-grow-1"></div>
-    </div>
+        ) : null}
+      </div>
+      <div className={styles.paginationControls} ref={controls}>
+        <div className="flex-grow-1"></div>
+        <ul
+          className="pagination"
+          style={{ visibility: props.paginationMode !== 'normal' ? 'hidden' : 'visible' }}
+        >
+          <li className={classNames('page-item', previousDisabled ? 'disabled' : '')}>
+            <button
+              className="page-link"
+              onClick={() => onSelectPage(active - 1)}
+              disabled={previousDisabled}
+            >
+              Previous
+            </button>
+          </li>
+          {pages.map((p, i) => (
+            <li key={i} className={classNames('page-item', i == active ? 'active' : '')}>
+              <button className="page-link" onClick={() => onSelectPage(i)}>
+                {i + 1}
+              </button>
+            </li>
+          ))}
+          <li className={classNames('page-item', nextDisabled ? 'disabled' : '')}>
+            <button
+              className="page-link"
+              onClick={() => {
+                onSelectPage(active + 1);
+              }}
+              disabled={nextDisabled}
+            >
+              Next
+            </button>
+          </li>
+        </ul>
+        <div className="flex-grow-1"></div>
+      </div>
+    </>
   );
 };
