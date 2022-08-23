@@ -5,19 +5,18 @@ import * as ContentModel from 'data/content/model/elements/types';
 interface ModalProps {
   onDone: (x: any) => void;
   onCancel: () => void;
-  model: ContentModel.Image;
+  model: ContentModel.ImageBlock | ContentModel.ImageInline;
 }
 export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
-  const [value, setValue] = useState(model.alt);
+  const [alt, setAlt] = useState(model.alt);
+  const [width, setWidth] = useState(model.width);
+
   return (
-    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone(value)}>
+    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone({ alt, width })}>
       <div>
-        <h3 className="mb-2">Alternative Text</h3>
-        <p className="mb-4">
-          Write a short description of this image for visitors who are unable to see it.
-        </p>
+        <h3 className="mb-2">Settings</h3>
         <div
-          className="m-auto"
+          className="mx-auto mb-4"
           style={{
             width: 300,
             height: 200,
@@ -26,11 +25,33 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
             backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
           }}
-        ></div>
+        />
+        <h4 className="mb-2">Size</h4>
+        <p className="mb-2">
+          You can manually set the image width here and the height will scale automatically.
+        </p>
+        <div className="mb-4">
+          <span>
+            Width:{' '}
+            <input
+              type="number"
+              value={width}
+              onChange={(e) => {
+                const width = parseInt(e.target.value);
+                !Number.isNaN(width) && setWidth(width);
+              }}
+            />
+          </span>
+        </div>
+        <h4 className="mb-2">Alternative Text</h4>
+        <p className="mb-4">
+          Write a short description of this image for visitors who are unable to see it.
+        </p>
+
         <input
           className="form-control"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={alt}
+          onChange={(e) => setAlt(e.target.value)}
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
         />
       </div>

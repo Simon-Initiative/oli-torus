@@ -4,6 +4,8 @@ defmodule OliWeb.Common.FormatDateTime do
 
   import Oli.Utils, only: [value_or: 2]
 
+  @utc_timezone "Etc/UTC"
+
   @doc """
   Returns a human readable formatted duration
   """
@@ -17,8 +19,7 @@ defmodule OliWeb.Common.FormatDateTime do
   Converts a datetime to a specific timezone based on a user's session or specified timezone
   and returns an ISO 8601 formatted string.
 
-  This session timezone information is set and updated on the timezone api call every time a
-  page is loaded.
+  This session timezone information is fetched from the browser when Torus is loaded for the first time.
 
   ## Examples
       # date can be given a %Plug.Conn{}, %SessionContext{} or local_tz string to localize the datetime
@@ -88,24 +89,31 @@ defmodule OliWeb.Common.FormatDateTime do
   end
 
   @doc """
-  Converts a datetime to a specific timezone based on a user's session. This
-  session timezone information is set and updated on the timezone api call every
-  time a page is loaded.
+  Converts a datetime to a specific timezone based on a user's session.
+  This session timezone information is fetched from the browser when Torus is loaded for the first time.
 
   If NaiveDateTime is given it is assumed to be utc
   """
   def maybe_localized_datetime(%NaiveDateTime{} = naive_date, nil),
-    do: Timex.to_datetime(naive_date, "Etc/UTC")
+    do: {:not_localized, Timex.to_datetime(naive_date, @utc_timezone)}
 
-  def maybe_localized_datetime(%DateTime{} = datetime, nil), do: datetime
+  def maybe_localized_datetime(%NaiveDateTime{} = naive_date, %SessionContext{local_tz: local_tz}) do
+    naive_date
+    |> Timex.to_datetime(@utc_timezone)
+    |> maybe_localized_datetime(local_tz)
+  end
+
+  def maybe_localized_datetime(%DateTime{} = datetime, nil), do: {:not_localized, datetime}
 
   def maybe_localized_datetime(%DateTime{} = datetime, %SessionContext{local_tz: local_tz}),
     do: maybe_localized_datetime(datetime, local_tz)
 
+  def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when local_tz == @utc_timezone, do: {:not_localized, datetime}
+
   def maybe_localized_datetime(%DateTime{} = datetime, local_tz) when is_binary(local_tz) do
     # ensure timezone is a valid
     if Timex.Timezone.exists?(local_tz) do
-      {:localized, Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))}
+      Timex.Timezone.convert(datetime, Timex.Timezone.get(local_tz, Timex.now()))
     else
       datetime
     end
@@ -118,35 +126,35 @@ defmodule OliWeb.Common.FormatDateTime do
   Precision of the datetime can be set to :date, :minutes (default) or :relative
 
   ## Examples
-      iex> dt(datetime)
-      "December 31, 2021 at 11:59:59 PM UTC"
+      iex> format_datetime(datetime)
+      "December 31, 2021 at 11:59 PM MST"
 
-      iex> dt({:localized, datetime_utc})
-      "December 31, 2021 at 11:59:59 PM"
+      iex> format_datetime({:not_localized, datetime})
+      "December 31, 2021 at 5:59 AM UTC"
 
-      iex> dt({:localized, datetime}, precision: :date)
-      "December 31, 2021"
-
-      iex> dt({:localized, datetime}, precision: :minutes)
+      iex> format_datetime(datetime, show_timezone: false)
       "December 31, 2021 at 11:59 PM"
 
-      iex> dt({:localized, datetime}, precision: :relative)
-      "8 minutes ago"
+      iex> format_datetime(datetime, precision: :date)
+      "December 31, 2021 UTC"
 
-      iex> dt(datetime, :relative)
+      iex> format_datetime(datetime, precision: :seconds)
+      "December 31, 2021 at 11:59:59 PM UTC"
+
+      iex> format_datetime(datetime, precision: :relative)
       "5 hours ago"
 
       # author has preference show_relative_dates set to true
-      iex> dt(datetime, author: author)
+      iex> format_datetime(datetime, author: author)
       "8 minutes ago"
   """
   def format_datetime(maybe_localized_datetime, opts \\ [])
 
   def format_datetime(nil, _opts), do: ""
 
-  def format_datetime({:localized, %DateTime{} = datetime}, opts) do
-    # default to showing no timezone if the datetime has been localized
-    format_datetime(datetime, Keyword.put_new(opts, :show_timezone, false))
+  def format_datetime({:not_localized, %DateTime{} = datetime}, opts) do
+    opts = Keyword.put(opts, :show_timezone, true)
+    format_datetime(datetime, opts)
   end
 
   def format_datetime(%DateTime{} = datetime, opts) do
@@ -159,7 +167,6 @@ defmodule OliWeb.Common.FormatDateTime do
 
     show_timezone = Keyword.get(opts, :show_timezone, true)
 
-    # show the timezone if the datetime hasnt been converted to a local timezone
     maybe_timezone =
       if show_timezone do
         " {Zabbr}"
@@ -181,6 +188,46 @@ defmodule OliWeb.Common.FormatDateTime do
         Timex.format!(datetime, "{relative}", :relative)
     end
   end
+
+  @doc """
+  Converts a datestring to a UTC datetime, assuming the input date is in the given timezone.
+
+  ## Examples
+      iex> datestring_to_utc_datetime("2022-05-18T12:35", "US/Arizona")
+      ~U[2022-05-18 19:35:00Z]
+  """
+  def datestring_to_utc_datetime(date, _) when is_nil(date) or date == "" or not is_binary(date), do: nil
+
+  def datestring_to_utc_datetime(date_string, %SessionContext{local_tz: local_tz}) do
+    datestring_to_utc_datetime(date_string, local_tz)
+  end
+
+  def datestring_to_utc_datetime(date_string, local_tz) do
+    date_string
+    |> Timex.parse!("{ISO:Extended}")
+    |> Timex.to_datetime(local_tz)
+    |> DateTime.shift_zone(@utc_timezone)
+    |> elem(1)
+  end
+
+  @doc """
+  Converts a date/time value to a localized DateTime struct.
+
+  ## Examples
+    iex> convert_datetime(~U[2022-06-22 13:58:23Z], "America/Montevideo")
+    #DateTime<2022-06-22 10:58:23.316111-03:00 -03 America/Montevideo>
+
+    iex> convert_datetime(~U[2022-06-22 13:58:23Z], %SessionContext{local_tz: "America/Montevideo"})
+    #DateTime<2022-06-22 10:58:23.316111-03:00 -03 America/Montevideo>
+  """
+  def convert_datetime(date, _) when is_nil(date) or date == "", do: nil
+  def convert_datetime(datetime, %SessionContext{local_tz: local_tz}), do: convert_datetime(datetime, local_tz)
+  def convert_datetime(datetime, timezone), do: Timex.to_datetime(datetime, timezone)
+
+  @doc """
+  Returns the UTC timezone.
+  """
+  def default_timezone, do: @utc_timezone
 
   defp author_format_preference(nil), do: nil
 

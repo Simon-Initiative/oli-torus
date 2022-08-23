@@ -17,6 +17,7 @@ export type RuleOperator =
   | 'contains'
   | 'notcontains'
   | 'regex'
+  | 'equals'
   // numeric
   | 'gt'
   | 'gte'
@@ -32,6 +33,7 @@ export function isOperator(s: string): s is RuleOperator {
     'contains',
     'notcontains',
     'regex',
+    'equals',
     'gt',
     'gte',
     'eq',
@@ -43,7 +45,16 @@ export function isOperator(s: string): s is RuleOperator {
   ].includes(s);
 }
 
+export const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
+export const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+
+export const unescapeSingleOrMultipleInputs = (
+  s: string | [string, string],
+): string | [string, string] =>
+  typeof s === 'string' ? unescapeInput(s) : [unescapeInput(s[0]), unescapeInput(s[1])];
+
 // text
+export const equalsRule = (input: string) => `input equals {${input}}`;
 export const matchRule = (input: string) => `input like {${input}}`;
 export const containsRule = (input: string) => `input contains {${input}}`;
 export const notContainsRule = (input: string) => invertRule(containsRule(input));
@@ -93,8 +104,11 @@ export const makeRule = (operator: RuleOperator, input: string | [string, string
         return notContainsRule(input);
       case 'regex':
         return matchRule(input);
+      case 'equals':
+        return equalsRule(input);
     }
   }
+
   switch (operator) {
     case 'btw':
       return btwRule(input[0], input[1]);
@@ -113,7 +127,7 @@ export const parseInputFromRule = (rule: string) =>
   });
 
 export const parseSingleInput = (rule: string) =>
-  rule.substring(rule.indexOf('{') + 1, rule.indexOf('}'));
+  unescapeInput(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}')));
 
 export const parseOperatorFromRule = (rule: string): RuleOperator => {
   switch (true) {
@@ -124,6 +138,8 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
       return 'contains';
     case rule.includes('like'):
       return 'regex';
+    case rule.includes('equals'):
+      return 'equals';
 
     // numeric
     case ['!', '>', '<', '='].every((op) => rule.includes(op)):
@@ -148,7 +164,7 @@ export const parseOperatorFromRule = (rule: string): RuleOperator => {
 };
 
 export const isTextRule = (rule: string): boolean =>
-  !!rule.match(/contains/) || !!rule.match(/like/);
+  !!rule.match(/contains/) || !!rule.match(/like/) || !!rule.match(/equals/);
 
 // Explicitly match all ids in `toMatch` and do not match any ids in `allChoiceIds` \ `toMatch`
 export const matchListRule = (all: string[], toMatch: string[]) => {

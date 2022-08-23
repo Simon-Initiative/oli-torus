@@ -1,16 +1,16 @@
 {
-    "id": "janus_multi_line_text",
-    "friendlyName": "MultiLine Text Input",
-    "description": "An input for longer text supporting multiple lines.",
-    "icon": "icon-part-longText.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-multi-line-text",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-multi-line-text",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_multi_line_text",
+  "friendlyName": "MultiLine Text Input",
+  "description": "An input for longer text supporting multiple lines.",
+  "icon": "icon-part-longText.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-multi-line-text",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-multi-line-text",
+    "entry": "./authoring-entry.ts"
+  }
 }

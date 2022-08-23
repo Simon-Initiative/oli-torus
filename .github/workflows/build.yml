@@ -8,6 +8,7 @@ on:
 
 jobs:
   elixir-build-test:
+    name: Elixir build and test
     runs-on: ubuntu-latest
 
     env:
@@ -16,7 +17,7 @@ jobs:
 
     steps:
       - name: 🛎️ Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: 🔧 Configure
         run: |
@@ -27,6 +28,26 @@ jobs:
 
       - name: 🗄 Start test database
         run: docker-compose up -d postgres
+
+      - name: 💾 Restore the deps cache
+        id: mix-deps-cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: 💾 Restore the Node.js cache
+        id: yarn-cache
+        uses: actions/cache@v3
+        with:
+          path: assets/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('assets/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
@@ -40,23 +61,61 @@ jobs:
       - name: 🔨 Build dependencies
         run: mix deps.compile
 
-      - name: 🔨 Build project
-        run: set -a;source oli.env && mix clean && mix compile --warnings-as-errors
+      - name: 🧹 Clean on master
+        if: github.ref == 'refs/heads/master'
+        run: set -a;source oli.env && mix clean
 
-      - name: ▶️ Run tests
+      - name: 🔨 Build project
+        run: set -a;source oli.env && mix compile --warnings-as-errors
+
+      - name: ▶️ Run unit tests
         run: set -a;source oli.env && MIX_ENV=test mix ecto.reset && mix test
 
-  ts-build-test:
+      - name: 📦 Install node_module dependencies
+        run: yarn --cwd assets --frozen-lockfile
+
+      - name: ▶️ Run integration tests
+        run: |
+          /usr/local/share/chrome_driver/chromedriver &
+          timeout 90 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' localhost:9515)" != "404" ]]; do sleep 1; done' || false
+          set -a;source oli.env && MIX_ENV=hound mix test.hound
+
+      - name: 📈 Save test results
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: integration-test-results
+          path: test-results
+          if-no-files-found: ignore
+
+  check-simon-token:
+    name: Check simon-bot access token
     runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check_token.outputs.available }}
+    steps:
+      - name: Check whether SIMON_BOT_PERSONAL_ACCESS_TOKEN is set
+        id: check_token
+        run: echo "::set-output name=available::$(if [ "${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}" != "" ] ; then echo true ; else echo false ; fi)"
+
+  auto-format:
+    name: Auto format and lint
+    runs-on: ubuntu-latest
+    needs: check-simon-token
+    if: needs.check-simon-token.outputs.available == 'true'
 
     steps:
       - name: 🛎️ Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.SIMON_BOT_PERSONAL_ACCESS_TOKEN }}
 
       - name: 🔧 Configure
         uses: actions/setup-node@v1
         with:
-          node-version: '16.13.2'
+          node-version: "16.14.2"
 
       - name: 🧪 Setup elixir
         uses: erlef/setup-elixir@v1
@@ -67,14 +126,52 @@ jobs:
       - name: ⬇️ Install elixir dependencies
         run: mix deps.get
 
-      - name: Install node_module dependencies 📦
-        run: npm install -g yarn && cd assets && yarn
+      - name: 📦 Install node_module dependencies
+        run: yarn --cwd assets --frozen-lockfile
+
+      - name: 🤖 Auto format
+        run: yarn --cwd assets run format
+
+      - name: ✅ Commit
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: Auto format
+          committer_name: Simon Bot (GitHub Actions)
+          committer_email: simondevbot@gmail.com
+
+  ts-build-test:
+    name: TypeScript build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: 🔧 Configure
+        uses: actions/setup-node@v1
+        with:
+          node-version: "16.14.2"
+
+      - name: 🧪 Setup elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: 1.13.2 # Define the elixir version [required]
+          otp-version: 24.0 # Define the OTP version [required]
+
+      - name: ⬇️ Install elixir dependencies
+        run: mix deps.get
+
+      - name: 📦 Install node_module dependencies
+        run: yarn --cwd assets --frozen-lockfile
 
       - name: 🧹 Lint
-        run: cd assets && npm run lint
+        run: cd assets && yarn run prettier && yarn run lint
 
       - name: 🔨 Build
-        run: cd assets && npm run deploy
+        run: yarn --cwd assets run deploy
 
       - name: ⚙️ Test
-        run: cd assets && npm run test
+        run: yarn --cwd assets run test

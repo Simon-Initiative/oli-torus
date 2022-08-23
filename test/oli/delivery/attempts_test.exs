@@ -11,6 +11,8 @@ defmodule Oli.Delivery.AttemptsTest do
   alias Oli.Delivery.Page.PageContext
   alias Oli.Delivery.Attempts.Core.{ClientEvaluation, StudentInput, ActivityAttempt}
 
+  import Oli.Factory
+
   describe "creating the attempt tree records" do
     setup do
       content1 = %{
@@ -76,7 +78,8 @@ defmodule Oli.Delivery.AttemptsTest do
     } do
       Attempts.track_access(p1.resource.id, section.id, user.id)
 
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id = UUID.uuid4()
 
       refute Attempts.has_any_attempts?(user, section, p1.revision.resource_id)
 
@@ -85,6 +88,7 @@ defmodule Oli.Delivery.AttemptsTest do
           latest_resource_attempt: nil,
           page_revision: p1.revision,
           section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
           user_id: user.id,
           activity_provider: activity_provider,
           blacklisted_activity_ids: [],
@@ -142,20 +146,39 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id)
 
       # Page 1
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
-        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       {:error, {:active_attempt_present}} =
-        PageLifecycle.start(revision.slug, section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       # No page
       {:error, {:not_found}} =
-        PageLifecycle.start("garbage slug", section.slug, user1.id, activity_provider)
+        PageLifecycle.start(
+          "garbage slug",
+          section.slug,
+          datashop_session_id,
+          user1.id,
+          activity_provider
+        )
 
       # The started attempt should be the latest attempt for this user
       latest_attempt = Attempts.get_latest_resource_attempt(resource.id, section.slug, user1.id)
@@ -166,6 +189,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id,
           user1.id,
           activity_provider
         )
@@ -177,16 +201,19 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
-      PageContext.create_for_visit(section, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
+      PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
       # User1 - same as above
       {:ok, %AttemptState{resource_attempt: resource_attempt}} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -198,6 +225,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -208,13 +236,20 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
 
       # Start an attempt, should have same results as user1 above
       {:ok, %AttemptState{resource_attempt: resource_attempt2}} =
-        PageLifecycle.start(revision.slug, section.slug, user2.id, activity_provider)
+        PageLifecycle.start(
+          revision.slug,
+          section.slug,
+          datashop_session_id_user2,
+          user2.id,
+          activity_provider
+        )
 
       latest_attempt2 = Attempts.get_latest_resource_attempt(resource.id, section.slug, user2.id)
       assert latest_attempt2.id == resource_attempt2.id
@@ -223,6 +258,7 @@ defmodule Oli.Delivery.AttemptsTest do
         PageLifecycle.visit(
           revision,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
@@ -342,20 +378,22 @@ defmodule Oli.Delivery.AttemptsTest do
       graded_page: %{revision: revision},
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id_user1 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
 
       access =
-        Attempts.get_graded_resource_access_for_context(section.slug)
+        Attempts.get_graded_resource_access_for_context(section.id)
         |> Enum.filter(fn a -> a.resource_id == revision.resource_id && a.user_id == user1.id end)
         |> hd
 
@@ -369,38 +407,87 @@ defmodule Oli.Delivery.AttemptsTest do
       user1: user1,
       user2: user2
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id_user1 = UUID.uuid4()
+      datashop_session_id_user2 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
 
-      PageContext.create_for_visit(section, revision.slug, user2)
+      PageContext.create_for_visit(section, revision.slug, user2, datashop_session_id_user2)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user2,
           user2.id,
           activity_provider
         )
 
-      accesses1 = Attempts.get_graded_resource_access_for_context(section.slug, [user1.id])
+      accesses1 = Attempts.get_graded_resource_access_for_context(section.id, [user1.id])
       assert Enum.all?(accesses1, fn a -> a.user_id == user1.id end)
 
-      accesses2 = Attempts.get_graded_resource_access_for_context(section.slug, [user2.id])
+      accesses2 = Attempts.get_graded_resource_access_for_context(section.id, [user2.id])
       assert Enum.all?(accesses2, fn a -> a.user_id == user2.id end)
 
       accesses_both =
-        Attempts.get_graded_resource_access_for_context(section.slug, [user1.id, user2.id])
+        Attempts.get_graded_resource_access_for_context(section.id, [user1.id, user2.id])
 
       assert length(accesses_both) == length(accesses1) + length(accesses2)
+    end
+
+    test "get graded resource accesses where the last lms sync failed - returns empty when no failed sync exists" do
+      user = insert(:user)
+
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} = section_with_assessment(%{})
+      last_grade_update = insert(:lms_grade_update)
+
+      insert(:resource_access,
+        user: user,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      assert [] == Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)
+    end
+
+    test "get graded resource accesses where the last lms sync failed" do
+      user1 = insert(:user)
+      user2 = insert(:user)
+
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} = section_with_assessment(%{})
+      last_successful_grade_update = insert(:lms_grade_update)
+      last_grade_update = insert(:lms_grade_update)
+
+      insert(:resource_access,
+        user: user1,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: last_successful_grade_update.id,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      insert(:resource_access,
+        user: user2,
+        section: section,
+        resource: page_revision.resource,
+        last_successful_grade_update_id: nil,
+        last_grade_update_id: last_grade_update.id
+      )
+
+      assert length(Attempts.get_failed_grade_sync_resource_accesses_for_section(section.slug)) ==
+               2
     end
 
     test "get latest attempt - activity attempts", %{
@@ -432,13 +519,7 @@ defmodule Oli.Delivery.AttemptsTest do
     end
 
     test "get latest attempts - part attempts", %{attempt1: attempt1} do
-      [{_activity_attempt, part_attempt_map}] =
-        Hierarchy.get_latest_attempts(attempt1.id)
-        |> Map.values()
-
-      [part_attempt] =
-        part_attempt_map
-        |> Map.values()
+      part_attempt = get_latest_resource_part_attempt(attempt1.id)
 
       assert %Oli.Delivery.Attempts.Core.PartAttempt{} = part_attempt
       assert part_attempt.attempt_number == 1
@@ -458,14 +539,16 @@ defmodule Oli.Delivery.AttemptsTest do
       section: section,
       user1: user1
     } do
-      activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id_user1 = UUID.uuid4()
 
-      PageContext.create_for_visit(section, revision.slug, user1)
+      PageContext.create_for_visit(section, revision.slug, user1, datashop_session_id_user1)
 
       {:ok, %AttemptState{} = _} =
         PageLifecycle.start(
           revision.slug,
           section.slug,
+          datashop_session_id_user1,
           user1.id,
           activity_provider
         )
@@ -486,6 +569,8 @@ defmodule Oli.Delivery.AttemptsTest do
     alias Oli.Activities.ModeSpecification
 
     test "processes a set of client evaluations for an activity that permits client evaluation" do
+      datashop_session_id = UUID.uuid4()
+
       # create mock activity which allows client evaluation
       {:ok, %Activities.ActivityRegistration{}} =
         Activities.register_activity(%Manifest{
@@ -493,6 +578,8 @@ defmodule Oli.Delivery.AttemptsTest do
           friendlyName: "Test Client Eval",
           description: "A test activity that allows client evaluation",
           delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
+          icon: "nothing",
+          petiteLabel: "test",
           authoring: %ModeSpecification{
             element: "test-client-eval",
             entry: "./authoring-entry.ts"
@@ -502,7 +589,12 @@ defmodule Oli.Delivery.AttemptsTest do
         })
 
       # create an example project with the activity in a graded page
-      %{activity_attempt1: activity_attempt1, part1_attempt1: part1_attempt1, section: section} =
+      %{
+        attempt1: attempt1,
+        activity_attempt1: activity_attempt1,
+        part1_attempt1: part1_attempt1,
+        section: section
+      } =
         Seeder.base_project_with_resource2()
         |> Seeder.create_section()
         |> Seeder.add_user(%{}, :user1)
@@ -575,22 +667,29 @@ defmodule Oli.Delivery.AttemptsTest do
       assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
-               client_evaluations
+               client_evaluations,
+               datashop_session_id
              ) ==
                {:ok,
                 [
-                  %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
+                  %Oli.Delivery.Evaluation.Actions.FeedbackAction{
                     attempt_guid: part1_attempt1.attempt_guid,
                     feedback: %Oli.Activities.Model.Feedback{content: "some-feedback", id: "1"},
                     out_of: 1,
                     score: 1,
                     error: nil,
-                    type: "FeedbackActionResult"
+                    type: "FeedbackAction"
                   }
                 ]}
+
+      # verify the latest part attempt includes the datashop session id
+      assert get_latest_resource_part_attempt(attempt1.id).datashop_session_id ==
+               datashop_session_id
     end
 
     test "fails to process a set of client evaluations for an activity that does not permit client evaluation" do
+      datashop_session_id = UUID.uuid4()
+
       # create mock activity which does not allow client evaluation
       {:ok, %Activities.ActivityRegistration{}} =
         Activities.register_activity(%Manifest{
@@ -598,6 +697,8 @@ defmodule Oli.Delivery.AttemptsTest do
           friendlyName: "Test Client Eval",
           description: "A test activity that allows client evaluation",
           delivery: %ModeSpecification{element: "test-client-eval", entry: "./delivery-entry.ts"},
+          icon: "nothing",
+          petiteLabel: "test",
           authoring: %ModeSpecification{
             element: "test-client-eval",
             entry: "./authoring-entry.ts"
@@ -676,12 +777,25 @@ defmodule Oli.Delivery.AttemptsTest do
         }
       ]
 
-      # check that client evaluation submission succeeds
+      # verify the client evaluation submission fails with error message
       assert Evaluate.apply_client_evaluation(
                context_id,
                activity_attempt_guid,
-               client_evaluations
+               client_evaluations,
+               datashop_session_id
              ) == {:error, "Activity type does not allow client evaluation"}
     end
+  end
+
+  defp get_latest_resource_part_attempt(resource_attempt_id) do
+    [{_activity_attempt, part_attempt_map}] =
+      Hierarchy.get_latest_attempts(resource_attempt_id)
+      |> Map.values()
+
+    [part_attempt] =
+      part_attempt_map
+      |> Map.values()
+
+    part_attempt
   end
 end

@@ -1,5 +1,5 @@
 import { Transforms, Editor, Element } from 'slate';
-import { isTopLevel, isActive } from 'components/editing/utils';
+import { isTopLevel, isActive } from 'components/editing/slateUtils';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Model } from 'data/content/model/elements/factories';
 

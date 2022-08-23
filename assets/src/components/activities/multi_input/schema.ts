@@ -15,20 +15,21 @@ import { assertNever } from 'utils/common';
 export type MultiInput = Dropdown | FillInTheBlank;
 export type MultiInputDelivery =
   | { id: string; inputType: 'dropdown'; options: SelectOption[] }
-  | { id: string; inputType: 'text' | 'numeric' };
+  | { id: string; inputType: 'text' | 'numeric' | 'math' };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
   partId: string;
   choiceIds: ChoiceId[];
 }
+
 export interface FillInTheBlank extends Identifiable {
-  inputType: 'text' | 'numeric';
+  inputType: 'text' | 'numeric' | 'math';
   partId: string;
 }
 
-export type MultiInputType = 'dropdown' | 'text' | 'numeric';
-export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric'];
+export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math';
+export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric', 'math'];
 
 export const multiInputTypeFriendly = (type: MultiInputType): string =>
   Maybe.maybe(
@@ -36,6 +37,7 @@ export const multiInputTypeFriendly = (type: MultiInputType): string =>
       dropdown: 'Dropdown',
       numeric: 'Number',
       text: 'Text',
+      math: 'Math',
     }[type],
   ).valueOr(assertNever(type));
 

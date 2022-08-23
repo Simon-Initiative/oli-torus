@@ -1,3 +1,4 @@
+import { Environment } from 'janus-script';
 import React, { CSSProperties, useCallback, useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { parseBool } from 'utils/common';
@@ -21,7 +22,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
   const [showPopup, setShowPopup] = useState(false);
   const [popupVisible, setPopupVisible] = useState(true);
   const [iconSrc, setIconSrc] = useState('');
-
+  const [scriptEnv, setScriptEnv] = useState<any>();
   const [initSnapshot, setInitSnapshot] = useState<InitResultProps>();
 
   const [activityHost, setActivityHost] = useState<any>(null);
@@ -85,6 +86,10 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
     }
     if (initResult.context.mode === contexts.REVIEW) {
       setContext(false);
+    }
+    if (initResult.env) {
+      const env = new Environment(initResult.env);
+      setScriptEnv(env);
     }
     handleStylingChanges();
     setReady(true);
@@ -258,6 +263,7 @@ const Popup: React.FC<PartComponentProps<PopupModel>> = (props) => {
       snapshot: initSnapshot.snapshot,
       context: initSnapshot.context,
       onClose: () => handleToggleIcon(false),
+      env: scriptEnv,
     };
     return activityHost && ReactDOM.createPortal(<PopupWindow {...windowProps} />, activityHost);
   };

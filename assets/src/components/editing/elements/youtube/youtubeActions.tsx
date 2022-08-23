@@ -33,10 +33,7 @@ export const insertYoutube = createButtonCommandDesc({
   },
 });
 
-const dismiss = () => window.oliDispatch(modalActions.dismiss());
-const display = (c: any) => window.oliDispatch(modalActions.display(c));
-
-export type YoutubeCreationProps = {
+type YoutubeCreationProps = {
   onChange: (src: string) => void;
   onEdit: (src: string) => void;
 };
@@ -54,7 +51,7 @@ const YoutubeCreation = (props: YoutubeCreationProps) => {
             props.onChange(e.target.value);
             setSrc(e.target.value);
           }}
-          onKeyPress={(e) => onEnterApply(e, () => props.onEdit(src))}
+          onKeyPress={(e: any) => onEnterApply(e, () => props.onEdit(src))}
           className="form-control mr-sm-2"
         />
         <div className="mb-2">
@@ -68,10 +65,12 @@ const YoutubeCreation = (props: YoutubeCreationProps) => {
 export function selectYoutube(): Promise<string | null> {
   return new Promise((resolve, _reject) => {
     const selected: { src: null | string } = { src: null };
+    const dismiss = () => window.oliDispatch(modalActions.dismiss());
+    const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
     const selection = (
       <ModalSelection
-        title="Insert Webpage"
+        title="Insert YouTube"
         onInsert={() => {
           dismiss();
           resolve(selected.src ? selected.src : '');

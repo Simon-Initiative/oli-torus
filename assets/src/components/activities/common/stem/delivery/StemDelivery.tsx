@@ -1,8 +1,10 @@
-import { useDeliveryElementContext } from 'components/activities/DeliveryElement';
+import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
 import { HasStem, Stem } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
+import { ActivityDeliveryState } from 'data/activities/DeliveryState';
+import { useSelector } from 'react-redux';
 import './StemDelivery.scss';
 
 interface StemProps {
@@ -23,6 +25,7 @@ interface Props {
   className?: string;
 }
 export const StemDeliveryConnected: React.FC<Props> = (props) => {
-  const { model, writerContext } = useDeliveryElementContext<HasStem>();
-  return <StemDelivery stem={model.stem} context={writerContext} {...props} />;
+  const { writerContext } = useDeliveryElementContext<HasStem>();
+  const uiState = useSelector((state: ActivityDeliveryState) => state);
+  return <StemDelivery stem={(uiState.model as any).stem} context={writerContext} {...props} />;
 };

@@ -12,6 +12,7 @@ defmodule OliWeb.Progress.StudentView do
   alias OliWeb.Common.Table.SortableTableModel
   alias OliWeb.Sections.Mount
   alias OliWeb.Common.SessionContext
+  alias OliWeb.Router.Helpers, as: Routes
 
   data breadcrumbs, :any
   data title, :string, default: "Student Progress"
@@ -22,16 +23,17 @@ defmodule OliWeb.Progress.StudentView do
   data resource_accesses, :map
   data page_nodes, :list
 
-  defp set_breadcrumbs(type, section) do
+  def set_breadcrumbs(type, section, user_id) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
-    |> breadcrumb(section)
+    |> breadcrumb(section, user_id)
   end
 
-  def breadcrumb(previous, _) do
+  def breadcrumb(previous, section, user_id) do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Student Progress"
+          full_title: "Student Progress",
+          link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug, user_id)
         })
       ]
   end
@@ -58,7 +60,16 @@ defmodule OliWeb.Progress.StudentView do
                 section_slug,
                 user_id
               )
-              |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
+              |> Enum.reduce(%{}, fn r, m ->
+                # limit score decimals to two significant figures, rounding up
+                r =
+                  case r.score do
+                    nil -> r
+                    _ -> Map.put(r, :score, format_score(r.score))
+                  end
+
+                Map.put(m, r.resource_id, r)
+              end)
 
             hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
 
@@ -80,7 +91,8 @@ defmodule OliWeb.Progress.StudentView do
                table_model: table_model,
                page_nodes: page_nodes,
                resource_accesses: resource_accesses,
-               breadcrumbs: set_breadcrumbs(type, section),
+               breadcrumbs: set_breadcrumbs(type, section, user_id),
+               delivery_breadcrumb: true,
                section: section,
                user: user
              )}

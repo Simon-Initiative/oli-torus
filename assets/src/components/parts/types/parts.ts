@@ -94,3 +94,13 @@ export const defaultCapabilities = {
   duplicate: true,
   configure: false,
 };
+
+export interface Expression {
+  item?: unknown;
+  part?: unknown;
+  suggestedFix?: string;
+  owner: any[]; // TODO
+  formattedExpression: boolean;
+  key?: string;
+  message?: string;
+}

@@ -71,6 +71,7 @@ defmodule OliWeb.Api.PaymentController do
   Create a batch of payment codes for a specific product.
   """
   @doc parameters: [],
+       security: [%{"bearer-authorization" => []}],
        request_body:
          {"Request body for making a payment code batch request", "application/json",
           OliWeb.Api.PaymentController.BatchPaymentCodeRequest, required: true},

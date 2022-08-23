@@ -1,0 +1,11 @@
+.test-results {
+  display: inline-block;
+  width: 220px;
+  color: white;
+
+  svg {
+    height: 50px;
+    margin: 10px 0px;
+    transform: rotate(-90deg);
+  }
+}

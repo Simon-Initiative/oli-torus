@@ -12,6 +12,7 @@ defmodule Oli.Authoring.Course.Project do
     field :version, :string
     field :visibility, Ecto.Enum, values: [:authors, :selected, :global], default: :authors
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
+    field :allow_duplication, :boolean, default: false
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
     belongs_to :family, Oli.Authoring.Course.Family
@@ -30,6 +31,8 @@ defmodule Oli.Authoring.Course.Project do
 
     has_many :publications, Oli.Publishing.Publication
 
+    belongs_to :publisher, Oli.Inventories.Publisher
+
     field :owner_id, :integer, virtual: true
     field :owner_name, :string, virtual: true
 
@@ -47,9 +50,12 @@ defmodule Oli.Authoring.Course.Project do
       :family_id,
       :project_id,
       :visibility,
-      :status
+      :status,
+      :allow_duplication,
+      :publisher_id
     ])
-    |> validate_required([:title, :version, :family_id])
+    |> validate_required([:title, :version, :family_id, :publisher_id])
+    |> foreign_key_constraint(:publisher_id)
     |> Slug.update_never("projects")
   end
 end

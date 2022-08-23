@@ -34,9 +34,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
       # Consider completed jobs to be duplicates the entire time they are retained
       period: :infinity,
 
-      # Only detect conflicts on jobs that are available or scheduled.  Once a job is executing
-      # or finished we no longer want to consider it for duplicate checks
-      states: [:available, :scheduled]
+      # Only detect conflicts on jobs that are available, scheduled, or retryable.
+      # Once a job is completed or discarded we no longer want to consider it for duplicate checks
+      states: [:available, :scheduled, :retryable]
     ]
 
   import Ecto.Query, warn: false
@@ -277,5 +277,9 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.GradeUpdateWorker do
       }
     end
     |> track(:not_synced, nil, resource_access, type, job, section)
+  end
+
+  def get_jobs() do
+    Repo.all(from(j in Oban.Job, where: j.queue == "grades"))
   end
 end

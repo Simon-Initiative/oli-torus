@@ -17,7 +17,6 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~U[2010-04-17 00:00:00.000000Z],
-      timezone: "some timezone",
       title: "some title",
       context_id: "context_id"
     }
@@ -53,17 +52,12 @@ defmodule Oli.SectionsTest do
       Sections.enroll(user2.id, section.id, [ContextRoles.get_role(:context_learner)])
       Sections.enroll(user3.id, section.id, [ContextRoles.get_role(:context_learner)])
 
-      assert length(Sections.list_enrollments(section.slug)) == 3
+      enrollments = Sections.list_enrollments(section.slug)
 
-      [one, two, three] = Sections.list_enrollments(section.slug)
+      assert enrollments |> Enum.map(& &1.user_id) |> Enum.sort() ==
+               [user1, user2, user3] |> Enum.map(& &1.id) |> Enum.sort()
 
-      assert one.user_id == user1.id
-      assert two.user_id == user2.id
-      assert three.user_id == user3.id
-
-      assert one.section_id == section.id
-      assert two.section_id == section.id
-      assert three.section_id == section.id
+      assert enrollments |> Enum.map(& &1.section_id) |> Enum.uniq() == [section.id]
 
       assert ContextRoles.has_role?(
                user1,
@@ -155,7 +149,6 @@ defmodule Oli.SectionsTest do
       open_and_free: true,
       registration_open: true,
       start_date: ~U[2010-04-17 00:00:00.000000Z],
-      timezone: "some timezone",
       title: "some title",
       context_id: "some context_id"
     }
@@ -164,7 +157,6 @@ defmodule Oli.SectionsTest do
       open_and_free: false,
       registration_open: false,
       start_date: ~U[2011-05-18 00:00:00.000000Z],
-      timezone: "some updated timezone",
       title: "some updated title",
       context_id: "some updated context_id"
     }
@@ -173,7 +165,6 @@ defmodule Oli.SectionsTest do
       open_and_free: nil,
       registration_open: nil,
       start_date: nil,
-      timezone: nil,
       title: nil,
       context_id: nil
     }
@@ -201,8 +192,8 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~U[2010-04-17 00:00:00Z]
       assert section.registration_open == true
       assert section.start_date == ~U[2010-04-17 00:00:00Z]
-      assert section.timezone == "some timezone"
       assert section.title == "some title"
+      refute section.pay_by_institution
     end
 
     test "list_sections/0 returns all sections", %{section: section} do
@@ -250,6 +241,27 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
+    test "get_section_from_lti_params/1 returns the section from the given lti params when aud claim is a list", %{
+      section: section,
+      institution: institution
+    } do
+      jwk = jwk_fixture()
+      registration = registration_fixture(%{tool_jwk_id: jwk.id})
+
+      deployment =
+        deployment_fixture(%{institution_id: institution.id, registration_id: registration.id})
+
+      {:ok, section} = Sections.update_section(section, %{lti_1p3_deployment_id: deployment.id})
+
+      lti_params =
+        Oli.Lti.TestHelpers.all_default_claims()
+        |> put_in(["iss"], registration.issuer)
+        |> put_in(["aud"], [registration.client_id])
+        |> put_in(["https://purl.imsglobal.org/spec/lti/claim/context", "id"], section.context_id)
+
+      assert Sections.get_section_from_lti_params(lti_params).id == section.id
+    end
+
     test "create_section/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_attrs)
     end
@@ -259,7 +271,6 @@ defmodule Oli.SectionsTest do
       assert section.end_date == ~U[2011-05-18 00:00:00Z]
       assert section.registration_open == false
       assert section.start_date == ~U[2011-05-18 00:00:00Z]
-      assert section.timezone == "some updated timezone"
       assert section.title == "some updated title"
     end
 
@@ -360,6 +371,19 @@ defmodule Oli.SectionsTest do
       assert Enum.find(section_resources, &(&1.resource_id == latest4.id)) == nil
       assert Enum.find(section_resources, &(&1.resource_id == parent4.id)) == nil
     end
+
+    test "get_existing_slugs/1 returns an empty list when passing no slugs" do
+      assert Sections.get_existing_slugs([]) == []
+    end
+
+    test "get_existing_slugs/1 returns the existing slugs from the input list" do
+      slugs =
+        insert_pair(:section_resource)
+        |> Enum.map(& &1.slug)
+        |> Enum.sort()
+
+      assert Sections.get_existing_slugs(["another_slug" | slugs]) |> Enum.sort() == slugs
+    end
   end
 
   describe "section updates" do
@@ -379,7 +403,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -434,7 +457,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -549,7 +571,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -696,7 +717,6 @@ defmodule Oli.SectionsTest do
       {:ok, section} =
         Sections.create_section(%{
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: institution.id,
@@ -844,7 +864,8 @@ defmodule Oli.SectionsTest do
           destination_index
         )
 
-      hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
+      hierarchy =
+        Hierarchy.find_and_update_node(hierarchy, updated)
         |> Hierarchy.finalize()
 
       project_publications = Sections.get_pinned_project_publications(section.id)

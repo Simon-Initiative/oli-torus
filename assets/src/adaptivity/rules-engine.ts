@@ -10,6 +10,7 @@ import {
   RuleProperties,
   TopLevelCondition,
 } from 'json-rules-engine';
+import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import { CapiVariableTypes, JanusConditionProperties } from './capi';
 import { janus_std } from './janus-scripts/builtin_functions';
@@ -22,9 +23,9 @@ import {
   evalAssignScript,
   evalScript,
   extractAllExpressionsFromText,
+  extractUniqueVariablesFromText,
   getExpressionStringForValue,
   getValue,
-  looksLikeJson,
 } from './scripting';
 
 export interface JanusRuleProperties extends RuleProperties {
@@ -79,6 +80,34 @@ const evaluateValueExpression = (value: string, env: Environment) => {
         result = evaluatedValue.result;
       }
     } catch (ex) {
+      // if it's and expression and it wasn't evaluated till this point then it means the equation is something like
+      //{17/1.5*{q:1500660404583:613|stage.DrinkVolume.value}*{q:1500660389923:565|variables.UnknownBeaker}*176.12} and script engine can't evaluate the expression if it
+      // starts with {} and the brackets does not begin with an actual variable. we need to send it as '17/1.5*{q:1500660404583:613|stage.DrinkVolume.value}*{q:1500660389923:565|variables.UnknownBeaker}*176.12'
+      const expressions = extractAllExpressionsFromText(value);
+      //adding more safety so that it does not break anything else.
+      // A expression will not have a ';' inside it. So if there is a ';' inside it, it is CSS. Ignore that
+      const updatedVariables = expressions.filter((e) => !e.includes(';'));
+      const updatedValue = typeof value === 'string' ? value.trim() : value;
+      if (
+        typeof updatedValue === 'string' &&
+        updatedVariables?.length &&
+        updatedValue[0] === '{' &&
+        updatedValue[updatedValue.length - 1] === '}'
+      ) {
+        try {
+          const evaluatedValue = evalScript(
+            updatedValue.substring(1, updatedValue.length - 1),
+            env,
+          );
+
+          const canEval = evaluatedValue?.result !== undefined && !evaluatedValue.result.message;
+          if (canEval) {
+            result = evaluatedValue.result;
+          }
+        } catch (ex) {
+          return result;
+        }
+      }
       return result;
     }
   }
@@ -130,6 +159,21 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         }
         const evaluatedValue = evaluateValueExpression(actualValue, env);
         modifiedValue = `${evaluatedValue},${toleranceValue}`;
+      } else if (condition?.operator === 'inRange' || condition?.operator === 'notInRange') {
+        // these have min, max, and optionally (unused) tolerance
+        if (Array.isArray(ogValue)) {
+          modifiedValue = ogValue
+            .map((value) =>
+              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+            )
+            .join(',');
+        } else if (typeof ogValue === 'string') {
+          modifiedValue = parseArray(ogValue)
+            .map((value) =>
+              typeof value === 'string' ? evaluateValueExpression(value, env) : value,
+            )
+            .join(',');
+        }
       } else if (typeof ogValue === 'string' && ogValue.indexOf('{') === -1) {
         modifiedValue = ogValue;
       } else {
@@ -153,6 +197,28 @@ const processRules = (rules: JanusRuleProperties[], env: Environment) => {
         ogValue.slice(-1) !== ']'
       ) {
         modifiedValue = `[${ogValue}]`;
+      }
+
+      if (
+        condition?.type === CapiVariableTypes.ARRAY &&
+        (condition?.operator === 'containsAnyOf' || condition?.operator === 'notContainsAnyOf')
+      ) {
+        const targetValue = getValue(condition.fact, env);
+        if (
+          typeof targetValue === 'string' &&
+          targetValue.charAt(0) !== '[' &&
+          targetValue.slice(-1) !== ']'
+        ) {
+          const modifiedTargetValue = `[${targetValue}]`;
+          const updateAttempt = [
+            {
+              target: `${condition.fact}`,
+              operator: '=',
+              value: modifiedTargetValue,
+            },
+          ];
+          bulkApplyState(updateAttempt, env);
+        }
       }
       condition.value = modifiedValue;
     });
@@ -262,69 +328,87 @@ export const defaultWrongRule = {
 };
 
 export const findReferencedActivitiesInConditions = (conditions: any) => {
-  const referencedActivities: Set<string> = new Set();
+  const referencedKeys = getReferencedKeysInConditions(conditions);
+  const sequenceRefs = referencedKeys
+    .filter((key) => key.indexOf('|stage.') !== -1)
+    .map((key) => key.split('|')[0]);
 
-  conditions.forEach((condition: any) => {
-    if (condition.fact && condition.fact.indexOf('|stage.') !== -1) {
-      const referencedSequenceId = condition.fact.split('|stage.')[0];
-      referencedActivities.add(referencedSequenceId);
-    }
-    if (typeof condition.value === 'string' && condition.value.indexOf('|stage.') !== -1) {
-      // value could have more than one reference inside it
-      const exprs = extractAllExpressionsFromText(condition.value);
-      exprs.forEach((expr: string) => {
-        if (expr.indexOf('|stage.') !== -1) {
-          const referencedSequenceId = expr.split('|stage.')[0];
-          referencedActivities.add(referencedSequenceId);
-        }
-      });
-    }
-    if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
-      childRefs.forEach((ref) => referencedActivities.add(ref));
-    }
-  });
+  /* console.log('findReferencedActivitiesInConditions', { referencedKeys, sequenceRefs }); */
 
-  return Array.from(referencedActivities);
+  return Array.from(new Set(sequenceRefs));
 };
 
 export const getReferencedKeysInConditions = (conditions: any) => {
   const references: Set<string> = new Set();
 
-  conditions.forEach((condition: any) => {
-    // the fact *must* be a reference to a key we need
-    if (condition.fact) {
-      references.add(condition.fact);
-    }
-    // the value *might* contain a reference to a key we need
-    if (
-      typeof condition.value === 'string' &&
-      condition.value.search(/app\.|variables\.|stage\.|session\./) !== -1
-    ) {
-      // value could have more than one reference inside it
-      const exprs = extractAllExpressionsFromText(condition.value);
-      const expressions = condition.value.match(/{([^{^}]+)}/g);
-      exprs.forEach((expr: string) => {
-        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-          references.add(expr);
-        }
-      });
-      expressions.forEach((expr: string) => {
-        if (expr.search(/app\.|variables\.|stage\.|session\./) !== -1) {
-          //we should remove the {}
-          const actualExp = expr.substring(1, expr.length - 1);
-          if (!references.has(actualExp)) {
-            references.add(expr.substring(1, expr.length - 1));
+  conditions.forEach(
+    (condition: {
+      all: boolean;
+      any: boolean;
+      fact: string;
+      value: string | number | boolean | unknown;
+    }) => {
+      // the fact *must* be a reference to a key we need
+      if (condition.fact) {
+        references.add(condition.fact);
+      }
+      // the value *might* contain a reference to a key we need
+      if (typeof condition.value === 'string') {
+        extractUniqueVariablesFromText(condition.value).forEach((v) => references.add(v));
+      } else if (Array.isArray(condition.value)) {
+        condition.value.forEach((value: any) => {
+          if (typeof value === 'string') {
+            extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
           }
-        }
-      });
-    }
-    if (condition.any || condition.all) {
-      const childRefs = findReferencedActivitiesInConditions(condition.any || condition.all);
-      childRefs.forEach((ref) => references.add(ref));
-    }
-  });
+        });
+      }
+      if (condition.any || condition.all) {
+        const childRefs = getReferencedKeysInConditions(condition.any || condition.all);
+        childRefs.forEach((ref) => references.add(ref));
+      }
+    },
+  );
 
+  return Array.from(references);
+};
+
+export const findReferencedActivitiesInActions = (actions: any) => {
+  const referencedKeys = getReferencedKeysInActions(actions);
+  const sequenceRefs = referencedKeys
+    .filter((key) => key.indexOf('|stage.') !== -1)
+    .map((key) => key.split('|')[0]);
+
+  /* console.log('findReferencedActivitiesInActions', { referencedKeys, sequenceRefs }); */
+
+  return Array.from(new Set(sequenceRefs));
+};
+
+export const getReferencedKeysInActions = (actions: any) => {
+  const references: Set<string> = new Set();
+  actions.forEach(
+    (action: {
+      params: { target: string; value: string | number | boolean | unknown };
+      type: string;
+    }) => {
+      if (action.type === 'mutateState') {
+        // the target *must* be a reference to a key we need
+        if (action.params.target) {
+          references.add(action.params.target);
+        }
+
+        // the value *might* contain a reference to a key we need
+        if (typeof action.params.value === 'string') {
+          extractUniqueVariablesFromText(action.params.value).forEach((v) => references.add(v));
+        } else if (Array.isArray(action.params.value)) {
+          action.params.value.forEach((value: any) => {
+            if (typeof value === 'string') {
+              extractUniqueVariablesFromText(value).forEach((v) => references.add(v));
+            }
+          });
+        }
+      }
+    },
+  );
   return Array.from(references);
 };
 
@@ -342,6 +426,7 @@ export interface ScoringContext {
   trapStateScoreScheme: boolean;
   negativeScoreAllowed: boolean;
   currentAttemptNumber: number;
+  isManuallyGraded: boolean;
 }
 
 export const check = async (
@@ -403,37 +488,43 @@ export const check = async (
   }
 
   let score = 0;
-  //below condition make sure the score calculation will happen only if the answer is correct and
-  //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
-  if (isCorrect || scoringContext.negativeScoreAllowed) {
-    if (scoringContext.trapStateScoreScheme) {
-      // apply all the actions from the resultEvents that mutate the state
-      // then check the session.currentQuestionScore and clamp it against the maxScore
-      // setting that value to score
-      const mutations = resultEvents.reduce((acc, evt) => {
-        const { actions } = evt.params as Record<string, any>;
-        const mActions = actions.filter(
-          (action: any) =>
-            action.type === 'mutateState' &&
-            action.params.target === 'session.currentQuestionScore',
-        );
-        return acc.concat(...acc, mActions);
-      }, []);
-      if (mutations.length) {
-        const mutApplies = mutations.map(({ params }) => params);
-        bulkApplyState(mutApplies, env);
-        score = getValue('session.currentQuestionScore', env) || 0;
-      }
-    } else {
-      const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
-      const scorePerAttempt = maxScore / maxAttempt;
-      score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
-    }
-    score = Math.min(score, scoringContext.maxScore);
-    if (!scoringContext.negativeScoreAllowed) {
-      score = Math.max(0, score);
+  if (scoringContext.trapStateScoreScheme) {
+    // apply all the actions from the resultEvents that mutate the state
+    // then check the session.currentQuestionScore and clamp it against the maxScore
+    // setting that value to score
+    const mutations = resultEvents.reduce((acc, evt) => {
+      const { actions } = evt.params as Record<string, any>;
+      const mActions = actions.filter(
+        (action: any) =>
+          action.type === 'mutateState' && action.params.target === 'session.currentQuestionScore',
+      );
+      return acc.concat(...acc, mActions);
+    }, []);
+    if (mutations.length) {
+      const mutApplies = mutations.map(({ params }) => params);
+
+      bulkApplyState(mutApplies, env);
+      score = getValue('session.currentQuestionScore', env) || 0;
     }
   }
+  //below condition make sure the score calculation will happen only if the answer is correct and
+  //in case of incorrect answer if negative scoring is allowed then calculation will proceed.
+  else if (isCorrect || scoringContext.negativeScoreAllowed) {
+    const { maxScore, maxAttempt, currentAttemptNumber } = scoringContext;
+    const scorePerAttempt = maxScore / maxAttempt;
+    score = maxScore - scorePerAttempt * (currentAttemptNumber - 1);
+  }
+  score = Math.min(score, scoringContext.maxScore || 0);
+  if (!scoringContext.negativeScoreAllowed) {
+    score = Math.max(0, score);
+  }
+
+  // if this activity has manual grading, then the score should just be zero so that it can be graded manually
+  if (scoringContext.isManuallyGraded) {
+    score = 0;
+  }
+  // make sure that score is *always* a number
+  score = isNaN(Number(score)) ? 0 : Number(score);
 
   const finalResults = {
     correct: isCorrect,

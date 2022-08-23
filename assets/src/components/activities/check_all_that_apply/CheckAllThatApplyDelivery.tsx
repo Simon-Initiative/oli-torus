@@ -8,17 +8,15 @@ import {
   setSelection,
   activityDeliverySlice,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
@@ -32,14 +30,20 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
     state: activityState,
+    context,
+    onSubmitActivity,
     onResetActivity,
     onSaveActivity,
+    model,
   } = useDeliveryElementContext<CATASchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
-
+  const { surveyId } = context;
   useEffect(() => {
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 
   // First render initializes state

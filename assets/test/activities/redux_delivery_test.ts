@@ -13,23 +13,33 @@ import {
   studentInputToString,
 } from 'data/activities/utils';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
+import { ActivityContext } from 'components/activities';
 
 describe('activity delivery state management', () => {
   const model = defaultCATAModel();
   model.authoring.parts[0].hints.push(makeHint('Hint 1'));
+  const context = {
+    graded: false,
+    surveyId: null,
+    groupId: null,
+    bibParams: [],
+    pageAttemptGuid: '',
+    sectionSlug: '',
+    userId: 0,
+  } as ActivityContext;
   const props = {
     model,
     activitySlug: 'activity-slug',
     state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
-    graded: false,
-    preview: false,
+    context,
   };
+
   const { onSaveActivity } = defaultDeliveryElementProps;
   const store: Store<ActivityDeliveryState> = configureStore({}, activityDeliverySlice.reducer);
   const dispatch: Dispatch<any> = store.dispatch;
 
   it('can initialize state', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state)));
+    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
     expect(store.getState().attemptState).toEqual(props.state);
     const partState = store.getState().partState[DEFAULT_PART_ID];
     expect(partState).toBeTruthy();
@@ -39,7 +49,7 @@ describe('activity delivery state management', () => {
   });
 
   it('can select single choices', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state)));
+    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[0].id, onSaveActivity, 'single'));
     expect(store.getState().partState[DEFAULT_PART_ID]?.studentInput).toEqual([
       model.choices[0].id,
@@ -47,7 +57,7 @@ describe('activity delivery state management', () => {
   });
 
   it('can select multiple choices', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state)));
+    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[0].id, onSaveActivity, 'multiple'));
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[1].id, onSaveActivity, 'multiple'));
     expect(store.getState().partState[DEFAULT_PART_ID]?.studentInput).toEqual([

@@ -1,32 +1,31 @@
 defmodule OliWeb.Sections.SectionsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
-  alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, Check}
-  alias OliWeb.Common.SessionContext
-  alias Oli.Delivery.Sections.{Browse, BrowseOptions}
-  alias OliWeb.Common.Table.SortableTableModel
-  alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.Sections.SectionsTableModel
-
-  import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
+  import OliWeb.DelegatedEvents
+
+  alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Delivery.Sections.{Browse, BrowseOptions, Section}
+  alias OliWeb.Common.{Breadcrumb, Check, FilterBox, PagedTable, TextSearch, SessionContext}
+  alias OliWeb.Common.Table.SortableTableModel
+  alias OliWeb.Sections.SectionsTableModel
+  alias OliWeb.Router.Helpers, as: Routes
 
   @limit 25
   @default_options %BrowseOptions{
-    show_deleted: false,
     institution_id: nil,
     blueprint_id: nil,
-    active_only: false,
-    text_search: ""
+    text_search: "",
+    active_today: false,
+    filter_status: nil,
+    filter_type: nil
   }
+  @type_opts [:open, :lms]
 
   prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "All Course Sections"
-
   data sections, :list, default: []
-
   data tabel_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
@@ -38,7 +37,7 @@ defmodule OliWeb.Sections.SectionsView do
     |> breadcrumb()
   end
 
-  def breadcrumb(previous) do
+  defp breadcrumb(previous) do
     previous ++
       [
         Breadcrumb.new(%{
@@ -59,7 +58,6 @@ defmodule OliWeb.Sections.SectionsView do
       )
 
     total_count = determine_total(sections)
-
     {:ok, table_model} = SectionsTableModel.new(context, sections)
 
     {:ok,
@@ -74,26 +72,16 @@ defmodule OliWeb.Sections.SectionsView do
      )}
   end
 
-  defp determine_total(projects) do
-    case(projects) do
-      [] -> 0
-      [hd | _] -> hd.total_count
-    end
-  end
-
   def handle_params(params, _, socket) do
-    table_model =
-      SortableTableModel.update_from_params(
-        socket.assigns.table_model,
-        params
-      )
-
+    table_model = SortableTableModel.update_from_params(socket.assigns.table_model, params)
     offset = get_int_param(params, "offset", 0)
 
     options = %BrowseOptions{
       text_search: get_param(params, "text_search", ""),
-      show_deleted: get_boolean_param(params, "show_deleted", false),
-      active_only: get_boolean_param(params, "active_only", false),
+      active_today: get_boolean_param(params, "active_today", false),
+      filter_status:
+        get_atom_param(params, "filter_status", Ecto.Enum.values(Section, :status), nil),
+      filter_type: get_atom_param(params, "filter_type", @type_opts, nil),
       # This view is currently for all institutions and all root products
       institution_id: nil,
       blueprint_id: nil
@@ -120,28 +108,75 @@ defmodule OliWeb.Sections.SectionsView do
   end
 
   def render(assigns) do
+    # can't use @ notation inside sigil
+    type_opts = @type_opts
+
     ~F"""
-    <div>
+      <div>
+        <FilterBox
+          card_header_text="Browse Course Sections"
+          card_body_text=""
+          table_model={@table_model}
+          show_sort={false}
+          show_more_opts={true}>
+          <TextSearch id="text-search" text={@options.text_search}/>
 
-      <Check class="mr-4" checked={@options.show_deleted} click="show_deleted">Show deleted/archived sections</Check>
-      <Check checked={@options.active_only} click="active_only">Show only active sections</Check>
+          <:extra_opts>
+            <Check checked={@options.active_today} click="active_today">Active (start/end dates include today)</Check>
 
-      <div class="mb-3"/>
+            <form :on-change="change_type" class="d-flex">
+              <select name="type" id="select_type" class="custom-select custom-select mr-2">
+                <option value="" selected>Type</option>
+                {#for type_opt <- type_opts}
+                  <option value={type_opt} selected={@options.filter_type == type_opt}>{humanize_type_opt(type_opt)}</option>
+                {/for}
+              </select>
+            </form>
 
-      <TextSearch id="text-search" text={@options.text_search} />
+            <form :on-change="change_status" class="d-flex">
+              <select name="status" id="select_status" class="custom-select custom-select mr-2">
+                <option value="" selected>Status</option>
+                {#for status_opt <- Ecto.Enum.values(Section, :status)}
+                  <option value={status_opt} selected={@options.filter_status == status_opt}>{Phoenix.Naming.humanize(status_opt)}</option>
+                {/for}
+              </select>
+            </form>
+          </:extra_opts>
+        </FilterBox>
 
-      <div class="mb-3"/>
+        <div class="mb-5"/>
 
-      <PagedTable
-        filter={@options.text_search}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}/>
-
-    </div>
-
+        <div class="sections-table">
+          <PagedTable
+            filter={@options.text_search}
+            table_model={@table_model}
+            total_count={@total_count}
+            offset={@offset}
+            limit={@limit}
+            show_bottom_paging={false}/>
+        </div>
+      </div>
     """
+  end
+
+  def handle_event("active_today", _, socket),
+    do: patch_with(socket, %{active_today: !socket.assigns.options.active_today})
+
+  def handle_event("change_status", %{"status" => status}, socket),
+    do: patch_with(socket, %{filter_status: status})
+
+  def handle_event("change_type", %{"type" => type}, socket),
+    do: patch_with(socket, %{filter_type: type})
+
+  def handle_event(event, params, socket),
+    do: delegate_to({event, params, socket, &__MODULE__.patch_with/2},
+        [&TextSearch.handle_delegated/4, &PagedTable.handle_delegated/4])
+
+  defp determine_total(projects) do
+    case projects do
+      [] -> 0
+      [hd | _] -> hd.total_count
+    end
   end
 
   def patch_with(socket, changes) do
@@ -157,8 +192,9 @@ defmodule OliWeb.Sections.SectionsView do
                sort_order: socket.assigns.table_model.sort_order,
                offset: socket.assigns.offset,
                text_search: socket.assigns.options.text_search,
-               show_deleted: socket.assigns.options.show_deleted,
-               active_only: socket.assigns.options.active_only
+               active_today: socket.assigns.options.active_today,
+               filter_status: socket.assigns.options.filter_status,
+               filter_type: socket.assigns.options.filter_type
              },
              changes
            )
@@ -167,17 +203,6 @@ defmodule OliWeb.Sections.SectionsView do
      )}
   end
 
-  def handle_event("show_deleted", _, socket),
-    do: patch_with(socket, %{show_deleted: !socket.assigns.options.show_deleted})
-
-  def handle_event("active_only", _, socket),
-    do: patch_with(socket, %{active_only: !socket.assigns.options.active_only})
-
-  def handle_event(event, params, socket) do
-    {event, params, socket, &__MODULE__.patch_with/2}
-    |> delegate_to([
-      &TextSearch.handle_delegated/4,
-      &PagedTable.handle_delegated/4
-    ])
-  end
+  defp humanize_type_opt(:open), do: "Open"
+  defp humanize_type_opt(:lms), do: "LMS"
 end

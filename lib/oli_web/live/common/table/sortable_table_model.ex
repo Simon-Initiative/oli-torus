@@ -228,9 +228,6 @@ defmodule OliWeb.Common.Table.SortableTableModel do
     end
   end
 
-  def render_inserted_at_column(assigns, %{inserted_at: inserted_at}, _),
-    do: date(inserted_at, Map.get(assigns, :context))
-
   def render_link_column(assigns, label, route_path, class \\ "") do
     ~F"""
       <Link

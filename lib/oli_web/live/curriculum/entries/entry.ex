@@ -67,7 +67,7 @@ defmodule OliWeb.Curriculum.EntryLive do
 
       <%# prevent dragging of actions menu and modals using this draggable wrapper %>
       <div draggable="true" ondragstart="event.preventDefault(); event.stopPropagation();">
-        <%= live_component Actions, assigns %>
+        <%= live_component Actions, Map.merge(assigns, %{disable_move: false}) %>
       </div>
     </div>
     """

@@ -1,0 +1,12 @@
+<div>
+
+  <h3>Access Course</h3>
+
+  <p>You have already created one or more sections.</p>
+
+  <p>Would you like to
+    <%= link "create a new section with this lesson", to: @create_section_url %>
+    or <%= link "go to my existing sections", to: Routes.delivery_path(@conn, :open_and_free_index) %>?
+  </p>
+
+</div>

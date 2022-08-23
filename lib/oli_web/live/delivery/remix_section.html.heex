@@ -3,7 +3,7 @@
 <div id="curriculum-container" class="container curriculum-editor">
   <h3><%= @section.title %></h3>
 
-  <div class="row">
+  <div class="row mt-3">
     <div class="col-12">
       <div class="mb-3 d-flex flex-row flex-nowrap">
         Customize your curriculum by adding, removing and rearranging course materials.
@@ -28,7 +28,7 @@
             <p>There's nothing here.</p>
           </div>
         <% end %>
-        <%= for {node, index} <- Enum.with_index(@active.children) |> Enum.filter(fn {c, _i} -> c.uuid != @dragging end) do %>
+        <%= for {node, index} <- filter_items(@active.children, @dragging) do %>
           <DropTarget.droptarget id={index} index={index} />
           <Entry.entry
               index={index}

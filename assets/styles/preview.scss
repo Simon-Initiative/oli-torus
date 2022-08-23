@@ -1,6 +1,6 @@
-@import "authoring/variables";
+@import 'authoring/variables';
 
-html.preview {
+& {
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -9,13 +9,13 @@ html.preview {
   font-family: $font-family-sans-serif;
   font-size: $font-size-base;
   line-height: normal;
-  font-feature-settings: "kern", "liga", "pnum";
+  font-feature-settings: 'kern', 'liga', 'pnum';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
   body #PreviewTools {
-    font-feature-settings: "kern", "liga", "pnum";
+    font-feature-settings: 'kern', 'liga', 'pnum';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -25,5 +25,5 @@ html.preview {
     font-weight: normal;
   }
 
-  @import "./preview/preview-tools.scss";
+  @import './preview/preview-tools.scss';
 }

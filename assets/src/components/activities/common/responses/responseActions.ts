@@ -33,6 +33,12 @@ export const ResponseActions = {
     };
   },
 
+  editShowPage(responseId: ResponseId, showPage: number | undefined) {
+    return (model: HasParts) => {
+      getResponseBy(model, (r) => r.id === responseId).showPage = showPage;
+    };
+  },
+
   removeResponse(responseId: ResponseId, _path = RESPONSES_PATH) {
     return (model: HasParts) => {
       getParts(model).forEach((part) => {

@@ -78,15 +78,15 @@ defmodule OliWeb.CommunityLiveTest do
         live(conn, live_view_show_route(community.id))
     end
 
-    test "redirects to communities when accessing a community that is not an admin", %{
+    test "redirects to communities when accessing a community that is not an admin of", %{
       conn: conn,
       author: author
     } do
-      insert(:community)
+      non_admin_community_id = insert(:community).id
       insert(:community_account, %{author: author})
 
       {:error, {:redirect, %{to: "/authoring/communities"}}} =
-        live(conn, live_view_show_route(123))
+        live(conn, live_view_show_route(non_admin_community_id))
     end
   end
 
@@ -180,6 +180,20 @@ defmodule OliWeb.CommunityLiveTest do
 
       refute has_element?(view, "##{first_c.id}")
       assert has_element?(view, "##{last_c.id}")
+    end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      c1 = insert(:community)
+
+      {:ok, view, _html} = live(conn, @live_view_index_route)
+
+      assert has_element?(
+               view,
+               "tr##{c1.id}",
+               OliWeb.Common.Utils.render_date(c1, :inserted_at, session_context)
+             )
     end
   end
 
@@ -339,7 +353,7 @@ defmodule OliWeb.CommunityLiveTest do
     test "redirects to index view and displays error message when community does not exist", %{
       conn: conn
     } do
-      conn = get(conn, live_view_show_route(1000))
+      conn = get(conn, live_view_show_route(-1))
 
       assert conn.private.plug_session["phoenix_flash"]["info"] ==
                "That community does not exist or it was deleted."
@@ -909,7 +923,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => cv1.id})
 
       assert view
@@ -972,7 +986,8 @@ defmodule OliWeb.CommunityLiveTest do
 
     test "applies paging", %{conn: conn, community: community} do
       [first_cv | tail] =
-        insert_list(21, :community_visibility, %{community: community}) |> Enum.sort()
+        insert_list(26, :community_visibility, %{community: community})
+        |> Enum.sort_by(& &1.project.title)
 
       last_cv = List.last(tail)
 
@@ -987,6 +1002,20 @@ defmodule OliWeb.CommunityLiveTest do
 
       refute has_element?(view, "##{first_cv.id}")
       assert has_element?(view, "##{last_cv.id}")
+    end
+
+    test "renders datetimes using the local timezone", %{community: community} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      cv1 = insert(:community_visibility, %{community: community})
+
+      {:ok, view, _html} = live(conn, live_view_associated_index_route(community.id))
+
+      assert has_element?(
+               view,
+               "tr##{cv1.id}",
+               OliWeb.Common.Utils.render_date(cv1, :inserted_at, session_context)
+             )
     end
   end
 
@@ -1011,10 +1040,14 @@ defmodule OliWeb.CommunityLiveTest do
       insert(:community_visibility, %{community: community, project: associated_project})
       insert(:community_visibility, %{community: community, section: associated_product})
 
-      project = insert(:project)
-      product = insert(:section)
+      project = insert(:project, title: "Test Project")
+      product = insert(:section, title: "Test Product")
 
       {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
+
+      view
+      |> element("th[phx-click=\"sort\"]:first-of-type")
+      |> render_click(%{sort_by: "title"})
 
       assert view
              |> element("tr:first-child > td:first-child")
@@ -1022,7 +1055,7 @@ defmodule OliWeb.CommunityLiveTest do
                project.title
 
       assert view
-             |> element("tr:last-child > td:first-child")
+             |> element("tr:nth-child(2) > td:first-child")
              |> render() =~
                product.title
     end
@@ -1033,7 +1066,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div > button")
       |> render_click(%{"id" => project.id, "type" => "project"})
 
       assert view
@@ -1104,20 +1137,20 @@ defmodule OliWeb.CommunityLiveTest do
     end
 
     test "applies paging", %{conn: conn, community: %Community{id: id}} do
-      [first_project | _tail] = insert_list(19, :project)
-      section = insert(:section)
+      [first_p | tail] = insert_list(21, :project) |> Enum.sort_by(& &1.title)
+      last_p = List.last(tail)
 
       {:ok, view, _html} = live(conn, live_view_associated_new_route(id))
 
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               first_project.title
+               first_p.title
 
       refute view
              |> element("tr:last-child > td:first-child")
              |> render() =~
-               section.title
+               last_p.title
 
       view
       |> element("a[phx-click=\"page_change\"]", "2")
@@ -1126,7 +1159,21 @@ defmodule OliWeb.CommunityLiveTest do
       assert view
              |> element("tr:first-child > td:first-child")
              |> render() =~
-               section.title
+               last_p.title
+    end
+
+    test "renders datetimes using the local timezone", %{community: community} = context do
+      s = insert(:section)
+
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      {:ok, view, _html} = live(conn, live_view_associated_new_route(community.id))
+
+      assert element(
+               view,
+               "tbody",
+               OliWeb.Common.Utils.render_date(s, :inserted_at, session_context)
+             )
     end
   end
 
@@ -1173,7 +1220,7 @@ defmodule OliWeb.CommunityLiveTest do
       {:ok, view, _html} = live(conn, live_view_members_index_route(community.id))
 
       view
-      |> element("tr:first-child > td:last-child > button")
+      |> element("tr:first-child > td:last-child > div  > button")
       |> render_click(%{"id" => user.id})
 
       assert view

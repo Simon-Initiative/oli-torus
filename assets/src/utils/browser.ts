@@ -19,3 +19,6 @@ export const addDarkModeListener = (fn: (mode: 'light' | 'dark') => void) => {
 
 export const removeDarkModeListener = (listener: EventListener) =>
   window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', listener);
+
+export const getViewportHeight = () =>
+  Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);

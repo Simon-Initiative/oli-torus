@@ -10,11 +10,12 @@ defmodule Oli.Delivery.Sections do
   alias Oli.Delivery.Sections.Enrollment
   alias Lti_1p3.Tool.ContextRole
   alias Lti_1p3.DataProviders.EctoProvider
-  alias Oli.Lti.Tool.Deployment
-  alias Oli.Lti.Tool.Registration
+  alias Oli.Lti.Tool.{Deployment, Registration}
+  alias Oli.Lti.LtiParams
   alias Oli.Delivery.Sections.SectionResource
   alias Oli.Publishing
   alias Oli.Publishing.Publication
+  alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Sections.SectionsProjectsPublications
   alias Oli.Resources.Numbering
   alias Oli.Authoring.Course.Project
@@ -30,6 +31,8 @@ defmodule Oli.Delivery.Sections do
   alias Lti_1p3.Tool.PlatformRoles
   alias Oli.Delivery.Updates.Broadcaster
   alias Oli.Delivery.Sections.EnrollmentBrowseOptions
+  alias Oli.Utils.Slug
+  alias OliWeb.Common.FormatDateTime
 
   require Logger
 
@@ -87,7 +90,7 @@ defmodule Oli.Delivery.Sections do
     query =
       Enrollment
       |> join(:left, [e], u in User, on: u.id == e.user_id)
-      |> join(:left, [e, _], p in "payments", on: p.enrollment_id == e.id)
+      |> join(:left, [e, _], p in Payment, on: p.enrollment_id == e.id)
       |> where(^filter_by_text)
       |> where(^filter_by_role)
       |> where([e, _], e.section_id == ^section_id)
@@ -465,7 +468,7 @@ defmodule Oli.Delivery.Sections do
       |> Map.get("id")
 
     issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
+    client_id = LtiParams.peek_client_id(lti_params)
 
     Repo.all(
       from(s in Section,
@@ -667,12 +670,59 @@ defmodule Oli.Delivery.Sections do
     change_section(Map.merge(section, %{open_and_free: true}), attrs)
   end
 
+  # Creates a 'hierarchy definition' strictly from a a project and the recursive
+  # definition of containers starting with the root revision container.  This hierarchy
+  # definition is a map of resource ids to a list of the child resource ids, effectively
+  # the definition of the hierarchy.
+  defp create_hierarchy_definition_from_project(
+         published_resources_by_resource_id,
+         revision,
+         definition
+       ) do
+    child_revisions =
+      Enum.map(revision.children, fn id -> published_resources_by_resource_id[id].revision end)
+
+    Enum.reduce(
+      child_revisions,
+      Map.put(
+        definition,
+        revision.resource_id,
+        Enum.map(child_revisions, fn r -> r.resource_id end)
+      ),
+      fn revision, definition ->
+        create_hierarchy_definition_from_project(
+          published_resources_by_resource_id,
+          revision,
+          definition
+        )
+      end
+    )
+  end
+
   @doc """
-  Create all section resources from the given section and publication using the
-  root resource's revision tree. Returns the root section resource record.
+  Create all section resources from the given section and publication and optional hierarchy definition.
+  The hierarchy definition is a map of resource ids to the list of directly contained children (referenced
+  by resource ids) for that parent.  The hierarchy definition must contain an entry for every container that will appear
+  in the course section resources.  An example of the hierarchy definition with the root (1) and three
+  top-level units (resource ids 2, 3, 4):
+
+  ```
+  %{
+    1 => [2, 3, 4],
+    2 => [5, 6, 7],
+    3 => [8, 9],
+    4 => [10]
+  }
+  ```
+
+  If the hierarchy definition argument is omitted, a default hierarchy definition will be generated from
+  the project's root revision and its children, recursively.
+
+  Returns the root section resource record.
+
   ## Examples
-      iex> create_section_resources(section)
-      {:ok, %Section{}}
+      iex> create_section_resources(section, publication, hierarchy_definition)
+      {:ok, %SectionResource{}}
   """
   def create_section_resources(
         %Section{} = section,
@@ -680,17 +730,33 @@ defmodule Oli.Delivery.Sections do
           id: publication_id,
           root_resource_id: root_resource_id,
           project_id: project_id
-        } = publication
+        } = publication,
+        hierarchy_definition \\ nil
       ) do
     Repo.transaction(fn ->
       published_resources_by_resource_id = published_resources_map(publication.id)
 
+      %PublishedResource{revision: root_revision} =
+        published_resources_by_resource_id[root_resource_id]
+
+      # If a custom hierarchy_definition was supplied, use it, otherwise
+      # use the hierarchy defined by the project
+      hierarchy_definition =
+        case hierarchy_definition do
+          nil ->
+            create_hierarchy_definition_from_project(
+              published_resources_by_resource_id,
+              root_revision,
+              %{}
+            )
+
+          other ->
+            other
+        end
+
       numbering_tracker = Numbering.init_numbering_tracker()
       level = 0
       processed_ids = []
-
-      %PublishedResource{revision: root_revision} =
-        published_resources_by_resource_id[root_resource_id]
 
       {root_section_resource_id, _numbering_tracker, processed_ids} =
         create_section_resource(
@@ -700,7 +766,8 @@ defmodule Oli.Delivery.Sections do
           processed_ids,
           root_revision,
           level,
-          numbering_tracker
+          numbering_tracker,
+          hierarchy_definition
         )
 
       processed_ids = [root_resource_id | processed_ids]
@@ -735,14 +802,17 @@ defmodule Oli.Delivery.Sections do
          processed_ids,
          revision,
          level,
-         numbering_tracker
+         numbering_tracker,
+         hierarchy_definition
        ) do
     {numbering_index, numbering_tracker} =
       Numbering.next_index(numbering_tracker, level, revision)
 
+    children = Map.get(hierarchy_definition, revision.resource_id, [])
+
     {children, numbering_tracker, processed_ids} =
       Enum.reduce(
-        revision.children,
+        children,
         {[], numbering_tracker, processed_ids},
         fn resource_id, {children_ids, numbering_tracker, processed_ids} ->
           %PublishedResource{revision: child} = published_resources_by_resource_id[resource_id]
@@ -755,7 +825,8 @@ defmodule Oli.Delivery.Sections do
               processed_ids,
               child,
               level + 1,
-              numbering_tracker
+              numbering_tracker,
+              hierarchy_definition
             )
 
           {[id | children_ids], numbering_tracker, [resource_id | processed_ids]}
@@ -772,7 +843,7 @@ defmodule Oli.Delivery.Sections do
         numbering_index: numbering_index,
         numbering_level: level,
         children: children,
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        slug: Slug.generate(:section_resources, revision.title),
         resource_id: revision.resource_id,
         project_id: publication.project_id,
         section_id: section.id
@@ -931,7 +1002,8 @@ defmodule Oli.Delivery.Sections do
 
         # ensure there are no duplicate resources so as to not violate the
         # section_resource [section_id, resource_id] database constraint
-        hierarchy = Hierarchy.purge_duplicate_resources(hierarchy)
+        hierarchy =
+          Hierarchy.purge_duplicate_resources(hierarchy)
           |> Hierarchy.finalize()
 
         # generate a new set of section resources based on the hierarchy
@@ -1025,7 +1097,9 @@ defmodule Oli.Delivery.Sections do
         section_resources
       end)
     else
-      throw "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
+      throw(
+        "Cannot rebuild section curriculum with a hierarchy that has unfinalized changes. See Oli.Delivery.Hierarchy.finalize/1 for details."
+      )
     end
   end
 
@@ -1112,15 +1186,18 @@ defmodule Oli.Delivery.Sections do
   @doc """
   Returns a map of resource_id to published resource
   """
-  def published_resources_map(publication_ids) when is_list(publication_ids) do
-    Publishing.get_published_resources_by_publication(publication_ids,
-      preload: [:resource, :revision, :publication]
-    )
+  def published_resources_map(
+        publication_ids,
+        opts \\ [preload: [:resource, :revision, :publication]]
+      )
+
+  def published_resources_map(publication_ids, opts) when is_list(publication_ids) do
+    Publishing.get_published_resources_by_publication(publication_ids, opts)
     |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.resource_id, r) end)
   end
 
-  def published_resources_map(publication_id) do
-    published_resources_map([publication_id])
+  def published_resources_map(publication_id, opts) do
+    published_resources_map([publication_id], opts)
   end
 
   @doc """
@@ -1277,6 +1354,20 @@ defmodule Oli.Delivery.Sections do
     end
   end
 
+  @doc """
+  For a given section and resource, determine which project this
+  resource originally belongs to.
+  """
+  def determine_which_project_id(section_id, resource_id) do
+    Repo.one(
+      from(
+        sr in SectionResource,
+        where: sr.section_id == ^section_id and sr.resource_id == ^resource_id,
+        select: sr.project_id
+      )
+    )
+  end
+
   # finds the parent node of the given resource id
   defp parent_node(hierarchy, resource_id) do
     container = ResourceType.get_id_by_type("container")
@@ -1322,7 +1413,7 @@ defmodule Oli.Delivery.Sections do
           SectionResource.changeset(%SectionResource{}, %{
             numbering_index: numbering.index,
             numbering_level: numbering.level,
-            slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+            slug: Slug.generate(:section_resources, revision.title),
             resource_id: resource_id,
             project_id: project_id,
             section_id: section_id,
@@ -1354,7 +1445,8 @@ defmodule Oli.Delivery.Sections do
   defp create_nonstructural_section_resources(section_id, publication_ids,
          skip_resource_ids: skip_resource_ids
        ) do
-    published_resources_by_resource_id = published_resources_map(publication_ids)
+    published_resources_by_resource_id =
+      published_resources_map(publication_ids, preload: [:revision, :publication])
 
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
@@ -1364,9 +1456,10 @@ defmodule Oli.Delivery.Sections do
     |> Enum.filter(fn {resource_id, %{revision: rev}} ->
       !MapSet.member?(skip_set, resource_id) && !is_structural?(rev)
     end)
-    |> Enum.map(fn {_id, %PublishedResource{revision: revision, publication: pub}} ->
+    |> generate_slugs_until_uniq()
+    |> Enum.map(fn {slug, %PublishedResource{revision: revision, publication: pub}} ->
       [
-        slug: Oli.Utils.Slug.generate(:section_resources, revision.title),
+        slug: slug,
         resource_id: revision.resource_id,
         project_id: pub.project_id,
         section_id: section_id,
@@ -1383,61 +1476,91 @@ defmodule Oli.Delivery.Sections do
     resource_type_id == container
   end
 
-  @doc """
-  Parses a ISO 8601 formatted local timestamps to DateTimes if they are not empty or nil.
+  # Function that generates a set of unique slugs that don't collide with any of the existing ones from the
+  # section_resources table. It aims to minimize the number of queries to the database for ensuring that the slugs
+  # generated are unique.
+  defp generate_slugs_until_uniq(published_resources) do
+    # generate initial slugs for new section resources
+    published_resources_by_slug =
+      Enum.reduce(published_resources, %{}, fn {_, pr}, acc ->
+        title = pr.revision.title
 
-  Returns a tuple containing the start and end datetimes in UTC: {utc_start_date, utc_end_date}
-  """
-  def parse_and_convert_start_end_dates_to_utc(start_date, end_date, from_timezone) do
-    section_timezone = Timex.Timezone.get(from_timezone)
-    utc_timezone = Timex.Timezone.get(:utc, Timex.now())
+        # if a previous published resource has the same revision then generate a new initial slug different from the default
+        slug_attempt = if Map.has_key?(acc, Slug.slugify(title)), do: 1, else: 0
+        initial_slug = Slug.generate_nth(title, slug_attempt)
 
-    utc_start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" or not is_binary(start_date) ->
-          start_date
+        Map.put(acc, initial_slug, pr)
+      end)
 
-        start_date ->
-          start_date
-          |> Timex.parse!("{ISO:Extended}")
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
+    # until all slugs are unique or up to 10 attempts
+    {prs_by_non_uniq_slug, prs_by_uniq_slug} =
+      Enum.reduce_while(1..10, {published_resources_by_slug, %{}}, fn attempt,
+                                                                      {prs_by_non_uniq_slug,
+                                                                       prs_by_uniq_slug} ->
+        # get all slugs that already exist in the system and can't be used for new section resources
+        existing_slugs =
+          prs_by_non_uniq_slug
+          |> Map.keys()
+          |> get_existing_slugs()
 
-    utc_end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" or not is_binary(end_date) ->
-          end_date
+        # if all slugs are unique then finish the loop, otherwise generate new slugs for the non unique ones
+        if Enum.empty?(existing_slugs) do
+          {:halt, {%{}, Map.merge(prs_by_non_uniq_slug, prs_by_uniq_slug)}}
+        else
+          # separate the slug candidates that succeeded and are unique from the ones that are not unique yet
+          {new_prs_by_non_uniq_slug, new_uniq_to_merge} =
+            Map.split(prs_by_non_uniq_slug, existing_slugs)
 
-        end_date ->
-          end_date
-          |> Timex.parse!("{ISO:Extended}")
-          |> Timex.to_datetime(section_timezone)
-          |> Timex.Timezone.convert(utc_timezone)
-      end
+          new_prs_by_non_uniq_slug = regenerate_slugs(new_prs_by_non_uniq_slug, attempt)
+          new_prs_by_uniq_slug = Map.merge(prs_by_uniq_slug, new_uniq_to_merge)
 
-    {utc_start_date, utc_end_date}
+          {:cont, {new_prs_by_non_uniq_slug, new_prs_by_uniq_slug}}
+        end
+      end)
+
+    unless Enum.empty?(prs_by_non_uniq_slug) do
+      throw(
+        "Cannot rebuild section curriculum. After several attempts it was not possible to generate unique slugs for new nonstructural section resources. See Oli.Delivery.Sections.create_nonstructural_section_resources/3 for details."
+      )
+    end
+
+    prs_by_uniq_slug
   end
 
   @doc """
-  Converts a section's start_date and end_date to the gievn timezone's local datetimes
+  Filters a given list of slugs, returning only the ones that already exist in the section_resources table.
+  """
+  def get_existing_slugs(slugs) do
+    Repo.all(
+      from(
+        sr in SectionResource,
+        where: sr.slug in ^slugs,
+        select: sr.slug,
+        distinct: true
+      )
+    )
+  end
+
+  # Generates a new set of slug candidates
+  defp regenerate_slugs(prs_by_slug, attempt) do
+    Enum.reduce(prs_by_slug, %{}, fn {_slug,
+                                      %PublishedResource{revision: revision} = published_resource},
+                                     acc ->
+      new_slug = Slug.generate_nth(revision.title, attempt)
+
+      Map.put(acc, new_slug, published_resource)
+    end)
+  end
+
+  @doc """
+  Converts a section's start_date and end_date to the given timezone's local datetimes
   """
   def localize_section_start_end_datetimes(
-        %Section{start_date: start_date, end_date: end_date, timezone: timezone} = section
+        %Section{start_date: start_date, end_date: end_date} = section,
+        context
       ) do
-    timezone = Timex.Timezone.get(timezone, Timex.now())
-
-    start_date =
-      case start_date do
-        start_date when start_date == nil or start_date == "" -> start_date
-        start_date -> Timex.Timezone.convert(start_date, timezone)
-      end
-
-    end_date =
-      case end_date do
-        end_date when end_date == nil or end_date == "" -> end_date
-        end_date -> Timex.Timezone.convert(end_date, timezone)
-      end
+    start_date = FormatDateTime.convert_datetime(start_date, context)
+    end_date = FormatDateTime.convert_datetime(end_date, context)
 
     section
     |> Map.put(:start_date, start_date)

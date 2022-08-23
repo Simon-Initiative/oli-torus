@@ -19,37 +19,68 @@ defmodule OliWeb.ResourceController do
   def edit(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
-    project = conn.assigns.project
 
     case PageEditor.create_context(project_slug, revision_slug, conn.assigns[:current_author]) do
       {:ok, context} ->
-        render(conn, determine_editor(context),
-          active: :curriculum,
-          breadcrumbs:
-            Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
-          is_admin?: is_admin?,
-          context: Jason.encode!(context),
-          raw_context: context,
-          scripts: Activities.get_activity_scripts(:authoring_script),
-          part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
-          project_slug: project_slug,
-          revision_slug: revision_slug,
-          activity_types: Activities.activities_for_project(project),
-          part_component_types: PartComponents.part_components_for_project(project),
-          graded: context.graded
-        )
+        render_editor(context, conn, project_slug, revision_slug, is_admin?)
 
       {:error, :not_found} ->
         render_not_found(conn, project_slug)
     end
   end
 
-  # Look at the revision content to determine which editor to display
-  defp determine_editor(context) do
-    case context.content do
-      %{"advancedAuthoring" => true} -> "advanced.html"
-      _ -> "edit.html"
-    end
+  defp render_editor(
+         %{content: %{"advancedAuthoring" => true}} = context,
+         conn,
+         project_slug,
+         revision_slug,
+         is_admin?
+       ) do
+    project = conn.assigns.project
+    activity_types = Activities.activities_for_project(project)
+
+    render(conn, "advanced.html",
+      app_params: %{
+        isAdmin: is_admin?,
+        revisionSlug: revision_slug,
+        projectSlug: project_slug,
+        graded: context.graded,
+        content: context,
+        paths: %{
+          images: Routes.static_path(conn, "/images")
+        },
+        activityTypes: activity_types,
+        partComponentTypes: PartComponents.part_components_for_project(project)
+      },
+      active: :curriculum,
+      activity_types: activity_types,
+      breadcrumbs:
+        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+      graded: context.graded,
+      part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
+      raw_context: context,
+      scripts: Activities.get_activity_scripts(:authoring_script)
+    )
+  end
+
+  defp render_editor(context, conn, project_slug, revision_slug, is_admin?) do
+    project = conn.assigns.project
+
+    render(conn, "edit.html",
+      active: :curriculum,
+      breadcrumbs:
+        Breadcrumb.trail_to(project_slug, revision_slug, Oli.Publishing.AuthoringResolver),
+      is_admin?: is_admin?,
+      raw_context: context,
+      scripts: Activities.get_activity_scripts(:authoring_script),
+      part_scripts: PartComponents.get_part_component_scripts(:authoring_script),
+      project_slug: project_slug,
+      revision_slug: revision_slug,
+      activity_types: Activities.activities_for_project(project),
+      part_component_types: PartComponents.part_components_for_project(project),
+      graded: context.graded,
+      title: "Edit | " <> context.title
+    )
   end
 
   def preview(conn, %{"project_id" => project_slug, "revision_slug" => revision_slug}) do
@@ -61,22 +92,41 @@ defmodule OliWeb.ResourceController do
         render_not_found(conn, project_slug)
 
       %{content: %{"advancedDelivery" => true}} = revision ->
+        activity_types = Activities.activities_for_project(project)
+
         put_root_layout(conn, {OliWeb.LayoutView, "chromeless.html"})
         |> render("advanced_page_preview.html",
-          revision: revision,
           additional_stylesheets: Map.get(revision.content, "additionalStylesheets", []),
-          activity_types: Activities.activities_for_project(project),
+          activity_types: activity_types,
           scripts: Activities.get_activity_scripts(:delivery_script),
           part_scripts: PartComponents.get_part_component_scripts(:delivery_script),
           user: author,
           project_slug: project_slug,
           title: revision.title,
-          preview_mode: true
+          preview_mode: true,
+          display_curriculum_item_numbering: true,
+          app_params: %{
+            activityTypes: activity_types,
+            resourceId: revision.resource_id,
+            sectionSlug: project_slug,
+            userId: author.id,
+            pageSlug: revision.slug,
+            pageTitle: revision.title,
+            content: revision.content,
+            graded: revision.graded,
+            resourceAttemptState: nil,
+            resourceAttemptGuid: nil,
+            activityGuidMapping: nil,
+            previousPageURL: nil,
+            nextPageURL: nil,
+            previewMode: true
+          }
         )
 
       revision ->
         %Oli.Delivery.ActivityProvider.Result{
-          revisions: activity_revisions,
+          prototypes: prototypes,
+          bib_revisions: bib_references,
           transformed_content: transformed_content
         } =
           Oli.Delivery.ActivityProvider.provide(
@@ -86,6 +136,7 @@ defmodule OliWeb.ResourceController do
               section_slug: project_slug,
               publication_id: Oli.Publishing.project_working_publication(project_slug).id
             },
+            [],
             Oli.Publishing.AuthoringResolver
           )
 
@@ -97,15 +148,19 @@ defmodule OliWeb.ResourceController do
               objectives:
                 Oli.Delivery.Page.ObjectivesRollup.rollup_objectives(
                   revision,
-                  activity_revisions,
+                  Enum.map(prototypes, fn p -> p.revision end),
                   AuthoringResolver,
                   project_slug
                 ),
               content_html:
                 PageEditor.render_page_html(project_slug, transformed_content, author,
-                  preview: true
+                  preview: true,
+                  bib_app_params: bib_references
                 ),
               context: context,
+              bib_app_params: %{
+                bibReferences: bib_references
+              },
               scripts: Activities.get_activity_scripts(),
               preview_mode: true,
               container:
@@ -115,6 +170,7 @@ defmodule OliWeb.ResourceController do
                 else
                   nil
                 end,
+              display_curriculum_item_numbering: true,
               page_link_url: &Routes.resource_path(conn, :preview, project_slug, &1),
               container_link_url: &Routes.resource_path(conn, :preview, project_slug, &1)
             )
@@ -148,6 +204,7 @@ defmodule OliWeb.ResourceController do
 
   def render_not_found(conn, project_slug) do
     conn
+    |> put_root_layout({OliWeb.LayoutView, "default.html"})
     |> put_view(OliWeb.SharedView)
     |> render("_not_found.html",
       title: "Not Found",

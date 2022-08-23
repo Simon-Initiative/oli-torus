@@ -9,7 +9,7 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
   alias Oli.Delivery.Hierarchy
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias Oli.Resources.Revision
-  alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation}
+  alias OliWeb.Common.{Breadcrumb, DeleteModalNoConfirmation, FormatDateTime}
 
   def render(assigns) do
     ~F"""
@@ -173,10 +173,12 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           fn items ->
             Enum.filter(
               items,
-              &(&1.uuid != root.uuid and
-                  (&1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
+              &((&1.uuid != root.uuid and
+                   (&1.revision.resource_type_id ==
+                      Oli.Resources.ResourceType.get_id_by_type("page") and
+                      &1.revision.graded)) or
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("container"))
             )
           end
 
@@ -184,11 +186,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
           fn items ->
             Enum.filter(
               items,
-              &(&1.uuid != root.uuid and
-                  &1.revision.resource_id != resource_id and
-                  (&1.revision.resource_type_id ==
-                    Oli.Resources.ResourceType.get_id_by_type("page") and
-                  &1.revision.graded) or (&1.revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("container")))
+              &((&1.uuid != root.uuid and
+                   &1.revision.resource_id != resource_id and
+                   (&1.revision.resource_type_id ==
+                      Oli.Resources.ResourceType.get_id_by_type("page") and
+                      &1.revision.graded)) or
+                  &1.revision.resource_type_id ==
+                    Oli.Resources.ResourceType.get_id_by_type("container"))
             )
           end
       end
@@ -366,24 +370,27 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
       modal: %{assigns: %{hierarchy: hierarchy}}
     } = socket.assigns
 
-    %HierarchyNode{resource_id: resource_id, revision: %Revision{title: title, resource_type_id: resource_type_id}} =
-      Hierarchy.find_in_hierarchy(hierarchy, selection)
+    %HierarchyNode{
+      resource_id: resource_id,
+      revision: %Revision{title: title, resource_type_id: resource_type_id}
+    } = Hierarchy.find_in_hierarchy(hierarchy, selection)
 
     container_type_id = Oli.Resources.ResourceType.get_id_by_type("container")
 
     case {resource_type_id, gating_condition.type} do
       {^container_type_id, type} when type in [:finished, :started] ->
-        {:noreply, put_flash(
-          socket,
-          :error,
-          "Only pages can be selected for this type of gating condition"
-        ) |> hide_modal()}
-      _ ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           "Only pages can be selected for this type of gating condition"
+         )
+         |> hide_modal()}
 
+      _ ->
         data = Map.put(gating_condition.data, :resource_id, resource_id)
 
         {:noreply,
-
          assign(socket,
            gating_condition:
              gating_condition
@@ -393,7 +400,6 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
          |> put_flash(:error, nil)
          |> hide_modal()}
     end
-
   end
 
   def handle_event(
@@ -433,9 +439,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         %{"value" => value},
         socket
       ) do
-    %{gating_condition: %{data: data} = gating_condition} = socket.assigns
+    %{
+      gating_condition: %{data: data} = gating_condition,
+      context: context
+    } = socket.assigns
 
-    data = Map.put(data, :start_datetime, Timex.parse!(value, "{ISO:Extended}"))
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
+    data = Map.put(data, :start_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}
   end
@@ -445,9 +455,13 @@ defmodule OliWeb.Delivery.Sections.GatingAndScheduling.GatingConditionStore do
         %{"value" => value},
         socket
       ) do
-    %{gating_condition: %{data: data} = gating_condition} = socket.assigns
+    %{
+      gating_condition: %{data: data} = gating_condition,
+      context: context
+    } = socket.assigns
 
-    data = Map.put(data, :end_datetime, Timex.parse!(value, "{ISO:Extended}"))
+    utc_datetime = FormatDateTime.datestring_to_utc_datetime(value, context)
+    data = Map.put(data, :end_datetime, utc_datetime)
 
     {:noreply, assign(socket, gating_condition: %{gating_condition | data: data})}
   end

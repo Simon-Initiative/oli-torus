@@ -8,10 +8,12 @@ defmodule Oli.Activities.State.ActivityState do
     :attemptNumber,
     :dateEvaluated,
     :dateSubmitted,
+    :lifecycle_state,
     :score,
     :outOf,
     :hasMoreAttempts,
-    :parts
+    :parts,
+    :groupId
   ]
 
   @derive Jason.Encoder
@@ -20,10 +22,12 @@ defmodule Oli.Activities.State.ActivityState do
     :attemptNumber,
     :dateEvaluated,
     :dateSubmitted,
+    :lifecycle_state,
     :score,
     :outOf,
     :hasMoreAttempts,
-    :parts
+    :parts,
+    :groupId
   ]
 
   @spec from_attempt(
@@ -32,7 +36,11 @@ defmodule Oli.Activities.State.ActivityState do
           Oli.Activities.Model.t()
         ) ::
           %Oli.Activities.State.ActivityState{}
-  def from_attempt(%ActivityAttempt{} = attempt, part_attempts, %Model{} = model) do
+  def from_attempt(
+        %ActivityAttempt{} = attempt,
+        part_attempts,
+        %Model{} = model
+      ) do
     # Create the part states, and where we encounter parts from the model
     # that do not have an attempt we create the default state
     attempt_map = Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.part_id, p) end)
@@ -53,22 +61,26 @@ defmodule Oli.Activities.State.ActivityState do
       attemptNumber: attempt.attempt_number,
       dateEvaluated: attempt.date_evaluated,
       dateSubmitted: attempt.date_submitted,
+      lifecycle_state: attempt.lifecycle_state,
       score: attempt.score,
       outOf: attempt.out_of,
       hasMoreAttempts: has_more_attempts,
-      parts: parts
+      parts: parts,
+      groupId: attempt.group_id
     }
   end
 
-  def create_preview_state(transformed_model) do
+  def create_preview_state(transformed_model, group_id \\ nil) do
     %Oli.Activities.State.ActivityState{
       attemptGuid: UUID.uuid4(),
       attemptNumber: 1,
       dateEvaluated: nil,
       dateSubmitted: nil,
+      lifecycle_state: :active,
       score: nil,
       outOf: nil,
       hasMoreAttempts: true,
+      groupId: group_id,
       parts:
         Enum.map(transformed_model["authoring"]["parts"], fn p ->
           %Oli.Activities.State.PartState{

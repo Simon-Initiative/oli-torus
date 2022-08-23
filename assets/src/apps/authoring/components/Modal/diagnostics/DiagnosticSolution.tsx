@@ -26,6 +26,11 @@ export const DiagnosticSolution: React.FC<SolutionProps> = (props: SolutionProps
       action = <FixTargetButton {...props} />;
       break;
     case DiagnosticTypes.INVALID_VALUE:
+    case DiagnosticTypes.INVALID_EXPRESSION_VALUE:
+    case DiagnosticTypes.INVALID_EXPRESSION:
+    case DiagnosticTypes.INVALID_OWNER_INIT:
+    case DiagnosticTypes.INVALID_OWNER_CONDITION:
+    case DiagnosticTypes.INVALID_OWNER_MUTATE:
       action = <FixIdButton {...props} />;
       break;
     default:

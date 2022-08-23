@@ -14,7 +14,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   require Logger
 
-  def evaluate_activity(section_slug, activity_attempt_guid, part_inputs) do
+  def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
       |> Repo.preload([:resource_attempt])
@@ -25,28 +25,49 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     } = activity_attempt
 
     activity_model = select_model(activity_attempt)
+    part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     case Model.parse(activity_model) do
       {:ok, %Model{rules: []}} ->
-        evaluate_from_input(section_slug, activity_attempt_guid, part_inputs)
+        evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id)
 
       {:ok, %Model{rules: rules, delivery: delivery, authoring: authoring}} ->
+        submit_active_part_attempts(activity_attempt)
+
         custom = Map.get(delivery, "custom", %{})
 
+        is_manually_graded = Enum.any?(part_attempts, fn pa -> pa.grading_approach == :manual end)
+
+        # count the manual max score, and use that as the default instead of zero if there is no maxScore set by the author
+        max_score =
+          case is_manually_graded do
+            true ->
+              manual_max = Enum.reduce(part_attempts, fn sum, pa -> sum + pa.out_of end)
+              Map.get(custom, "maxScore", manual_max)
+
+            false ->
+              Map.get(custom, "maxScore", 0)
+          end
+
         scoringContext = %{
-          maxScore: Map.get(custom, "maxScore", 0),
+          maxScore: max_score,
           maxAttempt: Map.get(custom, "maxAttempt", 1),
           trapStateScoreScheme: Map.get(custom, "trapStateScoreScheme", false),
           negativeScoreAllowed: Map.get(custom, "negativeScoreAllowed", false),
-          currentAttemptNumber: attempt_number
+          currentAttemptNumber: attempt_number,
+          isManuallyGraded: is_manually_graded
         }
 
         activitiesRequiredForEvaluation =
           Map.get(authoring, "activitiesRequiredForEvaluation", [])
 
-        variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
+        # Logger.debug("ACTIVITIES REQUIRED: #{activitiesRequiredForEvaluation}")
 
-        # Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+        variablesRequiredForEvaluation = Map.get(authoring, "variablesRequiredForEvaluation", nil)
+        # Logger.debug("VARIABLES REQUIRED: #{Jason.encode!(variablesRequiredForEvaluation)}")
+
+        Logger.debug("SCORE CONTEXT: #{Jason.encode!(scoringContext)}")
+
         evaluate_from_rules(
           section_slug,
           resource_attempt,
@@ -55,12 +76,28 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           scoringContext,
           rules,
           activitiesRequiredForEvaluation,
-          variablesRequiredForEvaluation
+          variablesRequiredForEvaluation,
+          datashop_session_id
         )
 
       e ->
         e
     end
+  end
+
+  defp submit_active_part_attempts(activity_attempt) do
+    part_attempts = get_latest_part_attempts(activity_attempt.attempt_guid)
+
+    Enum.filter(part_attempts, fn pa -> pa.lifecycle_state == :active end)
+    |> Enum.reduce_while({:ok, []}, fn pa, {:ok, updated} ->
+      case update_part_attempt(pa, %{
+             lifecycle_state: :submitted,
+             date_submitted: DateTime.utc_now()
+           }) do
+        {:ok, updated_part_attempt} -> {:cont, {:ok, [updated_part_attempt | updated]}}
+        e -> {:halt, e}
+      end
+    end)
   end
 
   def evaluate_from_rules(
@@ -71,7 +108,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         scoringContext,
         rules,
         activitiesRequiredForEvaluation,
-        variablesRequiredForEvaluation
+        variablesRequiredForEvaluation,
+        datashop_session_id
       ) do
     state =
       case variablesRequiredForEvaluation do
@@ -104,19 +142,25 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
         client_evaluations = to_client_results(score, out_of, part_inputs)
 
-        case apply_client_evaluation(
-               section_slug,
-               activity_attempt_guid,
-               client_evaluations,
-               :do_not_normalize
-             ) do
-          {:ok, _} ->
-            {:ok, decodedResults}
+        if scoringContext.isManuallyGraded do
+          # TODO: update part attempts?
+          {:ok, decodedResults}
+        else
+          case apply_client_evaluation(
+                 section_slug,
+                 activity_attempt_guid,
+                 client_evaluations,
+                 :do_not_normalize,
+                 datashop_session_id
+               ) do
+            {:ok, _} ->
+              {:ok, decodedResults}
 
-          {:error, err} ->
-            Logger.error("Error in apply client results! #{err}")
+            {:error, err} ->
+              Logger.error("Error in apply client results! #{err}")
 
-            {:error, err}
+              {:error, err}
+          end
         end
 
       {:error, err} ->
@@ -240,6 +284,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         end
       end)
 
+    # Logger.debug("Extrinsic state: #{Jason.encode!(extrinsic_state)}")
+    # Logger.debug("Response state: #{Jason.encode!(response_state)}")
+    # Logger.debug("Input state: #{Jason.encode!(input_state)}")
+
     attempt_state = Map.merge(response_state, extrinsic_state)
     Map.merge(input_state, attempt_state)
   end
@@ -261,8 +309,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   On failure returns `{:error, error}`
   """
-  @spec evaluate_from_input(String.t(), String.t(), [map()]) :: {:ok, [map()]} | {:error, any}
-  def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs) do
+  @spec evaluate_from_input(String.t(), String.t(), [map()], String.t()) ::
+          {:ok, [map()]} | {:error, any}
+  def evaluate_from_input(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     Repo.transaction(fn ->
       part_attempts = get_latest_part_attempts(activity_attempt_guid)
       part_inputs = filter_already_evaluated(part_inputs, part_attempts)
@@ -270,7 +319,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
       case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-           |> persist_evaluations(part_inputs, roll_up_fn) do
+           |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
         {:ok, results} -> results
         {:error, error} -> Repo.rollback(error)
         _ -> Repo.rollback("unknown error")
@@ -324,9 +373,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   @doc """
   Evaluates an activity attempt using only the already stored state present in
   the child part attempts.  This exists primarly to allow graded pages to
-  submit all of the contained activites when the student clicks "Submit Assessment".
+  submit all of the contained activites when the student clicks "Submit Answers".
   """
-  def evaluate_from_stored_input(activity_attempt_guid) do
+  def evaluate_from_stored_input(activity_attempt_guid, datashop_session_id) do
     part_attempts = get_latest_part_attempts(activity_attempt_guid)
 
     # derive the part_attempts from the currently saved state that we expect
@@ -339,9 +388,15 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             map -> Map.get(map, "input")
           end
 
+        files =
+          case p.response do
+            nil -> nil
+            map -> Map.get(map, "files", [])
+          end
+
         %{
           attempt_guid: p.attempt_guid,
-          input: %StudentInput{input: input}
+          input: %StudentInput{input: input, files: files}
         }
       end)
 
@@ -349,7 +404,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     roll_up_fn = determine_activity_rollup_fn(activity_attempt_guid, part_inputs, part_attempts)
 
     case evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts)
-         |> persist_evaluations(part_inputs, roll_up_fn) do
+         |> persist_evaluations(part_inputs, roll_up_fn, datashop_session_id) do
       {:ok, _} -> part_attempts
       {:error, error} -> Repo.rollback(error)
     end
@@ -372,13 +427,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   On failure returns `{:error, error}`
   """
-  @spec apply_client_evaluation(String.t(), String.t(), [map()]) ::
+  @spec apply_client_evaluation(String.t(), String.t(), [map()], Atom.t(), String.t()) ::
           {:ok, [map()]} | {:error, any}
   def apply_client_evaluation(
         section_slug,
         activity_attempt_guid,
         client_evaluations,
-        normalize_mode \\ :normalize
+        normalize_mode \\ :normalize,
+        datashop_session_id
       ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
@@ -406,7 +462,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               normalize_mode
             )
 
-          persist_client_evaluations(part_inputs, client_evaluations, roll_up_fn, false)
+          persist_client_evaluations(
+            part_inputs,
+            client_evaluations,
+            roll_up_fn,
+            false,
+            datashop_session_id
+          )
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
 
@@ -426,9 +488,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
   On failure returns `{:error, error}`
   """
-  @spec apply_super_activity_evaluation(String.t(), String.t(), [map()]) ::
+  @spec apply_super_activity_evaluation(String.t(), String.t(), [map()], String.t()) ::
           {:ok, [map()]} | {:error, any}
-  def apply_super_activity_evaluation(section_slug, activity_attempt_guid, client_evaluations) do
+  def apply_super_activity_evaluation(
+        section_slug,
+        activity_attempt_guid,
+        client_evaluations,
+        datashop_session_id
+      ) do
     # verify this activity type allows client evaluation
     activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
     activity_registration_slug = activity_attempt.revision.activity_type.slug
@@ -446,7 +513,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
         Repo.transaction(fn ->
           no_roll_up = fn result -> result end
 
-          persist_client_evaluations(part_inputs, client_evaluations, no_roll_up, true)
+          persist_client_evaluations(
+            part_inputs,
+            client_evaluations,
+            no_roll_up,
+            true,
+            datashop_session_id
+          )
         end)
         |> Snapshots.maybe_create_snapshot(part_inputs, section_slug)
 
@@ -455,7 +528,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     end
   end
 
-  defp persist_client_evaluations(part_inputs, client_evaluations, roll_up_fn, replace) do
+  defp persist_client_evaluations(
+         part_inputs,
+         client_evaluations,
+         roll_up_fn,
+         replace,
+         datashop_session_id
+       ) do
     case client_evaluations
          |> Enum.map(fn %{
                           attempt_guid: attempt_guid,
@@ -466,8 +545,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
                           }
                         } ->
            {:ok,
-            %Oli.Delivery.Evaluation.Actions.FeedbackActionResult{
-              type: "FeedbackActionResult",
+            %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+              type: "FeedbackAction",
               attempt_guid: attempt_guid,
               feedback: feedback,
               score: score,
@@ -475,7 +554,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             }}
          end)
          |> (fn evaluations -> {:ok, evaluations} end).()
-         |> persist_evaluations(part_inputs, roll_up_fn, replace) do
+         |> persist_evaluations(part_inputs, roll_up_fn, replace, datashop_session_id) do
       {:ok, results} ->
         results
 
@@ -497,6 +576,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     %Result{score: score, out_of: out_of} =
       Scoring.calculate_score(activity_attempt.revision.scoring_strategy_id, part_attempts)
+
+    Logger.debug("rollup_part_attempt_evaluations: score: #{score}, out_of: #{out_of}")
 
     {score, out_of} =
       case normalize_mode do
@@ -540,7 +621,6 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
     {:ok, %Model{parts: parts}} = Model.parse(activity_model)
 
     evaluations =
-
       case Model.parse(activity_model) do
         {:ok, %Model{rules: []}} ->
           # We need to tie the attempt_guid from the part_inputs to the attempt_guid
@@ -616,16 +696,24 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
       Enum.reduce(part_inputs, part_attempts_map, fn part_input, map ->
         pa = Map.get(map, part_input.attempt_guid)
 
-        if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-             pa.grading_approach == :automatic do
-          Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
-        else
+        unless is_nil(pa) do
           if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
-               pa.grading_approach == :manual do
-            Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
+               pa.grading_approach == :automatic do
+            Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :evaluated})
           else
-            map
+            if (pa.lifecycle_state == :submitted or pa.lifecycle_state == :active) and
+                 pa.grading_approach == :manual do
+              Map.put(map, pa.attempt_guid, %{pa | lifecycle_state: :submitted})
+            else
+              map
+            end
           end
+        else
+          Logger.info(
+            "Part attempt with GUID #{part_input.attempt_guid} was not found in part attempts map"
+          )
+
+          map
         end
       end)
       |> Map.values()

@@ -20,7 +20,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb}
+  alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, SessionContext}
   alias Oli.Activities.Model.Part
   alias Oli.Delivery.Attempts.ManualGrading
   alias Oli.Delivery.Attempts.ManualGrading.BrowseOptions
@@ -96,11 +96,13 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         total_count = determine_total(attempts)
 
         activities = Oli.Activities.list_activity_registrations()
-        additional_scripts = Enum.map(activities, fn a -> a.authoring_script end)
+        part_components = Oli.PartComponents.get_part_component_scripts(:delivery_script)
+        additional_scripts = Enum.map(activities, fn a -> a.authoring_script end) |> Enum.concat(part_components)
 
         activity_types_map = Enum.reduce(activities, %{}, fn e, m -> Map.put(m, e.id, e) end)
 
-        {:ok, table_model} = TableModel.new(attempts, activity_types_map)
+        context = SessionContext.init(session)
+        {:ok, table_model} = TableModel.new(attempts, activity_types_map, context)
 
         table_model = Map.put(table_model, :sort_order, :desc)
         |> Map.put(:sort_by_spec, TableModel.date_submitted_spec())
@@ -108,6 +110,7 @@ defmodule OliWeb.ManualGrading.ManualGradingView do
         {:ok,
          assign(socket,
            breadcrumbs: set_breadcrumbs(type, section),
+           delivery_breadcrumb: true,
            section: section,
            total_count: total_count,
            table_model: table_model,

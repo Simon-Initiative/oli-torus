@@ -91,7 +91,6 @@ const FIBAuthor: React.FC<AuthorPartComponentProps<FIBModel>> = (props) => {
   );
   return (
     <div data-janus-type={tagName} style={styles} className={`fib-container`}>
-      <style type="text/css">@import url(/css/janus_fill_blanks_delivery.css);</style>
       <style type="text/css">{`${customCss}`};</style>
       <div className="scene">
         <div className="app">

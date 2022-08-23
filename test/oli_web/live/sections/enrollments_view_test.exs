@@ -71,12 +71,18 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
   describe "gating and scheduling live test admin" do
     setup [:setup_enrollments_view]
 
-    test "mount enrollments for admin", %{conn: conn, section: section} do
+    test "mount enrollments for admin", %{section: section} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
       {:ok, _view, html} =
         live(conn, Routes.live_path(@endpoint, OliWeb.Sections.EnrollmentsView, section.slug))
 
+      [e | _] = Oli.Delivery.Sections.list_enrollments(section.slug)
+
       assert html =~ "Admin"
       assert html =~ "Enrollments"
+      assert html =~ "Download as .CSV"
+      assert html =~ OliWeb.Common.Utils.render_date(e, :inserted_at, session_context)
     end
   end
 
@@ -105,7 +111,12 @@ defmodule OliWeb.Sections.EnrollmentsViewTest do
 
     enroll(section)
 
-    admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
+    admin =
+      author_fixture(%{
+        system_role_id: Oli.Accounts.SystemRole.role_id().admin,
+        preferences:
+          %Oli.Accounts.AuthorPreferences{show_relative_dates: false} |> Map.from_struct()
+      })
 
     conn =
       Plug.Test.init_test_session(conn, [])

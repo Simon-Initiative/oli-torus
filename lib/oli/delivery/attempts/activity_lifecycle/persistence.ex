@@ -3,10 +3,10 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   alias Oli.Repo
 
   alias Oli.Delivery.Evaluation.Actions.{
-    FeedbackActionResult,
-    NavigationActionResult,
-    StateUpdateActionResult,
-    SubmissionActionResult
+    FeedbackAction,
+    NavigationAction,
+    StateUpdateAction,
+    SubmissionAction
   }
 
   alias Oli.Delivery.Attempts.Core.PartAttempt
@@ -25,45 +25,65 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   evaluation result that will be sent back to the client.
   """
 
-  def persist_evaluations({:error, error}, _, _), do: {:error, error}
+  def persist_evaluations({:error, error}, _, _, _), do: {:error, error}
 
-  def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn) do
+  def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, datashop_session_id) do
     evaluated_inputs = Enum.zip(part_inputs, evaluations)
 
-    case Enum.reduce_while(evaluated_inputs, {:ok, false, []}, &persist_single_evaluation/2) do
+    case Enum.reduce_while(
+           evaluated_inputs,
+           {:ok, false, []},
+           persist_single_evaluation_with_datashop_session_fn(datashop_session_id)
+         ) do
       {:ok, _, results} -> roll_up_fn.({:ok, results})
       error -> error
     end
   end
 
-  def persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, replace) do
+  def persist_evaluations(
+        {:ok, evaluations},
+        part_inputs,
+        roll_up_fn,
+        replace,
+        datashop_session_id
+      ) do
     case replace do
       false ->
-        persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn)
+        persist_evaluations({:ok, evaluations}, part_inputs, roll_up_fn, datashop_session_id)
 
       true ->
         evaluated_inputs = Enum.zip(part_inputs, evaluations)
 
-        case Enum.reduce_while(evaluated_inputs, {:ok, replace, []}, &persist_single_evaluation/2) do
+        case Enum.reduce_while(
+               evaluated_inputs,
+               {:ok, replace, []},
+               persist_single_evaluation_with_datashop_session_fn(datashop_session_id)
+             ) do
           {:ok, _, results} -> roll_up_fn.({:ok, results})
           error -> error
         end
     end
   end
 
+  defp persist_single_evaluation_with_datashop_session_fn(datashop_session_id) do
+    &persist_single_evaluation(&1, &2, datashop_session_id)
+  end
+
   # Persist the result of a single evaluation for a single part_input submission.
-  defp persist_single_evaluation({_, {:error, error}}, _), do: {:halt, {:error, error}}
+  defp persist_single_evaluation({_, {:error, error}}, _, _), do: {:halt, {:error, error}}
 
   defp persist_single_evaluation(
-         {_, {:ok, %NavigationActionResult{} = action_result}},
-         {:ok, replace, results}
+         {_, {:ok, %NavigationAction{} = action_result}},
+         {:ok, replace, results},
+         _datashop_session_id
        ) do
     {:cont, {:ok, replace, results ++ [action_result]}}
   end
 
   defp persist_single_evaluation(
-         {_, {:ok, %StateUpdateActionResult{} = action_result}},
-         {:ok, replace, results}
+         {_, {:ok, %StateUpdateAction{} = action_result}},
+         {:ok, replace, results},
+         _datashop_session_id
        ) do
     {:cont, {:ok, replace, results ++ [action_result]}}
   end
@@ -71,12 +91,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
           {:ok,
-           %FeedbackActionResult{
+           %FeedbackAction{
              feedback: feedback,
              score: score,
              out_of: out_of
            } = feedback_action}},
-         {:ok, replace, results}
+         {:ok, replace, results},
+         datashop_session_id
        ) do
     now = DateTime.utc_now()
 
@@ -101,7 +122,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
              date_submitted: now,
              score: score,
              out_of: out_of,
-             feedback: feedback
+             feedback: feedback,
+             datashop_session_id: datashop_session_id
            ]
          ) do
       nil ->
@@ -117,8 +139,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
   defp persist_single_evaluation(
          {%{attempt_guid: attempt_guid, input: input},
-          {:ok, %SubmissionActionResult{} = submission_action}},
-         {:ok, replace, results}
+          {:ok, %SubmissionAction{} = submission_action}},
+         {:ok, replace, results},
+         datashop_session_id
        ) do
     now = DateTime.utc_now()
 
@@ -140,7 +163,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
              response: input,
              lifecycle_state: :submitted,
              date_evaluated: nil,
-             date_submitted: now
+             date_submitted: now,
+             datashop_session_id: datashop_session_id
            ]
          ) do
       nil ->

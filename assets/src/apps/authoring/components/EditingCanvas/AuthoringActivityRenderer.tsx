@@ -37,11 +37,6 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
 
   const selectedPartId = useSelector(selectCurrentSelection);
 
-  if (!activityModel.authoring || !activityModel.activityType) {
-    console.warn('Bad Activity Data', activityModel);
-    return null;
-  }
-
   const ref = useRef<any>(null);
 
   const elementProps = {
@@ -55,6 +50,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
       left: '300px',
       paddingRight: '300px',
       paddingBottom: '300px',
+      pointerEvents: `${editMode ? 'auto' : 'none'}`,
     },
     authoringContext: JSON.stringify({
       selectedPartId,
@@ -72,6 +68,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   );
 
   useEffect(() => {
+    if (!activityModel.authoring || !activityModel.activityType) {
+      return;
+    }
     // the "notificationStream" is a state based way to "push" stuff into the activity
     // from here it uses the notification system which is an event emitter because
     // these are web components and not in the same react context, and
@@ -82,6 +81,9 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
   }, [notificationStream]);
 
   useEffect(() => {
+    if (!activityModel.authoring || !activityModel.activityType) {
+      return;
+    }
     const customEventHandler = async (e: any) => {
       const target = e.target as HTMLElement;
       if (target?.id === elementProps.id) {
@@ -117,6 +119,7 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
         }
       }
     };
+
     // for now just do this, todo we need to setup events and listen
     document.addEventListener('customEvent', customEventHandler);
 
@@ -135,10 +138,16 @@ const AuthoringActivityRenderer: React.FC<AuthoringActivityRendererProps> = ({
     setIsReady(true);
 
     return () => {
+      /* console.log('AAR: unmounting'); */
       document.removeEventListener('customEvent', customEventHandler);
       document.removeEventListener('modelUpdated', handleActivityEdit);
     };
-  }, []);
+  }, [elementProps.id]);
+
+  if (!activityModel.authoring || !activityModel.activityType) {
+    console.warn('Bad Activity Data', activityModel);
+    return null;
+  }
 
   return isReady
     ? React.createElement(activityModel.activityType?.authoring_element, elementProps, null)

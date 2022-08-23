@@ -1,0 +1,13 @@
+@use 'authoring/theme' as authoring;
+
+:global(html.authoring) {
+  .deleteButton {
+    &:not([disabled]) {
+      color: rgba(authoring.$body-color, 0.8);
+
+      &:hover {
+        color: authoring.$danger;
+      }
+    }
+  }
+}

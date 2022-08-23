@@ -5,6 +5,8 @@ defmodule OliWeb.ProjectControllerTest do
   alias Oli.Activities
   alias Oli.Activities.ActivityRegistrationProject
 
+  import Oli.Factory
+
   @basic_get_routes [:overview, :publish, :insights]
   setup [:author_project_conn]
   @valid_attrs %{title: "default title"}
@@ -27,8 +29,22 @@ defmodule OliWeb.ProjectControllerTest do
     |> Enum.each(fn path -> unauthorized_redirect(conn, path, project2.slug) end)
   end
 
+  describe "projects" do
+    # this test demonstrates the valid case where an author has multiple user accounts associated
+    # (consider an authoring account shared across lms or independent instructor accounts)
+    test "multiple linked user accounts still renders properly", %{conn: conn, author: author} do
+      _user_associated = insert(:user, author: author)
+      _user2_associated = insert(:user, author: author)
+
+      conn = get(conn, Routes.live_path(OliWeb.Endpoint, OliWeb.Projects.ProjectsLive))
+
+      assert html_response(conn, 200) =~ "<h3>Projects</h3>"
+    end
+  end
+
   describe "overview" do
     test "displays the page", %{conn: conn, project: project} do
+      publisher = Oli.Inventories.get_publisher(project.publisher_id)
       custom_act = Activities.get_registration_by_slug("oli_image_coding")
 
       %ActivityRegistrationProject{}
@@ -40,7 +56,10 @@ defmodule OliWeb.ProjectControllerTest do
 
       conn = get(conn, Routes.project_path(conn, :overview, project.slug))
 
-      assert html_response(conn, 200) =~ "Overview"
+      response = html_response(conn, 200)
+      assert response =~ "Overview"
+      assert response =~ project.title
+      assert response =~ publisher.name
     end
   end
 
@@ -48,6 +67,18 @@ defmodule OliWeb.ProjectControllerTest do
     test "displays the page", %{conn: conn, project: project} do
       conn = get(conn, Routes.project_path(conn, :publish, project.slug))
       assert html_response(conn, 200) =~ "Publish"
+    end
+
+    test "displays the published date", %{project: project} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, publication} = Oli.Publishing.publish_project(project, "New publication")
+
+      conn = get(conn, Routes.project_path(conn, :publish, project.slug))
+      assert html_response(conn, 200) =~ "Publish"
+
+      assert html_response(conn, 200) =~
+               "Last published <strong>" <>
+                 OliWeb.Common.Utils.render_date(publication, :published, session_context)
     end
   end
 

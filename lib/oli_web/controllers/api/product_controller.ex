@@ -2,16 +2,13 @@ defmodule OliWeb.Api.ProductController do
   @moduledoc """
   Endpoint for payment code bulk request.
   """
-
-  alias OpenApiSpex.Schema
-
-  alias Oli.Delivery.Sections
-  import OliWeb.Api.Helpers
-
   use OliWeb, :controller
   use OpenApiSpex.Controller
 
-  plug :valid_product_api_key
+  alias Oli.Delivery.Sections
+  alias OpenApiSpex.Schema
+
+  plug Oli.Plugs.ValidateProductApiKey
 
   action_fallback OliWeb.FallbackController
 
@@ -41,10 +38,13 @@ defmodule OliWeb.Api.ProductController do
             "description" => "World Cultures is a great....",
             "status" => "active",
             "requires_payment" => true,
+            "pay_by_institution" => false,
             "amount" => "$100.00",
             "has_grace_period" => true,
             "grace_period_days" => 10,
-            "grace_period_strategy" => "relative_to_student"
+            "grace_period_strategy" => "relative_to_student",
+            "publisher_id" => 10,
+            "cover_image" => "https://www.someurl.com/some-image.png"
           }
         ]
       }
@@ -55,6 +55,7 @@ defmodule OliWeb.Api.ProductController do
   Access the list of available products.
   """
   @doc parameters: [],
+       security: [%{"bearer-authorization" => []}],
        responses: %{
          200 =>
            {"Product Listing Response", "application/json",
@@ -63,13 +64,5 @@ defmodule OliWeb.Api.ProductController do
   def index(conn, _params) do
     products = Sections.list_blueprint_sections()
     render(conn, "index.json", products: products)
-  end
-
-  defp valid_product_api_key(conn, _options) do
-    if is_valid_api_key?(conn, &Oli.Interop.validate_for_products/1) do
-      conn
-    else
-      error(conn, 401, "Unauthorized")
-    end
   end
 end

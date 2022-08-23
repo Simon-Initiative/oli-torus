@@ -1,14 +1,13 @@
 /* eslint-disable */
-const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const globImporter = require('node-sass-glob-importer');
 const { ESBuildMinifyPlugin } = require('esbuild-loader');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const MONACO_DIR = path.resolve(__dirname, './node_modules/monaco-editor');
+const SHADOW_DOM_ENABLED = [path.resolve(__dirname, './src/components/parts/janus-fill-blanks')];
 
 // Determines the entry points for the webpack by looking at activity
 // implementations in src/components/activities folder
@@ -16,12 +15,16 @@ const populateEntries = () => {
   // These are the non-activity bundles
   const initialEntries = {
     app: ['babel-polyfill', './src/phoenix/app.ts'],
+    components: ['./src/apps/Components.tsx'],
     pageeditor: ['./src/apps/PageEditorApp.tsx'],
     activitybank: ['./src/apps/ActivityBankApp.tsx'],
+    bibliography: ['./src/apps/BibliographyApp.tsx'],
     authoring: ['./src/apps/AuthoringApp.tsx'],
     delivery: ['./src/apps/DeliveryApp.tsx'],
     stripeclient: ['./src/payment/stripe/client.ts'],
     timezone: ['./src/phoenix/timezone.ts'],
+    dark: ['./src/phoenix/dark.ts'],
+    keepalive: ['./src/phoenix/keep-alive.ts'],
   };
 
   const manifests = glob.sync('./src/components/activities/*/manifest.json', {});
@@ -50,37 +53,30 @@ const populateEntries = () => {
 
   const themePaths = [
     ...glob
-      .sync('./styles/themes/authoring/*/light.scss')
+      .sync('./styles/themes/authoring/*.scss')
       .map((p) => ({ prefix: 'authoring_', themePath: p })),
     ...glob
-      .sync('./styles/themes/authoring/*/dark.scss')
+      .sync('./styles/themes/authoring/custom/*.scss')
       .map((p) => ({ prefix: 'authoring_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/*/light.scss')
+      .sync('./styles/themes/delivery/*.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/*/dark.scss')
+      .sync('./styles/themes/delivery/custom/*.scss')
       .map((p) => ({ prefix: 'delivery_', themePath: p })),
     ...glob
       .sync('./styles/themes/delivery/adaptive_themes/*/light.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
+      .map((p) => ({ prefix: 'delivery_adaptive_themes_default_', themePath: p })),
     ...glob
-      .sync('./styles/themes/delivery/adaptive_themes/*/dark.scss')
-      .map((p) => ({ prefix: 'delivery_adaptive_themes_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/preview/*/light.scss')
-      .map((p) => ({ prefix: 'preview_', themePath: p })),
-    ...glob
-      .sync('./styles/themes/preview/*/dark.scss')
+      .sync('./styles/themes/preview/*.scss')
       .map((p) => ({ prefix: 'preview_', themePath: p })),
   ];
 
   const foundThemes = themePaths.map(({ prefix, themePath }) => {
-    const theme = path.basename(path.dirname(themePath));
-    const colorScheme = path.basename(themePath, '.scss');
+    const theme = path.basename(themePath, '.scss');
 
     return {
-      [prefix + theme + '_' + colorScheme]: themePath,
+      [prefix + theme]: themePath,
     };
   });
 
@@ -96,9 +92,9 @@ const populateEntries = () => {
   if (
     Object.keys(merged).length !=
     Object.keys(initialEntries).length +
-    2 * foundActivities.length +
-    2 * foundParts.length +
-    foundThemes.length
+      2 * foundActivities.length +
+      2 * foundParts.length +
+      foundThemes.length
   ) {
     throw new Error(
       'Encountered a possible naming collision in activity or part manifests. Aborting.',
@@ -176,16 +172,42 @@ module.exports = (env, options) => ({
       {
         test: /\.css$/,
         include: MONACO_DIR,
-        use: ['style-loader', 'css-loader']
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.ttf$/,
         include: MONACO_DIR,
-        use: ['file-loader']
+        use: ['file-loader'],
+      },
+      // load fonts, specifically for MathLive
+      {
+        test: /\.(woff(2)?|ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'fonts/',
+            },
+          },
+        ],
+      },
+      // load sounds, specifically for MathLive
+      {
+        test: /\.wav$/,
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              name: '[name].[ext]',
+              outputPath: 'sounds/',
+            },
+          },
+        ],
       },
       {
         test: /\.[s]?css$/,
-        exclude: MONACO_DIR,
+        include: SHADOW_DOM_ENABLED,
         use: [
           MiniCssExtractPlugin.loader,
           {
@@ -198,8 +220,59 @@ module.exports = (env, options) => ({
             loader: 'sass-loader',
             options: {
               sassOptions: {
-                includePaths: [path.join(__dirname, 'src'), path.join(__dirname, 'styles')],
-                importer: globImporter(),
+                includePaths: [path.join(__dirname, 'styles')],
+                quietDeps: true,
+              },
+              sourceMap: true,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.[s]?css$/,
+        include: path.resolve(__dirname, 'src'),
+        exclude: SHADOW_DOM_ENABLED,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: {
+              modules: {
+                mode: 'local',
+                auto: true,
+                localIdentName: '[local]_[hash:base64:8]',
+              },
+              sourceMap: true,
+            },
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [path.join(__dirname, 'styles')],
+                quietDeps: true,
+              },
+              sourceMap: true,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.[s]?css$/,
+        exclude: [MONACO_DIR, path.resolve(__dirname, 'src')],
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: 'sass-loader',
+            options: {
+              sassOptions: {
+                includePaths: [path.join(__dirname, 'styles')],
                 quietDeps: true,
               },
               sourceMap: true,
@@ -214,7 +287,9 @@ module.exports = (env, options) => ({
     ],
   },
   plugins: [
-    new MiniCssExtractPlugin({ filename: '../css/[name].css' }),
+    new MiniCssExtractPlugin({
+      filename: '../css/[name].css',
+    }),
     new CopyWebpackPlugin({ patterns: [{ from: 'static/', to: '../' }] }),
     new MonacoWebpackPlugin(),
   ],

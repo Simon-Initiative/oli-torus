@@ -1,14 +1,25 @@
 defmodule Oli.Delivery.PaywallTest do
   use Oli.DataCase
 
-  alias Oli.Delivery.Sections
-  alias Oli.Delivery.Paywall
+  import Ecto.Query, warn: false
+  import Oli.Factory
 
   alias Lti_1p3.Tool.ContextRoles
+  alias Oli.Delivery.{Sections, Paywall}
+  alias Oli.Delivery.Paywall.{AccessSummary, Discount}
   alias Oli.Publishing
-  import Ecto.Query, warn: false
 
-  describe "can_access" do
+  def last_week() do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    DateTime.add(datetime, -(60 * 60 * 24 * 7), :second)
+  end
+
+  def hours_ago(hours) do
+    {:ok, datetime} = DateTime.now("Etc/UTC")
+    DateTime.add(datetime, -(60 * 60 * hours), :second)
+  end
+
+  describe "summarize_access" do
     setup do
       map = Seeder.base_project_with_resource2()
 
@@ -22,11 +33,11 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       user1 = user_fixture() |> Repo.preload(:platform_roles)
@@ -38,7 +49,6 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           has_grace_period: false,
           context_id: UUID.uuid4(),
@@ -62,17 +72,17 @@ defmodule Oli.Delivery.PaywallTest do
       }
     end
 
-    test "can_access/2 fails then succeeds after user pays", %{
+    test "summarize_access/2 fails then succeeds after user pays", %{
       section: section,
       user1: user,
       codes1: codes
     } do
-      refute Paywall.can_access?(user, section)
+      refute Paywall.summarize_access(user, section).available
       assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      assert Paywall.summarize_access(user, section).available
     end
 
-    test "can_access/2 succeeds during grace period", %{
+    test "summarize_access/2 succeeds during grace period", %{
       section: section,
       user1: user,
       codes1: codes
@@ -83,15 +93,19 @@ defmodule Oli.Delivery.PaywallTest do
           grace_period_days: 6
         })
 
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
       assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :paid
     end
 
-    test "can_access/2 fails after grace period expires", %{
+    test "summarize_access/2 fails after grace period expires", %{
       section: section,
-      user1: user,
-      codes1: codes
+      user1: user
     } do
       {:ok, section} =
         Sections.update_section(section, %{
@@ -99,46 +113,71 @@ defmodule Oli.Delivery.PaywallTest do
           grace_period_days: 2
         })
 
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          start_date: last_week()
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      refute summary.available
+      assert summary.reason == :not_paid
     end
 
-    test "can_access/2 suceeds during grace period, strategy relative to student enrollment",
+    test "summarize_access/2 calculates grace period remaining correctly", %{
+      section: section,
+      user1: user
+    } do
+      {:ok, section} =
+        Sections.update_section(section, %{
+          has_grace_period: true,
+          grace_period_days: 1,
+          start_date: hours_ago(1)
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+      days = summary.grace_period_remaining |> AccessSummary.as_days()
+      assert days > 0 and days < 1
+
+      {:ok, section} =
+        Sections.update_section(section, %{
+          has_grace_period: true,
+          grace_period_days: 2,
+          start_date: hours_ago(1)
+        })
+
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+      days = summary.grace_period_remaining |> AccessSummary.as_days()
+      assert days > 1.0 and days < 2.0
+
+    end
+
+    test "summarize_access/2 suceeds during grace period, strategy relative to student enrollment",
          %{
            section: section,
-           user1: user,
-           codes1: codes
+           user1: user
          } do
       {:ok, section} =
         Sections.update_section(section, %{
           has_grace_period: true,
           grace_period_days: 2,
-          grace_period_strategy: :relative_to_student
+          grace_period_strategy: :relative_to_student,
+          start_date: last_week()
         })
 
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
+      summary = Paywall.summarize_access(user, section)
+      assert summary.available
+      assert summary.reason == :within_grace_period
+
     end
 
-    test "can_access/2 fails after grace period expires, strategy relative to student enrollment",
-         %{
-           section: section,
-           user1: user,
-           codes1: codes
-         } do
-      {:ok, section} =
-        Sections.update_section(section, %{
-          has_grace_period: true,
-          grace_period_days: 2,
-          grace_period_strategy: :relative_to_student
-        })
-
-      assert Paywall.can_access?(user, section)
-      assert {:ok, _} = Paywall.redeem_code(hd(codes) |> to_human(), user, section.slug)
-      assert Paywall.can_access?(user, section)
-    end
   end
 
   describe "redeeming codes" do
@@ -155,11 +194,11 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, product2} =
@@ -169,11 +208,11 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       user1 = user_fixture()
@@ -187,7 +226,6 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
@@ -204,7 +242,6 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
@@ -317,11 +354,11 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, free} =
@@ -331,11 +368,11 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           institution_id: map.institution.id,
-          base_project_id: map.project.id
+          base_project_id: map.project.id,
+          publisher_id: map.project.publisher_id
         })
 
       {:ok, section} =
@@ -345,7 +382,6 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 100),
           grace_period_days: 1,
           title: "1",
-          timezone: "1",
           registration_open: true,
           context_id: UUID.uuid4(),
           start_date: DateTime.add(DateTime.utc_now(), -5),
@@ -358,16 +394,16 @@ defmodule Oli.Delivery.PaywallTest do
       %{institution: map.institution, free: free, paid: paid, section: section}
     end
 
-    test "calculate_product_cost/2 correctly works when no discounts present", %{
+    test "section_cost_from_product/2 correctly works when no discounts present", %{
       free: free,
       paid: paid,
       institution: institution
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.calculate_product_cost(free, institution)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, institution)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution)
     end
 
-    test "calculate_product_cost/2 correctly applies fixed amount discounts",
+    test "section_cost_from_product/2 correctly applies fixed amount discounts",
          %{
            paid: paid,
            institution: institution
@@ -381,7 +417,7 @@ defmodule Oli.Delivery.PaywallTest do
           amount: Money.new(:USD, 90)
         })
 
-      assert {:ok, Money.new(:USD, 90)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution)
 
       Paywall.create_discount(%{
         institution_id: institution.id,
@@ -391,48 +427,280 @@ defmodule Oli.Delivery.PaywallTest do
         amount: Money.new(:USD, 80)
       })
 
-      assert {:ok, Money.new(:USD, 80)} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 80)} == Paywall.section_cost_from_product(paid, institution)
     end
 
-    test "calculate_product_cost/2 correctly applies percentage discounts",
-         %{
-           paid: paid,
-           institution: institution
-         } do
-      {:ok, _} =
-        Paywall.create_discount(%{
-          institution_id: institution.id,
-          section_id: nil,
-          type: :percentage,
-          percentage: 0.5,
-          amount: Money.new(:USD, 90)
-        })
+    percentage_discounts = [
+      %{discount: 50, expected: 50},
+      %{discount: 20, expected: 80},
+      %{discount: 19, expected: 81},
+      %{discount: 12.45, expected: 88},
+      %{discount: 12.55, expected: 87},
+      %{discount: 90, expected: 10},
+      %{discount: 3, expected: 97}
+    ]
 
-      assert {:ok, Money.new(:USD, "50.0")} == Paywall.calculate_product_cost(paid, institution)
+    for %{discount: discount, expected: expected_amount} <- percentage_discounts do
+      @discount discount
+      @expected_amount expected_amount
 
+      # amount from paid is #Money<:USD, 100>
+      test "section_cost_from_product/2 correctly applies percentage discount for #{discount}",
+          %{
+            paid: paid,
+            institution: institution
+          } do
+        {:ok, _} =
+          Paywall.create_discount(%{
+            institution_id: institution.id,
+            section_id: nil,
+            type: :percentage,
+            percentage: @discount,
+            amount: Money.new(:USD, @expected_amount)
+          })
+
+        assert {:ok, Money.new(:USD, @expected_amount)} == Paywall.section_cost_from_product(paid, institution)
+      end
+    end
+
+    test "section_cost_from_product/2 doesn't apply institution-specific discount to other institutions", %{
+      institution: institution_a,
+      paid: paid
+    } do
       Paywall.create_discount(%{
-        institution_id: institution.id,
-        section_id: paid.id,
-        type: :percentage,
-        percentage: 0.2,
-        amount: Money.new(:USD, 80)
+        institution_id: institution_a.id,
+        section_id: nil,
+        type: :fixed_amount,
+        percentage: 0,
+        amount: Money.new(:USD, 90)
       })
 
-      assert {:ok, Money.new(:USD, "20.0")} == Paywall.calculate_product_cost(paid, institution)
+      assert {:ok, Money.new(:USD, 90)} == Paywall.section_cost_from_product(paid, institution_a)
+
+      institution_b = insert(:institution)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, institution_b)
     end
 
-    test "calculate_product_cost/2 correctly works when no institution present", %{
+    test "section_cost_from_product/2 correctly works when no institution present", %{
       free: free,
       paid: paid
     } do
-      assert {:ok, Money.new(:USD, 0)} == Paywall.calculate_product_cost(free, nil)
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(paid, nil)
+      assert {:ok, Money.new(:USD, 0)} == Paywall.section_cost_from_product(free, nil)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(paid, nil)
     end
 
-    test "calculate_product_cost/2 correctly works when given an enrollable section", %{
+    test "section_cost_from_product/2 correctly works when given an enrollable section", %{
       section: section
     } do
-      assert {:ok, Money.new(:USD, 100)} == Paywall.calculate_product_cost(section, nil)
+      assert {:ok, Money.new(:USD, 100)} == Paywall.section_cost_from_product(section, nil)
+    end
+  end
+
+  describe "discount" do
+    test "create_discount/1 with valid data creates a discount" do
+      params = params_with_assocs(:discount)
+
+      assert {:ok, %Discount{} = discount} = Paywall.create_discount(params)
+      assert discount.type == params.type
+      assert discount.percentage == params.percentage
+      refute discount.amount
+    end
+
+    test "create_discount/1 with invalid percentage returns error changeset" do
+      institution = insert(:institution)
+      params = %{
+        institution_id: institution.id,
+        section_id: nil,
+        type: :percentage,
+        amount: nil,
+        percentage: 120.0
+      }
+
+      assert {:error, changeset} = Paywall.create_discount(params)
+      {error, _} = changeset.errors[:percentage]
+      refute changeset.valid?
+      assert error =~ "must be less than or equal to %{number}"
+
+      assert {:error, changeset} = Paywall.create_discount(Map.merge(params, %{percentage: -1}))
+      {error, _} = changeset.errors[:percentage]
+      refute changeset.valid?
+      assert error =~ "must be greater than or equal to %{number}"
+    end
+
+    test "create_discount/1 for existing product/institution returns error changeset" do
+      institution = insert(:institution)
+      product = insert(:section, type: :blueprint)
+      insert(:discount, institution: institution, section: product)
+      params = %{
+        institution_id: institution.id,
+        section_id: product.id,
+        type: :percentage,
+        amount: Money.new(:USD, 10),
+        percentage: 10.0
+      }
+
+      assert {:error, changeset} = Paywall.create_discount(params)
+      {error, _} = changeset.errors[:section_id]
+
+      refute changeset.valid?
+      assert error =~ "has already been taken"
+    end
+
+    test "get_discount_by!/1 returns a discount when exists one for the section and the institution" do
+      discount = insert(:discount)
+
+      returned_discount = Paywall.get_discount_by!(%{
+        section_id: discount.section_id,
+        institution_id: discount.institution_id
+      })
+
+      assert discount.id == returned_discount.id
+      assert discount.type == returned_discount.type
+    end
+
+    test "get_discount_by!/1 returns nil if the discount does not exist" do
+      refute Paywall.get_discount_by!(%{id: 123})
+    end
+
+    test "get_discount_by!/1 raises if returns more than one result" do
+      discount = insert(:discount)
+      insert(:discount, section: discount.section)
+
+      assert_raise Ecto.MultipleResultsError,
+                  ~r/^expected at most one result but got 2 in query/,
+                  fn -> Paywall.get_discount_by!(%{section_id: discount.section_id}) end
+    end
+
+    test "get_institution_wide_discount!/1 returns a discount when exists one for the institution" do
+      discount = insert(:discount, section: nil)
+
+      returned_discount = Paywall.get_institution_wide_discount!(discount.institution_id)
+
+      assert discount.id == returned_discount.id
+      assert discount.type == returned_discount.type
+    end
+
+    test "get_institution_wide_discount!/1 returns nil if a discount does not exist for the institution" do
+      refute Paywall.get_institution_wide_discount!(123)
+    end
+
+    test "get_institution_wide_discount!/1 raises if returns more than one result" do
+      discount = insert(:discount, section: nil)
+      insert(:discount, institution: discount.institution, section: nil)
+
+      assert_raise Ecto.MultipleResultsError,
+                  ~r/^expected at most one result but got 2 in query/,
+                  fn -> Paywall.get_institution_wide_discount!(discount.institution_id) end
+    end
+
+    test "get_product_discounts/1 returns empty if a discount does not exist for the product" do
+      assert [] == Paywall.get_product_discounts(123)
+    end
+
+    test "get_product_discounts/1 returns the discounts associated with one product" do
+      %Discount{id: first_discount_id} = first_discount = insert(:discount)
+      %Discount{id: second_discount_id} = insert(:discount, section: first_discount.section, percentage: 90)
+
+      assert [%Discount{id: ^first_discount_id}, %Discount{id: ^second_discount_id}]
+        = Paywall.get_product_discounts(first_discount.section.id) |> Enum.sort_by(& &1.percentage)
+    end
+
+    test "update_discount/2 updates the discount successfully" do
+      discount = insert(:discount)
+
+      {:ok, updated_discount} = Paywall.update_discount(discount, %{percentage: 99.0})
+
+      assert discount.id == updated_discount.id
+      assert updated_discount.percentage == 99.0
+    end
+
+    test "update_discount/2 does not update the discount when there is an invalid field" do
+      amount_discount = insert(:discount)
+
+      {:error, changeset} = Paywall.update_discount(amount_discount, %{type: :fixed_amount, amount: nil})
+      {error, _} = changeset.errors[:amount]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
+
+      percentage_discount = insert(:discount)
+
+      {:error, changeset} = Paywall.update_discount(percentage_discount, %{type: :percentage, percentage: nil})
+      {error, _} = changeset.errors[:percentage]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
+    end
+
+    test "delete_discount/1 deletes the discount" do
+      discount = insert(:discount)
+
+      assert {:ok, _deleted_discount} = Paywall.delete_discount(discount)
+      refute Paywall.get_discount_by!(%{id: discount.id})
+    end
+
+    test "change_discount/1 returns a discount changeset" do
+      discount = insert(:discount)
+      assert %Ecto.Changeset{} = Paywall.change_discount(discount)
+    end
+
+    test "create_or_update_discount/1 creates a discount" do
+      params = params_with_assocs(:discount)
+
+      assert {:ok, %Discount{} = discount} = Paywall.create_or_update_discount(params)
+      assert discount.type == params.type
+      assert discount.percentage == params.percentage
+      refute discount.amount
+    end
+
+    test "create_or_update_discount/1 updates an existing discount" do
+      discount = insert(:discount)
+      params = %{
+        institution_id: discount.institution_id,
+        section_id: discount.section_id,
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
+      }
+
+      assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
+      assert updated_discount.id == discount.id
+      assert updated_discount.type == :fixed_amount
+      assert updated_discount.amount == Money.new(:USD, 25)
+      refute updated_discount.percentage
+    end
+
+    test "create_or_update_discount/1 updates an existing discount (only institution)" do
+      discount = insert(:discount, section: nil)
+      params = %{
+        institution_id: discount.institution_id,
+        section_id: nil,
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
+      }
+
+      assert {:ok, %Discount{} = updated_discount} = Paywall.create_or_update_discount(params)
+      assert updated_discount.id == discount.id
+      assert updated_discount.type == :fixed_amount
+      assert updated_discount.amount == Money.new(:USD, 25)
+      refute updated_discount.percentage
+    end
+
+    test "create_or_update_discount/1 returns error if no institution is specified" do
+      params = %{
+        institution_id: nil,
+        section_id: nil,
+        type: :fixed_amount,
+        amount: Money.new(:USD, 25),
+        percentage: nil
+      }
+
+      {:error, changeset} = Paywall.create_or_update_discount(params)
+      {error, _} = changeset.errors[:institution_id]
+
+      refute changeset.valid?
+      assert error =~ "can't be blank"
     end
   end
 end

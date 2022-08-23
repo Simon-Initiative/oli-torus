@@ -12,12 +12,43 @@ defmodule OliWeb.LayoutView do
       logo_link_path: 1
     ]
 
+  import OliWeb.AuthoringView,
+    only: [
+      author_role_text: 1,
+      author_role_color: 1,
+      author_icon: 1
+    ]
+
   import Oli.Branding
 
   alias Oli.Accounts
   alias Oli.Publishing.AuthoringResolver
   alias OliWeb.Breadcrumb.BreadcrumbTrailLive
+  alias Oli.Delivery.Paywall.AccessSummary
   alias Oli.Delivery.Sections
+
+  def show_pay_early(%AccessSummary{reason: :within_grace_period}), do: true
+  def show_pay_early(_), do: false
+
+  def pay_early_message(%AccessSummary{
+        reason: :within_grace_period,
+        grace_period_remaining: seconds_remaining
+      }) do
+    fractional_days_remaining = AccessSummary.as_days(seconds_remaining)
+
+    cond do
+      fractional_days_remaining < 1.0 ->
+        "Today is the last day of your grace period access for this course"
+
+      fractional_days_remaining < 2.0 ->
+        "Tomorrow is the last day remaining in your grace period access of this course"
+
+      true ->
+        "You have #{round(fractional_days_remaining)} more days remaining in your grace period access of this course"
+    end
+  end
+
+  def pay_early_message(_), do: ""
 
   def container_slug(assigns) do
     if assigns[:container] do
@@ -93,45 +124,18 @@ defmodule OliWeb.LayoutView do
     end
   end
 
-  def account_link(%{:assigns => assigns} = conn) do
-    current_author = assigns.current_author
-
-    initials =
-      case current_author.name do
-        nil ->
-          "?"
-
-        name ->
-          name = String.trim(name)
-
-          cond do
-            # After trimming, if a name contains a space that space can only be between two other non-space characters
-            # so we guarantee that two initials can be extracted
-            String.contains?(name, " ") ->
-              name
-              |> String.split(~r{\s+})
-              |> Enum.map(&String.at(&1, 0))
-              |> Enum.take(2)
-
-            # If after trimming there is no space, but there is text, we simply take the first character as a singular
-            String.length(name) > 0 ->
-              String.at(name, 0)
-
-            # If after trimming, there is the empty string, we show the question mark
-            true ->
-              "?"
-          end
-      end
-
-    icon = raw("<div class=\"user-initials-icon\">#{initials}</div>")
-
-    link([icon],
-      to: Routes.live_path(conn, OliWeb.Workspace.AccountDetailsLive),
-      class: "#{active_class(active_or_nil(assigns), :account)} account-link"
-    )
-  end
+  def account_dropdown(%{assigns: %{current_author: current_author}} = conn),
+    do:
+      render(__MODULE__, "_author_account_dropdown.html",
+        conn: conn,
+        current_author: current_author
+      )
 
   def render_layout(layout, assigns, do: content) do
     render(layout, Map.put(assigns, :inner_layout, content))
+  end
+
+  def dev_mode?() do
+    Application.fetch_env!(:oli, :env) == :dev
   end
 end

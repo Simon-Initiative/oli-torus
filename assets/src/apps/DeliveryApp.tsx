@@ -1,4 +1,4 @@
 import Delivery from './delivery/Delivery';
-import { defineApplication } from './app';
+import { registerApplication } from './app';
 
-defineApplication(Delivery);
+registerApplication('Delivery', Delivery);

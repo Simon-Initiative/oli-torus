@@ -10,6 +10,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   }
 
   alias Oli.Activities.State.ActivityState
+  alias Oli.Activities.State.PartState
   alias Oli.Activities.Model
   alias Oli.Activities.Transformers
 
@@ -86,7 +87,12 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
 
   `{:error, {:not_found}}`
   """
-  def reset_activity(section_slug, activity_attempt_guid, seed_state_from_previous \\ false) do
+  def reset_activity(
+        section_slug,
+        activity_attempt_guid,
+        datashop_session_id,
+        seed_state_from_previous \\ false
+      ) do
     Repo.transaction(fn ->
       activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
 
@@ -117,9 +123,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           revision = DeliveryResolver.from_resource_id(section_slug, activity_attempt.resource_id)
 
           {model_to_store, working_model} =
-            case Transformers.apply_transforms(revision.content) do
-              {:ok, transformed_model} -> {transformed_model, transformed_model}
-              {:no_effect, original} -> {nil, original}
+            case Transformers.apply_transforms([revision]) do
+              [{:ok, nil}] -> {nil, revision.content}
+              [{:ok, transformed_model}] -> {transformed_model, transformed_model}
               _ -> {nil, nil}
             end
 
@@ -131,6 +137,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                    attempt_number: attempt_count + 1,
                    transformed_model: model_to_store,
                    resource_id: activity_attempt.resource_id,
+                   group_id: activity_attempt.group_id,
                    revision_id: revision.id,
                    resource_attempt_id: activity_attempt.resource_attempt_id
                  }) do
@@ -152,7 +159,8 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
                             part_id: p.part_id,
                             grading_approach: p.grading_approach,
                             response: response,
-                            activity_attempt_id: new_activity_attempt.id
+                            activity_attempt_id: new_activity_attempt.id,
+                            datashop_session_id: datashop_session_id
                           }) do
                        {:ok, part_attempt} -> {:cont, {:ok, acc ++ [part_attempt]}}
                        {:error, changeset} -> {:halt, {:error, changeset}}
@@ -167,6 +175,55 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
           else
             {:error, error} -> Repo.rollback(error)
           end
+        end
+      end
+    end)
+  end
+
+  @doc """
+  Resets a single part attempt.  Returns {:ok, %PartState{}} or error.
+  """
+  def reset_part(activity_attempt_guid, part_attempt_guid, datashop_session_id) do
+    Repo.transaction(fn ->
+      part_attempt = get_part_attempt_by(attempt_guid: part_attempt_guid)
+      activity_attempt = get_activity_attempt_by(attempt_guid: activity_attempt_guid)
+
+      if is_nil(part_attempt) or is_nil(activity_attempt) do
+        Repo.rollback({:not_found})
+      else
+        # We cannot rely on the attempt number from the supplied activity attempt
+        # to determine the total number of attempts - or the next attempt number, since
+        # a client could be resetting an attempt that is not the latest attempt (e.g. from multiple
+        # browser windows).
+        # Instead we will query to determine the count of attempts. This is likely an
+        # area where we want locking in place to ensure that we can never get into a state
+        # where two attempts are generated with the same number
+
+        attempt_count =
+          count_part_attempts(
+            activity_attempt.id,
+            part_attempt.part_id
+          )
+
+        {:ok, parsed_model} =
+          case activity_attempt.transformed_model do
+            nil -> Model.parse(activity_attempt.revision.content)
+            t -> Model.parse(t)
+          end
+
+        part = Enum.find(parsed_model.parts, fn p -> p.id == part_attempt.part_id end)
+
+        case create_part_attempt(%{
+               attempt_guid: UUID.uuid4(),
+               attempt_number: attempt_count + 1,
+               part_id: part_attempt.part_id,
+               grading_approach: part_attempt.grading_approach,
+               response: nil,
+               activity_attempt_id: activity_attempt.id,
+               datashop_session_id: datashop_session_id
+             }) do
+          {:ok, part_attempt} -> PartState.from_attempt(part_attempt, part)
+          {:error, changeset} -> Repo.rollback(changeset)
         end
       end
     end)
@@ -203,8 +260,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   @doc """
   Performs activity model transformation for test mode.
   """
-  def perform_test_transformation(model) do
-    Transformers.apply_transforms(model)
+  def perform_test_transformation(%Oli.Resources.Revision{} = revision) do
+    [result] = Transformers.apply_transforms([revision])
+    result
   end
 
   @doc """
@@ -225,22 +283,29 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
   def get_activity_attempt_save_files(attempt_guid, user_id, attempt_number) do
     query =
       from a in ActivityAttemptSaveFile,
-           where: a.attempt_guid == ^attempt_guid and a.attempt_number == ^attempt_number and a.user_id == ^user_id,
-           select: a
+        where:
+          a.attempt_guid == ^attempt_guid and a.attempt_number == ^attempt_number and
+            a.user_id == ^user_id,
+        select: a
+
     Repo.all(query)
   end
 
   def get_activity_attempt_save_file(attempt_guid, user_id, attempt_number, file_name) do
     query =
       from a in ActivityAttemptSaveFile,
-           where: a.attempt_guid == ^attempt_guid
-                  and a.file_name == ^file_name and a.user_id == ^user_id,
-           select: a
-    query = if attempt_number != nil do
-      where(query, [a], a.attempt_number == ^attempt_number)
-    else
-      query
-    end
+        where:
+          a.attempt_guid == ^attempt_guid and
+            a.file_name == ^file_name and a.user_id == ^user_id,
+        select: a
+
+    query =
+      if attempt_number != nil do
+        where(query, [a], a.attempt_number == ^attempt_number)
+      else
+        query
+      end
+
     Repo.one(query)
   end
 
@@ -254,7 +319,9 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
       {:error, changeset}         -> # Something went wrong
 
   """
-  def save_activity_attempt_state_file(%{attempt_guid: attempt_guid, file_name: file_name, user_id: user_id} = changes) do
+  def save_activity_attempt_state_file(
+        %{attempt_guid: attempt_guid, file_name: file_name, user_id: user_id} = changes
+      ) do
     changes = Map.merge(changes, %{file_guid: UUID.uuid4()})
 
     case Repo.get_by(
@@ -270,6 +337,18 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle do
     end
     |> ActivityAttemptSaveFile.changeset(changes)
     |> Repo.insert_or_update()
+  end
+
+  defp count_part_attempts(activity_attempt_id, part_id) do
+    {count} =
+      Repo.one(
+        from(p in PartAttempt,
+          where: p.activity_attempt_id == ^activity_attempt_id and p.part_id == ^part_id,
+          select: {count(p.id)}
+        )
+      )
+
+    count
   end
 
   defp count_activity_attempts(resource_attempt_id, resource_id) do

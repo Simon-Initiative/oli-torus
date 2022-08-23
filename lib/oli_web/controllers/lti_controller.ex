@@ -2,7 +2,6 @@ defmodule OliWeb.LtiController do
   use OliWeb, :controller
 
   import Oli.Utils
-  import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
   alias Oli.Delivery.Sections
@@ -11,7 +10,7 @@ defmodule OliWeb.LtiController do
   alias Lti_1p3
   alias Oli.Predefined
   alias Oli.Slack
-  alias OliWeb.Common.LtiSession
+  alias OliWeb.Common.{LtiSession, SessionContext, Utils}
   alias Oli.Lti.LtiParams
   alias Lti_1p3.Tool.ContextRoles
   alias Lti_1p3.Tool.PlatformRoles
@@ -171,6 +170,10 @@ defmodule OliWeb.LtiController do
                 "message_type" => "LtiResourceLinkRequest",
                 "icon_url" => Oli.VendorProperties.normalized_workspace_logo(host)
               },
+              %{
+                "placement" => "assignment_selection",
+                "message_type" => "LtiResourceLinkRequest"
+              },
               case Map.get(params, "course_navigation_default") do
                 "disabled" ->
                   %{
@@ -186,9 +189,13 @@ defmodule OliWeb.LtiController do
                   }
               end
               ## TODO: add support for more placement types in the future, possibly configurable by LMS admin
+              # assignment_selection when we support deep linking
               # %{
               #   "placement" => "assignment_selection",
-              #   "message_type" => "LtiResourceLinkRequest"
+              #   "message_type" => "LtiDeepLinkingRequest",
+              #   "custom_fields" => %{
+              #     "assignment_id" => "$Canvas.assignment.id"
+              #   }
               # },
               # %{
               #   "placement" => "homework_submission",
@@ -243,6 +250,7 @@ defmodule OliWeb.LtiController do
       ) do
     case Institutions.create_pending_registration(pending_registration_attrs) do
       {:ok, pending_registration} ->
+        context = SessionContext.init(conn)
         # send a Slack notification regarding the new registration request
         Slack.send(%{
           "username" => "Torus Bot",
@@ -274,11 +282,12 @@ defmodule OliWeb.LtiController do
                 %{
                   "type" => "mrkdwn",
                   "text" =>
-                    "*Location:*\n#{pending_registration.country_code} - #{pending_registration.timezone}"
+                    "*Location:*\n#{pending_registration.country_code}"
                 },
                 %{
                   "type" => "mrkdwn",
-                  "text" => "*Date:*\n#{pending_registration.inserted_at |> date()}"
+                  "text" =>
+                    "*Date:*\n#{Utils.render_precise_date(pending_registration, :inserted_at, context)}"
                 }
               ]
             },
@@ -308,7 +317,6 @@ defmodule OliWeb.LtiController do
           changeset: changeset,
           submit_action: Routes.lti_path(conn, :request_registration),
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: pending_registration_attrs["issuer"],
@@ -337,7 +345,6 @@ defmodule OliWeb.LtiController do
           changeset: Institutions.change_pending_registration(%PendingRegistration{}),
           submit_action: Routes.lti_path(conn, :request_registration),
           country_codes: Predefined.country_codes(),
-          timezones: Predefined.timezones(),
           world_universities_and_domains: Predefined.world_universities_and_domains(),
           lti_config_defaults: Predefined.lti_config_defaults(),
           issuer: issuer,
@@ -353,11 +360,11 @@ defmodule OliWeb.LtiController do
 
   defp handle_valid_lti_1p3_launch(conn, lti_params) do
     issuer = lti_params["iss"]
-    client_id = lti_params["aud"]
+    client_id = LtiParams.peek_client_id(lti_params)
     deployment_id = lti_params["https://purl.imsglobal.org/spec/lti/claim/deployment_id"]
 
     case Institutions.get_institution_registration_deployment(issuer, client_id, deployment_id) do
-      {institution, _registration, _deployment} ->
+      {institution, registration, _deployment} ->
         lti_roles = lti_params["https://purl.imsglobal.org/spec/lti/claim/roles"]
 
         # update user values defined by the oidc standard per LTI 1.3 standard user identity claims
@@ -413,26 +420,12 @@ defmodule OliWeb.LtiController do
 
                   # make sure section details are up to date
                   %{"title" => context_title} = context
-                  {:ok, _section} = update_section_details(context_title, section, lti_params)
+                  {:ok, _section} = update_section_details(context_title, section, lti_params, registration)
                 end
-
-                # if account is linked to an author, sign them in
-                conn =
-                  if user.author_id != nil do
-                    author = Accounts.get_author!(user.author_id)
-
-                    # sign into authoring account using Pow
-                    conn
-                    |> use_pow_config(:author)
-                    |> Pow.Plug.create(author)
-                  else
-                    conn
-                  end
 
                 # sign current user in and redirect to home page
                 conn
-                |> use_pow_config(:user)
-                |> Pow.Plug.create(user)
+                |> create_pow_user(:user, user)
                 |> redirect(to: Routes.delivery_path(conn, :index))
             end
 
@@ -448,11 +441,11 @@ defmodule OliWeb.LtiController do
     Sections.enroll(user_id, section_id, context_roles)
   end
 
-  defp update_section_details(context_title, section, lti_params) do
+  defp update_section_details(context_title, section, lti_params, registration) do
     Sections.update_section(section, %{
       title: context_title,
       grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
-      line_items_service_url: AGS.get_line_items_url(lti_params),
+      line_items_service_url: AGS.get_line_items_url(lti_params, registration),
       nrps_enabled: NRPS.nrps_enabled?(lti_params),
       nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
     })

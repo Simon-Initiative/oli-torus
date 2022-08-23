@@ -28,7 +28,8 @@ config :oli, Oli.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
   timeout: 600_000,
-  ownership_timeout: 600_000
+  ownership_timeout: 600_000,
+  log: String.to_existing_atom(System.get_env("DEV_DB_LOG_LEVEL", "debug"))
 
 # Configure email for development
 config :oli, Oli.Mailer, adapter: Bamboo.LocalAdapter
@@ -38,12 +39,6 @@ config :oli, OliWeb.Pow.Mailer, adapter: Bamboo.LocalAdapter
 config :oli, :stripe_provider,
   public_secret: "pk_test_TYooMQauvdEDq54NiTphI7jx",
   private_secret: "sk_test_4eC39HqLyjWDarjtT1zdp7dc"
-
-force_ssl =
-  case System.get_env("FORCE_SSL", "false") do
-    "true" -> [rewrite_on: [:x_forwarded_proto]]
-    _ -> false
-  end
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
@@ -66,7 +61,6 @@ config :oli, OliWeb.Endpoint,
     keyfile: System.get_env("SSL_KEY_PATH", "priv/ssl/localhost.key"),
     certfile: System.get_env("SSL_CERT_PATH", "priv/ssl/localhost.crt")
   ],
-  force_ssl: force_ssl,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -157,3 +151,7 @@ config :appsignal, :config, active: false
 # Configure AWS
 config :ex_aws,
   region: System.get_env("AWS_REGION", "us-east-1")
+
+config :ex_aws, :hackney_opts,
+  follow_redirect: true,
+  recv_timeout: 200_000

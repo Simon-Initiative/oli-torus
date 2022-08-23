@@ -68,12 +68,40 @@ defmodule Oli.Interop do
     validate(code, :products_enabled)
   end
 
+  @doc """
+  Validates that a key can be used for the activity registration scope.
+
+  Returns true if valid, false if not.
+  """
+  def validate_for_registration(code) do
+    validate(code, :registration_enabled)
+  end
+
+  def validate_for_automation_setup(code) do
+    validate(code, :automation_setup_enabled)
+  end
+
   defp validate(code, field) do
     hash = :crypto.hash(:md5, code) |> Base.encode16()
 
     case Repo.get_by(ApiKey, hash: hash) do
-      nil -> false
-      key -> Map.get(key, field) == true and key.status == :enabled
+      nil ->
+        false
+
+      key ->
+        Map.get(key, field) == true and key.status == :enabled
+    end
+  end
+
+  @doc """
+  Returns the registration namespace present in a key.
+  """
+  def get_namespace(code) do
+    hash = :crypto.hash(:md5, code) |> Base.encode16()
+
+    case Repo.get_by(ApiKey, hash: hash) do
+      nil -> nil
+      key -> Map.get(key, :registration_namespace)
     end
   end
 end

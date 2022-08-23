@@ -1,11 +1,11 @@
-@import 'authoring/variables';
+@use 'authoring/theme' as authoring;
 
 .tags-selection {
   padding-top: 5px;
   padding-bottom: 10px;
 
   .existing-tags {
-    background-color: $gray-100;
+    background-color: authoring.$gray-100;
     max-height: 500px;
     margin-left: 15px;
     padding-top: 10px;
@@ -22,15 +22,15 @@
       white-space: nowrap;
       overflow-x: hidden;
       text-overflow: ellipsis;
-      border: 1px solid $gray-100;
+      border: 1px solid authoring.$gray-100;
 
       &:hover {
-        border: 1px solid $gray-600;
+        border: 1px solid authoring.$gray-600;
       }
     }
 
     .selected {
-      background-color: $gray-300;
+      background-color: authoring.$gray-300;
     }
   }
 }

@@ -1,43 +1,83 @@
-import React from 'react';
-
-import { Purpose as PurposeType } from 'data/content/resource';
+import React, { PropsWithChildren, useState } from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
+import guid from 'utils/guid';
+import { PurposeTypes } from 'data/content/resource';
+import { classNames } from 'utils/classNames';
 
 export type PurposeProps = {
   editMode: boolean; // Whether or not we can edit
+  canEditPurpose: boolean;
   purpose: string;
-  purposes: PurposeType[];
   onEdit: (purpose: string) => void;
 };
 
 export const Purpose = (props: PurposeProps) => {
-  const { editMode, purpose, onEdit, purposes } = props;
+  const { editMode, canEditPurpose, purpose, onEdit } = props;
 
-  const options = purposes.map((p) => (
+  const options = PurposeTypes.map((p) => (
     <button className="dropdown-item" key={p.value} onClick={() => onEdit(p.value)}>
       {p.label}
     </button>
   ));
 
-  const purposeLabel = purposes.find((p) => p.value === purpose)?.label;
+  const purposeLabel = PurposeTypes.find((p) => p.value === purpose)?.label;
+  const disabled = !editMode || !canEditPurpose;
 
   return (
-    <div className="form-inline">
-      <div className="dropdown">
-        <button
-          type="button"
-          id="purposeTypeButton"
-          disabled={!editMode}
-          className="btn btn-sm dropdown-toggle btn-purpose mr-3"
-          data-toggle="dropdown"
-          aria-haspopup="true"
-          aria-expanded="false"
-        >
-          {purposeLabel}
-        </button>
-        <div className="dropdown-menu" aria-labelledby="purposeTypeButton">
-          {options}
+    <MaybePurposeTooltip canEditPurpose={canEditPurpose}>
+      <div className="form-inline">
+        <div className="dropdown">
+          <button
+            type="button"
+            id="purposeTypeButton"
+            disabled={disabled}
+            style={disabled ? { pointerEvents: 'none' } : {}}
+            className={classNames('btn btn-sm dropdown-toggle btn-purpose', disabled && 'disabled')}
+            data-toggle="dropdown"
+            aria-haspopup="true"
+            aria-expanded="false"
+          >
+            {purposeLabel}
+          </button>
+          <div className="dropdown-menu dropdown-menu-right" aria-labelledby="purposeTypeButton">
+            {options}
+          </div>
         </div>
       </div>
-    </div>
+    </MaybePurposeTooltip>
+  );
+};
+
+interface MaybePurposeTooltipProps {
+  canEditPurpose: boolean;
+}
+
+const MaybePurposeTooltip = ({
+  canEditPurpose,
+  children,
+}: PropsWithChildren<MaybePurposeTooltipProps>) => {
+  const [id] = useState(guid());
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  if (canEditPurpose) {
+    return <>{children}</>;
+  }
+
+  return (
+    <OverlayTrigger
+      trigger="click"
+      overlay={
+        <Popover id={id}>
+          <Popover.Content>
+            A purpose is already set on either a parent or child group.
+          </Popover.Content>
+        </Popover>
+      }
+      rootClose={true}
+      show={isPopoverOpen}
+      onToggle={setIsPopoverOpen}
+    >
+      <div>{children}</div>
+    </OverlayTrigger>
   );
 };

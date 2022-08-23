@@ -8,7 +8,7 @@ defmodule OliWeb.Sections.LtiSettings do
 
   def render(assigns) do
     ~F"""
-    <Group label="LTI Settings" description="Settings defined in the LMS that is launching students and instructors into this coruse section">
+    <Group label="LTI Settings" description="Settings defined in the LMS that is launching students and instructors into this course section">
       <ReadOnly label="Context ID" value={@section.context_id} />
       <ReadOnly label="Grade Passback Enabled" value={boolean(@section.grade_passback_enabled)} />
       <ReadOnly label="Line Items Service URL" value={@section.line_items_service_url} />

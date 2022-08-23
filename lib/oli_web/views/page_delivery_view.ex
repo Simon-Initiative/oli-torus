@@ -1,11 +1,16 @@
 defmodule OliWeb.PageDeliveryView do
   use OliWeb, :view
+  use Phoenix.Component
 
   alias Oli.Resources.ResourceType
   alias Oli.Resources.Numbering
   alias Oli.Delivery.Hierarchy.HierarchyNode
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Attempts.Core
+  alias Oli.Resources.Revision
+  alias OliWeb.Common.Utils
+
+  import Oli.Utils, only: [value_or: 2]
 
   def show_score(nil, nil), do: ""
 
@@ -31,22 +36,95 @@ defmodule OliWeb.PageDeliveryView do
     url_from_desc(conn, conn.assigns.previous_page)
   end
 
+  def previous_url(conn, %{"slug" => slug} = previous_page, preview_mode, section_slug) do
+    Routes.page_delivery_path(conn, action(preview_mode, previous_page), section_slug, slug)
+  end
+
+  def previous_title(%{"title" => title}) do
+    title
+  end
+
   def next_url(conn) do
     url_from_desc(conn, conn.assigns.next_page)
+  end
+
+  def next_url(conn, %{"slug" => slug} = next_page, preview_mode, section_slug) do
+    Routes.page_delivery_path(conn, action(preview_mode, next_page), section_slug, slug)
+  end
+
+  def next_title(%{"title" => title}) do
+    title
+  end
+
+  def prev_link(%{to: path, title: title} = assigns) do
+    ~H"""
+      <%= link to: path, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+        <div class="d-flex flex-row">
+          <div>
+            <i class="fas fa-arrow-left nav-icon"></i>
+          </div>
+          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-right">
+            <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
+            <div class="nav-title"><%= title %></div>
+          </div>
+        </div>
+      <% end %>
+    """
+  end
+
+  def next_link(%{to: path, title: title} = assigns) do
+    ~H"""
+      <%= link to: path, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+        <div class="d-flex flex-row">
+          <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
+            <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
+            <div class="nav-title"><%= title %></div>
+          </div>
+          <div>
+            <i class="fas fa-arrow-right nav-icon"></i>
+          </div>
+        </div>
+      <% end %>
+    """
+  end
+
+  def action(preview_mode, %Revision{} = revision), do: action(preview_mode, container?(revision))
+
+  def action(preview_mode, %{"type" => type}), do: action(preview_mode, type == "container")
+
+  def action(preview_mode, is_container) when is_boolean(is_container) do
+    case {preview_mode, is_container} do
+      {true, true} ->
+        :container_preview
+
+      {true, false} ->
+        :page_preview
+
+      {false, true} ->
+        :container
+
+      {false, false} ->
+        :page
+    end
   end
 
   def container?(rev) do
     ResourceType.get_type_by_id(rev.resource_type_id) == "container"
   end
 
-  def container_title(%HierarchyNode{
-        numbering: %Numbering{
-          level: level,
-          index: index
+  def container_title(
+        %HierarchyNode{
+          numbering: %Numbering{
+            level: level,
+            index: index
+          },
+          revision: revision
         },
-        revision: revision
-      }) do
-    Numbering.container_type(level) <> " #{index}: #{revision.title}"
+        display_curriculum_item_numbering \\ true
+      ) do
+    if display_curriculum_item_numbering,
+      do: "#{Numbering.container_type(level)} #{index}: #{revision.title}",
+      else: "#{Numbering.container_type(level)}: #{revision.title}"
   end
 
   def has_submitted_attempt?(resource_access) do

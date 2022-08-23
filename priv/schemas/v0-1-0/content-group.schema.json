@@ -5,40 +5,24 @@
   "description": "A grouping of content with a particular layout",
   "type": "object",
   "properties": {
-    "id": {
-      "type": ["integer", "string"]
-    },
     "type": {
       "const": "group"
     },
+    "id": {
+      "type": ["integer", "string"]
+    },
     "layout": {
-      "enum": ["deck"]
+      "enum": ["vertical", "deck"]
+    },
+    "paginationMode": {
+      "enum": ["normal", "manualReveal", "automatedReveal"]
+    },
+    "purpose": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
     },
     "children": {
-      "type": "array",
-      "items": {
-        "oneOf": [
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-element.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-block.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-group.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
-          },
-          {
-            "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
-          }
-        ]
-      }
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/elements.schema.json"
     }
   },
-  "required": ["type", "layout", "children"]
+  "required": ["type", "layout", "purpose", "children"]
 }

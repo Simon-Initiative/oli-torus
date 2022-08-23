@@ -1,0 +1,38 @@
+@use 'authoring/theme' as authoring;
+
+.contentBreak {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  user-select: none;
+
+  &:hover > .actions {
+    opacity: 100;
+  }
+}
+
+.actions {
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  opacity: 0;
+  padding: 4px 6px;
+  background: authoring.$body-bg;
+  z-index: authoring.$z-content-3;
+  border-radius: 4px;
+  -webkit-box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
+  -moz-box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: 2px 2px 8px 0px rgba(0, 0, 0, 0.25);
+
+  transition: opacity 200ms ease-in;
+}
+
+.label {
+  color: authoring.$gray-600;
+}
+
+.dashed {
+  flex-grow: 1;
+  border-bottom: 1px dashed authoring.$gray-600;
+  margin: 0 20px 10px 20px;
+}

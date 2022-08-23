@@ -31,6 +31,7 @@ import {
 import { parseArray } from 'utils/common';
 import { b64EncodeUnicode } from 'utils/decode';
 import {
+  complexExpressionRule,
   complexRuleWithMultipleActions,
   defaultCorrectRule,
   defaultWrongRule,
@@ -73,6 +74,17 @@ describe('Rules Engine', () => {
     )) as CheckResult;
     expect(events.length).toEqual(2);
     expect(events[0].type).toEqual(complexRuleWithMultipleActions.event.type);
+  });
+
+  it('should evaluate complex expressions', async () => {
+    const { results: events } = (await check(
+      mockState,
+      [complexExpressionRule, defaultWrongRule],
+      correctAttemptScoringContext,
+    )) as CheckResult;
+
+    expect(events.length).toEqual(1);
+    expect(events[0].type).toEqual(complexExpressionRule.event.type);
   });
 
   it('should not process disabled rules', async () => {
@@ -179,6 +191,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,
@@ -197,6 +210,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,
@@ -215,6 +229,7 @@ describe('Rules Engine', () => {
       negativeScoreAllowed: false,
       trapStateScoreScheme: true,
       currentAttemptNumber: 1,
+      isManuallyGraded: false,
     };
     const { score, out_of } = (await check(
       mockState,
@@ -230,10 +245,21 @@ describe('Rules Engine', () => {
 describe('Operators', () => {
   describe('Equality Operators', () => {
     it('should be able to test basic equality', () => {
+      expect(isEqual(false, 'NULL')).toEqual(false);
+      expect(isEqual(false, null)).toEqual(false);
+      expect(isEqual(false, 'false')).toEqual(true);
+      expect(isEqual(true, 'true')).toEqual(true);
+      expect(isEqual(false, 'true')).toEqual(false);
+      expect(isEqual(true, 'false')).toEqual(false);
       expect(isEqual('a', 'a')).toEqual(true);
       expect(isEqual(9, 9)).toEqual(true);
       expect(isEqual([1, 2], [1, 2])).toEqual(true);
+      expect(isEqual(1, true)).toEqual(true);
+      expect(isEqual(0, false)).toEqual(true);
+      expect(isEqual(1, false)).toEqual(false);
       expect(notEqual(9, 3)).toEqual(true);
+      expect(notEqual(undefined, 3)).toEqual(false);
+      expect(notEqual(3, undefined)).toEqual(false);
       expect(notEqual('a', 'c')).toEqual(true);
       expect(notEqual([3, 2], [1, 2])).toEqual(true);
     });
@@ -281,29 +307,46 @@ describe('Operators', () => {
     });
 
     it('should match string contains as partial', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('cde', conditionValue)).toEqual(true);
+      const inputValue = 'abc';
+      expect(containsOperator(inputValue, 'ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'cd')).toEqual(true);
     });
 
-    it('should match string contains as case insensitive', () => {
-      const conditionValue = 'abcd';
-      expect(containsOperator('Abc', conditionValue)).toEqual(true);
-      expect(notContainsOperator('Cde', conditionValue)).toEqual(true);
+    it('should match string contains as case INSENSITIVE', () => {
+      const inputValue = 'abcd';
+      expect(containsOperator(inputValue, 'Ab')).toEqual(true);
+      expect(notContainsOperator(inputValue, 'Ac')).toEqual(true);
     });
 
-    it('should find single elements contained in arrays', () => {
-      expect(containsOperator('a', '[a,b,c]')).toEqual(true);
-      expect(containsOperator(9, '[1,2,9]')).toEqual(true);
-      expect(containsOperator('a', [1, 2, 3])).toEqual(false);
+    it('should test for spaces and other characters', () => {
+      expect(containsOperator('I have spaces', ' ')).toEqual(true);
+      expect(containsOperator('1+1/2', '+')).toEqual(true);
+      expect(notContainsOperator('=A3+2', '=')).toEqual(false);
     });
 
-    it('should find array subsets within arrays', () => {
-      expect(containsOperator('[8,6]', [9, 8, 7])).toEqual(false);
-      expect(containsOperator('9,8', [9, 8, 7])).toEqual(true);
-      expect(containsOperator('[7,9]', [9, 8, 7])).toEqual(true);
-      expect(containsOperator([1, 2], [1, 2, 3])).toEqual(true);
-      expect(containsOperator([4, 1], [1, 2, 3, 4])).toEqual(true);
+    it('should match when there are arrays of strings case INSENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsOperator(['a', 'b', 'c'], 'A')).toEqual(true);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'b'])).toEqual(true);
+      expect(containsOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsOperator('1,2,3', [1, 4])).toEqual(false);
     });
   });
 
@@ -316,10 +359,36 @@ describe('Operators', () => {
       expect(notContainsExactlyOperator(null, null)).toEqual(true);
     });
 
-    it('should match the content of arrays and strings for exactly', () => {
-      expect(containsExactlyOperator(['a', 'b'], ['a', 'b'])).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abc')).toEqual(true);
-      expect(containsExactlyOperator('abc', 'abcd')).toEqual(false);
+    it('should match when there are arrays of strings case SENSITIVE', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'a')).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'd')).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], 'A')).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'c'])).toEqual(true);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['a', 'd'])).toEqual(false);
+      expect(containsExactlyOperator(['a', 'b', 'c'], ['A', 'b'])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('abc', ['a', 'b'])).toEqual(true);
+      expect(containsExactlyOperator('ABC', ['AB', 'C'])).toEqual(true);
+      expect(containsExactlyOperator('abc', ['a', 'd'])).toEqual(false);
+    });
+
+    it('should match when there are arrays of numbers', () => {
+      // does inputValue contain the conditionValue? where inputValue is an array of values
+      expect(containsExactlyOperator([1, 2, 3], 1)).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], 4)).toEqual(false);
+      // does inputValue contain the conditionValue where both inputValue and conditionValue are arrays of values
+      expect(containsExactlyOperator([1, 2, 3], [1, 2])).toEqual(true);
+      expect(containsExactlyOperator([1, 2, 3], [1, 4])).toEqual(false);
+      // does inputValue contain the conditionValue where inputValue is a string and conditionValue is an array of values
+      expect(containsExactlyOperator('1,2,3', [1, 2])).toEqual(true);
+      expect(containsExactlyOperator('1,2,3', [1, 4])).toEqual(false);
+    });
+
+    it('should be case SENSITIVE', () => {
+      expect(containsExactlyOperator('abc', 'Abc')).toEqual(false);
+      expect(containsExactlyOperator('Abc', 'A')).toEqual(true);
     });
   });
 
@@ -347,7 +416,51 @@ describe('Operators', () => {
       const conditionValue2 = '[1, 3, 5, 7]';
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
-      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
+
+      expect(notContainsAnyOfOperator('123A2', ['A2', 'B2'])).toEqual(false);
+
+      const conditionValue3 = [
+        'polar',
+        'dipole',
+        'nonpolar',
+        'charge',
+        'polarity',
+        'hydrophilic',
+        'hydrophobic',
+      ];
+      expect(
+        containsAnyOfOperator(
+          'An "expert" might say, the charged phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the non-polar parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(true);
+      expect(
+        containsAnyOfOperator(
+          'An "expert" might say, the phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(false);
+
+      expect(
+        notContainsAnyOfOperator(
+          'This does not , contains any value, from array.',
+          conditionValue3,
+        ),
+      ).toEqual(true);
+      expect(
+        notContainsAnyOfOperator(
+          'An "expert" might say, the charged phosphate groups interact well with  water molecules and are most stable on the outside of the molecule in contact with water. On the other hand, the non-polar parts of the bases do not interact well with water and are most stable within the molecule, shielded from the solvent.',
+          conditionValue3,
+        ),
+      ).toEqual(false);
+
+      expect(
+        containsAnyOfOperator(
+          'blah blah tree snow something whatever',
+          '[tree,snow,leaves,ground]',
+        ),
+      ).toEqual(true);
     });
 
     it('should handle if the conditionValue is an actual array', () => {
@@ -372,7 +485,9 @@ describe('Operators', () => {
       expect(notContainsAnyOfOperator('Milk, Bread, Oven Mitts', conditionValue)).toEqual(true);
       expect(containsAnyOfOperator('[1,7]', conditionValue2)).toEqual(true);
       expect(containsAnyOfOperator(1, conditionValue2)).toEqual(true);
-      expect(containsAnyOfOperator(17, conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('17', conditionValue2)).toEqual(false);
+      expect(containsAnyOfOperator('1', '[11,12]')).toEqual(false);
+      expect(containsAnyOfOperator('11', '[11,12]')).toEqual(true);
     });
   });
 

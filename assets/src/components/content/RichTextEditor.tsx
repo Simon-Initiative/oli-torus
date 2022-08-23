@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { ErrorBoundary } from 'components/common/ErrorBoundary';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
@@ -7,20 +7,20 @@ import { ProjectSlug } from 'data/types';
 import React from 'react';
 import { Descendant, Editor as SlateEditor, Operation } from 'slate';
 import { classNames } from 'utils/classNames';
-import { getToolbarForContentType } from 'components/editing/toolbar/utils';
+import { MediaItemRequest } from 'components/activities/types';
+import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 
 type Props = {
   projectSlug: ProjectSlug;
   editMode: boolean;
-  className?: string;
   value: Descendant[];
   onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
+  className?: string;
   placeholder?: string;
-  onRequestMedia?: any;
+  onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
   style?: React.CSSProperties;
   commandContext?: CommandContext;
   normalizerContext?: NormalizerContext;
-  preventLargeContent?: boolean;
 };
 export const RichTextEditor: React.FC<Props> = (props) => {
   // Support content persisted when RichText had a `model` property.
@@ -31,16 +31,15 @@ export const RichTextEditor: React.FC<Props> = (props) => {
       <ErrorBoundary>
         <Editor
           normalizerContext={props.normalizerContext}
-          commandContext={props.commandContext || { projectSlug: props.projectSlug }}
-          editMode={props.editMode}
-          value={value}
-          onEdit={(value, editor, operations) => props.onEdit(value, editor, operations)}
-          toolbarInsertDescs={getToolbarForContentType({
-            type: 'small',
-            onRequestMedia: props.onRequestMedia,
-          })}
           placeholder={props.placeholder}
           style={props.style}
+          editMode={props.editMode}
+          commandContext={props.commandContext ?? { projectSlug: props.projectSlug }}
+          onEdit={props.onEdit}
+          value={value}
+          toolbarInsertDescs={blockInsertOptions({
+            onRequestMedia: props.onRequestMedia,
+          })}
         >
           {props.children}
         </Editor>
@@ -55,10 +54,10 @@ export const RichTextEditorConnected: React.FC<Omit<Props, 'projectSlug' | 'edit
   const { editMode, projectSlug, onRequestMedia } = useAuthoringElementContext();
   return (
     <RichTextEditor
-      {...props}
       editMode={editMode}
       projectSlug={projectSlug}
       onRequestMedia={onRequestMedia}
+      {...props}
     />
   );
 };

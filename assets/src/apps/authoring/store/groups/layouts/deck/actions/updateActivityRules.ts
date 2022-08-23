@@ -1,7 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { CapiVariableTypes } from 'adaptivity/capi';
 import {
+  findReferencedActivitiesInActions,
   findReferencedActivitiesInConditions,
+  getReferencedKeysInActions,
   getReferencedKeysInConditions,
 } from 'adaptivity/rules-engine';
 import {
@@ -13,7 +15,9 @@ import {
   getSequenceLineage,
 } from 'apps/delivery/store/features/groups/actions/sequence';
 import { BulkActivityUpdate, bulkEdit } from 'data/persistence/activity';
-import { isEqual } from 'lodash';
+import isEqual from 'lodash/isEqual';
+import flatten from 'lodash/flatten';
+import uniq from 'lodash/uniq';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import {
@@ -31,6 +35,20 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
       if (condition.fact && !condition.id) {
         condition.id = `c:${guid()}`;
       }
+      const presumedType = inferTypeFromOperatorAndValue(condition.operator, condition.value);
+      if (condition.type && presumedType !== condition.type) {
+        // this is likely to happen repeatedly especially in some cases with numbers looking like strings
+        // TODO: deeper analysis of the values considering all factors
+        // TODO: add to diagnostics instead of trying to auto correct? (the value, which currently not doing)
+        /* console.warn('updateNestedConditions: type mismatch, need to infer correct type', {
+          type: condition.type,
+          presumedType,
+          operator: condition.operator,
+          condition,
+        }); */
+        // set the type to null so that it will go through the slightly more complex logic below
+        condition.type = null;
+      }
       if (condition.fact && !condition.type) {
         // because there might not be a type from an import, and the value might not actually be the type of the fact,
         // if the target is a component on the screen, we need to infer from the fact component type in the schema
@@ -46,12 +64,19 @@ const updateNestedConditions = async (conditions: any, activityTree: IActivity[]
             }
             return result;
           }, null);
-          /* console.log('INFERRING', { condition, targetPart, componentId, targetKey }); */
           if (targetPart) {
             inferredType = await inferTypeFromComponentType(targetPart.type, targetKey, targetPart);
           }
+          /* console.log('INFERRING FROM COMPONENT SCHEMA', {
+            inferredType,
+            condition,
+            targetPart,
+            componentId,
+            targetKey,
+          }); */
         }
         if (inferredType === CapiVariableTypes.UNKNOWN) {
+          /* console.log('INFERRING 2', { condition, inferredType }); */
           // we need to get the type based on the operator AND the value intelligently
           inferredType = inferTypeFromOperatorAndValue(condition.operator, condition.value);
         }
@@ -100,6 +125,7 @@ export const updateActivityRules = createAsyncThunk(
             const rootCondition = clone(conditions || { all: [] }); // layers might not have conditions
             const rootConditionIsAll = !!rootCondition.all;
             const conditionsToUpdate = rootCondition[rootConditionIsAll ? 'all' : 'any'];
+            const actionsToUpdate = event.params.actions;
             if (!rootCondition.id) {
               rootCondition.id = `b:${guid()}`;
             }
@@ -110,6 +136,8 @@ export const updateActivityRules = createAsyncThunk(
             await updateNestedConditions(conditionsToUpdate, activityTree);
             referencedSequenceIds.push(...findReferencedActivitiesInConditions(conditionsToUpdate));
             referencedVariableKeys.push(...getReferencedKeysInConditions(conditionsToUpdate));
+            referencedSequenceIds.push(...findReferencedActivitiesInActions(actionsToUpdate));
+            referencedVariableKeys.push(...getReferencedKeysInActions(actionsToUpdate));
             rule.conditions = rootCondition;
             if (forceProgress) {
               const nav = rule.event.params.actions.find(
@@ -125,6 +153,20 @@ export const updateActivityRules = createAsyncThunk(
         // ensure referencedVariableKeys are unique
         referencedVariableKeys = [...new Set(referencedVariableKeys)];
 
+        // finally need to add to the required activities any variables that are required but inherited from the sequence
+        referencedVariableKeys.forEach((key) => {
+          // find the key in the authoring.parts
+          if (key.indexOf('stage.') === 0) {
+            const [, componentId] = key.split('.');
+            const partDef = childActivity.authoring.parts.find(
+              (part: any) => part.id === componentId,
+            );
+            if (partDef && partDef.inherited) {
+              referencedSequenceIds.push(partDef.owner);
+            }
+          }
+        });
+
         const childActivityClone = clone(childActivity);
         const referencedActivityIds: number[] = Array.from(new Set(referencedSequenceIds))
           .map((id) => {
@@ -133,47 +175,69 @@ export const updateActivityRules = createAsyncThunk(
               return sequenceItem.resourceId;
             } else {
               console.warn(
-                `[updateActivityRules] could not find referenced activity ${id} in sequence`,
+                `[updateActivityRules (${childActivity.id})] could not find referenced activity ${id} in sequence`,
                 deck,
               );
             }
           })
           .filter((id) => id) as number[];
+
         if (
           !isEqual(
-            childActivityClone.authoring.activitiesRequiredForEvaluation,
-            referencedActivityIds,
+            (childActivityClone.authoring.activitiesRequiredForEvaluation || []).sort(),
+            referencedActivityIds.sort(), // order doesn't matter, don't rewrite just because order may have changed
           )
         ) {
           // console.log('RULE REFS: ', referencedActivityIds);
           childActivityClone.authoring.activitiesRequiredForEvaluation = referencedActivityIds;
-          activitiesToUpdate.push(childActivityClone);
+          console.log('UPDATE ACTIVITY REFS REQUIRED FOR EVALUATION', {
+            referencedActivityIds,
+            childActivityClone,
+          });
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
+            activitiesToUpdate.push(childActivityClone);
+          }
         }
-        if (
-          !isEqual(
-            childActivityClone.authoring.variablesRequiredForEvaluation,
-            referencedVariableKeys,
-          )
-        ) {
+
+        childActivityClone.authoring.variablesRequiredForEvaluation =
+          childActivityClone.authoring.variablesRequiredForEvaluation || [];
+        const refVarLengthEqual =
+          childActivityClone.authoring.variablesRequiredForEvaluation.length ===
+          referencedVariableKeys.length;
+        const hasAllReferencedVariables =
+          refVarLengthEqual &&
+          referencedVariableKeys.every((rv) =>
+            childActivityClone.authoring.variablesRequiredForEvaluation.includes(rv),
+          );
+        if (!hasAllReferencedVariables) {
           childActivityClone.authoring.variablesRequiredForEvaluation = referencedVariableKeys;
-          console.log('UPDATE VALUES REQUIRED FOR EVALUATION', {
+          childActivityClone.authoring.variablesRequiredForEvaluation = uniq(
+            flatten(childActivityClone.authoring.variablesRequiredForEvaluation),
+          );
+          console.log('UPDATE VARS REQUIRED FOR EVALUATION', {
             referencedVariableKeys,
             childActivityClone,
           });
-          activitiesToUpdate.push(childActivityClone);
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
+            activitiesToUpdate.push(childActivityClone);
+          }
         }
+
         childActivityClone.authoring.rules = activityRulesClone;
         /* console.log('CLONE RULES', { childActivityClone, childActivity }); */
         if (!isEqual(childActivity.authoring.rules, childActivityClone.authoring.rules)) {
           /* console.log('CLONE IS DIFFERENT!'); */
-          if (activitiesToUpdate.indexOf(childActivityClone) === -1) {
+          // add to activitiesToUpdate if not already in there (check by id)
+          if (!activitiesToUpdate.find((a) => a.id === childActivityClone.id)) {
             activitiesToUpdate.push(childActivityClone);
           }
         }
       }),
     );
 
-    /* console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate); */
+    console.log(`${activitiesToUpdate.length} ACTIVITIES TO UPDATE: `, activitiesToUpdate);
 
     if (activitiesToUpdate.length) {
       dispatch(upsertActivities({ activities: activitiesToUpdate }));

@@ -18,7 +18,7 @@ export function updateModel<T extends ContentModel.ModelElement>(
   Transforms.setNodes(editor, changes, { at: path });
 }
 
-export const onEditModel = <T extends ContentModel.ModelElement>(model: T) => {
+export const useEditModelCallback = <T extends ContentModel.ModelElement>(model: T) => {
   const editor = useSlate();
 
   return React.useCallback((attrs: Partial<T>) => updateModel<T>(editor, model, attrs), [editor]);
@@ -41,3 +41,10 @@ export const InlineChromiumBugfix = () => (
     ${String.fromCodePoint(160) /* Non-breaking space */}
   </span>
 );
+
+export function elementBorderStyle(active: boolean): React.CSSProperties {
+  return {
+    border: active ? '3px solid blue' : '3px solid transparent',
+    borderRadius: 3,
+  };
+}

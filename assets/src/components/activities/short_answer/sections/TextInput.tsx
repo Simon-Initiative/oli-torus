@@ -1,10 +1,10 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
-import { isOperator, RuleOperator } from 'data/activities/model/rules';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
+import { escapeInput, isOperator, RuleOperator, unescapeInput } from 'data/activities/model/rules';
 import React from 'react';
 
 interface State {
   operator: RuleOperator;
-  input: string | [string, string];
+  input: string;
 }
 interface InputProps {
   setState: (s: State) => void;
@@ -42,8 +42,8 @@ export const TextInput: React.FC<InputProps> = ({ state, setState }) => {
         disabled={!editMode}
         type="text"
         className="form-control"
-        onChange={(e) => setState({ operator: state.operator, input: e.target.value })}
-        value={state.input}
+        onChange={(e) => setState({ operator: state.operator, input: escapeInput(e.target.value) })}
+        value={unescapeInput(state.input)}
       />
     </div>
   );

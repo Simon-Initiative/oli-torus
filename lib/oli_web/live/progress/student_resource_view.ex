@@ -1,9 +1,9 @@
 defmodule OliWeb.Progress.StudentResourceView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  alias OliWeb.Common.{Breadcrumb}
+  alias OliWeb.Common.{Breadcrumb, SessionContext, Utils}
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Delivery.Attempts.Core.ResourceAccess
-  alias Surface.Components.{Form}
+  alias Surface.Components.Form
   alias Surface.Components.Form.{Field, Label, NumberInput, ErrorTag}
   alias OliWeb.Progress.AttemptHistory
   alias OliWeb.Sections.Mount
@@ -23,8 +23,8 @@ defmodule OliWeb.Progress.StudentResourceView do
   data is_editing, :boolean, default: false
   data grade_sync_result, :any, default: nil
 
-  defp set_breadcrumbs(type, section) do
-    OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
+  defp set_breadcrumbs(type, section, user_id) do
+    OliWeb.Progress.StudentView.set_breadcrumbs(type, section, user_id)
     |> breadcrumb(section)
   end
 
@@ -52,18 +52,32 @@ defmodule OliWeb.Progress.StudentResourceView do
             Mount.handle_error(socket, {:error, e})
 
           {type, _, section} ->
+            context = SessionContext.init(session)
             resource_access = get_resource_access(resource_id, section_slug, user_id)
 
             changeset =
               case resource_access do
-                nil -> nil
-                _ -> ResourceAccess.changeset(resource_access, %{})
+                nil ->
+                  nil
+
+                _ ->
+                  ResourceAccess.changeset(resource_access, %{
+                    # limit score decimals to two significant figures, rounding up
+                    score:
+                      if is_nil(resource_access.score) do
+                        nil
+                      else
+                        Utils.format_score(resource_access.score)
+                      end
+                  })
               end
 
             {:ok,
              assign(socket,
+               context: context,
                changeset: changeset,
-               breadcrumbs: set_breadcrumbs(type, section),
+               breadcrumbs: set_breadcrumbs(type, section, user_id),
+               delivery_breadcrumb: true,
                section: section,
                resource_access: resource_access,
                revision: revision,
@@ -133,6 +147,7 @@ defmodule OliWeb.Progress.StudentResourceView do
             <Field name={:score} class="form-label-group">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
               <NumberInput class="form-control" opts={disabled: !@is_editing}/>
+              <div class="text-muted">Scores are rounded up, limiting to two decimal points.</div>
             </Field>
             <Field name={:out_of} class="form-label-group mb-4">
               <div class="d-flex justify-content-between"><Label/><ErrorTag class="help-block"/></div>
@@ -155,7 +170,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       </Group>
       {/if}
       <Group label="Attempt History" description="">
-        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts}/>
+        <AttemptHistory section={@section} resource_attempts={@resource_access.resource_attempts} {=@context}/>
       </Group>
     </Groups>
     """
@@ -169,7 +184,13 @@ defmodule OliWeb.Progress.StudentResourceView do
         <ReadOnly label="Resource" value={@revision.title}/>
       </Group>
       <Group label="Attempt History" description="">
-        The student has not yet accessed this course resource
+        <p>The student has not yet accessed this course resource.</p>
+
+        {#if @revision.graded}
+          <p>If there is a need to manually set the grade for this student without the student ever having visited this page, first create the access record:</p>
+          <button class="btn btn-primary mt-4" type="button" :on-click="create_access_record">Create Access Record</button>
+        {/if}
+
       </Group>
     </Groups>
     """
@@ -193,6 +214,15 @@ defmodule OliWeb.Progress.StudentResourceView do
       |> ResourceAccess.changeset(params)
 
     {:noreply, assign(socket, changeset: changeset)}
+  end
+
+  def handle_event("create_access_record", _, socket) do
+    section = socket.assigns.section
+    user = socket.assigns.user
+    revision = socket.assigns.revision
+
+    {:ok, resource_access} = Core.track_access(revision.resource_id, section.id, user.id)
+    {:noreply, assign(socket, resource_access: resource_access)}
   end
 
   def handle_event("passback", _, socket) do
@@ -227,6 +257,7 @@ defmodule OliWeb.Progress.StudentResourceView do
       |> ensure_no_nil("out_of")
 
     case Core.update_resource_access(socket.assigns.resource_access, params) do
+      # Score is updated as provided, and it's formatted and rounded for display only
       {:ok, resource_access} ->
         socket = put_flash(socket, :info, "Grade changed")
 
@@ -234,7 +265,10 @@ defmodule OliWeb.Progress.StudentResourceView do
          assign(socket,
            is_editing: false,
            resource_access: resource_access,
-           changeset: ResourceAccess.changeset(resource_access, %{})
+           changeset:
+             ResourceAccess.changeset(resource_access, %{
+               score: Utils.format_score(resource_access.score)
+             })
          )}
 
       {:error, %Ecto.Changeset{} = changeset} ->

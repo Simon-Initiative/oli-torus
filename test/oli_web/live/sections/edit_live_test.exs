@@ -109,6 +109,16 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "loads section data correctly", %{conn: conn} do
+      section = insert(:section, requires_payment: true)
+
+      {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
+
+      assert html =~ "Edit Section Details"
+      assert html =~ "Payment Settings"
+      assert has_element?(view, "input[name=\"section[pay_by_institution]\"]")
+    end
+
+    test "loads open and free section data correctly", %{conn: conn} do
       section = insert(:section, open_and_free: true)
 
       {:ok, view, html} = live(conn, live_view_edit_route(section.slug))
@@ -128,6 +138,29 @@ defmodule OliWeb.Sections.EditLiveTest do
                "None"
     end
 
+    test "loads open and free section datetimes correctly using the local timezone", context do
+      {:ok, conn: conn, context: _} = set_timezone(context)
+      timezone = Plug.Conn.get_session(conn, :browser_timezone)
+
+      section = insert(:section_with_dates, open_and_free: true)
+
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+
+      assert view
+             |> element("#section_start_date")
+             |> render() =~
+               utc_datetime_to_localized_datestring(section.start_date, timezone)
+
+      assert view
+             |> element("#section_end_date")
+             |> render() =~
+               utc_datetime_to_localized_datestring(section.end_date, timezone)
+
+      assert view
+             |> element("small")
+             |> render() =~ "Timezone: " <> timezone
+    end
+
     test "loads section data correctly when is created with a brand", %{conn: conn} do
       brand = insert(:brand)
       section = insert(:section, %{brand: brand})
@@ -140,6 +173,28 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> element("option[selected=\"selected\"][value=\"#{section.brand_id}\"]")
              |> render() =~
                "#{brand.name}"
+    end
+
+    test "save event updates curriculum numbering visibility", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, live_view_edit_route(section.slug))
+      assert section.display_curriculum_item_numbering
+
+      assert view
+             |> element("#section_display_curriculum_item_numbering")
+             |> render() =~ "checked"
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{
+        "section" => %{"display_curriculum_item_numbering" => "false"}
+      })
+
+      updated_section = Sections.get_section!(section.id)
+      refute updated_section.display_curriculum_item_numbering
+
+      refute view
+             |> element("#section_display_curriculum_item_numbering")
+             |> render() =~ "checked"
     end
   end
 end

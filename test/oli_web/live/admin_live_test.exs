@@ -4,10 +4,10 @@ defmodule OliWeb.AdminLiveTest do
 
   import Phoenix.LiveViewTest
   import Oli.Factory
-  import OliWeb.Common.FormatDateTime
 
   alias Oli.Accounts
   alias Oli.Accounts.{Author, User}
+  alias OliWeb.Common.Utils
 
   @live_view_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.AdminView)
   @live_view_users_route Routes.live_path(OliWeb.Endpoint, OliWeb.Users.UsersView)
@@ -259,24 +259,30 @@ defmodule OliWeb.AdminLiveTest do
     end
 
     test "applies sorting", %{conn: conn} do
-      user_1 = insert(:user, %{given_name: "Testing A"})
-      user_2 = insert(:user, %{given_name: "Testing B"})
+      user_a = insert(:user, %{given_name: "Testing A", email: "tttt@example.com"})
+      user_b = insert(:user, %{given_name: "Testing B", email: "bbbb@example.com"})
 
       {:ok, view, _html} = live(conn, @live_view_users_route)
 
-      assert view
-             |> element("tr:first-child > td:first-child")
-             |> render() =~
-               user_1.given_name
-
+      # Sort by email asc
       view
       |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
-      |> render_click(%{sort_by: "name"})
+      |> render_click(%{sort_by: "email"})
 
       assert view
-             |> element("tr:first-child > td:first-child")
+             |> element("tr:first-child > td:first-child > div")
              |> render() =~
-               user_2.given_name
+               user_b.given_name
+
+      # Sort by email desc
+      view
+      |> element("th[phx-click=\"paged_table_sort\"]:first-of-type")
+      |> render_click(%{sort_by: "email"})
+
+      assert view
+             |> element("tr:first-child > td:first-child > div")
+             |> render() =~
+               user_a.given_name
     end
 
     test "applies paging", %{conn: conn} do
@@ -309,13 +315,26 @@ defmodule OliWeb.AdminLiveTest do
              |> render() =~
                last_user.given_name
     end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      user = insert(:user, email_confirmed_at: DateTime.utc_now())
+
+      {:ok, view, _html} = live(conn, @live_view_users_route)
+
+      assert view
+             |> element("tr##{user.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_precise_date(user, :email_confirmed_at, session_context)
+    end
   end
 
   describe "user detail" do
     setup [:admin_conn, :create_user]
 
-    test "loads correctly with user data", %{conn: conn, user: user} do
-      {:ok, view, _html} = live(conn, live_view_user_detail_route(user.id))
+    test "loads correctly with user data", %{user: user} = context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+      {:ok, view, _} = live(conn, live_view_user_detail_route(user.id))
 
       assert has_element?(view, "input[value=\"#{user.sub}\"]")
       assert has_element?(view, "input[value=\"#{user.name}\"]")
@@ -326,9 +345,21 @@ defmodule OliWeb.AdminLiveTest do
       assert has_element?(view, "#user_independent_learner")
       assert has_element?(view, "#user_can_create_sections")
       assert has_element?(view, "input[value=\"#{user.research_opt_out}\"]")
-      assert has_element?(view, "input[value=\"#{user.email_confirmed_at}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.inserted_at)}\"]")
-      assert has_element?(view, "input[value=\"#{date(user.updated_at)}\"]")
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :email_confirmed_at, session_context)}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :inserted_at, session_context)}\"]"
+             )
+
+      assert has_element?(
+               view,
+               "input[value=\"#{Utils.render_date(user, :updated_at, session_context)}\"]"
+             )
     end
 
     test "displays error message when submit fails", %{
@@ -369,7 +400,7 @@ defmodule OliWeb.AdminLiveTest do
       conn: conn
     } do
       assert {:error, {:redirect, %{to: "/not_found"}}} =
-               live(conn, live_view_user_detail_route(1000))
+               live(conn, live_view_user_detail_route(-1))
     end
 
     test "displays a confirm modal before deleting a user", %{
@@ -617,6 +648,23 @@ defmodule OliWeb.AdminLiveTest do
              )
              |> render() =~ "Email Confirmed"
     end
+
+    test "renders datetimes using the local timezone", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      author = insert(:author, email_confirmed_at: DateTime.utc_now())
+
+      {:ok, view, _html} = live(conn, @live_view_authors_route)
+
+      assert view
+             |> element("tr##{author.id}")
+             |> render() =~
+               OliWeb.Common.Utils.render_precise_date(
+                 author,
+                 :email_confirmed_at,
+                 session_context
+               )
+    end
   end
 
   describe "author detail" do
@@ -636,7 +684,7 @@ defmodule OliWeb.AdminLiveTest do
       conn: conn
     } do
       assert {:error, {:redirect, %{to: "/not_found"}}} =
-               live(conn, live_view_author_detail_route(1000))
+               live(conn, live_view_author_detail_route(-1))
     end
 
     test "displays a confirm modal before deleting a author", %{

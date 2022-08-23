@@ -4,6 +4,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
   """
   import Oli.Authoring.Editing.Utils
+  import Ecto.Query, warn: false
+
+  require Logger
+
   alias Oli.Authoring.{Locks, Course}
   alias Oli.Resources.Revision
   alias Oli.Resources
@@ -20,8 +24,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Rendering.Activity.ActivitySummary
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
-
-  import Ecto.Query, warn: false
+  alias Oli.Resources.ContentMigrator
+  alias Oli.Utils.SchemaResolver
+  alias Oli.Features
 
   @doc """
   Attempts to process an edit for a resource specified by a given
@@ -58,22 +63,22 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update) do
+           {:ok, converted_update} <- convert_to_activity_ids(update),
+           :ok <- validate_page_content_json(converted_update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
-            # If we acquired the lock, we must first create a new revision
-            {:acquired} ->
+            # If we acquired or updated the lock, we can proceed
+            lock_result when lock_result in [{:acquired}, {:updated}] ->
               get_latest_revision(publication, resource)
               |> resurrect_or_delete_activity_references(converted_update, project.slug)
-              |> create_new_revision(publication, resource, author.id)
-              |> update_revision(converted_update, project.slug)
-              |> possibly_release_lock(project, publication, resource, author, update)
-
-            # A successful lock update means we can safely edit the existing revision
-            {:updated} ->
-              get_latest_revision(publication, resource)
-              |> resurrect_or_delete_activity_references(converted_update, project.slug)
-              |> maybe_create_new_revision(publication, resource, author.id, converted_update)
+              |> maybe_create_new_revision(
+                publication,
+                project,
+                resource,
+                author.id,
+                converted_update,
+                lock_result
+              )
               |> update_revision(converted_update, project.slug)
               |> possibly_release_lock(project, publication, resource, author, update)
 
@@ -106,6 +111,35 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     previous
   end
+
+  defp validate_page_content_json(page) do
+    case page_content(page) do
+      nil ->
+        :ok
+
+      json ->
+        schema = SchemaResolver.schema("page-content.schema.json")
+
+        case ExJsonSchema.Validator.validate(schema, json) do
+          :ok ->
+            :ok
+
+          {:error, errors} ->
+            error_details = [
+              schema: "page-content.schema.json",
+              page: page,
+              errors: errors
+            ]
+
+            Logger.error("Page content JSON invalid #{Kernel.inspect(error_details)}")
+            {:error, errors}
+        end
+    end
+  end
+
+  defp page_content(%{"content" => content}), do: content
+  defp page_content(%{content: content}), do: content
+  defp page_content(_), do: nil
 
   @doc """
   Attempts to lock a resource for editing.
@@ -193,8 +227,9 @@ defmodule Oli.Authoring.Editing.PageEditor do
            Publishing.project_working_publication(project_slug)
            |> Repo.preload(:project)
            |> trap_nil(),
-         {:ok, %{content: content, deleted: false} = revision} <-
+         {:ok, %{deleted: false} = revision} <-
            AuthoringResolver.from_revision_slug(project_slug, revision_slug) |> trap_nil(),
+         {:ok, %{content: content} = revision} <- maybe_migrate_revision_content(revision),
          {:ok, objectives} <-
            Publishing.get_published_objective_details(publication.id) |> trap_nil(),
          {:ok, objectives_with_parent_reference} <-
@@ -225,12 +260,27 @@ defmodule Oli.Authoring.Editing.PageEditor do
          content: convert_to_activity_slugs(revision.content, publication.id),
          activities: activities,
          activityContexts: ActivityEditor.create_contexts(project_slug, activity_ids),
+         featureFlags:
+           Features.list_features_and_states()
+           |> Enum.reduce(%{}, fn {%Oli.Features.Feature{label: label}, value}, acc ->
+             Map.put(acc, label, value)
+           end),
          project: publication.project,
          previous_page: previous,
          next_page: next
        }}
     else
       _ -> {:error, :not_found}
+    end
+  end
+
+  defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
+    case ContentMigrator.migrate(content, :page, to: :latest) do
+      {:migrated, migrated_content} ->
+        {:ok, %Revision{revision | content: migrated_content}}
+
+      {:skipped, _content} ->
+        {:ok, revision}
     end
   end
 
@@ -249,9 +299,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
            user: author,
            mode: mode,
            activity_map: activities,
-           project_slug: project_slug
+           project_slug: project_slug,
+           bib_app_params: Keyword.get(options, :bib_app_params, [])
          } do
-      Rendering.Page.render(render_context, content["model"], Rendering.Page.Html)
+      Rendering.Page.render(render_context, content, Rendering.Page.Html)
     else
       _ -> {:error, :not_found}
     end
@@ -264,6 +315,10 @@ defmodule Oli.Authoring.Editing.PageEditor do
         type == "activity-reference"
       end)
       |> Enum.map(fn %{"activity_id" => id} -> id end)
+
+    # Get a mapping of the activities to their parent groups. We need to set this
+    # correctly so that client-side pagination automation works
+    group_mapping = Oli.Resources.PageContent.activity_parent_groups(content)
 
     if length(found_activities) != 0 do
       # get a view of all current registered activity types
@@ -279,32 +334,44 @@ defmodule Oli.Authoring.Editing.PageEditor do
                         activity_type_id: activity_type_id,
                         content: content,
                         graded: graded
-                      } ->
+                      } = revision ->
          # To support 'test mode' in the editor, we give the editor an initial transformed
          # version of the model that it can immediately use for display purposes. If it fails
          # to transform, nil will be handled by the client and the raw model will be used
          # instead
+
          transformed =
-           case Transformers.apply_transforms(content) do
-             {:ok, t} -> t
-             {:no_effect, t} -> t
-             _ -> nil
+           case Transformers.apply_transforms([revision]) do
+             [{:ok, nil}] ->
+               revision.content
+
+             [{:ok, t}] ->
+               t
+
+             _ ->
+               revision.content
            end
 
          # the activity type this revision pertains to
          type = Map.get(reg_map, activity_type_id)
 
-         state = ActivityState.create_preview_state(transformed)
+         state =
+           ActivityState.create_preview_state(
+             transformed,
+             Map.get(group_mapping, resource_id).group
+           )
 
          %ActivitySummary{
            id: resource_id,
            attempt_guid: nil,
            model: ActivityContext.prepare_model(transformed, prune: false),
            state: ActivityContext.prepare_state(state),
+           lifecycle_state: state.lifecycle_state,
            delivery_element: type.delivery_element,
            authoring_element: type.authoring_element,
            script: type.delivery_script,
-           graded: graded
+           graded: graded,
+           bib_refs: Map.get(content, "bibrefs", [])
          }
        end)
        |> Enum.reduce(%{}, fn summary, acc -> Map.put(acc, summary.id, summary) end)}
@@ -398,22 +465,21 @@ defmodule Oli.Authoring.Editing.PageEditor do
         {revision, []}
 
       activity_ids ->
-        activity_revisions =
-          AuthoringResolver.from_resource_id(project_slug, activity_ids)
-          |> Enum.map(fn revision ->
-            {:ok, updated} =
-              Oli.Resources.update_revision(revision, %{
-                deleted: MapSet.member?(deletions, revision.resource_id)
-              })
+        AuthoringResolver.from_resource_id(project_slug, activity_ids)
+        |> Enum.filter(fn r -> !is_nil(r) end)
+        |> Enum.each(fn revision ->
+          Oli.Publishing.ChangeTracker.track_revision(project_slug, revision, %{
+            deleted: MapSet.member?(deletions, revision.resource_id)
+          })
+        end)
 
-            updated
-          end)
+        activity_revisions = AuthoringResolver.from_resource_id(project_slug, activity_ids)
 
         {revision, activity_revisions}
     end
   end
 
-  # Reverse references found in a resource update for activites. They will
+  # Reverse references found in a resource update for activities. They will
   # come from the client as activity revision slugs, we store them internally
   # as activity ids.
   defp convert_to_activity_ids(%{"content" => content} = update) do
@@ -527,13 +593,17 @@ defmodule Oli.Authoring.Editing.PageEditor do
   defp maybe_create_new_revision(
          {previous, changed_activity_revisions},
          publication,
+         project,
          resource,
          author_id,
-         update
+         update,
+         lock_result
        ) do
     title = Map.get(update, "title", previous.title)
 
-    if title != previous.title do
+    needs_new_revision = Oli.Publishing.needs_new_revision_for_edit?(project.slug, previous.id)
+
+    if title != previous.title or needs_new_revision or lock_result == {:acquired} do
       create_new_revision(
         {previous, changed_activity_revisions},
         publication,

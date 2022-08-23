@@ -7,7 +7,8 @@ defmodule Oli.Institutions.Institution do
     field :country_code, :string
     field :institution_email, :string
     field :institution_url, :string
-    field :timezone, :string
+    field :research_consent, Ecto.Enum, values: [:oli_form, :no_form], default: :oli_form
+    field :status, Ecto.Enum, values: [:active, :deleted], default: :active
 
     # an institution can specify a default brand
     belongs_to :default_brand, Oli.Branding.Brand
@@ -34,15 +35,16 @@ defmodule Oli.Institutions.Institution do
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone,
-      :default_brand_id
+      :default_brand_id,
+      :research_consent,
+      :status
     ])
     |> validate_required([
       :name,
       :country_code,
       :institution_email,
       :institution_url,
-      :timezone
+      :research_consent
     ])
   end
 end

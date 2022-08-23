@@ -45,11 +45,22 @@ defmodule Oli.Features do
     do: update_feature_state(get_by_label(label).id, state)
 
   def bootstrap_feature_states() do
-    Enum.map(@features, fn %Feature{id: id} ->
-      case Repo.get(FeatureState, id) do
-        nil -> create_feature_state(%{state: :disabled})
-        e -> e
-      end
+    Repo.transaction(fn ->
+      # delete any feature flags that are no longer defined
+      Repo.all(FeatureState)
+      |> Enum.each(fn %FeatureState{id: id} ->
+        if id not in @features do
+          from(f in FeatureState, where: f.id == ^id)
+          |> Repo.delete_all()
+        end
+      end)
+
+      Enum.map(@features, fn %Feature{id: id} ->
+        case Repo.get(FeatureState, id) do
+          nil -> create_feature_state(%{id: id, state: :disabled})
+          e -> e
+        end
+      end)
     end)
   end
 

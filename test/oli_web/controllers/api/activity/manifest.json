@@ -1,0 +1,18 @@
+{
+  "id": "test_test",
+  "friendlyName": "Test activity",
+  "description": "A question that does nothing",
+  "icon": "input",
+  "delivery": {
+    "element": "test-test-delivery",
+    "entry": "./delivery.js"
+  },
+  "authoring": {
+    "element": "test-test-authoring",
+    "entry": "./authoring.js"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

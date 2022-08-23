@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 import { configureStore } from 'state/store';
 import { activityDeliverySlice } from 'data/activities/DeliveryState';
 import { Provider } from 'react-redux';
-import { DeliveryElementProvider } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider } from 'components/activities/DeliveryElementProvider';
 import { makeHint } from 'components/activities/types';
 import { defaultActivityState } from 'data/activities/utils';
 
@@ -20,7 +20,15 @@ describe('check all that apply delivery', () => {
       model,
       activitySlug: 'activity-slug',
       state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
-      graded: false,
+      context: {
+        graded: false,
+        surveyId: null,
+        groupId: null,
+        userId: 0,
+        pageAttemptGuid: '',
+        sectionSlug: '',
+        bibParams: [],
+      },
       preview: false,
     };
     const { onSaveActivity, onSubmitActivity } = defaultDeliveryElementProps;

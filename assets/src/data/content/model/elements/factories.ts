@@ -1,4 +1,5 @@
-import { normalizeHref } from 'components/editing/elements/link/utils';
+import { normalizeHref } from './utils';
+
 import {
   TableData,
   TableRow,
@@ -8,17 +9,25 @@ import {
   Webpage,
   Hyperlink,
   Paragraph,
-  Code,
   InputRef,
   Popup,
   Table,
   YouTube,
-  Image,
+  ImageBlock,
   Audio,
   Blockquote,
   ModelElement,
   HeadingOne,
   HeadingTwo,
+  Citation,
+  ImageInline,
+  CodeV2,
+  FormulaBlock,
+  FormulaInline,
+  FormulaSubTypes,
+  Callout,
+  CalloutInline,
+  Video,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -48,13 +57,30 @@ export const Model = {
 
   ul: () => create<UnorderedList>({ type: 'ul', children: [Model.li()] }),
 
+  video: () => create<Video>({ type: 'video', src: [] }),
+
   youtube: (src?: string) => create<YouTube>({ type: 'youtube', src }),
+
+  callout: (text = '') => create<Callout>({ type: 'callout', children: [Model.p(text)] }),
+  calloutInline: (text = '') =>
+    create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
+
+  formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
+    create<FormulaBlock>({ type: 'formula', src, subtype }),
+
+  formulaInline: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
+    create<FormulaInline>({ type: 'formula_inline', src, subtype }),
 
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  image: (src?: string) => create<Image>({ type: 'img', src, display: 'block' }),
+  cite: (text = '', bibref: number) =>
+    create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),
+
+  image: (src?: string) => create<ImageBlock>({ type: 'img', src, display: 'block' }),
+
+  imageInline: (src?: string) => create<ImageInline>({ type: 'img_inline', src }),
 
   audio: (src?: string) => create<Audio>({ type: 'audio', src }),
 
@@ -69,10 +95,10 @@ export const Model = {
       type: 'blockquote',
     }),
 
-  code: (children = '') =>
-    create<Code>({
+  code: (code = '') =>
+    create<CodeV2>({
       type: 'code',
-      code: children,
+      code,
       language: 'Text',
     }),
 

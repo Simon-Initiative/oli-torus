@@ -12,7 +12,7 @@ defmodule OliWeb.Admin.Ingest do
   prop author, :any
 
   data breadcrumbs, :any
-  data title, :string, default: "Ingest Course Project"
+  data title, :string, default: "Ingest Project"
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -23,7 +23,7 @@ defmodule OliWeb.Admin.Ingest do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Ingest Course Project",
+          full_title: "Ingest Project",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
@@ -58,13 +58,8 @@ defmodule OliWeb.Admin.Ingest do
   def handle_event("ingest", _params, socket) do
     %{author: author} = socket.assigns
 
-    with path_upload <-
-          consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry ->
-            path
-            |> IO.inspect
-          end),
+    with path_upload <- consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
          {:ok, project} <- Ingest.ingest(hd(path_upload), author) do
-
       {:noreply , redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
     else
       error ->

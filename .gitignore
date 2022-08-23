@@ -11,11 +11,16 @@ Mnesia.nonode@nohost
 # The directory where the NodeJS Elixir bridge will read files from
 /priv/node/
 
+/assets/typedocs/
+
 # The directory Mix will write compiled artifacts to.
 /_build/
 
 # If you run "mix test --cover", coverage assets end up here.
 /cover/
+
+# `mix test.hound` will output failing test results here
+/test-results/
 
 # The directory Mix downloads your dependencies sources to.
 /deps/
@@ -51,10 +56,21 @@ npm-debug.log
 /assets/static/custom/*
 !/assets/static/custom/README.md
 
+# Ignore custom themes
+/assets/styles/themes/authoring/custom/*
+!/assets/styles/themes/authoring/custom/README.md
+/assets/styles/themes/delivery/custom/*
+!/assets/styles/themes/delivery/custom/README.md
+
 oli.env
 postgres.env
 /assets/test-results/
 /assets/coverage/
+/assets/dist-sdk/
+/assets/sdk/oli-torus-sdk-*.tgz
+/assets/sdk/dist/
+/assets/sdk/node_modules
+/assets/sdk/yarn.lock
 .devmode
 .elixir_ls
 .DS_Store
@@ -72,3 +88,4 @@ stacks.out
 .mnesia
 yarn-error.log
 /priv/superactivity/
+/assets/src/components/activities/oli_ctat2/

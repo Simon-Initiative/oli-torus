@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Attempts.Core do
   alias Oli.Repo
   alias Oli.Repo.{Paging, Sorting}
 
+  alias Oli.Accounts.User
   alias Oli.Delivery.Sections.Section
   alias Oli.Publishing.PublishedResource
   alias Oli.Resources.Revision
@@ -223,38 +224,80 @@ defmodule Oli.Delivery.Attempts.Core do
 
   `[%ResourceAccess{}, ...]`
   """
-  def get_graded_resource_access_for_context(section_slug) do
-    Repo.all(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: spp in SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id,
-        join: r in Revision,
-        on: pr.revision_id == r.id,
-        where: s.slug == ^section_slug and s.status == :active and r.graded == true,
-        select: a
-      )
-    )
+  def get_graded_resource_access_for_context(section_id) do
+    graded_resource_access_for_context(section_id)
+    |> Repo.all()
   end
 
-  def get_graded_resource_access_for_context(section_slug, student_ids) do
+  def get_graded_resource_access_for_context(section_id, user_ids) do
+    graded_resource_access_for_context(section_id)
+    |> where([_, _, _, a], a.user_id in ^user_ids)
+    |> Repo.all()
+  end
+
+  # base query, intended to be composable for the above two uses
+  defp graded_resource_access_for_context(section_id) do
+    SectionsProjectsPublications
+    |> join(:left, [spp], pr in PublishedResource, on: pr.publication_id == spp.publication_id)
+    |> join(:left, [_, pr], r in Revision, on: r.id == pr.revision_id)
+    |> join(:left, [spp, _, r], a in ResourceAccess,
+      on: r.resource_id == a.resource_id and a.section_id == spp.section_id
+    )
+    |> where([spp, _, r, _], spp.section_id == ^section_id and r.graded == true)
+    |> select([_, _, _, a], a)
+  end
+
+  @doc """
+    Retrieves all graded resource access where the last lms grade sync failed
+    for a given section.
+
+    `[
+      %{
+        id: 21390,
+        resource_id: 1234,
+        user_id: 558,
+        user_name: "Some user name",
+        page_title: "Some page title"
+      },
+      ...
+    ]`
+  """
+  def get_failed_grade_sync_resource_accesses_for_section(section_slug) do
     Repo.all(
-      from(a in ResourceAccess,
-        join: s in Section,
-        on: a.section_id == s.id,
-        join: spp in SectionsProjectsPublications,
-        on: s.id == spp.section_id,
-        join: pr in PublishedResource,
-        on: pr.publication_id == spp.publication_id,
-        join: r in Revision,
-        on: pr.revision_id == r.id,
+      from(
+        resource_access in ResourceAccess,
+        join: section in assoc(resource_access, :section),
+        join: user in assoc(resource_access, :user),
+        join: section_project_publication in assoc(section, :section_project_publications),
+        join: published_resource in PublishedResource,
+        on: section_project_publication.publication_id == published_resource.publication_id,
+        join: revision in Revision,
+        on:
+          revision.id == published_resource.revision_id and
+            revision.resource_id == resource_access.resource_id,
         where:
-          a.user_id in ^student_ids and s.slug == ^section_slug and s.status == :active and
-            r.graded == true,
-        select: a
+          section.slug == ^section_slug and
+            section.status == :active and
+            revision.deleted == false and
+            revision.graded == true and
+            (not is_nil(resource_access.last_grade_update_id) and
+               (is_nil(resource_access.last_successful_grade_update_id) or
+                  resource_access.last_grade_update_id !=
+                    resource_access.last_successful_grade_update_id)),
+        select: %{
+          id: resource_access.id,
+          resource_id: resource_access.resource_id,
+          user_id: user.id,
+          user_name: user.name,
+          page_title: revision.title
+        },
+        group_by: [
+          resource_access.id,
+          resource_access.resource_id,
+          user.id,
+          user.name,
+          revision.title
+        ]
       )
     )
   end
@@ -336,7 +379,7 @@ defmodule Oli.Delivery.Attempts.Core do
   def get_resource_accesses(section_slug, user_id) do
     Repo.all(
       from(a in ResourceAccess,
-        join: ra in ResourceAttempt,
+        left_join: ra in ResourceAttempt,
         on: a.id == ra.resource_access_id,
         join: s in Section,
         on: a.section_id == s.id,
@@ -350,10 +393,23 @@ defmodule Oli.Delivery.Attempts.Core do
     )
   end
 
+  @doc """
+  For a given project id, this retrieves part attempts and user information, for those part attempts
+  that are evaluated and that have snapshots defined. This is a key query for powering analytics
+  (mainly DataShop export), and thus is the reasoning why it is snapshot driven.
+
+  This impl is optimized so that it can be used even in very large datasets, where there might be
+  thousands or tens of thousands of part attempts.  One single massive query that attempted to
+  preload the activity attempt, the revision of the activity, the resource attempt and the
+  revision of the resource via a series of 'joins' would have an unnecessarily large payload due to the fact
+  that many attempts and certainly most revisions would be duplicates.   This approach here
+  makes a series of db requests, fetching the unique set of attempts and revisions necesarry to
+  then 'reconstruct' the preloaded attempt hierarchies.
+  """
   def get_part_attempts_and_users(project_id) do
-    Repo.all(
-      from(
-        project in Project,
+    # This is our base, reusable query designed to get the part attempts
+    core =
+      from project in Project,
         join: spp in SectionsProjectsPublications,
         on: spp.project_id == project.id,
         join: section in Section,
@@ -361,29 +417,102 @@ defmodule Oli.Delivery.Attempts.Core do
         join: project_resource in ProjectResource,
         on: project_resource.project_id == ^project_id,
         join: snapshot in Snapshot,
+        as: :snapshot,
         on:
           snapshot.section_id == section.id and
             snapshot.resource_id == project_resource.resource_id,
         join: part_attempt in PartAttempt,
+        as: :part_attempt,
         on: snapshot.part_attempt_id == part_attempt.id,
-        join: user in User,
-        on: snapshot.user_id == user.id,
-        # Only look at evaluated part attempts -> date evaluated not nil
         where:
           project.id == ^project_id and
-            part_attempt.lifecycle_state == :evaluated,
-        select: %{part_attempt: part_attempt, user: user}
+            part_attempt.lifecycle_state == :evaluated
+
+    # Now get the resource attempt revision for those part attempts, distinctly, and
+    # create a map of their ids to the attempts
+    resource_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        join: r in Revision,
+        on: ra.revision_id == r.id,
+        distinct: true,
+        select: r
       )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    # Now get the resource attempts themselves, distincly, and create a map, while
+    # wiring into them the resource revisions fetched above
+    resource_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: ra in ResourceAttempt,
+        on: a.resource_attempt_id == ra.id,
+        distinct: true,
+        select: ra
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        # wire in the resource attempt revision, to simulate the preload
+        r = Map.put(r, :revision, Map.get(resource_attempt_revisions, r.revision_id))
+        Map.put(m, r.id, r)
+      end)
+
+    # Get the activity attempt revisions, distinctly.  Getting them distinctly is a potentially
+    # huge optimization if we imagine a course where there might only be ten activities, but that
+    # are taken 10,000 times by students.
+    activity_attempt_revisions =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        join: r in Revision,
+        on: a.revision_id == r.id,
+        distinct: true,
+        select: r
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m -> Map.put(m, r.id, r) end)
+
+    # Get the attempts, and wire in the activity revision and the resource attempt
+    activity_attempts =
+      from([part_attempt: part_attempt] in core,
+        join: a in ActivityAttempt,
+        on: part_attempt.activity_attempt_id == a.id,
+        distinct: true,
+        select: a
+      )
+      |> Repo.all()
+      |> Enum.reduce(%{}, fn r, m ->
+        r =
+          Map.put(r, :resource_attempt, Map.get(resource_attempts, r.resource_attempt_id))
+          |> Map.put(:revision, Map.get(activity_attempt_revisions, r.revision_id))
+
+        Map.put(m, r.id, r)
+      end)
+
+    # Now get the part attempts with user
+    from([snapshot: s, part_attempt: part_attempt] in core,
+      join: user in User,
+      on: s.user_id == user.id,
+      select: %{part_attempt: part_attempt, user: user}
     )
-    |> Enum.map(
-      &%{
-        user: &1.user,
+    |> Repo.all()
+    |> Enum.map(fn %{user: user, part_attempt: part_attempt} ->
+      # Wire in the activity attempt to each part attempt
+      %{
+        user: user,
         part_attempt:
-          Repo.preload(&1.part_attempt,
-            activity_attempt: [:revision, revision: :activity_type, resource_attempt: :revision]
+          Map.put(
+            part_attempt,
+            :activity_attempt,
+            Map.get(activity_attempts, part_attempt.activity_attempt_id)
           )
       }
-    )
+    end)
   end
 
   def has_any_active_attempts?(resource_attempts) do
@@ -442,6 +571,19 @@ defmodule Oli.Delivery.Attempts.Core do
       )
     )
     |> Repo.preload(revision: [:activity_type])
+  end
+
+  def get_latest_activity_attempts(resource_attempt_id) do
+    Repo.all(
+      from(aa in ActivityAttempt,
+        left_join: aa2 in ActivityAttempt,
+        on:
+          aa.resource_attempt_id == aa2.resource_attempt_id and aa.resource_id == aa2.resource_id and
+            aa.id < aa2.id,
+        where: aa.resource_attempt_id == ^resource_attempt_id and is_nil(aa2),
+        select: aa
+      )
+    )
   end
 
   @doc """

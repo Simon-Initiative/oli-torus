@@ -1,10 +1,12 @@
 defmodule Oli.Utils.SlugTest do
   use Oli.DataCase
 
+  import Ecto.Query, warn: false
+
   alias Oli.Utils.Slug
 
   alias Oli.Authoring.Course.Project
-  alias Oli.Delivery.Sections.SectionInvite
+  alias Oli.Delivery.Sections.{SectionInvite, SectionResource}
   alias Oli.Delivery.Sections
   alias Oli.Resources.Revision
   alias Oli.Repo
@@ -132,7 +134,6 @@ defmodule Oli.Utils.SlugTest do
       {:ok, section} =
         Sections.create_section(%{
           base_project_id: project.id,
-          timezone: "some timezone",
           title: "some title",
           context_id: "context_id"
         })
@@ -154,7 +155,6 @@ defmodule Oli.Utils.SlugTest do
       {:ok, section} =
         Sections.create_section(%{
           base_project_id: project.id,
-          timezone: "some timezone",
           title: "some title",
           context_id: "context_id"
         })
@@ -175,6 +175,24 @@ defmodule Oli.Utils.SlugTest do
         |> Repo.update!()
 
       assert slug == updated_section_invite.slug
+    end
+
+    test "generate_nth/2 generates a slug with no suffix in the first attempt" do
+      assert Slug.generate_nth("Hello World", 0) == "hello_world"
+    end
+
+    test "generate_nth/2 generates a slug with a 5-chars-long suffix before the fifth attempt" do
+      assert Slug.generate_nth("Hello World", Enum.random(1..4)) =~ ~r/hello_world_\w{5,5}/
+    end
+
+    test "generate_nth/2 generates a slug with a 10-chars-long suffix after the fifth attempt" do
+      assert Slug.generate_nth("Hello World", Enum.random(5..10)) =~ ~r/hello_world_\w{10,10}/
+    end
+
+    test "generate/2 generates a unique slug using the title provided", %{revision1: r} do
+      slug = Slug.generate("section_resources", r.title)
+
+      refute Repo.exists?(from sr in SectionResource, where: sr.slug == ^slug)
     end
   end
 end

@@ -2,8 +2,9 @@ defmodule Oli.Utils do
   require Logger
 
   import Ecto.Changeset
+  import Ecto.Query, warn: false
 
-  @urlRegex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
+  @url_regex ~r/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/i
 
   @doc """
   Generates a random hex string of the given length
@@ -156,9 +157,44 @@ defmodule Oli.Utils do
     end
   end
 
+  def validate_number_if(
+        changeset,
+        field,
+        condition,
+        greater_than_or_equal_to,
+        less_than_or_equal_to
+      ) do
+    if condition.(changeset) do
+      Ecto.Changeset.validate_number(
+        changeset,
+        field,
+        greater_than_or_equal_to: greater_than_or_equal_to,
+        less_than_or_equal_to: less_than_or_equal_to
+      )
+    else
+      changeset
+    end
+  end
+
   def validate_acceptance_if(changeset, field, condition, message \\ "must be accepted") do
     if condition.(changeset) do
       Ecto.Changeset.validate_acceptance(changeset, field, message: message)
+    else
+      changeset
+    end
+  end
+
+  def unique_constraint_if(changeset, fields, condition, opts \\ []) do
+    if condition.(changeset) do
+      Ecto.Changeset.unique_constraint(changeset, fields, opts)
+    else
+      changeset
+    end
+  end
+
+  def foreign_key_constraint_if(changeset, field, condition, opts \\ []) do
+    if condition.(changeset) do
+      Ecto.Changeset.foreign_key_constraint(changeset, field, opts)
     else
       changeset
     end
@@ -175,6 +211,13 @@ defmodule Oli.Utils do
     end)
   end
 
+  @spec read_json_file(
+          binary
+          | maybe_improper_list(
+              binary | maybe_improper_list(any, binary | []) | char,
+              binary | []
+            )
+        ) :: {:error, atom} | {:ok, false | nil | true | binary | list | number | map}
   def read_json_file(filename) do
     with {:ok, body} <- File.read(filename), {:ok, json} <- Poison.decode(body), do: {:ok, json}
   end
@@ -274,10 +317,17 @@ defmodule Oli.Utils do
   def string_to_boolean(_bool), do: false
 
   @doc """
+  Ensures a number (integer/float) is a string
+  """
+  def ensure_number_is_string(value) when is_integer(value), do: Integer.to_string(value)
+  def ensure_number_is_string(value) when is_float(value), do: Float.to_string(value)
+  def ensure_number_is_string(value), do: value
+
+  @doc """
   Detects all urls in a string and replaces them with hyperlinks.
   """
   def find_and_linkify_urls_in_string(string) do
-    Regex.replace(@urlRegex, string, fn _, url ->
+    Regex.replace(@url_regex, string, fn _, url ->
       absolute_url =
         if is_url_absolute(url) do
           url
@@ -289,4 +339,12 @@ defmodule Oli.Utils do
     end)
   end
 
+  @doc """
+  Receives a map with conditions on entity's fields, and returns dynamic conditions to be used in an Ecto query.
+  """
+  def filter_conditions(filter) do
+    Enum.reduce(filter, false, fn {field, value}, conditions ->
+      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
+    end)
+  end
 end

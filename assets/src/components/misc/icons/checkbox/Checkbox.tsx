@@ -1,5 +1,4 @@
 import React from 'react';
-import './Checkbox.scss';
 
 interface Props {
   className?: string;

@@ -1,6 +1,9 @@
 import { clone } from 'utils/common';
 
-import { updatePart } from 'apps/authoring/store/parts/actions/updatePart';
+import {
+  updatePart,
+  updatePartWithCorrectExpression,
+} from 'apps/authoring/store/parts/actions/updatePart';
 import { saveActivity } from '../../../../authoring/store/activities/actions/saveActivity';
 import { DiagnosticTypes } from './DiagnosticTypes';
 import cloneDeep from 'lodash/cloneDeep';
@@ -13,6 +16,18 @@ export const updateId = (problem: any, fixed: string) => {
   const partId = problem.item.id;
   const changes = { id: fixed };
   return updatePart({ activityId, partId, changes });
+};
+
+export const updatePartsWithCorrectExpression = (problem: any, fixed: string) => {
+  const activityId = problem.owner.resourceId;
+  const partId = problem.item.part.id;
+  const changes = {
+    item: problem.item.item,
+    part: problem.item.part,
+    formattedExpression: problem.item.formattedExpression,
+    message: problem.item.message,
+  };
+  return updatePartWithCorrectExpression({ activityId, partId, changes });
 };
 
 export const updateRule = (rule: any, problem: any, activities: any) => {
@@ -41,7 +56,8 @@ export const updateRule = (rule: any, problem: any, activities: any) => {
 };
 
 export const updatePath =
-  (t: 'navigation' | 'mutateState') => (problem: any, fixed: string, activities: any) => {
+  (t: 'navigation' | 'mutateState', side: 'target' | 'value' = 'target') =>
+  (problem: any, fixed: string, activities: any) => {
     const { item } = problem;
 
     const ruleClone = cloneDeep(problem.item);
@@ -54,7 +70,7 @@ export const updatePath =
       ...action,
       params: {
         ...action.params,
-        target: fixed,
+        [side]: fixed,
       },
     };
     actionsClone[actions.indexOf(action)] = a;
@@ -69,58 +85,67 @@ export const updateConditionProperty =
 
     const ruleClone = cloneDeep(item.rule);
     const type = has(ruleClone.conditions, 'all') ? 'all' : 'any';
-    const list = ruleClone.conditions[type];
-    forEachCondition(list, (condition: any) => {
-      // console.log(condition, item.condition);
-      if (condition.id === item.condition.id) {
-        const cond = findConditionById(condition.id, list) as JanusConditionProperties;
-        if (cond) {
-          cond[t] = fixed;
+    if (ruleClone.conditions) {
+      const list = ruleClone.conditions[type];
+      forEachCondition(list, (condition: any) => {
+        // console.log(condition, item.condition);
+        if (condition.id === item.condition.id) {
+          const cond = findConditionById(condition.id, list) as JanusConditionProperties;
+          if (cond) {
+            cond[t] = fixed;
+          }
         }
-      }
-    });
+      });
 
-    return updateRule(ruleClone, problem, activities);
+      return updateRule(ruleClone, problem, activities);
+    } else {
+      return updateInitComponentPath('value')(problem, fixed, activities);
+    }
   };
 
-export const updateInitComponentPath = (problem: any, fixed: string, activities: any) => {
-  const { item, owner } = problem;
-  const { fact } = item;
+export const updateInitComponentPath =
+  (t: 'value' | 'target') => (problem: any, fixed: string, activities: any) => {
+    const { item, owner } = problem;
+    const { fact } = item;
 
-  const factClone = clone(fact);
-  factClone.target = fixed;
+    const factClone = clone(fact);
+    factClone[t] = fixed;
+    const activity = activities.find((a: any) => a.id === owner.resourceId);
+    const existing = activity?.content.custom.facts.find((r: any) => r.id === fact.id);
 
-  const activity = activities.find((a: any) => a.id === owner.resourceId);
-  const existing = activity?.content.custom.facts.find((r: any) => r.id === fact.id);
+    const diff = JSON.stringify(factClone) !== JSON.stringify(existing);
+    /*console.log('RULE CHANGE: ', {
+      fact,
+      existing,
+      diff,
+    });*/
+    if (!existing) {
+      console.warn("rule not found, shouldn't happen!!!");
+      return;
+    }
 
-  const diff = JSON.stringify(factClone) !== JSON.stringify(existing);
-  /*console.log('RULE CHANGE: ', {
-    fact,
-    existing,
-    diff,
-  });*/
-  if (!existing) {
-    console.warn("rule not found, shouldn't happen!!!");
-    return;
-  }
-
-  if (diff) {
-    const activityClone = clone(activity);
-    const factsClone = activity ? [...activity.content.custom.facts] : [];
-    factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
-    activityClone.content.custom.facts = factsClone;
-    return saveActivity({ activity: activityClone, undoable: true });
-  }
-};
+    if (diff) {
+      const activityClone = clone(activity);
+      const factsClone = activity ? [...activity.content.custom.facts] : [];
+      factsClone[activity?.content.custom.facts.indexOf(existing)] = factClone;
+      activityClone.content.custom.facts = factsClone;
+      return saveActivity({ activity: activityClone, undoable: true });
+    }
+  };
 
 const updaters: any = {
   [DiagnosticTypes.DUPLICATE]: updateId,
   [DiagnosticTypes.PATTERN]: updateId,
   [DiagnosticTypes.BROKEN]: updatePath('navigation'),
-  [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath,
+  [DiagnosticTypes.INVALID_TARGET_INIT]: updateInitComponentPath('target'),
   [DiagnosticTypes.INVALID_TARGET_MUTATE]: updatePath('mutateState'),
   [DiagnosticTypes.INVALID_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION_VALUE]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_EXPRESSION]: updatePartsWithCorrectExpression,
   [DiagnosticTypes.INVALID_TARGET_COND]: updateConditionProperty('fact'),
+  [DiagnosticTypes.INVALID_OWNER_INIT]: updateInitComponentPath('value'),
+  [DiagnosticTypes.INVALID_OWNER_CONDITION]: updateConditionProperty('value'),
+  [DiagnosticTypes.INVALID_OWNER_MUTATE]: updatePath('mutateState', 'value'),
   [DiagnosticTypes.DEFAULT]: () => {},
 };
 

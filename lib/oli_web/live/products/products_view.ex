@@ -1,10 +1,8 @@
 defmodule OliWeb.Products.ProductsView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   alias Oli.Repo
+  alias OliWeb.Common.{Breadcrumb, Filter, Listing, SessionContext}
   alias OliWeb.Products.Create
-  alias OliWeb.Common.Filter
-  alias OliWeb.Common.Listing
-  alias OliWeb.Common.Breadcrumb
   alias Oli.Authoring.Course
   alias Oli.Accounts.Author
   alias Oli.Delivery.Sections.Blueprint
@@ -15,7 +13,7 @@ defmodule OliWeb.Products.ProductsView do
   prop project, :any
   prop author, :any
   data breadcrumbs, :any
-  data title, :string, default: "Course Products"
+  data title, :string, default: "Products"
 
   data creation_title, :string, default: ""
   data products, :list, default: []
@@ -68,31 +66,41 @@ defmodule OliWeb.Products.ProductsView do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Course Products",
+          full_title: "Products",
           link: Routes.live_path(OliWeb.Endpoint, __MODULE__)
         })
       ]
   end
 
-  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id}, socket) do
+  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
     project = Course.get_project_by_slug(project_slug)
     products = Blueprint.list_for_project(project)
 
-    mount_as(author, false, products, project, breadcrumb([]), socket)
+    mount_as(
+      author,
+      false,
+      products,
+      project,
+      breadcrumb([]),
+      "Products | " <> project.title,
+      socket,
+      session
+    )
   end
 
-  def mount(_, %{"current_author_id" => author_id}, socket) do
+  def mount(_, %{"current_author_id" => author_id} = session, socket) do
     author = Repo.get(Author, author_id)
 
     products = Blueprint.list()
-    mount_as(author, true, products, nil, admin_breadcrumbs(), socket)
+    mount_as(author, true, products, nil, admin_breadcrumbs(), "Products", socket, session)
   end
 
-  defp mount_as(author, is_admin_view, products, project, breadcrumbs, socket) do
+  defp mount_as(author, is_admin_view, products, project, breadcrumbs, title, socket, session) do
     total_count = length(products)
 
-    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products)
+    context = SessionContext.init(session)
+    {:ok, table_model} = OliWeb.Products.ProductsTableModel.new(products, context)
 
     {:ok,
      assign(socket,
@@ -102,7 +110,8 @@ defmodule OliWeb.Products.ProductsView do
        project: project,
        products: products,
        total_count: total_count,
-       table_model: table_model
+       table_model: table_model,
+       title: title
      )}
   end
 
@@ -139,16 +148,10 @@ defmodule OliWeb.Products.ProductsView do
   def handle_event("create", _, socket) do
     case Blueprint.create_blueprint(socket.assigns.project.slug, socket.assigns.creation_title) do
       {:ok, blueprint} ->
-        blueprint = Repo.preload(blueprint, :base_project)
-        products = [blueprint | socket.assigns.products]
-        table_model = Map.put(socket.assigns.table_model, :rows, products)
-
         {:noreply,
-         assign(socket,
-           table_model: table_model,
-           products: products,
-           total_count: socket.assigns.total_count + 1
-         )}
+         socket
+         |> put_flash(:info, "Product successfully created.")
+         |> redirect(to: Routes.live_path(socket, OliWeb.Products.DetailsView, blueprint.slug))}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not create product")}

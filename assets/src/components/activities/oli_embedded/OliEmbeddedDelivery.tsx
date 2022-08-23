@@ -2,15 +2,15 @@ import { configureStore } from 'state/store';
 import React, { useEffect, useState } from 'react';
 import { OliEmbeddedModelSchema } from 'components/activities/oli_embedded/schema';
 import ReactDOM from 'react-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch } from 'react-redux';
 import * as ActivityTypes from 'components/activities/types';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from 'components/activities/DeliveryElement';
-import { activityDeliverySlice } from 'data/activities/DeliveryState';
+  activityDeliverySlice,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
+} from 'data/activities/DeliveryState';
 
 interface Context {
   attempt_guid: string;
@@ -22,13 +22,22 @@ interface Context {
   part_ids: string;
 }
 
-const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
-  const { state: activityState } = useDeliveryElementContext<OliEmbeddedModelSchema>();
+const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
+  const {
+    state: activityState,
+    surveyId,
+    onSubmitActivity,
+    onResetActivity,
+  } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
   const [context, setContext] = useState<Context>();
   const [preview, setPreview] = useState<boolean>(false);
 
+  const dispatch = useDispatch();
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity);
+
     fetchContext();
     setInterval(() => {
       const iframe: HTMLIFrameElement = document.querySelector(
@@ -57,6 +66,7 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
     })
       .then((response) => response.json())
       .then((json) => {
+        configDefaults(json);
         setContext(json);
       })
       .catch((error) => {
@@ -69,6 +79,43 @@ const EmbeddedDelivery = (props: DeliveryElementProps<OliEmbeddedModelSchema>) =
   // @ts-ignore
   window.adjustIframeHeight = (i, f) => {
     // No-op. Here for backward compatibility
+  };
+
+  const configDefaults = (context: Context) => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.workbookConfig = {
+      userGUID: context.user_guid,
+      sessionGuid: '1958e2f50a0000562295c9a569354ab5',
+      contextGuid: activityState.attemptGuid,
+      dataSet: 'none',
+      syllabusURI: 'none',
+      sectionTitle: 'none',
+      isGuestSection: false,
+      pageContextGuid: 'none',
+      pageActivityGuid: 'none',
+      wbkContextGuid: 'none',
+      wbkActivityGuid: 'none',
+      isStandalone: false,
+      isSupplement: false,
+      enableAuthorWidget: false,
+      authToken: 'none',
+      logService: '/jcourse/dashboard/log/server',
+      courseKey: 'none',
+      pageNumber: 1,
+      unit: 'some unit',
+      unit_nr: 1,
+      module: 'some module',
+      module_nr: 1,
+      section: 'section title',
+      userGroup: 'none',
+    };
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.AZ = {
+      d: { courseKey: 'key1', pageNumber: 1 },
+    };
   };
 
   return (

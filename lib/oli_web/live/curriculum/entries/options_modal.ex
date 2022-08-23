@@ -4,7 +4,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
@@ -19,6 +18,24 @@ defmodule OliWeb.Curriculum.OptionsModal do
   end
 
   def render(%{changeset: changeset, revision: revision} = assigns) do
+    attempt_options = [
+      "1": 1,
+      "2": 2,
+      "3": 3,
+      "4": 4,
+      "5": 5,
+      "6": 6,
+      "7": 7,
+      "8": 8,
+      "9": 9,
+      "10": 10,
+      "15": 15,
+      "25": 25,
+      "50": 50,
+      "100": 100,
+      Unlimited: 0
+    ]
+
     ~L"""
     <div class="modal fade show" style="display: block" id="options_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
@@ -51,7 +68,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
 
                   <div class="form-group">
                     <%= label f, "Number of Attempts" %>
-                    <%= select f, :max_attempts, 1..10, class: "custom-select", disabled: is_disabled(changeset, revision), class: "form-control", aria_describedby: "numberOfAttempts", placeholder: "Number of Attempts" %>
+                    <%= select f, :max_attempts, attempt_options, class: "custom-select", disabled: is_disabled(changeset, revision), class: "form-control", aria_describedby: "numberOfAttempts", placeholder: "Number of Attempts" %>
                     <small id="numberOfAttempts" class="form-text text-muted">Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.</small>
                   </div>
 
@@ -66,6 +83,17 @@ defmodule OliWeb.Curriculum.OptionsModal do
                         aria_describedby: "scoringStrategy",
                         placeholder: "Scoring Strategy" %>
                     <small id="scoringStrategy" class="form-text text-muted">The scoring strategy determines how to calculate the final grade book score across all attempts.</small>
+                  </div>
+
+                  <div class="form-group">
+                    <%= label f, "Retake Mode" %>
+                    <%= select f, :retake_mode, [{"Normal: Students answer all questions in each attempt", :normal}, {"Targeted: Students answer only incorrect questions from previous attempts", :targeted}],
+                        class: "custom-select",
+                        disabled: is_disabled(changeset, revision) or !@revision.graded,
+                        class: "form-control",
+                        aria_describedby: "retakeMode",
+                        placeholder: "Retake Mode" %>
+                    <small id="retakeMode" class="form-text text-muted">The retake mode determines how subsequent attempts are presented to students.</small>
                   </div>
                 <% end %>
               </div>
@@ -94,7 +122,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
   end
 
   defp save_revision(socket, revision_params) do
-    %{container: container, project: project, revision: revision} = socket.assigns
+    %{redirect_url: redirect_url, project: project, revision: revision} = socket.assigns
 
     case ContainerEditor.edit_page(project, revision.slug, revision_params) do
       {:ok, _} ->
@@ -104,7 +132,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
            :info,
            "#{resource_type_label(revision) |> String.capitalize()} options saved"
          )
-         |> push_redirect(to: Routes.container_path(socket, :index, project.slug, container.slug))}
+         |> push_redirect(to: redirect_url)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}

@@ -1,44 +1,61 @@
 defmodule OliWeb.Delivery.SelectSource do
+  use OliWeb.Common.SortableTable.TableHandlers
   use Surface.LiveView
 
   alias Oli.Accounts
+  alias Oli.Delivery
   alias Oli.Delivery.Sections.Blueprint
+  alias Oli.Lti.LtiParams
   alias Oli.Publishing
-  alias OliWeb.Common.{Breadcrumb, Filter, Listing}
+  alias OliWeb.Common.{Breadcrumb, Filter, FilterBox, Listing, SessionContext}
   alias OliWeb.Router.Helpers, as: Routes
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Field, RadioButton}
 
-  data breadcrumbs, :any,
-    default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
+  import Oli.Utils
 
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Select Source for New Section"})]
   data title, :string, default: "Select Source for New Section"
-
   data sources, :list, default: []
-
-  data tabel_model, :struct
+  data table_model, :struct
   data total_count, :integer, default: 0
   data offset, :integer, default: 0
   data limit, :integer, default: 20
   data query, :string, default: ""
   data applied_query, :string, default: ""
+  data view_type, :atom, default: :card
 
   @table_filter_fn &OliWeb.Delivery.SelectSource.filter_rows/3
   @table_push_patch_path &OliWeb.Delivery.SelectSource.live_path/2
 
-  # Breadcrumbs are an authoring-only requirement.
-  # SelectSource is used in delivery section creation (for Direct Delivery functionality),
-  # so no breadcrumbs are needed in that context.
   def breadcrumbs(:admin) do
-    OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb()
+    OliWeb.OpenAndFreeController.set_breadcrumbs() |> breadcrumb(:admin)
   end
 
-  def breadcrumbs(_), do: []
+  def breadcrumbs(:lms_instructor) do
+    breadcrumb([
+      Breadcrumb.new(%{
+        full_title: "Create Course Section",
+        link: Routes.delivery_path(OliWeb.Endpoint, :index)
+      })
+    ], :lms_instructor, "Start")
+  end
 
-  def breadcrumb(previous) do
+  def breadcrumbs(:independent_learner) do
+    breadcrumb([
+      Breadcrumb.new(%{
+        full_title: "My Courses",
+        link: Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+      })
+    ], :independent_learner)
+  end
+
+  defp breadcrumb(previous, type, title \\ "Select Source") do
     previous ++
       [
         Breadcrumb.new(%{
-          full_title: "Select Source",
-          link: Routes.select_source_path(OliWeb.Endpoint, :admin)
+          full_title: title,
+          link: Routes.select_source_path(OliWeb.Endpoint, type)
         })
       ]
   end
@@ -56,73 +73,141 @@ defmodule OliWeb.Delivery.SelectSource do
               :blueprint -> p.title
             end
 
-          String.downcase(title)
-          |> String.contains?(str)
+          String.contains?(String.downcase(title), str)
         end)
     end
   end
 
-  def live_path(socket, params) do
-    Routes.select_source_path(socket, socket.assigns.live_action, params)
-  end
+  def live_path(socket, params),
+    do: Routes.select_source_path(socket, socket.assigns.live_action, params)
 
   def mount(_params, session, socket) do
-    # SelectSource used in two routes.
-    # live_action is :independent_learner or :admin
-    route = socket.assigns.live_action
+    context = SessionContext.init(session)
+
+    # SelectSource used in three routes.
+    # live_action is :independent_learner, :admin or :lms_instructor
+    live_action = socket.assigns.live_action
+
+    lti_params =
+      case session["lti_params_id"] do
+        nil -> nil
+
+        lti_params_id ->
+          %{params: lti_params} = LtiParams.get_lti_params(lti_params_id)
+          lti_params
+      end
+
+    user =
+      case session["current_user_id"] do
+        nil -> nil
+        current_user_id -> Accounts.get_user!(current_user_id, preload: [:author])
+      end
 
     sources =
-      retrieve_all_sources(route, session)
+      retrieve_all_sources(live_action, %{user: user, lti_params: lti_params})
       |> Enum.with_index(fn element, index -> Map.put(element, :unique_id, index) end)
 
-    total_count = length(sources)
-
-    {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources)
+    {:ok, table_model} = OliWeb.Delivery.SelectSource.TableModel.new(sources, context)
 
     {:ok,
-     assign(socket,
-       breadcrumbs: breadcrumbs(route),
-       total_count: total_count,
-       table_model: table_model,
-       sources: sources
-     )}
+      assign(socket,
+        breadcrumbs: breadcrumbs(live_action),
+        delivery_breadcrumb: true,
+        total_count: length(sources),
+        table_model: table_model,
+        sources: sources,
+        user: user,
+        lti_params: lti_params,
+        live_action: live_action
+    )}
   end
 
   def render(assigns) do
     ~F"""
-    <div>
+      <div class="d-flex flex-column mt-4">
+        <FilterBox table_model={@table_model} show_sort={is_cards_view?(@live_action, @view_type)} show_more_opts={is_instructor?(@live_action)}>
+          <Filter query={@applied_query} apply={"apply_search"} change={"change_search"} reset="reset_search"/>
 
-      <Filter apply={"apply_search"} change={"change_search"} reset="reset_search"/>
+          <:extra_opts>
+            <Form for={:view} change="update_view_type">
+              <Field name={:type} class="control w-100 d-flex align-items-center">
+                <div class="btn-group btn-group-toggle">
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :card, do: " active", else: ""}>
+                    <RadioButton value="card" checked={@view_type == :card} opts={hidden: true}/>
+                    <i class='fa fa-th'></i>
+                  </label>
+                  <label class={"btn btn-outline-secondary" <> if @view_type == :list, do: " active", else: ""}>
+                    <RadioButton value="list" checked={@view_type == :list} opts={hidden: true}/>
+                    <i class='fa fa-list'></i>
+                  </label>
+                </div>
+              </Field>
+            </Form>
+          </:extra_opts>
+        </FilterBox>
 
-      <div class="mb-3"/>
+        <Listing
+          filter={@applied_query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          selected="selected"
+          sort="sort"
+          page_change="page_change"
+          show_bottom_paging={false}
+          cards_view={is_cards_view?(@live_action, @view_type)}
+        />
 
-      <Listing
-        filter={@applied_query}
-        table_model={@table_model}
-        total_count={@total_count}
-        offset={@offset}
-        limit={@limit}
-        sort="sort"
-        page_change="page_change"/>
-
-    </div>
-
+        {#if is_lms_instructor?(@live_action) and is_nil(@user.author)}
+          <div class="row mb-5">
+            <div class="col-8 mx-auto">
+              <div class="card">
+                <div class="card-body text-center">
+                  <h5 class="card-title">Have a Course Authoring Account?</h5>
+                  <p class="card-text">Link your authoring account to access projects where you are a collaborator.</p>
+                  <a href={Routes.delivery_path(OliWeb.Endpoint, :link_account)} target="_blank" class="btn btn-primary link-account">Link Authoring Account</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
+      </div>
     """
   end
 
-  def handle_event("selected", %{"id" => source}, socket) do
-    path =
-      OliWeb.OpenAndFreeView.get_path([socket.assigns.live_action, :new, %{"source_id" => source}])
+  def handle_event("update_view_type", %{"view" => %{"type" => view_type}}, socket),
+    do: {:noreply, assign(socket, :view_type, String.to_atom(view_type))}
 
+  def handle_event("selected", %{"id" => source}, socket),
+    do: handle_select(socket.assigns.live_action, source, socket)
+
+  defp handle_select(:lms_instructor, source, socket) do
+    case Delivery.create_section(
+           source,
+           socket.assigns.user,
+           socket.assigns.lti_params
+         ) do
+      {:ok, _section} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Section successfully created.")
+         |> push_redirect(to: Routes.delivery_path(OliWeb.Endpoint, :index))}
+
+      {:error, error} ->
+        {_error_id, error_msg} = log_error("Failed to create new section", error)
+        {:noreply, put_flash(socket, :error, error_msg)}
+    end
+  end
+
+  defp handle_select(live_action, source, socket) do
     {:noreply,
      redirect(socket,
-       to: path
+       to: OliWeb.OpenAndFreeView.get_path([live_action, :new, %{"source_id" => source}])
      )}
   end
 
-  use OliWeb.Common.SortableTable.TableHandlers
-
-  defp retrieve_all_sources(:admin, _session) do
+  defp retrieve_all_sources(:admin, _opts) do
     products = Blueprint.list()
 
     free_project_publications =
@@ -137,11 +222,19 @@ defmodule OliWeb.Delivery.SelectSource do
     free_project_publications ++ products
   end
 
-  defp retrieve_all_sources(:independent_learner, session) do
-    Publishing.retrieve_visible_sources(
-      session["current_user_id"]
-      |> Accounts.get_user!(preload: [:author]),
-      nil
-    )
-  end
+  defp retrieve_all_sources(:independent_learner, %{user: user}),
+    do: Publishing.retrieve_visible_sources(user, nil)
+
+  defp retrieve_all_sources(:lms_instructor, %{user: user, lti_params: lti_params}),
+    do: Delivery.retrieve_visible_sources(user, lti_params)
+
+  defp is_instructor?(:admin), do: false
+  defp is_instructor?(_), do: true
+
+  defp is_cards_view?(:independent_learner, :card), do: true
+  defp is_cards_view?(:lms_instructor, :card), do: true
+  defp is_cards_view?(_, _), do: false
+
+  defp is_lms_instructor?(:lms_instructor), do: true
+  defp is_lms_instructor?(_), do: false
 end

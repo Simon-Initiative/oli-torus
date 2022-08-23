@@ -1,6 +1,7 @@
 defmodule OliWeb.PaymentController do
   use OliWeb, :controller
   require Logger
+  alias Oli.Delivery.Paywall.AccessSummary
 
   @doc """
   Render the page to show a student that they do not have access because
@@ -58,38 +59,35 @@ defmodule OliWeb.PaymentController do
     if user.guest do
       render(conn, "require_account.html", section_slug: section_slug)
     else
-      if Oli.Delivery.Paywall.can_access?(user, section) do
-        conn
-        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
-      else
-        case determine_cost(section) do
-          {:ok, amount} ->
-            get_provider_module()
-            |> apply(:show, [conn, section, user, amount])
 
-          _ ->
+      # Check the paywall access summary, as this route isn't protected by the
+      # plug that inserts the access summary into the assigns.  We allow users
+      # view the "make a payment" page only if they are within the grace period
+      # or if the course material is now unavailable because they haven't paid
+      allow_payment = case Oli.Delivery.Paywall.summarize_access(user, section) do
+        %AccessSummary{available: false, reason: :not_paid} -> true
+        %AccessSummary{available: true, reason: :within_grace_period} -> true
+        _ -> false
+      end
+
+      if allow_payment do
+        case section.amount do
+          nil ->
             conn
             |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
+
+          amount ->
+            get_provider_module()
+            |> apply(:show, [conn, section, user, amount])
         end
+      else
+        conn
+        |> redirect(to: Routes.page_delivery_path(conn, :index, section.slug))
       end
     end
 
     # perform this check in the case that a user refreshes the payment page
     # after already paying.  This will simply redirect them to their course.
-  end
-
-  defp determine_product(section) do
-    if is_nil(section.blueprint_id) do
-      section
-    else
-      section.blueprint
-    end
-  end
-
-  defp determine_cost(section) do
-    section = Oli.Repo.preload(section, [:institution, :blueprint])
-    product = determine_product(section)
-    Oli.Delivery.Paywall.calculate_product_cost(product, section.institution)
   end
 
   @doc """

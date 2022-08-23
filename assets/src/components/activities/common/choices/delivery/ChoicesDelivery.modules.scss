@@ -1,0 +1,35 @@
+@use 'authoring/theme' as authoring;
+@import 'bootstrap';
+
+.choicesContainer {
+  width: 100%;
+}
+.choicesChoiceRow {
+  width: 100%;
+}
+.choicesChoiceWrapper {
+  @extend .d-flex;
+  align-items: center;
+  padding: 0.5em 0.5em 0.5em 0;
+  width: 100%;
+}
+.choicesChoiceLabel {
+  @extend .d-flex;
+  @extend .flex-row;
+  margin: 0;
+  min-width: 0%;
+  display: flex;
+  -webkit-box-flex: 1;
+  box-flex: 1;
+  flex-grow: 1;
+  box-pack: justify;
+  flex-grow: 1;
+  -webkit-box-pack: justify;
+  justify-content: space-between;
+}
+
+.choicesChoiceContent {
+  margin-left: 0.6rem;
+  font-size: 14px;
+  line-height: 20px;
+}

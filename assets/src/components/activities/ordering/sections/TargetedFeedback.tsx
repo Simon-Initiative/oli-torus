@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
 import { ResponseCard } from 'components/activities/common/responses/ResponseCard';
@@ -8,10 +8,12 @@ import { ResponseChoices } from 'components/activities/ordering/sections/Respons
 import { RichText } from 'components/activities/types';
 import { Choices } from 'data/activities/model/choices';
 import { getTargetedResponseMappings } from 'data/activities/model/responses';
+import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import React from 'react';
 
 export const TargetedFeedback: React.FC = () => {
-  const { model, dispatch } = useAuthoringElementContext<OrderingSchema>();
+  const { model, dispatch, authoringContext, editMode } =
+    useAuthoringElementContext<OrderingSchema>();
   return (
     <>
       {getTargetedResponseMappings(model).map((mapping) => (
@@ -35,6 +37,15 @@ export const TargetedFeedback: React.FC = () => {
               )
             }
           />
+          {authoringContext.contentBreaksExist ? (
+            <ShowPage
+              editMode={editMode}
+              index={mapping.response.showPage}
+              onChange={(showPage: any) =>
+                dispatch(ResponseActions.editShowPage(mapping.response.id, showPage))
+              }
+            />
+          ) : null}
         </ResponseCard>
       ))}
       <AuthoringButtonConnected

@@ -1,0 +1,193 @@
+@use 'authoring/theme' as authoring;
+@import 'common/mixins';
+
+.addResourceContent {
+  @include disable-select;
+  position: relative;
+  padding: 10px 0;
+  width: 90%;
+  margin: 0 auto;
+  cursor: pointer;
+  opacity: 0;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  .insertButtonContainer {
+    position: absolute;
+    left: -28px;
+    top: -2px;
+    padding-right: 5px;
+    opacity: inherit;
+
+    .insertButton {
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid authoring.$gray-500;
+      color: authoring.$gray-500;
+      opacity: inherit;
+      transition: opacity 200ms ease-out, background-color 200ms ease-out;
+
+      i {
+        vertical-align: text-top;
+        color: authoring.$gray-500;
+        transition: transform 200ms ease-in-out, color 200ms ease-in-out;
+      }
+    }
+  }
+}
+
+.active {
+  opacity: 1;
+
+  .insertButtonContainer {
+    .insertButton {
+      background-color: authoring.$primary;
+      border-color: authoring.$primary;
+
+      i {
+        color: authoring.$white;
+        transform: rotate(45deg);
+      }
+    }
+  }
+
+  .insertAdornment {
+    background-color: authoring.$primary;
+  }
+}
+
+.disabled {
+  cursor: default;
+}
+
+.insertAdornment {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background-color: authoring.$gray-500;
+  opacity: inherit;
+  transition: opacity 200ms ease-out;
+}
+
+.insertLabel {
+  padding-bottom: 100px;
+  transition: opacity 200ms ease-out;
+}
+
+.insertButtonContainer {
+  top: 0px;
+}
+
+.insertButton {
+  border: 2px solid transparent;
+  background-color: rgba($color: authoring.$body-color, $alpha: 0.6);
+  color: white;
+}
+
+.addResourcePopover {
+  max-width: 375px;
+  overflow: hidden;
+  width: fit-content;
+  z-index: 500;
+  border-radius: 6px;
+  border-color: authoring.$light !important;
+
+  &:global(.popover) {
+    max-width: unset !important;
+  }
+}
+
+.addResourcePopoverContent {
+  height: 215px;
+  width: 375px;
+  padding: 4px 2px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  border-radius: 2px;
+  overflow: hidden;
+  background-color: authoring.$body-bg;
+  border-color: authoring.$light;
+
+  :global(.header) {
+    padding-left: 6px;
+    text-transform: uppercase;
+    font-size: 0.9em;
+  }
+
+  :global(hr) {
+    width: 80%;
+    color: lightgray;
+  }
+
+  :global(.type-label) {
+    color: authoring.$body-color;
+    font-size: 0.8em;
+    font-weight: 300;
+  }
+  :global(.resource-choice-header) {
+    color: authoring.$body-color;
+    font-size: 0.9em;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  :global(.resource-choice) {
+    border: none;
+    max-height: 50px;
+    min-height: 50px;
+    max-width: 70px;
+    min-width: 70px;
+    background-color: authoring.$body-bg;
+    color: authoring.$body-color;
+
+    &:hover {
+      color: authoring.$primary;
+    }
+    &:active {
+      transform: translateY(4px);
+    }
+  }
+
+  :global(.resource-choice-icon) {
+    font-size: 24px;
+  }
+
+  :global(.resource-choices-divider) {
+    border-left-color: authoring.$light;
+    border-left-width: 1px;
+    border-left-style: solid;
+    max-height: 170px;
+  }
+
+  :global(.resource-choices-tip) {
+    font-size: 0.8em;
+    color: authoring.$body-color;
+  }
+
+  :global(.resource-choices) {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+  }
+
+  :global(.non-activities) {
+    max-width: 140px;
+    max-height: 170px;
+  }
+  :global(.activities) {
+    max-width: 210px;
+    max-height: 170px;
+  }
+  :global(.type-description) {
+    color: authoring.$body-color;
+    font-size: 0.8em;
+  }
+}

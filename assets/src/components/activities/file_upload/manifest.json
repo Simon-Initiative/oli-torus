@@ -1,0 +1,19 @@
+{
+  "id": "oli_file_upload",
+  "friendlyName": "File Upload",
+  "petiteLabel": "Upload",
+  "description": "A question that expects student submission via uploaded files",
+  "icon": "file-upload",
+  "delivery": {
+    "element": "oli-file-upload-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-file-upload-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

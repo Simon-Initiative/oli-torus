@@ -74,6 +74,8 @@ defmodule Oli.Accounts.User do
 
     field :enroll_after_email_confirmation, :string, virtual: true
 
+    embeds_one :preferences, Oli.Accounts.UserPreferences, on_replace: :delete
+
     timestamps(type: :utc_datetime)
   end
 
@@ -112,6 +114,7 @@ defmodule Oli.Accounts.User do
       :can_create_sections,
       :age_verified
     ])
+    |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> unique_constraint(:email, name: :users_email_independent_learner_index)
     |> maybe_create_unique_sub()
@@ -156,6 +159,7 @@ defmodule Oli.Accounts.User do
       :can_create_sections,
       :age_verified
     ])
+    |> cast_embed(:preferences)
     |> validate_required_if([:email], &is_independent_learner_not_guest/1)
     |> maybe_create_unique_sub()
     |> lowercase_email()

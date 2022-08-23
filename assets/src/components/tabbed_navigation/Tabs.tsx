@@ -12,7 +12,11 @@ const TabComponent: React.FunctionComponent<TabProps> = ({ index, children, acti
     role="tabpanel"
     aria-labelledby={'tab-' + index}
   >
-    {children}
+    {React.Children.map(
+      children,
+      (child, _index) =>
+        React.isValidElement(child) && React.cloneElement(child, { activetab: activeTab }),
+    )}
   </div>
 );
 
@@ -22,7 +26,7 @@ const TabsComponent: React.FC<TabsComponentProps> = ({ children }) => {
   const [activeTab, setActiveTab] = useState(0);
   return (
     <>
-      <ul className="nav nav-tabs mb-4" id="activity-authoring-tabs" role="tablist">
+      <ul className="nav nav-tabs my-3" id="activity-authoring-tabs" role="tablist">
         {React.Children.map(children, (child, index) => {
           if (React.isValidElement(child) && isValidChild(child, TabbedNavigation)) {
             return (

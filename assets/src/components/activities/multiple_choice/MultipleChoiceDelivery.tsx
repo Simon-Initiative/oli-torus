@@ -1,11 +1,7 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from '../DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MCSchema } from './schema';
 import * as ActivityTypes from '../types';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -17,6 +13,8 @@ import {
   activityDeliverySlice,
   isEvaluated,
   resetAction,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
@@ -32,14 +30,21 @@ import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 export const MultipleChoiceComponent: React.FC = () => {
   const {
     state: activityState,
+    context,
+    onSubmitActivity,
     onSaveActivity,
     onResetActivity,
+    model,
   } = useDeliveryElementContext<MCSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const dispatch = useDispatch();
+  const { surveyId } = context;
 
   useEffect(() => {
-    dispatch(initializeState(activityState, initialPartInputs(activityState)));
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+
+    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 
   // First render initializes state
@@ -81,6 +86,7 @@ export const MultipleChoiceComponent: React.FC = () => {
 export class MultipleChoiceDelivery extends DeliveryElement<MCSchema> {
   render(mountPoint: HTMLDivElement, props: DeliveryElementProps<MCSchema>) {
     const store = configureStore({}, activityDeliverySlice.reducer);
+
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>

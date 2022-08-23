@@ -1,20 +1,30 @@
 import React from 'react';
+import { classNames, WithClassName } from 'utils/classNames';
+import styles from './DeleteButton.modules.scss';
 
 export type DeleteButtonProps = {
   onClick: () => void;
   editMode: boolean;
 };
 
-export const DeleteButton = (props: DeleteButtonProps) => (
+export const DeleteButton = ({
+  className,
+  editMode,
+  onClick,
+}: WithClassName<DeleteButtonProps>) => (
   <button
     style={{
       height: 31,
     }}
-    disabled={!props.editMode}
+    disabled={!editMode}
     type="button"
-    className="p-0 mr-2 d-flex align-items-center justify-content-center btn btn-sm btn-delete"
+    className={classNames(
+      className,
+      styles.deleteButton,
+      'p-0 d-flex align-items-center justify-content-center btn btn-sm btn-delete',
+    )}
     aria-label="delete"
-    onClick={props.onClick}
+    onClick={onClick}
   >
     <span className="material-icons" aria-hidden="true">
       delete

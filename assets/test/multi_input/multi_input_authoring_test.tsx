@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { AuthoringElementProvider } from 'components/activities/AuthoringElement';
+import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';
@@ -116,7 +116,7 @@ describe('multi input question - default (with text input)', () => {
     fireEvent.click(screen.getByText('Add targeted feedback'));
     const responses = model.authoring.parts[0].responses;
     expect(responses).toHaveLength(3);
-    expect(responses[1]).toHaveProperty('rule', 'input contains {another answer}');
+    expect(responses[1]).toHaveProperty('rule', 'input contains {}');
     expect(responses[1]).toHaveProperty('score', 0);
   });
 

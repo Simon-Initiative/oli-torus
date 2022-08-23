@@ -9,12 +9,9 @@ import { contexts } from '../../../types/applicationContext';
 import { usePrevious } from '../../hooks/usePrevious';
 import { PartComponentProps } from '../types/parts';
 import { FIBModel } from './schema';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const css = require('./FillBlanks.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const quill = require('./Quill.css');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const select2Styles = require('react-select2-wrapper/css/select2.css');
+
+import './FillBlanks.scss';
+
 export const parseBool = (val: any) => {
   // cast value to number
   const num: number = +val;
@@ -314,9 +311,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
 
   const handleInput = (e: any) => {
     if (!e || typeof e === 'undefined') return;
-    if (prevElementValues && prevElementValues.length > 0) {
-      setAttempted(true);
-    }
+    setAttempted(true);
     const inputOption: SelectOption = { key: e.name, value: e.value };
     console.log('input trigger!', { id, inputOption });
     maybeUpdateElementValues([inputOption]);
@@ -411,7 +406,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
     } catch (err) {
       console.log(err);
     }
-  }, [getElementValueByKey]);
+  }, [getElementValueByKey, attempted]);
 
   useEffect(() => {
     // write to state when elementValues changes
@@ -543,7 +538,7 @@ const FillBlanks: React.FC<PartComponentProps<FIBModel>> = (props) => {
         }
         return insertList;
       }),
-    [getElementValueByKey],
+    [getElementValueByKey, showHints],
   );
 
   return (

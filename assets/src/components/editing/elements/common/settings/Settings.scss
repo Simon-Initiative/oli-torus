@@ -1,4 +1,4 @@
-@use 'delivery/variables' as delivery;
+@use 'authoring/theme' as authoring;
 
 .settings-editor-wrapper {
   padding: 5px;
@@ -7,7 +7,7 @@
     width: 400px;
     padding: 10px;
     border-radius: 4px;
-    background-color: transparentize($color: $gray-200, $amount: 0.1);
+    background-color: rgba(authoring.$gray-200, 0.9);
     backdrop-filter: blur(16px);
   }
 }

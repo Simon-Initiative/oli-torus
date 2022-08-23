@@ -8,28 +8,23 @@ defmodule Oli.Analytics.Datashop.Elements.Skills do
   </skill>
   """
   import XmlBuilder
-  alias Oli.Publishing
   require Logger
 
-  def setup(%{publication: publication, skill_ids: skill_ids}) do
+  def setup(%{skill_ids: skill_ids, skill_titles: skill_titles}) do
     skill_ids
-    |> Enum.map(&element(:skill, [make_skill_element(publication, &1)]))
+    |> Enum.map(&element(:skill, [make_skill_element(skill_titles, &1)]))
     |> Enum.filter(&(&1 != nil))
   end
 
-  defp make_skill_element(publication, skill_id) do
-    objective_rev = Publishing.get_published_revision(publication.id, skill_id)
-
-    case objective_rev do
+  defp make_skill_element(skill_titles, skill_id) do
+    case Map.get(skill_titles, skill_id) do
       nil ->
-        Logger.error(
-          "Error finding objective with resource id #{skill_id} and publication #{Kernel.inspect(publication)}"
-        )
+        Logger.error("Error finding objective with resource id #{skill_id}")
 
         nil
 
-      _ ->
-        element(:name, objective_rev.title)
+      title ->
+        element(:name, title)
     end
   end
 end

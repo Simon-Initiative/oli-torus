@@ -5,7 +5,7 @@ import {
   makeResponse,
   Response,
 } from 'components/activities/types';
-import { containsRule, eqRule, matchRule } from 'data/activities/model/rules';
+import { containsRule, eqRule, equalsRule, matchRule } from 'data/activities/model/rules';
 import { getByUnsafe, getPartById } from 'data/activities/model/utils';
 import { Maybe } from 'tsmonad';
 import { Operations } from 'utils/pathOperations';
@@ -18,6 +18,10 @@ export const Responses = {
   ],
   forNumericInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
     makeResponse(eqRule('1'), 1, correctText),
+    Responses.catchAll(incorrectText),
+  ],
+  forMathInput: (correctText = 'Correct', incorrectText = 'Incorrect') => [
+    makeResponse(equalsRule(''), 1, correctText),
     Responses.catchAll(incorrectText),
   ],
   forMultipleChoice: (
@@ -42,7 +46,7 @@ export const getResponseBy = (model: HasParts, predicate: (x: Response) => boole
 
 // Does not take into account partial credit
 export const getCorrectResponse = (model: HasParts, partId: string) => {
-  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score === 1)).valueOrThrow(
+  return Maybe.maybe(getResponsesByPartId(model, partId).find((r) => r.score >= 1)).valueOrThrow(
     new Error('Could not find correct response'),
   );
 };

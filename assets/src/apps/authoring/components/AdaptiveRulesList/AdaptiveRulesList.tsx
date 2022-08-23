@@ -66,8 +66,6 @@ const AdaptiveRulesList: React.FC = () => {
   const copied = useSelector(selectCopiedItem);
   const copiedType = useSelector(selectCopiedType);
 
-  useEffect(() => console.log(copied), [copied]);
-
   const handleSelectRule = (rule?: AdaptiveRule | InitState, isInitState?: boolean) => {
     if (isInitState) {
       // TODO: refactor initState string to enum

@@ -4,20 +4,18 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import {
-  DeliveryElement,
-  DeliveryElementProps,
-  DeliveryElementProvider,
-  useDeliveryElementContext,
-} from 'components/activities/DeliveryElement';
+import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import {
   activityDeliverySlice,
   ActivityDeliveryState,
   initializeState,
   isEvaluated,
+  listenForParentSurveySubmit,
+  listenForParentSurveyReset,
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -32,16 +30,27 @@ import { configureStore } from 'state/store';
 export const MultiInputComponent: React.FC = () => {
   const {
     state: activityState,
+    context,
+    onSubmitActivity,
     onSaveActivity,
     onResetActivity,
     model,
-    sectionSlug,
   } = useDeliveryElementContext<MultiInputSchema>();
+
+  const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
   const dispatch = useDispatch();
 
+  const emptyPartInputs = model.inputs.reduce((acc: any, input: any) => {
+    acc[input.partId] = [''];
+    return acc;
+  }, {} as PartInputs);
+
   useEffect(() => {
+    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptyPartInputs);
+
     dispatch(
       initializeState(
         activityState,
@@ -53,6 +62,8 @@ export const MultiInputComponent: React.FC = () => {
               return acc;
             }, {} as PartInputs),
         }),
+        model,
+        context,
       ),
     );
   }, []);
@@ -63,7 +74,7 @@ export const MultiInputComponent: React.FC = () => {
   }
 
   const toggleHints = (id: string) => {
-    const input = getByUnsafe(model.inputs, (x) => x.id === id);
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     setHintsShown((hintsShown) =>
       hintsShown.includes(input.partId)
         ? hintsShown.filter((id) => id !== input.partId)
@@ -72,7 +83,7 @@ export const MultiInputComponent: React.FC = () => {
   };
 
   const inputs = new Map(
-    model.inputs.map((input) => [
+    (uiState.model as MultiInputSchema).inputs.map((input) => [
       input.id,
       {
         input:
@@ -80,7 +91,7 @@ export const MultiInputComponent: React.FC = () => {
             ? {
                 id: input.id,
                 inputType: input.inputType,
-                options: model.choices
+                options: (uiState.model as MultiInputSchema).choices
                   .filter((c) => input.choiceIds.includes(c.id))
                   .map((choice) => ({
                     value: choice.id,
@@ -94,9 +105,9 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
-  const onChange = (id: string, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const input = getByUnsafe(model.inputs, (x) => x.id === id);
-    const value = e.target.value;
+  const onChange = (id: string, value: string) => {
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
         partId: input.partId,
@@ -115,6 +126,7 @@ export const MultiInputComponent: React.FC = () => {
 
   const writerContext = defaultWriterContext({
     sectionSlug,
+    bibParams,
     inputRefContext: {
       toggleHints,
       onChange,
@@ -126,20 +138,14 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <StemDelivery className="form-inline" stem={model.stem} context={writerContext} />
+        <StemDelivery
+          className="form-inline"
+          stem={(uiState.model as MultiInputSchema).stem}
+          context={writerContext}
+        />
         <GradedPointsConnected />
         <ResetButtonConnected
-          onReset={() =>
-            dispatch(
-              resetAction(
-                onResetActivity,
-                model.inputs.reduce((acc, input) => {
-                  acc[input.partId] = [''];
-                  return acc;
-                }, {} as PartInputs),
-              ),
-            )
-          }
+          onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
         />
         <SubmitButtonConnected disabled={false} />
         {hintsShown.map((partId) => (

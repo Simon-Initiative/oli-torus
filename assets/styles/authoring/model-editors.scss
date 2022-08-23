@@ -1,5 +1,5 @@
-@import "authoring/variables";
-@import "bootstrap";
+@import 'authoring/variables';
+@import 'bootstrap';
 
 .editors .structured-content,
 .rich-text-editor {
@@ -14,14 +14,22 @@
       position: relative;
       margin-bottom: 0;
       word-wrap: break-word;
-      overflow: hidden;
+      overflow: visible;
+
+      th,
+      td {
+        position: relative;
+      }
 
       .table-dropdown {
+        z-index: 1000;
         position: absolute;
         top: 5px;
         right: 8px;
         user-select: none;
         float: right;
+        display: 'flex';
+        flex-direction: row;
 
         button.dropdown-toggle {
           padding: 5px 2px;
@@ -32,6 +40,7 @@
           border: 1px solid $gray-500;
           border-radius: 2px;
         }
+
         button.dropdown-toggle::after {
           color: $gray-500;
           margin: 0;
@@ -70,16 +79,10 @@
   }
 
   .settings-input {
+    padding-top: 0 !important;
     text-align: center;
-    border: 0;
     width: 100%;
     height: auto;
     color: rgba($color: $body-color, $alpha: 0.68);
-    background: transparent;
-    outline: none;
-  }
-  .settings-input:active::placeholder,
-  .settings-input:focus::placeholder {
-    color: transparent;
   }
 }

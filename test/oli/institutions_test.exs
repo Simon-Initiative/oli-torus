@@ -9,9 +9,45 @@ defmodule Oli.InstitutionsTest do
   alias Oli.Lti.Tool.Registration
 
   describe "institutions" do
+    test "create_institution/1 with valid data creates a institution" do
+      params = params_with_assocs(:institution)
+      assert {:ok, %Institution{} = institution} = Institutions.create_institution(params)
+
+      assert institution.name == params.name
+      assert institution.institution_email == params.institution_email
+      assert institution.research_consent == params.research_consent
+    end
+
+    test "create_institution/1 with invalid research consent returns error changeset" do
+      params = params_for(:institution, %{research_consent: "testing"})
+      assert {:error, %Ecto.Changeset{}} = Institutions.create_institution(params)
+    end
+
+    test "list_institutions/0 returns ok when there are no institutions" do
+      assert [] = Institutions.list_institutions()
+    end
+
+    test "list_institutions/0 returns all the institutions" do
+      insert_list(3, :institution)
+
+      assert 3 = length(Institutions.list_institutions())
+    end
+
+    test "get_institution!/1 returns a institution when the id exists" do
+      institution = insert(:institution)
+
+      returned_institution = Institutions.get_institution!(institution.id)
+
+      assert institution.id == returned_institution.id
+      assert institution.name == returned_institution.name
+    end
+
+    test "get_institution!/1 raises an error if the institution does not exist" do
+      assert_raise Ecto.NoResultsError, fn -> Institutions.get_institution!(-1) end
+    end
+
     test "get_institution_by!/1 with existing data returns an institution" do
       %Institution{name: name} = insert(:institution)
-
       institution = Institutions.get_institution_by!(%{name: name})
 
       assert institution.name == name
@@ -27,6 +63,33 @@ defmodule Oli.InstitutionsTest do
       assert_raise Ecto.MultipleResultsError, fn ->
         Institutions.get_institution_by!(%{country_code: "US"})
       end
+    end
+
+    test "update_institution/2 updates the institution successfully" do
+      institution = insert(:institution)
+
+      {:ok, updated_institution} =
+        Institutions.update_institution(institution, %{name: "new_name"})
+
+      assert institution.id == updated_institution.id
+      assert updated_institution.name == "new_name"
+    end
+
+    test "update_institution/2 does not update the institution when there is an invalid field" do
+      institution = insert(:institution)
+
+      {:error, changeset} =
+        Institutions.update_institution(institution, %{research_consent: "invalid"})
+
+      {error, _} = changeset.errors[:research_consent]
+
+      refute changeset.valid?
+      assert error =~ "is invalid"
+    end
+
+    test "change_institution/1 returns a institution changeset" do
+      institution = insert(:institution)
+      assert %Ecto.Changeset{} = Institutions.change_institution(institution)
     end
   end
 
@@ -47,7 +110,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: "some auth_token_url",
       client_id: "some client_id",
       issuer: "some issuer",
-      key_set_url: "some key_set_url"
+      key_set_url: "some key_set_url",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @update_attrs %{
       auth_login_url: "some updated auth_login_url",
@@ -55,7 +119,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: "some updated auth_token_url",
       client_id: "some updated client_id",
       issuer: "some updated issuer",
-      key_set_url: "some updated key_set_url"
+      key_set_url: "some updated key_set_url",
+      line_items_service_domain: "some updated line_items_service_domain"
     }
     @invalid_attrs %{
       auth_login_url: nil,
@@ -63,7 +128,8 @@ defmodule Oli.InstitutionsTest do
       auth_token_url: nil,
       client_id: nil,
       issuer: nil,
-      key_set_url: nil
+      key_set_url: nil,
+      line_items_service_domain: nil
     }
 
     test "list_registrations/0 returns all registrations", %{registration: registration} do
@@ -98,6 +164,7 @@ defmodule Oli.InstitutionsTest do
       assert registration.client_id == "some client_id"
       assert registration.issuer == "some other issuer"
       assert registration.key_set_url == "some key_set_url"
+      assert registration.line_items_service_domain == "some line_items_service_domain"
     end
 
     test "create_registration/1 with invalid data returns error changeset" do
@@ -116,6 +183,7 @@ defmodule Oli.InstitutionsTest do
       assert registration.client_id == "some updated client_id"
       assert registration.issuer == "some updated issuer"
       assert registration.key_set_url == "some updated key_set_url"
+      assert registration.line_items_service_domain == "some updated line_items_service_domain"
     end
 
     test "update_registration/2 with invalid data returns error changeset", %{
@@ -237,39 +305,39 @@ defmodule Oli.InstitutionsTest do
       country_code: "some country_code",
       institution_email: "some institution_email",
       institution_url: "some institution_url",
-      timezone: "some timezone",
       issuer: "some issuer",
       client_id: "some client_id",
       key_set_url: "some key_set_url",
       auth_token_url: "some auth_token_url",
       auth_login_url: "some auth_login_url",
-      auth_server: "some auth_server"
+      auth_server: "some auth_server",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @update_attrs %{
       name: "some updated institution",
       country_code: "some updated country_code",
       institution_email: "some updated institution_email",
       institution_url: "some updated institution_url",
-      timezone: "some updated timezone",
       issuer: "some updated issuer",
       client_id: "some updated client_id",
       key_set_url: "some updated key_set_url",
       auth_token_url: "some updated auth_token_url",
       auth_login_url: "some updated auth_login_url",
-      auth_server: "some updated auth_server"
+      auth_server: "some updated auth_server",
+      line_items_service_domain: "some line_items_service_domain"
     }
     @invalid_attrs %{
       name: nil,
       country_code: nil,
       institution_email: nil,
       institution_url: nil,
-      timezone: nil,
       issuer: nil,
       client_id: nil,
       key_set_url: nil,
       auth_token_url: nil,
       auth_login_url: nil,
-      auth_server: nil
+      auth_server: nil,
+      line_items_service_domain: nil
     }
 
     test "list_pending_registrations/0 returns all pending_registrations", %{
@@ -348,8 +416,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "https://institution.example.edu/",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert same_institution.id == institution.id
@@ -359,8 +426,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "http://institution.example.edu",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert same_institution.id == institution.id
@@ -370,8 +436,7 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "http://different.example.edu",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
         })
 
       assert different_institution.id != institution.id
@@ -386,8 +451,22 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@example.edu",
           institution_url: "https://institution.example.edu/",
-          name: "Example Institution",
-          timezone: "US/Eastern"
+          name: "Example Institution"
+        })
+
+      assert result_institution.id == first_institution.id
+    end
+
+    test "find_or_create_institution_by_normalized_url/1 finds existing institution if mixed casing is used",
+         %{institution: first_institution} do
+      _second_institution = institution_fixture()
+
+      {:ok, result_institution} =
+        Institutions.find_or_create_institution_by_normalized_url(%{
+          country_code: "US",
+          institution_email: "institution@example.edu",
+          institution_url: "https://institution.ExAmPle.EDU/",
+          name: "Example Institution"
         })
 
       assert result_institution.id == first_institution.id
@@ -400,13 +479,13 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@new.example.edu",
           institution_url: "http://new.example.edu",
-          timezone: "US/Eastern",
           issuer: "new issuer",
           client_id: "new client_id",
           key_set_url: "new key_set_url",
           auth_token_url: "new auth_token_url",
           auth_login_url: "new auth_login_url",
-          auth_server: "new auth_server"
+          auth_server: "new auth_server",
+          line_items_service_domain: "new line_items_service_domain"
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =
@@ -432,13 +511,13 @@ defmodule Oli.InstitutionsTest do
           country_code: "US",
           institution_email: "institution@new.example.edu",
           institution_url: "http://institution.example.edu",
-          timezone: "US/Eastern",
           issuer: "new issuer",
           client_id: "new client_id",
           key_set_url: "new key_set_url",
           auth_token_url: "new auth_token_url",
           auth_login_url: "new auth_login_url",
-          auth_server: "new auth_server"
+          auth_server: "new auth_server",
+          line_items_service_domain: "new line_items_service_domain"
         })
 
       {:ok, {%Institution{}, %Registration{}, _deployment}} =

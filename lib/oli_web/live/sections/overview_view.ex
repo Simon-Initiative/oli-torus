@@ -50,7 +50,8 @@ defmodule OliWeb.Sections.OverviewView do
 
         {:ok,
          assign(socket,
-           is_admin: Mount.is_lms_or_system_admin?(user, section),
+           is_system_admin: type == :admin,
+           is_lms_or_system_admin: Mount.is_lms_or_system_admin?(user, section),
            breadcrumbs: set_breadcrumbs(type, section),
            instructors: fetch_instructors(section),
            user: user,
@@ -75,6 +76,8 @@ defmodule OliWeb.Sections.OverviewView do
   end
 
   def render(assigns) do
+    deployment = assigns.section.lti_1p3_deployment
+
     ~F"""
     {render_modal(assigns)}
     <Groups>
@@ -83,13 +86,30 @@ defmodule OliWeb.Sections.OverviewView do
         <ReadOnly label="Title" value={@section.title}/>
         <ReadOnly label="Course Section Type" value={type_to_string(@section)}/>
         <ReadOnly label="URL" value={Routes.page_delivery_url(OliWeb.Endpoint, :index, @section.slug)}/>
+        {#unless is_nil(deployment)}
+          <ReadOnly
+            label="Institution"
+            type={if @is_system_admin, do: "link"}
+            link_label={deployment.institution.name}
+            value={
+              if @is_system_admin,
+                do: Routes.institution_path(OliWeb.Endpoint, :show, deployment.institution_id),
+                else: deployment.institution.name
+            }
+          />
+        {/unless}
       </Group>
       <Group label="Instructors" description="Manage the users with instructor level access">
         <Instructors users={@instructors}/>
       </Group>
       <Group label="Curriculum" description="Manage the content delivered to students">
         <ul class="link-list">
-        <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)}>Preview Course Content</a></li>
+        <li>
+          <a target="_blank" href={Routes.page_delivery_path(OliWeb.Endpoint, :index_preview, @section.slug)} class={"btn btn-link p-0 #{if @is_system_admin, do: " disabled mr-2"}"}>Preview Course Content</a>
+          {#if @is_system_admin}
+            <span class="badge badge-info">Coming Soon</span>
+          {/if}
+        </li>
         <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}>Enter Course as a Student</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
@@ -124,11 +144,12 @@ defmodule OliWeb.Sections.OverviewView do
               {/if}
             </a>
           </li>
-          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View Grades</a></li>
+          <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, @section.slug)}>View all Grades</a></li>
           <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section.slug)}>Download Gradebook as <code>.csv</code> file</a></li>
           {#if !@section.open_and_free}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradesLive, @section.slug)}>Manage LMS Gradebook</a></li>
-            {#if @is_admin}
+            <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, @section.slug)}>View Grades that failed to sync</a></li>
+            {#if @is_lms_or_system_admin}
               <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.ObserveGradeUpdatesView, @section.slug)}>Observe grade updates in real-time</a></li>
             {/if}
             <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.BrowseUpdatesView, @section.slug)}>Browse LMS Grade Update Log</a></li>
@@ -136,7 +157,7 @@ defmodule OliWeb.Sections.OverviewView do
           </ul>
       </Group>
 
-      {#if @is_admin and !@section.open_and_free}
+      {#if @is_lms_or_system_admin and !@section.open_and_free}
         <Group label="LMS Admin" description="Administrator LMS Connection">
           <UnlinkSection unlink="unlink" section={@section}/>
         </Group>

@@ -49,6 +49,19 @@ export const safelySelectStringInputs = (
   );
 };
 
+export const safelySelectFiles = (activityState: ActivityState | undefined): Maybe<PartInputs> => {
+  const partInputs = activityState?.parts.filter((part) => !!part?.response?.files);
+  if (!partInputs) return Maybe.nothing();
+
+  return Maybe.maybe(activityState).lift((state) =>
+    state.parts.reduce((acc, partState) => {
+      const files = partState.response?.files;
+      acc[String(partState.partId)] = files;
+      return acc;
+    }, {} as PartInputs),
+  );
+};
+
 export const initialPartInputs = (
   activityState: ActivityState | undefined,
   defaultPartInputs: PartInputs = { [DEFAULT_PART_ID]: [] },
@@ -102,5 +115,6 @@ export const defaultActivityState = (model: ActivityModelSchema): ActivityState 
     hasMoreAttempts: true,
     parts,
     hasMoreHints: false,
+    groupId: null,
   };
 };

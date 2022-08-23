@@ -1,7 +1,7 @@
 defmodule Oli.Rendering.Content do
   @moduledoc """
   This modules defines the rendering functionality for Oli structured content. Rendering is
-  extensibile to any format which implements the behavior defined in this module, then specifying
+  extensible to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `content/html.ex`.
   """
   import Oli.Utils
@@ -11,9 +11,6 @@ defmodule Oli.Rendering.Content do
   @type next :: (() -> String.t())
   @type children :: [%{}]
 
-  @callback example(%Context{}, next, %{}) :: [any()]
-  @callback learn_more(%Context{}, next, %{}) :: [any()]
-  @callback manystudentswonder(%Context{}, next, %{}) :: [any()]
   @callback text(%Context{}, %{}) :: [any()]
   @callback p(%Context{}, next, %{}) :: [any()]
   @callback h1(%Context{}, next, %{}) :: [any()]
@@ -23,6 +20,8 @@ defmodule Oli.Rendering.Content do
   @callback h5(%Context{}, next, %{}) :: [any()]
   @callback h6(%Context{}, next, %{}) :: [any()]
   @callback img(%Context{}, next, %{}) :: [any()]
+  @callback img_inline(%Context{}, next, %{}) :: [any()]
+  @callback video(%Context{}, next, %{}) :: [any()]
   @callback youtube(%Context{}, next, %{}) :: [any()]
   @callback iframe(%Context{}, next, %{}) :: [any()]
   @callback audio(%Context{}, next, %{}) :: [any()]
@@ -33,6 +32,13 @@ defmodule Oli.Rendering.Content do
   @callback ol(%Context{}, next, %{}) :: [any()]
   @callback ul(%Context{}, next, %{}) :: [any()]
   @callback li(%Context{}, next, %{}) :: [any()]
+
+  @callback formula(%Context{}, next, %{}) :: [any()]
+  @callback formula_inline(%Context{}, next, %{}) :: [any()]
+
+  @callback callout(%Context{}, next, %{}) :: [any()]
+  @callback callout_inline(%Context{}, next, %{}) :: [any()]
+
   @callback math(%Context{}, next, %{}) :: [any()]
   @callback math_line(%Context{}, next, %{}) :: [any()]
   @callback code(%Context{}, next, %{}) :: [any()]
@@ -41,12 +47,24 @@ defmodule Oli.Rendering.Content do
   @callback a(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
+  @callback cite(%Context{}, next, %{}) :: [any()]
 
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
+  DEPRECATED these content types are no longer used but remain here for backwards compatibility.
+  Purpose specific content is now handled by using a Group with a purpose.
+  """
+  @callback example(%Context{}, next, %{}) :: [any()]
+  @callback learn_more(%Context{}, next, %{}) :: [any()]
+  @callback manystudentswonder(%Context{}, next, %{}) :: [any()]
+
+  @doc """
   Renders an Oli content element that contains children.
-  Returns an IO list of raw html strings to be futher processed by Phoenix/BEAM writev.
+  Returns an IO list of strings.
+
+  Content elements with purposes attached are deprecated but the rendering code is
+  left here to support these existing elements.
   """
   def render(
         %Context{} = context,
@@ -80,7 +98,7 @@ defmodule Oli.Rendering.Content do
     Enum.map(children, fn child -> render(context, child, writer) end)
   end
 
-  # Renders an text content
+  # Renders text content
   def render(%Context{} = context, %{"text" => _text} = text_element, writer) do
     writer.text(context, text_element)
   end
@@ -88,6 +106,38 @@ defmodule Oli.Rendering.Content do
   # Renders content children
   def render(%Context{} = context, children, writer) when is_list(children) do
     Enum.map(children, fn child -> render(context, child, writer) end)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula", "children" => children} = element,
+        writer
+      ) do
+    writer.formula(context, fn -> render(context, children, writer) end, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula"} = element,
+        writer
+      ) do
+    writer.formula(context, nil, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula_inline", "children" => children} = element,
+        writer
+      ) do
+    writer.formula_inline(context, fn -> render(context, children, writer) end, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "formula_inline"} = element,
+        writer
+      ) do
+    writer.formula_inline(context, nil, element)
   end
 
   # Renders a content element by calling the provided writer implementation on a
@@ -123,6 +173,12 @@ defmodule Oli.Rendering.Content do
 
       "img" ->
         writer.img(context, next, element)
+
+      "img_inline" ->
+        writer.img_inline(context, next, element)
+
+      "video" ->
+        writer.video(context, next, element)
 
       "youtube" ->
         writer.youtube(context, next, element)
@@ -172,8 +228,17 @@ defmodule Oli.Rendering.Content do
       "a" ->
         writer.a(context, next, element)
 
+      "cite" ->
+        writer.cite(context, next, element)
+
       "popup" ->
         writer.popup(context, next, element)
+
+      "callout" ->
+        writer.callout(context, next, element)
+
+      "callout_inline" ->
+        writer.callout_inline(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

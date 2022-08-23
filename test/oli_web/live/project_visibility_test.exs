@@ -75,6 +75,23 @@ defmodule OliWeb.ProjectVisibilityTest do
              |> element("#user_submit select")
              |> render() =~ author.email
     end
+
+    test "succesfully updates the allow duplication flag", %{
+      conn: conn,
+      project: project
+    } do
+      {:ok, view, _} =
+        live_isolated(conn, OliWeb.Projects.VisibilityLive,
+          session: %{"project_slug" => project.slug}
+        )
+
+      view
+      |> element("#duplication_option")
+      |> render_change(%{"duplication" => %{"allow_duplication" => true}})
+
+      updated_project = Course.get_project!(project.id)
+      assert updated_project.allow_duplication
+    end
   end
 
   defp setup_session(%{conn: conn}) do

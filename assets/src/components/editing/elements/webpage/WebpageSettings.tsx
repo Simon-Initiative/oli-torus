@@ -1,114 +1,66 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
-import * as Settings from 'components/editing/elements/common/settings/Settings';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
+import { Toolbar } from 'components/editing/toolbar/Toolbar';
+import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
+import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton';
+import { DescriptiveButton } from 'components/editing/toolbar/buttons/DescriptiveButton';
+import { WebpageModal } from 'components/editing/elements/webpage/WebpageModal';
+import { modalActions } from 'actions/modal';
 
-const onVisit = (href: string) => {
-  window.open(href, '_blank');
-};
-
-const onCopy = (href: string) => {
-  navigator.clipboard.writeText(href);
-};
-
-type YouTubeSettingsProps = {
-  model: ContentModel.YouTube;
-  onEdit: (model: ContentModel.YouTube) => void;
-  onRemove: () => void;
+interface SettingsProps {
   commandContext: CommandContext;
-  editMode: boolean;
-};
-
-const toLink = (src: string) => src;
-
-export const YouTubeSettings = (props: YouTubeSettingsProps) => {
-  // Which selection is active, URL or in course page
-  const [model, setModel] = useState(props.model);
-
-  const ref = useRef();
-
-  useEffect(() => {
-    // Inits the tooltips, since this popover rendres in a react portal
-    // this was necessary
-    if (ref !== null && ref.current !== null) {
-      (window as any).$('[data-toggle="tooltip"]').tooltip();
-    }
-  });
-
-  const setSrc = (src: string) => setModel(Object.assign({}, model, { src }));
-  const setAlt = (alt: string) => setModel(Object.assign({}, model, { alt }));
-
-  const applyButton = (disabled: boolean) => (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        props.onEdit(model);
-      }}
-      disabled={disabled}
-      className="btn btn-primary ml-1"
-    >
-      Apply
-    </button>
-  );
-
+  model: ContentModel.Webpage;
+  onEdit: (attrs: Partial<ContentModel.Webpage>) => void;
+}
+export const WebpageSettings = (props: SettingsProps) => {
   return (
-    <div className="settings-editor-wrapper">
-      <div className="settings-editor" ref={ref as any}>
-        <div className="d-flex justify-content-between mb-2">
-          <div>YouTube</div>
-
-          <div>
-            <Settings.Action
-              icon="fab fa-youtube"
-              tooltip="Open YouTube to Find a Video"
-              onClick={() => onVisit('https://www.youtube.com')}
-            />
-            <Settings.Action
-              icon="fas fa-external-link-alt"
-              tooltip="Open link"
-              onClick={() => onVisit(toLink(model.src ?? ''))}
-            />
-            <Settings.Action
-              icon="far fa-copy"
-              tooltip="Copy link"
-              onClick={() => onCopy(toLink(model.src ?? ''))}
-            />
-            <Settings.Action
-              icon="fas fa-trash"
-              tooltip="Remove YouTube Video"
-              id="remove-button"
-              onClick={() => props.onRemove()}
-            />
-          </div>
-        </div>
-
-        <form className="form">
-          <label>YouTube Video ID</label>
-          <input
-            type="text"
-            value={model.src}
-            onChange={(e) => setSrc(e.target.value)}
-            className="form-control mr-sm-2"
-          />
-          <div className="mb-2">
-            <small>
-              e.g. https://www.youtube.com/watch?v=<strong>zHIIzcWqsP0</strong>
-            </small>
-          </div>
-
-          <label>Alt Text</label>
-          <input
-            type="text"
-            value={model.alt}
-            onChange={(e) => setAlt(e.target.value)}
-            onKeyPress={(e) => Settings.onEnterApply(e, () => props.onEdit(model))}
-            className="form-control mr-sm-2"
-          />
-        </form>
-
-        {applyButton(!props.editMode)}
-      </div>
-    </div>
+    <Toolbar context={props.commandContext}>
+      <Toolbar.Group>
+        <CommandButton
+          description={createButtonCommandDesc({
+            icon: 'open_in_new',
+            description: 'Open Video',
+            execute: () => window.open(props.model.src, '_blank'),
+          })}
+        />
+        <CommandButton
+          description={createButtonCommandDesc({
+            icon: 'content_copy',
+            description: 'Copy Video Link',
+            execute: () => navigator.clipboard.writeText(props.model.src ?? ''),
+          })}
+        />
+      </Toolbar.Group>
+      <Toolbar.Group>
+        <SettingsButton model={props.model} onEdit={props.onEdit} />
+      </Toolbar.Group>
+    </Toolbar>
   );
 };
+interface SettingsButtonProps {
+  model: ContentModel.Webpage;
+  onEdit: (attrs: Partial<ContentModel.Webpage>) => void;
+}
+const SettingsButton = (props: SettingsButtonProps) => (
+  <DescriptiveButton
+    description={createButtonCommandDesc({
+      icon: '',
+      description: 'Settings',
+      execute: (_context, _editor, _params) =>
+        window.oliDispatch(
+          modalActions.display(
+            <WebpageModal
+              model={props.model}
+              onDone={({ alt, width, src }: Partial<ContentModel.Webpage>) => {
+                console.log('width', width, alt, src);
+                window.oliDispatch(modalActions.dismiss());
+                props.onEdit({ alt, width, src });
+              }}
+              onCancel={() => window.oliDispatch(modalActions.dismiss())}
+            />,
+          ),
+        ),
+    })}
+  />
+);

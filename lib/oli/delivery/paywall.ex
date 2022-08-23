@@ -12,26 +12,48 @@ defmodule Oli.Delivery.Paywall do
   alias Oli.Delivery.Sections.Enrollment
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Institutions.Institution
+  alias Oli.Delivery.Paywall.AccessSummary
 
   @maximum_batch_size 500
 
   @doc """
-  Determines if a user can access a course section, taking into account paywall settings.
-  """
-  def can_access?(_, %Section{requires_payment: false}), do: true
+  Summarizes a users ability to access a course section, taking into account the paywall configuration
+  for that course section.
 
-  def can_access?(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
+  Returns an `%AccessSummary` struct which details the following:
+  1. Whether or not the user can access the course material
+  2. A reason for why the user can or cannot access
+  3. The number of days remaining (in whole numbers) if the user is accessing the material
+     during a grace period window
+  """
+  def summarize_access(_, %Section{requires_payment: false}), do: AccessSummary.build_no_paywall()
+
+  def summarize_access(%User{id: id} = user, %Section{slug: slug, requires_payment: true} = section) do
     if Sections.is_instructor?(user, slug) or Sections.is_admin?(user, slug) do
-      true
+      AccessSummary.instructor()
     else
       enrollment = Sections.get_enrollment(slug, id)
 
-      # A student can access a paywalled section if the following two conditions hold:
-      # 1. They are enrolled in the section
-      # 2. They have either made a payment OR they are within the grace period (if there is one)
-      !is_nil(enrollment) and (has_paid?(enrollment) or within_grace_period?(enrollment, section))
+      if is_nil(enrollment) and section.requires_enrollment do
+        AccessSummary.not_enrolled()
+      else
+        if section.pay_by_institution do
+          AccessSummary.pay_by_institution()
+        else
+          case has_paid?(enrollment) do
+            true -> AccessSummary.paid()
+            _ ->
+              case within_grace_period?(enrollment, section) do
+                true -> grace_period_seconds_remaining(enrollment, section) |> AccessSummary.within_grace()
+                _ -> AccessSummary.not_paid()
+              end
+          end
+        end
+      end
     end
   end
+
+  defp has_paid?(nil), do: false
 
   defp has_paid?(%Enrollment{id: id}) do
     query =
@@ -48,6 +70,8 @@ defmodule Oli.Delivery.Paywall do
     end
   end
 
+  defp within_grace_period?(nil, _), do: false
+
   defp within_grace_period?(_, %Section{has_grace_period: false}), do: false
 
   defp within_grace_period?(%Enrollment{inserted_at: inserted_at}, %Section{
@@ -59,11 +83,33 @@ defmodule Oli.Delivery.Paywall do
       :relative_to_section ->
         case start_date do
           nil -> false
-          _ -> Date.compare(Date.utc_today(), Date.add(start_date, days)) == :lt
+          _ ->
+            case Date.compare(Date.utc_today(), Date.add(start_date, days)) do
+              :lt -> true
+              :eq -> true
+              _ -> false
+            end
         end
 
       :relative_to_student ->
         Date.compare(Date.utc_today(), Date.add(inserted_at, days)) == :lt
+    end
+  end
+
+  defp grace_period_seconds_remaining(%Enrollment{inserted_at: inserted_at}, %Section{
+    grace_period_days: days,
+    grace_period_strategy: strategy,
+    start_date: start_date
+  }) do
+    case strategy do
+      :relative_to_section ->
+        case start_date do
+          nil -> 0
+          _ -> -DateTime.diff(DateTime.utc_now(), DateTime.add(start_date, days * 24 * 60 * 60))
+        end
+
+      :relative_to_student ->
+        -DateTime.diff(DateTime.utc_now(), DateTime.add(inserted_at, days * 24 * 60 * 60))
     end
   end
 
@@ -152,45 +198,30 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
-  Given a section (blueprint or enrollable), calculate the cost to use it for
-  a specific institution, taking into account any product-wide and product-specific discounts
-  this instituttion has.
+    Given a section (blueprint) calculate the cost to use it for
+    a specific institution, taking into account any product-wide and product-specific discounts
+    this institution has.
 
-  Returns {:ok, %Money{}} or {:error, reason}
+      Returns {:ok, %Money{}} or {:error, reason}
   """
-  def calculate_product_cost(
-        %Section{requires_payment: false},
-        _
-      ),
-      do: {:ok, Money.new(:USD, 0)}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, amount: amount},
-        nil
-      ),
-      do: {:ok, amount}
-
-  def calculate_product_cost(
-        %Section{requires_payment: true, id: id, amount: amount},
-        %Institution{id: institution_id}
-      ) do
+  @spec section_cost_from_product(%Section{}, %Institution{}) :: {:ok, %Money{}} | {:error, any}
+   def section_cost_from_product(
+    %Section{requires_payment: true, id: id, amount: amount},
+    %Institution{id: institution_id}
+  ) do
     discounts =
       from(d in Discount,
-        where:
-          (is_nil(d.section_id) and d.institution_id == ^institution_id) or
-            (d.section_id == ^id and d.institution_id == ^institution_id),
+        where: d.institution_id == ^institution_id and
+          (is_nil(d.section_id) or # Institution-wide discounts
+          d.section_id == ^id),  # Section-specific discounts for the given institution
         select: d
       )
       |> Repo.all()
 
     # Remove any institution-wide discounts if an institution and section specific discount exists
-    discounts =
-      case Enum.any?(discounts, fn d -> !is_nil(d.section_id) end) do
-        true ->
-          Enum.filter(discounts, fn d -> !is_nil(d.section_id) end)
-
-        false ->
-          discounts
+    discounts = case Enum.filter(discounts, fn d -> !is_nil(d.section_id) end) do
+        [] -> discounts
+        filtered_discounts -> filtered_discounts
       end
 
     # Now calculate the product cost, taking into account a discount
@@ -199,12 +230,20 @@ defmodule Oli.Delivery.Paywall do
         {:ok, amount}
 
       [%Discount{type: :percentage, percentage: percentage}] ->
-        Money.mult(amount, percentage)
+        {:ok, discount_amount} = amount
+          |> Money.mult(round(percentage))
+          |> elem(1)
+          |> Money.div(100)
+
+        Money.sub(amount, discount_amount)
 
       [%Discount{amount: amount}] ->
         {:ok, amount}
     end
   end
+
+  def section_cost_from_product(%Section{requires_payment: true, amount: amount}, nil), do: {:ok, amount}
+  def section_cost_from_product(%Section{requires_payment: false}, _), do: {:ok, Money.new(:USD, 0)}
 
   @doc """
   Redeems a payment code for a given course section.
@@ -374,6 +413,9 @@ defmodule Oli.Delivery.Paywall do
     |> Repo.update()
   end
 
+  # ------------------------------------------
+  # Discounts
+
   @doc """
   Creates a discount.
   ## Examples
@@ -386,5 +428,120 @@ defmodule Oli.Delivery.Paywall do
     %Discount{}
     |> Discount.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking discount changes.
+  ## Examples
+      iex> change_discount(discount)
+      %Ecto.Changeset{data: %Discount{}}
+  """
+  def change_discount(%Discount{} = discount, attrs \\ %{}),
+    do: Discount.changeset(discount, attrs)
+
+  @doc """
+  Deletes a discount.
+  ## Examples
+      iex> delete_discount(discount)
+      {:ok, %Discount{}}
+      iex> delete_discount(discount)
+      {:error, changeset}
+  """
+  def delete_discount(%Discount{} = discount),
+    do: Repo.delete(discount)
+
+  @doc """
+  Gets a discount by clauses. Will raise an error if
+  more than one matches the criteria.
+  ## Examples
+      iex> get_discount_by!(%{section_id: 1})
+      %Discount{}
+      iex> get_discount_by!(%{section_id: 123})
+      nil
+      iex> get_discount_by!(%{section_id: 2, u})
+      Ecto.MultipleResultsError
+  """
+  def get_discount_by!(clauses),
+    do: Repo.get_by(Discount, clauses) |> Repo.preload([:institution])
+
+  @doc """
+  Gets the discounts of a product
+  ## Examples
+      iex> get_product_discounts!(1)
+      [%Discount{}, %Discount{}, ...]
+      iex> get_product_discounts!(123)
+      []
+  """
+  def get_product_discounts(product_id) do
+    Repo.all(from(
+      d in Discount,
+      where: d.section_id == ^product_id,
+      select: d,
+      preload: [:institution, :section]
+    ))
+  end
+
+  @doc """
+  Gets a discount by institution id and section_id == nil
+  ## Examples
+      iex> get_institution_wide_discount!(1)
+      %Discount{}
+      iex> get_institution_wide_discount!(123)
+      nil
+      iex> get_institution_wide_discount!(2)
+      Ecto.MultipleResultsError
+  """
+  def get_institution_wide_discount!(institution_id) do
+    Repo.one(from(
+      d in Discount,
+      where: d.institution_id == ^institution_id and is_nil(d.section_id),
+      select: d
+    ))
+  end
+
+  @doc """
+  Updates a discount.
+  ## Examples
+      iex> update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def update_discount(%Discount{} = discount, attrs) do
+    discount
+    |> Discount.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Create or update (if exists) a discount.
+  ## Examples
+      iex> create_or_update_discount(discount, %{name: new_value})
+      {:ok, %Discount{}}
+      iex> create_or_update_discount(discount, %{name: bad_value})
+      {:error, %Ecto.Changeset{}}
+  """
+  def create_or_update_discount(%{institution_id: nil} = attrs),
+    do: {:error, Ecto.Changeset.add_error(Discount.changeset(%Discount{}, attrs), :institution, "can't be blank")}
+
+  def create_or_update_discount(%{section_id: nil} = attrs) do
+    case get_institution_wide_discount!(attrs.institution_id) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
+  end
+
+  def create_or_update_discount(attrs) do
+    case get_discount_by!(%{
+      section_id: attrs.section_id,
+      institution_id: attrs.institution_id
+    }) do
+      nil -> %Discount{}
+      discount -> discount
+    end
+    |> Discount.changeset(attrs)
+    |> Repo.insert_or_update()
   end
 end

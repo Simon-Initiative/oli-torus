@@ -1,4 +1,5 @@
 import { SectionSlug } from 'data/types';
+import { batchedBuffer } from 'utils/common';
 import { makeRequest } from './common';
 
 // eslint-disable-next-line
@@ -13,13 +14,23 @@ export type ExtrinsicDelete = {
   result: 'success';
 };
 
+const setQ = new Set();
+const lastSet = () => {
+  const arr = Array.from(setQ);
+  return arr[arr.length - 1];
+};
+
 export function readGlobal(keys: string[] | null = null) {
   const params = {
     method: 'GET',
     url: '/state' + toKeyParams(keys),
   };
 
-  return makeRequest<ExtrinsicRead>(params);
+  const result = makeRequest<ExtrinsicRead>(params);
+
+  /* console.log('GET DATA FROM STATE', { keys, params, result }); */
+
+  return result;
 }
 
 export const readGlobalUserState = async (
@@ -38,6 +49,9 @@ export const readGlobalUserState = async (
       result = storedUserState;
     }
   } else {
+    if (lastSet()) {
+      await lastSet();
+    }
     const serverUserState = await readGlobal(keys);
     // merge server state with result
     if ((serverUserState as any).type !== 'ServerError') {
@@ -47,10 +61,11 @@ export const readGlobalUserState = async (
   return result;
 };
 
-export const updateGlobalUserState = async (
+export const internalUpdateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
+  /* console.log('updateGlobalUserState', updates); */
   const topLevelKeys = Object.keys(updates);
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
 
@@ -70,9 +85,25 @@ export const updateGlobalUserState = async (
 
     localStorage.setItem('torus.userState', JSON.stringify(mergedState));
   } else {
-    await upsertGlobal(newState);
+    const op = upsertGlobal(newState);
+    setQ.add(op);
+    await op;
+    setQ.delete(op);
   }
   return newState;
+};
+
+const updateInterval = 300;
+const [batchedUpdate] = batchedBuffer(internalUpdateGlobalUserState, updateInterval);
+
+export const updateGlobalUserState = async (
+  updates: { [topKey: string]: { [key: string]: any } },
+  useLocalStorage = false,
+) => {
+  /* console.log('updateGlobalUserState called', { updates, useLocalStorage }); */
+  const result = await batchedUpdate(updates, useLocalStorage);
+  /* console.log('updateGlobalUserState result', { result, updates }); */
+  return result;
 };
 
 export function deleteGlobal(keys: string[]) {
@@ -91,7 +122,11 @@ export function upsertGlobal(keyValues: KeyValues) {
     url: '/state',
   };
 
-  return makeRequest<ExtrinsicDelete>(params);
+  const result = makeRequest<ExtrinsicDelete>(params);
+
+  /* console.log('UPSERT DATA TO STATE', { params, result }); */
+
+  return result;
 }
 
 export function readSection(slug: SectionSlug, keys: string[] | null = null) {
@@ -117,6 +152,34 @@ export function upsertSection(slug: SectionSlug, keyValues: KeyValues) {
     method: 'PUT',
     body: JSON.stringify(keyValues),
     url: `/state/course/${slug}`,
+  };
+
+  return makeRequest<ExtrinsicDelete>(params);
+}
+
+export function readAttempt(slug: SectionSlug, attemptGuid: string, keys: string[] | null = null) {
+  const params = {
+    method: 'GET',
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}` + toKeyParams(keys),
+  };
+
+  return makeRequest<ExtrinsicRead>(params);
+}
+
+export function deleteAttempt(slug: SectionSlug, attemptGuid: string, keys: string[]) {
+  const params = {
+    method: 'DELETE',
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}` + toKeyParams(keys),
+  };
+
+  return makeRequest<ExtrinsicRead>(params);
+}
+
+export function upsertAttempt(slug: SectionSlug, attemptGuid: string, keyValues: KeyValues) {
+  const params = {
+    method: 'PUT',
+    body: JSON.stringify(keyValues),
+    url: `/state/course/${slug}/resource_attempt/${attemptGuid}`,
   };
 
   return makeRequest<ExtrinsicDelete>(params);

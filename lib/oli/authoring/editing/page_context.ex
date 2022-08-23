@@ -14,6 +14,7 @@ defmodule Oli.Authoring.Editing.ResourceContext do
     :activities,
     :activityContexts,
     :resourceId,
+    :featureFlags,
     # these fields are not JSON encoded
     :project,
     :previous_page,

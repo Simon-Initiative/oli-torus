@@ -32,6 +32,7 @@ import {
 } from './store/app/slice';
 import { initializeFromContext } from './store/page/actions/initializeFromContext';
 import { PageContext } from './types';
+import { getModeFromLocalStorage } from 'components/misc/DarkModeSelector';
 
 export interface AuthoringProps {
   isAdmin: boolean;
@@ -124,8 +125,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
   useEffect(() => {
     if (isAppVisible) {
       // forced light mode to save on initial dev time
-      const darkModeCss: any = document.getElementById('authoring-theme-dark');
-      darkModeCss.href = '/css/authoring_torus_light.css';
+      document.documentElement.classList.remove('dark');
       document.body.classList.add('overflow-hidden'); // prevents double scroll bars
       authoringContainer?.classList.remove('d-none');
       setTimeout(() => {
@@ -134,8 +134,15 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
     }
     if (!isAppVisible) {
       // reset forced light mode
-      const darkModeCss: any = document.getElementById('authoring-theme-dark');
-      darkModeCss.href = '/css/authoring_torus_dark.css';
+      switch (getModeFromLocalStorage()) {
+        case 'dark':
+          document.documentElement.classList.add('dark');
+          break;
+        case 'auto':
+          break;
+        case 'light':
+          break;
+      }
       document.body.classList.remove('overflow-hidden');
       authoringContainer?.classList.remove('startup');
       setTimeout(() => {
@@ -146,7 +153,6 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       document.body.classList.remove('overflow-hidden');
     };
   }, [isAppVisible]);
-
   useEffect(() => {
     const appConfig = {
       paths: props.paths,
@@ -155,6 +161,7 @@ const Authoring: React.FC<AuthoringProps> = (props: AuthoringProps) => {
       revisionSlug: props.revisionSlug,
       partComponentTypes: props.partComponentTypes,
       activityTypes: props.activityTypes,
+      allObjectives: props.content.allObjectives || [],
     };
     dispatch(setInitialConfig(appConfig));
   }, [props]);

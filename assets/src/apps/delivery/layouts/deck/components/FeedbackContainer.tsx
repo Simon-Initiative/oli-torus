@@ -1,7 +1,7 @@
 import { getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { selectCurrentActivityTree } from 'apps/delivery/store/features/groups/selectors/deck';
 import { selectIsLegacyTheme } from 'apps/delivery/store/features/page/slice';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import FeedbackRenderer from './FeedbackRenderer';
 
@@ -28,7 +28,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
   const currentActivityIds = (currentActivityTree || []).map((activity) => activity.id);
 
   const isLegacyTheme = useSelector(selectIsLegacyTheme);
-
+  const [renderId, setRenderId] = useState<number>(Date.now());
   const handleToggleFeedback = () => {
     if (minimized) {
       onMaximize();
@@ -36,7 +36,9 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
       onMinimize();
     }
   };
-
+  useEffect(() => {
+    setRenderId(Date.now());
+  }, [feedbacks]);
   const handleCloseFeedback = () => {
     onMinimize();
   };
@@ -87,6 +89,7 @@ const FeedbackContainer: React.FC<FeedbackContainerProps> = ({
           </style>
           <div className="content">
             <FeedbackRenderer
+              key={`${renderId}`}
               feedbacks={feedbacks}
               snapshot={getLocalizedStateSnapshot(currentActivityIds)}
             />

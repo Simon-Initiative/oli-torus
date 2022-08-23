@@ -34,6 +34,7 @@ export const attemptState: ActivityState = {
   parts: [partState],
   hasMoreAttempts: true,
   hasMoreHints: true,
+  groupId: null,
 };
 
 const feedbackAction: Action = {
@@ -42,6 +43,7 @@ const feedbackAction: Action = {
   part_id: '1',
   out_of: 1,
   score: 1,
+  show_page: null,
   feedback: makeFeedback('correct feedback'),
 };
 
@@ -83,6 +85,7 @@ export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringEleme
   const model = initialModel;
   return {
     projectSlug: '',
+    authoringContext: { contentBreaksExist: false },
     editMode: true,
     model,
     onPostUndoable: jest.fn(),

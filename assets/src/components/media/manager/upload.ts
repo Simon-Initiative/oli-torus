@@ -1,13 +1,20 @@
 import * as persistence from 'data/persistence/media';
 
+export const MaxFileUploadSizeMB = 350; // User-friendly number
+export const MaxFileUploadSizeBytes = MaxFileUploadSizeMB * 1048576;
+
 // the server creates a lock on upload, so we must upload files one at a
 // time. This factory function returns a new promise to upload a file
 // recursively until files is empty
 export const uploadFiles = async (projectSlug: string, files: File[]) => {
   const results: any[] = [];
 
-  const uploadFile = async (file: File): Promise<any> =>
-    persistence.createMedia(projectSlug, file).then((result) => {
+  const uploadFile = async (file: File): Promise<any> => {
+    if (file.size >= MaxFileUploadSizeBytes) {
+      throw new Error('File is too large');
+    }
+
+    return persistence.createMedia(projectSlug, file).then((result) => {
       results.push(result);
 
       if (files.length > 0) {
@@ -16,6 +23,7 @@ export const uploadFiles = async (projectSlug: string, files: File[]) => {
 
       return results;
     });
+  };
 
   return uploadFile(files.pop() as File);
 };

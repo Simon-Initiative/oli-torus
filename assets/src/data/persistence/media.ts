@@ -7,7 +7,7 @@ export type MediaItemCreated = {
   url: string;
 };
 
-function getFileName(file: File) {
+export function getFileName(file: File) {
   const fileNameWithDot = file.name.slice(
     0,
     file.name.indexOf('.') !== -1 ? file.name.indexOf('.') + 1 : file.name.length,
@@ -18,7 +18,7 @@ function getFileName(file: File) {
   return fileNameWithDot + extension;
 }
 
-function encodeFile(file: File): Promise<string> {
+export function encodeFile(file: File): Promise<string> {
   const reader = new FileReader();
 
   if (file) {
@@ -26,7 +26,11 @@ function encodeFile(file: File): Promise<string> {
       reader.addEventListener(
         'load',
         () => {
-          if (reader.result !== null) {
+          if (reader.result === '') {
+            // Max string-size in V8 is 512mb, if your base64 string is bigger than that,
+            // file-reader will return an empty string here
+            reject('failed to encode');
+          } else if (reader.result !== null) {
             resolve((reader.result as string).substr((reader.result as string).indexOf(',') + 1));
           } else {
             reject('failed to encode');

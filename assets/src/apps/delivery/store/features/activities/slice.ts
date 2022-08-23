@@ -19,6 +19,7 @@ export interface ActivityContent {
 export interface IActivity {
   id: EntityId;
   resourceId?: number;
+  activitySlug?: string;
   authoring?: any;
   content?: ActivityContent;
   activityType?: any;

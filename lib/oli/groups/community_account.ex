@@ -18,5 +18,6 @@ defmodule Oli.Groups.CommunityAccount do
     |> validate_required([:community_id])
     |> unique_constraint([:community_id, :author_id], name: :index_community_author)
     |> unique_constraint([:community_id, :user_id], name: :index_community_user)
+    |> foreign_key_constraint(:community_id)
   end
 end

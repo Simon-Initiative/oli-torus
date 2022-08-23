@@ -4,7 +4,9 @@ defmodule Oli.AccountsTest do
   import Oli.Factory
 
   alias Oli.Accounts
-  alias Oli.Accounts.{Author, User}
+  alias Oli.Accounts.{Author, AuthorPreferences, User, UserPreferences}
+  alias Oli.Groups
+  alias Oli.Groups.CommunityAccount
 
   describe "authors" do
     test "system role defaults to author", %{} do
@@ -63,6 +65,42 @@ defmodule Oli.AccountsTest do
     test "user_confirmation_pending?/1 returns false when author has a confirmed account" do
       confirmed_author = insert(:author, email_confirmed_at: Timex.now())
       refute Accounts.user_confirmation_pending?(confirmed_author)
+    end
+
+    test "get_author_preference/3 returns an author preference" do
+      author = insert(:author)
+
+      assert Accounts.get_author_preference(author, :timezone) == "America/New_York"
+    end
+
+    test "get_author_preference/3 fetches an author by id and returns the preference" do
+      author = insert(:author)
+
+      assert Accounts.get_author_preference(author.id, :timezone) == "America/New_York"
+    end
+
+    test "get_author_preference/3 returns the default value when no preference was set" do
+      author = insert(:author, preferences: %AuthorPreferences{})
+
+      assert Accounts.get_author_preference(author, :timezone, "default") == "default"
+    end
+
+    test "set_author_preference/3 sets an author preference" do
+      author = insert(:author)
+
+      assert {:ok, author} =
+               Accounts.set_author_preference(author, :timezone, "America/Los_Angeles")
+
+      assert author.preferences.timezone == "America/Los_Angeles"
+    end
+
+    test "set_author_preference/3 fetches an author by id and sets the preference" do
+      author = insert(:author)
+
+      assert {:ok, author} =
+               Accounts.set_author_preference(author.id, :timezone, "America/Los_Angeles")
+
+      assert author.preferences.timezone == "America/Los_Angeles"
     end
   end
 
@@ -196,6 +234,122 @@ defmodule Oli.AccountsTest do
 
       assert %Author{community_admin_count: 2} =
                Accounts.get_author_with_community_admin_count(community_account.author_id)
+    end
+
+    test "setup_sso_user/2 returns the created user and associates it to the given community" do
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+      {:ok, user} = Accounts.setup_sso_user(fields, community.id)
+
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+    end
+
+    test "setup_sso_user/2 returns an error and rollbacks the insertions when data is invalid" do
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+
+      assert {:error,
+              %Ecto.Changeset{
+                errors: [
+                  community_id:
+                    {"does not exist",
+                     [
+                       constraint: :foreign,
+                       constraint_name: "communities_accounts_community_id_fkey"
+                     ]}
+                ]
+              }} = Accounts.setup_sso_user(fields, 0)
+
+      refute Accounts.get_user_by(%{sub: "sub", email: "email"})
+    end
+
+    test "setup_sso_author/2 creates author and user if do not exist and associates user to the given community" do
+      community = insert(:community)
+      fields = %{"sub" => "sub", "cognito:username" => "username", "email" => "email"}
+      {:ok, author} = Accounts.setup_sso_author(fields, community.id)
+
+      assert author.name == "username"
+      assert author.email == "email"
+
+      user = Accounts.get_user_by(%{email: "email"})
+      assert user.sub == "sub"
+      assert user.preferred_username == "username"
+      assert user.email == "email"
+      assert user.can_create_sections
+
+      assert %CommunityAccount{} =
+               Groups.get_community_account_by!(%{user_id: user.id, community_id: community.id})
+
+      assert user.author_id == author.id
+    end
+
+    test "setup_sso_author/2 links user with author when they have the same email" do
+      community = insert(:community)
+      user = insert(:user)
+      author = insert(:author, email: user.email)
+
+      fields = %{"sub" => user.sub, "cognito:username" => "username", "email" => user.email}
+      {:ok, returned_author} = Accounts.setup_sso_author(fields, community.id)
+
+      assert returned_author == author
+
+      returned_user = Accounts.get_user_by(%{email: user.email})
+      assert returned_user.email == user.email
+      assert returned_user.author_id == returned_author.id
+    end
+
+    test "is_lms_user?/1 returns true when the user exists and belongs to an lms" do
+      user = insert(:user)
+      insert(:lti_params, user_id: user.id)
+
+      assert Accounts.is_lms_user?(user.email)
+    end
+
+    test "is_lms_user?/1 returns false when the user does not exist" do
+      refute Accounts.is_lms_user?("invalid_email")
+    end
+
+    test "is_lms_user?/1 returns false when the user exists but is not from an lms" do
+      user = insert(:user)
+
+      refute Accounts.is_lms_user?(user.email)
+    end
+
+    test "get_user_preference/3 returns an user preference" do
+      user = insert(:user)
+
+      assert Accounts.get_user_preference(user, :timezone) == "America/New_York"
+    end
+
+    test "get_user_preference/3 fetches an user by id and returns the preference" do
+      user = insert(:user)
+
+      assert Accounts.get_user_preference(user.id, :timezone) == "America/New_York"
+    end
+
+    test "get_user_preference/3 returns the default value when no preference was set" do
+      user = insert(:user, preferences: %UserPreferences{})
+
+      assert Accounts.get_user_preference(user, :timezone, "default") == "default"
+    end
+
+    test "set_user_preference/3 sets an user preference" do
+      user = insert(:user)
+
+      assert {:ok, user} = Accounts.set_user_preference(user, :timezone, "America/Los_Angeles")
+      assert user.preferences.timezone == "America/Los_Angeles"
+    end
+
+    test "set_user_preference/3 fetches an user by id and sets the preference" do
+      user = insert(:user)
+
+      assert {:ok, user} = Accounts.set_user_preference(user.id, :timezone, "America/Los_Angeles")
+      assert user.preferences.timezone == "America/Los_Angeles"
     end
   end
 

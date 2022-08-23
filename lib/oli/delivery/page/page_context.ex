@@ -10,7 +10,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :resource_attempts,
     :activities,
     :objectives,
-    :latest_attempts
+    :latest_attempts,
+    :bib_revisions
   ]
   defstruct [
     :review_mode,
@@ -19,7 +20,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :resource_attempts,
     :activities,
     :objectives,
-    :latest_attempts
+    :latest_attempts,
+    :bib_revisions
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -30,6 +32,7 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Attempts.Core, as: Attempts
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
+  alias Oli.Utils.BibUtils
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -40,7 +43,8 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) :: %PageContext{}
+  @spec create_for_review(String.t(), String.t(), Oli.Accounts.User) ::
+          %PageContext{}
   def create_for_review(section_slug, attempt_guid, _) do
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.review(attempt_guid) do
@@ -60,6 +64,19 @@ defmodule Oli.Delivery.Page.PageContext do
 
     page_revision = hd(resource_attempts).revision
 
+    summaries = if activities != nil, do: Map.values(activities), else: []
+
+    bib_revisions =
+      BibUtils.assemble_bib_entries(
+        page_revision.content,
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        DeliveryResolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
+
     %PageContext{
       review_mode: true,
       page: page_revision,
@@ -68,7 +85,8 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
-      latest_attempts: latest_attempts
+      latest_attempts: latest_attempts,
+      bib_revisions: bib_revisions
     }
   end
 
@@ -81,20 +99,24 @@ defmodule Oli.Delivery.Page.PageContext do
   information is collected and then assembled in a fashion that can be given
   to a renderer.
   """
-  @spec create_for_visit(Section, String.t(), Oli.Accounts.User) ::
-          %PageContext{}
-  def create_for_visit(%Section{slug: section_slug, id: section_id}, page_slug, user) do
+  def create_for_visit(
+        %Section{slug: section_slug, id: section_id},
+        page_slug,
+        user,
+        datashop_session_id
+      ) do
     # resolve the page revision per section
     page_revision = DeliveryResolver.from_revision_slug(section_slug, page_slug)
 
     Attempts.track_access(page_revision.resource_id, section_id, user.id)
 
-    activity_provider = &Oli.Delivery.ActivityProvider.provide/3
+    activity_provider = &Oli.Delivery.ActivityProvider.provide/4
 
     {progress_state, resource_attempts, latest_attempts, activities} =
       case PageLifecycle.visit(
              page_revision,
              section_slug,
+             datashop_session_id,
              user.id,
              activity_provider
            ) do
@@ -120,6 +142,19 @@ defmodule Oli.Delivery.Page.PageContext do
         page_revision
       end
 
+    summaries = if activities != nil, do: Map.values(activities), else: []
+
+    bib_revisions =
+      BibUtils.assemble_bib_entries(
+        page_revision.content,
+        summaries,
+        fn r -> Map.get(r, :bib_refs, []) end,
+        section_slug,
+        DeliveryResolver
+      )
+      |> Enum.with_index(1)
+      |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
+
     %PageContext{
       review_mode: false,
       page: page_revision,
@@ -128,7 +163,8 @@ defmodule Oli.Delivery.Page.PageContext do
       activities: activities,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
-      latest_attempts: latest_attempts
+      latest_attempts: latest_attempts,
+      bib_revisions: bib_revisions
     }
   end
 

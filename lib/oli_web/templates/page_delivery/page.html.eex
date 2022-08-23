@@ -7,18 +7,20 @@
 window.userToken = "<%= assigns[:user_token] %>";
 </script>
 
-<%= render "_objectives.html", objectives: @objectives %>
+<%= unless @graded && not @review_mode do %>
+  <%= render "_objectives.html", objectives: @objectives %>
+<% end %>
 
 <%= if @review_mode == true do %>
   <%= if @resource_attempt.lifecycle_state == :evaluated do  %>
     <div class="mb-2">
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= date(@resource_attempt.inserted_at, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= date(@resource_attempt.date_evaluated, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :date_evaluated, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
@@ -26,7 +28,7 @@ window.userToken = "<%= assigns[:user_token] %>";
     </div>
     <div class="row">
       <div class="col-sm-3">Points:</div>
-      <div><%= @resource_attempt.score %> out of <%= @resource_attempt.out_of %> </div>
+      <div><%= Utils.format_score(@resource_attempt.score) %> out of <%= @resource_attempt.out_of %> </div>
     </div>
     </div>
   <% end %>
@@ -35,11 +37,11 @@ window.userToken = "<%= assigns[:user_token] %>";
     <h3>Awaiting Instructor Grading</h3>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= date(@resource_attempt.inserted_at, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= date(@resource_attempt.date_submitted, @conn) %></div>
+      <div><%= Utils.render_date(@resource_attempt, :date_submitted, @conn) %></div>
     </div>
     </div>
   <% end %>
@@ -54,13 +56,16 @@ window.userToken = "<%= assigns[:user_token] %>";
 </script>
 
 <%= if @graded && @activity_count > 0 && @review_mode == false do %>
-  <%= link "Submit Assessment", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg" %>
+  <div class="d-flex align-items-center justify-content-center">
+    <%= link "Submit Answers", to: Routes.page_delivery_path(@conn, :finalize_attempt, @section_slug, @slug, @attempt_guid), class: "btn btn-primary btn-lg text-center" %>
+  </div>
 <% end %>
 
 <%= if @review_mode == true do %>
-<%= link "Exit", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
+  <div class="d-flex align-items-center justify-content-center">
+    <%= link "Continue", to: Routes.page_delivery_path(@conn, :page, @section_slug, @slug), class: "btn btn-primary btn-lg" %>
+  </div>
 <% end %>
-
 
 <%= if Oli.Utils.LoadTesting.enabled?() do %>
 <!--

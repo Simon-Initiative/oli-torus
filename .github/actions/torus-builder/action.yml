@@ -1,13 +1,13 @@
-name: 'Torus Builder'
-description: 'Build Torus App for Production'
+name: "Torus Builder"
+description: "Build Torus App for Production"
 inputs:
   build-sha:
-    description: 'SHA of the build commit'
+    description: "SHA of the build commit"
     required: true
 runs:
-  using: 'docker'
+  using: "docker"
   # image: 'Dockerfile'
   ## Use the prebuilt builder image on docker hub until github improves caching across builds
-  image: olisimon/torus-builder:1.0.0
+  image: olisimon/torus-builder:1.1.0
   args:
     - ${{ inputs.build-sha }}

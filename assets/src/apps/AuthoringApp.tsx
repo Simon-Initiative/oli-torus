@@ -1,4 +1,4 @@
 import Authoring from './authoring/Authoring';
-import { defineApplication } from './app';
+import { registerApplication } from './app';
 
-defineApplication(Authoring);
+registerApplication('Authoring', Authoring);

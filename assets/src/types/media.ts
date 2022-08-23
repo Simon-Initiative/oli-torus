@@ -1,6 +1,6 @@
 import * as ModelElements from 'data/content/model/elements/types';
 
-export type MediaLibraryOption = ModelElements.Audio | ModelElements.Image;
+export type MediaLibraryOption = ModelElements.Audio | ModelElements.ImageBlock;
 
 export type MediaItem = {
   rev: number;

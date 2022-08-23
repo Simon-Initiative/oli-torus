@@ -1,0 +1,27 @@
+@use 'authoring/theme' as authoring;
+@import 'common/mixins';
+
+.resource-editor {
+  margin: 0 auto;
+
+  &.row {
+    .col-12 {
+      padding: 0;
+    }
+  }
+
+  .preview-content {
+    all: initial;
+    all: unset;
+    flex: 1;
+    padding: 0 40px;
+    border: 1px solid authoring.$gray-200;
+    border-radius: 4px;
+  }
+}
+
+.resource-block-editor {
+  .card-body > .content > .slate-editor {
+    border: none;
+  }
+}

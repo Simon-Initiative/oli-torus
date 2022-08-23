@@ -1,7 +1,7 @@
 defmodule Oli.Rendering.Activity do
   @moduledoc """
   This modules defines the rendering functionality for an Oli activity. Rendering is
-  extensibile to any format which implements the behavior defined in this module, then specifying
+  extensible to any format which implements the behavior defined in this module, then specifying
   that format at render time. For an example of how exactly to extend this, see `activity/html.ex`.
   """
   import Oli.Utils
@@ -13,10 +13,9 @@ defmodule Oli.Rendering.Activity do
 
   @doc """
   Renders an Oli activity given an activity-reference element and using the
-  activity_map from context. Returns an IO list of raw html strings to be futher processed by
-  Phoenix/BEAM writev.
+  activity_map from context. Returns an IO list of strings.
   """
-  def render(%Context{} = context, %{"activity_id" => _, "purpose" => _} = element, writer) do
+  def render(%Context{} = context, %{"activity_id" => _} = element, writer) do
     writer.activity(context, element)
   end
 

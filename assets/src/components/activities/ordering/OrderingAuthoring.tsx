@@ -4,6 +4,8 @@ import { Choices as ChoicesAuthoring } from 'components/activities/common/choice
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
+import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
+import { defaultWriterContext } from 'data/content/writers/context';
 import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import { TargetedFeedback } from 'components/activities/ordering/sections/TargetedFeedback';
@@ -16,12 +18,10 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import {
-  AuthoringElement,
-  AuthoringElementProps,
-  AuthoringElementProvider,
-  useAuthoringElementContext,
-} from '../AuthoringElement';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
 import { OrderingSchema } from './schema';
@@ -29,7 +29,7 @@ import { OrderingSchema } from './schema';
 const store = configureStore();
 
 export const Ordering: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext<OrderingSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<OrderingSchema>();
 
   const choices = model.choices.reduce((m: any, c) => {
     m[c.id] = c;
@@ -51,6 +51,8 @@ export const Ordering: React.FC = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
+        <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+
         <ResponseChoices
           choices={getCorrectChoiceIds(model).map((id) => choices[id])}
           setChoices={(choices) => dispatch(Actions.setCorrectChoices(choices))}
@@ -61,6 +63,13 @@ export const Ordering: React.FC = () => {
 
       <TabbedNavigation.Tab label="Hints">
         <Hints partId={DEFAULT_PART_ID} />
+      </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label="Dynamic Variables">
+        <VariableEditorOrNot
+          editMode={editMode}
+          model={model}
+          onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+        />
       </TabbedNavigation.Tab>
 
       <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />

@@ -11,12 +11,8 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import guid from 'utils/guid';
-import {
-  AuthoringElement,
-  AuthoringElementProps,
-  AuthoringElementProvider,
-  useAuthoringElementContext,
-} from '../AuthoringElement';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -37,7 +33,7 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
     onRequestMedia,
   };
 
-  function selectImage(_projectSlug: string, _model: ContentModel.Image): Promise<string> {
+  function selectImage(_projectSlug: string, _model: ContentModel.ImageBlock): Promise<string> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',
@@ -57,8 +53,8 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
   function selectSpreadsheet(
     _projectSlug: string,
-    _model: ContentModel.Image,
-  ): Promise<ContentModel.Image> {
+    _model: ContentModel.ImageBlock,
+  ): Promise<ContentModel.ImageBlock> {
     return new Promise((resolve, reject) => {
       const request = {
         type: 'MediaItemRequest',

@@ -3,6 +3,7 @@ defmodule Oli.Content.Activity.HtmlTest do
 
   alias Oli.Rendering.Context
   alias Oli.Rendering.Activity
+  alias Oli.Rendering.Activity.ActivitySummary
 
   import ExUnit.CaptureLog
 
@@ -15,13 +16,17 @@ defmodule Oli.Content.Activity.HtmlTest do
 
     test "renders well-formed activity properly", %{author: author} do
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -29,7 +34,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         "activity_id" => 1,
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 
@@ -43,26 +48,29 @@ defmodule Oli.Content.Activity.HtmlTest do
       rendered_html_string = Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
       assert rendered_html_string =~
-               "<oli-multiple-choice-delivery class=\"activity-container\" graded=\"false\" state=\"{ \"active\": true }\" model=\"{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}\""
+               ~s|<oli-multiple-choice-delivery class="activity-container" state="{ "active": true }" model="{ "choices": [ "A", "B", "C", "D" ], "feedback": [ "A", "B", "C", "D" ], "stem": ""}"|
     end
 
     test "renders malformed activity gracefully", %{author: author} do
       activity_map = %{
-        1 => %{
+        1 => %ActivitySummary{
           id: 1,
           graded: false,
-          slug: "test",
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
       element = %{
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 
@@ -78,20 +86,23 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~
-                        "<div class=\"activity invalid alert alert-danger\">Activity error"
+                        "<div class=\"alert alert-danger\">Activity render error"
              end) =~ "Activity render error"
     end
 
     test "handles missing activity from activity-map gracefully", %{author: author} do
       activity_map = %{
-        5 => %{
+        5 => %ActivitySummary{
           id: 5,
           graded: false,
-          slug: "test",
           state: "{ \"active\": true }",
           model:
             "{ \"choices\": [ \"A\", \"B\", \"C\", \"D\" ], \"feedback\": [ \"A\", \"B\", \"C\", \"D\" ], \"stem\": \"\"}",
-          delivery_element: "oli-multiple-choice-delivery"
+          delivery_element: "oli-multiple-choice-delivery",
+          authoring_element: "oli-multiple-choice-authoring",
+          script: "./authoring-entry.ts",
+          attempt_guid: "12345",
+          lifecycle_state: :active
         }
       }
 
@@ -99,7 +110,7 @@ defmodule Oli.Content.Activity.HtmlTest do
         "activity_id" => 1,
         "children" => [],
         "id" => 4_097_071_352,
-        "purpose" => "None",
+        "purpose" => "none",
         "type" => "activity-reference"
       }
 
@@ -115,7 +126,7 @@ defmodule Oli.Content.Activity.HtmlTest do
                  Phoenix.HTML.raw(rendered_html) |> Phoenix.HTML.safe_to_string()
 
                assert rendered_html_string =~
-                        "<div class=\"activity error alert alert-danger\">An error occurred and this activity could not be shown. Please contact support with issue"
+                        "<div class=\"alert alert-danger\">ActivitySummary with id 1 missing from activity_map"
              end) =~ "ActivitySummary with id 1 missing from activity_map"
     end
   end

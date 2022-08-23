@@ -9,8 +9,7 @@ defmodule OliWeb.SessionController do
 
   def signout(conn, %{"type" => type}) do
     conn
-    |> use_pow_config(String.to_atom(type))
-    |> Pow.Plug.delete()
+    |> delete_pow_user(String.to_atom(type))
     |> delete_session_data(type)
     |> redirect(to: Routes.static_page_path(conn, :index))
   end

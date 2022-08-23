@@ -48,7 +48,7 @@ defmodule OliWeb.Sections.GatingAndScheduling.Edit do
     <div class="container">
       <h3>{@title}</h3>
 
-      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} parent_gate={@parent_gate} count_exceptions={@count_exceptions} create_or_update={:update} />
+      <Form id="new_gating_contition" section={@section} gating_condition={@gating_condition} parent_gate={@parent_gate} count_exceptions={@count_exceptions} create_or_update={:update} {=@context}/>
     </div>
     """
   end

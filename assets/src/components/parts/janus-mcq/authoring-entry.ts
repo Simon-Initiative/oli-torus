@@ -7,7 +7,14 @@ import {
   observedAttributes as apiObservedAttributes,
 } from '../partsApi';
 import McqAuthor from './McqAuthor';
-import { adaptivitySchema, createSchema, getCapabilities, schema, uiSchema } from './schema';
+import {
+  adaptivitySchema,
+  createSchema,
+  getCapabilities,
+  schema,
+  uiSchema,
+  validateUserConfig,
+} from './schema';
 
 const observedAttributes: string[] = [...apiObservedAttributes, ...authoringObservedAttributes];
 const customEvents: any = {
@@ -31,5 +38,6 @@ register(McqAuthor, manifest.authoring.element, observedAttributes, {
     createSchema,
     getCapabilities,
     getAdaptivitySchema: async () => adaptivitySchema,
+    validateUserConfig,
   },
 });

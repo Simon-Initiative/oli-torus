@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Immutable from 'immutable';
-import { Typeahead } from 'react-bootstrap-typeahead';
+import {
+  Typeahead,
+  TypeaheadResult,
+  TypeaheadMenuProps,
+  AllTypeaheadOwnAndInjectedProps,
+} from 'react-bootstrap-typeahead';
 import { Objective, ResourceId } from 'data/content/objective';
 import { ProjectSlug } from 'data/types';
 import { create } from 'data/persistence/objective';
 import guid from 'utils/guid';
+import { classNames } from 'utils/classNames';
+
+import styles from './ObjectivesSelection.modules.scss';
 
 export type ObjectivesProps = {
   objectives: Objective[];
@@ -12,8 +20,29 @@ export type ObjectivesProps = {
   editMode: boolean;
   projectSlug: ProjectSlug;
   onEdit: (objectives: ResourceId[]) => void;
-  onRegisterNewObjective: (objective: Objective) => void;
+  onRegisterNewObjective?: (objective: Objective) => void;
 };
+
+// Custom filterBy function for the Typeahead. This allows searches to
+// pick up child objectives for text that matches the parent
+function filterBy(byId: any, option: Objective, props: AllTypeaheadOwnAndInjectedProps<Objective>) {
+  if (option.title.indexOf(props.text) > -1) {
+    return true;
+  }
+
+  if (option.parentId !== null) {
+    return byId[option.parentId].title.indexOf(props.text) > -1;
+  }
+
+  return false;
+}
+
+function createMapById(objectives: Objective[]) {
+  return objectives.reduce((m: any, o: any) => {
+    m[o.id] = o;
+    return m;
+  }, {});
+}
 
 export const ObjectivesSelection = (props: ObjectivesProps) => {
   const { objectives, editMode, selected, onEdit, onRegisterNewObjective } = props;
@@ -21,16 +50,44 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
   // Typeahead throws a bunch of warnings if it doesn't contain
   // a unique DOM id.  So we generate one for it.
   const [id] = useState(guid());
+  const [byId, setById] = useState(createMapById(objectives));
+
+  const allSelected = selected.reduce((m: any, id: any) => {
+    m[id] = true;
+    return m;
+  }, {});
+
+  useEffect(() => {
+    setById(createMapById(objectives));
+  }, [objectives]);
+
+  const renderMenuItemChildren = (
+    option: TypeaheadResult<Objective>,
+    _props: TypeaheadMenuProps<Objective>,
+    _index: number,
+  ) => {
+    return (
+      <div>
+        {option.parentId !== null ? <span className="ml-3">&nbsp;</span> : null}
+        <input className="mr-2" type="checkbox" readOnly checked={allSelected[option.id]}></input>
+        {option.title}
+      </div>
+    );
+  };
 
   // The current 'selected' state of Typeahead must be the same shape as
   // the options objects. So we look up from our list of slugs those objects.
   const map = Immutable.Map<ResourceId, Objective>(objectives.map((o) => [o.id, o]));
   const asObjectives = selected.map((s) => map.get(s) as Objective);
 
+  const allowNewObjective = !!onRegisterNewObjective;
+
   return (
-    <div className="flex-grow-1 objectives-selection">
+    <div className={classNames(styles.objectivesSelection, 'flex-grow-1')}>
       <Typeahead
         id={id}
+        filterBy={filterBy.bind(this, byId)}
+        renderMenuItemChildren={renderMenuItemChildren}
         multiple={true}
         disabled={!editMode}
         onChange={(updated: (Objective & { customOption?: boolean })[]) => {
@@ -39,7 +96,7 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
           if (createdObjective) {
             create(props.projectSlug, createdObjective.title)
               .then((result) => {
-                if (result.result === 'success') {
+                if (result.result === 'success' && onRegisterNewObjective) {
                   onRegisterNewObjective({
                     id: result.resourceId,
                     title: createdObjective.title,
@@ -70,18 +127,25 @@ export const ObjectivesSelection = (props: ObjectivesProps) => {
             // This check handles some weirdness where Typeahead fires onChange when
             // there really isn't a change.
             if (updated.length !== selected.length) {
-              const updatedObjectives = updated.map((o) => o.id);
-              onEdit(updatedObjectives);
+              const updatedObjectives = updated
+                .map((o) => o.id)
+                .reduce((m: any, i) => {
+                  m[i] = true;
+                  return m;
+                }, {});
+
+              const ids = Object.keys(updatedObjectives).map((str) => parseInt(str));
+
+              onEdit(ids);
             }
           }
         }}
         options={props.objectives}
-        allowNew={true}
+        allowNew={allowNewObjective}
         newSelectionPrefix="Create new objective: "
-        selectHintOnEnter={true}
         labelKey="title"
         selected={asObjectives}
-        placeholder="Attach learning objectives..."
+        placeholder="Select learning objectives..."
       />
     </div>
   );

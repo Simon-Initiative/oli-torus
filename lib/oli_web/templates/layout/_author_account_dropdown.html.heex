@@ -1,0 +1,27 @@
+<nav class="navbar p-0 small">
+  <div class="nav-item dropdown form-inline my-2 my-lg-0">
+    <a class="user nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <div class="block lg:inline-block lg:mt-0 text-grey-darkest no-underline hover:underline mr-4">
+        <div class="username"><%= @current_author.name %></div>
+        <div class={"role text-right #{author_role_color(@current_author)}"}><%= author_role_text @current_author %></div>
+      </div>
+      <div class="user-icon"><%= author_icon(assigns) %></div>
+    </a>
+
+    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+      <%= link "Edit Account", to: Routes.live_path(@conn, OliWeb.Workspace.AccountDetailsLive), class: "dropdown-item btn" %>
+      <div class="dropdown-item no-hover">
+        Dark Mode
+        <%= ReactPhoenix.ClientSide.react_component("Components.DarkModeSelector", %{showLabels: false}) %>
+      </div>
+      <div class="dropdown-item no-hover">
+        Timezone
+        <br>
+        <OliWeb.Common.SelectTimezone.render conn={@conn}/>
+      </div>
+      <div class="dropdown-divider"></div>
+
+      <%= link "Sign out", to: Routes.authoring_session_path(@conn, :signout, type: :author), method: :delete, id: "signout-link", class: "dropdown-item btn" %>
+    </div>
+  </div>
+</nav>

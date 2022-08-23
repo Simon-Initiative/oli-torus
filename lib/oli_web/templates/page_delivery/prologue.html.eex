@@ -1,7 +1,7 @@
 <% prologue_class = "jumbotron prologue " <> if @allow_attempt?, do: "allow-attempt", else: "" %>
 <div class="<%= prologue_class %>">
   <h3 class="display-4"><%= @title %></h3>
-  <p class="lead" style="color: #c0392b;">This is a <strong>graded assessment</strong></p>
+  <p class="lead" style="color: #c0392b;">This is a <strong>scored</strong> page</p>
 
   <%= if has_submitted_attempt?(Map.get(@summary.access_map, @resource_id)) do %>
     <h4 class="mb-2">
@@ -14,16 +14,21 @@
   <div class="mb-2">
     <h5 class="mb-0">
       <%= link to: Routes.page_delivery_path(@conn, :review_attempt, @section_slug, @slug, resource_attempt.attempt_guid) do %>
-      <span>Attempt <%= resource_attempt.attempt_number %> of <%= @max_attempts %></span>
+
+      <%= if @max_attempts == 0 do %>
+        <span>Attempt <%= resource_attempt.attempt_number %></span>
+        <% else %>
+        <span>Attempt <%= resource_attempt.attempt_number %> of <%= @max_attempts %></span>
+        <% end %>
       <% end %>
     </h5>
     <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
-      <div><%= date(resource_attempt.inserted_at, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= date(resource_attempt.date_evaluated, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :date_evaluated, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
@@ -31,7 +36,7 @@
     </div>
     <div class="row">
       <div class="col-sm-3">Points:</div>
-      <div><%= resource_attempt.score %> out of <%= resource_attempt.out_of %> </div>
+      <div><%= :erlang.float_to_binary(resource_attempt.score, [:compact, {:decimals, 2}]) %> out of <%= :erlang.float_to_binary(resource_attempt.out_of, [:compact, {:decimals, 2}]) %> </div>
     </div>
   </div>
   <% end %>

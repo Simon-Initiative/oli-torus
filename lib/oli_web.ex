@@ -139,8 +139,9 @@ defmodule OliWeb do
       import Oli.Branding
       import Oli.Utils.SchemaResolver, only: [schemas: 0]
 
-
       alias OliWeb.Router.Helpers, as: Routes
+
+      import ReactPhoenix.ClientSide
     end
   end
 

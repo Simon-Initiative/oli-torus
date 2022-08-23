@@ -28,7 +28,7 @@ const WebpageCreation = (props: WebpageCreationProps) => {
             props.onChange(e.target.value);
             setSrc(e.target.value);
           }}
-          onKeyPress={(e) => Settings.onEnterApply(e, () => props.onEdit(src))}
+          onKeyPress={(e: any) => Settings.onEnterApply(e, () => props.onEdit(src))}
           className="form-control mr-sm-2"
         />
         <div className="mb-2">

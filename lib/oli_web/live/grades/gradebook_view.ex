@@ -27,6 +27,7 @@ defmodule OliWeb.Grades.GradebookView do
   data offset, :integer, default: 0
   data limit, :integer, default: @limit
   data options, :any
+  data show_all_links, :boolean, default: false
 
   def set_breadcrumbs(type, section) do
     type
@@ -50,6 +51,14 @@ defmodule OliWeb.Grades.GradebookView do
         Mount.handle_error(socket, {:error, e})
 
       {type, _, section} ->
+        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
+
+        graded_pages =
+          hierarchy
+          |> Oli.Delivery.Hierarchy.flatten()
+          |> Enum.filter(fn node -> node.revision.graded end)
+          |> Enum.map(fn node -> node.revision end)
+
         enrollments =
           Sections.browse_enrollments(
             section,
@@ -60,18 +69,16 @@ defmodule OliWeb.Grades.GradebookView do
 
         total_count = determine_total(enrollments)
 
-        hierarchy = Oli.Publishing.DeliveryResolver.full_hierarchy(section.slug)
-
-        graded_pages =
-          hierarchy
-          |> Oli.Delivery.Hierarchy.flatten()
-          |> Enum.filter(fn node -> node.revision.graded end)
-          |> Enum.map(fn node -> node.revision end)
-
         resource_accesses = fetch_resource_accesses(enrollments, section)
 
         {:ok, table_model} =
-          GradebookTableModel.new(enrollments, graded_pages, resource_accesses, section)
+          GradebookTableModel.new(
+            enrollments,
+            graded_pages,
+            resource_accesses,
+            section,
+            false
+          )
 
         {:ok,
          assign(socket,
@@ -98,7 +105,7 @@ defmodule OliWeb.Grades.GradebookView do
     student_ids = Enum.map(enrollments, fn user -> user.id end)
 
     Oli.Delivery.Attempts.Core.get_graded_resource_access_for_context(
-      section.slug,
+      section.id,
       student_ids
     )
   end
@@ -111,6 +118,7 @@ defmodule OliWeb.Grades.GradebookView do
       )
 
     offset = get_int_param(params, "offset", 0)
+    show_all_links = get_boolean_param(params, "show_all_links", false)
 
     options = %EnrollmentBrowseOptions{
       text_search: get_param(params, "text_search", ""),
@@ -135,7 +143,8 @@ defmodule OliWeb.Grades.GradebookView do
         enrollments,
         socket.assigns.graded_pages,
         resource_accesses,
-        socket.assigns.section
+        socket.assigns.section,
+        show_all_links
       )
 
     total_count = determine_total(enrollments)
@@ -146,6 +155,7 @@ defmodule OliWeb.Grades.GradebookView do
        offset: offset,
        table_model: table_model,
        total_count: total_count,
+       show_all_links: show_all_links,
        options: options
      )}
   end
@@ -154,7 +164,16 @@ defmodule OliWeb.Grades.GradebookView do
     ~F"""
     <div>
 
-      <TextSearch id="text-search"/>
+      <div class="d-flex justify-content-between">
+        <TextSearch id="text-search"/>
+        <div class="form-check mt-2">
+          <input type="checkbox" id="toggle_show_all_links" class="form-check-input" checked={@show_all_links} phx-hook="CheckboxListener" />
+          <label for="toggle_show_all_links" class="form-check-label">
+            <div>Shows links for all gradebook entries</div>
+            <small class="text-muted">Allows access to pages that students have not finished or started</small>
+          </label>
+        </div>
+      </div>
 
       <div class="mb-3"/>
 
@@ -188,6 +207,10 @@ defmodule OliWeb.Grades.GradebookView do
          ),
        replace: true
      )}
+  end
+
+  def handle_event("change", %{"id" => "toggle_show_all_links", "checked" => checked}, socket) do
+    patch_with(socket, %{show_all_links: checked})
   end
 
   def handle_event(event, params, socket) do

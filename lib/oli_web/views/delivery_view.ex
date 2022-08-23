@@ -2,6 +2,8 @@ defmodule OliWeb.DeliveryView do
   use OliWeb, :view
   use Phoenix.Component
 
+  import OliWeb.Common.SourceImage
+
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Section
   alias Oli.Accounts.User

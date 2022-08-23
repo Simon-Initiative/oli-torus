@@ -210,7 +210,7 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
     ];
     const notifications = notificationsHandled.map((notificationType: NotificationType) => {
       const handler = (payload: any) => {
-        console.log(`${notificationType.toString()} notification handled [Nav Button]`, payload);
+        /* console.log(`${notificationType.toString()} notification handled [Nav Button]`, payload); */
         switch (notificationType) {
           case NotificationType.CHECK_STARTED:
             // nothing to do
@@ -337,6 +337,10 @@ const NavigationButton: React.FC<PartComponentProps<NavButtonModel>> = (props) =
               const sTransparent = changes[`stage.${id}.transparent`];
               if (sTransparent !== undefined) {
                 setButtonTransparent(sTransparent);
+              }
+
+              if (payload.mode === contexts.REVIEW) {
+                setButtonEnabled(false);
               }
             }
             break;

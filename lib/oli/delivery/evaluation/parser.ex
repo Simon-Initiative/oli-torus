@@ -32,14 +32,28 @@ defmodule Oli.Delivery.Evaluation.Parser do
   op_gt = ascii_char([?>]) |> optional(string(" ")) |> replace(:gt) |> label(">")
   op_eq = ascii_char([?=]) |> optional(string(" ")) |> replace(:eq) |> label("=")
   op_like = string("like") |> optional(string(" ")) |> replace(:like) |> label("like")
+  op_equals = string("equals") |> optional(string(" ")) |> replace(:equals) |> label("equals")
+
   op_contains =
     string("contains") |> optional(string(" ")) |> replace(:contains) |> label("contains")
+
+  escaped =
+    ignore(ascii_char([?\\]))
+    |> ascii_char([?\\, ?{, ?}])
+
+  non_escaped = utf8_char([{:not, ?\\}])
+
+  character =
+    choice([
+      escaped,
+      non_escaped
+    ])
 
   defcombinatorp(
     :string_until_rbrace,
     repeat(
       lookahead_not(ascii_char([?}]))
-      |> utf8_char([])
+      |> concat(character)
     )
     |> reduce({List, :to_string, []})
   )
@@ -64,7 +78,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
   defcombinatorp(:component, choice([attempt_number_, input_, input_length_]))
 
   # <operator> :== "<" | ">" | "=" | "like" | "contains"
-  defcombinatorp(:operator, choice([op_lt, op_gt, op_eq, op_like, op_contains]))
+  defcombinatorp(:operator, choice([op_lt, op_gt, op_eq, op_like, op_contains, op_equals]))
 
   # <criterion> :== <component> <operator> <check>
   defcombinatorp(

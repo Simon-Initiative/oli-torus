@@ -19,20 +19,18 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
-import {
-  AuthoringElement,
-  AuthoringElementProps,
-  AuthoringElementProvider,
-  useAuthoringElementContext,
-} from '../AuthoringElement';
+import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
+import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
 import { MCActions as Actions } from '../common/authoring/actions/multipleChoiceActions';
+import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
+import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
 
 const store = configureStore();
 
 const MultipleChoice: React.FC = () => {
-  const { dispatch, model } = useAuthoringElementContext<MCSchema>();
+  const { dispatch, model, editMode } = useAuthoringElementContext<MCSchema>();
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -73,6 +71,13 @@ const MultipleChoice: React.FC = () => {
 
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={DEFAULT_PART_ID} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Dynamic Variables">
+          <VariableEditorOrNot
+            editMode={editMode}
+            model={model}
+            onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
+          />
         </TabbedNavigation.Tab>
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>

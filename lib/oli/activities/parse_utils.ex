@@ -47,6 +47,9 @@ defmodule Oli.Activities.ParseUtils do
         case content do
           # :model -> former impl when selection was persisted
           # along with the model
+          %{"model" => model} ->
+            has_content?(model)
+
           %{model: model} ->
             has_content?(model)
 
@@ -88,7 +91,7 @@ defmodule Oli.Activities.ParseUtils do
       content: %{
         "model" => [
           %{"children" => [%{"text" => text}], "id" => uuid(), "type" => "p"}
-        ],
+        ]
       },
       id: uuid()
     }

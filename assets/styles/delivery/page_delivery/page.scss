@@ -39,10 +39,19 @@ h1.title {
   height: 50px;
 }
 
-#content {
+#page-content {
   width: 100%;
   flex: 1;
   margin-top: 20px;
+}
+
+.content {
+  max-width: 770px;
+  margin: 0 auto;
+
+  & > * {
+    margin-bottom: 1.5rem;
+  }
 }
 
 .selection {
@@ -87,17 +96,22 @@ h1.title {
     display: none;
   }
 
-  #content {
+  #page-content {
     margin-left: 0px;
   }
 }
 
 .rolled-up-objectives {
-  margin: 10px;
-  margin-top: 20px;
+  margin: 20px 10px;
+  padding: 16px;
+  background-color: $objectives-background;
+  color: $objectives-text;
+  border: 2px solid $objectives-border-color;
+  border-radius: 4px;
 
   .label {
     font-size: 1.2em;
+    font-weight: 600;
   }
   .title {
     font-size: 1.1em;
@@ -115,5 +129,11 @@ h1.title {
   /** images should scale to available width if larger than available width */
   img {
     max-width: 100%;
+  }
+}
+
+.paginated {
+  .elements > * {
+    display: none;
   }
 }

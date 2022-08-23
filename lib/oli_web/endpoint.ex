@@ -49,13 +49,22 @@ defmodule OliWeb.Endpoint do
   plug(Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    length: 20_000_000,
+    # 512mb is the max body size our file-upload client code can generate.
+    length: 512_000_000,
     json_decoder: Phoenix.json_library(),
     body_reader: {OliWeb.CacheBodyReader, :read_body, []}
   )
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
+
+  unless Mix.env() == :test do
+    plug(Oli.Plugs.SSL,
+      rewrite_on: [:x_forwarded_proto],
+      hsts: true,
+      log: false
+    )
+  end
 
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
@@ -64,7 +73,7 @@ defmodule OliWeb.Endpoint do
 
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:user))
   plug(Pow.Plug.Session, OliWeb.Pow.PowHelpers.get_pow_config(:author))
-  plug(PowPersistentSession.Plug.Cookie, persistent_session_cookie_key: "oli_persistent_session")
+  plug(PowPersistentSession.Plug.Cookie)
 
   plug(OliWeb.Router)
 end

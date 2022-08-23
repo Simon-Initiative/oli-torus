@@ -47,11 +47,18 @@ export const isEqual = (factValue: any, value: any): boolean => {
   }
   // for boolean values,  factValue comes as true and value comes as 'true'
   // and some factValue comes as 'true' and value comes as true
-  if (typeOfFactValue === 'boolean') {
-    return value.toString().toLowerCase() === 'true' ? true === factValue : false === factValue;
+
+  const stringifiedValue = value?.toString().toLowerCase();
+  if (
+    typeOfFactValue === 'boolean' &&
+    (stringifiedValue === 'true' || stringifiedValue === 'false')
+  ) {
+    return stringifiedValue === 'true' ? true === factValue : false === factValue;
   }
   if (typeOfValue === 'boolean') {
-    return factValue.toString().toLowerCase() === 'true' ? true === value : false === value;
+    return factValue.toString().toLowerCase() === 'true' || factValue > 0
+      ? true === value
+      : false === value;
   }
   if (typeOfValue === 'string' && (value === 'true' || value === 'false')) {
     return parseBoolean(value) === parseBoolean(factValue);
@@ -147,9 +154,16 @@ export const notEqualWithToleranceOperator = (factValue: any, value: any) => {
 
 export const notEqual = (factValue: any, value: any) => {
   const typeOfValue = typeof value;
+  const typeOfFactValue = typeof factValue;
   //the rules that check the actual numbers do NOT fire if the value is NaN or the text box isn't filled out.
   //so `is not 32.06` should not fire true if the number is a NaN.
-  if (typeOfValue === 'number' && Number.isNaN(factValue)) {
+  if (
+    (typeOfValue === 'number' || typeOfFactValue === 'number') &&
+    (factValue === undefined ||
+      value === undefined ||
+      Number.isNaN(factValue) ||
+      Number.isNaN(value))
+  ) {
     return false;
   }
   return !isEqual(factValue, value);

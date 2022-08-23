@@ -1,15 +1,26 @@
 import React from 'react';
 import { Choice, makeContent } from 'components/activities/types';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
-import './ChoicesAuthoring.scss';
 import { Draggable } from 'components/common/DraggableColumn';
 import { RichTextEditorConnected } from 'components/content/RichTextEditor';
 import { RemoveButtonConnected } from 'components/activities/common/authoring/removeButton/RemoveButton';
-import { toSimpleText } from 'components/editing/utils';
+import { toSimpleText } from 'components/editing/slateUtils';
 import { Descendant } from 'slate';
+import { classNames } from 'utils/classNames';
+
+import styles from './ChoicesAuthoring.modules.scss';
+
+const renderChoiceIcon = (icon: any, choice: any, index: any) =>
+  icon ? (
+    typeof icon === 'function' ? (
+      <div className={styles.choiceIcon}>{icon(choice, index)}</div>
+    ) : (
+      <div className={styles.choiceIcon}>{icon}</div>
+    )
+  ) : undefined;
 
 interface Props {
-  icon: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
+  icon?: React.ReactNode | ((choice: Choice, index: number) => React.ReactNode);
   choices: Choice[];
   addOne: () => void;
   setAll: (choices: Choice[]) => void;
@@ -34,9 +45,7 @@ export const Choices: React.FC<Props> = ({
             {(_choice, index) => (
               <>
                 <Draggable.DragIndicator />
-                <div className="choicesAuthoring__choiceIcon">
-                  {typeof icon === 'function' ? icon(choice, index) : icon}
-                </div>
+                {renderChoiceIcon(icon, choice, index)}
                 {simpleText ? (
                   <input
                     className="form-control"
@@ -54,7 +63,7 @@ export const Choices: React.FC<Props> = ({
                 )}
 
                 {choices.length > 1 && (
-                  <div className="choicesAuthoring__removeButtonContainer">
+                  <div className={styles.removeButtonContainer}>
                     <RemoveButtonConnected onClick={() => onRemove(choice.id)} />
                   </div>
                 )}
@@ -74,9 +83,9 @@ interface AddChoiceButtonProps {
 }
 const AddChoiceButton: React.FC<AddChoiceButtonProps> = ({ addOne }) => {
   return (
-    <div className="choicesAuthoring__addChoiceContainer">
+    <div className={styles.addChoiceContainer}>
       <AuthoringButtonConnected
-        className=".btn .btn-link .pl-0 choicesAuthoring__addChoiceButton"
+        className={classNames(styles.AddChoiceButton, 'btn btn-link pl-0')}
         action={addOne}
       >
         Add choice

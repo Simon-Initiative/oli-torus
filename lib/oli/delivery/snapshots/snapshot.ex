@@ -5,7 +5,8 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
   # A summary of part attempt history designed to power analytic queries
 
   schema "snapshots" do
-    # The page, activity and part that this snapshot pertains to
+    # The project, page, activity and part that this snapshot pertains to
+    belongs_to(:project, Oli.Authoring.Course.Project)
     belongs_to(:resource, Oli.Resources.Resource)
     belongs_to(:activity, Oli.Resources.Resource)
     field(:part_id, :string)
@@ -43,7 +44,7 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
     field(:score, :float)
     field(:out_of, :float)
 
-    # Count of the number of hints received during this attempt
+    # Count of the number of hints received
     field(:hints, :integer)
 
     timestamps(type: :utc_datetime)
@@ -53,6 +54,7 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
   def changeset(problem_step_rollup, attrs) do
     problem_step_rollup
     |> cast(attrs, [
+      :project_id,
       :resource_id,
       :activity_id,
       :part_id,
@@ -73,6 +75,7 @@ defmodule Oli.Delivery.Snapshots.Snapshot do
       :hints
     ])
     |> validate_required([
+      :project_id,
       :resource_id,
       :activity_id,
       :part_id,

@@ -1,5 +1,5 @@
 defmodule OliWeb.Products.DetailsView do
-  use Surface.LiveView
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
 
   alias Oli.Repo
   alias OliWeb.Common.Breadcrumb
@@ -8,22 +8,28 @@ defmodule OliWeb.Products.DetailsView do
   alias Oli.Delivery.Sections
   alias Oli.Delivery.Sections.Blueprint
   alias Oli.Branding
+  alias Oli.Inventories
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Confirm
   alias OliWeb.Sections.Mount
-  alias OliWeb.Products.Details.{Actions, Edit, Content}
+  alias OliWeb.Products.Details.{Actions, Edit, Content, ImageUpload}
+  alias Oli.Utils.S3Storage
 
-  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Course Product"})]
+  require Logger
+
+  data breadcrumbs, :any, default: [Breadcrumb.new(%{full_title: "Product Overview"})]
   data product, :any, default: nil
   data show_confirm, :boolean, default: false
   prop author, :any
   prop is_admin, :boolean
 
   def set_breadcrumbs(section),
-    do: [Breadcrumb.new(%{
-      full_title: section.title,
-      link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
-    })]
+    do: [
+      Breadcrumb.new(%{
+        full_title: section.title,
+        link: Routes.live_path(OliWeb.Endpoint, __MODULE__, section.slug)
+      })
+    ]
 
   def mount(
         %{"product_id" => product_slug},
@@ -41,15 +47,24 @@ defmodule OliWeb.Products.DetailsView do
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
 
+        publishers = Inventories.list_publishers()
+
         {:ok,
          assign(socket,
            available_brands: available_brands,
+           publishers: publishers,
            updates: Sections.check_for_available_publication_updates(product),
            author: author,
            product: product,
            is_admin: Oli.Accounts.is_admin?(author),
            changeset: Section.changeset(product, %{}),
            title: "Edit Product"
+         )
+         |> Phoenix.LiveView.allow_upload(:cover_image,
+           accept: ~w(.jpg .jpeg .png),
+           max_entries: 1,
+           auto_upload: true,
+           max_file_size: 5_000_000
          )}
     end
   end
@@ -66,7 +81,7 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-md-8">
-          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} is_admin={@is_admin}/>
+          <Edit product={@product} changeset={@changeset} available_brands={@available_brands} publishers={@publishers} is_admin={@is_admin}/>
         </div>
       </div>
       <div class="row py-5 border-bottom">
@@ -77,9 +92,22 @@ defmodule OliWeb.Products.DetailsView do
           </div>
         </div>
         <div class="col-md-8">
-          <Content product={@product} updates={@updates}/>
+          <Content product={@product} changeset={@changeset} save="save" updates={@updates}/>
         </div>
       </div>
+
+      <div class="row py-5 border-bottom">
+        <div class="col-md-4">
+          <h4>Cover Image</h4>
+          <div class="text-muted">
+            Manage the cover image for this product. Max file size is 5 MB.
+          </div>
+        </div>
+        <div class="col-md-8">
+          <ImageUpload product={@product} uploads={@uploads} changeset={@changeset} upload_event="update_image" change="change" cancel_upload="cancel_upload" updates={@updates}/>
+        </div>
+      </div>
+
       <div class="row py-5">
         <div class="col-md-4">
           <h4>Actions</h4>
@@ -140,5 +168,50 @@ defmodule OliWeb.Products.DetailsView do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, changeset: changeset)}
     end
+  end
+
+  def handle_event("validate_image", _, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event("update_image", _, socket) do
+    bucket_name = Application.fetch_env!(:oli, :s3_media_bucket_name)
+
+    uploaded_files =
+      consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
+
+        temp_file_path = meta.path
+        section_path = "sections/#{socket.assigns.product.slug}"
+        image_file_name = "#{entry.uuid}.#{ext(entry)}"
+        upload_path = "#{section_path}/#{image_file_name}"
+
+        S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
+      end)
+
+    with {:ok, uploaded_path} <- Enum.at(uploaded_files, 0),
+      {:ok, section} <- Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path})
+      do
+        socket = put_flash(socket, :info, "Product changes saved")
+        {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
+      else
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          socket = put_flash(socket, :info, "Couldn't update product image")
+          {:noreply, assign(socket, changeset: changeset)}
+
+        {:error, payload} ->
+          Logger.error("Error uploading product image to S3: #{inspect(payload)}")
+          socket = put_flash(socket, :info, "Couldn't update product image")
+          {:noreply, socket}
+    end
+  end
+
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :cover_image, ref)}
+  end
+
+  defp ext(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    ext
   end
 end

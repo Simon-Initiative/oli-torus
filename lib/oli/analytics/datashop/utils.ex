@@ -33,10 +33,9 @@ defmodule Oli.Analytics.Datashop.Utils do
     cdata("Attempt student input")
   end
 
-  def hint_text(part, hint_id) do
+  def hint_text(hint_content) do
     try do
-      part["hints"]
-      |> Enum.find(&(&1["id"] == hint_id))
+      hint_content
       |> Map.get("content")
       |> parse_html_content
     rescue

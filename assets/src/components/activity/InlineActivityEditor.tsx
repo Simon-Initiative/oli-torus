@@ -8,18 +8,25 @@ import { Tag } from 'data/content/tags';
 import { ResourceId } from 'data/types';
 import React from 'react';
 import { valueOr } from 'utils/common';
-import { TitleBar } from '../content/TitleBar';
+import { TextEditor } from 'components/TextEditor';
+import { DeleteButton } from 'components/misc/DeleteButton';
+import styles from './InlineActivityEditor.modules.scss';
+import { classNames } from 'utils/classNames';
 
 export interface ActivityEditorProps extends ActivityEditContext {
-  onEdit: (state: EditorUpdate) => void;
-  onPostUndoable: (undoable: Undoable) => void;
-  onRegisterNewObjective: (o: Objective) => void;
-  onRegisterNewTag: (o: Tag) => void;
   editMode: boolean;
   projectSlug: string;
   allObjectives: Objective[];
   allTags: Tag[];
   banked: boolean;
+  canRemove: boolean;
+  contentBreaksExist: boolean;
+  customToolbarItems?: React.ComponentType;
+  onEdit: (state: EditorUpdate) => void;
+  onPostUndoable: (undoable: Undoable) => void;
+  onRegisterNewObjective: (o: Objective) => void;
+  onRegisterNewTag: (o: Tag) => void;
+  onRemove: () => void;
 }
 
 // This is the state of our activity editing that is undoable
@@ -128,7 +135,7 @@ export class InlineActivityEditor extends React.Component<
   }
 
   render() {
-    const { authoringElement } = this.props;
+    const { authoringElement, contentBreaksExist } = this.props;
 
     const onTitleEdit = (title: string) => {
       this.update({ title });
@@ -139,7 +146,9 @@ export class InlineActivityEditor extends React.Component<
       model: JSON.stringify(this.props.model),
       editmode: new Boolean(this.props.editMode).toString(),
       projectslug: this.props.projectSlug,
+      authoringcontext: JSON.stringify({ contentBreaksExist }),
     };
+
     const parts = valueOr(this.props.model.authoring.parts, []);
     const partIds = parts.map((p: any) => p.id);
 
@@ -161,14 +170,26 @@ export class InlineActivityEditor extends React.Component<
 
     return (
       <div className="col-12">
-        <div className="activity-editor">
-          <TitleBar
-            title={this.props.title}
-            onTitleEdit={onTitleEdit}
-            editMode={this.props.editMode}
-          >
-            <div />
-          </TitleBar>
+        <div className={classNames(styles.inlineActivityEditor, 'activity-editor')}>
+          <div className="d-flex align-items-baseline flex-grow-1 mr-2">
+            <TextEditor
+              onEdit={onTitleEdit}
+              model={this.props.title}
+              showAffordances={true}
+              size="large"
+              allowEmptyContents={false}
+              editMode={this.props.editMode}
+            />
+            <div className="flex-grow-1"></div>
+            <div className={styles.toolbar}>
+              {this.props.customToolbarItems && <this.props.customToolbarItems />}
+              <DeleteButton
+                className="ml-2"
+                editMode={this.props.editMode && this.props.canRemove}
+                onClick={this.props.onRemove}
+              />
+            </div>
+          </div>
           <ActivityLOs
             partIds={partIds}
             editMode={this.props.editMode}

@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import chroma from 'chroma-js';
 import { ActivityState, PartResponse, StudentResponse } from 'components/activities/types';
-import React, { CSSProperties, useCallback, useEffect, useState } from 'react';
+import React, { CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   ApplyStateOperation,
@@ -27,11 +27,15 @@ import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
 } from '../../store/features/groups/selectors/deck';
-import { selectEnableHistory, selectUserName, setScore } from '../../store/features/page/slice';
+import {
+  selectEnableHistory,
+  selectPageSlug,
+  selectUserName,
+  setScore,
+} from '../../store/features/page/slice';
 import { LayoutProps } from '../layouts';
 import DeckLayoutFooter from './DeckLayoutFooter';
 import DeckLayoutHeader from './DeckLayoutHeader';
-import { parseArray, parseNumString } from 'utils/common';
 import { getLocalizedCurrentStateSnapshot } from 'apps/delivery/store/features/adaptivity/actions/getLocalizedCurrentStateSnapshot';
 
 const InjectedStyles: React.FC<{ css?: string }> = (props) => {
@@ -50,14 +54,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   const fieldRef = React.useRef<HTMLInputElement>(null);
   const currentActivityTree = useSelector(selectCurrentActivityTree);
   const currentActivityAttemptTree = useSelector(selectCurrentActivityTreeAttemptState);
+  const currentLesson = useSelector(selectPageSlug);
   const currentUserName = useSelector(selectUserName);
   const historyModeNavigation = useSelector(selectHistoryNavigationActivity);
   const isEnd = useSelector(selectLessonEnd);
-  const defaultClasses: any[] = ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'];
+  const defaultClasses: any[] = useMemo(
+    () => ['lesson-loaded', previewMode ? 'previewView' : 'lessonView'],
+    [previewMode],
+  );
   const [pageClasses, setPageClasses] = useState<string[]>([]);
   const [activityClasses, setActivityClasses] = useState<string[]>([...defaultClasses]);
   const [lessonStyles, setLessonStyles] = useState<any>({});
-  const enableHistory = useSelector(selectEnableHistory);
+
   // Background
   const backgroundClasses = ['background'];
   const backgroundStyles: CSSProperties = {};
@@ -67,7 +75,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
   if (pageContent?.custom?.backgroundImageScaleContent) {
     backgroundClasses.push('background-scaled');
   }
-  const getCustomClassAncestry = () => {
+  const getCustomClassAncestry = useCallback(() => {
     let className = '';
     if (currentActivityTree) {
       currentActivityTree.forEach((activity) => {
@@ -78,7 +86,8 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     }
 
     return className;
-  };
+  }, [currentActivityTree]);
+
   useEffect(() => {
     // clear body classes on init for a clean slate
     document.body.className = '';
@@ -112,11 +121,16 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       // apply a custom *janus* script if defined
       // this is for user defined functions (also legacy)
       // TODO: something if there are errors
-      const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
-      /* console.log('Lesson Custom Script: ', {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const csResult = evalScript(pageContent?.customScript, defaultGlobalEnv);
+        /* console.log('Lesson Custom Script: ', {
         script: pageContent?.customScript,
         csResult,
       }); */
+      } catch (e) {
+        console.error('Error in custom script: ', e);
+      }
     }
 
     if (Array.isArray(pageContent?.custom?.variables)) {
@@ -141,7 +155,11 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         .filter((s: any) => s);
       // execute each sequentially in case there are errors (missing functions)
       statements.forEach((statement) => {
-        evalScript(statement, defaultGlobalEnv);
+        try {
+          evalScript(statement, defaultGlobalEnv);
+        } catch (e) {
+          console.error('Error found processing variables: ', e);
+        }
       });
     }
   }, [pageContent]);
@@ -150,27 +168,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     if (!currentActivityTree || currentActivityTree.length === 0) {
       return;
     }
-    // Need to clear out snapshot for the current activity before we send the init trap state.
-    // this is needed for use cases where, when we re-visit an activity screen, it needs to restart fresh otherwise
-    // some screens go in loop
-    // Don't do anything id enableHistory/historyModeNavigation is ON
 
-    if (!historyModeNavigation && currentActivityTree) {
-      const globalSnapshot = getEnvState(defaultGlobalEnv);
-      // this is firing after some initial part saves and wiping out what we have just set
-      // maybe we don't need to write the local versions ever?? instead just whenever anything
-      // is asking for it we can just give the localized snapshot?
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-
-      const idsToBeRemoved: any[] = Object.keys(globalSnapshot).filter(
-        (key: string) =>
-          key.indexOf('stage.') === 0 || key.indexOf(`${currentActivity.id}|stage.`) === 0,
-      ); /*
-      console.log('REMOVING STATE VALUES: ', idsToBeRemoved); */
-      if (idsToBeRemoved.length) {
-        removeStateValues(defaultGlobalEnv, idsToBeRemoved);
-      }
-    }
     let timeout: NodeJS.Timeout;
     let resolve;
     let reject;
@@ -196,15 +194,21 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     });
     sharedActivityPromise = { promise, resolve, reject };
 
+    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
     currentActivityTree.forEach((activity) => {
-      // layers already might be there
-      // TODO: do I need to reset ever???
-      if (!sharedActivityInit.has(activity.id)) {
+      // need to leave the layers as already initialized assuming they are already initialized
+      // but the current screen should always be false, sometimes we come back to a screen as a new initialization
+      if (!sharedActivityInit.has(activity.id) || activity.id === currentActivity.id) {
+        /* console.log(
+          '[AllActivitiesInit] SETTING INIT FALSE FOR: ',
+          activity.id,
+          currentActivity.id,
+        ); */
         sharedActivityInit.set(activity.id, false);
       }
     });
 
-    const currentActivity = currentActivityTree[currentActivityTree.length - 1];
     if (!currentActivity) {
       return;
     }
@@ -239,8 +243,18 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return () => {
       clearTimeout(timeout);
       sharedActivityPromise = null;
+      if (historyModeNavigation) {
+        console.log('[AllActivitiesInit] historyModeNavigation is ON, clearing sharedActivityInit');
+        sharedActivityInit.clear();
+      }
     };
-  }, [currentActivityTree]);
+  }, [
+    currentActivityTree,
+    defaultClasses,
+    getCustomClassAncestry,
+    historyModeNavigation,
+    pageClasses,
+  ]);
 
   useEffect(() => {
     // clear the body classes in prep for the real classes
@@ -260,35 +274,47 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
       console.error('[initCurrentActivity] bad tree??', currentActivityTree);
       return;
     }
-    const resolve = await dispatch(initializeActivity(currentActivity.resourceId));
-  }, [currentActivityTree]);
+    await dispatch(initializeActivity(currentActivity.resourceId));
+  }, [currentActivityTree, dispatch]);
 
-  const handleActivityReady = async (activityId: string | number, attemptGuid: string) => {
-    sharedActivityInit.set(activityId, true);
-    // BS: this is init state phase (mostly) and it needs to run AFTER every part
-    // has already saved its "default" values or else the init state rules will just
-    // get overwritten by them saving the default value
-    //
-    /* console.log('DECK HANDLE READY', {
-      activityId,
-      attemptGuid,
-      currentActivityTree,
-      sharedActivityInit: Array.from(sharedActivityInit.entries()),
-    }); */
-    if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
-      await initCurrentActivity();
-      const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-      sharedActivityPromise.resolve({
-        snapshot: getLocalizedStateSnapshot(currentActivityIds),
-        context: {
-          currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
-          mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
-        },
-      });
-      dispatch(setInitPhaseComplete(true));
-    }
-    return sharedActivityPromise.promise;
-  };
+  const handleActivityReady = useCallback(
+    async (activityId: string | number, attemptGuid: string) => {
+      sharedActivityInit.set(activityId, true);
+      // BS: this is init state phase (mostly) and it needs to run AFTER every part
+      // has already saved its "default" values or else the init state rules will just
+      // get overwritten by them saving the default value
+      //
+      /* console.log('DECK HANDLE READY', {
+        activityId,
+        attemptGuid,
+        currentActivityTree,
+        sharedActivityInit: Array.from(sharedActivityInit.entries()),
+      }); */
+
+      if (currentActivityTree?.every((activity) => sharedActivityInit.get(activity.id) === true)) {
+        if (!historyModeNavigation) {
+          await initCurrentActivity();
+        }
+        const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+        const snapshot = getLocalizedStateSnapshot(currentActivityIds);
+        const context = {
+          snapshot,
+          context: {
+            currentLesson,
+            currentActivity: currentActivityTree[currentActivityTree.length - 1].id,
+            mode: historyModeNavigation ? contexts.REVIEW : contexts.VIEWER,
+          },
+        };
+
+        console.log('DECK HANDLE READY (ALL ACTIVITIES DONE INIT)', { context });
+
+        sharedActivityPromise.resolve(context);
+        dispatch(setInitPhaseComplete(true));
+      }
+      return sharedActivityPromise.promise;
+    },
+    [currentActivityTree, currentLesson, dispatch, historyModeNavigation, initCurrentActivity],
+  );
 
   const handleActivitySave = async (
     activityId: string | number,
@@ -310,84 +336,90 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return true;
   };
 
-  const handleActivitySavePart = async (
-    activityId: string | number,
-    attemptGuid: string,
-    partAttemptGuid: string,
-    response: StudentResponse,
-  ) => {
-    /* console.log('DECK HANDLE SAVE PART', {
+  const handleActivitySavePart = useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      partAttemptGuid: string,
+      response: StudentResponse,
+    ) => {
+      /* console.log('DECK HANDLE SAVE PART', {
       activityId,
       attemptGuid,
       partAttemptGuid,
       response,
       currentActivityTree,
     }); */
-    const statePrefix = `${activityId}|stage`;
-    const responseMap = response.input.reduce(
-      (result: { [x: string]: any }, item: { key: string; path: string }) => {
-        result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
-        return result;
-      },
-      {},
-    );
+      const statePrefix = `${activityId}|stage`;
+      const responseMap = response.input.reduce(
+        (result: { [x: string]: any }, item: { key: string; path: string }) => {
+          result[item.key] = { ...item, path: `${statePrefix}.${item.path}` };
+          return result;
+        },
+        {},
+      );
 
-    const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
-    if (!currentActivityTree || !currentActivityTree.length) {
-      // throw instead?
-      return { result: 'error' };
-    }
-
-    //if user navigated from history, don't save anything and just return the saved state
-    if (historyModeNavigation) {
-      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
-    }
-
-    if (response?.input?.length) {
-      let result;
-      // in addition to the current part attempt, need to lookup in the tree
-      // if this part is an inherited part and also write to the child attempt records
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      if (currentActivity.id !== activityId) {
-        // this means that the part is inherted (we are a layer or parent screen)
-        // so we need to update all children in the tree with this part response as well
-        result = await dispatch(
-          savePartStateToTree({
-            attemptGuid,
-            partAttemptGuid,
-            response: responseMap,
-            activityTree: currentActivityTree,
-          }),
-        );
-      } else {
-        result = await dispatch(
-          savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
-        );
+      const currentActivityIds = (currentActivityTree || []).map((a) => a.id);
+      if (!currentActivityTree || !currentActivityTree.length) {
+        // throw instead?
+        return { result: 'error' };
       }
-      return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
-    } else {
-      return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
-    }
-  };
 
-  const handleActivitySubmitPart = async (
-    activityId: string | number,
-    attemptGuid: string,
-    partAttemptGuid: string,
-    response: StudentResponse,
-  ) => {
-    // save before submitting
-    const { result, snapshot } = await handleActivitySavePart(
-      activityId,
-      attemptGuid,
-      partAttemptGuid,
-      response,
-    );
+      //if user navigated from history, don't save anything and just return the saved state
+      if (historyModeNavigation) {
+        return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+      }
 
-    dispatch(triggerCheck({ activityId: activityId.toString() }));
+      if (response?.input?.length) {
+        let result;
+        // in addition to the current part attempt, need to lookup in the tree
+        // if this part is an inherited part and also write to the child attempt records
+        const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+        if (currentActivity.id !== activityId) {
+          // this means that the part is inherted (we are a layer or parent screen)
+          // so we need to update all children in the tree with this part response as well
+          result = await dispatch(
+            savePartStateToTree({
+              attemptGuid,
+              partAttemptGuid,
+              response: responseMap,
+              activityTree: currentActivityTree,
+            }),
+          );
+        } else {
+          result = await dispatch(
+            savePartState({ attemptGuid, partAttemptGuid, response: responseMap }),
+          );
+        }
+        return { result, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+      } else {
+        return { result: null, snapshot: getLocalizedStateSnapshot(currentActivityIds) };
+      }
+    },
+    [currentActivityTree, dispatch, historyModeNavigation],
+  );
 
-    return { result, snapshot };
-  };
+  const handleActivitySubmitPart = useCallback(
+    async (
+      activityId: string | number,
+      attemptGuid: string,
+      partAttemptGuid: string,
+      response: StudentResponse,
+    ) => {
+      // save before submitting
+      const { result, snapshot } = await handleActivitySavePart(
+        activityId,
+        attemptGuid,
+        partAttemptGuid,
+        response,
+      );
+
+      dispatch(triggerCheck({ activityId: activityId.toString() }));
+
+      return { result, snapshot };
+    },
+    [dispatch, handleActivitySavePart],
+  );
 
   const handleActivityRequestLatestState = useCallback(async () => {
     const sResult = await dispatch(getLocalizedCurrentStateSnapshot());
@@ -397,14 +429,49 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     return {
       snapshot,
     };
-  }, [currentActivityTree]);
+  }, [dispatch]);
+
+  const [localActivityTree, setLocalActivityTree] = useState<any>(currentActivityTree);
+
+  useEffect(() => {
+    setLocalActivityTree((currentLocalTree: any) => {
+      if (!currentActivityTree) {
+        return null;
+      }
+
+      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
+
+      if (!currentLocalTree) {
+        return currentActivityTree
+          ? currentActivityTree.map((activity) => ({
+              ...activity,
+              activityKey: historyModeNavigation
+                ? `${activity.id}_${currentActivity.id}_history`
+                : activity.id,
+            }))
+          : null;
+      }
+
+      const currentLocalActivity = currentLocalTree[currentLocalTree.length - 1];
+      // if the current and current local are the same, then we don't need to do anything
+      if (currentLocalActivity.id === currentActivity.id) {
+        return currentLocalTree;
+      }
+      return currentActivityTree.map((activity) => ({
+        ...activity,
+        activityKey: historyModeNavigation
+          ? `${activity.id}_${currentActivity.id}_history`
+          : activity.id,
+      }));
+    });
+  }, [currentActivityTree, historyModeNavigation]);
 
   const renderActivities = useCallback(() => {
-    if (!currentActivityTree || !currentActivityTree.length) {
+    if (!localActivityTree || !localActivityTree.length) {
       return <div>loading...</div>;
     }
 
-    const actualCurrentActivity = currentActivityTree[currentActivityTree.length - 1];
+    const actualCurrentActivity = localActivityTree[localActivityTree.length - 1];
     const config = actualCurrentActivity.content.custom;
     const styles: CSSProperties = {
       width: config?.width || lessonStyles.width,
@@ -450,22 +517,22 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     // attempts are being constantly updated, if we are not careful it will re-render the activity
     // too many times. instead we want to only send the "initial" attempt state
     // activities should then keep track of updates internally and if needed request updates
-    const activities = currentActivityTree.map((activity) => {
+    const activities = localActivityTree.map((activity: any) => {
       const attempt = currentActivityAttemptTree?.find(
         (a) => a?.activityId === activity.resourceId,
       );
       if (!attempt) {
-        console.error('could not find attempt state for ', activity);
+        // this will happen but I think it should be OK because it will call this method again
+        // when the attempt tree is updated, and next time it will have the state
+        /* console.warn('could not find attempt state for ', activity.id); */
         return;
+      } else {
+        /* console.log('found attempt state for ', activity.id); */
       }
-      const currentActivity = currentActivityTree[currentActivityTree.length - 1];
-      const activityKey = historyModeNavigation
-        ? `${activity.id}_${currentActivity.id}_history`
-        : activity.id;
 
       return (
         <ActivityRenderer
-          key={activityKey}
+          key={activity.activityKey}
           activity={activity}
           attempt={attempt as ActivityState}
           onActivitySave={handleActivitySave}
@@ -483,7 +550,15 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
         {activities}
       </div>
     );
-  }, [currentActivityTree, lessonStyles]);
+  }, [
+    currentActivityAttemptTree,
+    localActivityTree,
+    handleActivityReady,
+    handleActivityRequestLatestState,
+    handleActivitySavePart,
+    handleActivitySubmitPart,
+    lessonStyles.width,
+  ]);
 
   useEffect(() => {
     if (!isEnd) {
@@ -505,7 +580,7 @@ const DeckLayoutView: React.FC<LayoutProps> = ({ pageTitle, pageContent, preview
     const curScore = getValue('session.currentQuestionScore', defaultGlobalEnv) || 0;
     dispatch(setScore({ score: tutScore + curScore }));
     // we shouldn't have to send this to the server, it should already be calculated there
-  }, [isEnd]);
+  }, [dispatch, isEnd]);
 
   return (
     <div ref={fieldRef} className={activityClasses.join(' ')}>

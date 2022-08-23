@@ -1,7 +1,14 @@
 @import 'bootstrap';
 
-.content,
-.activity-editor {
+span.term {
+  font-weight: bold;
+  color: #709e30;
+  font-style: italic;
+}
+
+.structured-content,
+.activity-editor,
+.content {
   blockquote {
     margin-top: 12px;
     font-family: Georgia, Cambria, 'Times New Roman', Times, serif;
@@ -49,6 +56,14 @@
 
     caption {
       @extend .text-center;
+    }
+  }
+
+  .table-borderless {
+    border: 0;
+    tr,
+    td {
+      border: 0;
     }
   }
 
@@ -119,6 +134,38 @@
     @extend .embed-responsive-item;
   }
 
+  .callout-inline,
+  .formula-inline {
+    display: inline-block;
+    background-color: darken($body-bg, 5%);
+    margin: 0px 0.5em;
+    padding: 2px 0.5em;
+    vertical-align: middle;
+    mjx-container[display='true'] {
+      pointer-events: none;
+      margin: 0px !important;
+    }
+  }
+
+  .callout-block,
+  .formula {
+    display: block;
+    background-color: darken($body-bg, 5%);
+    text-align: center;
+    margin: 8px;
+    padding: 12px;
+
+    blockquote,
+    ol,
+    ul,
+    .monaco-editor {
+      text-align: left;
+    }
+    mjx-container[display='true'] {
+      pointer-events: none;
+    }
+  }
+
   .figure-wrapper {
     display: flex;
     justify-content: center;
@@ -134,6 +181,10 @@
         text-align: center;
         margin-top: 8px;
         color: black;
+      }
+
+      .embed-responsive {
+        margin: auto;
       }
     }
   }

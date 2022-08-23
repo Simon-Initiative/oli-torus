@@ -5,14 +5,14 @@ defmodule Oli.Groups do
 
   import Ecto.Query, warn: false
 
-  alias Oli.Accounts
+  alias Ecto.Multi
+  alias Oli.{Accounts, Institutions, Publishing, Repo, Utils}
   alias Oli.Accounts.{Author, User}
+  alias Oli.Authoring.Course.Project
+  alias Oli.Delivery.Sections.Section
   alias Oli.Groups.{Community, CommunityAccount, CommunityInstitution, CommunityVisibility}
-  alias Oli.Institutions
   alias Oli.Institutions.Institution
-  alias Oli.Publishing
   alias Oli.Publishing.Publication
-  alias Oli.Repo
 
   # ------------------------------------------------------------
   # Communities
@@ -40,7 +40,7 @@ defmodule Oli.Groups do
       []
   """
   def search_communities(filter) do
-    from(c in Community, where: ^filter_conditions(filter))
+    from(c in Community, where: ^Utils.filter_conditions(filter))
     |> Repo.all()
   end
 
@@ -136,25 +136,28 @@ defmodule Oli.Groups do
 
   """
   def find_or_create_community_user_account(user_id, community_id) do
-    Repo.transaction(fn _ ->
-      case Repo.one(
-             from(account in CommunityAccount,
-               where:
-                 account.user_id == ^user_id and
-                   account.community_id == ^community_id
-             )
-           ) do
-        nil ->
-          {:ok, account} =
-            create_community_account(%{user_id: user_id, community_id: community_id})
+    clauses = %{user_id: user_id, community_id: community_id}
 
-          account
+    res =
+      Multi.new()
+      |> Multi.run(:community_account, fn _, _ -> {:ok, get_community_account_by!(clauses)} end)
+      |> Multi.run(:new_community_account, &maybe_create_community_account(&1, &2, clauses))
+      |> Repo.transaction()
 
-        account ->
-          account
-      end
-    end)
+    case res do
+      {:ok, %{new_community_account: community_account}} ->
+        {:ok, community_account}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
   end
+
+  defp maybe_create_community_account(_repo, %{community_account: nil}, clauses),
+    do: create_community_account(clauses)
+
+  defp maybe_create_community_account(_repo, %{community_account: community_account}, _clauses),
+    do: {:ok, community_account}
 
   @doc """
   Creates a community account.
@@ -504,8 +507,10 @@ defmodule Oli.Groups do
       on: associated_communities.id == community.id,
       join: community_visibility in CommunityVisibility,
       on: community_visibility.community_id == community.id,
-      left_join: project in assoc(community_visibility, :project),
-      left_join: section in assoc(community_visibility, :section),
+      left_join: project in Project,
+      on: project.id == community_visibility.project_id and project.status == :active,
+      left_join: section in Section,
+      on: section.id == community_visibility.section_id and section.status == :active,
       join: last_publication in subquery(Publishing.last_publication_query()),
       on:
         last_publication.project_id == project.id or
@@ -667,12 +672,6 @@ defmodule Oli.Groups do
   end
 
   # ------------------------------------------------------------
-
-  defp filter_conditions(filter) do
-    Enum.reduce(filter, false, fn {field, value}, conditions ->
-      dynamic([entity], field(entity, ^field) == ^value or ^conditions)
-    end)
-  end
 
   defp create_community_associations_from_fields(fields, attrs, create_association) do
     {created_community_associations, errors} =

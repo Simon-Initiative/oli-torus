@@ -2,20 +2,19 @@ defmodule Oli.PublishingTest do
   use Oli.DataCase
 
   import Oli.Factory
+  import Ecto.Query
 
-  alias Oli.Authoring.Course
-  alias Oli.Publishing
-  alias Oli.Publishing.Publication
-  alias Oli.Publishing.PublishedResource
-  alias Oli.Resources
-  alias Oli.Authoring.Editing.PageEditor
-  alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Authoring.Editing.ActivityEditor
-  alias Oli.Authoring.Locks
   alias Oli.Accounts.{SystemRole, Author}
+  alias Oli.Authoring.{Course, Locks}
+  alias Oli.Authoring.Editing.{PageEditor, ObjectiveEditor, ActivityEditor}
+  alias Oli.Activities
   alias Oli.Delivery.Sections.Section
+  alias Oli.Publishing
+  alias Oli.Publishing.{Publication, PublishedResource}
+  alias Oli.Resources
+  alias Oli.Seeder
 
-  def create_activity(parts, author, project, page_revision, obj_resource_id) do
+  def create_activity(parts, author, project, page_revision) do
     # Create a two part activity where each part is tied to one of the objectives above
 
     objectives =
@@ -28,24 +27,6 @@ defmodule Oli.PublishingTest do
 
     {:ok, {revision, _}} =
       ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
-
-    # attach just one activity
-    update = %{
-      "objectives" => %{"attached" => [obj_resource_id]},
-      "content" => %{
-        "model" => [
-          %{
-            "type" => "activity-reference",
-            "id" => 1,
-            "activitySlug" => revision.slug,
-            "purpose" => "none"
-          }
-        ]
-      }
-    }
-
-    PageEditor.acquire_lock(project.slug, page_revision.slug, author.email)
-    assert {:ok, _} = PageEditor.edit(project.slug, page_revision.slug, author.email, update)
 
     update = %{"objectives" => objectives}
 
@@ -182,13 +163,14 @@ defmodule Oli.PublishingTest do
       {:ok, %{revision: obj2}} = ObjectiveEditor.add_new(%{title: "two"}, author, project)
       {:ok, %{revision: obj3}} = ObjectiveEditor.add_new(%{title: "three"}, author, project)
 
+      PageEditor.acquire_lock(project.slug, revision.slug, author.email)
+
       activity1 =
         create_activity(
           [{"1", [obj1.resource_id]}, {"2", []}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity2 =
@@ -196,8 +178,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj1.resource_id]}, {"2", [obj1.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity3 =
@@ -205,8 +186,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj1.resource_id]}, {"2", [obj2.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
 
       activity4 =
@@ -214,23 +194,58 @@ defmodule Oli.PublishingTest do
           [{"1", [obj2.resource_id]}, {"2", [obj3.resource_id]}],
           author,
           project,
-          revision,
-          obj1.resource_id
+          revision
         )
+
+      update = %{
+        "objectives" => %{"attached" => [obj1.resource_id]},
+        "content" => %{
+          "version" => "0.1.0",
+          "model" => [
+            %{
+              "type" => "activity-reference",
+              "id" => "1",
+              "activitySlug" => activity1.slug
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => "2",
+              "activitySlug" => activity2.slug
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => "3",
+              "activitySlug" => activity3.slug
+            },
+            %{
+              "type" => "activity-reference",
+              "id" => "4",
+              "activitySlug" => activity4.slug
+            }
+          ]
+        }
+      }
+
+      assert {:ok, _} = PageEditor.edit(project.slug, revision.slug, author.email, update)
 
       results = Publishing.find_objective_attachments(obj1.resource_id, publication.id)
 
       assert length(results) == 5
 
       # activity 2 should appear twice since it has the objective attached in multiple parts
-      assert Enum.filter(results, fn r -> r.id == activity2.id end) |> length == 2
+      assert Enum.filter(results, fn r -> r.resource_id == activity2.resource_id end) |> length ==
+               2
 
       # the next two have it in only one part
-      assert Enum.filter(results, fn r -> r.id == activity1.id end) |> length == 1
-      assert Enum.filter(results, fn r -> r.id == activity3.id end) |> length == 1
+      assert Enum.filter(results, fn r -> r.resource_id == activity1.resource_id end) |> length ==
+               1
+
+      assert Enum.filter(results, fn r -> r.resource_id == activity3.resource_id end) |> length ==
+               1
 
       # this activity does not have this objective attached at all
-      assert Enum.filter(results, fn r -> r.id == activity4.id end) |> length == 0
+      assert Enum.filter(results, fn r -> r.resource_id == activity4.resource_id end) |> length ==
+               0
 
       # the page has it attached as well
       assert Enum.filter(results, fn r -> r.resource_id == revision.resource_id end) |> length ==
@@ -278,7 +293,7 @@ defmodule Oli.PublishingTest do
 
       # mappings should now be replaced with new mappings in the new publication
       assert unpublished_mappings !=
-               Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
+        Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
     end
 
     test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",
@@ -299,8 +314,7 @@ defmodule Oli.PublishingTest do
           [{"1", [obj.resource_id]}, {"1", []}],
           author,
           project,
-          original_revision,
-          obj.resource_id
+          original_revision
         )
 
       {:acquired} =
@@ -321,6 +335,7 @@ defmodule Oli.PublishingTest do
       # Update a page
       page_content = %{
         "content" => %{
+          "version" => "0.1.0",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -347,6 +362,16 @@ defmodule Oli.PublishingTest do
 
       published_revision = Resources.get_revision!(published_resource.revision_id)
       assert published_revision.content == revision_with_activity.content
+    end
+
+    test "publish_project/1 refreshes part_mapping materialized view with published information" do
+      %{activity: %{revision: revision}, project: project} = project_with_activity()
+
+      Publishing.publish_project(project, "Some description")
+
+      assert Repo.all(from pm in "part_mapping",
+      where: pm.revision_id == ^revision.id,
+      select: pm.grading_approach) == ["manual"]
     end
 
     test "broadcasting the new publication works when publishing", %{project: project} do
@@ -388,6 +413,7 @@ defmodule Oli.PublishingTest do
 
       # make some edits
       content = %{
+        "version" => "0.1.0",
         "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
       }
 
@@ -472,6 +498,26 @@ defmodule Oli.PublishingTest do
       Publishing.insert_visibility(%{project_id: project.id, institution_id: institution.id})
       assert Publishing.available_publications(author3, institution) |> length == 2
       assert Publishing.available_publications(author2, institution) |> length == 2
+    end
+
+    test "get_published_resources_by_publication/2 returns all the published resources of a given publication",
+         %{publication: publication} do
+      # mappings should be retained in the original published publication
+      mappings = Publishing.get_published_resources_by_publication(publication.id)
+
+      assert Enum.count(mappings) == 3
+      assert Enum.all?(mappings, &(&1.publication.id == publication.id))
+    end
+
+    test "get_published_resources_by_publication/2 only preloads the given assocations",
+         %{publication: publication} do
+      # mappings should be retained in the original published publication
+      mappings =
+        Publishing.get_published_resources_by_publication(publication.id, preload: [:resource])
+
+      assert Enum.all?(mappings, &Ecto.assoc_loaded?(&1.resource))
+      refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.publication))
+      refute Enum.all?(mappings, &Ecto.assoc_loaded?(&1.revision))
     end
   end
 
@@ -727,5 +773,69 @@ defmodule Oli.PublishingTest do
       assert [%Publication{id: ^publication_id}, %Section{id: ^product_id}] =
                Publishing.retrieve_visible_sources(user, institution)
     end
+
+    test "retrieve_visible_sources/2 does not return deleted products/projects" do
+      user = insert(:user)
+      institution = insert(:institution)
+      project = insert(:project, status: :deleted)
+      insert(:publication, %{project: project})
+      insert(:section, %{base_project: project, status: :deleted})
+
+      assert [] == Publishing.retrieve_visible_sources(user, institution)
+    end
+  end
+
+  defp project_with_activity() do
+    content = %{
+      "stem" => "1",
+      "authoring" => %{
+        "parts" => [
+          %{
+            "id" => "1",
+            "gradingApproach" => "manual",
+            "responses" => [
+              %{
+                "rule" => "input like {a}",
+                "score" => 10,
+                "id" => "r1",
+                "feedback" => %{"id" => "1", "content" => "yes"}
+              },
+              %{
+                "rule" => "input like {b}",
+                "score" => 11,
+                "id" => "r2",
+                "feedback" => %{"id" => "2", "content" => "almost"}
+              },
+              %{
+                "rule" => "input like {c}",
+                "score" => 0,
+                "id" => "r3",
+                "feedback" => %{"id" => "3", "content" => "no"}
+              }
+            ],
+            "scoringStrategy" => "best",
+            "evaluationStrategy" => "regex"
+          }
+        ]
+      }
+    }
+
+    Seeder.base_project_with_resource2()
+    |> Seeder.create_section()
+    |> Seeder.add_user(%{}, :user1)
+    |> Seeder.add_user(%{}, :user2)
+    |> Seeder.add_activity(
+      %{
+        title: "Some activity",
+        activity_type_id: Activities.get_registration_by_slug("oli_short_answer").id,
+        content: content
+      },
+      :publication,
+      :project,
+      :author,
+      :activity
+    )
+    |> Seeder.add_page(%{graded: true}, :graded_page)
+    |> Seeder.create_section_resources()
   end
 end

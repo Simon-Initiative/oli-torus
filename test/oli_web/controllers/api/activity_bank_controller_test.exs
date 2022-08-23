@@ -5,6 +5,13 @@ defmodule OliWeb.Api.ActivityBankControllerTest do
   setup [:project_seed]
 
   describe "activity bank endpoint tests" do
+    test "can launch activity bank editor", %{conn: conn, project: project} do
+      conn = get(conn, Routes.activity_bank_path(conn, :index, project.slug))
+
+      assert html_response(conn, 200) =~
+               "<div data-react-class=\"Components.ActivityBank\" data-react-props=\""
+    end
+
     test "can query all", %{conn: conn, project: project} do
       payload = %{"logic" => %{"conditions" => nil}, "paging" => %{"limit" => 5, "offset" => 0}}
       conn = post(conn, Routes.activity_bank_path(conn, :retrieve, project.slug), payload)

@@ -1,8 +1,11 @@
 defmodule OliWeb.Common.PowTest do
   use OliWeb.ConnCase
 
+  import Oli.Factory
+
   alias Oli.Accounts
   alias Oli.Accounts.User
+  alias Oli.Delivery.Sections
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
 
@@ -63,7 +66,7 @@ defmodule OliWeb.Common.PowTest do
   describe "pow user" do
     setup [:setup_section]
 
-    test "handles new session", %{conn: conn, user: user} do
+    test "handles successful new session for non LMS user", %{conn: conn, user: user} do
       conn =
         conn
         |> get(Routes.pow_session_path(conn, :new))
@@ -90,6 +93,37 @@ defmodule OliWeb.Common.PowTest do
 
       assert html_response(conn, 302) =~
                Routes.delivery_path(conn, :open_and_free_index)
+    end
+
+    test "handles new session failure for non LMS user", %{conn: conn, user: user} do
+      # sign user in
+      conn =
+        post(conn, Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "bad_password"}
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~
+               "The provided login details did not work. Please verify your credentials, and try again."
+    end
+
+    test "handles new session failure for an LMS user and displays warning properly", %{
+      conn: conn
+    } do
+      # sign user in
+      user = insert(:user)
+      insert(:lti_params, user_id: user.id)
+
+      conn =
+        post(conn, Routes.pow_session_path(conn, :create),
+          user: %{email: user.email, password: "bad_password"}
+        )
+
+      html = html_response(conn, 200)
+
+      assert html =~
+               "We have detected an account using that email was previously created when you accessed the system from your LMS."
     end
 
     test "shows auth providers sign in buttons", %{conn: conn} do
@@ -168,6 +202,59 @@ defmodule OliWeb.Common.PowTest do
 
       assert response =~ "Sign in with Github"
       assert response =~ "div class=\"github-auth-container\""
+    end
+  end
+
+  describe "confirm students on signup based on section logic" do
+    setup [:setup_section]
+
+    test "do not confirm student when section indicates to not omit student email verification",
+         %{conn: conn, section: section} do
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                section: section.slug
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/session/new?section=#{section.slug}\">redirected"
+
+      assert %User{email: @user_email, email_confirmed_at: nil} =
+               Accounts.get_user_by(%{email: @user_email})
+    end
+
+    test "confirm student and redirects to enroll when section indicates to omit student email confirmation",
+         %{conn: conn, section: section} do
+      {:ok, section} = Sections.update_section(section, %{skip_email_verification: true})
+      expect_recaptcha_http_post()
+
+      conn =
+        post(
+          conn,
+          Routes.pow_registration_path(conn, :create),
+          %{
+            user:
+              Map.merge(@user_form_attrs, %{
+                section: section.slug
+              }),
+            "g-recaptcha-response": "any"
+          }
+        )
+
+      assert html_response(conn, 302) =~
+               "You are being <a href=\"/sections/#{section.slug}/enroll\">redirected"
+
+      assert %User{email: @user_email} = user = Accounts.get_user_by(%{email: @user_email})
+      assert user.email_confirmed_at
     end
   end
 

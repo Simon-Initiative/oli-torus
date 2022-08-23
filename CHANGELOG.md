@@ -4,10 +4,131 @@
 
 ### Bug Fixes
 
+### Enhancements
+
+- Add support for inline 'term' markup
+
+## 0.21.3 (2022-08-05)
+
+### Bug Fixes
+
+- Fix an issue where scroll wheel changes the value of numeric input
+- Fix an issue where underlined and strikethrough text were not being rendered
+- Fix an issue where guest user_id is blank in datashop export
+- Allow insertion of tables, iframes and all other elements in stem, choices and feedback
+- Change 'Submit Assessment' button to 'Submit Answers'
+
+### Enhancements
+
+- Product ingestion support
+
+## 0.21.2 (2022-07-20)
+
+### Bug Fixes
+
+- Fix a problem with handling groups and surveys
+
+## 0.21.1 (2022-07-19)
+
+### Bug Fixes
+
+- Fix a problem with activity bank selections
+
+## 0.21.0 (2022-07-15)
+
+### Bug Fixes
+
+- Fix an issue where activity bank styles were not rendering properly
+- Fix an issue where question STEM isn't displayed in ordering answer key
+- Fix an issue with the insertion menu visibility in dark mode
+
+### Enhancements
+
+- Survey delivery support
+- Legacy Custom Drag and Drag activity support
+- Improve the way activity bank edit locks are presented to a user
+- Add proper datashop session id tracking
+- Add ability to set bullet-style on ordered and unordered lists
+
+## 0.20.1 (2022-07-07)
+
+### Bug Fixes
+
+- Fix an issue related to session cookies
+
+## 0.20.0 (2022-06-30)
+
+### Bug Fixes
+
+- Restore ability to edit title of basic pages
+- Fix an issue where formatting toolbar covers content
+- Prevent deletion of non-empty curriculum containers
+- Fix an issue where analytics weren't properly including remixed sections
+
+### Enhancements
+
+- Provide more context in the browser tab
+- Improve the learning objective selection dropdown
+- Improve authoring improvement insights UI
+- Improve content and activity insertion menu
+- Dynamic question infrastructure
+
+## 0.19.4 (2022-06-09)
+
+### Bug Fixes
+
+- Improve performance of DataShop export
+- Fix an issue where multi-input activity inputs were being duplicated
+- Fix an issue where table headers were misaligned in the insights view
+- Fix an issue where table caption rendering throws an internal server error
+- Allow deletion of objective to cascade through to banked activities
+
+### Enhancements
+
+- Allow for broader range of number of attempts, including unlimited, for scored pages
+- Add survey authoring support (behind feature flag)
+- Add File Upload activity
+- Simplify objective creation, improve attachment UX
+
+## 0.19.3 (2022-05-17)
+
+### Bug Fixes
+
+- Fix an issue where paging in Activity Bank did not preserve filtered logic
+- Fix link editing
+- Fix an issue where delivery styles were not being applied correctly
+- Fix an issue where table editor options dropdown was hidden behind editor
+
+### Enhancements
+
+- Add content groups and paging support
+
+## 0.19.2 (2022-05-13)
+
+### Bug Fixes
+
+- Fix an issue where get connected button on publish page doesn't work
+
+## 0.19.1 (2022-05-03)
+
+### Bug Fixes
+
+- Fix an issue where multiple user accounts linked to a single author results in an internal server error
+
+## 0.19.0 (2022-05-03)
+
+### Bug Fixes
+
 - Fix inability to search in projects and users view
-- Properly handle the case that a section invite link leads to an unavailable section
+- Properly handle the case that a section invite link leads to an unavailable
+  section
 - Fix empty hints showing up in delivery mode
 - Fix table styling when words overflow bounds
+- Fix popup content editing
+- Fix image alt text rendering
+- Add tooltips to insights table headers, add keyboard navigation
+- Change ordering question interaction after activity is submitted
+- Fix cross-project activity deletion bug
 
 ### Enhancements
 
@@ -17,13 +138,19 @@
 - Allow learning objective attachment to pages
 - Instructor review of completed graded attempts
 - Allow gates to be defined in products
-- Hide subsequent purpose types for activities when the same purpose type is used in a series
+- Hide subsequent purpose types for activities when the same purpose type is
+  used in a series
+- Allow students to pay and apply codes during a grace period
+- Activity SDK
+- Add editor settings for Image, Webpage (iframe), Youtube elements
+- Support rich text (formatting, etc.) in page content captions
 
 ## 0.18.4 (2022-02-24)
 
 ### Bug Fixes
 
-- Improve performance of initial page visits by introducing bulk insertions of attempts
+- Improve performance of initial page visits by introducing bulk insertions of
+  attempts
 - Fix enrollments view rendering problem in sections that require payment
 - Ensure score can never exceed out of for graded pages
 - Ensure multiple payment attempts is handled correctly
@@ -36,14 +163,18 @@
 
 ### Enhancements
 
-- Optimize rendering and storage by allowing attempts to only store transformed models when necessary
+- Optimize rendering and storage by allowing attempts to only store transformed
+  models when necessary
 - Adds support for Legacy OLI custom activities
 
 ### Release Notes
 
 - Set up support for Legacy OLI activities as follows:
-  - Check out a copy of the repo https://github.com/Simon-Initiative/torus_superactivity to a local folder
-  - Configure torus oli.env file to include a variable named SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above, e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
+  - Check out a copy of the repo
+    https://github.com/Simon-Initiative/torus_superactivity to a local folder
+  - Configure torus oli.env file to include a variable named
+    SUPER_ACTIVITY_FOLDER and set the variable to point to the folder above,
+    e.g. SUPER_ACTIVITY_FOLDER=torus/superactivity
   - Ensure the folder is readable to the running torus instance
 
 **Environment Configs**
@@ -82,28 +213,42 @@ SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legac
 
 ### Bug Fixes
 
-- Fix a bug that prevented editing internal links when only one other page exists
+- Fix a bug that prevented editing internal links when only one other page
+  exists
 - Fix a bug that prevented content from being added during remix
 - Fix a bug that prevented payment processing for product-less paid sections
 - Fix a bug that allowed paid status of a section to be toggled off
-- Fix a bug that resulted in products being able to be created with invalid grace period days
+- Fix a bug that resulted in products being able to be created with invalid
+  grace period days
 - Fix Open and Free section creation when done through the admin panel
-- Fix an issue where LTI 1.3 deployments should represent individual institutions
-- Move LTI 1.3 registrations listing to live view table with search, sorting and paging
+- Fix an issue where LTI 1.3 deployments should represent individual
+  institutions
+- Move LTI 1.3 registrations listing to live view table with search, sorting and
+  paging
 - Fix LMS course section creation to properly set the blueprint reference
-- Fix a bug where null deployment id results in empty string in pending registration form
-- Fix a bug where immediately removing a new activity leaves it visible to the system
-- Fix an issue where selecting the actual checkbox in select source list doesn't work
+- Fix a bug where null deployment id results in empty string in pending
+  registration form
+- Fix a bug where immediately removing a new activity leaves it visible to the
+  system
+- Fix an issue where selecting the actual checkbox in select source list doesn't
+  work
 - Updates the labelling of options in the project visibility view
 
 ### Enhancements
 
 - Send total points available during LMS line item creation
-- LMS Lite functionality. Admins can allow delivery users to create sections through OLI by toggling their ability to "create sections" and adding the "independent learner" role in the admin interface. These "independent instructors" can then create sections with a start/end date that are private and require an invitation to join. Instructors can invite students by creating an invite link from the section management portal -- any student with this link can enroll automatically.
+- LMS Lite functionality. Admins can allow delivery users to create sections
+  through OLI by toggling their ability to "create sections" and adding the
+  "independent learner" role in the admin interface. These "independent
+  instructors" can then create sections with a start/end date that are private
+  and require an invitation to join. Instructors can invite students by creating
+  an invite link from the section management portal -- any student with this
+  link can enroll automatically.
 - Add support for configurable vendor properties
 - Allow default brand to be changed via release env var
 - Display course section and course project slug identifiers
-- Allow sections created from free products to have their payment settings edited
+- Allow sections created from free products to have their payment settings
+  edited
 
 ## 0.17.0 (2021-11-30)
 
@@ -131,9 +276,12 @@ SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legac
 ### Bug Fixes
 
 - Fix bug that prevented deletion of authors that have locked resource revisions
-- Fix an issue related to next previous page links that causes 500 internal server error on advanced authoring pages
-- Fix a bug that prevented MultiInput activities with dropdowns from evaluating correctly
-- Fix a bug that prevented SingleResponse activities from properly restoring student state
+- Fix an issue related to next previous page links that causes 500 internal
+  server error on advanced authoring pages
+- Fix a bug that prevented MultiInput activities with dropdowns from evaluating
+  correctly
+- Fix a bug that prevented SingleResponse activities from properly restoring
+  student state
 - Fix a bug that was preventing manual grade sync from executing
 
 ### Enhancements
@@ -145,7 +293,8 @@ SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legac
 ### Bug Fixes
 
 - Fix the rendering of HTML special characters within activities
-- Fix an issue where email was always being required regardless of independent_learner and guest status
+- Fix an issue where email was always being required regardless of
+  independent_learner and guest status
 
 ## 0.14.5 (2021-11-05)
 
@@ -162,7 +311,8 @@ SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legac
 
 ### Bug Fixes
 
-- Fix an issue where simultaneous section creations can result in more than one active sections for a given context
+- Fix an issue where simultaneous section creations can result in more than one
+  active sections for a given context
 - Fix an issue with sorting by title in open and free source selection table
 
 ### Enhancements
@@ -171,7 +321,9 @@ SUPER_ACTIVITY_FOLDER    local folder location of static support files for Legac
 
 **OpenSSL 1.1.1 Upgrade Required**
 
-Releases are now built using openssl11-devel for erlang which means that OpenSSL 1.1.1 is required to be installed on the deployment target for all future releases.
+Releases are now built using openssl11-devel for erlang which means that OpenSSL
+1.1.1 is required to be installed on the deployment target for all future
+releases.
 
 ```
 # centos
@@ -180,7 +332,9 @@ sudo yum install openssl11
 
 **Environment Configs**
 
-The following environment configs are now available for AppSignal integration. All are required for AppSignal support. If none are specified, AppSignal integration will be disabled.
+The following environment configs are now available for AppSignal integration.
+All are required for AppSignal support. If none are specified, AppSignal
+integration will be disabled.
 
 ```
 APPSIGNAL_OTP_APP       (Optional) AppSignal integration OTP app. Should be set to "oli".
@@ -207,7 +361,8 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 - Fix insertion toolbar positioning
 - Fix insertion toolbar tooltips not disappearing after inserting content
 - Fix insertion toolbar tooltips not showing
-- Fix an issue where the button for inserting a table would move around unless the mouse was positioned in just the right way
+- Fix an issue where the button for inserting a table would move around unless
+  the mouse was positioned in just the right way
 
 ## 0.14.1 (2021-10-28)
 
@@ -215,7 +370,8 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 
 - Fix an issue with Apply Update button and move content updates to async worker
 - Fix text editor issue where image resizing didn't work from right drag handle
-- Fix text editor issue where link editing tooltip could overlap with formatting toolbar
+- Fix text editor issue where link editing tooltip could overlap with formatting
+  toolbar
 - Fix an issue where previewing a project with no pages crashes
 - Fix some issues related to searching and viewing sortable tables
 - Fix an issue where activity submissions would not display activity feedback
@@ -225,7 +381,8 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 - New Admin landing page
 - New Instructor Course Section overview page
 - Allow LMS and System admins to unlink LMS section
-- Gradebook and graded page per student details with instructor centered grade override
+- Gradebook and graded page per student details with instructor centered grade
+  override
 - Student specific progress display
 
 ## 0.14.0 (2021-10-13)
@@ -239,8 +396,10 @@ APPSIGNAL_APP_ENV       (Optional) AppSignal environment. e.g. "prod"
 - Fix an issue where nonstructural section resources were missing after update
 - Add analytics download fields
 - Add datashop timestamps for seconds
-- Fix datashop bugs with missing <level> elements caused by deleted pages not showing in the container hierarchy
-- Fix an issue where minor updates were not properly updating section resource records
+- Fix datashop bugs with missing <level> elements caused by deleted pages not
+  showing in the container hierarchy
+- Fix an issue where minor updates were not properly updating section resource
+  records
 
 ### Enhancements
 
@@ -302,7 +461,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug Fixes
 
-- Fix an issue where generating resource links for tag types throws a server error
+- Fix an issue where generating resource links for tag types throws a server
+  error
 
 ## 0.13.2 (2021-09-17)
 
@@ -318,25 +478,32 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 ### Bug Fixes
 
 - Fix an issue where platform roles were failing to update on LTI launch
-- Fix an issue that prevents projects page from loading when a project has no collaborators
+- Fix an issue that prevents projects page from loading when a project has no
+  collaborators
 
 ## 0.13.0 (2021-09-07)
 
 ### Bug Fixes
 
 - Fix an issue where changing the title of a page made the current slug invalid
-- Properly handle ordering activity submission when no student interaction has taken place
-- Fix various UI issues such as showing outline in LMS iframe, email templates and dark mode feedback
-- Fix an issue where the manage grades page displayed an incorrect grade book link
+- Properly handle ordering activity submission when no student interaction has
+  taken place
+- Fix various UI issues such as showing outline in LMS iframe, email templates
+  and dark mode feedback
+- Fix an issue where the manage grades page displayed an incorrect grade book
+  link
 - Removed unecessary and failing javascript from project listing view
-- Restore ability to realize deeply nested activity references within adaptive page content
-- Fix an issue in admin accounts interface where manage options sometimes appear twice
+- Restore ability to realize deeply nested activity references within adaptive
+  page content
+- Fix an issue in admin accounts interface where manage options sometimes appear
+  twice
 - Allow graded adaptive pages to render the prologue page
 - Allow Image Coding activity to work properly within graded pages
 
 ### Enhancements
 
-- Add infrastructure for advanced section creation, including the ability to view and apply publication updates
+- Add infrastructure for advanced section creation, including the ability to
+  view and apply publication updates
 - Enable banked activity creation and editing
 - Add user-defined tag infrastructure and incorporate in banked activity editing
 - Allow filtering of deleted projects as an admin
@@ -402,7 +569,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 - Truncate "relative difficulty" on Insights page
 - Change wording on "Break down objective" modal
 - Make "Break down objective" explanation image responsive
-- Fix page editor content block rendering issue in Firefox - increase block contrast
+- Fix page editor content block rendering issue in Firefox - increase block
+  contrast
 - Fix problem in Firefox where changing question tabs scrolls to top of page
 
 ### Enhancements
@@ -411,8 +579,10 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug Fixes
 
-- Fix an issue where deleting multiple choice answers could put the question in a state where no incorrect answer is found
-- Fix an issue where activities do not correctly restore their "in-progress" state from student work
+- Fix an issue where deleting multiple choice answers could put the question in
+  a state where no incorrect answer is found
+- Fix an issue where activities do not correctly restore their "in-progress"
+  state from student work
 - Fix an issue where images and audio could not be added to activiites
 
 ## 0.12.1 (2021-07-12)
@@ -432,34 +602,43 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Enhancements
 
-- Add ability to generate and download a course digest from existing course projects
-- Redesign check all that apply, multiple choice, short answer, and ordering activities
+- Add ability to generate and download a course digest from existing course
+  projects
+- Redesign check all that apply, multiple choice, short answer, and ordering
+  activities
 - Merge activity editing into the page editor
 - Redesign the workspace header to include view title, help and user icons
-- Clearly separate the hierarchy navigation and page editing links in curriculum editor
+- Clearly separate the hierarchy navigation and page editing links in curriculum
+  editor
 - Implement smaller sized left hand navigation pane
 
 ## 0.11.1 (2021-6-16)
 
 ### Bug fixes
 
-- Fix an issue preventing deletion of projects whose names contain special characters
+- Fix an issue preventing deletion of projects whose names contain special
+  characters
 - Fix an issue related to persisting sessions across server restarts
 - Fix an issue where modals and rearrange were broken in curriculum view
-- Fix an issue where toggling multiple choice answer correctness could cause submission failures
+- Fix an issue where toggling multiple choice answer correctness could cause
+  submission failures
 
 ## 0.11.0 (2021-6-15)
 
 ### Enhancements
 
 - Image coding: disable submit button before code is run
-- Allow setting of arbitrary content from upload JSON file in revision history tool
-- Add ability for independent learners to create accounts, sign in and track progress
+- Allow setting of arbitrary content from upload JSON file in revision history
+  tool
+- Add ability for independent learners to create accounts, sign in and track
+  progress
 
 ### Bug fixes
 
-- Image coding: remove extra space at end of printed lines (problem for regexp grading)
-- Fix issues related to exporting DataShop events for courses that contain hierarchies
+- Image coding: remove extra space at end of printed lines (problem for regexp
+  grading)
+- Fix issues related to exporting DataShop events for courses that contain
+  hierarchies
 - Fix an issue with the torus logo in dark mode
 - Fix to support rich text content with empty models
 - Fix to properly identify the correct choice in multiple choice activities
@@ -477,13 +656,16 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 - Introduce load testing support
 - Expose telemetry metrics for Prometheus metrics scraping
 - Add support for course package delete
-- Add support for disabling answer choice shuffling in multiple choice, check all that apply, ordering questions
+- Add support for disabling answer choice shuffling in multiple choice, check
+  all that apply, ordering questions
 - Add support for moving curriculum items
-- Allow analytic snapshot creation to run asynchronous to the rest of the attempt finalization code
+- Allow analytic snapshot creation to run asynchronous to the rest of the
+  attempt finalization code
 
 ### Bug fixes
 
-- Fix help and logo links on register institution page, change help form to modal
+- Fix help and logo links on register institution page, change help form to
+  modal
 - Add missing database indexes, rework resolver queries
 - Fix ability to request hints
 - Fix content editing after drag and drop in resource editors
@@ -491,9 +673,11 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 - Fix projects view project card styling
 - Fix problem with inputs causing clipping in Firefox
 - Fix problem with difficulty selecting and focusing in Firefox
-- Fix problem where containers with no children were rendered as pages in delivery
+- Fix problem where containers with no children were rendered as pages in
+  delivery
 - Fix some style inconsistencies in delivery and dark mode
-- Fix an issue where reordering a curriculum item could result in incorrect n-1 position
+- Fix an issue where reordering a curriculum item could result in incorrect n-1
+  position
 
 ## 0.9.0 (2021-4-22)
 
@@ -512,8 +696,10 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 ### Bug fixes
 
 - Support page-to-page links during course ingestion
-- Use section slugs instead of ids in storage service URLs for delivery endpoints
-- Fix a crash when an existing logged-in user accesses the Register Institution page
+- Use section slugs instead of ids in storage service URLs for delivery
+  endpoints
+- Fix a crash when an existing logged-in user accesses the Register Institution
+  page
 - Activity feedback fixes and unit tests
 - Remove support for image floating to fix display issues in text editors
 - Change activity rule, outcome modeling for use in adaptive activities
@@ -539,7 +725,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 - Account for ingested pages that have missing objectives
 - Fix check all that apply + ordering activity submission in published projects
 - Fix issue where long lines in code blocks in activities overflow
-- Change how ids are determined in ingestion to avoid problems with unicode characters
+- Change how ids are determined in ingestion to avoid problems with unicode
+  characters
 - Scope lock messages to a specific project
 - (Developer) Auto format Elixir code
 - Fix attempts sort order
@@ -551,8 +738,10 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug fixes
 
-- Fix an issue where administrators cannot configure a section without instructor role
-- Fix an issue where publishing or duplicating courses would cause save errors in page and activity editors
+- Fix an issue where administrators cannot configure a section without
+  instructor role
+- Fix an issue where publishing or duplicating courses would cause save errors
+  in page and activity editors
 - Fix keyboard deletion with media items
 - Add extra newline after an iframe/webpage is inserted into an editor
 
@@ -568,18 +757,22 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 - Add the ability for an activity to submit client side evaluations
 - Change project slug determiniation during course ingestion to be server driven
-- Add the ability to limit what activities are available for use in particular course projects
+- Add the ability to limit what activities are available for use in particular
+  course projects
 - Add the ability to duplicate a project on the course overview page
 
 ### Bug fixes
 
-- Fix an issue where cancelling a curriculum deletion operation still deleted the curriculum item
+- Fix an issue where cancelling a curriculum deletion operation still deleted
+  the curriculum item
 - Fix an issue where the projects table did not sort by created date correctly
 - Fix an issue where activity text that contained HTML tags rendered actual HTML
-- Fix an issue where pasting text containing newlines from an external source crashes the editor
+- Fix an issue where pasting text containing newlines from an external source
+  crashes the editor
 - Fix an issue with null section slugs and deployment id in existing sections
 - Fix an issue where large images can obscure the Review mode UI
-- Fix an issue where accessibility warnings for pages with multiple images only show the first image
+- Fix an issue where accessibility warnings for pages with multiple images only
+  show the first image
 
 ## 0.6.1 (2021-3-3)
 
@@ -613,14 +806,16 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 ### Bug fixes
 
 - Fix missing status 201 handling on Freshdesk API call
-- Fix an issue where creating an institution with the same url as multiple existing institutions creates another new institution
+- Fix an issue where creating an institution with the same url as multiple
+  existing institutions creates another new institution
 
 ## 0.5.0 (2021-1-12)
 
 ### Enhancements
 
 - Improved LTI workflow for new institutions
-- Add support for embedding images in structured content editors by external URL and by pasting a copied image
+- Add support for embedding images in structured content editors by external URL
+  and by pasting a copied image
 - Ordering activity
 - Add support for user help requests capture and forward to email or help desk
 
@@ -632,7 +827,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug fixes
 
-- Fix an issue where new local activities were not being registered on deployment
+- Fix an issue where new local activities were not being registered on
+  deployment
 
 ## 0.4.0 (2021-1-4)
 
@@ -642,7 +838,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug fixes
 
-- Fix an issue where special characters in a course slug broke breadcrumb navigation in editor
+- Fix an issue where special characters in a course slug broke breadcrumb
+  navigation in editor
 - Fix some silently broken unit tests
 
 ## 0.3.0 (2020-12-10)
@@ -654,7 +851,8 @@ BLACKBOARD_APPLICATION_CLIENT_ID  (Optional) Blackboard registered application C
 
 ### Bug fixes
 
-- Fix an LTI 1.3 issue where launch was using kid to lookup registration instead of issuer and client id
+- Fix an LTI 1.3 issue where launch was using kid to lookup registration instead
+  of issuer and client id
 
 ## 0.2.0 (2020-12-10)
 

@@ -5,9 +5,10 @@ import { Everapp } from './EverappRenderer';
 
 export interface IEverappMenuProps {
   apps: Everapp[];
+  isLegacyTheme: boolean;
 }
 
-const EverappMenu: React.FC<IEverappMenuProps> = ({ apps }) => {
+const EverappMenu: React.FC<IEverappMenuProps> = ({ apps, isLegacyTheme }) => {
   const dispatch = useDispatch();
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
@@ -17,17 +18,27 @@ const EverappMenu: React.FC<IEverappMenuProps> = ({ apps }) => {
   };
 
   return (
-    <div className="beagleToggleContainer">
+    <div className={`${!isLegacyTheme ? 'theme-header-beagle' : 'beagleToggleContainer'}`}>
       <button
-        className="beagleAppListToggle"
+        className={`${!isLegacyTheme ? 'theme-header-beagle__toggle' : 'beagleAppListToggle'}`}
         title="Toggle Everapp Menu"
         aria-label="Toggle Everapp menu"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="icon-beagle"></div>
+        {!isLegacyTheme ? (
+          <span>
+            <div className="theme-header-beagle__icon"></div>
+            <span className="theme-header-beagle__label">Apps</span>{' '}
+          </span>
+        ) : (
+          <div className="icon-beagle"></div>
+        )}
       </button>
-      <div className="beagleAppPanel">
-        <div className={`beagleAppListView ${isOpen ? '' : 'displayNone'}`}>
+      <div
+        className={`${!isLegacyTheme ? 'theme-header-beagle__panel' : 'beagleAppPanel'}
+        ${isOpen ? '' : 'displayNone'}`}
+      >
+        <div className="beagleAppListView">
           <div className="beagleAppListWrapper">
             <div className="beagleAppList">
               {apps

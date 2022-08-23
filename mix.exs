@@ -4,16 +4,17 @@ defmodule Oli.MixProject do
   def project do
     [
       app: :oli,
-      version: "0.18.4",
+      version: "0.21.3",
       elixir: "~> 1.13.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: elixirc_options(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
+        "test.hound": :hound,
         test: :test,
         "test.ecto.reset": :test,
         coveralls: :test,
@@ -27,12 +28,7 @@ defmodule Oli.MixProject do
       name: "OLI Torus",
       source_url: "https://github.com/Simon-Initiative/oli-torus",
       homepage_url: "http://oli.cmu.edu",
-      docs: [
-        # The main page in the docs
-        main: "Oli",
-        logo: "assets/static/images/torus-icon.png",
-        extras: ["README.md", "LICENSE.md"]
-      ],
+      docs: docs(),
       releases: [
         oli: [
           include_executables_for: [:unix],
@@ -41,6 +37,69 @@ defmodule Oli.MixProject do
         ]
       ],
       default_release: :oli
+    ]
+  end
+
+  defp docs do
+    [
+      main: "introduction",
+      assets: "doc_assets",
+      logo: "assets/static/images/torus-icon.png",
+      extra_section: "GUIDES",
+      extras: extras(),
+      groups_for_extras: groups_for_extras(),
+      filter_modules: "ThisModuleDoesNotExist"
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/starting/end-user.md",
+      "guides/starting/developer.md",
+      "guides/starting/self-hosted.md",
+      "guides/process/client-coding.md",
+      "guides/process/server-coding.md",
+      "guides/process/pr-template.md",
+      "guides/process/changelog-pr.md",
+      "guides/process/deployment.md",
+      "guides/process/building.md",
+      "guides/design/introduction.md",
+      "guides/design/high-level.md",
+      "guides/design/publication-model.md",
+      "guides/design/attempt.md",
+      "guides/design/attempt-handling.md",
+      "guides/design/locking.md",
+      "guides/design/page-model.md",
+      "guides/design/gdpr.md",
+      "guides/design/misc.md",
+      "guides/activities/overview.md",
+      "guides/lti/implementing.md",
+      "guides/lti/config.md",
+      "guides/ingest/overview.md",
+      "guides/ingest/media.md",
+      "assets/typedocs/modules.md"
+    ] ++ list_typedoc_files()
+  end
+
+  defp list_typedoc_files() do
+    Path.wildcard("assets/typedocs/interfaces/*.md") ++
+      Path.wildcard("assets/typedocs/enums/*.md") ++
+      Path.wildcard("assets/typedocs/classes/*.md")
+  end
+
+  defp groups_for_extras do
+    [
+      "Getting started": ~r/guides\/starting\/.?/,
+      Releases: ~r/guides\/releases\/.?/,
+      Process: ~r/guides\/process\/.?/,
+      "System design": ~r/guides\/design\/.?/,
+      "Activity SDK": ~r/guides\/activities\/.?/,
+      "LTI 1.3": ~r/guides\/lti\/.?/,
+      "Content ingestion": ~r/guides\/ingest\/.?/,
+      "Client Side API": ~r/assets\/typedocs\/modules.md/,
+      Interfaces: ~r/assets\/typedocs\/interfaces\/.?/,
+      Enums: ~r/assets\/typedocs\/enums\/.?/,
+      Classes: ~r/assets\/typedocs\/classes\/.?/
     ]
   end
 
@@ -55,6 +114,7 @@ defmodule Oli.MixProject do
   end
 
   # Specifies which paths to compile per environment.
+  defp elixirc_paths(:hound), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
@@ -84,23 +144,27 @@ defmodule Oli.MixProject do
       {:ex_aws_s3, "~> 2.3"},
       {:ex_aws_lambda, "~> 2.0"},
       {:ex_json_schema, "~> 0.9.1"},
-      {:ex_machina, "~> 2.7.0", only: :test},
+      {:ex_machina, "~> 2.7.0", only: [:hound, :test]},
       {:ex_money, "~> 5.0"},
       {:ex_money_sql, "~> 1.0"},
-      {:excoveralls, "~> 0.14.4", only: :test},
-      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.14.4", only: [:hound, :test]},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false},
       {:floki, ">= 0.30.0"},
       {:gettext, "~> 0.11"},
       {:hackney, "~> 1.17"},
+      {:html_sanitize_ex, "~> 1.4"},
+      {:hound, "~> 1.0"},
       {:httpoison, "~> 1.6"},
       {:jason, "~> 1.3"},
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
-      {:lti_1p3, "~> 0.4.1"},
-      {:lti_1p3_ecto_provider, "~> 0.3.1"},
+      {:lti_1p3, "~> 0.4.5"},
+      {:lti_1p3_ecto_provider, "~> 0.3.2"},
+      {:libcluster, "~> 3.3"},
+      {:libcluster_ec2, "~> 0.6"},
       {:mime, "~> 1.2"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:mox, "~> 0.5", only: :test},
+      {:mox, "~> 0.5", only: [:test, :hound]},
       {:nimble_parsec, "~> 0.5"},
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
@@ -117,6 +181,7 @@ defmodule Oli.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:pow, "~> 1.0.21"},
       {:pow_assent, "~> 0.4.9"},
+      {:react_phoenix, "~> 1.3"},
       {:certifi, "~> 2.7"},
       {:ssl_verify_fun, "~> 1.1"},
       {:surface, "~> 0.5.1"},
@@ -127,7 +192,6 @@ defmodule Oli.MixProject do
       {:telemetry, "~> 0.4.1"},
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
-      {:telemetry_metrics_prometheus, "~> 1.0.0"},
       {:timex, "~> 3.5"},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},

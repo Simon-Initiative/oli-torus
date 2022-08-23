@@ -7,6 +7,7 @@ defmodule OliWeb.InstitutionControllerTest do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Institutions
+  alias Oli.Institutions.Institution
   alias Oli.Lti.Tool.Registration
   alias Oli.Lti.Tool.Deployment
   alias Oli.Institutions.PendingRegistration
@@ -15,27 +16,24 @@ defmodule OliWeb.InstitutionControllerTest do
     country_code: "some country_code",
     institution_email: "some institution_email",
     institution_url: "some institution_url",
-    name: "some name",
-    timezone: "some timezone"
+    name: "some name"
   }
   @update_attrs %{
     country_code: "some updated country_code",
     institution_email: "some updated institution_email",
     institution_url: "some updated institution_url",
-    name: "some updated name",
-    timezone: "some updated timezone"
+    name: "some updated name"
   }
   @invalid_attrs %{
     country_code: nil,
     institution_email: nil,
     institution_url: nil,
-    name: nil,
-    timezone: nil
+    name: nil
   }
 
-  describe "index" do
-    setup [:create_institution]
+  setup [:create_institution]
 
+  describe "index" do
     test "lists all institutions", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :index))
       assert html_response(conn, 200) =~ "some name"
@@ -43,8 +41,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "new institution" do
-    setup [:create_institution]
-
     test "renders form", %{conn: conn} do
       conn = get(conn, Routes.institution_path(conn, :new))
       assert html_response(conn, 200) =~ "Register Institution"
@@ -52,12 +48,10 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "create institution" do
-    setup [:create_institution]
-
     test "redirects to page index when data is valid", %{conn: conn} do
       conn = post(conn, Routes.institution_path(conn, :create), institution: @create_attrs)
 
-      assert redirected_to(conn) == Routes.static_page_path(conn, :index)
+      assert redirected_to(conn) == Routes.institution_path(conn, :index)
     end
 
     test "renders errors when data is invalid", %{conn: conn} do
@@ -67,11 +61,12 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "show institution" do
-    setup [:create_institution]
-
     test "renders institution details", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :show, institution))
       assert html_response(conn, 200) =~ "some name"
+
+      assert html_response(conn, 200) =~
+               "href=\"#{Routes.discount_path(OliWeb.Endpoint, :institution, institution.id)}\""
     end
 
     test "renders institution registration details", %{conn: conn, institution: institution} do
@@ -88,8 +83,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "edit institution" do
-    setup [:create_institution]
-
     test "renders form for editing chosen institution", %{conn: conn, institution: institution} do
       conn = get(conn, Routes.institution_path(conn, :edit, institution))
       assert html_response(conn, 200) =~ "Edit Institution"
@@ -97,8 +90,6 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "update institution" do
-    setup [:create_institution]
-
     test "redirects when data is valid", %{conn: conn, author: author, institution: institution} do
       conn =
         put(conn, Routes.institution_path(conn, :update, institution), institution: @update_attrs)
@@ -122,25 +113,18 @@ defmodule OliWeb.InstitutionControllerTest do
   end
 
   describe "delete institution" do
-    setup [:create_institution]
-
-    test "deletes chosen institution", %{conn: conn, author: author, institution: institution} do
+    test "deletes chosen institution", %{conn: conn, institution: institution} do
       conn = delete(conn, Routes.institution_path(conn, :delete, institution))
       assert redirected_to(conn) == Routes.institution_path(conn, :index)
 
-      assert_error_sent(404, fn ->
-        conn =
-          recycle(conn)
-          |> Pow.Plug.assign_current_user(author, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      institution_id = institution.id
 
-        get(conn, Routes.institution_path(conn, :show, institution))
-      end)
+      assert %Institution{id: ^institution_id} =
+               Institutions.get_institution_by!(%{status: :deleted})
     end
   end
 
   describe "approve registration" do
-    setup [:create_institution]
-
     test "approves the chosen registration", %{conn: conn} do
       pending_registration = pending_registration_fixture()
 
@@ -160,6 +144,27 @@ defmodule OliWeb.InstitutionControllerTest do
 
                assert Institutions.count_pending_registrations() == 0
              end) =~ "This message cannot be sent because SLACK_WEBHOOK_URL is not configured"
+    end
+
+    test "displays pending registration data", context do
+      {:ok, conn: conn, context: session_context} = set_timezone(context)
+
+      pending_registration = pending_registration_fixture()
+
+      conn = get(conn, Routes.institution_path(conn, :index))
+
+      assert html_response(conn, 200) =~ pending_registration.name
+      assert html_response(conn, 200) =~ pending_registration.institution_url
+      assert html_response(conn, 200) =~ pending_registration.institution_email
+
+      assert html_response(conn, 200) =~
+               OliWeb.Common.Utils.render_date(
+                 pending_registration,
+                 :inserted_at,
+                 session_context
+               )
+
+      assert html_response(conn, 200) =~ "Decline"
     end
   end
 

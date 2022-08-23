@@ -1,0 +1,30 @@
+.variablesEditor {
+  display: flex;
+  flex-direction: column;
+  min-width: 500;
+}
+.buttonPanel {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.ace_editor {
+  font-size: 14;
+}
+.error {
+  color: red;
+}
+.evaluated {
+  color: black;
+}
+.variableLabel {
+  font-family: 'Inconsolata, monospace';
+  font-size: 14px;
+}
+.variableResult {
+  font-family: 'Inconsolata, monospace';
+  font-size: 14px;
+}
+.header {
+  flex: 1;
+}

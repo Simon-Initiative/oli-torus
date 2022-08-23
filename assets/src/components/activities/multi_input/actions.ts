@@ -17,7 +17,7 @@ import {
   PostUndoable,
   Stem,
 } from 'components/activities/types';
-import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/utils';
+import { elementsAdded, elementsOfType, elementsRemoved } from 'components/editing/slateUtils';
 import { Choices } from 'data/activities/model/choices';
 import { List } from 'data/activities/model/list';
 import { getCorrectResponse, Responses } from 'data/activities/model/responses';
@@ -180,6 +180,7 @@ export const MultiInputActions = {
         dropdown: Responses.forMultipleChoice(choices[0].id),
         text: Responses.forTextInput(),
         numeric: Responses.forNumericInput(),
+        math: Responses.forMathInput(),
       }[type];
 
       input.inputType = type;

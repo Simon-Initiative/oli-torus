@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
 import { StemAuthoring } from 'components/activities/common/stem/authoring/StemAuthoring';
 import { HasStem } from 'components/activities/types';

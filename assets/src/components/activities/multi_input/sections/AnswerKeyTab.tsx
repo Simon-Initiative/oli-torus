@@ -1,4 +1,4 @@
-import { useAuthoringElementContext } from 'components/activities/AuthoringElement';
+import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { AuthoringButtonConnected } from 'components/activities/common/authoring/AuthoringButton';
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
@@ -7,6 +7,7 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
+import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import {
   Dropdown,
   FillInTheBlank,
@@ -18,17 +19,25 @@ import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { makeResponse, Response, RichText } from 'components/activities/types';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { getCorrectResponse } from 'data/activities/model/responses';
-import { containsRule, eqRule } from 'data/activities/model/rules';
+import { containsRule, eqRule, equalsRule } from 'data/activities/model/rules';
 import { defaultWriterContext } from 'data/content/writers/context';
 import React from 'react';
 
+const defaultRuleForInputType = (inputType: string | undefined) => {
+  switch (inputType) {
+    case 'numeric':
+      return eqRule('');
+    case 'math':
+      return equalsRule('');
+    case 'text':
+    default:
+      return containsRule('');
+  }
+};
+
 export const addTargetedFeedbackFillInTheBlank = (input: FillInTheBlank) =>
   ResponseActions.addResponse(
-    makeResponse(
-      input.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
-      0,
-      '',
-    ),
+    makeResponse(defaultRuleForInputType(input.inputType), 0, ''),
     input.partId,
   );
 
@@ -36,7 +45,8 @@ interface Props {
   input: MultiInput;
 }
 export const AnswerKeyTab: React.FC<Props> = (props) => {
-  const { model, dispatch } = useAuthoringElementContext<MultiInputSchema>();
+  const { model, dispatch, authoringContext, editMode } =
+    useAuthoringElementContext<MultiInputSchema>();
 
   if (props.input.inputType === 'dropdown') {
     const choices = model.choices.filter((choice) =>
@@ -95,6 +105,15 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
             response={response}
             onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
           />
+          {authoringContext.contentBreaksExist ? (
+            <ShowPage
+              editMode={editMode}
+              index={response.showPage}
+              onChange={(showPage: any) =>
+                dispatch(ResponseActions.editShowPage(response.id, showPage))
+              }
+            />
+          ) : null}
         </ResponseCard>
       ))}
       <AuthoringButtonConnected

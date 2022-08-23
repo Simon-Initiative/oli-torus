@@ -1,16 +1,16 @@
 {
-    "id": "janus_mcq",
-    "friendlyName": "Multiple Choice Question",
-    "description": "Displays a Multiple Choice Question",
-    "icon": "icon-part-mcq.svg",
-    "author": "Project Janus Team",
-    "global": true,
-    "delivery": {
-        "element": "janus-mcq",
-        "entry": "./delivery-entry.ts"
-    },
-    "authoring": {
-        "element": "janus-mcq",
-        "entry": "./authoring-entry.ts"
-    }
+  "id": "janus_mcq",
+  "friendlyName": "Multiple Choice Question",
+  "description": "Displays a Multiple Choice Question",
+  "icon": "icon-part-mcq.svg",
+  "author": "Project Janus Team",
+  "global": true,
+  "delivery": {
+    "element": "janus-mcq",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "janus-mcq",
+    "entry": "./authoring-entry.ts"
+  }
 }

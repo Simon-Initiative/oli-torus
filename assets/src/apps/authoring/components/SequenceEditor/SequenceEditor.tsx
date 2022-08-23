@@ -5,7 +5,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import { createNew as createNewActivity } from '../../../authoring/store/activities/actions/createNew';
-import { setCurrentRule, setRightPanelActiveTab } from '../../../authoring/store/app/slice';
+import {
+  selectIsAdmin,
+  selectProjectSlug,
+  setCurrentRule,
+  setRightPanelActiveTab,
+} from '../../../authoring/store/app/slice';
 import {
   selectAllActivities,
   selectCurrentActivity,
@@ -44,6 +49,8 @@ const SequenceEditor: React.FC<any> = () => {
   const [itemToRename, setItemToRename] = useState<any>(undefined);
   const [showConfirmDelete, setShowConfirmDelete] = useState<boolean>(false);
   const [itemToDelete, setItemToDelete] = useState<any>(undefined);
+  const isAdmin = useSelector(selectIsAdmin);
+  const projectSlug = useSelector(selectProjectSlug);
 
   const layerLabel = 'Layer';
   const bankLabel = 'Question Bank';
@@ -120,8 +127,10 @@ const SequenceEditor: React.FC<any> = () => {
       activityType: newActivity.activityType,
       content: { ...newActivity.model, authoring: undefined },
       authoring: newActivity.model.authoring,
+      title: newTitle,
+      tags: [],
     };
-
+    dispatch(saveActivity({ activity: reduxActivity, undoable: false }));
     await dispatch(upsertActivity({ activity: reduxActivity }));
     addNewSequence(newSequenceEntry, currentActivity?.activitySlug);
   };
@@ -538,6 +547,23 @@ const SequenceEditor: React.FC<any> = () => {
                 >
                   <i className="fas fa-arrow-right mr-2" /> Move In
                 </button>
+              )}
+              {isAdmin && (
+                <>
+                  <div className="dropdown-divider" />
+                  <button
+                    className="dropdown-item text-info"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      ($(`#sequence-item-${id}-context-menu`) as any).dropdown('toggle');
+                      // open revistion history in new tab
+                      window.open(`/project/${projectSlug}/history/resource_id/${item.resourceId}`);
+                    }}
+                  >
+                    <i className="fas fa-history mr-2" /> Revision History (Admin)
+                  </button>
+                  <div className="dropdown-divider"></div>
+                </>
               )}
               {/* <div className="dropdown-divider"></div>
           <button

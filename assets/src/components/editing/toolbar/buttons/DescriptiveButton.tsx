@@ -1,8 +1,9 @@
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
-import { useToolbar } from 'components/editing/toolbar/useToolbar';
+import { useToolbar } from 'components/editing/toolbar/hooks/useToolbar';
 import React from 'react';
 import { useSlate } from 'slate-react';
 import { classNames } from 'utils/classNames';
+import styles from '../Toolbar.modules.scss';
 
 interface DescriptiveButtonProps {
   description: CommandDescription;
@@ -11,7 +12,7 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
   const editor = useSlate();
   const { context, closeSubmenus } = useToolbar();
 
-  const onClick = React.useCallback(
+  const onMouseDown = React.useCallback(
     (_e) => {
       props.description.command.execute(context, editor);
       closeSubmenus();
@@ -28,16 +29,13 @@ export const DescriptiveButton = (props: DescriptiveButtonProps) => {
 
   const active = React.useMemo(() => props.description.active?.(editor), [props.description]);
 
-  const classes = React.useMemo(
-    () =>
-      classNames('editorToolbar__button', 'editorToolbar__button--descriptive', active && 'active'),
-    [active],
-  );
-
   return (
-    <button className={classes} onClick={onClick}>
-      {icon && <span className="icon material-icons">{icon}</span>}
-      {description}
+    <button
+      className={classNames(styles.toolbarButton, styles.descriptive, active && styles.active)}
+      onMouseDown={onMouseDown}
+    >
+      {icon && <span className={classNames(styles.icon, 'material-icons')}>{icon}</span>}
+      <span className={styles.description}>{description}</span>
     </button>
   );
 };

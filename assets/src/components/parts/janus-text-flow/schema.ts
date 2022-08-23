@@ -1,4 +1,5 @@
 import { CapiVariableTypes } from 'adaptivity/capi';
+import { formatExpression } from 'adaptivity/scripting';
 import AccordionTemplate from 'apps/authoring/components/PropertyEditor/custom/AccordionTemplate';
 import chroma from 'chroma-js';
 import { JSONSchema7Object } from 'json-schema';
@@ -6,6 +7,7 @@ import { parseNumString } from 'utils/common';
 import {
   ColorPalette,
   CreationContext,
+  Expression,
   JanusAbsolutePositioned,
   JanusCustomCss,
 } from '../types/parts';
@@ -163,9 +165,26 @@ export const transformSchemaToModel = (schema: Partial<TextFlowModel>) => {
 
   return result;
 };
+
+export const validateUserConfig = (part: any, owner: any): Expression[] => {
+  const brokenExpressions: Expression[] = [];
+  const evaluatedValue = formatExpression(part.custom.nodes);
+  if (evaluatedValue) {
+    brokenExpressions.push({
+      item: part,
+      part,
+      suggestedFix: evaluatedValue,
+      owner,
+      formattedExpression: true,
+    });
+  }
+  return brokenExpressions;
+};
+
 export const adaptivitySchema = {
   visible: CapiVariableTypes.BOOLEAN,
 };
 export const getCapabilities = () => ({
   configure: true,
+  canUseExpression: true,
 });

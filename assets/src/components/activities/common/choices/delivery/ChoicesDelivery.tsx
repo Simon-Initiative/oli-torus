@@ -2,7 +2,8 @@ import { Choice, ChoiceId } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
-import './ChoicesDelivery.scss';
+import { classNames } from 'utils/classNames';
+import styles from './ChoicesDelivery.modules.scss';
 
 interface Props {
   choices: Choice[];
@@ -24,19 +25,19 @@ export const ChoicesDelivery: React.FC<Props> = ({
 }) => {
   const isSelected = (choiceId: ChoiceId) => !!selected.find((s) => s === choiceId);
   return (
-    <div className="choices__container" aria-label="answer choices">
+    <div className={styles.choicesContainer} aria-label="answer choices">
       {choices.map((choice, index) => (
         <div
           key={choice.id}
           aria-label={`choice ${index + 1}`}
           onClick={() => (isEvaluated ? undefined : onSelect(choice.id))}
-          className={`choices__choice-row ${isSelected(choice.id) ? 'selected' : ''}`}
+          className={classNames(styles.choicesChoiceRow, isSelected(choice.id) ? 'selected' : '')}
         >
-          <div className="choices__choice-wrapper">
-            <label className="choices__choice-label" htmlFor={`choice-${index}`}>
+          <div className={styles.choicesChoiceWrapper}>
+            <label className={styles.choicesChoiceLabel} htmlFor={`choice-${index}`}>
               <div className="d-flex align-items-center">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
-                <div className="choices__choice-content">
+                <div className={styles.choicesChoiceContent}>
                   <HtmlContentModelRenderer content={choice.content} context={context} />
                 </div>
               </div>

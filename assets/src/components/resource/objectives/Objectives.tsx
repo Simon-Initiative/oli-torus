@@ -5,7 +5,7 @@ import React, { PropsWithChildren } from 'react';
 type Props = {};
 export const Objectives = (props: PropsWithChildren<Props>) => {
   return (
-    <Card>
+    <Card className="objectives">
       <Card.Body>
         <Card.Title>Learning Objectives</Card.Title>
         <div className="d-flex flex-row align-items-baseline">

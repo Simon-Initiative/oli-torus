@@ -6,6 +6,7 @@ defmodule OliWeb.Common.SessionContext do
   alias Oli.Accounts
   alias Oli.Accounts.Author
   alias Oli.Accounts.User
+  alias OliWeb.Common.FormatDateTime
 
   @enforce_keys [
     :local_tz,
@@ -34,19 +35,21 @@ defmodule OliWeb.Common.SessionContext do
   end
 
   def init(%Plug.Conn{assigns: assigns} = conn) do
-    local_tz = Plug.Conn.get_session(conn, "local_tz")
+    browser_timezone =
+      Plug.Conn.get_session(conn, "browser_timezone") || FormatDateTime.default_timezone()
+
     author = Map.get(assigns, :current_author)
     user = Map.get(assigns, :current_user)
 
     %__MODULE__{
-      local_tz: local_tz,
+      local_tz: local_tz(author, user, browser_timezone),
       author: author,
       user: user
     }
   end
 
   def init(%{} = session) do
-    local_tz = Map.get(session, "local_tz")
+    browser_timezone = Map.get(session, "browser_timezone", FormatDateTime.default_timezone())
 
     author =
       case Map.get(session, "current_author_id") do
@@ -67,9 +70,22 @@ defmodule OliWeb.Common.SessionContext do
       end
 
     %__MODULE__{
-      local_tz: local_tz,
+      local_tz: local_tz(author, user, browser_timezone),
       author: author,
       user: user
     }
+  end
+
+  defp local_tz(author, user, browser_timezone) do
+    cond do
+      not is_nil(author) ->
+        Accounts.get_author_preference(author, :timezone, browser_timezone)
+
+      not is_nil(user) ->
+        Accounts.get_user_preference(user, :timezone, browser_timezone)
+
+      true ->
+        browser_timezone
+    end
   end
 end
