@@ -621,8 +621,6 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     mode: isPreviewMode ? 'preview' : 'delivery', // TODO: review
     model,
     state,
-    progressState: 'progressState',
-    userId: currentUserId,
     onSaveActivity,
     onSubmitActivity,
     onRequestHint,
