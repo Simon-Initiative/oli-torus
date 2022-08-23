@@ -7,6 +7,12 @@
 ### Enhancements
 
 - Add support for inline 'term' markup
+- Added support for a new activity type - Vlab Activity
+  - A modified version of MultiInput (assets/src/components/activities/vlab)
+  - VlabDelivery includes iframe w/ CMU developed Virtual Chemistry Lab (from static/)
+  - Question can be one of the exiting MultiInput types or new VlabInput type
+  - If input type is VlabInput, Torus compares target parameter to VlabState for eval
+  - Config of Vlab via author composed JSON on model, or pre-built configs from static
 
 ## 0.21.3 (2022-08-05)
 

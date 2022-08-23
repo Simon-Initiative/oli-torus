@@ -1,0 +1,40 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "CuCl", 
+                  "description": "Copper(I) Chloride Solution", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "60", 
+                        "amount": "0.075"
+                     }
+                  ]
+               }
+            ], 
+            "FILE": {
+               "href": "cuclsolu.htm", 
+               "description": "Problem Description", 
+               "#text": "Problem Description"
+            }
+         }
+      ]
+   }
+}

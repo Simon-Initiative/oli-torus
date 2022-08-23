@@ -1,0 +1,75 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M CoCl<sub>2</sub>", 
+                  "description": "1 Molar Cobalt(II) Chloride Solution", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "224", 
+                        "amount": ".1"
+                     }, 
+                     {
+                        "id": "101", 
+                        "amount": ".2"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "10M HCl", 
+                  "description": "10 Molar Hydrochloric Acid", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "1", 
+                        "amount": "1.0"
+                     }, 
+                     {
+                        "id": "101", 
+                        "amount": "1.0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "6M AgNO<sub>3</sub>", 
+                  "description": "6 Molar Silver Nitrate", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "232", 
+                        "amount": ".6"
+                     }, 
+                     {
+                        "id": "233", 
+                        "amount": ".6"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

@@ -1,4 +1,4 @@
-import { friendlyType } from 'components/activities/multi_input/utils';
+import { friendlyType } from 'components/activities/vlab/utils';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';

@@ -1,0 +1,137 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.95", 
+            "state": "l", 
+            "molecularWeight": "18.02"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "molecularWeight": "1.007"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.9", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.01"
+         }, 
+         {
+            "id": "100", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59", 
+            "molecularWeight": "22.99"
+         }, 
+         {
+            "id": "101", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.16", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "102", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4", 
+            "molecularWeight": "62.01"
+         }, 
+         {
+            "id": "200", 
+            "name": "PO<sub>4</sub><sup>3-</sup>", 
+            "enthalpy": "-1277.4", 
+            "entropy": "-222", 
+            "molecularWeight": "94.97"
+         }, 
+         {
+            "id": "201", 
+            "name": "HPO<sub>4</sub><sup>2-</sup>", 
+            "enthalpy": "-1292.14", 
+            "entropy": "-33.5", 
+            "molecularWeight": "95.98"
+         }, 
+         {
+            "id": "202", 
+            "name": "H<sub>2</sub>PO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-1296.29", 
+            "entropy": "90.4", 
+            "molecularWeight": "96.99"
+         }, 
+         {
+            "id": "210", 
+            "name": "CH<sub>3</sub>COO<sup>-</sup>", 
+            "enthalpy": "-486.01", 
+            "entropy": "86.6", 
+            "molecularWeight": "59.05"
+         }, 
+         {
+            "id": "211", 
+            "name": "CH<sub>3</sub>COOH", 
+            "enthalpy": "-485.76", 
+            "entropy": "178.7", 
+            "molecularWeight": "60.06"
+         }, 
+         {
+            "id": "224", 
+            "name": "Co(H<sub>2</sub>O)<sub>6</sub><sup>2+</sup>", 
+            "enthalpy": "0", 
+            "entropy": "0", 
+            "molecularWeight": "120.9", 
+            "hue": "360", 
+            "saturation": "65", 
+            "value": "100", 
+            "colorConcentration": ".9"
+         }, 
+         {
+            "id": "226", 
+            "name": "CoCl<sub>4</sub><sup>2-</sup>", 
+            "enthalpy": "-575.64", 
+            "entropy": "489.21", 
+            "molecularWeight": "90.9", 
+            "hue": "240", 
+            "saturation": "75", 
+            "value": "100", 
+            "colorConcentration": ".1"
+         }, 
+         {
+            "id": "227", 
+            "name": "6H<sub>2</sub>O(l)", 
+            "enthalpy": "-190.45", 
+            "entropy": "32.83", 
+            "molecularWeight": "120.9"
+         }, 
+         {
+            "id": "232", 
+            "name": "Ag<sup>+</sup>", 
+            "enthalpy": "105.9", 
+            "entropy": "73.93", 
+            "molecularWeight": "120.9"
+         }, 
+         {
+            "id": "233", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-206.57", 
+            "entropy": "146", 
+            "molecularWeight": "120.9"
+         }, 
+         {
+            "id": "234", 
+            "name": "AgCl", 
+            "enthalpy": "-127.03", 
+            "entropy": "96.11", 
+            "state": "s", 
+            "hue": "180", 
+            "saturation": "0", 
+            "value": "100", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "120.9"
+         }
+      ]
+   }
+}

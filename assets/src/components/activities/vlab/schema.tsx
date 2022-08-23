@@ -9,13 +9,11 @@ import {
   ChoiceId,
 } from 'components/activities/types';
 import { Identifiable } from 'data/content/model/other';
-import { Maybe } from 'tsmonad';
-import { assertNever } from 'utils/common';
 
-export type MultiInput = Dropdown | FillInTheBlank;
-export type MultiInputDelivery =
+export type VlabInput = Dropdown | FillInTheBlank | VlabValue;
+export type VlabInputDelivery =
   | { id: string; inputType: 'dropdown'; options: SelectOption[] }
-  | { id: string; inputType: 'text' | 'numeric' };
+  | { id: string; inputType: 'text' | 'numeric' | 'vlabvalue' };
 
 export interface Dropdown extends Identifiable {
   inputType: 'dropdown';
@@ -27,26 +25,28 @@ export interface FillInTheBlank extends Identifiable {
   partId: string;
 }
 
-export type MultiInputType = 'dropdown' | 'text' | 'numeric';
-export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric'];
+export interface VlabValue extends Identifiable {
+  inputType: 'vlabvalue';
+  partId: string;
+  species: string;
+  parameter: string;
+}
+import { MultiInputType } from 'components/activities/multi_input/schema';
+export type VlabInputType = MultiInputType;
 
-export const multiInputTypeFriendly = (type: MultiInputType): string =>
-  Maybe.maybe(
-    {
-      dropdown: 'Dropdown',
-      numeric: 'Number',
-      text: 'Text',
-    }[type],
-  ).valueOr(assertNever(type));
-
-export interface MultiInputSchema extends ActivityModelSchema {
+export interface VlabSchema extends ActivityModelSchema {
   stem: Stem;
   // This is a separated out rather than putting a dropdown's choices under
   // its item in the `inputs` array because the backend transformation logic
   // take a string key to shuffle, and doesn't allow for predicate logic.
   choices: Choice[];
   // The actual student-answerable inputs, designated by their type
-  inputs: MultiInput[];
+  inputs: VlabInput[];
+  assignmentSource: string;
+  assignmentPath: string;
+  assignment: string;
+  configuration: string;
+  reactions: string;
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];

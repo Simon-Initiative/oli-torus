@@ -28,8 +28,14 @@ export interface FillInTheBlank extends Identifiable {
   partId: string;
 }
 
-export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math';
-export const multiInputTypes: MultiInputType[] = ['dropdown', 'text', 'numeric', 'math'];
+export type MultiInputType = 'dropdown' | 'text' | 'numeric' | 'math' | 'vlabvalue';
+export const multiInputTypes: MultiInputType[] = [
+  'dropdown',
+  'text',
+  'numeric',
+  'math',
+  'vlabvalue',
+];
 
 export const multiInputTypeFriendly = (type: MultiInputType): string =>
   Maybe.maybe(
@@ -38,6 +44,7 @@ export const multiInputTypeFriendly = (type: MultiInputType): string =>
       numeric: 'Number',
       text: 'Text',
       math: 'Math',
+      vlabvalue: 'Text',
     }[type],
   ).valueOr(assertNever(type));
 

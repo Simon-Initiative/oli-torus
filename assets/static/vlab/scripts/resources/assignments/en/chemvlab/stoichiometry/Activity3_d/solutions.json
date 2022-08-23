@@ -1,0 +1,115 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.3 M K<sub>2</sub>SO<sub>4</sub>", 
+                  "description": "potassium sulfate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "8", 
+                        "amount": "0.06"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.03"
+                     }
+                  ]
+               },
+              
+            
+               {
+                  "name": "0.3 M NaCl", 
+                  "description": "sodium chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.06"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.06"
+                     }
+                  ]
+               },
+                 {
+                  "name": "0.3 M BaCl<sub>2</sub>", 
+                  "description": "barium chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.03"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.06"
+                     }
+                  ]
+               },
+              {
+                  "name": "0.3 M Fe(C<sub>2</sub>H<sub>3</sub>O<sub>2</sub>)<sub>2</sub>", 
+                  "description": "iron II acetate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "11", 
+                        "amount": "0.03"
+                     }, 
+                     {
+                        "id": "12", 
+                        "amount": "0.06"
+                     }
+                  ]
+               },
+              {
+                  "name": "0.3 M Cu(NO<sub>3</sub>)<sub>2</sub>", 
+                  "description": "copper II nitrate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.03"
+                     }, 
+                     {
+                        "id": "9", 
+                        "amount": "0.06"
+                     }
+                  ]
+               }
+              
+            ]
+         }
+      ]
+   }
+}

@@ -1,11 +1,13 @@
-import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
+// import { MultiInput, MultiInputType } from 'components/activities/multi_input/schema';
+import { VlabInput, VlabInputType } from 'components/activities/vlab/schema';
 import { CommandDescription } from 'components/editing/elements/commands/interfaces';
+import { MultiInput } from 'components/activities/multi_input/schema';
 
 export const initCommands = (
-  model: MultiInput,
-  setInputType: (id: string, updated: MultiInputType) => void,
+  model: VlabInput | MultiInput,
+  setInputType: (id: string, updated: VlabInputType) => void,
 ): CommandDescription[] => {
-  const makeCommand = (description: string, type: MultiInputType): CommandDescription => ({
+  const makeCommand = (description: string, type: VlabInputType): CommandDescription => ({
     type: 'CommandDesc',
     icon: () => '',
     description: () => description,
@@ -23,5 +25,6 @@ export const initCommands = (
     makeCommand('Text', 'text'),
     makeCommand('Number', 'numeric'),
     makeCommand('Math', 'math'),
+    makeCommand('Vlab', 'vlabvalue'),
   ];
 };

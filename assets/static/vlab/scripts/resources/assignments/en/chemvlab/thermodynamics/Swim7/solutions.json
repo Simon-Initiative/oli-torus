@@ -1,0 +1,103 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Phenol Red", 
+                  "description": "Phenol Red Indicator Solution", 
+                  "volume": "0.1", 
+                  "vessel": "100mLBottle", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "45", 
+                        "amount": ".0000001"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample A", 
+                  "description": "Pool Sample A", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.000000021"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample B", 
+                  "description": "Pool Sample B", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.00001"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample C", 
+                  "description": "Pool Sample C", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "1", 
+                        "amount": "0.0000001"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample D", 
+                  "description": "Pool Sample D", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.000000064"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample E", 
+                  "description": "Pool Sample E", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

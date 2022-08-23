@@ -1,0 +1,37 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Reported SDS Sample", 
+                  "description": "Reported Sample of SDS from Factory B", 
+                  "volume": "0.1", 
+                  "vessel": "100mLVolumetricFlask", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.0002080"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

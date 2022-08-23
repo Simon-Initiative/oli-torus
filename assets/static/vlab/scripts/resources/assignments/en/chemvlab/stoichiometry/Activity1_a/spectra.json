@@ -1,0 +1,36 @@
+{
+  "SPECTRA_LIST": {
+    "SPECIES": [
+      {
+        "id": "3",
+        "BAND": [
+          {
+          "wavelength": "456",
+          "width": "80",
+          "e": "1"
+        },
+        {
+          "wavelength": "571",
+          "width": "80",
+          "e": "3"
+        },
+        {
+          "wavelength": "572",
+          "width": "80",
+          "e": "3"
+        },
+        {
+          "wavelength": "514",
+          "width": "80",
+          "e": "3"
+        },
+        {
+          "wavelength": "563",
+          "width": "80",
+          "e": "1"
+        }
+        ]
+      }
+    ]
+  }
+}
