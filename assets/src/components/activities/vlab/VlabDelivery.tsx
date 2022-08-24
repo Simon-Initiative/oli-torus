@@ -53,15 +53,16 @@ export const MultiInputComponent: React.FC = () => {
 
     // Loop over the inputs, if an input is type vlabInput, update it's value based on XML.
     if (!selectedFlask.querySelector('parsererror')) {
-      let value: any = 0;
+      let value = '';
       model.inputs.forEach((input) => {
         if (input.inputType === 'vlabvalue') {
           // Move this mess to Utils?
           // value = vlabValueFromXML(input, selectedFlask);
           const param = input.parameter;
-          const volume = selectedFlask
-            .getElementsByTagName('flask')[0]
-            .getElementsByTagName('volume')[0].textContent as any;
+          const volume: number = parseFloat(
+            selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('volume')[0]
+              .textContent as string,
+          );
           const speciesList = Array.from(
             selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('species'),
           );
@@ -72,28 +73,33 @@ export const MultiInputComponent: React.FC = () => {
           } else if (param === 'pH') {
             speciesList.forEach((species) => {
               if (species.getElementsByTagName('id')[0].textContent === '1') {
-                const hPlusMolarity =
-                  (species.getElementsByTagName('moles') as any)[0].textContent / volume;
-                value = -1 * Math.log10(hPlusMolarity);
+                const hPlusMolarity: number =
+                  parseFloat(species.getElementsByTagName('moles')[0].textContent) / volume;
+                value = (-1 * Math.log10(hPlusMolarity)).toString();
               }
             });
           } else {
             speciesList.forEach((species) => {
               if (species.getElementsByTagName('id')[0].textContent === input.species) {
                 if (param === 'molarity') {
-                  value = (species.getElementsByTagName('moles') as any)[0].textContent / volume;
+                  value = (
+                    parseFloat(species.getElementsByTagName('moles')[0].textContent) / volume
+                  ).toString();
                 } else if (param === 'concentration') {
-                  value = (species.getElementsByTagName('mass') as any)[0].textContent / volume;
+                  value = (
+                    parseFloat(species.getElementsByTagName('mass')[0].textContent) / volume
+                  ).toString();
                 } else {
-                  value = (species.getElementsByTagName(param) as any)[0].textContent;
+                  value = species.getElementsByTagName(param)[0].textContent;
                 }
               }
             });
           }
+          console.log('onValbChange value = ' + value);
           dispatch(
             activityDeliverySlice.actions.setStudentInputForPart({
               partId: input.partId,
-              studentInput: [value as any],
+              studentInput: [value],
             }),
           );
         }
@@ -196,11 +202,9 @@ export const MultiInputComponent: React.FC = () => {
         assignment: JSON.parse(model.assignment),
         configuration: JSON.parse(model.configuration),
         reactions: JSON.parse(model.reactions),
-
-        // TODO: these attributes are not on the VLab model:
-        solutions: JSON.parse((model as any).solutions),
-        species: JSON.parse((model as any).species),
-        spectra: JSON.parse((model as any).spectra),
+        solutions: JSON.parse(model.solutions),
+        species: JSON.parse(model.species),
+        spectra: JSON.parse(model.spectra),
       };
       (document.getElementById('vlab') as any).contentWindow.loadAssignmentJSON(assignmentJSON);
     }
@@ -213,6 +217,7 @@ export const MultiInputComponent: React.FC = () => {
       toggleHints,
       onChange,
       // TODO: This 'as any' cast was necessary as the types do not align
+      // Is the right fix for this to add 'input: MultiInputDelivery | VlabDelivery' to context.ts?
       inputs: inputs as any,
       disabled: isEvaluated(uiState),
     },

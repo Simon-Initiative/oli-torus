@@ -47,6 +47,9 @@ export interface VlabSchema extends ActivityModelSchema {
   assignment: string;
   configuration: string;
   reactions: string;
+  solutions: string;
+  species: string;
+  spectra: string;
   authoring: {
     targeted: ChoiceIdsToResponseId[];
     parts: Part[];
