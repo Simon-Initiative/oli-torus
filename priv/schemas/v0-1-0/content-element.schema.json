@@ -899,7 +899,9 @@
       "anyOf": [
         { "$ref": "#/$defs/media" },
         { "$ref": "#/$defs/block" },
-        { "$ref": "#/$defs/text-block" }
+        { "$ref": "#/$defs/text-block" },
+        { "$ref": "#/$defs/code-v2" },
+        { "$ref": "#/$defs/code-v1" }
       ]
     },
 
