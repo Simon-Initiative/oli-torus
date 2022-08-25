@@ -225,7 +225,21 @@ span.term {
     }
   }
 
-  .figure-wrapper {
+  .figure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    figure {
+      figcaption {
+        color: $primary;
+      }
+      @extend .img-fluid;
+      @extend .img-thumbnail;
+      padding: 1rem;
+    }
+  }
+
+  .caption-wrapper {
     display: flex;
     justify-content: center;
 

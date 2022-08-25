@@ -83,7 +83,7 @@ export const normalize = (editor: Editor, table: ModelElement | FormattedText, p
         // the max td count
         while (count < max) {
           console.warn(
-            `Normalizing content: Adding element to row index=${index} count=${count} max=${max}`,
+            `Normalizing content: Adding table element to row index=${index} count=${count} max=${max}`,
           );
           Transforms.insertNodes(editor, Model.td(''), { at: thisPath });
           count = count + 1;

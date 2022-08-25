@@ -20,7 +20,6 @@ export function updateModel<T extends ContentModel.ModelElement>(
 
 export const useEditModelCallback = <T extends ContentModel.ModelElement>(model: T) => {
   const editor = useSlate();
-
   return React.useCallback((attrs: Partial<T>) => updateModel<T>(editor, model, attrs), [editor]);
 };
 

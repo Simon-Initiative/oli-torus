@@ -1,0 +1,14 @@
+.figure-editor {
+  figure {
+    min-width: 10rem;
+  }
+  .title {
+    cursor: pointer;
+  }
+  .title-placeholder {
+    opacity: 0.5;
+  }
+  input {
+    color: $primary;
+  }
+}

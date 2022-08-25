@@ -1,5 +1,5 @@
 import { toSimpleText } from 'components/editing/slateUtils';
-import { ModelElement } from 'data/content/model/elements/types';
+import { AllModelElements, ModelElement } from 'data/content/model/elements/types';
 import { ContentItem, ContentTypes, isContentItem } from 'data/content/writers/writer';
 import * as React from 'react';
 import { PopoverState } from 'react-tiny-popover';
@@ -146,13 +146,13 @@ export const positionRect = (
   };
 };
 
-export const elementsOfType = (content: ContentTypes, type: string): ModelElement[] => {
+export const elementsOfType = (content: ContentTypes, type: string): AllModelElements[] => {
   const contentBfs = (
     content: ContentTypes,
-    cb: (c: ContentItem | ModelElement | Text) => any,
+    cb: (c: ContentItem | AllModelElements | Text) => any,
   ): void => {
     if (Array.isArray(content))
-      return content.forEach((c: ContentItem | ModelElement) => contentBfs(c, cb));
+      return content.forEach((c: ContentItem | AllModelElements) => contentBfs(c, cb));
 
     cb(content);
 
