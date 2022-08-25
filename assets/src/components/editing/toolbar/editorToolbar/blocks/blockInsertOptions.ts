@@ -15,6 +15,7 @@ import { insertCallout } from '../../../elements/callout/calloutActions';
 import { insertVideo } from '../../../elements/video/videoActions';
 import { insertDefinition } from '../../../elements/definition/definitionActions';
 import { insertFigure } from '../../../elements/figure/figureActions';
+import { insertDialog } from '../../../elements/dialog/dialogActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -28,6 +29,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertCallout,
   insertDefinition,
   insertFigure,
+  insertDialog,
 ];
 
 interface Opts {

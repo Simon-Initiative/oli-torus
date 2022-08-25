@@ -61,6 +61,12 @@ $toolbar-group-separator-color: #edeef0 !default;
 $toolbar-active-bg: #6b7281 !default;
 $toolbar-active-color: #f8f9fb !default;
 
+$speaker1: #d1e7dd !default;
+$speaker2: #f8d7da !default;
+$speaker3: #cff4fc !default;
+$speaker4: #fff3cd !default;
+$speaker5: #ffe5d0 !default;
+
 // Export all theme SASS variables to CSS
 & {
   // Custom variable values only support SassScript inside `#{}`.

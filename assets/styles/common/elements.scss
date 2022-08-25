@@ -225,6 +225,50 @@ span.term {
     }
   }
 
+  .dialog {
+    display: flex;
+    flex-direction: column;
+    border-radius: 2px;
+    .dialog-line {
+      &.speaker-1 {
+        background-color: $speaker1;
+      }
+      &.speaker-2 {
+        background-color: $speaker2;
+      }
+      &.speaker-3 {
+        background-color: $speaker3;
+      }
+      &.speaker-4 {
+        background-color: $speaker4;
+      }
+      &.speaker-5 {
+        background-color: $speaker5;
+      }
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 0.5rem;
+      align-items: center;
+      background-color: darken($body-bg, 5%);
+      .dialog-content {
+        flex-grow: 1;
+      }
+      .dialog-speaker {
+        padding: 0.5rem;
+        width: calc(50px + 1rem);
+        margin-right: 1rem;
+
+        .speaker-portrait {
+          width: 50px;
+        }
+        .speaker-name {
+          font-size: 0.75rem;
+          text-align: center;
+        }
+      }
+    }
+  }
+
   .figure {
     display: flex;
     align-items: center;
