@@ -22,6 +22,9 @@ const BlockElements: SchemaKey[] = [
   'formula',
   'callout',
 ];
+
+export const SemanticElements: SchemaKey[] = ['callout', 'definition', 'figure'];
+
 const HeadingElements: SchemaKey[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 const TextBlockElements: SchemaKey[] = ['p', ...HeadingElements];
 const MediaElements: SchemaKey[] = ['img', 'youtube', 'audio', 'video', 'iframe'];

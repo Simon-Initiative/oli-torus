@@ -2,6 +2,8 @@ import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import { ReactEditor, useSlate } from 'slate-react';
 import { Editor, Transforms } from 'slate';
+import { isActive } from '../slateUtils';
+import { SemanticElements } from '../../../data/content/model/schema';
 
 /**
  * Updates a model element that is contained in a slate data model hierarchy.
@@ -47,3 +49,7 @@ export function elementBorderStyle(active: boolean): React.CSSProperties {
     borderRadius: 3,
   };
 }
+
+export const insideSemanticElement = (editor: Editor) => {
+  return isActive(editor, SemanticElements);
+};
