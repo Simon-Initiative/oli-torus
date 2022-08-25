@@ -86,6 +86,30 @@ export const schema: Schema = {
       'h6',
     ]),
   },
+  pronunciation: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj([]),
+  },
+  translation: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj([]),
+  },
+  meaning: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
+    validChildren: toObj([]),
+  },
+  definition: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj([]),
+  },
   callout_inline: {
     isVoid: false,
     isBlock: false,

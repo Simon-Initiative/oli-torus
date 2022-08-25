@@ -26,6 +26,10 @@ export interface WriterImpl {
   iframe: ElementWriter;
   audio: ElementWriter;
   table: ElementWriter;
+  definition: ElementWriter;
+  definitionMeaning: ElementWriter;
+  definitionPronunciation: ElementWriter;
+  definitionTranslation: ElementWriter;
   tr: ElementWriter;
   th: ElementWriter;
   td: ElementWriter;
@@ -163,6 +167,14 @@ export class ContentWriter {
           () => this.render(context, content.content, impl),
           content,
         );
+      case 'meaning':
+        return impl.definitionMeaning(context, next, content);
+      case 'pronunciation':
+        return impl.definitionPronunciation(context, next, content);
+      case 'translation':
+        return impl.definitionTranslation(context, next, content);
+      case 'definition':
+        return impl.definition(context, next, content);
       default:
         return impl.unsupported(context, content);
     }

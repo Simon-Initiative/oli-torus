@@ -73,7 +73,6 @@ export const normalize = (editor: Editor, table: ModelElement | FormattedText, p
     });
 
     if (anyDiffer) {
-      console.warn('Normalizing table');
       table.children.forEach((row, index: number) => {
         let count = getEffectiveColumns(row, table);
 
@@ -83,7 +82,9 @@ export const normalize = (editor: Editor, table: ModelElement | FormattedText, p
         // Add as many empty td elements to bring this row back up to
         // the max td count
         while (count < max) {
-          console.warn(`Adding element to row index=${index} count=${count} max=${max}`);
+          console.warn(
+            `Normalizing content: Adding element to row index=${index} count=${count} max=${max}`,
+          );
           Transforms.insertNodes(editor, Model.td(''), { at: thisPath });
           count = count + 1;
         }

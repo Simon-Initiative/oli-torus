@@ -21,12 +21,33 @@ type TopLevel =
   | Blockquote
   | FormulaBlock
   | Callout
-  | Video;
+  | Video
+  | Definition;
 
-type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock | Callout | Video;
-type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline | CalloutInline;
+export type Block =
+  | TableRow
+  | TableCell
+  | ListItem
+  | MathLine
+  | CodeLine
+  | FormulaBlock
+  | Callout
+  | Video
+  | Definition
+  | DefinitionMeaning
+  | DefinitionPronunciation
+  | DefinitionTranslation;
 
-type TextBlock = Paragraph | Heading;
+export type Inline =
+  | Hyperlink
+  | Popup
+  | InputRef
+  | ImageInline
+  | Citation
+  | FormulaInline
+  | CalloutInline;
+
+export type TextBlock = Paragraph | Heading;
 type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
 type List = OrderedList | UnorderedList;
 type MediaBlock = ImageBlock | YouTube | Audio | Webpage;
@@ -115,9 +136,30 @@ export interface ImageInline extends BaseImage {
   type: 'img_inline';
 }
 
+export interface DefinitionPronunciation extends SlateElement<TextBlock[]> {
+  src: string;
+  contenttype: string;
+  type: 'pronunciation';
+}
+
+export interface DefinitionTranslation extends SlateElement<TextBlock[]> {
+  type: 'translation';
+}
+
+export interface DefinitionMeaning extends SlateElement<(Block | TextBlock)[]> {
+  type: 'meaning';
+}
+
+export interface Definition extends SlateElement<VoidChildren> {
+  type: 'definition';
+  term: string;
+  meanings: DefinitionMeaning[];
+  translations: DefinitionTranslation[];
+  pronunciation: DefinitionPronunciation;
+}
+
 export type FormulaSubTypes = 'mathml' | 'latex';
-interface Formula<typeIdentifier>
-  extends SlateElement<(ImageInline | Hyperlink | Popup | InputRef)[]> {
+interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
   src: string;
@@ -126,6 +168,11 @@ interface Formula<typeIdentifier>
 export type FormulaBlock = Formula<'formula'>;
 export type FormulaInline = Formula<'formula_inline'>;
 export interface VideoSource {
+  url: string;
+  contenttype: string;
+}
+
+export interface AudioSource {
   url: string;
   contenttype: string;
 }
