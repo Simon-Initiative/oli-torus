@@ -28,6 +28,10 @@ import {
   Callout,
   CalloutInline,
   Video,
+  DefinitionMeaning,
+  DefinitionPronunciation,
+  DefinitionTranslation,
+  Definition,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -109,5 +113,20 @@ export const Model = {
       type: 'popup',
       trigger: 'hover',
       content: [Model.p()],
+    }),
+
+  definitionMeaning: (overrides?: Partial<DefinitionMeaning>) =>
+    create<DefinitionMeaning>({ type: 'meaning', children: [Model.p()], ...overrides }),
+  definitionPronunciation: (overrides?: Partial<DefinitionPronunciation>) =>
+    create<DefinitionPronunciation>({ type: 'pronunciation', children: [Model.p()], ...overrides }),
+  definitionTranslation: (overrides?: Partial<DefinitionTranslation>) =>
+    create<DefinitionTranslation>({ type: 'translation', children: [Model.p()], ...overrides }),
+  definition: (overrides?: Partial<Definition>) =>
+    create<Definition>({
+      type: 'definition',
+      term: 'Term',
+      meanings: [Model.definitionMeaning({})],
+      translations: [],
+      ...overrides,
     }),
 };

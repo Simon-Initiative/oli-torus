@@ -227,9 +227,18 @@ defmodule OliWeb.Sections.OverviewView do
 
         case action_function.(socket.assigns.section) do
           {:ok, _section} ->
+            is_admin = socket.assigns.is_system_admin
+
+            redirect_path =
+              if is_admin do
+                Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+              else
+                Routes.delivery_path(socket.endpoint, :open_and_free_index)
+              end
+
             socket
             |> put_flash(:info, "Section successfully #{action}.")
-            |> redirect(to: Routes.delivery_path(socket.endpoint, :open_and_free_index))
+            |> redirect(to: redirect_path)
 
           {:error, %Ecto.Changeset{}} ->
             put_flash(

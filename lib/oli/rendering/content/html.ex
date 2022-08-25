@@ -194,6 +194,72 @@ defmodule Oli.Rendering.Content.Html do
     ["<li>", next.(), "</li>\n"]
   end
 
+  def definition_meaning(%Context{} = _context, next, _) do
+    ["<li class='meaning'>", next.(), "</li>\n"]
+  end
+
+  def definition_translation(%Context{} = _context, next, _) do
+    ["<span class='translation'>", next.(), " </span>\n"]
+  end
+
+  def definition_pronunciation(%Context{} = _context, next, element) do
+    case element["src"] do
+      nil ->
+        ["<span class='pronunciation'>", next.(), "</span>\n"]
+
+      src ->
+        audio_id = UUID.uuid4()
+        play_code = "document.getElementById(\"#{audio_id}\").play();"
+
+        [
+          "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
+          "<span class='pronunciation-player' onClick='#{play_code}'>",
+          "<audio id='#{audio_id}' src='#{escape_xml!(src)}'></audio>",
+          next.(),
+          "</span>\n"
+        ]
+    end
+  end
+
+  defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
+    if pronunciation do
+      "Pronunciation: "
+    else
+      ""
+    end
+  end
+
+  defp maybePronunciationHeader(_), do: ""
+
+  defp meaningClass(meanings) do
+    case Enum.count(meanings) do
+      0 -> "meanings-empty"
+      1 -> "meanings-single"
+      _ -> "meanings"
+    end
+  end
+
+  def definition(
+        %Context{} = _context,
+        render_translation,
+        render_pronunciation,
+        render_meaning,
+        %{"term" => term, "meanings" => meanings} = element
+      ) do
+    [
+      "<div class='definition'><div class='term'>",
+      term,
+      "</div><i>(definition)</i> <span class='definition-header'>",
+      maybePronunciationHeader(element),
+      render_pronunciation.(),
+      "<span class='definition-pronunciation'>",
+      render_translation.(),
+      "</span></span><ol class='#{meaningClass(meanings)}'>",
+      render_meaning.(),
+      "</ol></div>\n"
+    ]
+  end
+
   def formula_class(false), do: "formula"
   def formula_class(true), do: "formula-inline"
 
@@ -416,10 +482,6 @@ defmodule Oli.Rendering.Content.Html do
   defp revision_slug_from_course_link(href) do
     href
     |> String.replace_prefix("/course/link/", "")
-  end
-
-  def definition(%Context{} = _context, next, _) do
-    ["<extra>", next.(), "</extra>\n"]
   end
 
   def text(%Context{} = _context, %{"text" => text} = text_entity) do
