@@ -95,7 +95,6 @@ export const MultiInputComponent: React.FC = () => {
               }
             });
           }
-          console.log('onValbChange value = ' + value);
           dispatch(
             activityDeliverySlice.actions.setStudentInputForPart({
               partId: input.partId,

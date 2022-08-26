@@ -1,5 +1,10 @@
 import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
-import { VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
+import {
+  VlabInput,
+  VlabSchema,
+  VlabInputType,
+  VlabParameter,
+} from 'components/activities/vlab/schema';
 import {
   makeChoice,
   makeHint,
@@ -155,7 +160,7 @@ function ensureHasInput(model: VlabSchema) {
   // add new part.
   const ref = Model.inputRef();
   const part = makePart(Responses.forTextInput(), [makeHint('')]);
-  const input: MultiInput = { id: ref.id, inputType: 'text', partId: part.id };
+  const input: VlabInput = { id: ref.id, inputType: 'text', partId: part.id };
 
   const firstParagraph = model.stem.content.find((elem) => elem.type === 'p') as
     | Paragraph
@@ -273,7 +278,7 @@ function matchInputsToInputRefs(model: VlabSchema) {
   unmatchedInputRefs.forEach((ref) => {
     // create new input and part for the input ref in the stem
     const part = makePart(Responses.forTextInput(), [makeHint('')]);
-    model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as MultiInput);
+    model.inputs.push({ id: ref.id, inputType: 'text', partId: part.id } as VlabInput);
     model.authoring.parts.push(part);
   });
   return model;

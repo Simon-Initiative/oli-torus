@@ -32,7 +32,16 @@ export interface VlabValue extends Identifiable {
   parameter: string;
 }
 import { MultiInputType } from 'components/activities/multi_input/schema';
-export type VlabInputType = MultiInputType;
+export type VlabInputType = MultiInputType | 'vlabvalue';
+
+export type VlabParameter =
+  | 'volume'
+  | 'temp'
+  | 'moles'
+  | 'mass'
+  | 'molarity'
+  | 'concentration'
+  | 'pH';
 
 export interface VlabSchema extends ActivityModelSchema {
   stem: Stem;
