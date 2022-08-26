@@ -1,11 +1,38 @@
-import { ModelElement } from 'data/content/model/elements/types';
+import { AllModelElements, ModelElement } from 'data/content/model/elements/types';
 
-type ValidChildren = Partial<Record<keyof Schema, boolean>>;
-const toObj = (arr: (keyof Schema)[]): ValidChildren =>
+type SchemaKey = keyof Schema;
+type ValidChildren = Partial<Record<SchemaKey, boolean>>;
+
+const toObj = (arr: SchemaKey[]): ValidChildren =>
   arr.reduce((p: ValidChildren, c) => {
     p[c] = true;
     return p;
   }, {});
+
+const BlockElements: SchemaKey[] = [
+  'table',
+  'td',
+  'ol',
+  'ul',
+  'math',
+  'math_line',
+  'code_line',
+  'blockquote',
+  'code',
+  'formula',
+  'callout',
+];
+
+export const SemanticElements: SchemaKey[] = ['callout', 'definition', 'figure'];
+
+const HeadingElements: SchemaKey[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+const TextBlockElements: SchemaKey[] = ['p', ...HeadingElements];
+const MediaElements: SchemaKey[] = ['img', 'youtube', 'audio', 'video', 'iframe'];
+const SemanticChildrenElements: SchemaKey[] = [
+  ...BlockElements,
+  ...MediaElements,
+  ...TextBlockElements,
+];
 
 const header = {
   isVoid: false,
@@ -25,7 +52,7 @@ const tableCell = {
   isVoid: false,
   isBlock: true,
   isTopLevel: false,
-  validChildren: toObj(['p', 'img', 'youtube', 'audio', 'math', 'formula_inline', 'formula']),
+  validChildren: toObj(['p', 'math', 'formula_inline', 'formula', ...MediaElements]),
 };
 
 const list = {
@@ -43,7 +70,7 @@ export interface SchemaConfig {
   isSimpleText?: boolean;
 }
 
-interface Schema extends Record<ModelElement['type'], SchemaConfig> {}
+interface Schema extends Record<AllModelElements['type'], SchemaConfig> {}
 export const schema: Schema = {
   p: {
     isVoid: false,
@@ -68,23 +95,7 @@ export const schema: Schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
-    validChildren: toObj([
-      'p',
-      'img',
-      'youtube',
-      'audio',
-      'code',
-      'blockquote',
-      'iframe',
-      'ol',
-      'ul',
-      'h1',
-      'h2',
-      'h3',
-      'h4',
-      'h5',
-      'h6',
-    ]),
+    validChildren: toObj(SemanticChildrenElements),
   },
   pronunciation: {
     isVoid: false,
@@ -115,6 +126,12 @@ export const schema: Schema = {
     isBlock: false,
     isTopLevel: true,
     validChildren: toObj([]),
+  },
+  figure: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj(SemanticChildrenElements),
   },
   formula: {
     isVoid: true,

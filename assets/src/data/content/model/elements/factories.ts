@@ -11,12 +11,12 @@ import {
   Paragraph,
   InputRef,
   Popup,
+  Figure,
   Table,
   YouTube,
   ImageBlock,
   Audio,
   Blockquote,
-  ModelElement,
   HeadingOne,
   HeadingTwo,
   Citation,
@@ -32,11 +32,12 @@ import {
   DefinitionPronunciation,
   DefinitionTranslation,
   Definition,
+  AllModelElements,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
 
-function create<E extends ModelElement>(params: Partial<E>): E {
+function create<E extends AllModelElements>(params: Partial<E>): E {
   return {
     id: guid(),
     children: [{ text: '' }],
@@ -68,6 +69,8 @@ export const Model = {
   callout: (text = '') => create<Callout>({ type: 'callout', children: [Model.p(text)] }),
   calloutInline: (text = '') =>
     create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
+
+  figure: (title = '') => create<Figure>({ type: 'figure', title, children: [Model.p()] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),

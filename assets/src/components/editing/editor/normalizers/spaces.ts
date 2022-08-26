@@ -12,6 +12,9 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'code',
   'table',
   'iframe',
+  'definition',
+  'figure',
+  'callout',
 ]);
 
 export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {

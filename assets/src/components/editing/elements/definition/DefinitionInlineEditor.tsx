@@ -5,10 +5,7 @@ import { InlineEditor } from '../common/settings/InlineEditor';
 import { CommandContext } from '../commands/interfaces';
 
 import { Model } from '../../../../data/content/model/elements/factories';
-import { modalActions } from '../../../../actions/modal';
 import { selectAudio } from './definitionActions';
-import { useAuthoringElementContext } from '../../../activities/AuthoringElementProvider';
-import { OliEmbeddedModelSchema } from '../../../activities/oli_embedded/schema';
 
 export const DefinitionInlineEditor: React.FC<{
   definition: ContentModel.Definition;

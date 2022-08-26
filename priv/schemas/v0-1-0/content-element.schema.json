@@ -42,10 +42,10 @@
           "$ref": "#/$defs/blockquote"
         },
         {
-          "$ref": "#/$defs/video"
+          "$ref": "#/$defs/formula"
         },
         {
-          "$ref": "#/$defs/definition"
+          "$ref": "#/$defs/semantic"
         }
       ]
     },
@@ -68,12 +68,6 @@
         },
         {
           "$ref": "#/$defs/formula"
-        },
-        {
-          "$ref": "#/$defs/callout"
-        },
-        {
-          "$ref": "#/$defs/video"
         }
       ]
     },
@@ -105,6 +99,19 @@
         },
         {
           "$ref": "#/$defs/callout-inline"
+        }
+      ]
+    },
+    "semantic": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/callout"
+        },
+        {
+          "$ref": "#/$defs/definition"
+        },
+        {
+          "$ref": "#/$defs/figure"
         }
       ]
     },
@@ -377,6 +384,9 @@
           "$ref": "#/$defs/youtube"
         },
         {
+          "$ref": "#/$defs/video"
+        },
+        {
           "$ref": "#/$defs/audio"
         },
         {
@@ -612,29 +622,7 @@
         "children": {
           "type": "array",
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/paragraph"
-              },
-              {
-                "$ref": "#/$defs/heading"
-              },
-              {
-                "$ref": "#/$defs/code-v1"
-              },
-              {
-                "$ref": "#/$defs/code-v2"
-              },
-              {
-                "$ref": "#/$defs/blockquote"
-              },
-              {
-                "$ref": "#/$defs/media"
-              },
-              {
-                "$ref": "#/$defs/list"
-              }
-            ]
+            "$ref": "#/$defs/semantic-element-content"
           }
         }
       },
@@ -889,12 +877,31 @@
         "$ref": "#"
       }
     },
+    "figure": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "figure"
+        },
+        "title": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        }
+      }
+    },
 
-    "meaning-content": {
+    "semantic-element-content": {
       "anyOf": [
         { "$ref": "#/$defs/media" },
         { "$ref": "#/$defs/block" },
-        { "$ref": "#/$defs/text-block" }
+        { "$ref": "#/$defs/text-block" },
+        { "$ref": "#/$defs/code-v2" },
+        { "$ref": "#/$defs/code-v1" }
       ]
     },
 
@@ -939,7 +946,7 @@
         "children": {
           "type": "array",
           "items": {
-            "$ref": "#/$defs/meaning-content"
+            "$ref": "#/$defs/semantic-element-content"
           }
         }
       }
