@@ -171,6 +171,44 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
+  def figure(%Context{} = _context, next, %{"title" => title}) do
+    [title, next.(), " "]
+  end
+
+  def figure(%Context{} = _context, next, _) do
+    [next.(), " "]
+  end
+
+  def definition_meaning(%Context{} = _context, next, _) do
+    ["  ", next.(), "\n"]
+  end
+
+  def definition_translation(%Context{} = _context, next, _) do
+    ["  Translation: ", next.(), "\n"]
+  end
+
+  def definition_pronunciation(%Context{} = _context, next, _) do
+    ["  Pronunciation: ", next.(), "\n"]
+  end
+
+  def definition(
+        %Context{} = _context,
+        render_translation,
+        render_pronunciation,
+        render_meaning,
+        %{"term" => term}
+      ) do
+    [
+      "Definition: ",
+      term,
+      "\n",
+      render_meaning.(),
+      render_pronunciation.(),
+      render_translation.(),
+      "\n"
+    ]
+  end
+
   def popup(%Context{} = _context, next, _) do
     ["[popup with text ", next.(), "]"]
   end

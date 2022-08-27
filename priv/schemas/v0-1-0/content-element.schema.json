@@ -42,7 +42,10 @@
           "$ref": "#/$defs/blockquote"
         },
         {
-          "$ref": "#/$defs/video"
+          "$ref": "#/$defs/formula"
+        },
+        {
+          "$ref": "#/$defs/semantic"
         }
       ]
     },
@@ -65,12 +68,6 @@
         },
         {
           "$ref": "#/$defs/formula"
-        },
-        {
-          "$ref": "#/$defs/callout"
-        },
-        {
-          "$ref": "#/$defs/video"
         }
       ]
     },
@@ -102,6 +99,19 @@
         },
         {
           "$ref": "#/$defs/callout-inline"
+        }
+      ]
+    },
+    "semantic": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/callout"
+        },
+        {
+          "$ref": "#/$defs/definition"
+        },
+        {
+          "$ref": "#/$defs/figure"
         }
       ]
     },
@@ -374,6 +384,9 @@
           "$ref": "#/$defs/youtube"
         },
         {
+          "$ref": "#/$defs/video"
+        },
+        {
           "$ref": "#/$defs/audio"
         },
         {
@@ -609,29 +622,7 @@
         "children": {
           "type": "array",
           "items": {
-            "anyOf": [
-              {
-                "$ref": "#/$defs/paragraph"
-              },
-              {
-                "$ref": "#/$defs/heading"
-              },
-              {
-                "$ref": "#/$defs/code-v1"
-              },
-              {
-                "$ref": "#/$defs/code-v2"
-              },
-              {
-                "$ref": "#/$defs/blockquote"
-              },
-              {
-                "$ref": "#/$defs/media"
-              },
-              {
-                "$ref": "#/$defs/list"
-              }
-            ]
+            "$ref": "#/$defs/semantic-element-content"
           }
         }
       },
@@ -884,6 +875,111 @@
       "type": "array",
       "items": {
         "$ref": "#"
+      }
+    },
+    "figure": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "figure"
+        },
+        "title": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        }
+      }
+    },
+
+    "semantic-element-content": {
+      "anyOf": [
+        { "$ref": "#/$defs/media" },
+        { "$ref": "#/$defs/block" },
+        { "$ref": "#/$defs/text-block" },
+        { "$ref": "#/$defs/code-v2" },
+        { "$ref": "#/$defs/code-v1" }
+      ]
+    },
+
+    "definition-pronunciation": {
+      "properties": {
+        "type": {
+          "const": "pronunciation"
+        },
+        "src": {
+          "type": "string"
+        },
+        "contenttype": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        }
+      }
+    },
+    "definition-translation": {
+      "properties": {
+        "type": {
+          "const": "translation"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text-block"
+          }
+        }
+      }
+    },
+    "definition-meaning": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "meaning"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        }
+      }
+    },
+    "definition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "definition"
+        },
+        "term": {
+          "type": "string"
+        },
+        "pronunciation": {
+          "$ref": "#/$defs/definition-pronunciation"
+        },
+        "translations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-translation"
+          }
+        },
+        "meanings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/definition-meaning"
+          }
+        },
+
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#" }
+        }
       }
     },
     "video": {

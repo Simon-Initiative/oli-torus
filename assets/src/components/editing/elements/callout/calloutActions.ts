@@ -1,6 +1,7 @@
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { Transforms } from 'slate';
 import { Model } from '../../../../data/content/model/elements/factories';
+import { insideSemanticElement } from '../utils';
 
 export const insertCallout = createButtonCommandDesc({
   icon: 'web_asset',
@@ -11,6 +12,7 @@ export const insertCallout = createButtonCommandDesc({
 
     Transforms.insertNodes(editor, Model.callout(), { at, select: true });
   },
+  precondition: (editor) => !insideSemanticElement(editor),
 });
 
 export const insertInlineCallout = createButtonCommandDesc({

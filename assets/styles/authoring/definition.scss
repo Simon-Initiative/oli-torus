@@ -1,0 +1,65 @@
+@import 'authoring/variables';
+
+.definition-editor {
+  position: relative;
+  padding-top: 1em;
+  border: 1px solid $body-bg;
+  padding: 1em;
+
+  &.selected {
+    border: 1px dashed $gray-500;
+  }
+
+  .edit-preview-btn {
+    position: absolute;
+    right: 5px;
+    top: 5px;
+    display: none;
+  }
+
+  .btn-pronunciation-audio {
+    width: 2em;
+    height: 2em;
+    padding: 2px 0px;
+    position: relative;
+    top: -4px;
+  }
+
+  label {
+    margin-right: 1em;
+  }
+
+  .audio-row {
+    gap: 5px;
+  }
+  .definition-row {
+    display: flex;
+    flex-direction: row;
+    .definition-number {
+      position: relative;
+      top: 8px;
+      width: 2.2em;
+    }
+  }
+  .delete-btn {
+    width: 30px;
+    margin: 4px;
+    height: 29px;
+    padding: 2px 0px;
+  }
+  div.definition-input {
+    height: auto;
+    margin-bottom: 1em;
+    min-height: calc(1.5em + 0.75rem + 2px);
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
+}

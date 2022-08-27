@@ -12,10 +12,12 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
     if (['ol', 'ul'].includes(parent.type)) {
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, Model.li(), { at: path });
+        console.warn('Normalizing content: Wrapping text in list with list item');
         return;
       }
       if (Element.isElement(node) && !config.validChildren[node.type]) {
         Transforms.setNodes(editor, { type: 'li' }, { at: path });
+        console.warn('Normalizing content: Changing node in list to list item type');
         return;
       }
     }

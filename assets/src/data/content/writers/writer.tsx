@@ -1,10 +1,10 @@
-import { ModelElement } from 'data/content/model/elements/types';
+import { AllModelElements } from 'data/content/model/elements/types';
 import React from 'react';
 import { Text } from 'slate';
 import { WriterContext } from './context';
 
 export type Next = () => React.ReactElement;
-type ElementWriter = (ctx: WriterContext, next: Next, text: ModelElement) => React.ReactElement;
+type ElementWriter = (ctx: WriterContext, next: Next, text: AllModelElements) => React.ReactElement;
 
 export interface WriterImpl {
   text: (ctx: WriterContext, text: Text) => React.ReactElement;
@@ -19,6 +19,7 @@ export interface WriterImpl {
   formulaInline: ElementWriter;
   callout: ElementWriter;
   calloutInline: ElementWriter;
+  figure: ElementWriter;
   img: ElementWriter;
   img_inline: ElementWriter;
   video: ElementWriter;
@@ -26,6 +27,10 @@ export interface WriterImpl {
   iframe: ElementWriter;
   audio: ElementWriter;
   table: ElementWriter;
+  definition: ElementWriter;
+  definitionMeaning: ElementWriter;
+  definitionPronunciation: ElementWriter;
+  definitionTranslation: ElementWriter;
   tr: ElementWriter;
   th: ElementWriter;
   td: ElementWriter;
@@ -44,23 +49,28 @@ export interface WriterImpl {
     ctx: WriterContext,
     anchorNext: Next,
     contentNext: Next,
-    text: ModelElement,
+    text: AllModelElements,
   ) => React.ReactElement;
-  unsupported: (ctx: WriterContext, element: ModelElement) => React.ReactElement;
+  unsupported: (ctx: WriterContext, element: AllModelElements) => React.ReactElement;
 }
 
-export type ContentItem = { type: 'content'; children: ModelElement[] };
+export type ContentItem = { type: 'content'; children: AllModelElements[] };
 export function isContentItem(value: any): value is ContentItem {
   return value && value.type === 'content' && value.children !== undefined;
 }
 
-export type ContentTypes = ContentItem[] | ContentItem | ModelElement[] | ModelElement | Text;
+export type ContentTypes =
+  | ContentItem[]
+  | ContentItem
+  | AllModelElements[]
+  | AllModelElements
+  | Text;
 
 export class ContentWriter {
   render(context: WriterContext, content: ContentItem[], impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: ContentItem, impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ModelElement[], impl: WriterImpl): React.ReactElement;
-  render(context: WriterContext, content: ModelElement, impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: AllModelElements[], impl: WriterImpl): React.ReactElement;
+  render(context: WriterContext, content: AllModelElements, impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: Text, impl: WriterImpl): React.ReactElement;
   render(context: WriterContext, content: ContentTypes, impl: WriterImpl): React.ReactElement {
     if (Array.isArray(content)) {
@@ -89,7 +99,7 @@ export class ContentWriter {
       return impl.text(context, content);
     }
 
-    const next = () => this.render(context, content.children as ModelElement[], impl);
+    const next = () => this.render(context, content.children as AllModelElements[], impl);
 
     switch (content.type) {
       case 'p':
@@ -114,6 +124,8 @@ export class ContentWriter {
         return impl.callout(context, next, content);
       case 'callout_inline':
         return impl.calloutInline(context, next, content);
+      case 'figure':
+        return impl.figure(context, next, content);
       case 'img':
         return impl.img(context, next, content);
       case 'img_inline':
@@ -163,6 +175,14 @@ export class ContentWriter {
           () => this.render(context, content.content, impl),
           content,
         );
+      case 'meaning':
+        return impl.definitionMeaning(context, next, content);
+      case 'pronunciation':
+        return impl.definitionPronunciation(context, next, content);
+      case 'translation':
+        return impl.definitionTranslation(context, next, content);
+      case 'definition':
+        return impl.definition(context, next, content);
       default:
         return impl.unsupported(context, content);
     }

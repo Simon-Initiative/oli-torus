@@ -13,10 +13,12 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
     if (parent.type === 'code') {
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, { type: 'code_line', id: guid(), children: [] }, { at: path });
+        console.warn('Normalizing content: wrapping code_line in code block');
         return;
       }
       if (Element.isElement(node) && !config.validChildren[node.type]) {
         Transforms.setNodes(editor, { type: 'code_line' }, { at: path });
+        console.warn('Normalizing content: setting code_line type inside code block');
         return;
       }
     }

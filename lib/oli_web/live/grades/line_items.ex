@@ -17,8 +17,7 @@ defmodule OliWeb.Grades.LineItems do
 
         <p class="card-text">
 
-        <%= dgettext("grades", "While OLI automatically will create LMS gradebook line items as students complete assignments,
-        in some circumstances an instructor may want to explicitly create gradebook line items or update them.") %>
+        <%= dgettext("grades", "Update Line Items adds all gradable items to the LMS gradebook. Otherwise, each gradable item is added to the gradebook when the first student completes it.") %>
 
         </p>
 

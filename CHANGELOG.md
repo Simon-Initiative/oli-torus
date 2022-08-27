@@ -3,16 +3,21 @@
 ## Unreleased
 
 ### Bug Fixes
+### Enhancements
+
+## 0.21.4 (2022-08-23)
+
+### Bug Fixes
+
+- Fix an issue where content cant be removed if there is only one top-level element
 
 ### Enhancements
 
 - Add support for inline 'term' markup
-- Added support for a new activity type - Vlab Activity
-  - A modified version of MultiInput (assets/src/components/activities/vlab)
-  - VlabDelivery includes iframe w/ CMU developed Virtual Chemistry Lab (from static/)
-  - Question can be one of the exiting MultiInput types or new VlabInput type
-  - If input type is VlabInput, Torus compares target parameter to VlabState for eval
-  - Config of Vlab via author composed JSON on model, or pre-built configs from static
+- Add support for branching activities and page automation
+- Improve toolbar styles and usability
+- Add ability to browse all pages in a course project
+- Add Math input question type
 
 ## 0.21.3 (2022-08-05)
 

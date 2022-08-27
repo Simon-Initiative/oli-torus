@@ -13,6 +13,9 @@ import {
   CodeLine,
   CodeV1,
   CodeV2,
+  Figure,
+  Definition as DefinitionModel,
+  DefinitionPronunciation as DefinitionPronunciationModel,
   FormulaBlock,
   FormulaInline,
   HeadingFive,
@@ -56,6 +59,9 @@ import { cellAttributes } from '../../../components/editing/elements/table/table
 import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
+import { Definition } from '../../../components/common/Definition';
+import { DefinitionPronunciation } from '../../../components/common/DefinitionPronunciation';
+import { Figure as FigureElement } from '../../../components/common/Figure';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -84,7 +90,7 @@ export class HtmlParser implements WriterImpl {
       .reduce((acc, mark) => mark(acc), <>{text}</>);
   }
 
-  private figure(context: WriterContext, attrs: any, content: React.ReactElement) {
+  private captioned_content(context: WriterContext, attrs: any, content: React.ReactElement) {
     if (!attrs.caption) {
       return content;
     }
@@ -97,7 +103,7 @@ export class HtmlParser implements WriterImpl {
     const width = attrs.width ? { width: this.escapeXml(String(attrs.width)) + 'px' } : {};
 
     return (
-      <div className="figure-wrapper" style={width}>
+      <div className="caption-wrapper" style={width}>
         <figure className="figure embed-responsive text-center">
           {content}
           <figcaption className="figure-caption text-center">{caption}</figcaption>
@@ -128,6 +134,50 @@ export class HtmlParser implements WriterImpl {
     return <h6>{next()}</h6>;
   }
 
+  figure(ctx: WriterContext, next: Next, element: Figure) {
+    return <FigureElement title={element.title}>{next()}</FigureElement>;
+  }
+
+  definitionMeaning(context: WriterContext, next: Next, _: any) {
+    return <li className="meaning">{next()}</li>;
+  }
+
+  definitionTranslation(context: WriterContext, next: Next, _: any) {
+    return <span className="translation">{next()} </span>;
+  }
+
+  definitionPronunciation(
+    context: WriterContext,
+    next: Next,
+    pronunciation: DefinitionPronunciationModel,
+  ) {
+    return <DefinitionPronunciation pronunciation={pronunciation} next={next} />;
+  }
+
+  definition(context: WriterContext, next: Next, definition: DefinitionModel) {
+    const writer = new ContentWriter();
+
+    // Need to use a ContentWriter to recursively render the parts of the definition
+    const meanings =
+      definition.meanings && writer.render(context, definition.meanings, new HtmlParser());
+
+    const pronunciation =
+      definition.pronunciation &&
+      writer.render(context, definition.pronunciation, new HtmlParser());
+
+    const translations =
+      definition.translations && writer.render(context, definition.translations, new HtmlParser());
+
+    return (
+      <Definition
+        definition={definition}
+        meanings={meanings}
+        pronunciation={pronunciation}
+        translations={translations}
+      />
+    );
+  }
+
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
     switch (element.subtype) {
       case 'latex':
@@ -148,7 +198,7 @@ export class HtmlParser implements WriterImpl {
   img(context: WriterContext, next: Next, attrs: ImageBlock) {
     if (!attrs.src) return <></>;
 
-    return this.figure(
+    return this.captioned_content(
       context,
       attrs,
       <img
@@ -186,7 +236,7 @@ export class HtmlParser implements WriterImpl {
   iframe(context: WriterContext, next: Next, attrs: Webpage | YouTube) {
     if (!attrs.src) return <></>;
 
-    return this.figure(
+    return this.captioned_content(
       context,
       attrs,
       <div className="embed-responsive embed-responsive-16by9">
@@ -197,7 +247,7 @@ export class HtmlParser implements WriterImpl {
   audio(context: WriterContext, next: Next, attrs: Audio) {
     if (!attrs.src) return <></>;
 
-    return this.figure(
+    return this.captioned_content(
       context,
       attrs,
       <audio controls src={this.escapeXml(attrs.src)}>
@@ -259,7 +309,7 @@ export class HtmlParser implements WriterImpl {
     return this.codev1(context, next, attrs as CodeV1, langClass);
   }
   codev1(context: WriterContext, next: Next, attrs: CodeV1, className: string) {
-    return this.figure(
+    return this.captioned_content(
       context,
       attrs,
       <pre>
@@ -268,7 +318,7 @@ export class HtmlParser implements WriterImpl {
     );
   }
   codev2(context: WriterContext, _next: Next, attrs: CodeV2, className: string) {
-    return this.figure(
+    return this.captioned_content(
       context,
       attrs,
       <pre>

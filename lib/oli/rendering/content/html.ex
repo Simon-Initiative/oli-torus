@@ -51,7 +51,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def img(%Context{} = context, _, %{"src" => src} = attrs) do
-    figure(context, attrs, [
+    captioned_content(context, attrs, [
       ~s|<img class="figure-img img-fluid"#{maybeAlt(attrs)}#{maybeWidth(attrs)} src="#{escape_xml!(src)}"/>\n|
     ])
   end
@@ -91,7 +91,7 @@ defmodule Oli.Rendering.Content.Html do
         ""
       end
 
-    figure(context, attrs, [
+    captioned_content(context, attrs, [
       """
       <div class="embed-responsive embed-responsive-16by9"#{iframe_width}>
         <iframe#{maybeAlt(attrs)} class="embed-responsive-item" allowfullscreen src="#{escape_xml!(src)}"></iframe>
@@ -105,7 +105,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def audio(%Context{} = context, _, %{"src" => src} = attrs) do
-    figure(context, attrs, [~s|<audio controls src="#{escape_xml!(src)}">
+    captioned_content(context, attrs, [~s|<audio controls src="#{escape_xml!(src)}">
       Your browser does not support the <code>audio</code> element.
     </audio>\n|])
   end
@@ -194,6 +194,72 @@ defmodule Oli.Rendering.Content.Html do
     ["<li>", next.(), "</li>\n"]
   end
 
+  def definition_meaning(%Context{} = _context, next, _) do
+    ["<li class='meaning'>", next.(), "</li>\n"]
+  end
+
+  def definition_translation(%Context{} = _context, next, _) do
+    ["<span class='translation'>", next.(), " </span>\n"]
+  end
+
+  def definition_pronunciation(%Context{} = _context, next, element) do
+    case element["src"] do
+      nil ->
+        ["<span class='pronunciation'>", next.(), "</span>\n"]
+
+      src ->
+        audio_id = UUID.uuid4()
+        play_code = "document.getElementById(\"#{audio_id}\").play();"
+
+        [
+          "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
+          "<span class='pronunciation-player' onClick='#{play_code}'>",
+          "<audio id='#{audio_id}' src='#{escape_xml!(src)}'></audio>",
+          next.(),
+          "</span>\n"
+        ]
+    end
+  end
+
+  defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
+    if pronunciation do
+      "Pronunciation: "
+    else
+      ""
+    end
+  end
+
+  defp maybePronunciationHeader(_), do: ""
+
+  defp meaningClass(meanings) do
+    case Enum.count(meanings) do
+      0 -> "meanings-empty"
+      1 -> "meanings-single"
+      _ -> "meanings"
+    end
+  end
+
+  def definition(
+        %Context{} = _context,
+        render_translation,
+        render_pronunciation,
+        render_meaning,
+        %{"term" => term, "meanings" => meanings} = element
+      ) do
+    [
+      "<div class='definition'><div class='term'>",
+      term,
+      "</div><i>(definition)</i> <span class='definition-header'>",
+      maybePronunciationHeader(element),
+      render_pronunciation.(),
+      "<span class='definition-pronunciation'>",
+      render_translation.(),
+      "</span></span><ol class='#{meaningClass(meanings)}'>",
+      render_meaning.(),
+      "</ol></div>\n"
+    ]
+  end
+
   def formula_class(false), do: "formula"
   def formula_class(true), do: "formula-inline"
 
@@ -230,6 +296,24 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def figure(%Context{} = _context, next, %{"title" => title}) do
+    [
+      "<div class='figure'><figure><figcaption>",
+      title,
+      "</figcaption><div class='figure-content'>",
+      next.(),
+      "</div></figure></div>\n"
+    ]
+  end
+
+  def figure(%Context{} = _context, next, _) do
+    [
+      "<div class='figure'>",
+      next.(),
+      "</div>\n"
+    ]
+  end
+
   def formula_inline(context, next, map) do
     formula(context, next, map, true)
   end
@@ -260,7 +344,7 @@ defmodule Oli.Rendering.Content.Html do
         "text"
       end
 
-    figure(context, attrs, [
+    captioned_content(context, attrs, [
       ~s|<pre><code class="language-#{language}">#{escape_xml!(code)}</code></pre>\n|
     ])
   end
@@ -282,7 +366,7 @@ defmodule Oli.Rendering.Content.Html do
         "text"
       end
 
-    figure(context, attrs, [
+    captioned_content(context, attrs, [
       ~s|<pre><code class="language-#{language}">|,
       next.(),
       "</code></pre>\n"
@@ -297,7 +381,7 @@ defmodule Oli.Rendering.Content.Html do
     {_error_id, _error_msg} =
       log_error("Malformed content element. Missing language attribute", attrs)
 
-    figure(context, attrs, [
+    captioned_content(context, attrs, [
       ~s|<pre><code class="language-none">|,
       next.(),
       "</code></pre>\n"
@@ -418,10 +502,6 @@ defmodule Oli.Rendering.Content.Html do
     |> String.replace_prefix("/course/link/", "")
   end
 
-  def definition(%Context{} = _context, next, _) do
-    ["<extra>", next.(), "</extra>\n"]
-  end
-
   def text(%Context{} = _context, %{"text" => text} = text_entity) do
     escape_xml!(text) |> wrap_with_marks(text_entity)
   end
@@ -514,10 +594,10 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   # Accessible captions are created using a combination of the <figure /> and <figcaption /> elements.
-  defp figure(_context, %{"caption" => ""} = _attrs, content), do: content
+  defp captioned_content(_context, %{"caption" => ""} = _attrs, content), do: content
 
-  defp figure(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
-    [~s|<div class="figure-wrapper">|] ++
+  defp captioned_content(%Context{} = context, %{"caption" => caption_content} = _attrs, content) do
+    [~s|<div class="caption-wrapper">|] ++
       [~s|<figure class="figure embed-responsive text-center">|] ++
       content ++
       [~s|<figcaption class="figure-caption text-center">|] ++
@@ -527,7 +607,7 @@ defmodule Oli.Rendering.Content.Html do
       ["</div>"]
   end
 
-  defp figure(_context, _attrs, content), do: content
+  defp captioned_content(_context, _attrs, content), do: content
 
   defp caption(_context, content) when is_binary(content) do
     escape_xml!(content)
