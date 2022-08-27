@@ -27,7 +27,7 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 
-export const MultiInputComponent: React.FC = () => {
+export const VlabComponent: React.FC = () => {
   const {
     state: activityState,
     context,
@@ -46,7 +46,7 @@ export const MultiInputComponent: React.FC = () => {
 
     // TODO: this will break when more than one instance of Vlab is present on a page
     const selectedFlaskXML = (
-      document.getElementById('vlab') as any
+      document.getElementById('vlab_' + model.stem.id) as any
     ).contentWindow.getSelectedItem();
     const parser = new DOMParser();
     const selectedFlask = parser.parseFromString(selectedFlaskXML, 'application/xml');
@@ -195,7 +195,9 @@ export const MultiInputComponent: React.FC = () => {
   const onVlabLoad = () => {
     if (model.assignmentSource === 'builtIn') {
       const assignment = model.assignmentPath;
-      (document.getElementById('vlab') as any).contentWindow.loadAssignment(assignment);
+      (document.getElementById('vlab_' + model.stem.id) as any).contentWindow.loadAssignment(
+        assignment,
+      );
     } else {
       const assignmentJSON = {
         assignment: JSON.parse(model.assignment),
@@ -205,7 +207,9 @@ export const MultiInputComponent: React.FC = () => {
         species: JSON.parse(model.species),
         spectra: JSON.parse(model.spectra),
       };
-      (document.getElementById('vlab') as any).contentWindow.loadAssignmentJSON(assignmentJSON);
+      (document.getElementById('vlab_' + model.stem.id) as any).contentWindow.loadAssignmentJSON(
+        assignmentJSON,
+      );
     }
   };
 
@@ -225,7 +229,12 @@ export const MultiInputComponent: React.FC = () => {
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
-        <iframe id="vlab" className="vlab-holder" src="/vlab/vlab.html" onLoad={onVlabLoad} />
+        <iframe
+          id={'vlab_' + (uiState.model as VlabSchema).stem.id}
+          className="vlab-holder"
+          src="/vlab/vlab.html"
+          onLoad={onVlabLoad}
+        />
         <StemDelivery
           className="form-inline"
           stem={(uiState.model as VlabSchema).stem}
@@ -256,7 +265,7 @@ export class VlabDelivery extends DeliveryElement<VlabSchema> {
     ReactDOM.render(
       <Provider store={store}>
         <DeliveryElementProvider {...props}>
-          <MultiInputComponent />
+          <VlabComponent />
         </DeliveryElementProvider>
       </Provider>,
       mountPoint,

@@ -78,7 +78,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
               <input
                 className="form-check-input"
                 type="radio"
-                name="assignmentSource"
+                name={'assignmentSource_' + model.stem.id}
                 value="builtIn"
                 checked={model.assignmentSource === 'builtIn'}
                 onChange={() => dispatch(VlabActions.setAssignmentSource('builtIn'))}
@@ -91,7 +91,7 @@ export const VlabConfigTab: React.FC<Props> = (props) => {
               <input
                 className="form-check-input"
                 type="radio"
-                name="assignmentSource"
+                name={'assignmentSource_' + model.stem.id}
                 value="fromJSON"
                 checked={model.assignmentSource === 'fromJSON'}
                 onChange={() => dispatch(VlabActions.setAssignmentSource('fromJSON'))}

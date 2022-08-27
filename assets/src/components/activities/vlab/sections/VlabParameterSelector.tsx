@@ -11,7 +11,7 @@ interface Props {
 const paramList = ['volume', 'temp', 'pH', 'moles', 'mass', 'molarity', 'concentration'];
 
 export const VlabParameterSelector: React.FC<Props> = (props) => {
-  const { dispatch } = useAuthoringElementContext<VlabSchema>();
+  const { model, dispatch } = useAuthoringElementContext<VlabSchema>();
   return (
     <>
       <div>
@@ -27,7 +27,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
               <input
                 className="form-check-input"
                 type="radio"
-                name="vlparam"
+                name={'vlparam_' + model.stem.id}
                 value={param}
                 checked={param === props.input.parameter}
                 onChange={() => dispatch(VlabActions.setVlabParameter(props.input.id, param))}
