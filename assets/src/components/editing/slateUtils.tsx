@@ -74,7 +74,7 @@ export const isTopLevel = (editor: Editor) => {
   const [...nodes] = Editor.nodes(editor, {
     match: (n) => {
       if (!Element.isElement(n)) return false;
-      return schema[n.type].isTopLevel;
+      return schema[n.type]?.isTopLevel || false;
     },
   });
   return nodes.every((node) => node[1].length === 1);

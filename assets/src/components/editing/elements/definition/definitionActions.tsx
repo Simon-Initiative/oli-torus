@@ -10,6 +10,7 @@ import { createButtonCommandDesc } from 'components/editing/elements/commands/co
 import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
 import { AudioSource } from '../../../../data/content/model/elements/types';
+import { insideSemanticElement } from '../utils';
 
 export const insertDefinition = createButtonCommandDesc({
   icon: 'menu_book',
@@ -17,9 +18,9 @@ export const insertDefinition = createButtonCommandDesc({
   execute: (_context, editor) => {
     const at = editor.selection;
     if (!at) return;
-
     Transforms.insertNodes(editor, Model.definition(), { at });
   },
+  precondition: (editor) => !insideSemanticElement(editor),
 });
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
