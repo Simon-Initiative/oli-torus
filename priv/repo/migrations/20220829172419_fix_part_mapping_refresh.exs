@@ -50,7 +50,14 @@ defmodule Oli.Repo.Migrations.FixPartMappingRefresh do
     """
 
     execute """
-    CREATE UNIQUE INDEX part_id_revision_id
+    CREATE UNIQUE INDEX part_id_revision_id_grading
+    ON public.part_mapping USING btree
+    (part_id COLLATE pg_catalog."default", revision_id, grading_approach)
+    TABLESPACE pg_default;
+    """
+
+    execute """
+    CREATE INDEX part_id_revision_id
     ON public.part_mapping USING btree
     (part_id COLLATE pg_catalog."default", revision_id)
     TABLESPACE pg_default;

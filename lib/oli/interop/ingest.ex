@@ -613,20 +613,6 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  # The part ids are valid when a unique string id is present for all parts.
-  defp has_valid_part_ids?(content) do
-    part_ids =
-      Map.get(content, "authoring", %{"parts" => []})
-      |> Map.get("parts", [])
-      |> Enum.map(fn p -> Map.get(p, "id") end)
-
-    ids = MapSet.new(part_ids)
-
-    # Presence of `nil` or a difference in size indicates either a part was missing an id
-    # or a part id was duplicated
-    !MapSet.member?(ids, nil) and MapSet.size(ids) == Enum.count(part_ids)
-  end
-
   defp create_activity(
          project,
          activity,
@@ -638,35 +624,31 @@ defmodule Oli.Interop.Ingest do
     with {:ok, %{"content" => content} = activity} <-
            maybe_migrate_resource_content(activity, :activity),
          :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
-      if has_valid_part_ids?(content) do
-        title =
-          case Map.get(activity, "title") do
-            nil -> Map.get(activity, "subType")
-            "" -> Map.get(activity, "subType")
-            title -> title
-          end
+      title =
+        case Map.get(activity, "title") do
+          nil -> Map.get(activity, "subType")
+          "" -> Map.get(activity, "subType")
+          title -> title
+        end
 
-        scope =
-          case Map.get(activity, "scope", "embedded") do
-            str when str in ~w(embedded banked) -> String.to_existing_atom(str)
-            _ -> :embedded
-          end
+      scope =
+        case Map.get(activity, "scope", "embedded") do
+          str when str in ~w(embedded banked) -> String.to_existing_atom(str)
+          _ -> :embedded
+        end
 
-        %{
-          scope: scope,
-          tags: transform_tags(activity, tag_map),
-          title: title,
-          content: content,
-          author_id: as_author.id,
-          objectives: process_activity_objectives(activity, objective_map),
-          resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
-          activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
-          scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
-        }
-        |> create_resource(project)
-      else
-        {:error, "Invalid part id in activity #{Map.get(activity, "id")}"}
-      end
+      %{
+        scope: scope,
+        tags: transform_tags(activity, tag_map),
+        title: title,
+        content: content,
+        author_id: as_author.id,
+        objectives: process_activity_objectives(activity, objective_map),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
+      }
+      |> create_resource(project)
     end
   end
 
