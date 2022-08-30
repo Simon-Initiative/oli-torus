@@ -82,6 +82,11 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Hierarchy do
   defp construct_attempt_prototypes(%VisitContext{latest_resource_attempt: nil}), do: []
 
   defp construct_attempt_prototypes(%VisitContext{
+         page_revision: %Revision{content: %{"advancedDelivery" => true}}
+       }),
+       do: []
+
+  defp construct_attempt_prototypes(%VisitContext{
          latest_resource_attempt: latest_resource_attempt,
          page_revision: %Revision{retake_mode: :targeted} = page_revision
        }) do
