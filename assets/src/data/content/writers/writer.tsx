@@ -31,6 +31,7 @@ export interface WriterImpl {
   definitionMeaning: ElementWriter;
   definitionPronunciation: ElementWriter;
   definitionTranslation: ElementWriter;
+  dialog: ElementWriter;
   tr: ElementWriter;
   th: ElementWriter;
   td: ElementWriter;
@@ -124,6 +125,8 @@ export class ContentWriter {
         return impl.callout(context, next, content);
       case 'callout_inline':
         return impl.calloutInline(context, next, content);
+      case 'dialog':
+        return impl.dialog(context, next, content);
       case 'figure':
         return impl.figure(context, next, content);
       case 'img':

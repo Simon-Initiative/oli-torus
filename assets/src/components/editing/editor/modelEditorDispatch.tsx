@@ -24,6 +24,7 @@ import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutE
 import { VideoEditor } from '../elements/video/VideoEditor';
 import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { FigureEditor } from '../elements/figure/FigureEditor';
+import { DialogEditor } from '../elements/dialog/DialogEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -94,6 +95,8 @@ export function editorFor(
       return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
     case 'code_line':
       return <span {...attributes}>{props.children}</span>;
+    case 'dialog':
+      return <DialogEditor {...(editorProps as EditorProps<ContentModel.Dialog>)} />;
     case 'table':
       return <TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
     case 'tr':

@@ -28,7 +28,7 @@ export type TopLevel =
 
 export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
 
-export type Semantic = Definition | Callout | Figure;
+export type Semantic = Definition | Callout | Figure | Dialog;
 
 export type Inline =
   | Hyperlink
@@ -51,7 +51,7 @@ export type List = OrderedList | UnorderedList;
 export type MediaBlock = ImageBlock | YouTube | Audio | Webpage | Video;
 export type SemanticChildren = TextBlock | Block;
 // These types are only used inside other structured types and not directly as .children5
-type SubElements = DefinitionMeaning | DefinitionPronunciation | DefinitionTranslation;
+type SubElements = DefinitionMeaning | DefinitionPronunciation | DefinitionTranslation | DialogLine;
 
 export type TableCell = TableHeader | TableData;
 
@@ -163,6 +163,24 @@ export interface Definition extends SlateElement<VoidChildren> {
   meanings: DefinitionMeaning[];
   translations: DefinitionTranslation[];
   pronunciation: DefinitionPronunciation;
+}
+
+export interface DialogSpeaker {
+  name: string;
+  image: string;
+  id: string;
+}
+export interface DialogLine {
+  type: 'dialog_line';
+  speaker: string;
+  id: string;
+  children: SemanticChildren[];
+}
+export interface Dialog extends SlateElement<VoidChildren> {
+  type: 'dialog';
+  title: string;
+  speakers: DialogSpeaker[];
+  lines: DialogLine[];
 }
 
 export type FormulaSubTypes = 'mathml' | 'latex';

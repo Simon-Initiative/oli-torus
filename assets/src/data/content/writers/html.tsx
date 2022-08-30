@@ -15,6 +15,7 @@ import {
   Figure,
   Definition as DefinitionModel,
   DefinitionPronunciation as DefinitionPronunciationModel,
+  Dialog as DialogModel,
   FormulaBlock,
   FormulaInline,
   HeadingFive,
@@ -61,6 +62,7 @@ import { Next, WriterImpl, ContentWriter } from './writer';
 import { Definition } from '../../../components/common/Definition';
 import { DefinitionPronunciation } from '../../../components/common/DefinitionPronunciation';
 import { Figure as FigureElement } from '../../../components/common/Figure';
+import { Dialog } from '../../../components/Dialog';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -175,6 +177,10 @@ export class HtmlParser implements WriterImpl {
         translations={translations}
       />
     );
+  }
+
+  dialog(context: WriterContext, next: Next, dialog: DialogModel) {
+    return <Dialog dialog={dialog} context={context} />;
   }
 
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
