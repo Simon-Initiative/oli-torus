@@ -228,12 +228,22 @@ defmodule Oli.Rendering.Content.Plaintext do
   def dialog_line(%Context{}, next, %{"speaker" => speaker_id}, %{"speakers" => speakers}) do
     speaker = Enum.find(speakers, fn speaker -> speaker["id"] == speaker_id end)
 
-    [
-      speaker["name"],
-      ": ",
-      next.(),
-      "\n"
-    ]
+    case speaker do
+      nil ->
+        [
+          "Unknown: ",
+          next.(),
+          "\n"
+        ]
+
+      _ ->
+        [
+          speaker["name"],
+          ": ",
+          next.(),
+          "\n"
+        ]
+    end
   end
 
   def dialog_line(%Context{}, next, _, _) do

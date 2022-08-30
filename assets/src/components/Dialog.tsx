@@ -7,6 +7,13 @@ export const Speaker: React.FC<{ speaker?: ContentModel.DialogSpeaker; onClick?:
   speaker,
   onClick,
 }) => {
+  if (!speaker) {
+    return (
+      <div className="dialog-speaker" onClick={onClick}>
+        Unknown Speaker
+      </div>
+    );
+  }
   return (
     <div className="dialog-speaker" onClick={onClick}>
       {speaker?.image && <img src={speaker.image} className="img-fluid speaker-portrait" />}

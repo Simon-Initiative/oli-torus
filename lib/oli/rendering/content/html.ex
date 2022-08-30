@@ -231,7 +231,7 @@ defmodule Oli.Rendering.Content.Html do
   def dialog_line_class(speaker_id, %{"speakers" => speakers}) do
     speaker_index = Enum.find_index(speakers, fn speaker -> speaker["id"] == speaker_id end)
 
-    case speaker_id do
+    case speaker_index do
       nil -> "speaker-1"
       _ -> "speaker-#{rem(speaker_index, 5) + 1}"
     end

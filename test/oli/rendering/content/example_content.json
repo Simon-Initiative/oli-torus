@@ -471,6 +471,15 @@
               "children": [{ "text": "Hello Speaker 1" }]
             }
           ]
+        },
+        {
+          "speaker": "3",
+          "children": [
+            {
+              "type": "p",
+              "children": [{ "text": "This speaker does not exist." }]
+            }
+          ]
         }
       ]
     },
