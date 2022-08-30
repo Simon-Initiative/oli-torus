@@ -401,6 +401,14 @@ defmodule Oli.Delivery.AttemptsTest do
       assert is_nil(access.score)
     end
 
+    test "get graded resource access when no attempts exist", %{
+      section: section
+    } do
+      accesses = Attempts.get_graded_resource_access_for_context(section.id)
+
+      assert Enum.count(accesses) == 0
+    end
+
     test "get graded resource access for specific students", %{
       section: section,
       graded_page: %{revision: revision},
@@ -448,7 +456,9 @@ defmodule Oli.Delivery.AttemptsTest do
     test "get graded resource accesses where the last lms sync failed - returns empty when no failed sync exists" do
       user = insert(:user)
 
-      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} = section_with_assessment(%{})
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+        section_with_assessment(%{})
+
       last_grade_update = insert(:lms_grade_update)
 
       insert(:resource_access,
@@ -466,7 +476,9 @@ defmodule Oli.Delivery.AttemptsTest do
       user1 = insert(:user)
       user2 = insert(:user)
 
-      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} = section_with_assessment(%{})
+      {:ok, section: section, unit_one_revision: _unit_one_revision, page_revision: page_revision} =
+        section_with_assessment(%{})
+
       last_successful_grade_update = insert(:lms_grade_update)
       last_grade_update = insert(:lms_grade_update)
 
