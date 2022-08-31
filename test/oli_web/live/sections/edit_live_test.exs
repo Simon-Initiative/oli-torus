@@ -196,5 +196,46 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> element("#section_display_curriculum_item_numbering")
              |> render() =~ "checked"
     end
+
+    test "update section with a long title shows an error alert", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, "/authoring/products/#{section.slug}")
+
+      long_title =
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{title: long_title}})
+
+      assert view
+             |> element("div.alert.alert-danger")
+             |> render() =~
+               "Couldn&#39;t update product title"
+
+      assert view
+             |> element("#section_title")
+             |> render() =~ long_title
+
+      assert has_element?(view, "span", "Title should be at most 255 character(s)")
+    end
+
+    test "update section with a valid title shows an info alert", %{conn: conn, section: section} do
+      {:ok, view, _html} = live(conn, "/authoring/products/#{section.slug}")
+
+      valid_title = "Valid title"
+
+      view
+      |> element("form[phx-submit=\"save\"")
+      |> render_submit(%{section: %{title: valid_title}})
+
+      assert view
+             |> element("div.alert.alert-info")
+             |> render() =~
+               "Product changes saved"
+
+      assert view
+             |> element("#section_title")
+             |> render() =~ valid_title
+    end
   end
 end
