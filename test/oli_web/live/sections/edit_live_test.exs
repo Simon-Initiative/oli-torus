@@ -12,6 +12,10 @@ defmodule OliWeb.Sections.EditLiveTest do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.EditView, section_slug)
   end
 
+  defp live_view_edit_section_route(section_slug) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.DetailsView, section_slug)
+  end
+
   defp create_section(_conn) do
     section = insert(:section)
 
@@ -198,7 +202,7 @@ defmodule OliWeb.Sections.EditLiveTest do
     end
 
     test "update section with a long title shows an error alert", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, "/authoring/products/#{section.slug}")
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
 
       long_title =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
@@ -217,10 +221,13 @@ defmodule OliWeb.Sections.EditLiveTest do
              |> render() =~ long_title
 
       assert has_element?(view, "span", "Title should be at most 255 character(s)")
+
+      updated_section = Sections.get_section!(section.id)
+      refute updated_section.title == long_title
     end
 
     test "update section with a valid title shows an info alert", %{conn: conn, section: section} do
-      {:ok, view, _html} = live(conn, "/authoring/products/#{section.slug}")
+      {:ok, view, _html} = live(conn, live_view_edit_section_route(section.slug))
 
       valid_title = "Valid title"
 
@@ -236,6 +243,9 @@ defmodule OliWeb.Sections.EditLiveTest do
       assert view
              |> element("#section_title")
              |> render() =~ valid_title
+
+      updated_section = Sections.get_section!(section.id)
+      assert updated_section.title == valid_title
     end
   end
 end
