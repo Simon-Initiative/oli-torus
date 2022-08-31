@@ -62,7 +62,7 @@ export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]
 
 export interface Figure extends SlateElement<SemanticChildren[]> {
   type: 'figure';
-  title: string;
+  title: SemanticChildren[];
 }
 
 export interface Callout extends SlateElement<SemanticChildren[]> {

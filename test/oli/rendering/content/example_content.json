@@ -484,6 +484,11 @@
       ]
     },
     {
+      "type": "figure",
+      "title": [{ "type": "p", "children": [{ "text": "Figure Title" }] }],
+      "children": [{ "type": "p", "children": [{ "text": "Figure Content" }] }]
+    },
+    {
       "type": "p",
       "children": [
         {
