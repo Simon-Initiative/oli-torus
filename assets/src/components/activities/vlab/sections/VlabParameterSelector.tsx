@@ -32,7 +32,7 @@ export const VlabParameterSelector: React.FC<Props> = (props) => {
                 checked={param === props.input.parameter}
                 onChange={() => dispatch(VlabActions.setVlabParameter(props.input.id, param))}
               />
-              {friendlyVlabParameter(param)}
+              {friendlyVlabParameter(param as any)}
             </label>
           </div>
         ))}

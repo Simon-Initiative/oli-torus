@@ -67,14 +67,13 @@ export const VlabComponent: React.FC = () => {
             selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName('species'),
           );
           if (param === 'volume' || param === 'temp') {
-            value = selectedFlask
-              .getElementsByTagName('flask')[0]
-              .getElementsByTagName(param)[0].textContent;
+            value = selectedFlask.getElementsByTagName('flask')[0].getElementsByTagName(param)[0]
+              .textContent as any;
           } else if (param === 'pH') {
             speciesList.forEach((species) => {
               if (species.getElementsByTagName('id')[0].textContent === '1') {
                 const hPlusMolarity: number =
-                  parseFloat(species.getElementsByTagName('moles')[0].textContent) / volume;
+                  parseFloat(species.getElementsByTagName('moles')[0].textContent as any) / volume;
                 value = (-1 * Math.log10(hPlusMolarity)).toString();
               }
             });
@@ -83,14 +82,14 @@ export const VlabComponent: React.FC = () => {
               if (species.getElementsByTagName('id')[0].textContent === input.species) {
                 if (param === 'molarity') {
                   value = (
-                    parseFloat(species.getElementsByTagName('moles')[0].textContent) / volume
+                    parseFloat(species.getElementsByTagName('moles')[0].textContent as any) / volume
                   ).toString();
                 } else if (param === 'concentration') {
                   value = (
-                    parseFloat(species.getElementsByTagName('mass')[0].textContent) / volume
+                    parseFloat(species.getElementsByTagName('mass')[0].textContent as any) / volume
                   ).toString();
                 } else {
-                  value = species.getElementsByTagName(param)[0].textContent;
+                  value = species.getElementsByTagName(param)[0].textContent as any;
                 }
               }
             });
