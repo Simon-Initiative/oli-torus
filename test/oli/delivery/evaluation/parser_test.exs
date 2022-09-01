@@ -37,4 +37,18 @@ defmodule Oli.Delivery.Evaluation.ParserTest do
                "input equals {some string with escaped curly brackets here \\} and here \\{ }"
              )
   end
+
+  test "parses math equation with escaped characters" do
+    assert {:ok,
+            {:equals, :input,
+             "\\frac{1}{\\lambda}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2"}} ==
+             parse(
+               "input equals {\\\\frac\\{1\\}\\{\\\\lambda\\}\\\\left(\\\\left\\\\lbrace x\\\\right\\\\rbrace\\\\right)^2}"
+             )
+  end
+
+  test "parses existing content backslashes that are followed by a non-escape char" do
+    assert {:ok, {:like, :input, "(Plus\\s*\\[\\s*2\\s*,\\s*3\\s*,\\s*4\\s*\\])"}} ==
+             parse("input like {(Plus\\s*\\[\\s*2\\s*,\\s*3\\s*,\\s*4\\s*\\])}")
+  end
 end
