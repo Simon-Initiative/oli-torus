@@ -157,6 +157,7 @@ defmodule Oli.Delivery.Sections.Section do
     |> validate_dates_consistency(:start_date, :end_date)
     |> unique_constraint(:context_id, name: :sections_active_context_id_unique_index)
     |> Slug.update_never("sections")
+    |> validate_length(:title, max: 255)
   end
 
   def validate_positive_grace_period(changeset) do
