@@ -86,7 +86,7 @@ export const Model = {
       speakers: [Model.dialogSpeaker('Speaker #1'), Model.dialogSpeaker('Speaker #2')],
     }),
 
-  figure: (title = '') => create<Figure>({ type: 'figure', title, children: [Model.p()] }),
+  figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),

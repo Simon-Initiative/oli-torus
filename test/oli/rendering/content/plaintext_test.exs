@@ -32,6 +32,8 @@ defmodule Oli.Content.Content.PlaintextTest do
 
       assert rendered_text =~
                "Dialog: Sample Dialog\nSpeaker 1: Hello Speaker 2 \nSpeaker 2: Hello Speaker 1"
+
+      assert rendered_text =~ "Figure Title \nFigure Content"
     end
   end
 end

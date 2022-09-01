@@ -45,7 +45,7 @@ defmodule Oli.Rendering.Content do
   @callback formula(%Context{}, next, %{}) :: [any()]
   @callback formula_inline(%Context{}, next, %{}) :: [any()]
 
-  @callback figure(%Context{}, next, %{}) :: [any()]
+  @callback figure(%Context{}, next, next, %{}) :: [any()]
 
   @callback callout(%Context{}, next, %{}) :: [any()]
   @callback callout_inline(%Context{}, next, %{}) :: [any()]
@@ -182,6 +182,16 @@ defmodule Oli.Rendering.Content do
 
   def render(
         %Context{} = context,
+        %{"type" => "figure", "children" => children, "title" => title} = element,
+        writer
+      ) do
+    render_children = fn -> render(context, children, writer) end
+    render_title = fn -> render(context, title, writer) end
+    writer.figure(context, render_children, render_title, element)
+  end
+
+  def render(
+        %Context{} = context,
         %{"type" => "dialog"} = element,
         writer
       ) do
@@ -237,9 +247,6 @@ defmodule Oli.Rendering.Content do
 
       "img_inline" ->
         writer.img_inline(context, next, element)
-
-      "figure" ->
-        writer.figure(context, next, element)
 
       "video" ->
         writer.video(context, next, element)

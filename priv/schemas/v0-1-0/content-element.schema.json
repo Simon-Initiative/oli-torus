@@ -887,7 +887,10 @@
           "const": "figure"
         },
         "title": {
-          "type": "string"
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
         },
         "children": {
           "type": "array",
@@ -895,7 +898,8 @@
             "$ref": "#/$defs/semantic-element-content"
           }
         }
-      }
+      },
+      "required": ["type", "children", "title"]
     },
 
     "semantic-element-content": {

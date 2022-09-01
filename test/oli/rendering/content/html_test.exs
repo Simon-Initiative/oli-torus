@@ -76,6 +76,9 @@ defmodule Oli.Content.Content.HtmlTest do
 
       assert rendered_html_string =~
                "<div class=\"dialog-speaker\" ><img src=\"https://www.example.com/image.png\" class=\"img-fluid speaker-portrait\"/><div class=\"speaker-name\">Speaker 2</div></div>"
+
+      assert rendered_html_string =~
+               "<div class='figure'><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
     end
 
     test "renders malformed content gracefully", %{author: author} do
