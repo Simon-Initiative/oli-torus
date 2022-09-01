@@ -198,11 +198,6 @@
   flex: 1;
 }
 
-.input-group > .rbt .rbt-input-hint,
-.input-group > .rbt .rbt-aux {
-  z-index: $z-content-2;
-}
-
 .input-group > .rbt:not(:first-child) .form-control {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
