@@ -1,4 +1,4 @@
-import { AllModelElements, ModelElement } from 'data/content/model/elements/types';
+import { AllModelElements } from 'data/content/model/elements/types';
 
 type SchemaKey = keyof Schema;
 type ValidChildren = Partial<Record<SchemaKey, boolean>>;
@@ -23,7 +23,7 @@ const BlockElements: SchemaKey[] = [
   'callout',
 ];
 
-export const SemanticElements: SchemaKey[] = ['callout', 'definition', 'figure'];
+export const SemanticElements: SchemaKey[] = ['callout', 'definition', 'figure', 'dialog'];
 
 const HeadingElements: SchemaKey[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 const TextBlockElements: SchemaKey[] = ['p', ...HeadingElements];
@@ -95,6 +95,18 @@ export const schema: Schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: true,
+    validChildren: toObj(SemanticChildrenElements),
+  },
+  dialog: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: toObj([]),
+  },
+  dialog_line: {
+    isVoid: false,
+    isBlock: true,
+    isTopLevel: false,
     validChildren: toObj(SemanticChildrenElements),
   },
   pronunciation: {

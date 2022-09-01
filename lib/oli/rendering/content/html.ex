@@ -194,6 +194,61 @@ defmodule Oli.Rendering.Content.Html do
     ["<li>", next.(), "</li>\n"]
   end
 
+  def dialog(%Context{}, next, %{"title" => title}) do
+    ["<div class=\"dialog\"><h1>", title, "</h1>", next.(), "</div>"]
+  end
+
+  def dialog(%Context{}, next, _) do
+    ["<div class=\"dialog\">", next.(), "</div>"]
+  end
+
+  def dialog_speaker_portrait(image) do
+    "<img src=\"#{image}\" class=\"img-fluid speaker-portrait\"/>"
+  end
+
+  def dialog_speaker_portrait() do
+    # "<div class=\"material-icons speaker-portrait\">person</div>"
+    ""
+  end
+
+  def dialog_speaker(speaker_id, %{"speakers" => speakers}) do
+    speaker = Enum.find(speakers, fn speaker -> speaker["id"] == speaker_id end)
+
+    ["<div class=\"dialog-speaker\" >"] ++
+      case speaker do
+        %{"name" => name, "image" => image} ->
+          [dialog_speaker_portrait(image), "<div class=\"speaker-name\">", name, "</div>"]
+
+        %{"name" => name} ->
+          [dialog_speaker_portrait(), "<div class=\"speaker-name\">", name, "</div>"]
+
+        _ ->
+          ["<div class=\"speaker-name\">", "Unknown Speaker", "</div>"]
+      end ++
+      ["</div>"]
+  end
+
+  def dialog_line_class(speaker_id, %{"speakers" => speakers}) do
+    speaker_index = Enum.find_index(speakers, fn speaker -> speaker["id"] == speaker_id end)
+
+    case speaker_index do
+      nil -> "speaker-1"
+      _ -> "speaker-#{rem(speaker_index, 5) + 1}"
+    end
+  end
+
+  def dialog_line_class(_, _), do: "speaker-1"
+
+  def dialog_line(%Context{}, next, %{"speaker" => speaker_id}, dialog) do
+    [
+      "<div class=\"dialog-line #{dialog_line_class(speaker_id, dialog)}\">",
+      dialog_speaker(speaker_id, dialog),
+      "<div class=\"dialog-content\">",
+      next.(),
+      "</div></div>"
+    ]
+  end
+
   def definition_meaning(%Context{} = _context, next, _) do
     ["<li class='meaning'>", next.(), "</li>\n"]
   end

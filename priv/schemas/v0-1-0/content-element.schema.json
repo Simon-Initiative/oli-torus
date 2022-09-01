@@ -112,6 +112,9 @@
         },
         {
           "$ref": "#/$defs/figure"
+        },
+        {
+          "$ref": "#/$defs/dialog"
         }
       ]
     },
@@ -979,6 +982,66 @@
         "children": {
           "type": "array",
           "items": { "$ref": "#" }
+        }
+      }
+    },
+    "dialog-line": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "dialog_line"
+        },
+        "speaker": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        }
+      }
+    },
+    "dialog-speaker": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "dialog": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "dialog"
+        },
+        "speakers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dialog-speaker"
+          }
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dialog-line"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
         }
       }
     },

@@ -439,6 +439,51 @@
       "src": "x^2 + y^2 = z^2"
     },
     {
+      "type": "dialog",
+      "title": "Sample Dialog",
+      "speakers": [
+        {
+          "id": "1",
+          "name": "Speaker 1",
+          "image": "https://www.example.com/image.png"
+        },
+        {
+          "id": "2",
+          "name": "Speaker 2",
+          "image": "https://www.example.com/image.png"
+        }
+      ],
+      "lines": [
+        {
+          "speaker": "1",
+          "children": [
+            {
+              "type": "p",
+              "children": [{ "text": "Hello Speaker 2" }]
+            }
+          ]
+        },
+        {
+          "speaker": "2",
+          "children": [
+            {
+              "type": "p",
+              "children": [{ "text": "Hello Speaker 1" }]
+            }
+          ]
+        },
+        {
+          "speaker": "3",
+          "children": [
+            {
+              "type": "p",
+              "children": [{ "text": "This speaker does not exist." }]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "type": "p",
       "children": [
         {

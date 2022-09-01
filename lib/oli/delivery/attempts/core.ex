@@ -243,7 +243,7 @@ defmodule Oli.Delivery.Attempts.Core do
     |> join(:left, [spp, _, r], a in ResourceAccess,
       on: r.resource_id == a.resource_id and a.section_id == spp.section_id
     )
-    |> where([spp, _, r, _], spp.section_id == ^section_id and r.graded == true)
+    |> where([spp, _, r, a], not is_nil(a) and spp.section_id == ^section_id and r.graded == true)
     |> select([_, _, _, a], a)
   end
 

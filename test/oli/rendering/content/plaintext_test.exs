@@ -29,6 +29,9 @@ defmodule Oli.Content.Content.PlaintextTest do
                "[Formula]: <mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow>"
 
       assert rendered_text =~ "[Formula]: x^2 + y^2 = z^2"
+
+      assert rendered_text =~
+               "Dialog: Sample Dialog\nSpeaker 1: Hello Speaker 2 \nSpeaker 2: Hello Speaker 1"
     end
   end
 end

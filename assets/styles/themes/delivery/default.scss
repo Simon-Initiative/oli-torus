@@ -45,6 +45,13 @@ html.authoring .content-block .delivery {
   $objectives-background: lighten($cyan, 35%);
   $objectives-border-color: lighten($cyan, 30%);
 
+  // Dialog colors
+  $speaker1: #d1e7dd;
+  $speaker2: #f8d7da;
+  $speaker3: #cff4fc;
+  $speaker4: #fff3cd;
+  $speaker5: #ffe5d0;
+
   // Auth providers buttons
 
   $google-button-background-color: $white;
@@ -263,6 +270,13 @@ html.authoring.dark .content-block .delivery {
   $feedback-incorrect-color: $red;
   $feedback-error-bg: lighten($orange, 32%);
   $feedback-error-color: $orange;
+
+  // Dialog colors
+  $speaker1: #051b11;
+  $speaker2: #2c0b0e;
+  $speaker3: #032830;
+  $speaker4: #332701;
+  $speaker5: #331904;
 
   $hints-color: $gray-200;
   $hints-bg: $gray-700;
