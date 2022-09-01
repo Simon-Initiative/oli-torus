@@ -310,6 +310,7 @@ defmodule Oli.Resources do
           time_limit: previous_revision.time_limit,
           scope: previous_revision.scope,
           retake_mode: previous_revision.retake_mode,
+          parameters: previous_revision.parameters,
           tags: previous_revision.tags
         },
         convert_strings_to_atoms(attrs)

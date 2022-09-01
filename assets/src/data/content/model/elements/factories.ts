@@ -33,6 +33,9 @@ import {
   DefinitionTranslation,
   Definition,
   AllModelElements,
+  Dialog,
+  DialogLine,
+  DialogSpeaker,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -70,7 +73,20 @@ export const Model = {
   calloutInline: (text = '') =>
     create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
 
-  figure: (title = '') => create<Figure>({ type: 'figure', title, children: [Model.p()] }),
+  dialogSpeaker: (name: string) => ({ name, image: '', id: guid() }),
+
+  dialogLine: (speaker: string) =>
+    create<DialogLine>({ type: 'dialog_line', speaker, children: [Model.p()] }),
+
+  dialog: (title = '') =>
+    create<Dialog>({
+      type: 'dialog',
+      title,
+      lines: [],
+      speakers: [Model.dialogSpeaker('Speaker #1'), Model.dialogSpeaker('Speaker #2')],
+    }),
+
+  figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),

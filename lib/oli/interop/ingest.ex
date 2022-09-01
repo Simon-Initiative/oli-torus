@@ -726,12 +726,15 @@ defmodule Oli.Interop.Ingest do
         title -> title
       end
 
+    parameters = Map.get(objective, "parameters", nil)
+
     %{
       tags: transform_tags(objective, tag_map),
       title: title,
       content: %{},
       author_id: as_author.id,
       objectives: %{},
+      parameters: parameters,
       children:
         Map.get(objective, "objectives", [])
         |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end),

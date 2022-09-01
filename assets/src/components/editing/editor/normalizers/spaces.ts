@@ -15,6 +15,7 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'definition',
   'figure',
   'callout',
+  'dialog',
 ]);
 
 export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
