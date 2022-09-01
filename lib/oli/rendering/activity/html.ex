@@ -25,14 +25,7 @@ defmodule Oli.Rendering.Activity.Html do
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
-    activity_summary = activity_map[activity_id]
-
-    bib_params =
-      Enum.reduce(bib_app_params, [], fn x, acc ->
-        acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
-      end)
-
-    case activity_summary do
+    case activity_map[activity_id] do
       nil ->
         {error_id, error_msg} =
           log_error(
@@ -72,6 +65,11 @@ defmodule Oli.Rendering.Activity.Html do
         section_slug = context.section_slug
 
         activity_html_id = get_activity_html_id(activity_id, model_json)
+
+        bib_params =
+          Enum.reduce(bib_app_params, [], fn x, acc ->
+            acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
+          end)
 
         # See DeliveryElement.ts for a definition of the corresponding client-side type ActivityContext
         activity_context =

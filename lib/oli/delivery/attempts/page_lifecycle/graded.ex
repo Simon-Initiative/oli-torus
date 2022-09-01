@@ -78,7 +78,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.Graded do
       get_resource_attempt_history(page_revision.resource_id, section_slug, user_id)
 
     # We want to disregard any attempts that pertained to revisions whose graded status
-    # do not match the current graded status. This acommodates the toggling of "graded" status
+    # do not match the current graded status. This accommodates the toggling of "graded" status
     # across publications, interwoven with student attempts, to work correctly
     resource_attempts =
       Enum.filter(resource_attempts, fn a -> a.revision.graded == page_revision.graded end)

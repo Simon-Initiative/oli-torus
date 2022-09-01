@@ -6,6 +6,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
     FeedbackAction,
     NavigationAction,
     StateUpdateAction,
+    ExplanationAction,
     SubmissionAction
   }
 
@@ -82,6 +83,14 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Persistence do
 
   defp persist_single_evaluation(
          {_, {:ok, %StateUpdateAction{} = action_result}},
+         {:ok, replace, results},
+         _datashop_session_id
+       ) do
+    {:cont, {:ok, replace, results ++ [action_result]}}
+  end
+
+  defp persist_single_evaluation(
+         {_, {:ok, %ExplanationAction{} = action_result}},
          {:ok, replace, results},
          _datashop_session_id
        ) do

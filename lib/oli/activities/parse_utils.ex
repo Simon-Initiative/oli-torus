@@ -1,6 +1,4 @@
 defmodule Oli.Activities.ParseUtils do
-  import Oli.Utils
-
   @doc """
   Takes a list of items that are either of the
   form {:ok, struct} or {:error, string} and if any
@@ -84,16 +82,5 @@ defmodule Oli.Activities.ParseUtils do
       _ ->
         true
     end
-  end
-
-  def default_content_item(text) when is_binary(text) do
-    %{
-      content: %{
-        "model" => [
-          %{"children" => [%{"text" => text}], "id" => uuid(), "type" => "p"}
-        ]
-      },
-      id: uuid()
-    }
   end
 end

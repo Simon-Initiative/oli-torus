@@ -3,7 +3,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
   alias Oli.Delivery.Evaluation.Actions.{SubmissionAction, FeedbackAction}
   alias Oli.Activities.Model.{Part, Response}
   alias Oli.Delivery.Evaluation.Rule
-  alias Oli.Activities.ParseUtils
+  alias Oli.Activities.Model.Feedback
 
   @doc """
   Evaluates a student input for a given activity part.  In a successful
@@ -52,7 +52,7 @@ defmodule Oli.Delivery.Evaluation.Evaluator do
            type: "FeedbackAction",
            score: 0,
            out_of: adjusted_out_of,
-           feedback: ParseUtils.default_content_item("Incorrect"),
+           feedback: Feedback.from_text("Incorrect"),
            attempt_guid: context.part_attempt_guid,
            error: nil,
            show_page: nil,
