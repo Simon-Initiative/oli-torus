@@ -80,7 +80,7 @@ export const loadInitialPageState = createAsyncThunk(
       }
 
       if (params.resourceAttemptState) {
-        //EverApp state is already up-to date at this point. We should not update the Ever App state with params.resourceAttemptState
+        //EverApp state is already up-to date and merged with sessionState at this point. We should not update the Ever App state with params.resourceAttemptState
         const partAttemptVariables = Object.keys(params.resourceAttemptState).filter(
           (key) => !key.startsWith('app.'),
         );
