@@ -27,6 +27,8 @@ import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
+import { DEFAULT_PART_ID } from '../common/utils';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode } = useAuthoringElementContext<LikertModelSchema>();
@@ -100,6 +102,9 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
 
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={selectedPartId} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Explanation">
+          <Explanation partId={DEFAULT_PART_ID} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot
