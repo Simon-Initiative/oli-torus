@@ -159,7 +159,7 @@ defmodule Oli.MixProject do
       {:joken, "~> 2.2.0"},
       {:jose, "~> 1.10"},
       {:lti_1p3, "~> 0.4.6"},
-      {:lti_1p3_ecto_provider, "~> 0.3.2"},
+      {:lti_1p3_ecto_provider, "~> 0.3.3"},
       {:libcluster, "~> 3.3"},
       {:libcluster_ec2, "~> 0.6"},
       {:mime, "~> 1.2"},
