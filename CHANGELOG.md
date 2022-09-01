@@ -7,6 +7,7 @@
 ### Enhancements
 
 - Add support for inline 'term' markup
+- Add tab for authoring 'explanation' feedback to all activities
 
 ## 0.21.3 (2022-08-05)
 
