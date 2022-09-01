@@ -215,7 +215,7 @@ export const getExpressionStringForValue = (
   }
 
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
-    val = JSON.stringify(parseArray(val));
+    val = isEverAppArrayObject ? JSON.stringify(val) : JSON.stringify(parseArray(val));
   }
 
   if (v.type === CapiVariableTypes.NUMBER) {

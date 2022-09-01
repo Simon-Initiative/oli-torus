@@ -80,7 +80,18 @@ export const loadInitialPageState = createAsyncThunk(
       }
 
       if (params.resourceAttemptState) {
-        Object.assign(sessionState, params.resourceAttemptState);
+        //EverApp state is already up-to date at this point. We should not update the Ever App state with params.resourceAttemptState
+        const partAttemptVariables = Object.keys(params.resourceAttemptState).filter(
+          (key) => !key.startsWith('app.'),
+        );
+        const resourceAttemptStateWithoutEverAppState = partAttemptVariables.reduce(
+          (acc: Record<string, any>, entry) => {
+            acc[entry] = params.resourceAttemptState[entry];
+            return acc;
+          },
+          {},
+        );
+        Object.assign(sessionState, resourceAttemptStateWithoutEverAppState);
       }
 
       // update scripting env with session state
