@@ -24,6 +24,7 @@ export const ytCmdDesc = createButtonCommandDesc({
   execute: (_context, editor, src: string) => {
     const at = editor.selection;
     if (!at) return;
+    src = src || '';
 
     const hasParams = src.includes('?');
 

@@ -67,6 +67,18 @@ defmodule Oli.Content.Content.HtmlTest do
                "<span class=\"formula-inline\"><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></span>"
 
       assert rendered_html_string =~ "<span class=\"formula-inline\">\\(x^2 + y^2 = z^2\\)</span>"
+
+      assert rendered_html_string =~
+               "<div class=\"dialog-content\"><p>Hello Speaker 2</p>\n</div>"
+
+      assert rendered_html_string =~
+               "<div class=\"dialog-content\"><p>Hello Speaker 1</p>\n</div>"
+
+      assert rendered_html_string =~
+               "<div class=\"dialog-speaker\" ><img src=\"https://www.example.com/image.png\" class=\"img-fluid speaker-portrait\"/><div class=\"speaker-name\">Speaker 2</div></div>"
+
+      assert rendered_html_string =~
+               "<div class='figure'><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
     end
 
     test "renders malformed content gracefully", %{author: author} do

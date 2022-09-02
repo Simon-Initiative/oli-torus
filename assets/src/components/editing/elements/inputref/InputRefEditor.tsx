@@ -69,9 +69,11 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
         content={
           <Toolbar context={props.commandContext}>
             <Toolbar.Group>
-              {initCommands(input, inputRefContext.setInputType).map((desc, i) => (
-                <CommandButton description={desc} key={i} />
-              ))}
+              {initCommands(input, inputRefContext.setInputType, inputRefContext.isMultiInput).map(
+                (desc, i) => (
+                  <CommandButton description={desc} key={i} />
+                ),
+              )}
             </Toolbar.Group>
           </Toolbar>
         }

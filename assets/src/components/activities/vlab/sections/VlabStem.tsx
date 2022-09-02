@@ -22,9 +22,10 @@ export const VlabStem: React.FC<Props> = (props) => {
     projectSlug,
     inputRefContext: {
       setInputType: (id, type) => dispatch(VlabActions.setInputType(id, type)),
-      inputs: new Map(model.inputs.map((v) => [v.id, v])),
+      inputs: new Map(model.inputs.map((v) => [v.id, v])) as any,
       selectedInputRef: props.selectedInputRef,
       setSelectedInputRef: props.setSelectedInputRef,
+      isMultiInput: false,
     },
   };
 

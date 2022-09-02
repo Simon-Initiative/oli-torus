@@ -46,6 +46,7 @@ defmodule Oli.Resources.Revision do
     field :time_limit, :integer, default: 0
     field :scope, Ecto.Enum, values: [:embedded, :banked], default: :embedded
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
+    field :parameters, :map
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
     belongs_to :activity_type, Oli.Activities.ActivityRegistration
     belongs_to :primary_resource, Oli.Resources.Resource
@@ -80,6 +81,7 @@ defmodule Oli.Resources.Revision do
       :time_limit,
       :scope,
       :retake_mode,
+      :parameters,
       :scoring_strategy_id,
       :activity_type_id
     ])

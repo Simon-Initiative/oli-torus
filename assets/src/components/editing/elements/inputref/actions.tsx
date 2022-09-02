@@ -6,6 +6,7 @@ import { MultiInput } from 'components/activities/multi_input/schema';
 export const initCommands = (
   model: VlabInput | MultiInput,
   setInputType: (id: string, updated: VlabInputType) => void,
+  isMultiInput: boolean,
 ): CommandDescription[] => {
   const makeCommand = (description: string, type: VlabInputType): CommandDescription => ({
     type: 'CommandDesc',
@@ -19,12 +20,12 @@ export const initCommands = (
       precondition: () => true,
     },
   });
-
+  console.log(isMultiInput);
   return [
     makeCommand('Dropdown', 'dropdown'),
     makeCommand('Text', 'text'),
     makeCommand('Number', 'numeric'),
     makeCommand('Math', 'math'),
-    makeCommand('Vlab', 'vlabvalue'),
+    ...(isMultiInput ? [] : [makeCommand('Vlab', 'vlabvalue')]),
   ];
 };
