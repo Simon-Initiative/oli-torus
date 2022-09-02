@@ -50,7 +50,7 @@ export const getExpressionStringForValue = (
       canEval = test?.result !== undefined && !test.result.message;
       if (
         test?.result &&
-        test?.result?.length > 1 &&
+        test?.result?.length &&
         v.key &&
         v.key.startsWith('app.') &&
         typeof val === 'string' &&
