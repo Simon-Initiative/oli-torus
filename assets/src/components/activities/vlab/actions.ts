@@ -1,6 +1,12 @@
 import { MCActions } from 'components/activities/common/authoring/actions/multipleChoiceActions';
 import { StemActions } from 'components/activities/common/authoring/actions/stemActions';
-import { Dropdown, VlabInput, VlabSchema, VlabInputType } from 'components/activities/vlab/schema';
+import {
+  Dropdown,
+  VlabInput,
+  VlabSchema,
+  VlabInputType,
+  VlabValue,
+} from 'components/activities/vlab/schema';
 import {
   Choice,
   ChoiceId,
@@ -203,8 +209,8 @@ export const VlabActions = {
       }
 
       if (type === 'vlabvalue') {
-        (input as VlabInput).parameter = 'volume';
-        (input as VlabInput).species = '';
+        (input as VlabValue).parameter = 'volume';
+        (input as VlabValue).species = '';
       }
 
       part.responses = {
@@ -221,14 +227,14 @@ export const VlabActions = {
   setVlabParameter(id: string, param: string) {
     return (model: VlabSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
-      (input as VlabInput).parameter = param;
+      (input as VlabValue).parameter = param;
     };
   },
 
   setVlabSpecies(id: string, species: string) {
     return (model: VlabSchema) => {
       const input = getByUnsafe(model.inputs, (x) => x.id === id);
-      (input as VlabInput).species = species;
+      (input as VlabValue).species = species;
     };
   },
 
