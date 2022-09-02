@@ -351,21 +351,13 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def figure(%Context{} = _context, next, %{"title" => title}) do
+  def figure(%Context{} = _context, render_children, render_title, _) do
     [
       "<div class='figure'><figure><figcaption>",
-      title,
+      render_title.(),
       "</figcaption><div class='figure-content'>",
-      next.(),
+      render_children.(),
       "</div></figure></div>\n"
-    ]
-  end
-
-  def figure(%Context{} = _context, next, _) do
-    [
-      "<div class='figure'>",
-      next.(),
-      "</div>\n"
     ]
   end
 

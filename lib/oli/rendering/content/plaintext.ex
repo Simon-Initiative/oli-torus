@@ -171,12 +171,8 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
-  def figure(%Context{} = _context, next, %{"title" => title}) do
-    [title, next.(), " "]
-  end
-
-  def figure(%Context{} = _context, next, _) do
-    [next.(), " "]
+  def figure(%Context{} = _context, render_children, render_title, _) do
+    [render_title.(), "\n", render_children.(), "\n"]
   end
 
   def definition_meaning(%Context{} = _context, next, _) do

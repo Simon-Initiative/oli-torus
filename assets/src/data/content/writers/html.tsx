@@ -136,7 +136,11 @@ export class HtmlParser implements WriterImpl {
   }
 
   figure(ctx: WriterContext, next: Next, element: Figure) {
-    return <FigureElement title={element.title}>{next()}</FigureElement>;
+    return (
+      <FigureElement context={ctx} title={element.title}>
+        {next()}
+      </FigureElement>
+    );
   }
 
   definitionMeaning(context: WriterContext, next: Next, _: any) {
