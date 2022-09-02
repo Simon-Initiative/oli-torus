@@ -3,7 +3,15 @@
 ## Unreleased
 
 ### Bug Fixes
+
 ### Enhancements
+
+## 0.21.5 (2022-09-01)
+
+### Bug Fixes
+
+- Fix an issue where activity content containing backslashes prior to parser escaping breaks evaluation
+- Fix an issue where survey reset wasn't working properly
 
 ## 0.21.4 (2022-08-23)
 

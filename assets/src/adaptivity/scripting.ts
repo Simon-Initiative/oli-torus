@@ -50,7 +50,7 @@ export const getExpressionStringForValue = (
       canEval = test?.result !== undefined && !test.result.message;
       if (
         test?.result &&
-        test?.result?.length > 1 &&
+        test?.result?.length &&
         v.key &&
         v.key.startsWith('app.') &&
         typeof val === 'string' &&
@@ -215,7 +215,7 @@ export const getExpressionStringForValue = (
   }
 
   if (v.type === CapiVariableTypes.ARRAY || v.type === CapiVariableTypes.ARRAY_POINT) {
-    val = JSON.stringify(parseArray(val));
+    val = isEverAppArrayObject ? JSON.stringify(val) : JSON.stringify(parseArray(val));
   }
 
   if (v.type === CapiVariableTypes.NUMBER) {
