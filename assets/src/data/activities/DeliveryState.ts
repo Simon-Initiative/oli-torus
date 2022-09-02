@@ -499,7 +499,7 @@ export const listenForParentSurveyReset = (
 ) =>
   Maybe.maybe(surveyId).lift((surveyId) =>
     // listen for survey submit events if the delivery element is in a survey
-    document.addEventListener(Events.Registry.SurveySubmit, (e) => {
+    document.addEventListener(Events.Registry.SurveyReset, (e) => {
       // check if this activity belongs to the survey being reset
       if (e.detail.id === surveyId) {
         dispatch(resetAction(onResetActivity, partInputs));
