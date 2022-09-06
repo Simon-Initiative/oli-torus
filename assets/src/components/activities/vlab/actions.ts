@@ -218,9 +218,10 @@ export const VlabActions = {
         text: Responses.forTextInput(),
         numeric: Responses.forNumericInput(),
         vlabvalue: Responses.forNumericInput(),
-      }[type];
+        math: Responses.forMathInput(),
+      }[type] as any;
 
-      input.inputType = type;
+      input.inputType = type as any;
     };
   },
 
