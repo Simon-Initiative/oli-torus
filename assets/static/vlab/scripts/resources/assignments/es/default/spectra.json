@@ -1,0 +1,229 @@
+{
+  "SPECTRA_LIST": {
+    "SPECIES": [
+      {
+        "id": "49",
+        "BAND": [
+          {
+            "wavelength": "190",
+            "width": "130",
+            "e": "50000"
+          },
+          {
+            "wavelength": "270",
+            "width": "60",
+            "e": "4000"
+          },
+          {
+            "wavelength": "285",
+            "width": "40",
+            "e": "4000"
+          },
+          {
+            "wavelength": "325",
+            "width": "100",
+            "e": "6000"
+          },
+          {
+            "wavelength": "360",
+            "width": "100",
+            "e": "2000"
+          },
+          {
+            "wavelength": "436",
+            "width": "180",
+            "e": "19000"
+          }
+        ]
+      },
+      {
+        "id": "50",
+        "BAND": [
+          {
+            "wavelength": "195",
+            "width": "100",
+            "e": "29000"
+          },
+          {
+            "wavelength": "225",
+            "width": "100",
+            "e": "27000"
+          },
+          {
+            "wavelength": "290",
+            "width": "100",
+            "e": "3000"
+          },
+          {
+            "wavelength": "310",
+            "width": "80",
+            "e": "10000"
+          },
+          {
+            "wavelength": "400",
+            "width": "100",
+            "e": "8000"
+          },
+          {
+            "wavelength": "520",
+            "width": "140",
+            "e": "3000"
+          },
+          {
+            "wavelength": "560",
+            "width": "120",
+            "e": "7000"
+          },
+          {
+            "wavelength": "617",
+            "width": "120",
+            "e": "38000"
+          }
+        ]
+      },
+      {
+        "id": "41",
+        "BAND": [
+          {
+            "wavelength": "200",
+            "width": "50",
+            "e": "75000"
+          },
+          {
+            "wavelength": "240",
+            "width": "60",
+            "e": "5000"
+          },
+          {
+            "wavelength": "275",
+            "width": "80",
+            "e": "9000"
+          },
+          {
+            "wavelength": "320",
+            "width": "80",
+            "e": "7000"
+          },
+          {
+            "wavelength": "360",
+            "width": "100",
+            "e": "2000"
+          },
+          {
+            "wavelength": "400",
+            "width": "120",
+            "e": "2000"
+          },
+          {
+            "wavelength": "460",
+            "width": "100",
+            "e": "8000"
+          },
+          {
+            "wavelength": "500",
+            "width": "80",
+            "e": "37000"
+          },
+          {
+            "wavelength": "540",
+            "width": "80",
+            "e": "32000"
+          }
+        ]
+      },
+      {
+        "id": "42",
+        "BAND": [
+          {
+            "wavelength": "200",
+            "width": "50",
+            "e": "75000"
+          },
+          {
+            "wavelength": "240",
+            "width": "60",
+            "e": "5000"
+          },
+          {
+            "wavelength": "275",
+            "width": "80",
+            "e": "9000"
+          },
+          {
+            "wavelength": "320",
+            "width": "80",
+            "e": "7000"
+          },
+          {
+            "wavelength": "360",
+            "width": "100",
+            "e": "2000"
+          },
+          {
+            "wavelength": "450",
+            "width": "150",
+            "e": "28000"
+          }
+        ]
+      },
+      {
+        "id": "48",
+        "BAND": [
+          {
+            "wavelength": "190",
+            "width": "110",
+            "e": "40000"
+          },
+          {
+            "wavelength": "250",
+            "width": "60",
+            "e": "16000"
+          },
+          {
+            "wavelength": "295",
+            "width": "100",
+            "e": "9000"
+          },
+          {
+            "wavelength": "374",
+            "width": "80",
+            "e": "3000"
+          },
+          {
+            "wavelength": "555",
+            "width": "80",
+            "e": "14000"
+          },
+          {
+            "wavelength": "515",
+            "width": "140",
+            "e": "7000"
+          }
+        ]
+      },
+      {
+        "id": "44",
+        "BAND": [{
+          "wavelength": "410",
+          "width": "200",
+          "e": "15000"
+        }]
+      },
+      {
+        "id": "43",
+        "BAND": [
+          {
+            "wavelength": "520",
+            "width": "100",
+            "e": "25000"
+          },
+          {
+            "wavelength": "560",
+            "width": "100",
+            "e": "22000"
+          }
+        ]
+      }
+    ]
+  }
+}

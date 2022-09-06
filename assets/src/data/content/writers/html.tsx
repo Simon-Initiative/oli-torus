@@ -2,6 +2,7 @@
 import { DropdownInput } from 'components/activities/common/delivery/inputs/DropdownInput';
 import { HintsBadge } from 'components/activities/common/delivery/inputs/HintsBadge';
 import { NumericInput } from 'components/activities/common/delivery/inputs/NumericInput';
+import { VlabInput } from 'components/activities/common/delivery/inputs/VlabInput';
 import { TextInput } from 'components/activities/common/delivery/inputs/TextInput';
 import { MathInput } from 'components/activities/common/delivery/inputs/MathInput';
 import { CodeLanguages } from 'components/editing/elements/blockcode/codeLanguages';
@@ -400,6 +401,8 @@ export class HtmlParser implements WriterImpl {
         return withHints(<TextInput {...shared} />);
       case 'math':
         return withHints(<MathInput {...shared} inline />);
+      case 'vlabvalue':
+        return withHints(<VlabInput {...shared} />);
       case 'dropdown':
         return withHints(
           <DropdownInput

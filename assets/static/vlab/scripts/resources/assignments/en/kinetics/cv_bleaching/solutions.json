@@ -1,0 +1,41 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy",
+                  "species": [
+                     {
+                        "id": 0
+                     }
+                  ]
+               },
+               {
+                "name": "100 µM CV",
+                "description": "CV Stock solution",
+                "volume": 0.1,
+                "species": [
+                  {"id": 0},
+                  {"id": 3, "amount": 0.00001}
+                ]
+               },
+              {
+                "name": "0.10 M NaOH",
+                "description": "0.10 M NaOH",
+                "volume": 0.1,
+                "species": [
+                  {"id": 0},
+                  {"id": 2, "amount": 0.01},
+                  {"id": 5, "amount": 0.01}
+                ]
+               }
+            ]
+         }
+      ]
+   }
+}

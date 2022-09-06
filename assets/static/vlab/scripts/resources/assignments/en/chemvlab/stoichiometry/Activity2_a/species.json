@@ -1,0 +1,49 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "state": "l", 
+            "molecularWeight": "18.016"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008"
+         }, 
+         {
+            "id": "3", 
+            "name": "NH<sub>4</sub>NO<sub>3</sub>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4", 
+            "molecularWeight": "80.05"
+         }, 
+         {
+            "id": "5", 
+            "name": "NaC<sub>12</sub>H<sub>25</sub>SO<sub>4</sub>", 
+            "enthalpy": "-132.51", 
+            "entropy": "113.4", 
+            "molecularWeight": "288.38"
+         }, 
+         {
+            "id": "6", 
+            "name": "CH<sub>3</sub>COCH<sub>3</sub>", 
+            "enthalpy": "-132.51", 
+            "entropy": "113.4", 
+            "molecularWeight": "58.08"
+         }
+      ]
+   }
+}

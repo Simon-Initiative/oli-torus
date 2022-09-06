@@ -1,0 +1,45 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "River Sample", 
+                  "description": "River Water Sample", 
+                  "volume": "0.1", 
+                  "vessel": "100mLVolumetricFlask", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.0003747"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.000168874"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.000005739"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

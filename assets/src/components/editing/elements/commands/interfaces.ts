@@ -21,6 +21,7 @@ export interface CommandContext {
     inputs: Map<ID, MultiInput>;
     selectedInputRef: InputRef | undefined;
     setSelectedInputRef: (ref: InputRef | undefined) => void;
+    isMultiInput: boolean;
   };
 }
 

@@ -1,0 +1,370 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "state": "l"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75"
+         }, 
+         {
+            "id": "3", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4"
+         }, 
+         {
+            "id": "4", 
+            "name": "I<sup>-</sup>", 
+            "enthalpy": "-55.19", 
+            "entropy": "111.3"
+         }, 
+         {
+            "id": "5", 
+            "name": "Br<sup>-</sup>", 
+            "enthalpy": "-121.55", 
+            "entropy": "82.4"
+         }, 
+         {
+            "id": "6", 
+            "name": "ClO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-129.33", 
+            "entropy": "182.0"
+         }, 
+         {
+            "id": "7", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.16", 
+            "entropy": "56.5"
+         }, 
+         {
+            "id": "8", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0"
+         }, 
+         {
+            "id": "9", 
+            "name": "ClO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-103.97", 
+            "entropy": "162.3"
+         }, 
+         {
+            "id": "10", 
+            "name": "HF", 
+            "enthalpy": "-320.08", 
+            "entropy": "88.7"
+         }, 
+         {
+            "id": "11", 
+            "name": "F<sup>-</sup>", 
+            "enthalpy": "-332.08", 
+            "entropy": "-12.437604874789841"
+         }, 
+         {
+            "id": "12", 
+            "name": "Cl<sub>2</sub>CHCOOH", 
+            "enthalpy": "-619.1", 
+            "entropy": "160.64269874686065"
+         }, 
+         {
+            "id": "13", 
+            "name": "Cl<sub>2</sub>CHCOO<sup>-</sup>", 
+            "enthalpy": "-622.3", 
+            "entropy": "125.0"
+         }, 
+         {
+            "id": "14", 
+            "name": "NCCH<sub>2</sub>COOH", 
+            "enthalpy": "-54.2", 
+            "entropy": "276.04235418317654"
+         }, 
+         {
+            "id": "15", 
+            "name": "NCCH<sub>2</sub>COO<sup>-</sup>", 
+            "enthalpy": "-56.2", 
+            "entropy": "222.0"
+         }, 
+         {
+            "id": "16", 
+            "name": "HOCl", 
+            "enthalpy": "-120.9", 
+            "entropy": "139.73132118751613"
+         }, 
+         {
+            "id": "17", 
+            "name": "OCl<sup>-</sup>", 
+            "enthalpy": "-107.1", 
+            "entropy": "42.0"
+         }, 
+         {
+            "id": "18", 
+            "name": "HOBr", 
+            "enthalpy": "-112.42", 
+            "entropy": "144.34603038591086"
+         }, 
+         {
+            "id": "19", 
+            "name": "OBr<sup>-</sup>", 
+            "enthalpy": "-93.63", 
+            "entropy": "42.0"
+         }, 
+         {
+            "id": "20", 
+            "name": "HOI", 
+            "enthalpy": "-130.4", 
+            "entropy": "168.51298635759844"
+         }, 
+         {
+            "id": "21", 
+            "name": "OI<sup>-</sup>", 
+            "enthalpy": "-107.4", 
+            "entropy": "42.0"
+         }, 
+         {
+            "id": "22", 
+            "name": "CH<sub>3</sub>COOH", 
+            "enthalpy": "-485.76", 
+            "entropy": "178.7"
+         }, 
+         {
+            "id": "23", 
+            "name": "CH<sub>3</sub>COO<sup>-</sup>", 
+            "enthalpy": "-486.01", 
+            "entropy": "86.79009304852713"
+         }, 
+         {
+            "id": "24", 
+            "name": "HCN", 
+            "enthalpy": "107.1", 
+            "entropy": "124.7"
+         }, 
+         {
+            "id": "25", 
+            "name": "CN<sup>-</sup>", 
+            "enthalpy": "150.6", 
+            "entropy": "94.3212804273552"
+         }, 
+         {
+            "id": "26", 
+            "name": "H<sub>2</sub>CO<sub>3</sub>", 
+            "enthalpy": "-669.65", 
+            "entropy": "187.4"
+         }, 
+         {
+            "id": "27", 
+            "name": "HCO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-691.99", 
+            "entropy": "-9.130028584898714"
+         }, 
+         {
+            "id": "28", 
+            "name": "CO<sub>3</sub><sup>-2</sup>", 
+            "enthalpy": "-677.14", 
+            "entropy": "-156.8741463912882"
+         }, 
+         {
+            "id": "29", 
+            "name": "HSO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-887.34", 
+            "entropy": "131.8"
+         }, 
+         {
+            "id": "30", 
+            "name": "HSO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-887.34", 
+            "entropy": "131.8"
+         }, 
+         {
+            "id": "31", 
+            "name": "C<sub>6</sub>H<sub>5</sub>NH<sub>2</sub>", 
+            "enthalpy": "31.299999999999997", 
+            "entropy": "-192.11783197722377"
+         }, 
+         {
+            "id": "32", 
+            "name": "C<sub>6</sub>H<sub>5</sub>NH<sub>3</sub><sup>+</sup>", 
+            "enthalpy": "63.2", 
+            "entropy": "92.0"
+         }, 
+         {
+            "id": "33", 
+            "name": "NH<sub>3</sub>", 
+            "enthalpy": "-80.29", 
+            "entropy": "111.42203050810235"
+         }, 
+         {
+            "id": "34", 
+            "name": "Mg(OH)<sub>2</sub>", 
+            "enthalpy": "-924.54", 
+            "state": "s", 
+            "molecularWeight": "58.3", 
+            "entropy": "63.18"
+         }, 
+         {
+            "id": "35", 
+            "name": "Mg<sup>+2</sup>", 
+            "enthalpy": "-466.85", 
+            "entropy": "-128.7070741292725"
+         }, 
+         {
+            "id": "36", 
+            "name": "NH<sub>4</sub><sup>+</sup>", 
+            "enthalpy": "-132.51", 
+            "entropy": "113.4"
+         }, 
+         {
+            "id": "37", 
+            "name": "H<sub>3</sub>PO<sub>4</sub>", 
+            "enthalpy": "-1288.34", 
+            "entropy": "158.19999999999982"
+         }, 
+         {
+            "id": "38", 
+            "name": "H<sub>2</sub>PO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-1296.29", 
+            "entropy": "90.87604282938487"
+         }, 
+         {
+            "id": "39", 
+            "name": "HPO<sub>4</sub><sup>-2</sup>", 
+            "enthalpy": "-1292.14", 
+            "entropy": "-33.15335540626731"
+         }, 
+         {
+            "id": "40", 
+            "name": "PO<sub>4</sub><sup>-3</sup>", 
+            "enthalpy": "-1277.4", 
+            "entropy": "-226.04278471190318"
+         }, 
+         {
+            "id": "41", 
+            "name": "MethylOrangeH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "0", 
+            "saturation": "100", 
+            "value": "90", 
+            "colorConcentration": ".000000001"
+         }, 
+         {
+            "id": "42", 
+            "name": "MethylOrange<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "65.01640899362991", 
+            "hue": "62", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".0000000015"
+         }, 
+         {
+            "id": "43", 
+            "name": "MethylRedH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "0", 
+            "saturation": "100", 
+            "value": "90", 
+            "colorConcentration": ".000000001"
+         }, 
+         {
+            "id": "44", 
+            "name": "MethylRed<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "45.50335035130863", 
+            "hue": "62", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".0000000015"
+         }, 
+         {
+            "id": "45", 
+            "name": "CresolRedH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "62", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".0000000015"
+         }, 
+         {
+            "id": "46", 
+            "name": "CresolRed<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "-26.87908002817133", 
+            "hue": "0", 
+            "saturation": "100", 
+            "value": "90", 
+            "colorConcentration": ".000000001"
+         }, 
+         {
+            "id": "47", 
+            "name": "PhenolphthaleinH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0"
+         }, 
+         {
+            "id": "48", 
+            "name": "Phenolphthalein<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "-58.14250539834609", 
+            "hue": "0", 
+            "saturation": "85", 
+            "value": "100", 
+            "colorConcentration": ".0000000015"
+         }, 
+         {
+            "id": "49", 
+            "name": "BromocresolGreenH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "296", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".000000006"
+         }, 
+         {
+            "id": "50", 
+            "name": "BromocresolGreen<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "41.95706717590055", 
+            "hue": "137", 
+            "saturation": "90", 
+            "value": "95", 
+            "colorConcentration": ".0000000025"
+         }, 
+         {
+            "id": "60", 
+            "name": "CuCl", 
+            "state": "s", 
+            "molecularWeight": "98.9959", 
+            "enthalpy": "-137.2", 
+            "entropy": "86.2", 
+            "hue": "200", 
+            "saturation": "12", 
+            "value": "100", 
+            "colorConcentration": ".3",
+            "specificHeat": "0.1171"
+         }, 
+         {
+            "id": "61", 
+            "name": "Cu<sup>+</sup>", 
+            "enthalpy": "71.67", 
+            "entropy": "40.6"
+         }
+      ]
+   }
+}

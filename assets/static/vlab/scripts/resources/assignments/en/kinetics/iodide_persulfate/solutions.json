@@ -1,0 +1,61 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy",
+                  "species": [
+                     {
+                        "id": 0
+                     }
+                  ]
+               },
+               {
+                "name": "0.2 M NH<sub>4</sub>I",
+                "description": "0.2 M ammonium iodide",
+                "volume": 0.1,
+                "species": [
+                  {"id": 0},
+                  {"id": 3, "amount": 0.02},
+                  {"id": 6, "amount": 0.02}
+                ]
+               },
+              {
+                "name": "0.20 M (NH<sub>4</sub>)<sub>2</sub>S<sub>2</sub>O<sub>8</sub>",
+                "description": "0.20 M ammonium persulfate",
+                "volume": 0.1,
+                "species": [
+                  {"id": 0},
+                  {"id": 6, "amount": 0.04},
+                  {"id": 5, "amount": 0.02}
+                ]
+               },
+               {
+                  "name": "0.20 M (NH<sub>4</sub>)<sub>2</sub>S<sub>2</sub>O<sub>3</sub>",
+                  "description": "0.20 M ammonium thiosulfate",
+                  "volume": 0.1,
+                  "species": [
+                    {"id": 0},
+                    {"id": 6, "amount": 0.04},
+                    {"id": 9, "amount": 0.02}
+                  ]
+                 },
+                 {
+                  "name": "Starch",
+                  "description": "Starch",
+                  "volume": 0.1,
+                  "species": [
+                    {"id": 0},
+                    {"id": 11, "amount": 0.05}
+                  ]
+                 }
+            ]
+         }
+      ]
+   }
+}

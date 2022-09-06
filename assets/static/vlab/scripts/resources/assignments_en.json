@@ -1,0 +1,343 @@
+[
+  {
+    "category": "Default",
+    "assignments":[
+      {
+        "name": "Default Lab",
+        "author": "Mike Karabinos",
+        "description": "Contains the species, reactions, and solutions used by the Default Stockroom of the Virtual Lab",
+        "path": "default"
+      }
+    ]
+  },
+  {
+    "category": "chem207",
+    "assignments":[
+      {
+        "name": "exp01",
+        "author": "Mike Karabinos",
+        "description": "Contains the species, reactions, and solutions used by the Default Stockroom of the Virtual Lab",
+        "path": "chem207/exp01"
+      },
+      {
+        "name": "density",
+        "author": "not sure",
+        "description": "solvent model seems ok?",
+        "path": "chem207/density"
+      }
+    ]
+  },
+  {
+    "category": "Molarity and Density",
+    "assignments":[
+      {
+        "name": "Dilution Problem 1",
+        "author": "Dave Yaron",
+        "description": "Dilution of a glucose solution",
+        "path": "MolarityDensity/dilution"
+      },
+      {
+        "name": "Dilution Problem 2",
+        "author": "Mike Karabinos",
+        "description": "Preparation of a stock solution from a concentrated acid",
+        "path": "MolarityDensity/dilution2"
+      },
+      {
+        "name": "Sucrose Problem",
+        "author": "Jordi Cuadros and Tim Palucka",
+        "description": "Molarity, molality, mass percent, mole fraction? Understanding concentrations",
+        "path": "MolarityDensity/sucrose"
+      },
+      {
+        "name": "Making Solutions From Solids",
+        "author": "Jordi Cuadros and Mike Karabinos",
+        "description": "Making salt solutions at different concentration.",
+        "path": "MolarityDensity/salt"
+      },
+      {
+        "name": "Metals Density Problem",
+        "author": "Jordi Cuadros and Tim Palucka",
+        "description": "Identify metals from their density",
+        "path": "MolarityDensity/metals"
+      },
+      {
+        "name": "Liquid Density Problem",
+        "author": "Jordi Cuadros and Tim Palucka",
+        "description": "Identify a liquid from its density",
+        "path": "MolarityDensity/liquid"
+      },
+      {
+        "name": "Alcohol Density Problem",
+        "author": "Jordi Cuadros and Tim Palucka",
+        "description": "Determine the concentration from the density of the solution",
+        "path": "MolarityDensity/alcohol"
+      }
+    ]
+  },
+  {
+    "category": "Stoichiometry and Limiting Reagents",
+    "assignments":[
+      {
+        "name": "Jello Problem",
+        "author": "Donovan Lange",
+        "description": "In this problem, students mix together solutions in an atempt to control their color change",
+        "path": "Stoichiometry/jello"
+      },
+      {
+        "name": "Oracle Problem",
+        "author": "Donovan Lange",
+        "description": "Limiting reagent problem to determine the stoichiometry of a reaction",
+        "path": "Stoichiometry/oracle"
+      },
+      {
+        "name": "Oracle Problem 2",
+        "author": "Donovan Lange",
+        "description": "The limiting reagent problem from above with a more challenging solution",
+        "path": "Stoichiometry/oracle2"
+      },
+      {
+        "name": "Textbook Style Limiting Reagents Problems",
+        "author": "David Yaron and Mike Karabinos",
+        "description": "Solving text-book syle limiting reagent problems using the virtual lab",
+        "path": "Stoichiometry/textbook"
+      },
+      {
+        "name": "Open-ended Text Book Style Limiting Reagent Problem",
+        "author": "David Yaron",
+        "description": "Design an experiment to answer a limiting reagent style problem",
+        "path": "Stoichiometry/textbook2"
+      },
+      {
+        "name": "Predicting DNA concentration",
+        "author": "Dave Yaron",
+        "description": "Predict the results of a limiting reagents problem involving strings of DNA",
+        "path": "Stoichiometry/dna"
+      },
+      {
+        "name": "DNA/Dye Problem 2",
+        "author": "Dave Yaron",
+        "description": "In this limiting reagent excercise, students develop an experiment to determine the concentration of an unlabeled container",
+        "path": "Stoichiometry/dna2"
+      }
+    ]
+  },
+  {
+    "category": "Quantitative Analysis",
+    "assignments":[
+      {
+        "name": "Unknown Concentration Problem",
+        "author": "Mike Karabinos",
+        "description": "Determine the concentration of Silver ion in a Silver Nitrate Solution",
+        "path": "Quantitative/unknown"
+      },
+      {
+        "name": "Gravimetric Determination of Arsenic",
+        "author": "Jordi Cuadros",
+        "description": "Determine the amount of arsenic present in soil samples",
+        "path": "Quantitative/gravimetric"
+      }
+    ]
+  },
+  {
+    "category": "Chemical Equilibrium",
+    "assignments":[
+      {
+        "name": "Cobalt Lab",
+        "author": "Bob Belford",
+        "description": "An experiment that looks at Cobalt(II) Conplexes & LeChatlier's Principle",
+        "path": "Chemical/cobalt"
+      },
+      {
+        "name": "DNA Binding Problem",
+        "author": "Dave Yaron",
+        "description": "Explore equilibrium constants in biochemical systems",
+        "path": "Chemical/dna"
+      }
+    ]
+  },
+  {
+    "category": "Solubility and Solids",
+    "assignments":[
+      {
+        "name": "Temperature and the Solubility of Salts",
+        "author": "Rob Belford and David Yaron",
+        "description": "Examine the solubilites of salts based on temperature",
+        "path": "Solubility/temperature"
+      },
+      {
+        "name": "Determining the Solubility Product",
+        "author": "Rob Belford and David Yaron",
+        "description": "Determine the solubility product constant (Ksp) for various solids",
+        "path": "Solubility/determine"
+      },
+      {
+        "name": "Solubility Determination Problem",
+        "author": "Dave Yaron",
+        "description": "Determine the solubility of CuCl at different temperatures",
+        "path": "Solubility/solubility"
+      }
+    ]
+  },
+  {
+    "category": "Thermochemistry",
+    "assignments":[
+      {
+        "name": "Thermochemistry Problem 1",
+        "author": "David Yaron",
+        "description": "Observe and then determine the heat of reactions in aqueous solutions",
+        "path": "Thermochemistry/thermo"
+      },
+      {
+        "name": "Coffee",
+        "author": "Tim Palucka and David Yaron",
+        "description": "Create a solution of Coffee with a desired temperature",
+        "path": "Thermochemistry/coffee"
+      },
+      {
+        "name": "Coolant I",
+        "author": "Tim Palucka and Jordi Cuadros",
+        "description": "Measure and compare the heat capacity of an unknown liquid",
+        "path": "Thermochemistry/freeze"
+      },
+      {
+        "name": "Coolant II",
+        "author": "Tim Palucka and David Yaron",
+        "description": "Measure and compare the heat capacity of an unknown liquid with an unknown density",
+        "path": "Thermochemistry/freeze2"
+      },
+      {
+        "name": "Camping 1",
+        "author": "Tim Palucka and David Yaron",
+        "description": "Measure the enthalpy of a reaction",
+        "path": "Thermochemistry/thermoQ1"
+      },
+      {
+        "name": "Camping 2",
+        "author": "Tim Palucka and David Yaron",
+        "description": "Determine change in the enthalpy of a reaction as the concentration of reactants are varied",
+        "path": "Thermochemistry/thermoQ2"
+      },
+      {
+        "name": "Camping 3",
+        "author": "David Yaron and Jordi Cuadros",
+        "description": "Create solutions that when mixed, increase to a certain temperature",
+        "path": "Thermochemistry/thermoQ3"
+      },
+      {
+        "name": "ATP Reaction (Thermochemistry and Bonding)",
+        "author": "David Yaron and Jordi Cuadros",
+        "description": "Determine the enthalpy of the ATP reaction",
+        "path": "Thermochemistry/atp"
+      }
+    ]
+  },
+  {
+    "category": "Acids and Bases",
+    "assignments":[
+      {
+        "name": "Strong Acid Problems",
+        "author": "Rea Freeland",
+        "description": "Text book style strong acid and base problems that can be checked using the virtual lab",
+        "path": "Acids/strongacid"
+      },
+      {
+        "name": "Weak Acid Problems",
+        "author": "Rea Freeland",
+        "description": "Text book style weak acid and base problems that can be checked using the virtual lab",
+        "path": "Acids/weakacid"
+      },
+      {
+        "name": "Method of Successive Dilutions",
+        "author": "Bob Belford",
+        "description": "Exploring the pH Scale by the method of successive dilutions",
+        "path": "Acids/dilut"
+      },
+      {
+        "name": "Prelab Exercises: Acid Base Titration",
+        "author": "Sophia Nussbaum",
+        "description": "A collection of questions and exercises to complete before performing an acid/base titration",
+        "path": "Acids/prelabAcid"
+      },
+      {
+        "name": "Standardization of NaOH",
+        "author": "Dave Yaron",
+        "description": "In this prelab exercise, students standardize a solution of NaOH using KHP",
+        "path": "Acids/titration"
+      },
+      {
+        "name": "Unknown Acid and Base Problem",
+        "author": "Dave Yaron",
+        "description": "In this exercise, students graph the titration curve of an unknown acid and base to determine their pKa&apos;s and concentrations",
+        "path": "Acids/unknownacid"
+      },
+      {
+        "name": "pKa and Weak Acid Problem",
+        "author": "Dave Yaron",
+        "description": "Determine the pKa and concentration ratio of a protein in solution",
+        "path": "Acids/buffer"
+      },
+      {
+        "name": "Buffer Creation Problem",
+        "author": "Sophia Nussbaum",
+        "description": "An exercise to design a buffer solution with specific properties",
+        "path": "Acids/mkbuffer"
+      },
+      {
+        "name": "DNA/Dye Problem",
+        "author": "Dave Yaron",
+        "description": "Students examine equilibrium and buffer solutions in a biological setting",
+        "path": "Acids/dnadye"
+      }
+    ]
+  },
+  {"category": "Equilibrium",
+  "assignments": [
+    {"name": "Iron thiocyanate equilibrium",
+    "author": "Ryan Dwyer",
+    "description": "Analyze the iron thiocynate equilibrium",
+    "path": "iron_thiocyanate"
+      }
+    ]
+  },
+  {
+    "category": "ChemVlab+",
+    "assignments":[
+      {
+        "name": "Activity1_a",
+        "author": "us",
+        "description": "test",
+        "path": "chemvlab/stoichiometry/Activity1_a"
+      },
+      {
+        "name": "Activity1_b",
+        "author": "us",
+        "description": "test",
+        "path": "chemvlab/stoichiometry/Activity1_b"
+      },
+      {
+        "name": "New Gravimetric 1",
+        "author": "ChemVlab Team",
+        "description": "Testing for solubilityu",
+        "path": "chemvlab/stoichiometry/gravnew"
+      },
+      {
+        "name": "Bio remediation",
+        "author": "ChemVlab Team",
+        "description": "Debugging this",
+        "path": "chemvlab/stoichiometry/biored"
+      },
+      {
+        "name": "Solar1",
+        "author": "ChemVlab Team",
+        "description": "Debugging this",
+        "path": "chemvlab/thermodynamics/Solar1"
+      },
+      {
+        "name": "Solar2",
+        "author": "ChemVlab Team",
+        "description": "Debugging this",
+        "path": "chemvlab/thermodynamics/Solar2"
+      }
+    ]
+  }
+]

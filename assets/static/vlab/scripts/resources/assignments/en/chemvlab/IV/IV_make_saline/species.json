@@ -1,0 +1,70 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+        {
+            "entropy": "69.91", 
+            "name": "H<sub>2</sub>O", 
+            "state": "l", 
+            "enthalpy": "-285.83", 
+            "density": "1.000", 
+            "specificHeat": "1.000", 
+            "molecularWeight": "18.01534", 
+            "unitActivity": "true", 
+            "id": "0"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0" 
+           
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75" 
+          
+         }, 
+         {
+            "id": "3", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+              "density": "2.0",
+            "molecularWeight": "22.99"
+         }, 
+        {
+            "id": "4", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.58999999999997", 
+            "entropy": "56.5", 
+              "density": "2.0",
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "5", 
+            "name": "NaCl", 
+            "enthalpy": "-411.2", 
+            "entropy": "72.1", 
+            "state": "s", 
+             "hue": "52",
+            "saturation": "2",
+          
+            "value": "92",
+            "molecularWeight": "58.44", 
+            "density": "1.25"
+         },
+         {
+            "entropy": "85.0", 
+            "name": "NaCl<sub>(aq)</sub>", 
+            "state": "aq", 
+            "enthalpy": "-400.0", 
+            "molecularWeight": "58.44", 
+            "density": "1.25", 
+            "id": "6"
+         }
+    
+      ]
+   }
+}

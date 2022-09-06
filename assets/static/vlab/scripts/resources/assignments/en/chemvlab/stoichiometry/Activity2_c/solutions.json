@@ -1,0 +1,37 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Reported Acetone Sample", 
+                  "description": "Reported Sample of Acetone from Factory C", 
+                  "volume": "0.1", 
+                  "vessel": "100mLVolumetricFlask", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.0000344352617"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

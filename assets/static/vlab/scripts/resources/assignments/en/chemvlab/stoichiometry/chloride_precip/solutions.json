@@ -1,0 +1,114 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+                 {
+                  "name": "0.5 M KCl", 
+                  "description": "potassium chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "8", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.05"
+                     }
+                  ]
+               },
+               
+               {
+                  "name": "0.5 M NaNO<sub>3</sub>", 
+                  "description": "sodium nitrate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.05"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.5 M (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>", 
+                  "description": "ammonium sulfate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.1"
+                     }
+                  ]
+               },
+             
+                {
+                  "name": "0.5 M AgNO<sub>3</sub>", 
+                  "description": "silver nitrate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                       "id": "16", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.05"
+                     }
+                  ]
+               },
+               {
+                  "name": "0.5 M Mg(C<sub>2</sub>H<sub>3</sub>O<sub>2</sub>)<sub>2</sub>", 
+                  "description": "magnesium acetate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "13", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.1"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

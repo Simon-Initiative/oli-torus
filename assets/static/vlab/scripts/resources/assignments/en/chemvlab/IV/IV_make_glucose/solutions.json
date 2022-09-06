@@ -1,0 +1,60 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "Irydium Solutions", 
+            "SOLUTION": [
+               {
+                  "name": "H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0", 
+                        "amount": "166.525"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Glucose", 
+                  "description": "C<sub>6</sub>H<sub>12</sub>O<sub>6</sub>", 
+                
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "amount": "0.5", 
+                        "id": "3"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.154 M NaCl", 
+                  "description": "Sodium Chloride", 
+                  "volume": "0.75", 
+                  "vessel": "1000mLFlask",
+                  "species": [
+                     {
+                        "id": "0",
+                        "amount": "41.631"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.1155"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.1155"
+                     }
+                  ]
+               }
+            ], 
+            "FILE": {
+               "href": "problem.htmL", 
+               "description": "Problem Description", 
+               "#text": "Problem Description"
+            }
+         }
+      ]
+   }
+}
