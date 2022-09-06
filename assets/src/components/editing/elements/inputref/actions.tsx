@@ -20,7 +20,7 @@ export const initCommands = (
       precondition: () => true,
     },
   });
-  console.log(isMultiInput);
+
   return [
     makeCommand('Dropdown', 'dropdown'),
     makeCommand('Text', 'text'),
