@@ -4,6 +4,7 @@ defmodule Oli.Activities.State.ActivityState do
   alias Oli.Activities.Model
 
   @enforce_keys [
+    :activityId,
     :attemptGuid,
     :attemptNumber,
     :dateEvaluated,
@@ -18,6 +19,7 @@ defmodule Oli.Activities.State.ActivityState do
 
   @derive Jason.Encoder
   defstruct [
+    :activityId,
     :attemptGuid,
     :attemptNumber,
     :dateEvaluated,
@@ -57,6 +59,7 @@ defmodule Oli.Activities.State.ActivityState do
       end
 
     %Oli.Activities.State.ActivityState{
+      activityId: attempt.resource_id,
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
       dateEvaluated: attempt.date_evaluated,
@@ -72,6 +75,7 @@ defmodule Oli.Activities.State.ActivityState do
 
   def create_preview_state(transformed_model, group_id \\ nil) do
     %Oli.Activities.State.ActivityState{
+      activityId: 1,
       attemptGuid: UUID.uuid4(),
       attemptNumber: 1,
       dateEvaluated: nil,

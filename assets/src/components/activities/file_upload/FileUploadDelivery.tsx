@@ -16,6 +16,7 @@ import {
   resetAction,
   savePart,
   submitFiles,
+  listenForReviewAttemptChange,
   listenForParentSurveyReset,
 } from 'data/activities/DeliveryState';
 import { SubmitButton } from 'components/activities/common/delivery/submit_button/SubmitButton';
@@ -251,6 +252,7 @@ export const FileUploadComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+    listenForReviewAttemptChange(state.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

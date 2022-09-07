@@ -340,6 +340,30 @@ defmodule OliWeb.Api.AttemptController do
     }
   end
 
+  def get_activity_attempt(conn, %{
+        "activity_attempt_guid" => attempt_guid
+      }) do
+    case Attempts.get_activity_attempts([attempt_guid]) do
+      {:ok, [attempt]} ->
+        model = Oli.Delivery.Attempts.Core.select_model(attempt)
+
+        {:ok, parsed_model} = Oli.Activities.Model.parse(model)
+
+        state =
+          Oli.Activities.State.ActivityState.from_attempt(
+            attempt,
+            attempt.part_attempts,
+            parsed_model
+          )
+
+        json(conn, %{
+          "result" => "success",
+          "state" => state,
+          "model" => Map.delete(model, "authoring")
+        })
+    end
+  end
+
   @activity_attempt_parameters [
     section_slug: [
       in: :url,

@@ -20,5 +20,6 @@ defmodule Oli.Rendering.Context do
             survey_id: nil,
             pagination_mode: "normal",
             bib_app_params: [],
-            submitted_surveys: %{}
+            submitted_surveys: %{},
+            historical_attempts: nil
 end

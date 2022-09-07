@@ -16,6 +16,7 @@ import {
   isEvaluated,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -50,6 +51,7 @@ export const MultiInputComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, emptyPartInputs);
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

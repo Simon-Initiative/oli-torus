@@ -362,7 +362,8 @@ defmodule OliWeb.PageDeliveryController do
         end,
       activity_map: context.activities,
       bib_app_params: context.bib_revisions,
-      submitted_surveys: submitted_surveys
+      submitted_surveys: submitted_surveys,
+      historical_attempts: context.historical_attempts
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -427,8 +428,7 @@ defmodule OliWeb.PageDeliveryController do
       display_curriculum_item_numbering: section.display_curriculum_item_numbering,
       preview_mode: true,
       page_link_url: &Routes.page_delivery_path(conn, :page_preview, section_slug, &1),
-      container_link_url:
-        &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
+      container_link_url: &Routes.page_delivery_path(conn, :container_preview, section_slug, &1)
     )
   end
 
@@ -439,12 +439,12 @@ defmodule OliWeb.PageDeliveryController do
   end
 
   def page_preview(
-    conn,
-    %{
-      "section_slug" => section_slug,
-      "revision_slug" => revision_slug
-    }
-  ) do
+        conn,
+        %{
+          "section_slug" => section_slug,
+          "revision_slug" => revision_slug
+        }
+      ) do
     user = conn.assigns.current_user
 
     case Resolver.from_revision_slug(section_slug, revision_slug) do
@@ -482,7 +482,9 @@ defmodule OliWeb.PageDeliveryController do
             isInstructor: true
           }
         )
-      revision -> render_page_preview(conn, section_slug, revision)
+
+      revision ->
+        render_page_preview(conn, section_slug, revision)
     end
   end
 

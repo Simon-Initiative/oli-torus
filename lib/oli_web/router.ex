@@ -815,6 +815,17 @@ defmodule OliWeb.Router do
     )
   end
 
+  scope "/api/v1/state/course/:section_slug/activity_attempt", OliWeb do
+    pipe_through([
+      :browser,
+      :require_section,
+      :delivery_and_admin,
+      :pow_email_layout
+    ])
+
+    get("/:activity_attempt_guid", Api.AttemptController, :get_activity_attempt)
+  end
+
   ### Sections - Enrollment
   scope "/sections", OliWeb do
     pipe_through([
