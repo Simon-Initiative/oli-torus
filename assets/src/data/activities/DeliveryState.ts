@@ -513,12 +513,8 @@ export const listenForReviewAttemptChange = (
   dispatch: Dispatch<any>,
   context: ActivityContext,
 ) => {
-  console.log('listener');
   document.addEventListener(Events.Registry.ReviewModeAttemptChange, (e) => {
-    // check if this activity belongs to the survey being reset
-    console.log('here');
-    console.log(e.detail);
-    console.log(activityId);
+    // check if this activity is having its attempt changed
     if (e.detail.forId === activityId) {
       dispatch(
         initializeState(
