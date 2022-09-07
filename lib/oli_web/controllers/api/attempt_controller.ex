@@ -352,7 +352,7 @@ defmodule OliWeb.Api.AttemptController do
         state =
           Oli.Activities.State.ActivityState.from_attempt(
             attempt,
-            attempt.part_attempts,
+            Attempts.get_latest_part_attempts(attempt.attempt_guid),
             parsed_model
           )
 
