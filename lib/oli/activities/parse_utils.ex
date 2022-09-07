@@ -21,13 +21,15 @@ defmodule Oli.Activities.ParseUtils do
 
   @doc """
   Filters out slate items with no "real" content. E.g.,
-  # %{
-  #   "content" => %{
-  #     "model" => [
-  #       %{"children" => [%{"text" => ""}], "type" => "p"}
-  #     ]
-  #   }
-  # }
+  ```
+    %{
+      "content" => %{
+        "model" => [
+          %{"children" => [%{"text" => ""}], "type" => "p"}
+        ]
+      }
+    }
+  ```
   """
   def remove_empty(items) do
     Enum.filter(items, &has_content?(&1))

@@ -74,6 +74,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
       assert {:ok,
               [
                 %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
                   error: nil,
                   feedback: %Oli.Activities.Model.Feedback{
                     content: %{
@@ -91,7 +92,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                   part_id: "1",
                   score: 0,
                   show_page: nil,
-                  type: "FeedbackAction"
+                  explanation: nil
                 }
               ]} = map.scored_page2_activity_evaluation
 
@@ -140,13 +141,29 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
           datashop_session_id_user1
         )
 
-      # explanation strategy condition met, evaluation should return explanation
+      # explanation strategy condition met, evaluation should return explanation in feedback
       assert {
                :ok,
                [
-                 %Oli.Delivery.Evaluation.Actions.ExplanationAction{
+                 %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                   type: "FeedbackAction",
+                   error: nil,
+                   feedback: %Oli.Activities.Model.Feedback{
+                     content: %{
+                       "model" => [
+                         %{
+                           "children" => [
+                             %{"text" => "Incorrect"}
+                           ],
+                           "type" => "p"
+                         }
+                       ]
+                     }
+                   },
+                   out_of: 10,
                    part_id: "1",
-                   type: "ExplanationAction",
+                   score: 0,
+                   show_page: nil,
                    explanation: %Oli.Activities.Model.Explanation{
                      content: %{
                        "model" => [
@@ -156,8 +173,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                          }
                        ]
                      }
-                   },
-                   strategy: :after_max_resource_attempts_exhausted
+                   }
                  }
                ]
              } = map.scored_page2_activity_evaluation
@@ -244,6 +260,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
       assert {:ok,
               [
                 %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
                   error: nil,
                   feedback: %Oli.Activities.Model.Feedback{
                     content: %{
@@ -261,7 +278,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                   part_id: "1",
                   score: 0,
                   show_page: nil,
-                  type: "FeedbackAction"
+                  explanation: nil
                 }
               ]} = map.scored_page2_activity_evaluation
     end
@@ -304,6 +321,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
       assert {:ok,
               [
                 %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
                   error: nil,
                   feedback: %Oli.Activities.Model.Feedback{
                     content: %{
@@ -321,7 +339,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                   part_id: "1",
                   score: 0,
                   show_page: nil,
-                  type: "FeedbackAction"
+                  explanation: nil
                 }
               ]} = map.scored_page2_activity_evaluation
 
@@ -350,26 +368,39 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
         )
 
       # explanation strategy condition met, evaluation should return explanation
-      assert {
-               :ok,
-               [
-                 %Oli.Delivery.Evaluation.Actions.ExplanationAction{
-                   part_id: "1",
-                   type: "ExplanationAction",
-                   explanation: %Oli.Activities.Model.Explanation{
-                     content: %{
-                       "model" => [
-                         %{
-                           "children" => [%{"text" => "a scored activity explanation"}],
-                           "type" => "p"
-                         }
-                       ]
-                     }
-                   },
-                   strategy: :after_set_num_attempts
-                 }
-               ]
-             } = map.scored_page2_activity_evaluation
+      assert {:ok,
+              [
+                %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
+                  error: nil,
+                  feedback: %Oli.Activities.Model.Feedback{
+                    content: %{
+                      "model" => [
+                        %{
+                          "children" => [
+                            %{"text" => "Incorrect"}
+                          ],
+                          "type" => "p"
+                        }
+                      ]
+                    }
+                  },
+                  out_of: 10,
+                  part_id: "1",
+                  score: 0,
+                  show_page: nil,
+                  explanation: %Oli.Activities.Model.Explanation{
+                    content: %{
+                      "model" => [
+                        %{
+                          "children" => [%{"text" => "a scored activity explanation"}],
+                          "type" => "p"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]} = map.scored_page2_activity_evaluation
     end
 
     test "after_set_num_attempts explanation strategy in an unscored page", map do
@@ -405,6 +436,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
       assert {:ok,
               [
                 %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
                   error: nil,
                   feedback: %Oli.Activities.Model.Feedback{
                     content: %{
@@ -422,7 +454,7 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
                   part_id: "1",
                   score: 0,
                   show_page: nil,
-                  type: "FeedbackAction"
+                  explanation: nil
                 }
               ]} = map.unscored_page1_activity_evaluation
 
@@ -451,26 +483,39 @@ defmodule Oli.Delivery.Evaluation.ExplanationTest do
           evaluation_result_tag: :unscored_page1_activity_evaluation
         )
 
-      assert {
-               :ok,
-               [
-                 %Oli.Delivery.Evaluation.Actions.ExplanationAction{
-                   part_id: "1",
-                   type: "ExplanationAction",
-                   explanation: %Oli.Activities.Model.Explanation{
-                     content: %{
-                       "model" => [
-                         %{
-                           "children" => [%{"text" => "an unscored activity explanation"}],
-                           "type" => "p"
-                         }
-                       ]
-                     }
-                   },
-                   strategy: :after_set_num_attempts
-                 }
-               ]
-             } = map.unscored_page1_activity_evaluation
+      assert {:ok,
+              [
+                %Oli.Delivery.Evaluation.Actions.FeedbackAction{
+                  type: "FeedbackAction",
+                  error: nil,
+                  feedback: %Oli.Activities.Model.Feedback{
+                    content: %{
+                      "model" => [
+                        %{
+                          "children" => [
+                            %{"text" => "Incorrect"}
+                          ],
+                          "type" => "p"
+                        }
+                      ]
+                    }
+                  },
+                  out_of: 10,
+                  part_id: "1",
+                  score: 0,
+                  show_page: nil,
+                  explanation: %Oli.Activities.Model.Explanation{
+                    content: %{
+                      "model" => [
+                        %{
+                          "children" => [%{"text" => "an unscored activity explanation"}],
+                          "type" => "p"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]} = map.unscored_page1_activity_evaluation
     end
   end
 end

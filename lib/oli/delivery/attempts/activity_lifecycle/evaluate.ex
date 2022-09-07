@@ -12,6 +12,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
   alias Oli.Delivery.Evaluation.Explanation
+  alias Oli.Delivery.Evaluation.ExplanationContext
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -350,9 +351,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           activity_attempt_number: 1,
           part_attempt_number: 1,
           part_attempt_guid: part_id,
-          input: input.input,
-          resource_revision: nil,
-          activity_revision: nil
+          input: input.input
         }
 
         Oli.Delivery.Evaluation.Evaluator.evaluate(part, context)
@@ -614,8 +613,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
 
     %ActivityAttempt{
       resource_attempt: resource_attempt,
-      attempt_number: attempt_number,
-      revision: activity_revision
+      attempt_number: attempt_number
     } = activity_attempt
 
     activity_model = select_model(activity_attempt)
@@ -634,7 +632,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
 
           # flat map the results since the results may contain an additional explanation action
-          Enum.flat_map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
+          Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
             attempt = Map.get(attempt_map, attempt_guid)
             part = Map.get(part_map, attempt.part_id)
 
@@ -643,13 +641,17 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
               activity_attempt_number: attempt_number,
               part_attempt_number: attempt.attempt_number,
               part_attempt_guid: attempt.attempt_guid,
-              input: input.input,
-              resource_revision: resource_attempt.revision,
-              activity_revision: activity_revision
+              input: input.input
             }
 
-            [Standard.perform(attempt_guid, context, part)]
-            |> Explanation.maybe_pair_with_explanation(attempt_guid, context, part)
+            Standard.perform(attempt_guid, context, part)
+            |> Explanation.maybe_set_feedback_explanation(%ExplanationContext{
+              part: part,
+              part_attempt: attempt,
+              activity_attempt: activity_attempt,
+              resource_attempt: resource_attempt,
+              resource_revision: resource_attempt.revision
+            })
           end)
 
         _ ->

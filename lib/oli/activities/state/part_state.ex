@@ -1,7 +1,11 @@
 defmodule Oli.Activities.State.PartState do
+  alias Oli.Repo
   alias Oli.Delivery.Attempts.Core.PartAttempt
+  alias Oli.Delivery.Attempts.Core.ActivityAttempt
+  alias Oli.Delivery.Attempts.Core.ResourceAttempt
   alias Oli.Activities.Model.Part
   alias Oli.Activities.ParseUtils
+  alias Oli.Delivery.Evaluation.{Explanation, ExplanationContext}
 
   @enforce_keys [
     :attemptGuid,
@@ -34,7 +38,21 @@ defmodule Oli.Activities.State.PartState do
     :partId
   ]
 
-  def from_attempt(%PartAttempt{} = attempt, %Part{} = part) do
+  def from_attempt(
+        %PartAttempt{} = attempt,
+        %Part{} = part
+      ) do
+    # TODO: consider refactoring this to be more efficient than a preload on every call
+    %PartAttempt{
+      activity_attempt:
+        %ActivityAttempt{
+          resource_attempt:
+            %ResourceAttempt{
+              revision: resource_revision
+            } = resource_attempt
+        } = activity_attempt
+    } = Repo.preload(attempt, activity_attempt: [resource_attempt: [:revision]])
+
     # From the ids of hints displayed in the attempt, look up
     # the hint content from the part
     hint_map = Enum.reduce(part.hints, %{}, fn h, m -> Map.put(m, h.id, h) end)
@@ -49,6 +67,16 @@ defmodule Oli.Activities.State.PartState do
       part.hints
       |> ParseUtils.remove_empty()
 
+    feedback =
+      attempt.feedback
+      |> Explanation.maybe_set_feedback_explanation(%ExplanationContext{
+        part: part,
+        part_attempt: attempt,
+        activity_attempt: activity_attempt,
+        resource_attempt: resource_attempt,
+        resource_revision: resource_revision
+      })
+
     %Oli.Activities.State.PartState{
       attemptGuid: attempt.attempt_guid,
       attemptNumber: attempt.attempt_number,
@@ -57,7 +85,7 @@ defmodule Oli.Activities.State.PartState do
       score: attempt.score,
       outOf: attempt.out_of,
       response: attempt.response,
-      feedback: attempt.feedback,
+      feedback: feedback,
       hints: hints,
       hasMoreHints: length(attempt.hints) < length(real_part_hints),
       hasMoreAttempts: true,
