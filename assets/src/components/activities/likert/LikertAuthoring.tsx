@@ -104,7 +104,7 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
           <Hints partId={selectedPartId} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Explanation">
-          <Explanation partId={DEFAULT_PART_ID} />
+          <Explanation partId={selectedPartId} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot
