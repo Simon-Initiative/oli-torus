@@ -670,7 +670,9 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
     };
 
     // TODO: here in the handshake response we should send come config...
-    sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
+    setTimeout(() => {
+      sendFormedResponse(simLife.handshake, {}, JanusCAPIRequestTypes.HANDSHAKE_RESPONSE, []);
+    }, 1000);
   };
 
   const handleOnReady = (data: any) => {
