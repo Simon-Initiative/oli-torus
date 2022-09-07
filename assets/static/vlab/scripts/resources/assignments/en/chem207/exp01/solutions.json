@@ -1,0 +1,83 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy",
+                  "species": [
+                     {
+                        "id": "0",
+						 "amount": "166.5247506"
+                     }
+                  ]
+               }, 
+			   {
+              "name": "Fe(NH<sub>4</sub>)<sub>2</sub>(SO<sub>4</sub>)<sub>2</sub> <sup>.</sup> 6H<sub>2</sub>O",
+              "description": "Ferrous Ammonium Sulfate Hexahydrate",
+              "vessel": "SolidBottle",
+              "species": [
+                {
+                  "id": "3",
+                  "amount": ".2"
+                }
+              ]
+            },
+			{
+              "name": "10M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "10 Molar Sulfuric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" ,
+				 "amount": "5.5508"
+				 },
+                {
+                  "id": "5",
+                  "amount": "1"
+                },
+                {
+                  "id": "1",
+                  "amount": "2"
+                }
+              ]
+            },
+               {
+				 "name": "Unknown KMnO<sub>4</sub>",
+				  "description": "0.020 M Potassium Permanganate",
+				  "volume": "0.1",
+                  "species": [
+                     {
+                        "id": "0",
+			"amount": "5.5508"
+                     }, 
+{
+					  "id": "6",
+					  "amount": "0.0020"
+					},
+					{
+					  "id": "10",
+					  "amount": "0.0020"
+					}
+
+                  ]
+               },
+               {
+				 "name": "Distilled H<sub>2</sub>O",
+				  "description": "Distilled Water",
+				  "volume": "0.1",
+                  "species": [
+                     {
+                        "id": "0",
+				"amount": "5.5508"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

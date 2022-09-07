@@ -49,6 +49,7 @@ export const MultiInputComponent = () => {
         selectedInputRef={selectedInputRef}
         setSelectedInputRef={setSelectedInputRef}
         setEditor={setEditor}
+        isMultiInput={true}
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>

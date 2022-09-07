@@ -42,11 +42,11 @@ export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditRe
 
   const state = { operator, input: valueOr(input, '') };
 
-  if (inputType === 'numeric') {
-    return <NumericInput state={state as RangeState} setState={onEditRule} />;
-  }
   if (inputType === 'math') {
     return <MathInput state={state as SingleState} setState={onEditRule} />;
+  }
+  if (inputType === 'numeric' || inputType === 'vlabvalue') {
+    return <NumericInput state={state as SingleState} setState={onEditRule} />;
   }
   return <TextInput state={state as SingleState} setState={onEditRule} />;
 };

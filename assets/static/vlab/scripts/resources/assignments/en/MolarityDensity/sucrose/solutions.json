@@ -1,0 +1,59 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "Irydium Solutions", 
+            "SOLUTION": [
+               {
+                  "name": "H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0", 
+                        "amount": "166.525"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Sucrose", 
+                  "description": "Sucrose", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "amount": "0.5", 
+                        "id": "3"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Generic Cola", 
+                  "description": "Generic Brand Cola", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0", 
+                        "amount": "4.5"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.06"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.0005"
+                     }
+                  ]
+               }
+            ], 
+            "FILE": {
+               "href": "problem.htmL", 
+               "description": "Problem Description", 
+               "#text": "Problem Description"
+            }
+         }
+      ]
+   }
+}

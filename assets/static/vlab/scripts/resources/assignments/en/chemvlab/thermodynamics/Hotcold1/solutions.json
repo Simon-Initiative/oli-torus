@@ -1,0 +1,60 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Flask 1 H<sub>2</sub>O", 
+                  "description": "100 ml Distilled Water at 25\u00b0C", 
+                  "volume": "0.1", 
+                  "vessel": "FoamCup", 
+                  "temperature": "298.15", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Flask 2 H<sub>2</sub>O", 
+                  "description": "100 ml Distilled Water at 35\u00b0C", 
+                  "volume": "0.1", 
+                  "vessel": "FoamCup", 
+                  "temperature": "308.15", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Flask 3 H<sub>2</sub>O", 
+                  "description": "100 ml Distilled Water at 45\u00b0C", 
+                  "volume": "0.1", 
+                  "vessel": "FoamCup", 
+                  "temperature": "318.15", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Heated Rocks", 
+                  "description": "Heated Rocks", 
+                  "volume": "0.0", 
+                  "vessel": "FoamCup", 
+                  "temperature": "313.15", 
+                  "species": [
+                     {
+                        "id": "3", 
+                        "amount": "2.1"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

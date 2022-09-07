@@ -1,0 +1,251 @@
+{
+  "FILESYSTEM": {
+    "DIRECTORY": [{
+      "name": "stockroom",
+      "SOLUTION": [{
+        "name": "Distilled H<sub>2</sub>O",
+        "description": "Distilled Water",
+        "volume": "3.0",
+        "vessel": "3LCarboy",
+        "species": [{ "id": "0" }]
+      }],
+      "DIRECTORY": [
+        {
+          "name": "Solids",
+          "SOLUTION": [
+            {
+              "name": "Ag",
+              "description": "Silver",
+              "volume": "0.0",
+              "vessel": "SolidBottle",
+              "species": [{
+                "amount": "0.9",
+                "id": "59"
+              }]
+            },
+            {
+              "name": "Cu",
+              "description": "Copper",
+              "volume": "0.0",
+              "vessel": "SolidBottle",
+              "species": [{
+                "amount": "0.9",
+                "id": "60"
+              }]
+            },
+            {
+              "name": "Zn",
+              "description": "Zinc",
+              "volume": "0.0",
+              "vessel": "SolidBottle",
+              "species": [{
+                "amount": "1.3",
+                "id": "62"
+              }]
+            },
+            {
+              "name": "Pb",
+              "description": "Lead",
+              "volume": "0.0",
+              "vessel": "SolidBottle",
+              "species": [{
+                "amount": "0.4",
+                "id": "63"
+              }]
+            },
+            {
+              "name": "Mg",
+              "description": "Magnesium metal",
+              "volume": "0.0",
+              "vessel": "SolidBottle",
+              "species": [{
+                "amount": "4.8",
+                "id": "61"
+              }]
+            }
+          ]
+        },
+        {
+          "name": "Solutions",
+          "SOLUTION": [
+            {
+              "name": "0.10M Cu(NO<sub>3</sub>)<sub>2</sub>",
+              "description": "0.1 M Copper(II) nitrate",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0050",
+                  "id": "64"
+                },
+                {
+                  "amount": "0.010",
+                  "id": "3"
+                }
+              ]
+            },
+            {
+              "name": "0.10M Mg(NO<sub>3</sub>)<sub>2</sub>",
+              "description": "0.01M Magnesium sulfate",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.005",
+                  "id": "35"
+                },
+                {
+                  "amount": "0.010",
+                  "id": "3"
+                }
+              ]
+            },
+            {
+              "name": "0.10M Zn(NO<sub>3</sub>)<sub>2</sub>",
+              "description": "0.1M Zinc Nitrate",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.005",
+                  "id": "65"
+                },
+                {
+                  "amount": "0.010",
+                  "id": "3"
+                }
+              ]
+            },
+            {
+              "name": "0.10M Pb(NO<sub>3</sub>)<sub>2</sub>",
+              "description": "0.1M Lead Nitrate",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.005",
+                  "id": "66"
+                },
+                {
+                  "amount": "0.010",
+                  "id": "3"
+                }
+              ]
+            },
+            {
+              "name": "0.20M AgNO<sub>3</sub>",
+              "description": "0.2M Silver Nitrate",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.010",
+                  "id": "58"
+                },
+                {
+                  "amount": "0.010",
+                  "id": "3"
+                }
+              ]
+            },
+            {
+              "name": "Br<sub>2</sub> water",
+              "description": "Bromine water",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "1.9E-4",
+                  "id": "68"
+                }
+              ]
+            },
+            {
+              "name": "I<sub>2</sub> water",
+              "description": "Iodine solution",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0020",
+                  "id": "69"
+                }
+              ]
+            },
+            {
+              "name": "Cl<sub>2</sub> water",
+              "description": "Chlorine water",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0012",
+                  "id": "67"
+                }
+              ]
+            },
+            {
+              "name": "0.1M NaBr",
+              "description": "0.1M Sodium Bromide",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0050",
+                  "id": "8"
+                },
+                {
+                  "amount": "0.0050",
+                  "id": "5"
+                }
+              ]
+            },
+            {
+              "name": "0.1M NaCl",
+              "description": "0.1M Sodium Chloride",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0050",
+                  "id": "8"
+                },
+                {
+                  "amount": "0.0050",
+                  "id": "7"
+                }
+              ]
+            },
+            {
+              "name": "0.1 M NaI",
+              "description": "0.1 M Sodium Iodide",
+              "volume": "0.05",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "amount": "0.0050",
+                  "id": "8"
+                },
+                {
+                  "amount": "0.0050",
+                  "id": "4"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+  }
+}

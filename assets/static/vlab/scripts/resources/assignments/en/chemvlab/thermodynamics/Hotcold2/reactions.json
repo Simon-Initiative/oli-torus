@@ -1,0 +1,118 @@
+{
+   "REACTIONS": {
+      "REACTION": [
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "0", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "2", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "23", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "13", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "22", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "29", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "5", 
+                  "coefficient": "2"
+               }, 
+               {
+                  "id": "28", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "11", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "12", 
+                  "coefficient": "2"
+               }, 
+               {
+                  "id": "13", 
+                  "coefficient": "3"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "5", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "4", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "3", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "7", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "27", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "25", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "13", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "4", 
+                  "coefficient": "2"
+               }, 
+               {
+                  "id": "24", 
+                  "coefficient": "-1"
+               }
+            ]
+         }
+      ]
+   }
+}

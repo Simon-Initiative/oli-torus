@@ -1,0 +1,110 @@
+{
+  "SPECIES_LIST": {
+    "SPECIES": [
+      {
+        "entropy": "69.91",
+        "name": "H<sub>2</sub>O",
+        "state": "l",
+        "enthalpy": "-285.83",
+        "density": "1.000",
+        "specificHeat": "1.000",
+        "molecularWeight": "18.01534",
+        "id": "0"
+      },
+      {
+        "entropy": "0.0",
+        "name": "H<sup>+</sup>",
+        "enthalpy": "0.0",
+        "id": "1"
+      },
+      {
+        "entropy": "-10.75",
+        "name": "OH<sup>-</sup>",
+        "enthalpy": "-229.99",
+        "id": "2"
+      },
+      {
+       "id": "3",
+        "name": "Fe(NH<sub>4</sub>)<sub>2</sub>(SO<sub>4</sub>)<sub>2</sub> <sup>.</sup> 6H<sub>2</sub>O",
+        "enthalpy": "-2180.87",
+		 "density": "1.86",
+		 "hue": "125",
+        "saturation": "10",
+        "value": "95",
+		            "state": "s", 
+        "colorConcentration": ".000003",
+		"molecularWeight": "392.13",
+        "entropy": "-279.0"
+      },
+      {
+        "id": "4",
+        "name": "Fe<sup>2+</sup>",
+        "enthalpy": "-89.1",
+        "entropy": "-137.7",
+		 "molecularWeight": "55.84",
+        "density": "1.400"
+      },
+      {
+		"id": "5",
+        "name": "SO<sub>4</sub><sup>2-</sup>",
+        "enthalpy": "-909.3",
+	"molecularWeight": "96.06",
+        "entropy": "119.72687897408498"
+      },
+      {
+        "id": "6",
+        "name": "MnO4-",
+        "enthalpy": "-541.4",
+        "entropy": "191.2",
+        "hue": "298",
+        "saturation": "100",
+        "value": "26",
+        "colorConcentration": ".000003",
+	    "molecularWeight": "118.94",
+	 		  "unknown": "true"
+      },
+      {
+        "id": "7",
+        "name": "Mn<sup>2+</sup>",
+        "enthalpy": "-220.8",
+        "entropy": "1008614.9",
+        "hue": "298",
+        "saturation": "26",
+        "value": "100",
+	    "molecularWeight": "54.94",
+        "colorConcentration": ".03"
+      },
+      {
+        "id": "8",
+        "name": "Fe<sup>3+</sup>",
+        "enthalpy": "-48.5",
+	"molecularWeight": "55.85",
+        "entropy": "-315.9",
+	    "density": "1.400"
+      },
+      {
+        "id": "9",
+        "name": "NH<sub>4</sub><sup>+</sup>",
+        "enthalpy": "-132.51",
+	"molecularWeight": "18.04",
+        "entropy": "113.4",
+	    "density": "1.0"
+      },
+      {
+        "id": "10",
+        "name": "K<sup>+</sup>",
+	"molecularWeight": "39.10",
+        "enthalpy": "-240.3",
+        "entropy": "-58.5",
+	  "unknown": "true"
+      },
+      {
+        "id": "29",
+        "name": "HSO<sub>4</sub><sup>-</sup>",
+        "enthalpy": "-887.34",
+	"molecularWeight": "97.07",
+        "entropy": "131.8"
+      }
+    ]
+  }
+}

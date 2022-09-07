@@ -1,0 +1,259 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "molecularWeight": "18.016", 
+            "state": "l"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008"
+         }, 
+         {
+            "id": "3", 
+            "name": "KCl", 
+            "enthalpy": "-436.75", 
+            "entropy": "82.59", 
+            "molecularWeight": "74.56", 
+            "density": "1.984", 
+            "state": "s"
+         }, 
+         {
+            "id": "4", 
+            "name": "K<sup>+</sup>", 
+            "enthalpy": "-252.14", 
+            "entropy": "101.2", 
+            "density": "3.155", 
+            "specificHeat": "1", 
+            "molecularWeight": "39.098"
+         }, 
+         {
+            "id": "5", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.58999999999997", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "6", 
+            "name": "KNO<sub>3</sub>", 
+            "enthalpy": "-511.44666998203246", 
+            "entropy": "52.23873404635833", 
+            "molecularWeight": "101.097", 
+            "state": "s"
+         }, 
+         {
+            "id": "7", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4", 
+            "density": "3.155", 
+            "specificHeat": "1", 
+            "molecularWeight": "62.005"
+         }, 
+         {
+            "id": "8", 
+            "name": "NaCl", 
+            "enthalpy": "-409.4625737374579", 
+            "entropy": "79.2265509910217", 
+            "molecularWeight": "58.44", 
+            "density": "2.165", 
+            "state": "s"
+         }, 
+         {
+            "id": "9", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+            "molecularWeight": "22.99"
+         }, 
+         {
+            "id": "10", 
+            "name": "NaNO<sub>3</sub>", 
+            "enthalpy": "-458.35913872806526", 
+            "entropy": "121.36118129963981", 
+            "molecularWeight": "84.997", 
+            "density": "2.261", 
+            "state": "s"
+         }, 
+         {
+            "id": "11", 
+            "name": "Ce<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", 
+            "enthalpy": "-3056.647441979171", 
+            "entropy": "739.1928564111283", 
+            "molecularWeight": "568.42", 
+            "density": "3.912", 
+            "state": "s"
+         }, 
+         {
+            "id": "12", 
+            "name": "Ce<sup>+3</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+            "molecularWeight": "140.1"
+         }, 
+         {
+            "id": "13", 
+            "name": "SO<sub>4</sub><sup>-2</sup>", 
+            "enthalpy": "-909.3", 
+            "entropy": "20.1", 
+            "density": "3.155", 
+            "specificHeat": "1", 
+            "molecularWeight": "96.058"
+         }, 
+         {
+            "id": "14", 
+            "name": "LiCl", 
+            "enthalpy": "-408.61", 
+            "entropy": "59.33", 
+            "molecularWeight": "42.4", 
+            "density": "2.1", 
+            "state": "s"
+         }, 
+         {
+            "id": "15", 
+            "name": "Li<sup>+</sup>", 
+            "enthalpy": "-278.49", 
+            "entropy": "13.4", 
+            "molecularWeight": "6.941"
+         }, 
+         {
+            "id": "16", 
+            "name": "KClO<sub>3</sub>", 
+            "enthalpy": "-404.0720205836989", 
+            "entropy": "101.03436217616536", 
+            "molecularWeight": "122.55", 
+            "density": "2.3", 
+            "state": "s"
+         }, 
+         {
+            "id": "17", 
+            "name": "ClO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-99.20000000000002", 
+            "entropy": "162.3", 
+            "molecularWeight": "83.45"
+         }, 
+         {
+            "id": "18", 
+            "name": "K<sub>2</sub>Cr<sub>2</sub>O<sub>7</sub>", 
+            "enthalpy": "-2079.395416501965", 
+            "entropy": "211.11823665401621", 
+            "molecularWeight": "294.18", 
+            "density": "2.676", 
+            "hue": "0", 
+            "saturation": "100", 
+            "value": "85", 
+            "colorConcentration": ".03", 
+            "state": "s"
+         }, 
+         {
+            "id": "19", 
+            "name": "Cr<sub>2</sub>O<sub>7</sub><sup>-2</sup>", 
+            "enthalpy": "-1490.3", 
+            "entropy": "261.9", 
+            "hue": "49", 
+            "saturation": "87", 
+            "value": "100", 
+            "colorConcentration": ".1", 
+            "molecularWeight": "216"
+         }, 
+         {
+            "id": "20", 
+            "name": "CuSO<sub>4</sub>", 
+            "enthalpy": "-872.6489899998844", 
+            "entropy": "-180.8367605634999", 
+            "molecularWeight": "159.6", 
+            "density": "3.603", 
+            "state": "s"
+         }, 
+         {
+            "id": "21", 
+            "name": "Cu<sup>+2</sup>", 
+            "enthalpy": "64.79999999999995", 
+            "entropy": "-99.6", 
+            "hue": "222", 
+            "saturation": "84", 
+            "value": "100", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "63.55"
+         }, 
+         {
+            "id": "22", 
+            "name": "MgSO<sub>4</sub>", 
+            "enthalpy": "-1291.35", 
+            "entropy": "115.5", 
+            "molecularWeight": "120.37", 
+            "density": "2.66", 
+            "state": "s"
+         }, 
+         {
+            "id": "23", 
+            "name": "Mg<sup>+2</sup>", 
+            "enthalpy": "-467.0", 
+            "entropy": "-137.0", 
+            "density": "5.155", 
+            "specificHeat": "1", 
+            "molecularWeight": "24.305"
+         }, 
+         {
+            "id": "24", 
+            "name": "K<sub>2</sub>SO<sub>4</sub>", 
+            "enthalpy": "-1440.22", 
+            "entropy": "133.74319271437525", 
+            "molecularWeight": "174.27", 
+            "density": "2.662", 
+            "state": "s"
+         }, 
+         {
+            "id": "25", 
+            "name": "NH<sub>4</sub>NO<sub>3</sub>", 
+            "enthalpy": "-363.91", 
+            "entropy": "91.13323219806773", 
+            "molecularWeight": "80.04", 
+            "density": "1.725", 
+            "state": "s"
+         }, 
+         {
+            "id": "27", 
+            "name": "NH<sub>4</sub><sup>+</sup>", 
+            "enthalpy": "-132.51", 
+            "entropy": "113.4", 
+            "specificHeat": "1", 
+            "density": "3.155", 
+            "molecularWeight": "18.038"
+         }, 
+         {
+            "id": "28", 
+            "name": "CaCl<sub>2</sub>", 
+            "enthalpy": "-795.7", 
+            "entropy": "291.5266038441876", 
+            "molecularWeight": "110.986", 
+            "density": "2.15", 
+            "state": "s"
+         }, 
+         {
+            "id": "29", 
+            "name": "Ca<sup>+2</sup>", 
+            "enthalpy": "-542.8", 
+            "specificHeat": "1", 
+            "density": "2.15", 
+            "entropy": "-53.10000000000001", 
+            "molecularWeight": "40.080"
+         }
+      ]
+   }
+}

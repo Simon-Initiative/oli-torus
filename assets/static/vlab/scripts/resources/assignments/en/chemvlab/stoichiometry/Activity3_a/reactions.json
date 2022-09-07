@@ -1,0 +1,70 @@
+{
+   "REACTIONS": {
+      "REACTION": [
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "0", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "2", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "11", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "12", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "5", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "14", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "2", 
+                  "coefficient": "-2"
+               }, 
+               {
+                  "id": "10", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "15", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "12", 
+                  "coefficient": "-2"
+               }, 
+               {
+                  "id": "13", 
+                  "coefficient": "-1"
+               }
+            ]
+         }
+      ]
+   }
+}

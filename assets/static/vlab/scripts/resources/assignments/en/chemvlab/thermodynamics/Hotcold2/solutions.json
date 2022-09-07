@@ -1,0 +1,94 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "100 ml Distilled H<sub>2</sub>O", 
+                  "description": "100 ml Distilled Water", 
+                  "volume": "0.1", 
+                  "vessel": "FoamCup", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "KCl", 
+                  "description": "Potassium Chloride", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "3", 
+                        "amount": "1.1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "MgSO<sub>4</sub>", 
+                  "description": "Magnesium Sulfate", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "22", 
+                        "amount": "1.1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Ce<sub>2</sub>(SO<sub>4</sub>)<sub>3</sub>", 
+                  "description": "Cerius Sulfate", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "11", 
+                        "amount": "0.4"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "NH<sub>4</sub>NO<sub>3</sub>", 
+                  "description": "Ammonium Nitrate", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "25", 
+                        "amount": "0.8"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "CaCl<sub>2</sub>", 
+                  "description": "Calcium Chloride", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "28", 
+                        "amount": ".9"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "K<sub>2</sub>SO<sub>4</sub>", 
+                  "description": "Potassium Sulfate", 
+                  "volume": "0.0", 
+                  "vessel": "SolidBottle", 
+                  "species": [
+                     {
+                        "id": "24", 
+                        "amount": "0.8"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

@@ -1,0 +1,53 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.003M FeSCN<sup>+2</sup>", 
+                  "description": "0.003 M Iron(III) Thiocyanate Solution", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "104", 
+                        "amount": ".0003"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.1 M Fe(NO<sub>3</sub>)<sub>3</sub>", 
+                  "description": "0.1 M Iron(III) Nitrate", 
+                  "volume": ".1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "102", 
+                        "amount": "0.01"
+                     }, 
+                     {
+                        "id": "233", 
+                        "amount": "0.01"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}
