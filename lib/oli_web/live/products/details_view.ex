@@ -159,6 +159,8 @@ defmodule OliWeb.Products.DetailsView do
   end
 
   def handle_event("save", %{"section" => params}, socket) do
+    socket = clear_flash(socket)
+
     case Sections.update_section(socket.assigns.product, params) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Product changes saved")
@@ -166,6 +168,7 @@ defmodule OliWeb.Products.DetailsView do
         {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        socket = put_flash(socket, :error, "Couldn't update product title")
         {:noreply, assign(socket, changeset: changeset)}
     end
   end
@@ -179,7 +182,6 @@ defmodule OliWeb.Products.DetailsView do
 
     uploaded_files =
       consume_uploaded_entries(socket, :cover_image, fn meta, entry ->
-
         temp_file_path = meta.path
         section_path = "sections/#{socket.assigns.product.slug}"
         image_file_name = "#{entry.uuid}.#{ext(entry)}"
@@ -189,20 +191,19 @@ defmodule OliWeb.Products.DetailsView do
       end)
 
     with {:ok, uploaded_path} <- Enum.at(uploaded_files, 0),
-      {:ok, section} <- Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path})
-      do
-        socket = put_flash(socket, :info, "Product changes saved")
-        {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
-      else
+         {:ok, section} <-
+           Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path}) do
+      socket = put_flash(socket, :info, "Product changes saved")
+      {:noreply, assign(socket, product: section, changeset: Section.changeset(section, %{}))}
+    else
+      {:error, %Ecto.Changeset{} = changeset} ->
+        socket = put_flash(socket, :info, "Couldn't update product image")
+        {:noreply, assign(socket, changeset: changeset)}
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          socket = put_flash(socket, :info, "Couldn't update product image")
-          {:noreply, assign(socket, changeset: changeset)}
-
-        {:error, payload} ->
-          Logger.error("Error uploading product image to S3: #{inspect(payload)}")
-          socket = put_flash(socket, :info, "Couldn't update product image")
-          {:noreply, socket}
+      {:error, payload} ->
+        Logger.error("Error uploading product image to S3: #{inspect(payload)}")
+        socket = put_flash(socket, :info, "Couldn't update product image")
+        {:noreply, socket}
     end
   end
 

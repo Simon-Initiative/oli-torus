@@ -1,0 +1,60 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+             
+               {
+                  "name": "Pb(NO<sub>3</sub>)<sub>2</sub>", 
+                  "description": "unknown Pb<sup>2+</sup>", 
+                  "volume": "0.1", 
+                  "vessel": "500mLFlask",
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "17", 
+                        "amount": "0.0190"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.038"
+                     }
+                  ]
+               },
+              {
+                  "name": "KI", 
+                  "description": "potassium iodide", 
+                  "volume": "0.2", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.080"
+                     }, 
+                     {
+                        "id": "18", 
+                        "amount": "0.080"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

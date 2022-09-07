@@ -1,0 +1,80 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "state": "l", 
+            "molecularWeight": "18.016", 
+            "unitActivity": "true", 
+            "specificHeat": "1", 
+            "density": "1.0"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008", 
+            "specificHeat": "1", 
+            "density": "1"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008", 
+            "specificHeat": "1", 
+            "density": "1"
+         }, 
+         {
+            "id": "60", 
+            "name": "Solar Salt Liquid", 
+            "enthalpy": "0", 
+            "entropy": "0", 
+            "state": "l", 
+            "hue": "233", 
+            "saturation": "14", 
+            "waterReplacemen": "3.378", 
+            "value": "100", 
+            "colorConcentration": "10", 
+            "molecularWeight": "169.2", 
+            "density": "2.78", 
+            "specificHeat": "0.836520076"
+         }, 
+         {
+            "id": "61", 
+            "name": "Solar Metal Liquid", 
+            "enthalpy": "0", 
+            "entropy": "0", 
+            "state": "l", 
+            "hue": "113", 
+            "saturation": "3", 
+            "value": "85", 
+            "colorConcentration": "10", 
+            "molecularWeight": "169.2", 
+            "waterReplacemen": "1.47", 
+            "density": "5.25", 
+            "specificHeat": "0.3178"
+         }, 
+         {
+            "id": "62", 
+            "name": "Solar Oil", 
+            "enthalpy": "0", 
+            "entropy": "0", 
+            "state": "l", 
+            "hue": "233", 
+            "saturation": "6", 
+            "waterReplacemen": "3.378", 
+            "value": "20", 
+            "colorConcentration": "10", 
+            "molecularWeight": "169.2", 
+            "density": "2.42", 
+            "specificHeat": "0.5977"
+         }
+      ]
+   }
+}

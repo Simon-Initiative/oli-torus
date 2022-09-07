@@ -1,0 +1,20 @@
+.figure-editor {
+  margin: 1rem;
+  figure {
+    min-width: 10rem;
+  }
+  .figure-title-editor {
+    padding: 0.5rem;
+    min-width: 40rem;
+    border: 1px dashed $gray-400;
+  }
+  .title {
+    cursor: pointer;
+  }
+  .title-placeholder {
+    opacity: 0.5;
+  }
+  input {
+    color: $primary;
+  }
+}

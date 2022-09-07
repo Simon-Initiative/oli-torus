@@ -1,0 +1,1047 @@
+{
+  "FILESYSTEM": {
+    "DIRECTORY": [{
+      "name": "stockroom",
+      "SOLUTION": [{
+        "name": "Distilled H<sub>2</sub>O",
+        "description": "Distilled Water",
+        "volume": "3.0",
+        "vessel": "3LCarboy",
+        "species": [{ "id": "0" }]
+      }],
+      "DIRECTORY": [
+        {
+          "name": "Stock Solutions",
+          "SOLUTION": [
+            {
+              "name": "19M NaOH",
+              "description": "19M Sodium Hydroxide",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "38"
+                },
+                {
+                  "id": "2",
+                  "amount": "38"
+                }
+              ]
+            },
+            {
+              "name": "11.6M HCl",
+              "description": "11.6 Molar Hydrochloric Acid",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "23.2"
+                },
+                {
+                  "id": "1",
+                  "amount": "23.2"
+                }
+              ]
+            },
+            {
+              "name": "17.8M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "17.8 Molar Sulfuric Acid",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "35.6"
+                },
+                {
+                  "id": "1",
+                  "amount": "35.6"
+                }
+              ]
+            },
+            {
+              "name": "15.4M HNO<sub>3</sub>",
+              "description": "15.4 Molar Nitric Acid",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "30.8"
+                },
+                {
+                  "id": "1",
+                  "amount": "30.8"
+                }
+              ]
+            },
+            {
+              "name": "15M HClO<sub>4</sub>",
+              "description": "15 Molar Perchloric Acid",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "30"
+                },
+                {
+                  "id": "1",
+                  "amount": "30"
+                }
+              ]
+            },
+            {
+              "name": "14.6M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "14.6 Molar Phosphoric Acid",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "29.2"
+                }
+              ]
+            },
+            {
+              "name": "14.8M NH<sub>3</sub>",
+              "description": "14.8 Molar Ammonia",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "29.6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Strong Acids",
+          "SOLUTION": [
+            {
+              "name": "10M HCl",
+              "description": "10 Molar Hydrochloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HCl",
+              "description": "3 Molar Hydrochloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.30000000000000004"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "10M HBr",
+              "description": "10 Molar Hydrobromic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "5",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HBr",
+              "description": "3 Molar Hydrobromic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "5",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "3 Molar Sulfuric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "1 Molar Sulfuric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "10M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "10 Molar Sulfuric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "1"
+                },
+                {
+                  "id": "1",
+                  "amount": "1"
+                }
+              ]
+            },
+            {
+              "name": "3M HNO<sub>3</sub>",
+              "description": "3 Molar Nitric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "0.30000000000000004"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "10M HNO<sub>3</sub>",
+              "description": "10 Molar Nitric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "10M HClO<sub>4</sub>",
+              "description": "10 Molar Perchloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HClO<sub>4</sub>",
+              "description": "3 Molar Perchloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "10M HI",
+              "description": "10 Molar Hydriodic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "4",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HI",
+              "description": "3 Molar Hydriodic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "4",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M HCl",
+              "description": "1 Molar Hydrochloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "0.1M HCl",
+              "description": "0.1 Molar Hydrochloric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.01"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.01"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Weak Acids",
+          "SOLUTION": [
+            {
+              "name": "1M HF",
+              "description": "1 Molar Hydrofluoric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "10",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M CH<sub>3</sub>COOH",
+              "description": "1 Molar Acetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "22",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M CH<sub>3</sub>COOH",
+              "description": "3 Molar Acetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "22",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M NCCH<sub>2</sub>COOH",
+              "description": "3 Molar Cyanocetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "14",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "3 Molar Phosphoric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "1 Molar Phosphoric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NCCH<sub>2</sub>COOH",
+              "description": "1 Molar Cyanocetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "14",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOI",
+              "description": "3 Molar Hypoiodous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "20",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M HOCl",
+              "description": "1 Molar Hypochlorous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "16",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOCl",
+              "description": "3 Molar Hypochlorous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "16",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M HOI",
+              "description": "1 Molar Hypoiodous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "20",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M HOBr",
+              "description": "1 Molar Hypobromous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "18",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HF",
+              "description": "3 Molar Hydrofluoric Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "10",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "3M Cl<sub>2</sub>CHCOOH",
+              "description": "3 Molar Dichloroacetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "12",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M Cl<sub>2</sub>CHCOOH",
+              "description": "1 Molar Dichloroacetic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "12",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M HCN",
+              "description": "1 Molar Hydrocyanic Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "24",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOBr",
+              "description": "3 Molar Hypobromous Acid",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "18",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Conjugate Acids",
+          "SOLUTION": [
+            {
+              "name": "1M NH<sub>4</sub>Cl",
+              "description": "1 Molar Ammonium Chloride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "36",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M NH<sub>4</sub>Cl",
+              "description": "3 Molar Ammonium Chloride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "36",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M C<sub>5</sub>H<sub>5</sub>NHCl",
+              "description": "1M Pyridinium Chloride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "55",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M C<sub>5</sub>H<sub>5</sub>NHCl",
+              "description": "3M Pyridinium Chloride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "55",
+                  "amount": "0.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Strong Bases",
+          "SOLUTION": [
+            {
+              "name": "1M NaOH",
+              "description": "1M Sodium Hydroxide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "0.1M NaOH",
+              "description": "0.1M Sodium Hydroxide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.01"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.01"
+                }
+              ]
+            },
+            {
+              "name": "3M NaOH",
+              "description": "3M Sodium Hydroxide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "10M NaOH",
+              "description": "10M Sodium Hydroxide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "2",
+                  "amount": "1.0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Weak Bases",
+          "SOLUTION": [
+            {
+              "name": "3M NH<sub>3</sub>",
+              "description": "3 Molar Ammonia",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "0.5M Mg(OH)<sub>2</sub>",
+              "description": "0.5 Molar Magnesium Hydroxide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "51",
+                  "amount": "0.05"
+                }
+              ]
+            },
+            {
+              "name": "1M NH<sub>3</sub>",
+              "description": "1 Molar Ammonia",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M C<sub>5</sub>H<sub>5</sub>N",
+              "description": "1 Molar Pyridine",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "56",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M C<sub>5</sub>H<sub>5</sub>N",
+              "description": "3 Molar Pyridine",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "56",
+                  "amount": "0.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Conjugate Bases",
+          "SOLUTION": [
+            {
+              "name": "1M NaNCCH<sub>2</sub>COO",
+              "description": "1M Sodium Cyanoacetate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "15",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M Na<sub>2</sub>CO<sub>3</sub>",
+              "description": "1M Sodium Carbonate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.2"
+                },
+                {
+                  "id": "28",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M Na<sub>3</sub>PO<sub>4</sub>",
+              "description": "1M Sodium Phosphate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "40",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCH<sub>3</sub>COO",
+              "description": "1M Sodium Acetate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "23",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaHCO<sub>3</sub>",
+              "description": "1M Sodium Hydrogen Carbonate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "27",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOCl",
+              "description": "1M Sodium Hypochloride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "17",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOI",
+              "description": "1M Sodium Hypoiodide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "21",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCN",
+              "description": "1M Sodium Cyanide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "25",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOBr",
+              "description": "1M Sodium Hypobromide",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "19",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaF",
+              "description": "1M Sodium Floride",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "11",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCl<sub>2</sub>CHCOO",
+              "description": "1M Sodium Dichloroacetate",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "13",
+                  "amount": "0.1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Indicators",
+          "SOLUTION": [
+            {
+              "name": "Methyl Orange",
+              "description": "Methyl Orange Indicator Solution",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "41",
+                  "amount": ".0001"
+                }
+              ]
+            },
+            {
+              "name": "Methyl Red",
+              "description": "Methyl Red Indicator Solution",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "43",
+                  "amount": ".00015"
+                }
+              ]
+            },
+            {
+              "name": "Phenolphthalein",
+              "description": "Phenolphthalein Indicator Solution",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "47",
+                  "amount": ".00016"
+                }
+              ]
+            },
+            {
+              "name": "Bromocresol Green",
+              "description": "Bromocresol Green Indicator Solution",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": ".00006"
+                },
+                {
+                  "id": "50",
+                  "amount": ".00006"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Solids",
+          "SOLUTION": [
+            {
+              "name": "NaCl",
+              "description": "Sodium Chloride",
+              "vessel": "SolidBottle",
+              "species": [
+                {
+                  "id": "59",
+                  "amount": "3.7"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }]
+  }
+}

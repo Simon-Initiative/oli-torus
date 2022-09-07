@@ -1,0 +1,482 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "state": "l", 
+            "molecularWeight": "18.016"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sub>3</sub>O<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008"
+         }, 
+         {
+            "id": "3", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4", 
+            "molecularWeight": "62.01"
+         }, 
+         {
+            "id": "4", 
+            "name": "I<sup>-</sup>", 
+            "enthalpy": "-55.19", 
+            "entropy": "111.3", 
+            "molecularWeight": "126.9"
+         }, 
+         {
+            "id": "5", 
+            "name": "Br<sup>-</sup>", 
+            "enthalpy": "-121.55", 
+            "entropy": "82.4", 
+            "molecularWeight": "79.90"
+         }, 
+         {
+            "id": "6", 
+            "name": "ClO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-129.33", 
+            "entropy": "182.0", 
+            "molecularWeight": "99.45"
+         }, 
+         {
+            "id": "7", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.16", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "8", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+            "molecularWeight": "22.99"
+         }, 
+         {
+            "id": "9", 
+            "name": "ClO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-103.97", 
+            "entropy": "162.3", 
+            "molecularWeight": "83.45"
+         }, 
+         {
+            "id": "10", 
+            "name": "HF", 
+            "enthalpy": "-320.08", 
+            "entropy": "88.7", 
+            "molecularWeight": "20.008"
+         }, 
+         {
+            "id": "11", 
+            "name": "F<sup>-</sup>", 
+            "enthalpy": "-332.08", 
+            "entropy": "-12.437604874789841", 
+            "molecularWeight": "19.00"
+         }, 
+         {
+            "id": "12", 
+            "name": "Cl<sub>2</sub>CHCOOH", 
+            "enthalpy": "-619.1", 
+            "entropy": "160.64269874686065", 
+            "molecularWeight": "128.936"
+         }, 
+         {
+            "id": "13", 
+            "name": "Cl<sub>2</sub>CHCOO<sup>-</sup>", 
+            "enthalpy": "-622.3", 
+            "entropy": "125.0", 
+            "molecularWeight": "127.928"
+         }, 
+         {
+            "id": "14", 
+            "name": "NCCH<sub>2</sub>COOH", 
+            "enthalpy": "-54.2", 
+            "entropy": "276.04235418317654", 
+            "molecularWeight": "85.064"
+         }, 
+         {
+            "id": "15", 
+            "name": "NCCH<sub>2</sub>COO<sup>-</sup>", 
+            "enthalpy": "-56.2", 
+            "entropy": "222.0", 
+            "molecularWeight": "84.056"
+         }, 
+         {
+            "id": "16", 
+            "name": "HOCl", 
+            "enthalpy": "-120.9", 
+            "entropy": "139.73132118751613", 
+            "molecularWeight": "52.458"
+         }, 
+         {
+            "id": "17", 
+            "name": "OCl<sup>-</sup>", 
+            "enthalpy": "-107.1", 
+            "entropy": "42.0", 
+            "molecularWeight": "51.45"
+         }, 
+         {
+            "id": "18", 
+            "name": "HOBr", 
+            "enthalpy": "-112.42", 
+            "entropy": "144.34603038591086", 
+            "molecularWeight": "96.908"
+         }, 
+         {
+            "id": "19", 
+            "name": "OBr<sup>-</sup>", 
+            "enthalpy": "-93.63", 
+            "entropy": "42.0", 
+            "molecularWeight": "95.90"
+         }, 
+         {
+            "id": "20", 
+            "name": "HOI", 
+            "enthalpy": "-130.4", 
+            "entropy": "168.51298635759844", 
+            "molecularWeight": "143.908"
+         }, 
+         {
+            "id": "21", 
+            "name": "OI<sup>-</sup>", 
+            "enthalpy": "-107.4", 
+            "entropy": "42.0", 
+            "molecularWeight": "142.9"
+         }, 
+         {
+            "id": "22", 
+            "name": "CH<sub>3</sub>COOH", 
+            "enthalpy": "-485.76", 
+            "entropy": "178.7", 
+            "molecularWeight": "60.052"
+         }, 
+         {
+            "id": "23", 
+            "name": "CH<sub>3</sub>COO<sup>-</sup>", 
+            "enthalpy": "-486.01", 
+            "entropy": "86.79009304852713", 
+            "molecularWeight": "59.044"
+         }, 
+         {
+            "id": "24", 
+            "name": "HCN", 
+            "enthalpy": "107.1", 
+            "entropy": "124.7", 
+            "molecularWeight": "27.028"
+         }, 
+         {
+            "id": "25", 
+            "name": "CN<sup>-</sup>", 
+            "enthalpy": "150.6", 
+            "entropy": "94.3212804273552", 
+            "molecularWeight": "26.02"
+         }, 
+         {
+            "id": "26", 
+            "name": "H<sub>2</sub>CO<sub>3</sub>", 
+            "enthalpy": "-669.65", 
+            "entropy": "187.4", 
+            "molecularWeight": "62.026"
+         }, 
+         {
+            "id": "27", 
+            "name": "HCO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-691.99", 
+            "entropy": "-9.130028584898714", 
+            "molecularWeight": "61.018"
+         }, 
+         {
+            "id": "28", 
+            "name": "CO<sub>3</sub><sup>-2</sup>", 
+            "enthalpy": "-677.14", 
+            "entropy": "-156.8741463912882", 
+            "molecularWeight": "60.01"
+         }, 
+         {
+            "id": "29", 
+            "name": "HSO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-885.75", 
+            "entropy": "126.86", 
+            "molecularWeight": "97.078"
+         }, 
+         {
+            "id": "30", 
+            "name": "SO<sub>4</sub><sup>2-</sup>", 
+            "enthalpy": "-907.51", 
+            "entropy": "17.15", 
+            "molecularWeight": "96.07"
+         }, 
+         {
+            "id": "31", 
+            "name": "C<sub>6</sub>H<sub>5</sub>NH<sub>2</sub>", 
+            "enthalpy": "31.299999999999997", 
+            "entropy": "-192.11783197722377", 
+            "molecularWeight": "93.126"
+         }, 
+         {
+            "id": "32", 
+            "name": "C<sub>6</sub>H<sub>5</sub>NH<sub>3</sub><sup>+</sup>", 
+            "enthalpy": "63.2", 
+            "entropy": "92.0", 
+            "molecularWeight": "94.134"
+         }, 
+         {
+            "id": "33", 
+            "name": "NH<sub>3</sub>", 
+            "enthalpy": "-80.29", 
+            "entropy": "111.42203050810235", 
+            "molecularWeight": "17.034"
+         }, 
+         {
+            "id": "34", 
+            "name": "Mg(OH)<sub>2</sub>", 
+            "enthalpy": "-924.54", 
+            "state": "s", 
+            "molecularWeight": "58.3", 
+            "entropy": "63.18"
+         }, 
+         {
+            "id": "35", 
+            "name": "Mg<sup>+2</sup>", 
+            "enthalpy": "-466.85", 
+            "entropy": "-128.7070741292725", 
+            "molecularWeight": "24.305"
+         }, 
+         {
+            "id": "36", 
+            "name": "NH<sub>4</sub><sup>+</sup>", 
+            "enthalpy": "-132.51", 
+            "entropy": "113.4", 
+            "molecularWeight": "18.042"
+         }, 
+         {
+            "id": "37", 
+            "name": "H<sub>3</sub>PO<sub>4</sub>", 
+            "enthalpy": "-1288.34", 
+            "entropy": "158.19999999999982", 
+            "molecularWeight": "97.994"
+         }, 
+         {
+            "id": "38", 
+            "name": "H<sub>2</sub>PO<sub>4</sub><sup>-</sup>", 
+            "enthalpy": "-1296.29", 
+            "entropy": "90.87604282938487", 
+            "molecularWeight": "96.986"
+         }, 
+         {
+            "id": "39", 
+            "name": "HPO<sub>4</sub><sup>-2</sup>", 
+            "enthalpy": "-1292.14", 
+            "entropy": "-33.15335540626731", 
+            "molecularWeight": "95.978"
+         }, 
+         {
+            "id": "40", 
+            "name": "PO<sub>4</sub><sup>-3</sup>", 
+            "enthalpy": "-1277.4", 
+            "entropy": "-226.04278471190318", 
+            "molecularWeight": "94.97"
+         }, 
+         {
+            "id": "41", 
+            "name": "MethylOrangeH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "360", 
+            "saturation": "100", 
+            "value": "90", 
+            "colorConcentration": ".00001", 
+            "molecularWeight": "327.34"
+         }, 
+         {
+            "id": "42", 
+            "name": "MethylOrange<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "65.01640899362991", 
+            "hue": "62", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".000015", 
+            "molecularWeight": "327.34"
+         }, 
+         {
+            "id": "43", 
+            "name": "MethylRedH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "360", 
+            "saturation": "100", 
+            "value": "90", 
+            "colorConcentration": ".00002", 
+            "molecularWeight": "291.29"
+         }, 
+         {
+            "id": "44", 
+            "name": "MethylRed<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "45.50335035130863", 
+            "hue": "62", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".00003", 
+            "molecularWeight": "291.29"
+         }, 
+         {
+            "id": "45", 
+            "name": "PhenolRedH", 
+            "enthalpy": "-229.99", 
+            "entropy": "154.0", 
+            "hue": "50", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".0000000015", 
+            "molecularWeight": "358.38"
+         }, 
+         {
+            "id": "46", 
+            "name": "PhenolRed<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "-26.87908002817133", 
+            "hue": "301", 
+            "saturation": "100", 
+            "value": "95", 
+            "colorConcentration": ".000000001", 
+            "molecularWeight": "358.38"
+         }, 
+         {
+            "id": "47", 
+            "name": "PhenolphthaleinH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "molecularWeight": "318.33"
+         }, 
+         {
+            "id": "48", 
+            "name": "Phenolphthalein<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "-58.14250539834609", 
+            "hue": "320", 
+            "saturation": "100", 
+            "value": "84", 
+            "colorConcentration": ".00008", 
+            "molecularWeight": "318.33"
+         }, 
+         {
+            "id": "49", 
+            "name": "BromocresolGreenH", 
+            "enthalpy": "-229.99", 
+            "entropy": "144.0", 
+            "hue": "64", 
+            "saturation": "100", 
+            "value": "100", 
+            "colorConcentration": ".00005", 
+            "molecularWeight": "720.02"
+         }, 
+         {
+            "id": "50", 
+            "name": "BromocresolGreen<sup>-</sup>", 
+            "enthalpy": "-232.99", 
+            "entropy": "41.95706717590055", 
+            "hue": "223", 
+            "saturation": "90", 
+            "value": "95", 
+            "colorConcentration": ".00002", 
+            "molecularWeight": "720.02"
+         }, 
+         {
+            "id": "51", 
+            "name": "Mg(OH)<sub>2</sub>", 
+            "enthalpy": "-924.54", 
+            "entropy": "63.480304810939856", 
+            "state": "s", 
+            "hue": "180", 
+            "saturation": "0", 
+            "value": "100", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "58.32"
+         }, 
+         {
+            "id": "52", 
+            "name": "Mg<sup>+2</sup>", 
+            "enthalpy": "-466.85", 
+            "entropy": "-138.1", 
+            "molecularWeight": "24.305"
+         }, 
+         {
+            "id": "53", 
+            "name": "Ca(OH)<sub>2</sub>", 
+            "enthalpy": "-986.09", 
+            "entropy": "83.39", 
+            "state": "s", 
+            "hue": "180", 
+            "saturation": "0", 
+            "value": "100", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "58.32"
+         }, 
+         {
+            "id": "54", 
+            "name": "Ca<sup>+2</sup>", 
+            "enthalpy": "-542.83", 
+            "entropy": "-53.1", 
+            "molecularWeight": "40.08"
+         }, 
+         {
+            "id": "55", 
+            "name": "C<sub>5</sub>H<sub>5</sub>NH<sup>+</sup>", 
+            "enthalpy": "31.3", 
+            "entropy": "92.0", 
+            "molecularWeight": "80.108"
+         }, 
+         {
+            "id": "56", 
+            "name": "C<sub>5</sub>H<sub>5</sub>N", 
+            "enthalpy": "59.5", 
+            "entropy": "85.88064574580255", 
+            "molecularWeight": "79.1"
+         }, 
+         {
+            "id": "57", 
+            "name": "AgCl", 
+            "enthalpy": "-127.03", 
+            "entropy": "96.11", 
+            "state": "s", 
+            "hue": "180", 
+            "saturation": "0", 
+            "value": "85", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "143.32", 
+            "density": "5.56"
+         }, 
+         {
+            "id": "58", 
+            "name": "Ag<sup>+</sup>", 
+            "enthalpy": "105.57", 
+            "entropy": "72.68", 
+            "molecularWeight": "107.9"
+         }, 
+         {
+            "id": "59", 
+            "name": "NaCl", 
+            "enthalpy": "-411.2", 
+            "entropy": "72.1", 
+            "state": "s", 
+            "molecularWeight": "58.44", 
+            "density": "2.165"
+         }
+      ]
+   }
+}

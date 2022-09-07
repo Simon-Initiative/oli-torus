@@ -1,0 +1,70 @@
+{
+    "SPECIES_LIST": {
+        "SPECIES": [
+            {
+                "id": 0,
+                "name": "H<sub>2</sub>O",
+                "enthalpy": -285.83,
+                "entropy": 69.91,
+                "state": "l",
+                "molecularWeight": 18.016,
+                "specificHeat": 1.0
+            },
+            {
+                "id": 1,
+                "name": "H<sup>+</sup>",
+                "enthalpy": 0.0,
+                "entropy": 0.0,
+                "molecularWeight": 1.008
+            },
+            {
+                "id": 2,
+                "name": "OH<sup>-</sup>",
+                "enthalpy": -229.99,
+                "entropy": -10.75,
+                "molecularWeight": 17.008
+            },
+            {
+                "id": 3,
+                "name": "A",
+                "simpleName": "A",
+                "state": "aq",
+                "enthalpy": 0,
+                "entropy": 0,
+                "density": 1.5,
+                "specificHeat": 0.0,
+                "molecularWeight": 100.0,
+                "hue": 44.0,
+                "saturation": 72.0,
+                "value": 96.0,
+                "colorConcentration": 0.1
+            },
+            {
+                "id": 4,
+                "name": "B",
+                "simpleName": "B",
+                "state": "aq",
+                "enthalpy": 0.0,
+                "entropy": 0.0,
+                "density": 3,
+                "specificHeat": -0.01,
+                "molecularWeight": 50.0
+            },
+            {
+                "id": 5,
+                "name": "C",
+                "simpleName": "C",
+                "state": "aq",
+                "enthalpy": -30.0,
+                "entropy": -10.0,
+                "density": 5,
+                "specificHeat": -0.01,
+                "molecularWeight": 150.0,
+                "hue": 0.0,
+                "saturation": 98.0,
+                "value": 54.0,
+                "colorConcentration": 0.1
+            }
+        ]
+    }
+}

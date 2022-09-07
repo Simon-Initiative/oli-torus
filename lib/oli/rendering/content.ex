@@ -33,8 +33,19 @@ defmodule Oli.Rendering.Content do
   @callback ul(%Context{}, next, %{}) :: [any()]
   @callback li(%Context{}, next, %{}) :: [any()]
 
+  @callback definition(%Context{}, next, next, next, %{}) ::
+              [any()]
+  @callback definition_meaning(%Context{}, next, %{}) :: [any()]
+  @callback definition_translation(%Context{}, next, %{}) :: [any()]
+  @callback definition_pronunciation(%Context{}, next, %{}) :: [any()]
+
+  @callback dialog(%Context{}, next, %{}) :: [any()]
+  @callback dialog_line(%Context{}, next, %{}, %{}) :: [any()]
+
   @callback formula(%Context{}, next, %{}) :: [any()]
   @callback formula_inline(%Context{}, next, %{}) :: [any()]
+
+  @callback figure(%Context{}, next, next, %{}) :: [any()]
 
   @callback callout(%Context{}, next, %{}) :: [any()]
   @callback callout_inline(%Context{}, next, %{}) :: [any()]
@@ -140,6 +151,66 @@ defmodule Oli.Rendering.Content do
     writer.formula_inline(context, nil, element)
   end
 
+  def render(
+        %Context{} = context,
+        %{"type" => "definition"} = element,
+        writer
+      ) do
+    render_translation = fn ->
+      case element["translations"] do
+        nil -> []
+        translations -> Enum.map(translations, fn child -> render(context, child, writer) end)
+      end
+    end
+
+    render_pronunciation = fn ->
+      case element["pronunciation"] do
+        nil -> []
+        pronunciation -> render(context, pronunciation, writer)
+      end
+    end
+
+    render_meaning = fn ->
+      case element["meanings"] do
+        nil -> []
+        meanings -> Enum.map(meanings, fn child -> render(context, child, writer) end)
+      end
+    end
+
+    writer.definition(context, render_translation, render_pronunciation, render_meaning, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "figure", "children" => children, "title" => title} = element,
+        writer
+      ) do
+    render_children = fn -> render(context, children, writer) end
+    render_title = fn -> render(context, title, writer) end
+    writer.figure(context, render_children, render_title, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "dialog"} = element,
+        writer
+      ) do
+    render_lines = fn ->
+      case element["lines"] do
+        nil ->
+          []
+
+        lines ->
+          Enum.map(lines, fn child ->
+            render_line_content = fn -> render(context, child["children"], writer) end
+            writer.dialog_line(context, render_line_content, child, element)
+          end)
+      end
+    end
+
+    writer.dialog(context, render_lines, element)
+  end
+
   # Renders a content element by calling the provided writer implementation on a
   # supported element type.
   def render(
@@ -239,6 +310,15 @@ defmodule Oli.Rendering.Content do
 
       "callout_inline" ->
         writer.callout_inline(context, next, element)
+
+      "meaning" ->
+        writer.definition_meaning(context, next, element)
+
+      "translation" ->
+        writer.definition_translation(context, next, element)
+
+      "pronunciation" ->
+        writer.definition_pronunciation(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

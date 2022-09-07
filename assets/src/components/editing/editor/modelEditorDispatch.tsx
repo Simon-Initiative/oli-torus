@@ -22,6 +22,9 @@ import { ImageInlineEditor } from '../elements/image/inline/ImageInlineElement';
 import { FormulaEditor } from '../elements/formula/FormulaEditor';
 import { CalloutEditor, InlineCalloutEditor } from '../elements/callout/CalloutElement';
 import { VideoEditor } from '../elements/video/VideoEditor';
+import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
+import { FigureEditor } from '../elements/figure/FigureEditor';
+import { DialogEditor } from '../elements/dialog/DialogEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -92,6 +95,8 @@ export function editorFor(
       return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
     case 'code_line':
       return <span {...attributes}>{props.children}</span>;
+    case 'dialog':
+      return <DialogEditor {...(editorProps as EditorProps<ContentModel.Dialog>)} />;
     case 'table':
       return <TableEditor {...(editorProps as EditorProps<ContentModel.Table>)} />;
     case 'tr':
@@ -105,6 +110,10 @@ export function editorFor(
       return <span {...attributes}>Not implemented</span>;
     case 'input_ref':
       return <InputRefEditor {...(editorProps as EditorProps<ContentModel.InputRef>)} />;
+    case 'definition':
+      return <DefinitionEditor {...(editorProps as EditorProps<ContentModel.Definition>)} />;
+    case 'figure':
+      return <FigureEditor {...(editorProps as EditorProps<ContentModel.Figure>)} />;
     case 'formula':
     case 'formula_inline':
       return (

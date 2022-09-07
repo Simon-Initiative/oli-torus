@@ -1,0 +1,58 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.1M Na<sub>2</sub>SO<sub>4</sub>", 
+                  "description": "0.1M Sodium sulfate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.02"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.01"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "0.5M BaCl<sub>2</sub>", 
+                  "description": "0.5M Barium Chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.1"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

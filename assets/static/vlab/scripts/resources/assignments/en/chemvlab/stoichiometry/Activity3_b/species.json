@@ -1,0 +1,136 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "molecularWeight": "18.016", 
+            "state": "l"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008"
+         }, 
+         {
+            "id": "4", 
+            "name": "K<sup>+</sup>", 
+            "enthalpy": "-257.51623678712923", 
+            "entropy": "91.22701123467536", 
+            "molecularWeight": "39.10"
+         }, 
+         {
+            "id": "5", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.58999999999997", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "6", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-205.0", 
+            "entropy": "146.4", 
+            "molecularWeight": "62.01"
+         }, 
+         {
+            "id": "7", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59.0", 
+            "molecularWeight": "22.99"
+         }, 
+         {
+            "id": "8", 
+            "name": "Mg(OH)<sub>2</sub>", 
+            "enthalpy": "-924.54", 
+            "state": "s", 
+            "molecularWeight": "58.3", 
+            "density": ".2", 
+            "entropy": "63.18"
+         }, 
+         {
+            "id": "9", 
+            "name": "Mg<sup>2+</sup>", 
+            "enthalpy": "-466.85", 
+            "entropy": "-128.7070741292725", 
+            "molecularWeight": "24.305"
+         }, 
+         {
+            "id": "10", 
+            "name": "Cu<sup>2+</sup>", 
+            "enthalpy": "64.77", 
+            "entropy": "-99.6", 
+            "hue": "169", 
+            "saturation": "32", 
+            "value": "89", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "63.55"
+         }, 
+         {
+            "id": "11", 
+            "name": "AgCl", 
+            "enthalpy": "-127.03", 
+            "entropy": "96.11", 
+            "state": "s", 
+            "molecularWeight": "143.32", 
+            "density": ".4"
+         }, 
+         {
+            "id": "12", 
+            "name": "Ag<sup>+</sup>", 
+            "enthalpy": "105.57", 
+            "entropy": "72.68", 
+            "molecularWeight": "107.9"
+         }, 
+         {
+            "id": "13", 
+            "name": "CrO<sub>4</sub><sup>2-</sup>", 
+            "enthalpy": "-881", 
+            "entropy": "50", 
+            "hue": "49", 
+            "saturation": "100", 
+            "value": "93", 
+            "colorConcentration": ".1", 
+            "molecularWeight": "115.99"
+         }, 
+         {
+            "id": "14", 
+            "name": "Cu(OH)<sub>2</sub>", 
+            "enthalpy": "-555.0", 
+            "entropy": "-387.8934", 
+            "state": "s", 
+            "hue": "182", 
+            "saturation": "65", 
+            "value": "44", 
+            "colorConcentration": ".1", 
+            "molecularWeight": "97.56", 
+            "density": ".3"
+         }, 
+         {
+            "id": "15", 
+            "name": "Ag<sub>2</sub>CrO<sub>4</sub>", 
+            "enthalpy": "-986.09", 
+            "entropy": "83.39", 
+            "state": "s", 
+            "hue": "0", 
+            "saturation": "99", 
+            "value": "70", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "331.73", 
+            "density": "1"
+         }
+      ]
+   }
+}

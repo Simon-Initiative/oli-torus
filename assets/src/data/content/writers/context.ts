@@ -1,4 +1,5 @@
 import { MultiInputDelivery } from 'components/activities/multi_input/schema';
+import { VlabInputDelivery } from 'components/activities/vlab/schema';
 import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
@@ -9,7 +10,12 @@ export interface WriterContext {
     toggleHints: (id: string) => void;
     inputs: Map<
       ID,
-      { input: MultiInputDelivery; value: string; placeholder?: string; hasHints: boolean }
+      {
+        input: MultiInputDelivery | VlabInputDelivery;
+        value: string;
+        placeholder?: string;
+        hasHints: boolean;
+      }
     >;
     disabled: boolean;
   };

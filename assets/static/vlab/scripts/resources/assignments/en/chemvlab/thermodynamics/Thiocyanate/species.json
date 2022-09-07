@@ -1,0 +1,95 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.95", 
+            "state": "l", 
+            "molecularWeight": "18.02"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "molecularWeight": "1.007"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.9", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.01"
+         }, 
+         {
+            "id": "100", 
+            "name": "Na<sup>+</sup>", 
+            "enthalpy": "-240.12", 
+            "entropy": "59", 
+            "molecularWeight": "22.99"
+         }, 
+         {
+            "id": "101", 
+            "name": "Cl<sup>-</sup>", 
+            "enthalpy": "-167.16", 
+            "entropy": "56.5", 
+            "molecularWeight": "35.45"
+         }, 
+         {
+            "id": "102", 
+            "name": "Fe<sup>+3</sup>", 
+            "enthalpy": "202", 
+            "entropy": "315.9", 
+            "hue": "43", 
+            "saturation": "100", 
+            "value": "77", 
+            "colorConcentration": ".008", 
+            "molecularWeight": "55.8452"
+         }, 
+         {
+            "id": "103", 
+            "name": "SCN<sup>-</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "56.5"
+         }, 
+         {
+            "id": "104", 
+            "name": "FeSCN<sup>+2</sup>", 
+            "enthalpy": "77.0", 
+            "entropy": "-1.36", 
+            "hue": "356", 
+            "saturation": "100", 
+            "value": "27", 
+            "colorConcentration": ".0034", 
+            "molecularWeight": "58.0830"
+         }, 
+         {
+            "id": "232", 
+            "name": "Ag<sup>+</sup>", 
+            "enthalpy": "105.9", 
+            "entropy": "73.93", 
+            "molecularWeight": "120.9"
+         }, 
+         {
+            "id": "233", 
+            "name": "NO<sub>3</sub><sup>-</sup>", 
+            "enthalpy": "-206.57", 
+            "entropy": "146", 
+            "molecularWeight": "120.9"
+         }, 
+         {
+            "id": "234", 
+            "name": "AgSCN", 
+            "enthalpy": "-127.03", 
+            "entropy": "96.11", 
+            "state": "s", 
+            "hue": "180", 
+            "saturation": "0", 
+            "value": "100", 
+            "density": ".1", 
+            "colorConcentration": ".03", 
+            "molecularWeight": "120.9"
+         }
+      ]
+   }
+}

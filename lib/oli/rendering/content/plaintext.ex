@@ -171,12 +171,83 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.(), " "]
   end
 
+  def figure(%Context{} = _context, render_children, render_title, _) do
+    [render_title.(), "\n", render_children.(), "\n"]
+  end
+
+  def definition_meaning(%Context{} = _context, next, _) do
+    ["  ", next.(), "\n"]
+  end
+
+  def definition_translation(%Context{} = _context, next, _) do
+    ["  Translation: ", next.(), "\n"]
+  end
+
+  def definition_pronunciation(%Context{} = _context, next, _) do
+    ["  Pronunciation: ", next.(), "\n"]
+  end
+
+  def definition(
+        %Context{} = _context,
+        render_translation,
+        render_pronunciation,
+        render_meaning,
+        %{"term" => term}
+      ) do
+    [
+      "Definition: ",
+      term,
+      "\n",
+      render_meaning.(),
+      render_pronunciation.(),
+      render_translation.(),
+      "\n"
+    ]
+  end
+
   def popup(%Context{} = _context, next, _) do
     ["[popup with text ", next.(), "]"]
   end
 
   def definition(%Context{} = _context, next, _) do
     [next.(), " "]
+  end
+
+  def dialog(%Context{} = _context, next, %{"title" => title}) do
+    ["Dialog: ", title, "\n", next.(), " "]
+  end
+
+  def dialog(%Context{} = _context, next, _) do
+    ["Dialog:\n", next.(), " "]
+  end
+
+  def dialog_line(%Context{}, next, %{"speaker" => speaker_id}, %{"speakers" => speakers}) do
+    speaker = Enum.find(speakers, fn speaker -> speaker["id"] == speaker_id end)
+
+    case speaker do
+      nil ->
+        [
+          "Unknown: ",
+          next.(),
+          "\n"
+        ]
+
+      _ ->
+        [
+          speaker["name"],
+          ": ",
+          next.(),
+          "\n"
+        ]
+    end
+  end
+
+  def dialog_line(%Context{}, next, _, _) do
+    [
+      "Unknown: ",
+      next.(),
+      "\n"
+    ]
   end
 
   def text(%Context{} = _context, %{"text" => text}) do

@@ -1,0 +1,62 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "50g Solar Salt Liquid", 
+                  "description": "Solar Salt Liquid at 40\u00b0C", 
+                  "vessel": "FoamCup", 
+                  "temperature": "313.15", 
+                  "volume": "0.0179855", 
+                  "species": [
+                     {
+                        "id": "60", 
+                        "amount": "0.29550827"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "50g Solar Metal Liquid", 
+                  "description": "Solar Metal Liquid at 40\u00b0C", 
+                  "vessel": "FoamCup", 
+                  "temperature": "313.15", 
+                  "volume": "0.00952", 
+                  "species": [
+                     {
+                        "id": "61", 
+                        "amount": "0.29550827"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "50g Solar Oil", 
+                  "description": "Solar Oil at 40\u00b0C", 
+                  "vessel": "FoamCup", 
+                  "temperature": "313.15", 
+                  "volume": "0.08264", 
+                  "species": [
+                     {
+                        "id": "62", 
+                        "amount": "0.29550827"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "100g Distilled H<sub>2</sub>O", 
+                  "vessel": "FoamCup", 
+                  "description": "Distilled Water at 25\u00b0C", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0", 
+                        "amount": "5.55062165"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

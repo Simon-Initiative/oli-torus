@@ -1,0 +1,21 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Kiddie Pool Sample", 
+                  "description": "Kiddie Pool Sample", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

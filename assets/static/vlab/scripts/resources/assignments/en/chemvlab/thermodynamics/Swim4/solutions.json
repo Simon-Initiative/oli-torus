@@ -1,0 +1,72 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "Pool Sample", 
+                  "description": "Diving Pool Sample", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.000000079432"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "5 \u03bcM HCl", 
+                  "description": "0.000005 Molar Hydrochloric Acid", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.0000005"
+                     }, 
+                     {
+                        "id": "1", 
+                        "amount": "0.0000005"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "5 \u03bcM NaOH", 
+                  "description": "0.000005 Molar Sodium Hydroxide", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "8", 
+                        "amount": "0.0000005"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.0000005"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

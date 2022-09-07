@@ -1,0 +1,19 @@
+{
+  "id": "oli_vlab",
+  "friendlyName": "Virtual Lab",
+  "petiteLabel": "Vlab",
+  "description": "A chemistry virtual lab activity",
+  "icon": "flask",
+  "delivery": {
+    "element": "oli-vlab-delivery",
+    "entry": "./delivery-entry.ts"
+  },
+  "authoring": {
+    "element": "oli-vlab-authoring",
+    "entry": "./authoring-entry.ts"
+  },
+  "schemaPruning": {
+    "type": "keys",
+    "keys": ["feedback"]
+  }
+}

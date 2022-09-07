@@ -1,0 +1,374 @@
+{
+   "REACTIONS": {
+      "REACTION": [
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "0", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "2", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "11", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "10", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "13", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "12", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "15", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "14", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "16", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "17", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "18", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "19", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "20", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "21", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "23", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "22", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "25", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "24", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "26", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "27", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "28", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "27", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "35", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "34", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "2", 
+                  "coefficient": "2"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "33", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "36", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "31", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "32", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "38", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "37", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "38", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "39", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "39", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "40", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "42", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "41", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "44", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "43", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "46", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "45", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "48", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "47", 
+                  "coefficient": "-1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "50", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "49", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "1", 
+                  "coefficient": "1"
+               }
+            ]
+         }, 
+         {
+            "SPECIES_REF": [
+               {
+                  "id": "60", 
+                  "coefficient": "-1"
+               }, 
+               {
+                  "id": "61", 
+                  "coefficient": "1"
+               }, 
+               {
+                  "id": "7", 
+                  "coefficient": "1"
+               }
+            ]
+         }
+      ]
+   }
+}

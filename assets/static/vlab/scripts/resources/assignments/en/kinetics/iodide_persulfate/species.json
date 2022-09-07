@@ -1,0 +1,107 @@
+{
+    "SPECIES_LIST": {
+        "SPECIES": [
+            {
+                "id": 0,
+                "name": "H<sub>2</sub>O",
+                "enthalpy": -285.83,
+                "entropy": 69.91,
+                "state": "l",
+                "molecularWeight": 18.016,
+                "specificHeat": 1.0
+            },
+            {
+                "id": 1,
+                "name": "H<sup>+</sup>",
+                "enthalpy": 0.0,
+                "entropy": 0.0,
+                "molecularWeight": 1.008
+            },
+            {
+                "id": 2,
+                "name": "OH<sup>-</sup>",
+                "enthalpy": -229.99,
+                "entropy": -10.75,
+                "molecularWeight": 17.008
+            },
+            {
+                "id": 3,
+                "name": "I<sup>-</sup>",
+                "simpleName": "I-",
+                "state": "aq",
+                "enthalpy": -55.2,
+                "entropy": 111.3,
+                "specificHeat": -0.268,
+                "molecularWeight": 126.9044
+            },
+            {"id": 4,
+            "name": "SO<sub>4</sub><sup>2-</sup>",
+            "simpleName": "SO4^2-",
+            "state": "aq",
+            "enthalpy": -753.5,
+            "entropy": 92.0},
+            {"id": 5,
+                "name": "S<sub>2</sub>O<sub>8</sub><sup>2-</sup>",
+                "simpleName": "S2O8^2-",
+                "state": "aq",
+                "enthalpy": -1344.7,
+                "entropy": 244.3},
+            {"id": 6,
+                "name": "NH<sub>4</sub><sup>+</sup>",
+                "simpleName": "NH4^+",
+                "state": "aq",
+                "enthalpy": -133.26,
+                "entropy": 111.17},
+            {"id": 7,
+                "name": "NH<sub>3</sub>",
+                "simpleName": "NH3",
+                "state": "aq",
+                "enthalpy": -80.29,
+                "entropy": 111.3
+            },
+            {"id": 8,
+            "name": "I<sub>2</sub>",
+            "simpleName": "I2",
+            "state": "s",
+            "hue": "270", 
+            "saturation": "72", 
+            "value": "40", 
+            "colorConcentration": ".03", 
+            "enthalpy": 0,
+            "entropy": 116.14},
+            {"id": 9,
+            "name": "S<sub>2</sub>O<sub>3</sub><sup>2-</sup>",
+            "simpleName": "S2O3^2-",
+            "state": "aq",
+            "enthalpy": -652.3,
+            "entropy": 67.0},
+            {"id": 10,
+            "name": "S<sub>4</sub>O<sub>6</sub><sup>2-</sup>",
+            "simpleName": "S4O6^2-",
+            "state": "aq",
+            "enthalpy": -1254.6,
+            "entropy": 201
+            },
+            {
+            "id": 11,
+            "name": "starch",
+            "state": "aq",
+            "enthalpy": 0,
+            "entropy": 0,
+            "molecularWeight": 232.2
+            },
+            {
+                "id": 12,
+                "name": "I<sub>2/<sub>(starch)",
+                "state": "aq",
+                "enthalpy": -35,
+                "entropy": 80,
+                "molecularWeight": 232.2,
+                "hue": "270", 
+                "saturation": "72", 
+                "value": "20", 
+                "colorConcentration": ".00003" 
+            }
+        ]
+    }
+}

@@ -1,0 +1,51 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M Octane", 
+                  "description": "1M Solution of Octane in water", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "3", 
+                        "amount": "0.1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "1M X-630", 
+                  "description": "1M Solution of X-630", 
+                  "volume": "2.1", 
+                  "vessel": "2500mLBottle", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "2.1"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

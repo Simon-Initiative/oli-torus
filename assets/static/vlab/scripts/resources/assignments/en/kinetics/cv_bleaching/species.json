@@ -1,0 +1,60 @@
+{
+    "SPECIES_LIST": {
+        "SPECIES": [
+            {
+                "id": 0,
+                "name": "H<sub>2</sub>O",
+                "enthalpy": -285.83,
+                "entropy": 69.91,
+                "state": "l",
+                "molecularWeight": 18.016,
+                "specificHeat": 1.0
+            },
+            {
+                "id": 1,
+                "name": "H<sup>+</sup>",
+                "enthalpy": 0.0,
+                "entropy": 0.0,
+                "molecularWeight": 1.008
+            },
+            {
+                "id": 2,
+                "name": "OH<sup>-</sup>",
+                "enthalpy": -229.99,
+                "entropy": -10.75,
+                "molecularWeight": 17.008
+            },
+            {
+                "id": 3,
+                "name": "CV<sup>+</sup>",
+                "simpleName": "CV+",
+                "state": "aq",
+                "enthalpy": 0,
+                "entropy": 0,
+                "density": 1.5,
+                "specificHeat": 0.0,
+                "molecularWeight": 100.0,
+                "hue": 270.0,
+                "saturation": 50.0,
+                "value": 90.0,
+                "colorConcentration": 0.0001
+            },
+            {
+                "id": 4,
+                "name": "CVOH",
+                "simpleName": "CVOH",
+                "state": "aq",
+                "enthalpy": -260.0,
+                "entropy": 0.0,
+                "density": 5,
+                "molecularWeight": 117.008
+            },
+            {"id": 5,
+            "state": "aq",
+            "name": "Na<sup>+</sup>",
+            "enthalpy": 0.0,
+            "entropy": 0.0
+            }
+        ]
+    }
+}

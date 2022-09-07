@@ -1,0 +1,148 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Distilled H<sub>2</sub>O", 
+                  "description": "Distilled Water", 
+                  "volume": "3.0", 
+                  "vessel": "3LCarboy", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "AgNO<sub>3</sub>", 
+                  "description": "Silver Nitrate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.15"
+                     }, 
+                     {
+                        "id": "12", 
+                        "amount": "0.15"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "K<sub>2</sub>CrO<sub>4</sub>", 
+                  "description": "Potassium Chromate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.15"
+                     }, 
+                     {
+                        "id": "13", 
+                        "amount": "0.075"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "KNO<sub>3</sub>", 
+                  "description": "Potassium Nitrate", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "4", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "6", 
+                        "amount": "0.05"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "NaCl", 
+                  "description": "Sodium Chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.05"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "MgCl<sub>2</sub>", 
+                  "description": "Magnesium Chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "9", 
+                        "amount": "0.05"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.1"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "NaOH", 
+                  "description": "Sodium Hydroxide", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "7", 
+                        "amount": "0.2"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.2"
+                     }
+                  ]
+               }, 
+               {
+                  "name": "CuCl<sub>2</sub>", 
+                  "description": "Copper(II) chloride", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "5", 
+                        "amount": "0.15"
+                     }, 
+                     {
+                        "id": "10", 
+                        "amount": "0.075"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

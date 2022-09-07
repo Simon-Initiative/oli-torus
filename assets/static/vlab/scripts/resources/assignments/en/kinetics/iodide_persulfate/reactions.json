@@ -1,0 +1,80 @@
+{
+  "REACTIONS": {
+    "REACTION": [
+      {
+        "SPECIES_REF": [
+          {
+            "id": "0",
+            "coefficient": "-1"
+          },
+          {
+            "id": "1",
+            "coefficient": "1"
+          },
+          {
+            "id": "2",
+            "coefficient": "1"
+          }
+        ]
+      },
+      {
+        "SPECIES_REF": [
+          {
+            "id": 6,
+            "coefficient": -1
+          },
+          {"id": 1,
+          "coefficient": 1},
+          {"id": 7,
+          "coefficient": 1}
+        ]
+      },
+	  {
+        "SPECIES_REF": [
+          {
+            "id": 3,
+            "coefficient": -2,
+            "order": 1
+          },
+          {"id": 4,
+          "coefficient": 2},
+          {"id": 5,
+          "coefficient": -1,
+          "order": 1},
+          {"id": 8,
+          "coefficient": 1}
+        ],
+        "KINETICS": {
+          "Ea": 35.0,
+          "k298": 4.46e-3,
+          "useEquilibrium": false
+          }
+      },
+      {
+        "SPECIES_REF": [
+          {"id": 9,
+          "coefficient": -2},
+          {"id": 10,
+          "coefficient": 1},
+          {"id": 3,
+            "coefficient": 2
+          },
+          {"id": 8,
+            "coefficient": -1
+          }
+        ]
+      },
+      {
+        "SPECIES_REF": [
+          {"id": 8,
+          "coefficient": -1},
+          {"id": 11,
+          "coefficient": -1},
+          {"id": 12,
+            "coefficient": 1
+          }
+        ]
+      }
+    ]
+  }
+}
