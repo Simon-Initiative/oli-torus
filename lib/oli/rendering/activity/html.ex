@@ -109,6 +109,7 @@ defmodule Oli.Rendering.Activity.Html do
             attempts:
               Enum.map(attempts, fn a ->
                 %{
+                  state: a.lifecycle_state,
                   attemptNumber: a.attempt_number,
                   attemptGuid: a.attempt_guid,
                   date:

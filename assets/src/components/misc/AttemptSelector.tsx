@@ -6,6 +6,7 @@ export interface AttemptDetails {
   attemptNumber: number;
   attemptGuid: string;
   date: string;
+  state: 'active' | 'evaluated' | 'submitted';
 }
 
 export interface AttemptSelectorProps {
@@ -54,10 +55,15 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
           setCurrent(a);
         }}
       >
-        Attempt #{a.attemptNumber}: {a.date}
+        Attempt #{a.attemptNumber}: [{a.state}] {a.date}
       </a>
     );
   });
+
+  if (choices.length > 1) {
+    choices.splice(0, 0, <h6 className="dropdown-header">Previous attempts</h6>);
+  }
+  choices.splice(choices.length - 1, 0, <h6 className="dropdown-header">Most recent attempt</h6>);
 
   return (
     <div className="btn-group">
@@ -67,7 +73,7 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
         data-toggle="dropdown"
         aria-expanded="false"
       >
-        Attempt #{current.attemptNumber}: {current.date}
+        Attempt #{current.attemptNumber}: [{current.state}] {current.date}
       </button>
       <div className="dropdown-menu">{choices}</div>
     </div>
