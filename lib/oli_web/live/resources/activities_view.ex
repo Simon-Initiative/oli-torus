@@ -158,6 +158,8 @@ defmodule OliWeb.Resources.ActivitiesView do
     end
   end
 
+  # If there is a selected item in the table, push down an event to the client-side ReviewActivity hook
+  # giving it the information that it needs to broadcast a client-side sync event to other tabs
   defp push_sync_event(socket, table_model) do
     if !is_nil(table_model.selected) do
       revision =
@@ -224,6 +226,7 @@ defmodule OliWeb.Resources.ActivitiesView do
   def render(assigns) do
     ~F"""
     <div id="activity_review" phx-hook="ReviewActivity">
+
       <FilterBox
         card_header_text="Browse All Activities"
         card_body_text=""
@@ -242,6 +245,8 @@ defmodule OliWeb.Resources.ActivitiesView do
         total_count={@total_count}
         offset={@offset}
         limit={limit()}/>
+
+      <a href={Routes.activity_review_path(OliWeb.Endpoint, :index)}>Open Sync View</a>
     </div>
     """
   end
