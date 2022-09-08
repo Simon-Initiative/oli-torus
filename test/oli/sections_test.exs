@@ -169,6 +169,16 @@ defmodule Oli.SectionsTest do
       context_id: nil
     }
 
+    @invalid_title %{
+      end_date: ~U[2011-05-18 00:00:00.000000Z],
+      open_and_free: false,
+      registration_open: false,
+      start_date: ~U[2011-05-18 00:00:00.000000Z],
+      title:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+      context_id: "some updated context_id"
+    }
+
     setup do
       map = Seeder.base_project_with_resource2()
 
@@ -241,10 +251,11 @@ defmodule Oli.SectionsTest do
       assert Sections.get_section_from_lti_params(lti_params).id == section.id
     end
 
-    test "get_section_from_lti_params/1 returns the section from the given lti params when aud claim is a list", %{
-      section: section,
-      institution: institution
-    } do
+    test "get_section_from_lti_params/1 returns the section from the given lti params when aud claim is a list",
+         %{
+           section: section,
+           institution: institution
+         } do
       jwk = jwk_fixture()
       registration = registration_fixture(%{tool_jwk_id: jwk.id})
 
@@ -266,12 +277,26 @@ defmodule Oli.SectionsTest do
       assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_attrs)
     end
 
+    test "create_section/1 with long title returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Sections.create_section(@invalid_title)
+    end
+
     test "update_section/2 with valid data updates the section", %{section: section} do
       assert {:ok, %Section{} = section} = Sections.update_section(section, @update_attrs)
       assert section.end_date == ~U[2011-05-18 00:00:00Z]
       assert section.registration_open == false
       assert section.start_date == ~U[2011-05-18 00:00:00Z]
       assert section.title == "some updated title"
+    end
+
+    test "update_section/2 with long title returns error changeset", %{section: section} do
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Sections.update_section(section, @invalid_title)
+
+      {error_message, opts} = changeset.errors[:title]
+
+      assert error_message == "should be at most %{count} character(s)"
+      assert opts[:count] == 255
     end
 
     test "update_section/2 with invalid data returns error changeset", %{section: section} do

@@ -1,0 +1,17 @@
+{
+  "title": "Metals Density Problem",
+  "solutionViewers": [
+    {
+      "id": "solutionProperties",
+      "displayDefault": true,
+      "args": {
+        "honorSignificantFigures": true
+      }
+    },
+    {
+      "id": "thermometer",
+      "displayDefault": true
+    }
+  ],
+  "transfer": ["realistic"]
+}

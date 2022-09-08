@@ -205,10 +205,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       assert render(view) =~ "View and manage student grades and progress"
 
       assert has_element?(
-        view,
-        "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, section.slug)}\"]",
-        "View all Grades"
-      )
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.GradebookView, section.slug)}\"]",
+               "View all Grades"
+             )
 
       assert has_element?(
                view,
@@ -221,10 +221,10 @@ defmodule OliWeb.Sections.OverviewLiveTest do
              )
 
       assert has_element?(
-        view,
-        "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, section.slug)}\"]",
-        "View Grades that failed to sync"
-      )
+               view,
+               "a[href=\"#{Routes.live_path(OliWeb.Endpoint, OliWeb.Grades.FailedGradeSyncLive, section.slug)}\"]",
+               "View Grades that failed to sync"
+             )
     end
 
     test "unlink section from lms", %{conn: conn, section: section} do
@@ -263,7 +263,16 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       |> element("button[phx-click=\"delete_section\"]")
       |> render_click()
 
-      assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index))
+      system_role_id = conn.assigns.current_author.system_role_id
+
+      redirect_path =
+        if system_role_id == 2 do
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+        else
+          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+        end
+
+      assert_redirected(view, redirect_path)
       refute Sections.get_section_by_slug(section.slug)
     end
 
@@ -290,7 +299,16 @@ defmodule OliWeb.Sections.OverviewLiveTest do
       |> element("button[phx-click=\"delete_section\"]")
       |> render_click()
 
-      assert_redirected(view, Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index))
+      system_role_id = conn.assigns.current_author.system_role_id
+
+      redirect_path =
+        if system_role_id == 2 do
+          Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.SectionsView)
+        else
+          Routes.delivery_path(OliWeb.Endpoint, :open_and_free_index)
+        end
+
+      assert_redirected(view, redirect_path)
       assert %Section{status: :archived} = Sections.get_section!(section.id)
     end
 

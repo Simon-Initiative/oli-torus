@@ -1,0 +1,25 @@
+{
+   "FILESYSTEM": {
+      "DIRECTORY": [
+         {
+            "name": "stockroom", 
+            "SOLUTION": [
+               {
+                  "name": "Pool Sample", 
+                  "description": "Diving Pool Sample", 
+                  "volume": "0.1", 
+                  "species": [
+                     {
+                        "id": "0"
+                     }, 
+                     {
+                        "id": "2", 
+                        "amount": "0.000000079432"
+                     }
+                  ]
+               }
+            ]
+         }
+      ]
+   }
+}

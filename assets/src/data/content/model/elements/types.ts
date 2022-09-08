@@ -8,10 +8,13 @@ interface SlateElement<Children extends Descendant[]> extends BaseElement, Ident
 
 export type ModelElement = TopLevel | Block | Inline;
 
+// A list of all our element types, including those that can't be "bare" inside a children array.
+export type AllModelElements = ModelElement | SubElements;
+
 // All allows all SlateElement types. Small disallows full-width items like tables, webpages. Inline is only formatted text and inline elements like links.
 export type ContentModelMode = 'all' | 'small' | 'inline';
 
-type TopLevel =
+export type TopLevel =
   | TextBlock
   | List
   | MediaBlock
@@ -20,16 +23,36 @@ type TopLevel =
   | (CodeV1 | CodeV2)
   | Blockquote
   | FormulaBlock
-  | Callout
-  | Video;
+  | Video
+  | Semantic;
 
-type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock | Callout | Video;
-type Inline = Hyperlink | Popup | InputRef | ImageInline | Citation | FormulaInline | CalloutInline;
+export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
 
-type TextBlock = Paragraph | Heading;
-type Heading = HeadingOne | HeadingTwo | HeadingThree | HeadingFour | HeadingFive | HeadingSix;
-type List = OrderedList | UnorderedList;
-type MediaBlock = ImageBlock | YouTube | Audio | Webpage;
+export type Semantic = Definition | Callout | Figure | Dialog;
+
+export type Inline =
+  | Hyperlink
+  | Popup
+  | InputRef
+  | ImageInline
+  | Citation
+  | FormulaInline
+  | CalloutInline;
+
+export type TextBlock = Paragraph | Heading;
+export type Heading =
+  | HeadingOne
+  | HeadingTwo
+  | HeadingThree
+  | HeadingFour
+  | HeadingFive
+  | HeadingSix;
+export type List = OrderedList | UnorderedList;
+export type MediaBlock = ImageBlock | YouTube | Audio | Webpage | Video;
+export type SemanticChildren = TextBlock | Block;
+// These types are only used inside other structured types and not directly as .children5
+type SubElements = DefinitionMeaning | DefinitionPronunciation | DefinitionTranslation | DialogLine;
+
 export type TableCell = TableHeader | TableData;
 
 type HeadingChildren = Text[];
@@ -37,7 +60,12 @@ export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]
   type: 'p';
 }
 
-export interface Callout extends SlateElement<Paragraph[]> {
+export interface Figure extends SlateElement<SemanticChildren[]> {
+  type: 'figure';
+  title: SemanticChildren[];
+}
+
+export interface Callout extends SlateElement<SemanticChildren[]> {
   type: 'callout';
 }
 
@@ -115,9 +143,48 @@ export interface ImageInline extends BaseImage {
   type: 'img_inline';
 }
 
+export interface DefinitionPronunciation extends SlateElement<TextBlock[]> {
+  src: string;
+  contenttype: string;
+  type: 'pronunciation';
+}
+
+export interface DefinitionTranslation extends SlateElement<TextBlock[]> {
+  type: 'translation';
+}
+
+export interface DefinitionMeaning extends SlateElement<SemanticChildren[]> {
+  type: 'meaning';
+}
+
+export interface Definition extends SlateElement<VoidChildren> {
+  type: 'definition';
+  term: string;
+  meanings: DefinitionMeaning[];
+  translations: DefinitionTranslation[];
+  pronunciation: DefinitionPronunciation;
+}
+
+export interface DialogSpeaker {
+  name: string;
+  image: string;
+  id: string;
+}
+export interface DialogLine {
+  type: 'dialog_line';
+  speaker: string;
+  id: string;
+  children: SemanticChildren[];
+}
+export interface Dialog extends SlateElement<VoidChildren> {
+  type: 'dialog';
+  title: string;
+  speakers: DialogSpeaker[];
+  lines: DialogLine[];
+}
+
 export type FormulaSubTypes = 'mathml' | 'latex';
-interface Formula<typeIdentifier>
-  extends SlateElement<(ImageInline | Hyperlink | Popup | InputRef)[]> {
+interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
   src: string;
@@ -126,6 +193,11 @@ interface Formula<typeIdentifier>
 export type FormulaBlock = Formula<'formula'>;
 export type FormulaInline = Formula<'formula_inline'>;
 export interface VideoSource {
+  url: string;
+  contenttype: string;
+}
+
+export interface AudioSource {
   url: string;
   contenttype: string;
 }

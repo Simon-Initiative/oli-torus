@@ -26,6 +26,7 @@ import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { MCSchema } from './schema';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 
@@ -72,6 +73,11 @@ const MultipleChoice: React.FC = () => {
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={DEFAULT_PART_ID} />
         </TabbedNavigation.Tab>
+
+        <TabbedNavigation.Tab label="Explanation">
+          <Explanation partId={DEFAULT_PART_ID} />
+        </TabbedNavigation.Tab>
+
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot
             editMode={editMode}
@@ -79,6 +85,7 @@ const MultipleChoice: React.FC = () => {
             onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
           />
         </TabbedNavigation.Tab>
+
         <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
       </TabbedNavigation.Tabs>
     </>

@@ -1,4 +1,4 @@
-import { friendlyType } from 'components/activities/multi_input/utils';
+import { friendlyType } from 'components/activities/vlab/utils';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { Toolbar } from 'components/editing/toolbar/Toolbar';
 import { HoverContainer } from 'components/editing/toolbar/HoverContainer';
@@ -69,9 +69,11 @@ export const InputRefEditor = (props: InputRefEditorProps) => {
         content={
           <Toolbar context={props.commandContext}>
             <Toolbar.Group>
-              {initCommands(input, inputRefContext.setInputType).map((desc, i) => (
-                <CommandButton description={desc} key={i} />
-              ))}
+              {initCommands(input, inputRefContext.setInputType, inputRefContext.isMultiInput).map(
+                (desc, i) => (
+                  <CommandButton description={desc} key={i} />
+                ),
+              )}
             </Toolbar.Group>
           </Toolbar>
         }

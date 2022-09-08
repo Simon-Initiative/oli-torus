@@ -11,12 +11,12 @@ import {
   Paragraph,
   InputRef,
   Popup,
+  Figure,
   Table,
   YouTube,
   ImageBlock,
   Audio,
   Blockquote,
-  ModelElement,
   HeadingOne,
   HeadingTwo,
   Citation,
@@ -28,11 +28,19 @@ import {
   Callout,
   CalloutInline,
   Video,
+  DefinitionMeaning,
+  DefinitionPronunciation,
+  DefinitionTranslation,
+  Definition,
+  AllModelElements,
+  Dialog,
+  DialogLine,
+  DialogSpeaker,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
 
-function create<E extends ModelElement>(params: Partial<E>): E {
+function create<E extends AllModelElements>(params: Partial<E>): E {
   return {
     id: guid(),
     children: [{ text: '' }],
@@ -64,6 +72,21 @@ export const Model = {
   callout: (text = '') => create<Callout>({ type: 'callout', children: [Model.p(text)] }),
   calloutInline: (text = '') =>
     create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
+
+  dialogSpeaker: (name: string) => ({ name, image: '', id: guid() }),
+
+  dialogLine: (speaker: string) =>
+    create<DialogLine>({ type: 'dialog_line', speaker, children: [Model.p()] }),
+
+  dialog: (title = '') =>
+    create<Dialog>({
+      type: 'dialog',
+      title,
+      lines: [],
+      speakers: [Model.dialogSpeaker('Speaker #1'), Model.dialogSpeaker('Speaker #2')],
+    }),
+
+  figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),
@@ -109,5 +132,20 @@ export const Model = {
       type: 'popup',
       trigger: 'hover',
       content: [Model.p()],
+    }),
+
+  definitionMeaning: (overrides?: Partial<DefinitionMeaning>) =>
+    create<DefinitionMeaning>({ type: 'meaning', children: [Model.p()], ...overrides }),
+  definitionPronunciation: (overrides?: Partial<DefinitionPronunciation>) =>
+    create<DefinitionPronunciation>({ type: 'pronunciation', children: [Model.p()], ...overrides }),
+  definitionTranslation: (overrides?: Partial<DefinitionTranslation>) =>
+    create<DefinitionTranslation>({ type: 'translation', children: [Model.p()], ...overrides }),
+  definition: (overrides?: Partial<Definition>) =>
+    create<Definition>({
+      type: 'definition',
+      term: 'Term',
+      meanings: [Model.definitionMeaning({})],
+      translations: [],
+      ...overrides,
     }),
 };

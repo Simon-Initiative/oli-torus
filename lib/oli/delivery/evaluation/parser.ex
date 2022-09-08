@@ -41,7 +41,7 @@ defmodule Oli.Delivery.Evaluation.Parser do
     ignore(ascii_char([?\\]))
     |> ascii_char([?\\, ?{, ?}])
 
-  non_escaped = utf8_char([{:not, ?\\}])
+  non_escaped = utf8_char([])
 
   character =
     choice([

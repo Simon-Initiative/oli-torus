@@ -1,0 +1,88 @@
+[
+  {
+    "category": "Default",
+    "assignments":[
+      {
+        "name": "Default Lab",
+        "author": "Mike Karabinos",
+        "description": "Contains the specias, reactions, and solutions used by the Default Stockroom of the Virtual Lab",
+        "path": "default"
+      }
+    ]
+  },
+  {
+    "category": "ChemV+ IV",
+    "assignments":[
+      {
+        "name": "Iodine Dilution (0.12)",
+        "author": "Dave Yaron",
+        "description": "Prepare 150.0 ml of 0.06 g/mL iodine solution from a 0.12 g/mL iodine solution.",
+        "path": "chemvlab/IV_iodine_12"
+      },
+      {
+        "name": "Iodine Dilution (0.18)",
+        "author": "Dave Yaron",
+        "description": "Prepare 150.0 ml of 0.06 g/mL iodine solution from a 0.18 g/mL iodine solution.",
+        "path": "chemvlab/IV_iodine_18"
+      },
+      {
+        "name": "Prepare Saline Solution",
+        "author": "Dave Yaron",
+        "description": "Prepare 500ml of 0.154 M saline solution.",
+        "path": "chemvlab/IV_make_saline"
+      },
+      {
+        "name": "Dilute Saline Solution",
+        "author": "Dave Yaron",
+        "description": "Prepare 500ml of 0.0385 M saline solution by diluting 0.154 M saline solution.",
+        "path": "chemvlab/IV_dilute_saline"
+      },
+      {
+        "name": "Glucose Solution (0.526)",
+        "author": "Dave Yaron",
+        "description": "Starting with the saline solution, make 500 mL of 0.526 M glucose solution.",
+        "path": "chemvlab/IV_make_glucose"
+      },
+      {
+        "name": "Glucose Solution (1.052)",
+        "author": "Dave Yaron",
+        "description": "Make 500 mL of 1.052 M glucose solution.",
+        "path": "chemvlab/IV_make_glucose2"
+      }
+    ]
+  },
+  {
+    "category": "ChemVlab+ PowderAde",
+    "assignments":[
+      {
+        "name": "Diego's Drink",
+        "author": "us",
+        "description": "Diego's Drink",
+        "path": "chemvlab/stoichiometry/Activity1_a"
+      },
+      {
+        "name": "Mia's Drink",
+        "author": "us",
+        "description": "Mia's Drink",
+        "path": "chemvlab/stoichiometry/Activity1_b"
+      },
+    ]
+  },
+  {
+    "category": "ChemVlab+ New Testing",
+    "assignments":[
+      {
+        "name": "New Gravimetric 1",
+        "author": "ChemVlab Team",
+        "description": "Testing for solubilityu",
+        "path": "chemvlab/stoichiometry/gravnew"
+      },
+      {
+        "name": "Bio remediation",
+        "author": "ChemVlab Team",
+        "description": "Debugging this",
+        "path": "chemvlab/stoichiometry/biored"
+      }
+    ]
+  }
+]

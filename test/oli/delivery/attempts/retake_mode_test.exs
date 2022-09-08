@@ -241,5 +241,72 @@ defmodule Oli.Delivery.Attempts.PageLifecycle.RetakeModeTest do
       {_, part_map} = Map.get(attempts, a2.resource.id)
       assert Map.get(part_map, "1").response == nil
     end
+
+    test "targeted retake mode will not work for adaptive pages", %{
+      p1: p1,
+      user1: user,
+      section: section,
+      a1: a1,
+      a2: a2,
+      publication: pub
+    } do
+      Attempts.track_access(p1.resource.id, section.id, user.id)
+
+      activity_provider = &Oli.Delivery.ActivityProvider.provide/4
+      datashop_session_id = UUID.uuid4()
+
+      content = Map.put(p1.revision.content, "advancedDelivery", true)
+      adaptive_revision = %{p1.revision | content: content}
+
+      {:ok, resource_attempt} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: nil,
+          page_revision: adaptive_revision,
+          section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
+          user_id: user.id,
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: pub.id
+        })
+
+      attempts = Hierarchy.get_latest_attempts(resource_attempt.id)
+      {attempt, part_map} = Map.get(attempts, a1.resource.id)
+
+      Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
+
+      Map.get(part_map, "1")
+      |> Attempts.update_part_attempt(%{score: 1, out_of: 1, response: %{input: "this was right"}})
+
+      {attempt, part_map} = Map.get(attempts, a2.resource.id)
+      Attempts.update_activity_attempt(attempt, %{score: 1, out_of: 1})
+
+      Map.get(part_map, "1")
+      |> Attempts.update_part_attempt(%{
+        score: 1,
+        out_of: 1,
+        response: %{input: "this was right, also"}
+      })
+
+      {:ok, resource_attempt2} =
+        Hierarchy.create(%VisitContext{
+          latest_resource_attempt: resource_attempt,
+          page_revision: adaptive_revision,
+          section_slug: section.slug,
+          datashop_session_id: datashop_session_id,
+          user_id: user.id,
+          activity_provider: activity_provider,
+          blacklisted_activity_ids: [],
+          publication_id: pub.id
+        })
+
+      attempts = Hierarchy.get_latest_attempts(resource_attempt2.id)
+
+      # Ensure that the new part attempt records did not carry forward the state of previous resource attempt
+      {_, part_map} = Map.get(attempts, a1.resource.id)
+      refute Map.get(part_map, "1").response == %{"input" => "this was right"}
+      {_, part_map} = Map.get(attempts, a2.resource.id)
+      refute Map.get(part_map, "1").response == %{"input" => "this was right, also"}
+    end
   end
 end

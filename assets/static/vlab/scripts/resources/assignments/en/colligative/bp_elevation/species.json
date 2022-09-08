@@ -1,0 +1,70 @@
+{
+    "SPECIES_LIST": {
+        "SPECIES": [
+            {
+                "id": 0,
+                "name": "H<sub>2</sub>O",
+                "enthalpy": -285.83,
+                "entropy": 69.91,
+                "state": "l",
+                "molecularWeight": 18.016,
+                "specificHeat": 1.0
+            },
+            {
+                "id": 1,
+                "name": "H<sup>+</sup>",
+                "enthalpy": 0.0,
+                "entropy": 0.0,
+                "molecularWeight": 1.008
+            },
+            {
+                "id": 2,
+                "name": "OH<sup>-</sup>",
+                "enthalpy": -229.99,
+                "entropy": -10.75,
+                "molecularWeight": 17.008
+            },
+            {
+                "id": 3,
+                "name": "Sugar",
+                "state": "aq",
+                "enthalpy": 5.76,
+                "entropy": 0,
+                "density": 1.2,
+                "specificHeat": 0,
+                "molecularWeight": 342.3
+            },
+            {"id": 4,
+            "name": "Sugar",
+            "state": "s",
+            "enthalpy": 0,
+            "entropy": 0,
+            "density": 1.2,
+            "specificHeat": 0,
+            "molecularWeight": 342.3
+            },
+            {
+                "id": 6,
+                "name": "NO<sub>3</sub><sup>-</sup>",
+                "simpleName": "NO3-",
+                "state": "aq",
+                "enthalpy": -207.4,
+                "entropy": 146.4,
+                "density": 3,
+                "specificHeat": -0.333810663,
+                "molecularWeight": 62.0049
+            },
+            {
+                "id": 7,
+                "name": "K<sup>+</sup>",
+                "simpleName": "K+",
+                "state": "aq",
+                "enthalpy": -252.4,
+                "entropy": 102.5,
+                "density": 3,
+                "specificHeat": 0.133262189,
+                "molecularWeight": 39.0983
+            }
+        ]
+    }
+}

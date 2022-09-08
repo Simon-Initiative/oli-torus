@@ -101,7 +101,7 @@ span.term {
     @extend .ml-4;
   }
   div.float-md-left,
-  div.float-md-right {
+  dv.float-md-right {
     max-width: 410px;
     img.float-md-right,
     img.float-md-left,
@@ -133,6 +133,65 @@ span.term {
   .webpage-wrapper iframe {
     @extend .embed-responsive-item;
   }
+
+  .definition {
+    .term {
+      color: $green;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .meanings-empty {
+      display: none;
+    }
+
+    .meanings-single {
+      display: inline;
+      padding-left: 3px;
+      li {
+        list-style: none;
+        display: inline;
+        p {
+          display: inline;
+        }
+      }
+    }
+
+    .meanings {
+      p {
+        margin-bottom: 5px;
+      }
+    }
+
+    .meaning {
+      margin-bottom: 0px;
+    }
+    .translation {
+      font-style: italic;
+    }
+
+    .play-button {
+      position: relative;
+      top: 4px;
+      font-size: 16px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .translation,
+    .pronunciation,
+    .pronunciation-player {
+      p {
+        display: inline;
+      }
+    }
+
+    .pronunciation-player {
+      text-decoration: underline;
+      color: $link-color;
+      cursor: pointer;
+    }
+  } // .definition
 
   .callout-inline,
   .formula-inline {
@@ -166,7 +225,65 @@ span.term {
     }
   }
 
-  .figure-wrapper {
+  .dialog {
+    display: flex;
+    flex-direction: column;
+    border-radius: 2px;
+    .dialog-line {
+      &.speaker-1 {
+        background-color: $speaker1;
+      }
+      &.speaker-2 {
+        background-color: $speaker2;
+      }
+      &.speaker-3 {
+        background-color: $speaker3;
+      }
+      &.speaker-4 {
+        background-color: $speaker4;
+      }
+      &.speaker-5 {
+        background-color: $speaker5;
+      }
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 0.5rem;
+      align-items: center;
+      background-color: darken($body-bg, 5%);
+      .dialog-content {
+        flex-grow: 1;
+      }
+      .dialog-speaker {
+        padding: 0.5rem;
+        width: calc(80px + 1rem);
+        margin-right: 1rem;
+
+        .speaker-portrait {
+          width: 80px;
+        }
+        .speaker-name {
+          font-size: 0.75rem;
+          text-align: center;
+        }
+      }
+    }
+  }
+
+  .figure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    figure {
+      figcaption {
+        color: $primary;
+      }
+      @extend .img-fluid;
+      @extend .img-thumbnail;
+      padding: 1rem;
+    }
+  }
+
+  .caption-wrapper {
     display: flex;
     justify-content: center;
 

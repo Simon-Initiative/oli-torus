@@ -12,6 +12,10 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'code',
   'table',
   'iframe',
+  'definition',
+  'figure',
+  'callout',
+  'dialog',
 ]);
 
 export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
@@ -29,7 +33,11 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
       if (Element.isElement(node) && Element.isElement(nextNode)) {
         if (spacesRequiredBetween.has(nextNode.type) && spacesRequiredBetween.has(node.type)) {
           Transforms.insertNodes(editor, Model.p(), { mode: 'highest', at: Path.next(path) });
-
+          console.warn(
+            'Normalizing content: inserting spaces between nodes.',
+            node.type,
+            nextNode.type,
+          );
           return; // Return here necessary to enable multi-pass normalization
         }
       }

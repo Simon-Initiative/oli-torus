@@ -1,0 +1,42 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "id": "0", 
+            "name": "H<sub>2</sub>O", 
+            "enthalpy": "-285.83", 
+            "entropy": "69.91", 
+            "molecularWeight": "18.016", 
+            "state": "l"
+         }, 
+         {
+            "id": "1", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "entropy": "0.0", 
+            "molecularWeight": "1.008"
+         }, 
+         {
+            "id": "2", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "entropy": "-10.75", 
+            "molecularWeight": "17.008"
+         }, 
+         {
+            "id": "3", 
+            "name": "Rocks", 
+            "enthalpy": "-436.75", 
+            "entropy": "82.59", 
+            "molecularWeight": "74.56", 
+            "density": "1.984", 
+            "specificHeat": "2", 
+            "hue": "0", 
+            "saturation": "0", 
+            "value": "29", 
+            "colorConcentration": ".03", 
+            "state": "s"
+         }
+      ]
+   }
+}

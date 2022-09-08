@@ -19,6 +19,7 @@ import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { ExplanationTab } from './sections/ExplanationTab';
 
 const store = configureStore();
 
@@ -49,6 +50,7 @@ export const MultiInputComponent = () => {
         selectedInputRef={selectedInputRef}
         setSelectedInputRef={setSelectedInputRef}
         setEditor={setEditor}
+        isMultiInput={true}
       />
       {editor && input ? (
         <TabbedNavigation.Tabs>
@@ -60,6 +62,9 @@ export const MultiInputComponent = () => {
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Hints">
             <HintsTab input={input} index={index} />
+          </TabbedNavigation.Tab>
+          <TabbedNavigation.Tab label="Explanation">
+            <ExplanationTab input={input} />
           </TabbedNavigation.Tab>
           <TabbedNavigation.Tab label="Dynamic Variables">
             <VariableEditorOrNot

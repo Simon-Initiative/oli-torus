@@ -17,7 +17,7 @@ defmodule OliWeb.Grades.GradeSync do
 
         <p class="card-text">
           <%= dgettext("grades", "If an instructor changes the maximum score for an LMS gradebook line item after students
-          have submitted an attempt, it is necessary to synchronize the OLI grades for that LMS gradebook item.") %>
+          have submitted an attempt, it is necessary to synchronize the grades for that LMS gradebook item.") %>
         </p>
 
         <div class="alert alert-danger" role="alert">

@@ -26,6 +26,7 @@ import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { CATAActions } from './actions';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 
@@ -77,6 +78,9 @@ const CheckAllThatApply = () => {
 
       <TabbedNavigation.Tab label="Hints">
         <HintsAuthoring partId={DEFAULT_PART_ID} />
+      </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label="Explanation">
+        <Explanation partId={DEFAULT_PART_ID} />
       </TabbedNavigation.Tab>
       <TabbedNavigation.Tab label="Dynamic Variables">
         <VariableEditorOrNot

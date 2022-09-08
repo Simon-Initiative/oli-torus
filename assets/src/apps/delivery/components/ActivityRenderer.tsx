@@ -609,12 +609,18 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
 
   const elementProps = {
     ref,
-    graded: false,
+    context: JSON.stringify({
+      graded: false, // TODO: currently only the page (lesson) has this distinction
+      sectionSlug: currentLessonId,
+      userId: currentUserId,
+      groupId: null,
+      surveyId: null,
+      bibParams: null,
+      pageAttemptGuid: '', // TODO: don't think we use this currently, but might be good to have
+    }),
+    mode: isPreviewMode ? 'preview' : 'delivery', // TODO: review
     model,
     state,
-    preview: isPreviewMode,
-    progressState: 'progressState',
-    userId: currentUserId,
     onSaveActivity,
     onSubmitActivity,
     onRequestHint,

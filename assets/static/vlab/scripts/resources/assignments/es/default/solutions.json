@@ -1,0 +1,1044 @@
+{
+  "FILESYSTEM": {
+    "DIRECTORY": [{
+      "name": "stockroom",
+      "SOLUTION": [{
+        "name": "H<sub>2</sub>O desionizada",
+        "description": "Agua desionizada",
+        "volume": "3.0",
+        "vessel": "3LCarboy",
+        "species": [{ "id": "0" }]
+      }],
+      "DIRECTORY": [
+        {
+          "name": "Soluciones a granel",
+          "SOLUTION": [
+            {
+              "name": "19M NaOH",
+              "description": "19M Hidróxido sódico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "38"
+                },
+                {
+                  "id": "2",
+                  "amount": "38"
+                }
+              ]
+            },
+            {
+              "name": "11.6M HCl",
+              "description": "11.6M Ácido clorhídrico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "23.2"
+                },
+                {
+                  "id": "1",
+                  "amount": "23.2"
+                }
+              ]
+            },
+            {
+              "name": "17.8M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "17.8M Ácido sulfúrico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "35.6"
+                },
+                {
+                  "id": "1",
+                  "amount": "35.6"
+                }
+              ]
+            },
+            {
+              "name": "15.4M HNO<sub>3</sub>",
+              "description": "15.4M Ácido nítrico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "30.8"
+                },
+                {
+                  "id": "1",
+                  "amount": "30.8"
+                }
+              ]
+            },
+            {
+              "name": "15M HClO<sub>4</sub>",
+              "description": "15M Ácido perclórico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "30"
+                },
+                {
+                  "id": "1",
+                  "amount": "30"
+                }
+              ]
+            },
+            {
+              "name": "14.6M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "14.6M Ácido fosfórico",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "29.2"
+                }
+              ]
+            },
+            {
+              "name": "14.8M NH<sub>3</sub>",
+              "description": "14.8M Amoníaco",
+              "volume": "2.0",
+              "vessel": "2500mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "29.6"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ácidos fuertes",
+          "SOLUTION": [
+            {
+              "name": "10M HCl",
+              "description": "10M Ácido clorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HCl",
+              "description": "3M Ácido clorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.30000000000000004"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "10M HBr",
+              "description": "10M Ácido bromhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "5",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HBr",
+              "description": "3M Ácido bromhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "5",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "3M Ácido sulfúrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "1M Ácido sulfúrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "10M H<sub>2</sub>SO<sub>4</sub>",
+              "description": "10M Ácido sulfúrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "29",
+                  "amount": "1"
+                },
+                {
+                  "id": "1",
+                  "amount": "1"
+                }
+              ]
+            },
+            {
+              "name": "3M HNO<sub>3</sub>",
+              "description": "3M Ácido nítrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "0.30000000000000004"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "10M HNO<sub>3</sub>",
+              "description": "10M Ácido nítrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "3",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "10M HClO<sub>4</sub>",
+              "description": "10M Ácido perclórico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HClO<sub>4</sub>",
+              "description": "3M Ácido perclórico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "6",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "10M HI",
+              "description": "10M Ácido yodhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "4",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "1",
+                  "amount": "1.0"
+                }
+              ]
+            },
+            {
+              "name": "3M HI",
+              "description": "3M Ácido yodhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "4",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M HCl",
+              "description": "1M Ácido clorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "0.1M HCl",
+              "description": "0.1M Ácido clorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.01"
+                },
+                {
+                  "id": "1",
+                  "amount": "0.01"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ácidos débiles",
+          "SOLUTION": [
+            {
+              "name": "1M HF",
+              "description": "1M Ácido fluorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "10",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M CH<sub>3</sub>COOH",
+              "description": "1M Ácido acético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "22",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M CH<sub>3</sub>COOH",
+              "description": "3M Ácido acético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "22",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M NCCH<sub>2</sub>COOH",
+              "description": "3M Ácido cianoacético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "14",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "3M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "3M Ácido fosfórico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M H<sub>3</sub>PO<sub>4</sub>",
+              "description": "1M Ácido fosfórico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "37",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NCCH<sub>2</sub>COOH",
+              "description": "1M Ácido cianoacético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "14",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOI",
+              "description": "3M Ácido hipoyodoso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "20",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M HOCl",
+              "description": "1M Ácido hipocloroso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "16",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOCl",
+              "description": "3M Ácido hipocloroso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "16",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M HOI",
+              "description": "1M Ácido hipoyodoso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "20",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M HOBr",
+              "description": "1M Ácido hipobromoso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "18",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HF",
+              "description": "3M Ácido fluorhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "10",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "3M Cl<sub>2</sub>CHCOOH",
+              "description": "3M Ácido dicloroacético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "12",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            },
+            {
+              "name": "1M Cl<sub>2</sub>CHCOOH",
+              "description": "1M Ácido dicloroacético",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "12",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M HCN",
+              "description": "1M Ácido cianhídrico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "24",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M HOBr",
+              "description": "3M Ácido hipobromoso",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "18",
+                  "amount": "0.30000000000000004"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ácidos conjugados",
+          "SOLUTION": [
+            {
+              "name": "1M NH<sub>4</sub>Cl",
+              "description": "1M Cloruro amónico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "36",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M NH<sub>4</sub>Cl",
+              "description": "3M Cloruro amónico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "36",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "1M C<sub>5</sub>H<sub>5</sub>NHCl",
+              "description": "1M Cloruro de piridinio",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "55",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M C<sub>5</sub>H<sub>5</sub>NHCl",
+              "description": "3M Cloruro de piridinio",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "7",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "55",
+                  "amount": "0.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Bases fuertes",
+          "SOLUTION": [
+            {
+              "name": "1M NaOH",
+              "description": "1M Hidróxido sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "0.1M NaOH",
+              "description": "0.1M Hidróxido sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.01"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.01"
+                }
+              ]
+            },
+            {
+              "name": "3M NaOH",
+              "description": "3M Hidróxido sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "2",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "10M NaOH",
+              "description": "10M Hidróxido sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "1.0"
+                },
+                {
+                  "id": "2",
+                  "amount": "1.0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Bases débiles",
+          "SOLUTION": [
+            {
+              "name": "3M NH<sub>3</sub>",
+              "description": "3M Amoníaco",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "0.3"
+                }
+              ]
+            },
+            {
+              "name": "0.5M Mg(OH)<sub>2</sub>",
+              "description": "0.5M Hidróxido de magnesio",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "51",
+                  "amount": "0.05"
+                }
+              ]
+            },
+            {
+              "name": "1M NH<sub>3</sub>",
+              "description": "1M Amoníaco",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "33",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M C<sub>5</sub>H<sub>5</sub>N",
+              "description": "1M Piridina",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "56",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "3M C<sub>5</sub>H<sub>5</sub>N",
+              "description": "3M Piridina",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "56",
+                  "amount": "0.3"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Bases conjugadas",
+          "SOLUTION": [
+            {
+              "name": "1M NaNCCH<sub>2</sub>COO",
+              "description": "1M Cianoacetato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "15",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M Na<sub>2</sub>CO<sub>3</sub>",
+              "description": "1M Carbonato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.2"
+                },
+                {
+                  "id": "28",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M Na<sub>3</sub>PO<sub>4</sub>",
+              "description": "1M Fosfato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.3"
+                },
+                {
+                  "id": "40",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCH<sub>3</sub>COO",
+              "description": "1M Acetato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "23",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaHCO<sub>3</sub>",
+              "description": "1M Bicarbonato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "27",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOCl",
+              "description": "1M Hipoclorito sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "17",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOI",
+              "description": "1M Hipoyodito sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "21",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCN",
+              "description": "1M Cianuro sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "25",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaOBr",
+              "description": "1M Hipobromito sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "19",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaF",
+              "description": "1M Fluoruro sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "11",
+                  "amount": "0.1"
+                }
+              ]
+            },
+            {
+              "name": "1M NaCl<sub>2</sub>CHCOO",
+              "description": "1M Dicloroacetato sódico",
+              "volume": "0.1",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": "0.1"
+                },
+                {
+                  "id": "13",
+                  "amount": "0.1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Indicadores",
+          "SOLUTION": [
+            {
+              "name": "Naranja de metilo",
+              "description": "Solución de Naranja de metilo",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "41",
+                  "amount": ".0001"
+                }
+              ]
+            },
+            {
+              "name": "Rojo de metilo",
+              "description": "Solución de Rojo de metilo",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "43",
+                  "amount": ".00015"
+                }
+              ]
+            },
+            {
+              "name": "Fenolftaleína",
+              "description": "Solución de Fenolftaleína",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "47",
+                  "amount": ".00016"
+                }
+              ]
+            },
+            {
+              "name": "Verde de bromocresol",
+              "description": "Solución de Verde de bromocresol",
+              "volume": "0.1",
+              "vessel": "100mLBottle",
+              "species": [
+                { "id": "0" },
+                {
+                  "id": "8",
+                  "amount": ".00006"
+                },
+                {
+                  "id": "50",
+                  "amount": ".00006"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Sólidos",
+          "SOLUTION": [{
+            "name": "NaCl",
+            "description": "Cloruro de sodio",
+            "volume": "0.0",
+            "vessel": "SolidBottle",
+            "species": [{
+              "id": "59",
+              "amount": "3.0"
+            }]
+          }]
+        }
+      ]
+    }]
+  }
+}

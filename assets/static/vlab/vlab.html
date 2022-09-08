@@ -1,0 +1,29 @@
+<!doctype html><html class="no-js" lang=""><head><meta charset="utf-8"><title>Vlab3</title><meta name="description" content="Virtual Lab"><meta name="viewport" content="width=device-width,initial-scale=1"><script>var assignmentPath = "default";
+        var userName = null;
+        var session = null;
+        var loggingEnabled = false;
+        var destination = "oli";
+        var buildDate = "June 8, 2022";
+        var language = "en";
+        var allowLoadAssignment = false;
+        var showFirstTimeTips = false;
+        var labInfo = null;
+
+
+        function getWorkbenchItems() {
+            return labInfo.getWorkbenchItems();
+        }
+        function isFinishedLoading() {
+            return labInfo.isFinishedLoading();
+        }
+        function getSelectedItem() {
+            return labInfo.getSelectedItem();
+        }
+        function loadAssignment(assignmentPathTemp) {
+            assignmentPath = assignmentPathTemp;
+            if (labInfo)
+                labInfo.loadAssignment();
+        }
+        function loadAssignmentJSON(jsObject) {
+            labInfo.loadAssignmentJSON(jsObject);
+        }</script><script defer="defer" src="850-3137d0eefbbd05a57734.js"></script><script defer="defer" src="755-11c3fd056b5886c797a7.js"></script><script defer="defer" src="896-b74b634d43b84b4eeadd.js"></script><script defer="defer" src="bundle-2af66f297f5c1ba32d15.js"></script><script defer="defer" src="526-2ab1d3475c35ab8befd6.js"></script><script defer="defer" src="lib-3f0127fb962df241e57c.js"></script><link href="896.css" rel="stylesheet"></head><body><div id="vlab"></div></body></html>

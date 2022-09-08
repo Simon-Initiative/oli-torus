@@ -1,0 +1,60 @@
+{
+   "SPECIES_LIST": {
+      "SPECIES": [
+         {
+            "entropy": "69.91", 
+            "name": "H<sub>2</sub>O", 
+            "state": "l", 
+            "enthalpy": "-285.83", 
+            "density": "1.000", 
+            "specificHeat": "1.000", 
+            "molecularWeight": "18.01534", 
+            "unitActivity": "true", 
+            "id": "0"
+         }, 
+         {
+            "entropy": "0.0", 
+            "name": "H<sup>+</sup>", 
+            "enthalpy": "0.0", 
+            "id": "1"
+         }, 
+         {
+            "entropy": "-10.75", 
+            "name": "OH<sup>-</sup>", 
+            "enthalpy": "-229.99", 
+            "id": "2"
+         }, 
+         {
+            "entropy": "360.2", 
+            "name": "Sucrose", 
+            "state": "s", 
+            "enthalpy": "-2226.1", 
+            "molecularWeight": "342.3", 
+            "density": "1.587", 
+            "specificHeat": "0.2", 
+            "id": "3"
+         }, 
+         {
+            "entropy": "372.6", 
+            "name": "Sucrose<sub>(aq)</sub>", 
+            "state": "aq", 
+            "enthalpy": "-2224.1", 
+            "molecularWeight": "342.3", 
+            "density": "1.594", 
+            "id": "4"
+         }, 
+         {
+            "entropy": "0", 
+            "name": "Dye", 
+            "state": "aq", 
+            "enthalpy": "0", 
+            "molecularWeight": "500", 
+            "hue": "1",
+            "saturation": "100", 
+            "value": "40", 
+            "colorConcentration": ".0000005", 
+            "id": "5"
+         }
+      ]
+   }
+}

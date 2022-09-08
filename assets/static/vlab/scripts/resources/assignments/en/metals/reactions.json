@@ -1,0 +1,20 @@
+{
+   "REACTIONS": {
+      "REACTION": [{
+         "SPECIES_REF": [
+            {
+               "coefficient": "1",
+               "id": "0"
+            }, 
+            {
+               "coefficient": "-1",
+               "id": "1"
+            }, 
+            {
+               "coefficient": "-1",
+               "id": "2"
+            }
+         ]
+      }]
+   }
+}
