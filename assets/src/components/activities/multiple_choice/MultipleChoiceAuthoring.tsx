@@ -37,14 +37,28 @@ const MultipleChoice: React.FC = () => {
         <TabbedNavigation.Tab label="Question">
           <Stem />
 
-          <ChoicesAuthoring
-            icon={<Radio.Unchecked />}
-            choices={model.choices}
-            addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
-            setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
-            onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-            onRemove={(id) => dispatch(Actions.removeChoice(id))}
-          />
+          {editMode ? (
+            <ChoicesAuthoring
+              icon={<Radio.Unchecked />}
+              choices={model.choices}
+              addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
+              setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
+              onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
+              onRemove={(id) => dispatch(Actions.removeChoice(id))}
+            />
+          ) : null}
+
+          {editMode ? null : (
+            <ChoicesDelivery
+              unselectedIcon={<Radio.Unchecked />}
+              selectedIcon={<Radio.Checked />}
+              choices={model.choices}
+              selected={[getCorrectChoice(model).id]}
+              onSelect={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
+              isEvaluated={false}
+              context={defaultWriterContext()}
+            />
+          )}
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
           <StemDelivery stem={model.stem} context={defaultWriterContext()} />

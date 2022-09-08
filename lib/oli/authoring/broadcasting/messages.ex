@@ -1,6 +1,10 @@
 defmodule Oli.Authoring.Broadcaster.Messages do
   ### Message creation API
 
+  def message_activity_review(author_id) do
+    ["activity_review", "author", author_id] |> join
+  end
+
   def message_new_revision(resource_id) do
     resource(resource_id)
   end
