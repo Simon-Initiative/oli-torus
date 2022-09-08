@@ -1,6 +1,8 @@
 defmodule OliWeb.Resources.ActivitiesTableModel do
   alias OliWeb.Common.Table.{ColumnSpec, SortableTableModel}
   alias Oli.Resources.Revision
+  alias OliWeb.Router.Helpers, as: Routes
+
   use Surface.LiveComponent
 
   def render(assigns) do
@@ -9,7 +11,7 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
     """
   end
 
-  def new(activities, project, context, activities_by_type_id) do
+  def new(activities, project, context, activities_by_type_id, parent_pages) do
     column_specs = [
       %ColumnSpec{
         name: :activity_type_id,
@@ -26,6 +28,11 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
         render_fn: &OliWeb.Resources.ActivitiesTableModel.render_content_column/3
       },
       %ColumnSpec{
+        name: :resource_id,
+        label: "Page",
+        render_fn: &OliWeb.Resources.ActivitiesTableModel.render_page_column/3
+      },
+      %ColumnSpec{
         name: :updated_at,
         label: "Last Updated",
         render_fn: &OliWeb.Common.Table.Common.render_date/3
@@ -40,9 +47,28 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
       data: %{
         context: context,
         project_slug: project.slug,
-        activities_by_type_id: activities_by_type_id
+        activities_by_type_id: activities_by_type_id,
+        parent_pages: parent_pages
       }
     )
+  end
+
+  def render_page_column(
+        assigns,
+        %Revision{
+          resource_id: resource_id
+        },
+        _
+      ) do
+    case Map.get(assigns.parent_pages, resource_id) do
+      nil ->
+        ""
+
+      %{title: title, slug: slug} ->
+        ~F"""
+        <a href={Routes.resource_path(OliWeb.Endpoint, :edit, assigns.project_slug, slug)}>{title}</a>
+        """
+    end
   end
 
   def render_type_column(
@@ -67,13 +93,21 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
     |> best_effort_stem_extract()
   end
 
+  defp best_effort_stem_extract(%{"model" => items}), do: best_effort_stem_extract(items)
   defp best_effort_stem_extract([]), do: "[Empty]"
   defp best_effort_stem_extract([item | _]), do: extract(item)
+  defp best_effort_stem_extract(_), do: "[Empty]"
 
   defp extract(%{"type" => "p", "children" => children}) do
-    Enum.reduce(children, "", fn c, s ->
-      s <> Map.get(c, "text", "")
-    end)
+    value =
+      Enum.reduce(children, "", fn c, s ->
+        s <> Map.get(c, "text", "")
+      end)
+
+    cond do
+      String.length(value) > 75 -> String.slice(value, 0..75) <> "..."
+      true -> value
+    end
   end
 
   defp extract(%{"type" => t}), do: "[#{t}]"

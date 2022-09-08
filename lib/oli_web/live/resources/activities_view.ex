@@ -59,6 +59,10 @@ defmodule OliWeb.Resources.ActivitiesView do
             @default_options
           )
 
+        publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
+
+        parent_pages = Oli.Publishing.determine_parent_pages(publication_id)
+
         registered_activities = Oli.Activities.list_activity_registrations()
 
         activities_by_id =
@@ -67,7 +71,7 @@ defmodule OliWeb.Resources.ActivitiesView do
         total_count = determine_total(activities)
 
         {:ok, table_model} =
-          ActivitiesTableModel.new(activities, project, context, activities_by_id)
+          ActivitiesTableModel.new(activities, project, context, activities_by_id, parent_pages)
 
         assign(socket,
           context: context,
@@ -76,7 +80,9 @@ defmodule OliWeb.Resources.ActivitiesView do
           author: author,
           total_count: total_count,
           table_model: table_model,
+          publication_id: publication_id,
           options: @default_options,
+          parent_pages: parent_pages,
           tags_by_id:
             Enum.reduce(registered_activities, %{}, fn a, m ->
               Map.put(m, a.id, a.authoring_element)
@@ -136,9 +142,17 @@ defmodule OliWeb.Resources.ActivitiesView do
 
       selected =
         case selected do
-          "-2" -> Enum.at(activities, 0).id |> Integer.to_string()
-          "-1" -> Enum.at(activities, Enum.count(activities) - 1).id |> Integer.to_string()
-          _ -> selected
+          "-2" ->
+            Enum.at(activities, 0).id |> Integer.to_string()
+
+          "-1" ->
+            Enum.at(activities, Enum.count(activities) - 1).id |> Integer.to_string()
+
+          _ ->
+            case Enum.find(activities, fn r -> Integer.to_string(r.id) == selected end) do
+              nil -> nil
+              _ -> selected
+            end
         end
 
       table_model =
@@ -168,12 +182,6 @@ defmodule OliWeb.Resources.ActivitiesView do
       rendered =
         render_authoring(revision, socket.assigns.tags_by_id, socket.assigns.project.slug)
 
-      references =
-        Oli.Publishing.determine_parent_pages(
-          [revision.resource_id],
-          Oli.Publishing.get_unpublished_publication_id!(socket.assigns.project.id)
-        )
-
       Phoenix.LiveView.push_event(socket, "activity_selected", %{
         rendered: rendered,
         title: revision.title,
@@ -186,7 +194,7 @@ defmodule OliWeb.Resources.ActivitiesView do
             revision.slug
           ),
         reference:
-          case Map.get(references, revision.resource_id, nil) do
+          case Map.get(socket.assigns.parent_pages, revision.resource_id, nil) do
             nil ->
               nil
 
