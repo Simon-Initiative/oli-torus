@@ -2,10 +2,24 @@
   <script type="text/javascript" src="<%= Routes.static_path(@conn, "/js/" <> script) %>"></script>
 <% end %>
 
-<p>This is the page</p>
+<h3 id="title"></h3>
+<h4 id="slug"></h4>
+<div id="history"></div>
+<div id="reference"></div>
 
+<div id="container" style="padding: 20px; border: 2px inset rgba(28,110,164,0.17); border-radius: 12px; margin-top: 30px;" ></div>
 
 <script>
-const bc = new BroadcastChannel('review_activity');
-bc.onmessage = (event) => { console.log(event); }
+const bc = new BroadcastChannel('activity_selected');
+bc.onmessage = (event) => {
+  document.getElementById('container').innerHTML = event.data.rendered;
+  document.getElementById('title').innerHTML = event.data.title;
+  document.getElementById('slug').innerHTML = event.data.slug;
+  document.getElementById('history').innerHTML =`Edit History: <a href="${event.data.history}" target="editor">${event.data.history}</a>`;
+  document.getElementById('reference').innerHTML =
+    event.data.reference === null
+    ? ""
+    : `Edit Page: <a href="${event.data.reference}" target="editor">${event.data.reference}</a>`;
+
+}
 </script>

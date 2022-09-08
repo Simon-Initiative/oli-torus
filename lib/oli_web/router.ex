@@ -886,6 +886,8 @@ defmodule OliWeb.Router do
       :pow_email_layout
     ])
 
+    get("/activity_review", ActivityReviewController, :index)
+
     # General
     live("/", Admin.AdminView)
     live("/features", Features.FeaturesLive)

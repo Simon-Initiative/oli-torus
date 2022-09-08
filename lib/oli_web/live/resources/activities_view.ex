@@ -12,10 +12,7 @@ defmodule OliWeb.Resources.ActivitiesView do
   alias Oli.Resources.ActivityBrowseOptions
   alias OliWeb.Common.SessionContext
   alias OliWeb.Resources.ActivitiesTableModel
-  alias OliWeb.Resources.AuthoringScripts
-  alias OliWeb.Resources.AuthoredActivity
   alias Oli.Repo.{Paging, Sorting}
-  alias OliWeb.ManualGrading.Group
 
   data title, :string, default: "All Activities"
   data project, :any
@@ -67,8 +64,6 @@ defmodule OliWeb.Resources.ActivitiesView do
         activities_by_id =
           Enum.reduce(registered_activities, %{}, fn a, m -> Map.put(m, a.id, a) end)
 
-        scripts = Enum.map(registered_activities, fn r -> r.authoring_script end)
-
         total_count = determine_total(activities)
 
         {:ok, table_model} =
@@ -82,13 +77,10 @@ defmodule OliWeb.Resources.ActivitiesView do
           total_count: total_count,
           table_model: table_model,
           options: @default_options,
-          revision: nil,
-          scripts: scripts,
           tags_by_id:
             Enum.reduce(registered_activities, %{}, fn a, m ->
               Map.put(m, a.id, a.authoring_element)
-            end),
-          rendered_authoring: nil
+            end)
         )
       else
         _ ->
@@ -128,17 +120,11 @@ defmodule OliWeb.Resources.ActivitiesView do
     if only_selection_changed(socket.assigns, table_model, options, offset) do
       table_model = Map.put(socket.assigns.table_model, :selected, selected)
 
-      revision =
-        Enum.find(table_model.rows, fn r -> Integer.to_string(r.id) == table_model.selected end)
+      socket =
+        push_sync_event(socket, table_model)
+        |> assign(table_model: table_model)
 
-      {:noreply,
-       assign(
-         socket,
-         table_model: table_model,
-         rendered_authoring:
-           render_authoring(revision, socket.assigns.tags_by_id, socket.assigns.project.slug),
-         revision: revision
-       )}
+      {:noreply, socket}
     else
       activities =
         ActivityBrowse.browse_activities(
@@ -148,25 +134,66 @@ defmodule OliWeb.Resources.ActivitiesView do
           options
         )
 
+      selected =
+        case selected do
+          "-2" -> Enum.at(activities, 0).id |> Integer.to_string()
+          "-1" -> Enum.at(activities, Enum.count(activities) - 1).id |> Integer.to_string()
+          _ -> selected
+        end
+
       table_model =
         Map.put(table_model, :rows, activities)
         |> Map.put(:selected, selected)
 
       total_count = determine_total(activities)
 
-      revision =
-        Enum.find(table_model.rows, fn r -> Integer.to_string(r.id) == table_model.selected end)
-
       {:noreply,
-       assign(socket,
+       push_sync_event(socket, table_model)
+       |> assign(
          offset: offset,
          table_model: table_model,
          total_count: total_count,
-         options: options,
-         rendered_authoring:
-           render_authoring(revision, socket.assigns.tags_by_id, socket.assigns.project.slug),
-         revision: revision
+         options: options
        )}
+    end
+  end
+
+  defp push_sync_event(socket, table_model) do
+    if !is_nil(table_model.selected) do
+      revision =
+        Enum.find(table_model.rows, fn r -> Integer.to_string(r.id) == table_model.selected end)
+
+      rendered =
+        render_authoring(revision, socket.assigns.tags_by_id, socket.assigns.project.slug)
+
+      references =
+        Oli.Publishing.determine_parent_pages(
+          [revision.resource_id],
+          Oli.Publishing.get_unpublished_publication_id!(socket.assigns.project.id)
+        )
+
+      Phoenix.LiveView.push_event(socket, "activity_selected", %{
+        rendered: rendered,
+        title: revision.title,
+        slug: revision.slug,
+        history:
+          Routes.live_url(
+            OliWeb.Endpoint,
+            OliWeb.RevisionHistory,
+            socket.assigns.project.slug,
+            revision.slug
+          ),
+        reference:
+          case Map.get(references, revision.resource_id, nil) do
+            nil ->
+              nil
+
+            %{slug: slug} ->
+              Routes.resource_url(OliWeb.Endpoint, :edit, socket.assigns.project.slug, slug)
+          end
+      })
+    else
+      socket
     end
   end
 
@@ -196,9 +223,7 @@ defmodule OliWeb.Resources.ActivitiesView do
 
   def render(assigns) do
     ~F"""
-    <div>
-      <AuthoringScripts scripts={@scripts}/>
-
+    <div id="activity_review" phx-hook="ReviewActivity">
       <FilterBox
         card_header_text="Browse All Activities"
         card_body_text=""
@@ -210,20 +235,13 @@ defmodule OliWeb.Resources.ActivitiesView do
 
       <div class="mb-3"/>
 
-      <Group>
-        <PagedTable
-          allow_selection={true}
-          filter={@options.text_search}
-          table_model={@table_model}
-          total_count={@total_count}
-          offset={@offset}
-          limit={limit()}/>
-        </Group>
-        <Group>
-        {#if !is_nil(@revision)}
-          <AuthoredActivity id={"authored"} rendered_authoring={@rendered_authoring}/>
-        {/if}
-        </Group>
+      <PagedTable
+        allow_selection={true}
+        filter={@options.text_search}
+        table_model={@table_model}
+        total_count={@total_count}
+        offset={@offset}
+        limit={limit()}/>
     </div>
     """
   end
@@ -250,6 +268,43 @@ defmodule OliWeb.Resources.ActivitiesView do
          ),
        replace: true
      )}
+  end
+
+  def handle_event("keyboard-navigation", %{"direction" => direction}, socket) do
+    selected = socket.assigns.table_model.selected
+
+    index =
+      Enum.find_index(socket.assigns.table_model.rows, fn r ->
+        Integer.to_string(r.id) == selected
+      end)
+
+    new_index = direction + index
+
+    # The logic for allowing keyboard arrow navigation to change the selection *and* to
+    # switch pages (when the current item is the first or last item)
+    changes =
+      cond do
+        new_index < 0 ->
+          if socket.assigns.offset != 0 do
+            %{offset: socket.assigns.offset - @limit, selected: Integer.to_string(-1)}
+          else
+            %{selected: Enum.at(socket.assigns.table_model.rows, index).id |> Integer.to_string()}
+          end
+
+        new_index + socket.assigns.offset >= socket.assigns.total_count ->
+          %{selected: Enum.at(socket.assigns.table_model.rows, index).id |> Integer.to_string()}
+
+        new_index >= @limit ->
+          %{offset: socket.assigns.offset + @limit, selected: Integer.to_string(-2)}
+
+        true ->
+          %{
+            selected:
+              Enum.at(socket.assigns.table_model.rows, new_index).id |> Integer.to_string()
+          }
+      end
+
+    patch_with(socket, changes)
   end
 
   def handle_event(event, params, socket) do
