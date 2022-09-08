@@ -3,10 +3,6 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
   import Oli.Authoring.Broadcaster.Messages
 
   ### Subscription API
-  def subscribe_to_activity_reviews(author_id) do
-    PubSub.subscribe(Oli.PubSub, message_activity_review(author_id))
-  end
-
   def subscribe_to_new_revisions(resource_id) do
     PubSub.subscribe(Oli.PubSub, message_new_revision(resource_id))
   end
@@ -48,10 +44,6 @@ defmodule Oli.Authoring.Broadcaster.Subscriber do
   end
 
   ### Unsubscription API
-  def unsubscribe_to_activity_review(author_id) do
-    PubSub.unsubscribe(Oli.PubSub, message_activity_review(author_id))
-  end
-
   def unsubscribe_to_new_revisions(resource_id) do
     PubSub.unsubscribe(Oli.PubSub, message_new_revision(resource_id))
   end
