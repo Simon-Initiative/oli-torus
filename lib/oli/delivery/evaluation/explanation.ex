@@ -6,27 +6,46 @@ defmodule Oli.Delivery.Evaluation.Explanation do
   alias Oli.Delivery.Evaluation.Actions.FeedbackAction
 
   @doc """
-  Determines whether an explanation should be paired along with the provided feedback using
-  the given explanation context. If an explanation condition is met, then this will return
-  a 2-element list containing the given feedback and the resulting explanation. If not,
-  then a single element list containing the feedback is simply returned.
+  Determines whether an explanation should be shown using the given explanation context.
+  If an explanation condition is met, then this will return the resulting explanation.
+  Otherwise, returns `nil`.
   """
-  def maybe_set_feedback_explanation(
-        {:ok, feedback},
+  def get_explanation(
         %ExplanationContext{
           part: part
         } = context
       ) do
     case check_explanation_condition(context) do
       {_strategy, true} ->
-        {:ok, %FeedbackAction{feedback | explanation: part.explanation}}
+        part.explanation
 
       {_strategy, false} ->
-        {:ok, feedback}
+        nil
     end
   end
 
-  def maybe_set_feedback_explanation(other, _), do: other
+  @doc """
+  Determines whether an explanation should be paired along with the provided feedback using
+  the given explanation context. If an explanation condition is met, then this will return
+  a 2-element list containing the given feedback and the resulting explanation. If not,
+  then a single element list containing the feedback is simply returned.
+  """
+  def maybe_set_feedback_action_explanation(
+        {:ok, %FeedbackAction{} = feedback_action},
+        %ExplanationContext{
+          part: part
+        } = context
+      ) do
+    case check_explanation_condition(context) do
+      {_strategy, true} ->
+        {:ok, %FeedbackAction{feedback_action | explanation: part.explanation}}
+
+      {_strategy, false} ->
+        {:ok, feedback_action}
+    end
+  end
+
+  def maybe_set_feedback_action_explanation(other, _), do: other
 
   # show after max resource attempts exhausted strategy for scored pages
   # (ignore unscored pages for now)

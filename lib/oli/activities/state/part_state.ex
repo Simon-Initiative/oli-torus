@@ -16,6 +16,7 @@ defmodule Oli.Activities.State.PartState do
     :outOf,
     :response,
     :feedback,
+    :explanation,
     :hints,
     :hasMoreHints,
     :hasMoreAttempts,
@@ -32,6 +33,7 @@ defmodule Oli.Activities.State.PartState do
     :outOf,
     :response,
     :feedback,
+    :explanation,
     :hints,
     :hasMoreHints,
     :hasMoreAttempts,
@@ -67,9 +69,8 @@ defmodule Oli.Activities.State.PartState do
       part.hints
       |> ParseUtils.remove_empty()
 
-    feedback =
-      attempt.feedback
-      |> Explanation.maybe_set_feedback_explanation(%ExplanationContext{
+    explanation =
+      Explanation.get_explanation(%ExplanationContext{
         part: part,
         part_attempt: attempt,
         activity_attempt: activity_attempt,
@@ -85,7 +86,8 @@ defmodule Oli.Activities.State.PartState do
       score: attempt.score,
       outOf: attempt.out_of,
       response: attempt.response,
-      feedback: feedback,
+      feedback: attempt.feedback,
+      explanation: explanation,
       hints: hints,
       hasMoreHints: length(attempt.hints) < length(real_part_hints),
       hasMoreAttempts: true,

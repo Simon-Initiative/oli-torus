@@ -645,7 +645,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             }
 
             Standard.perform(attempt_guid, context, part)
-            |> Explanation.maybe_set_feedback_explanation(%ExplanationContext{
+            |> Explanation.maybe_set_feedback_action_explanation(%ExplanationContext{
               part: part,
               part_attempt: attempt,
               activity_attempt: activity_attempt,
