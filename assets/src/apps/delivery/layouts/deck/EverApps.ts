@@ -19,6 +19,7 @@ export const everAppActivityState: ActivityState = {
       outOf: null,
       response: null,
       feedback: null,
+      explanation: null,
       hints: [],
       partId: 'janus_capi_iframe-3311152192',
       hasMoreAttempts: false,

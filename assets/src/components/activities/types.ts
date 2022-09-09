@@ -487,7 +487,7 @@ export interface FeedbackAction extends IsAction {
   out_of: number;
   score: number;
   feedback: Feedback;
-  explanation: Explanation;
+  explanation: Explanation | null;
   show_page: number | null;
 }
 

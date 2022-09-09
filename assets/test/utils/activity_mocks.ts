@@ -45,6 +45,7 @@ const feedbackAction: Action = {
   score: 1,
   show_page: null,
   feedback: makeFeedback('correct feedback'),
+  explanation: null,
 };
 
 const evaluationResponse: EvaluationResponse = {
@@ -81,7 +82,9 @@ export const defaultDeliveryElementProps = {
   userId: 1,
 };
 
-export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringElementProps<T> => {
+export const defaultAuthoringElementProps = <T extends Record<string, unknown>>(
+  initialModel: T,
+): AuthoringElementProps<T> => {
   const model = initialModel;
   return {
     projectSlug: '',
