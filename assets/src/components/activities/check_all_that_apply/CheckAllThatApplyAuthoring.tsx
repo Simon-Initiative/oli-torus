@@ -79,7 +79,7 @@ const CheckAllThatApply = () => {
         <HintsAuthoring partId={model.authoring.parts[0].id} />
       </TabbedNavigation.Tab>
       <TabbedNavigation.Tab label="Explanation">
-        <Explanation partId={DEFAULT_PART_ID} />
+        <Explanation partId={model.authoring.parts[0].id} />
       </TabbedNavigation.Tab>
       <TabbedNavigation.Tab label="Dynamic Variables">
         <VariableEditorOrNot

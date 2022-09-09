@@ -1058,6 +1058,17 @@ defmodule Oli.Publishing do
     |> Enum.filter(fn m -> !Locks.expired_or_empty?(m) end)
   end
 
+  def create_resource_batch(project, author_id, batch_size) do
+    publication_id = get_unpublished_publication_id!(project.id)
+
+    sql = """
+    SELECT * FROM create_resource_batch(#{project.id}, #{publication_id}, #{author_id}, #{batch_size});
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Enum.map(results, fn [revision_id] -> revision_id end)
+  end
+
   @doc """
   For a given list of activity resource ids and a given project publication id,
   find and retrieve all revisions for the pages that contain the activities.
