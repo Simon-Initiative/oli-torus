@@ -286,7 +286,7 @@ defmodule Oli.Authoring.Course do
     end)
   end
 
-  defp default_project(title, family, additional_attrs \\ %{}) do
+  defp default_project(title, family, additional_attrs) do
     default_publisher = Inventories.default_publisher()
 
     Map.merge(
