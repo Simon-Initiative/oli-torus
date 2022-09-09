@@ -25,7 +25,7 @@ Example:
   "key_set_url": "https://canvas.oli.cmu.edu/api/lti/security/jwks",
   "auth_token_url": "https://canvas.oli.cmu.edu/login/oauth2/token",
   "auth_login_url": "https://canvas.oli.cmu.edu/api/lti/authorize_redirect",
-  "auth_server": "https://canvas.oli.cmu.edu"
+  "auth_server": "https://canvas.oli.cmu.edu/login/oauth2/token"
 }]
 ```
 
