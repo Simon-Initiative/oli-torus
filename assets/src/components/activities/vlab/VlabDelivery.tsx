@@ -16,6 +16,7 @@ import {
   isEvaluated,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -113,6 +114,7 @@ export const VlabComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptyPartInputs);
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

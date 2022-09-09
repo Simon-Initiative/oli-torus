@@ -15,6 +15,7 @@ import {
   resetAction,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
@@ -45,6 +46,7 @@ export const MultipleChoiceComponent: React.FC = () => {
       [model.authoring.parts[0].id]: [],
     });
 
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
     dispatch(
       initializeState(activityState, initialPartInputs(model, activityState), model, context),
     );

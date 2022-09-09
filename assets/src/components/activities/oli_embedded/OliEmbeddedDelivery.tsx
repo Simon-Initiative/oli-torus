@@ -10,6 +10,7 @@ import {
   activityDeliverySlice,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 
 interface Context {
@@ -25,9 +26,9 @@ interface Context {
 const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
   const {
     state: activityState,
-    surveyId,
     onSubmitActivity,
     onResetActivity,
+    context: activityContext,
   } = useDeliveryElementContext<OliEmbeddedModelSchema>();
 
   const [context, setContext] = useState<Context>();
@@ -35,8 +36,9 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
 
   const dispatch = useDispatch();
   useEffect(() => {
-    listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity);
+    listenForParentSurveySubmit(activityContext.surveyId, dispatch, onSubmitActivity);
+    listenForParentSurveyReset(activityContext.surveyId, dispatch, onResetActivity);
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, activityContext);
 
     fetchContext();
     setInterval(() => {

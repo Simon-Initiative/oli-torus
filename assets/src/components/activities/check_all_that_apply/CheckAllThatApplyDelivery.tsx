@@ -10,6 +10,7 @@ import {
   resetAction,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -43,6 +44,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
       [model.authoring.parts[0].id]: [],
     });
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(activityState, initialPartInputs(model, activityState), model, context),

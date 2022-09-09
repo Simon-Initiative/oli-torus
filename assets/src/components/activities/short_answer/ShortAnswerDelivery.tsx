@@ -17,6 +17,7 @@ import {
   resetAction,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import { configureStore } from 'state/store';
 import { safelySelectStringInputs } from 'data/activities/utils';
@@ -78,6 +79,7 @@ export const ShortAnswerComponent: React.FC = () => {
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
       [model.authoring.parts[0].id]: [''],
     });
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

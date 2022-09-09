@@ -360,7 +360,7 @@ defmodule Oli.Predefined do
         key_set_path: "/api/lti/security/jwks",
         auth_token_path: "/login/oauth2/token",
         auth_login_path: "/api/lti/authorize_redirect",
-        auth_server_path: "/"
+        auth_server_path: "/login/oauth2/token"
       },
       %{
         product_family_code: "moodle",
