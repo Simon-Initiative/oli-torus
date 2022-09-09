@@ -24,6 +24,7 @@ import { studentInputToString } from 'data/activities/utils';
 import { WritableDraft } from 'immer/dist/internal';
 import { ActivityModelSchema } from 'components/activities/types';
 import { Maybe } from 'tsmonad';
+import { initialPartInputs, isCorrect } from 'data/activities/utils';
 
 export type AppThunk<ReturnType = void> = ThunkAction<
   ReturnType,
@@ -506,3 +507,23 @@ export const listenForParentSurveyReset = (
       }
     }),
   );
+
+export const listenForReviewAttemptChange = (
+  activityId: number,
+  dispatch: Dispatch<any>,
+  context: ActivityContext,
+) => {
+  document.addEventListener(Events.Registry.ReviewModeAttemptChange, (e) => {
+    // check if this activity is having its attempt changed
+    if (e.detail.forId === activityId) {
+      dispatch(
+        initializeState(
+          e.detail.state as any,
+          initialPartInputs(e.detail.state as any),
+          e.detail.model as any,
+          context,
+        ),
+      );
+    }
+  });
+};

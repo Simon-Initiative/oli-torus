@@ -15,6 +15,7 @@ import {
   isEvaluated,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { initialPartInputs } from 'data/activities/utils';
@@ -48,6 +49,8 @@ const LikertComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptySelectionMap);
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+
     dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 
