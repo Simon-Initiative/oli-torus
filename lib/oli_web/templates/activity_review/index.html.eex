@@ -5,6 +5,7 @@
 <h3 id="title"></h3>
 <h4 id="slug"></h4>
 <div id="history"></div>
+<div id="svn"></div>
 <div id="reference"></div>
 
 <div id="container" style="padding: 20px; border: 2px inset rgba(28,110,164,0.17); border-radius: 12px; margin-top: 30px;" ></div>
@@ -15,6 +16,7 @@ bc.onmessage = (event) => {
   document.getElementById('container').innerHTML = event.data.rendered;
   document.getElementById('title').innerHTML = event.data.title;
   document.getElementById('slug').innerHTML = event.data.slug;
+  document.getElementById('svn').innerHTML =`View SVN: <a href="${event.data.svn_path}" target="editor">${event.data.svn_path}</a>`;
   document.getElementById('history').innerHTML =`Edit History: <a href="${event.data.history}" target="editor">${event.data.history}</a>`;
   document.getElementById('reference').innerHTML =
     event.data.reference === null

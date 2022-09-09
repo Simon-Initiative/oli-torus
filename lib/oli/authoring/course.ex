@@ -261,10 +261,11 @@ defmodule Oli.Authoring.Course do
     |> Repo.insert()
   end
 
-  def create_project(title, author) do
+  def create_project(title, author, additional_attrs \\ %{}) do
     Repo.transaction(fn ->
       with {:ok, project_family} <- create_family(default_family(title)),
-           {:ok, project} <- create_project(default_project(title, project_family)),
+           {:ok, project} <-
+             create_project(default_project(title, project_family, additional_attrs)),
            {:ok, collaborator} <- Collaborators.add_collaborator(author, project),
            {:ok, %{resource: resource, revision: resource_revision}} <-
              initial_resource_setup(author, project),
@@ -285,15 +286,18 @@ defmodule Oli.Authoring.Course do
     end)
   end
 
-  defp default_project(title, family) do
+  defp default_project(title, family, additional_attrs \\ %{}) do
     default_publisher = Inventories.default_publisher()
 
-    %{
-      title: title,
-      version: "1.0.0",
-      family_id: family.id,
-      publisher_id: default_publisher.id
-    }
+    Map.merge(
+      %{
+        title: title,
+        version: "1.0.0",
+        family_id: family.id,
+        publisher_id: default_publisher.id
+      },
+      additional_attrs
+    )
   end
 
   def update_project(%Project{} = project, attrs) do

@@ -302,9 +302,17 @@ defmodule Oli.Interop.Ingest do
   # Process the _project file to create the project structure
   defp create_project(project_details, as_author) do
     case Map.get(project_details, "title") do
-      nil -> {:error, :missing_project_title}
-      "" -> {:error, :empty_project_title}
-      title -> Oli.Authoring.Course.create_project(title, as_author)
+      nil ->
+        {:error, :missing_project_title}
+
+      "" ->
+        {:error, :empty_project_title}
+
+      title ->
+        Oli.Authoring.Course.create_project(title, as_author, %{
+          description: Map.get(project_details, "description"),
+          legacy_svn_root: Map.get(project_details, "svnRoot")
+        })
     end
   end
 
@@ -584,7 +592,11 @@ defmodule Oli.Interop.Ingest do
          {:ok, content} <- rewire_citation_references(content, bib_map) do
       graded = Map.get(page, "isGraded", false)
 
+      legacy_id = Map.get(page, "legacyId", nil)
+      legacy_path = Map.get(page, "legacyPath", nil)
+
       %{
+        legacy: %{id: legacy_id, path: legacy_path},
         tags: transform_tags(page, tag_map),
         title: Map.get(page, "title"),
         content: content,
@@ -637,7 +649,11 @@ defmodule Oli.Interop.Ingest do
           _ -> :embedded
         end
 
+      legacy_id = Map.get(activity, "legacyId", nil)
+      legacy_path = Map.get(activity, "legacyPath", nil)
+
       %{
+        legacy: %{id: legacy_id, path: legacy_path},
         scope: scope,
         tags: transform_tags(activity, tag_map),
         title: title,
@@ -727,8 +743,11 @@ defmodule Oli.Interop.Ingest do
       end
 
     parameters = Map.get(objective, "parameters", nil)
+    legacy_id = Map.get(objective, "legacyId", nil)
+    legacy_path = Map.get(objective, "legacyPath", nil)
 
     %{
+      legacy: %{id: legacy_id, path: legacy_path},
       tags: transform_tags(objective, tag_map),
       title: title,
       content: %{},

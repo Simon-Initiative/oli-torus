@@ -186,6 +186,7 @@ defmodule OliWeb.Resources.ActivitiesView do
         rendered: rendered,
         title: revision.title,
         slug: revision.slug,
+        svn_path: socket.assigns.project.legacy_svn_root <> revision.legacy.path,
         history:
           Routes.live_url(
             OliWeb.Endpoint,

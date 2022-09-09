@@ -1,5 +1,4 @@
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   ChoiceIdsToResponseId,
   HasChoices,
@@ -12,6 +11,8 @@ import {
 import { getResponses } from 'data/activities/model/responses';
 import { matchRule } from 'data/activities/model/rules';
 import { dispatch } from 'utils/test_utils';
+
+const DEFAULT_PART_ID = '1';
 
 describe('responses', () => {
   const choice = makeChoice('a');

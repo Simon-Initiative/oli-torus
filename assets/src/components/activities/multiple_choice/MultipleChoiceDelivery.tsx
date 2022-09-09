@@ -25,7 +25,6 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -42,7 +41,9 @@ export const MultipleChoiceComponent: React.FC = () => {
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
+      [model.authoring.parts[0].id]: [],
+    });
 
     dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
@@ -58,7 +59,7 @@ export const MultipleChoiceComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          partId={DEFAULT_PART_ID}
+          partId={model.authoring.parts[0].id}
           unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -69,13 +70,17 @@ export const MultipleChoiceComponent: React.FC = () => {
               <Radio.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'single'))}
+          onSelect={(id) =>
+            dispatch(setSelection(model.authoring.parts[0].id, id, onSaveActivity, 'single'))
+          }
         />
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
+          onReset={() =>
+            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [] }))
+          }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
         <EvaluationConnected />
       </div>
     </div>

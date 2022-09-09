@@ -7,7 +7,6 @@ import { ResponseCard } from 'components/activities/common/responses/ResponseCar
 import { SimpleFeedback } from 'components/activities/common/responses/SimpleFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { InputEntry } from 'components/activities/short_answer/sections/InputEntry';
 import { getTargetedResponses, shortAnswerOptions } from 'components/activities/short_answer/utils';
 import {
@@ -48,7 +47,7 @@ const ShortAnswer = () => {
               editMode={editMode}
               selected={model.inputType}
               onChange={(inputType) =>
-                dispatch(ShortAnswerActions.setInputType(inputType, DEFAULT_PART_ID))
+                dispatch(ShortAnswerActions.setInputType(inputType, model.authoring.parts[0].id))
               }
             />
           </div>
@@ -64,17 +63,22 @@ const ShortAnswer = () => {
                   : model.authoring.parts[0].gradingApproach
               }
               onChange={(gradingApproach) =>
-                dispatch(ShortAnswerActions.setGradingApproach(gradingApproach, DEFAULT_PART_ID))
+                dispatch(
+                  ShortAnswerActions.setGradingApproach(
+                    gradingApproach,
+                    model.authoring.parts[0].id,
+                  ),
+                )
               }
             />
             <InputEntry
-              key={getCorrectResponse(model, DEFAULT_PART_ID).id}
+              key={getCorrectResponse(model, model.authoring.parts[0].id).id}
               inputType={model.inputType}
-              response={getCorrectResponse(model, DEFAULT_PART_ID)}
+              response={getCorrectResponse(model, model.authoring.parts[0].id)}
               onEditResponseRule={(id, rule) => dispatch(ResponseActions.editRule(id, rule))}
             />
-            <SimpleFeedback partId={DEFAULT_PART_ID} />
-            {getTargetedResponses(model, DEFAULT_PART_ID).map((response: Response) => (
+            <SimpleFeedback partId={model.authoring.parts[0].id} />
+            {getTargetedResponses(model, model.authoring.parts[0].id).map((response: Response) => (
               <ResponseCard
                 title="Targeted feedback"
                 response={response}
@@ -102,7 +106,7 @@ const ShortAnswer = () => {
                       0,
                       '',
                     ),
-                    DEFAULT_PART_ID,
+                    model.authoring.parts[0].id,
                   ),
                 )
               }
@@ -113,7 +117,7 @@ const ShortAnswer = () => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <Hints partId={DEFAULT_PART_ID} />
+          <Hints partId={model.authoring.parts[0].id} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot

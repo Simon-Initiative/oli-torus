@@ -1,6 +1,5 @@
 import { Hints } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Manifest } from 'components/activities/types';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import React from 'react';
@@ -39,7 +38,7 @@ const FileUpload = () => {
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <Hints partId={DEFAULT_PART_ID} />
+          <Hints partId={model.authoring.parts[0].id} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot

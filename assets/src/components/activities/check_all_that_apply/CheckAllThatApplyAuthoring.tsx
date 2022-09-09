@@ -9,7 +9,6 @@ import { SimpleFeedback } from 'components/activities/common/responses/SimpleFee
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Checkbox } from 'components/misc/icons/checkbox/Checkbox';
 import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Choices } from 'data/activities/model/choices';
@@ -57,7 +56,7 @@ const CheckAllThatApply = () => {
           isEvaluated={false}
           context={defaultWriterContext()}
         />
-        <SimpleFeedback partId={DEFAULT_PART_ID} />
+        <SimpleFeedback partId={model.authoring.parts[0].id} />
         <TargetedFeedback
           toggleChoice={(choiceId, mapping) => {
             dispatch(
@@ -76,7 +75,7 @@ const CheckAllThatApply = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Hints">
-        <HintsAuthoring partId={DEFAULT_PART_ID} />
+        <HintsAuthoring partId={model.authoring.parts[0].id} />
       </TabbedNavigation.Tab>
       <TabbedNavigation.Tab label="Dynamic Variables">
         <VariableEditorOrNot

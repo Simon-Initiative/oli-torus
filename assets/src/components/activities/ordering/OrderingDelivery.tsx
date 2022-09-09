@@ -4,7 +4,6 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { ResponseChoices } from 'components/activities/ordering/sections/ResponseChoices';
 import {
   activityDeliverySlice,
@@ -44,7 +43,7 @@ export const OrderingComponent: React.FC = () => {
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
-        partId: DEFAULT_PART_ID,
+        partId: model.authoring.parts[0].id,
         studentInput,
       }),
     );
@@ -58,7 +57,7 @@ export const OrderingComponent: React.FC = () => {
   };
 
   const defaultPartInputs = {
-    [DEFAULT_PART_ID]: model.choices.map((choice) => choice.id),
+    [model.authoring.parts[0].id]: model.choices.map((choice) => choice.id),
   };
 
   useEffect(() => {
@@ -69,7 +68,7 @@ export const OrderingComponent: React.FC = () => {
       initializeState(
         activityState,
         initialPartInputs(activityState, {
-          [DEFAULT_PART_ID]: model.choices.map((c) => c.id),
+          [model.authoring.parts[0].id]: model.choices.map((c) => c.id),
         }),
         model,
         context,
@@ -104,7 +103,7 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput)
+          choices={Maybe.maybe(uiState.partState[model.authoring.parts[0].id]?.studentInput)
             .valueOr<StudentInput>([])
             .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
@@ -114,7 +113,7 @@ export const OrderingComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
         <EvaluationConnected />
       </div>
     </div>

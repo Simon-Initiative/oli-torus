@@ -12,7 +12,6 @@ import {
   stringToStudentInput,
   studentInputToString,
 } from 'data/activities/utils';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { ActivityContext } from 'components/activities';
 
 describe('activity delivery state management', () => {
@@ -33,6 +32,8 @@ describe('activity delivery state management', () => {
     state: Object.assign(defaultActivityState(model), { hasMoreHints: false }),
     context,
   };
+
+  const DEFAULT_PART_ID = '1';
 
   const { onSaveActivity } = defaultDeliveryElementProps;
   const store: Store<ActivityDeliveryState> = configureStore({}, activityDeliverySlice.reducer);

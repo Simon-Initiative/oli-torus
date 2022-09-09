@@ -35,7 +35,6 @@ import {
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from 'components/activities/types';
 import { FileSpec, FileUploadSchema } from 'components/activities/file_upload/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { getReadableFileSizeString, fileName } from './utils';
 import { RemoveButton } from '../common/authoring/removeButton/RemoveButton';
 import { uploadActivityFile } from 'data/persistence/state/intrinsic';
@@ -48,9 +47,11 @@ function onUploadClick(id: string) {
 }
 
 const getFilesFromState = (state: ActivityDeliveryState) => {
-  return state.partState[DEFAULT_PART_ID].studentInput === undefined
+  const key = Object.keys(state.partState)[0];
+
+  return state.partState[key].studentInput === undefined
     ? []
-    : (state.partState[DEFAULT_PART_ID].studentInput as any as FileMetaData[]);
+    : (state.partState[key].studentInput as any as FileMetaData[]);
 };
 
 const listenForParentSurveySubmit = (
@@ -250,7 +251,9 @@ export const FileUploadComponent: React.FC = () => {
   const { surveyId, sectionSlug, graded } = context;
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
+      [model.authoring.parts[0].id]: [],
+    });
 
     dispatch(
       initializeState(
@@ -260,7 +263,7 @@ export const FileUploadComponent: React.FC = () => {
         safelySelectFiles(state).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [DEFAULT_PART_ID]: [],
+            [model.authoring.parts[0].id]: [],
           }),
         }),
         model,
@@ -284,18 +287,20 @@ export const FileUploadComponent: React.FC = () => {
           sectionSlug={sectionSlug as any}
           model={uiState.model as any}
           state={state}
-          onSavePart={(a, p, s) => dispatch(savePart(DEFAULT_PART_ID, s, onSavePart))}
+          onSavePart={(a, p, s) => dispatch(savePart(model.authoring.parts[0].id, s, onSavePart))}
         />
 
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
+          onReset={() =>
+            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [] }))
+          }
         />
         <SubmitButton
           shouldShow={!isSubmitted(uiState) && !graded && surveyId === undefined}
           disabled={getFilesFromState(uiState).length === 0}
           onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
         />
-        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
         <EvaluationConnected />
       </div>
     </div>

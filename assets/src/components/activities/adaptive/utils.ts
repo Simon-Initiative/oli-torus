@@ -1,6 +1,5 @@
 import { AdaptiveModelSchema } from './schema';
 import { ScoringStrategy, makeHint } from '../types';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultModel: () => AdaptiveModelSchema = () => {
   return {
@@ -8,7 +7,7 @@ export const defaultModel: () => AdaptiveModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: DEFAULT_PART_ID,
+          id: '1',
           scoringStrategy: ScoringStrategy.average,
           responses: [],
           outcomes: [
