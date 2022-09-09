@@ -62,6 +62,7 @@ export const safelySelectFiles = (activityState: ActivityState | undefined): May
 };
 
 export const initialPartInputs = (
+  model: ActivityModelSchema,
   activityState: ActivityState | undefined,
   defaultPartInputs: PartInputs = { [model.authoring.parts[0].id]: [] },
 ): PartInputs => {

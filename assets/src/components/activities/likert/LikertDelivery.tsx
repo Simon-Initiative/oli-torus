@@ -47,7 +47,9 @@ const LikertComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptySelectionMap);
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
+    dispatch(
+      initializeState(activityState, initialPartInputs(model, activityState), model, context),
+    );
   }, []);
 
   // First render initializes state

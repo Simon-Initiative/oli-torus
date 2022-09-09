@@ -40,7 +40,9 @@ describe('activity delivery state management', () => {
   const dispatch: Dispatch<any> = store.dispatch;
 
   it('can initialize state', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
+    dispatch(
+      initializeState(props.state, initialPartInputs(props.model, props.state), model, context),
+    );
     expect(store.getState().attemptState).toEqual(props.state);
     const partState = store.getState().partState[DEFAULT_PART_ID];
     expect(partState).toBeTruthy();
@@ -50,7 +52,9 @@ describe('activity delivery state management', () => {
   });
 
   it('can select single choices', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
+    dispatch(
+      initializeState(props.state, initialPartInputs(props.model, props.state), model, context),
+    );
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[0].id, onSaveActivity, 'single'));
     expect(store.getState().partState[DEFAULT_PART_ID]?.studentInput).toEqual([
       model.choices[0].id,
@@ -58,7 +62,9 @@ describe('activity delivery state management', () => {
   });
 
   it('can select multiple choices', () => {
-    dispatch(initializeState(props.state, initialPartInputs(props.state), model, context));
+    dispatch(
+      initializeState(props.state, initialPartInputs(props.model, props.state), model, context),
+    );
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[0].id, onSaveActivity, 'multiple'));
     dispatch(setSelection(DEFAULT_PART_ID, model.choices[1].id, onSaveActivity, 'multiple'));
     expect(store.getState().partState[DEFAULT_PART_ID]?.studentInput).toEqual([

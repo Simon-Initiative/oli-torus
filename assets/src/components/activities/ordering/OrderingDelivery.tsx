@@ -67,7 +67,7 @@ export const OrderingComponent: React.FC = () => {
     dispatch(
       initializeState(
         activityState,
-        initialPartInputs(activityState, {
+        initialPartInputs(model, activityState, {
           [model.authoring.parts[0].id]: model.choices.map((c) => c.id),
         }),
         model,

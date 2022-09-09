@@ -44,7 +44,9 @@ export const CheckAllThatApplyComponent: React.FC = () => {
       [model.authoring.parts[0].id]: [],
     });
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
+    dispatch(
+      initializeState(activityState, initialPartInputs(model, activityState), model, context),
+    );
   }, []);
 
   // First render initializes state
