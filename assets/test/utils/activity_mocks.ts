@@ -7,6 +7,7 @@ import {
   makeHint,
   DeliveryMode,
   PartState,
+  ActivityModelSchema,
 } from 'components/activities/types';
 
 const partState: PartState = {
@@ -82,7 +83,7 @@ export const defaultDeliveryElementProps = {
   userId: 1,
 };
 
-export const defaultAuthoringElementProps = <T extends Record<string, unknown>>(
+export const defaultAuthoringElementProps = <T extends ActivityModelSchema>(
   initialModel: T,
 ): AuthoringElementProps<T> => {
   const model = initialModel;
@@ -93,6 +94,6 @@ export const defaultAuthoringElementProps = <T extends Record<string, unknown>>(
     model,
     onPostUndoable: jest.fn(),
     onRequestMedia: jest.fn(),
-    onEdit: (newModel) => Object.assign(model, newModel),
+    onEdit: (newModel) => Object.assign(model as any, newModel),
   };
 };
