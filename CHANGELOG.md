@@ -6,6 +6,8 @@
 
 ### Enhancements
 
+- Add tab for authoring 'explanation' feedback to all activities
+
 ## 0.21.5 (2022-09-01)
 
 ### Bug Fixes
