@@ -15,6 +15,7 @@ import {
   resetAction,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
@@ -43,7 +44,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
-
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
     dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);
 

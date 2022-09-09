@@ -12,117 +12,200 @@ defmodule Oli.Rendering.Activity.Html do
 
   @behaviour Oli.Rendering.Activity
 
+  defp get_activity_model(tag, resource_attempt, activity_id, activity_map, model) do
+    case tag do
+      "oli-adaptive-delivery" ->
+        page_model = Map.get(resource_attempt.content, "model")
+        get_flattened_activity_model(page_model, activity_id, activity_map)
+
+      _ ->
+        model
+    end
+  end
+
+  defp render_missing_activity(context, activity, activity_map, activity_id, render_opts) do
+    {error_id, error_msg} =
+      log_error(
+        "ActivitySummary with id #{activity_id} missing from activity_map",
+        {activity, activity_map}
+      )
+
+    if render_opts.render_errors do
+      error(context, activity, {:activity_missing, error_id, error_msg})
+    else
+      []
+    end
+  end
+
+  defp is_adaptive?(tag) do
+    String.starts_with?(tag, "oli-adaptive-")
+  end
+
+  defp render_activity_html(
+         %Context{
+           activity_map: activity_map,
+           mode: mode,
+           section_slug: section_slug,
+           resource_attempt: resource_attempt,
+           bib_app_params: bib_app_params
+         } = context,
+         %ActivitySummary{
+           authoring_element: authoring_element,
+           delivery_element: delivery_element,
+           model: model
+         } = summary,
+         %{"activity_id" => activity_id}
+       ) do
+    tag =
+      case mode do
+        :instructor_preview -> authoring_element
+        _ -> delivery_element
+      end
+
+    model_json = get_activity_model(tag, resource_attempt, activity_id, activity_map, model)
+
+    bib_params =
+      Enum.reduce(bib_app_params, [], fn x, acc ->
+        acc ++
+          [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
+      end)
+
+    case mode do
+      :instructor_preview ->
+        {:ok, bib_params_json} = Jason.encode(bib_params)
+        activity_html_id = get_activity_html_id(activity_id, model_json)
+
+        [
+          ~s|<#{tag} activity_id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
+        ]
+
+      :review ->
+        if is_adaptive?(tag) do
+          render_single_activity_html(tag, context, summary, bib_params, model_json)
+        else
+          [
+            render_historical_attempts(summary.id, context.historical_attempts, section_slug),
+            render_single_activity_html(tag, context, summary, bib_params, model_json)
+          ]
+        end
+
+      _ ->
+        render_single_activity_html(tag, context, summary, bib_params, model_json)
+    end
+  end
+
+  defp render_historical_attempts(activity_id, historical_attempts, section_slug) do
+    case Map.get(historical_attempts, activity_id) do
+      nil ->
+        []
+
+      [] ->
+        []
+
+      attempts ->
+        {:safe, attempt_selector} =
+          ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
+            activityId: activity_id,
+            attempts:
+              Enum.map(attempts, fn a ->
+                %{
+                  state: a.lifecycle_state,
+                  attemptNumber: a.attempt_number,
+                  attemptGuid: a.attempt_guid,
+                  date:
+                    Timex.format!(a.updated_at, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}")
+                }
+              end),
+            sectionSlug: section_slug
+          })
+
+        [attempt_selector]
+    end
+  end
+
+  defp render_single_activity_html(
+         tag,
+         %Context{
+           mode: mode,
+           user: user,
+           resource_attempt: resource_attempt,
+           group_id: group_id,
+           survey_id: survey_id
+         } = context,
+         %ActivitySummary{
+           state: state,
+           graded: graded
+         },
+         bib_params,
+         model_json
+       ) do
+    activity_context =
+      %{
+        graded: graded,
+        userId: user.id,
+        sectionSlug: context.section_slug,
+        surveyId: survey_id,
+        groupId: group_id,
+        bibParams: bib_params,
+        pageAttemptGuid:
+          if is_nil(resource_attempt) do
+            ""
+          else
+            resource_attempt.attempt_guid
+          end
+      }
+      |> Poison.encode!()
+      |> HtmlEntities.encode()
+
+    [
+      ~s|<#{tag} class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+    ]
+  end
+
+  defp possibly_wrap_in_purpose(activity_html, activity) do
+    case activity["purpose"] do
+      nil ->
+        activity_html
+
+      "none" ->
+        activity_html
+
+      purpose ->
+        [
+          ~s|<h4 class="activity-purpose |,
+          Oli.Utils.Slug.slugify(purpose),
+          ~s|">|,
+          Oli.Utils.Purposes.label_for(purpose),
+          "</h4>",
+          activity_html
+        ]
+    end
+  end
+
+  defp render_activity(
+         %Context{} = context,
+         %ActivitySummary{} = summary,
+         activity
+       ) do
+    render_activity_html(context, summary, activity)
+    |> possibly_wrap_in_purpose(activity)
+  end
+
   def activity(
         %Context{
           activity_map: activity_map,
-          render_opts: render_opts,
-          mode: mode,
-          user: user,
-          resource_attempt: resource_attempt,
-          group_id: group_id,
-          survey_id: survey_id,
-          bib_app_params: bib_app_params
+          render_opts: render_opts
         } = context,
         %{"activity_id" => activity_id} = activity
       ) do
-    case activity_map[activity_id] do
+    activity_summary = activity_map[activity_id]
+
+    case activity_summary do
       nil ->
-        {error_id, error_msg} =
-          log_error(
-            "ActivitySummary with id #{activity_id} missing from activity_map",
-            {activity, activity_map}
-          )
+        render_missing_activity(context, activity, activity_map, activity_id, render_opts)
 
-        if render_opts.render_errors do
-          error(context, activity, {:activity_missing, error_id, error_msg})
-        else
-          []
-        end
-
-      %ActivitySummary{
-        authoring_element: authoring_element,
-        delivery_element: delivery_element,
-        state: state,
-        graded: graded,
-        model: model
-      } ->
-        tag =
-          case mode do
-            :instructor_preview -> authoring_element
-            _ -> delivery_element
-          end
-
-        model_json =
-          case tag do
-            "oli-adaptive-delivery" ->
-              page_model = Map.get(resource_attempt.content, "model")
-              get_flattened_activity_model(page_model, activity_id, activity_map)
-
-            _ ->
-              model
-          end
-
-        section_slug = context.section_slug
-
-        activity_html_id = get_activity_html_id(activity_id, model_json)
-
-        bib_params =
-          Enum.reduce(bib_app_params, [], fn x, acc ->
-            acc ++ [%{"id" => x.id, "ordinal" => x.ordinal, "slug" => x.slug, "title" => x.title}]
-          end)
-
-        # See DeliveryElement.ts for a definition of the corresponding client-side type ActivityContext
-        activity_context =
-          %{
-            graded: graded,
-            userId: user.id,
-            sectionSlug: section_slug,
-            surveyId: survey_id,
-            groupId: group_id,
-            bibParams: bib_params,
-            pageAttemptGuid:
-              if is_nil(resource_attempt) do
-                ""
-              else
-                resource_attempt.attempt_guid
-              end
-          }
-          |> Poison.encode!()
-          |> HtmlEntities.encode()
-
-        activity_html =
-          case mode do
-            :instructor_preview ->
-              {:ok, bib_params_json} = Jason.encode(bib_params)
-
-              [
-                ~s|<#{tag} activity_id=\"#{activity_html_id}\" model="#{model_json}" editmode="false" projectSlug="#{section_slug}" bib_params="#{Base.encode64(bib_params_json)}"></#{tag}>\n|
-              ]
-
-            _ ->
-              [
-                ~s|<#{tag} class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}"  context="#{activity_context}"></#{tag}>\n|
-              ]
-          end
-
-        # purposes types directly on activities is deprecated but rendering is left here to support legacy content
-        case activity["purpose"] do
-          nil ->
-            activity_html
-
-          "none" ->
-            activity_html
-
-          purpose ->
-            [
-              ~s|<h4 class="activity-purpose |,
-              Oli.Utils.Slug.slugify(purpose),
-              ~s|">|,
-              Oli.Utils.Purposes.label_for(purpose),
-              "</h4>",
-              activity_html
-            ]
-        end
+      %ActivitySummary{} = activity_summary ->
+        render_activity(context, activity_summary, activity)
     end
   end
 

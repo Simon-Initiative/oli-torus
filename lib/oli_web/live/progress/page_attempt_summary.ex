@@ -19,12 +19,14 @@ defmodule OliWeb.Progress.PageAttemptSummary do
   def do_render(%{attempt: %{lifecycle_state: :active}} = assigns) do
     ~F"""
     <li class="list-group-item list-group-action flex-column align-items-start">
-      <div class="d-flex w-100 justify-content-between">
-        <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
-        <span>Not Submitted Yet</span>
-      </div>
-      <p class="mb-1">Started: {Utils.render_date(@attempt, :inserted_at, @context)}</p>
-      <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.</small>
+      <a href={Routes.instructor_review_path(OliWeb.Endpoint, :review_attempt, @section.slug, @attempt.attempt_guid)}>
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">Attempt {@attempt.attempt_number}</h5>
+          <span>Not Submitted Yet</span>
+        </div>
+        <p class="mb-1">Started: {Utils.render_date(@attempt, :inserted_at, @context)}</p>
+        <small class="text-muted">Time elapsed: {duration(@attempt.inserted_at, DateTime.utc_now())}.</small>
+        </a>
     </li>
     """
   end

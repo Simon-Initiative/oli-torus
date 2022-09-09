@@ -10,6 +10,7 @@ import {
   resetAction,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
 } from 'data/activities/DeliveryState';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
@@ -42,6 +43,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
   }, []);

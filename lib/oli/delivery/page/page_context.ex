@@ -11,7 +11,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :activities,
     :objectives,
     :latest_attempts,
-    :bib_revisions
+    :bib_revisions,
+    :historical_attempts
   ]
   defstruct [
     :review_mode,
@@ -21,7 +22,8 @@ defmodule Oli.Delivery.Page.PageContext do
     :activities,
     :objectives,
     :latest_attempts,
-    :bib_revisions
+    :bib_revisions,
+    :historical_attempts
   ]
 
   alias Oli.Delivery.Attempts.PageLifecycle
@@ -86,8 +88,21 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: bib_revisions
+      bib_revisions: bib_revisions,
+      historical_attempts: retrieve_historical_attempts(hd(resource_attempts))
     }
+  end
+
+  # For the given resource attempt, retrieve all historical activity attempt records,
+  # assembling them into a map of activity_id to a list of the activity attempts, including
+  # the latest attempt
+  defp retrieve_historical_attempts(resource_attempt) do
+    Oli.Delivery.Attempts.Core.get_all_activity_attempts(resource_attempt.id)
+    |> Enum.sort(fn a1, a2 -> a1.attempt_number < a2.attempt_number end)
+    |> Enum.reduce(%{}, fn a, m ->
+      appended = Map.get(m, a.resource_id, []) ++ [a]
+      Map.put(m, a.resource_id, appended)
+    end)
   end
 
   @doc """
@@ -164,7 +179,8 @@ defmodule Oli.Delivery.Page.PageContext do
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
-      bib_revisions: bib_revisions
+      bib_revisions: bib_revisions,
+      historical_attempts: nil
     }
   end
 
