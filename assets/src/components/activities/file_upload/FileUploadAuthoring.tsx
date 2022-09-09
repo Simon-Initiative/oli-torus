@@ -13,6 +13,7 @@ import { FileUploadActions } from './actions';
 import { FileUploadSchema, FileSpec } from './schema';
 import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 
@@ -39,6 +40,9 @@ const FileUpload = () => {
 
         <TabbedNavigation.Tab label="Hints">
           <Hints partId={model.authoring.parts[0].id} />
+        </TabbedNavigation.Tab>
+        <TabbedNavigation.Tab label="Explanation">
+          <Explanation partId={DEFAULT_PART_ID} />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Dynamic Variables">
           <VariableEditorOrNot

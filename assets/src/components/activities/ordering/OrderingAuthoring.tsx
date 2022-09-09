@@ -24,6 +24,7 @@ import { VariableActions } from '../common/variables/variableActions';
 import * as ActivityTypes from '../types';
 import { Actions } from './actions';
 import { OrderingSchema } from './schema';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const store = configureStore();
 
@@ -62,6 +63,9 @@ export const Ordering: React.FC = () => {
 
       <TabbedNavigation.Tab label="Hints">
         <Hints partId={model.authoring.parts[0].id} />
+      </TabbedNavigation.Tab>
+      <TabbedNavigation.Tab label="Explanation">
+        <Explanation partId={DEFAULT_PART_ID} />
       </TabbedNavigation.Tab>
       <TabbedNavigation.Tab label="Dynamic Variables">
         <VariableEditorOrNot

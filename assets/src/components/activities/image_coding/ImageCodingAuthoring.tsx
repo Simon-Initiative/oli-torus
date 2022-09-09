@@ -3,6 +3,7 @@ import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringC
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Heading } from 'components/misc/Heading';
+import { TabbedNavigation } from 'components/tabbed_navigation/Tabs';
 import { Model } from 'data/content/model/elements/factories';
 import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
@@ -12,6 +13,7 @@ import { configureStore } from 'state/store';
 import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import { AuthoringElementProvider, useAuthoringElementContext } from '../AuthoringElementProvider';
+import { Explanation } from '../common/explanation/ExplanationAuthoring';
 import * as ActivityTypes from '../types';
 import { MediaItemRequest } from '../types';
 import { ICActions } from './actions';
@@ -189,7 +191,14 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
         <div>
           {solutionParameters()}
 
-          <HintsAuthoring partId={model.authoring.parts[0].id} />
+          <TabbedNavigation.Tabs>
+            <TabbedNavigation.Tab label="Hints">
+              <HintsAuthoring partId={model.authoring.parts[0].id} />
+            </TabbedNavigation.Tab>
+            <TabbedNavigation.Tab label="Explanation">
+              <Explanation partId={model.authoring.parts[0].id} />
+            </TabbedNavigation.Tab>
+          </TabbedNavigation.Tabs>
 
           <Feedback
             {...sharedProps}
