@@ -255,7 +255,7 @@ export const FileUploadComponent: React.FC = () => {
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
       [model.authoring.parts[0].id]: [],
     });
-    listenForReviewAttemptChange(state.activityId as number, dispatch, context);
+    listenForReviewAttemptChange(model, state.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

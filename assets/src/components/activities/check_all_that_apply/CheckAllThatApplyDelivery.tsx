@@ -44,7 +44,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
       [model.authoring.parts[0].id]: [],
     });
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(activityState, initialPartInputs(model, activityState), model, context),

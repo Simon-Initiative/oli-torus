@@ -26,6 +26,7 @@ interface Context {
 const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) => {
   const {
     state: activityState,
+    model,
     onSubmitActivity,
     onResetActivity,
     context: activityContext,
@@ -38,7 +39,12 @@ const EmbeddedDelivery = (_props: DeliveryElementProps<OliEmbeddedModelSchema>) 
   useEffect(() => {
     listenForParentSurveySubmit(activityContext.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(activityContext.surveyId, dispatch, onResetActivity);
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, activityContext);
+    listenForReviewAttemptChange(
+      model,
+      activityState.activityId as number,
+      dispatch,
+      activityContext,
+    );
 
     fetchContext();
     setInterval(() => {

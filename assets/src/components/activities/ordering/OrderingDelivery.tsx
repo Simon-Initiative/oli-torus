@@ -64,7 +64,7 @@ export const OrderingComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, defaultPartInputs);
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(
