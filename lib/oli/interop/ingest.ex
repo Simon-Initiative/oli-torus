@@ -14,18 +14,13 @@ defmodule Oli.Interop.Ingest do
   Ingest a course digest archive that is sitting on the file system
   and turn it into a course project.  Gives the author specified access
   to the new project.
-
   A course digest archive is a zip file containing a flat list of JSON files.
-
   There are three required files in a course archive:
-
   _project.json: a document containing top-level project meta data
   _hierarchy.json: a document that specifies the course project container hierarchy
   _media-manifest.json: a manifest listing all of the media items referenced by the digest
-
   Any number of other JSON files corresponding to pages and activities can exist
   in the digest archive.
-
   Returns {:ok, project} on success and {:error, error} on failure
   """
   def ingest(file, as_author) do
@@ -364,7 +359,7 @@ defmodule Oli.Interop.Ingest do
       |> scrub_resources()
 
     Repo.transaction(fn ->
-      case Enum.reduce_while(activities, [], fn {id, activity}, all ->
+      case Enum.reduce_while(activities, %{}, fn {id, activity}, map ->
              case create_activity(
                     project,
                     activity,
@@ -373,24 +368,12 @@ defmodule Oli.Interop.Ingest do
                     tag_map,
                     objective_map
                   ) do
-               {:ok, attrs} -> {:cont, [{id, attrs} | all]}
+               {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
            end) do
-        {:error, e} ->
-          Repo.rollback(e)
-
-        all ->
-          map =
-            Oli.Publishing.create_resource_batch(project, as_author.id, Enum.count(all))
-            |> Enum.zip(all)
-            |> Enum.reduce(%{}, fn {revision_id, {id, attrs}}, m ->
-              revision = Oli.Repo.get!(Oli.Resources.Revision, revision_id)
-              {:ok, revision} = Oli.Resources.update_revision(revision, attrs)
-              Map.put(m, id, revision)
-            end)
-
-          {map, List.flatten(changes)}
+        {:error, e} -> Repo.rollback(e)
+        map -> {map, List.flatten(changes)}
       end
     end)
   end
@@ -412,7 +395,7 @@ defmodule Oli.Interop.Ingest do
       |> scrub_resources()
 
     Repo.transaction(fn ->
-      case Enum.reduce_while(pages, [], fn {id, page}, all ->
+      case Enum.reduce_while(pages, %{}, fn {id, page}, map ->
              case create_page(
                     project,
                     page,
@@ -422,24 +405,12 @@ defmodule Oli.Interop.Ingest do
                     bib_map,
                     as_author
                   ) do
-               {:ok, attrs} -> {:cont, [{id, attrs} | all]}
+               {:ok, revision} -> {:cont, Map.put(map, id, revision)}
                {:error, e} -> {:halt, {:error, e}}
              end
            end) do
-        {:error, e} ->
-          Repo.rollback(e)
-
-        all ->
-          map =
-            Oli.Publishing.create_resource_batch(project, as_author.id, Enum.count(all))
-            |> Enum.zip(all)
-            |> Enum.reduce(%{}, fn {revision_id, {id, attrs}}, m ->
-              revision = Oli.Repo.get!(Oli.Resources.Revision, revision_id)
-              {:ok, revision} = Oli.Resources.update_revision(revision, attrs)
-              Map.put(m, id, revision)
-            end)
-
-          {map, List.flatten(changes)}
+        {:error, e} -> Repo.rollback(e)
+        map -> {map, List.flatten(changes)}
       end
     end)
   end
@@ -608,7 +579,7 @@ defmodule Oli.Interop.Ingest do
   end
 
   # Create one page
-  defp create_page(_, page, activity_map, objective_map, tag_map, bib_map, as_author) do
+  defp create_page(project, page, activity_map, objective_map, tag_map, bib_map, as_author) do
     with {:ok, %{"content" => content} = page} <- maybe_migrate_resource_content(page, :page),
          :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
@@ -619,38 +590,38 @@ defmodule Oli.Interop.Ingest do
       legacy_id = Map.get(page, "legacyId", nil)
       legacy_path = Map.get(page, "legacyPath", nil)
 
-      {:ok,
-       %{
-         legacy: %{id: legacy_id, path: legacy_path},
-         tags: transform_tags(page, tag_map),
-         title: Map.get(page, "title"),
-         content: content,
-         author_id: as_author.id,
-         objectives: %{
-           "attached" =>
-             Enum.map(page["objectives"], fn id ->
-               case Map.get(objective_map, id) do
-                 nil -> nil
-                 r -> r.resource_id
-               end
-             end)
-             |> Enum.filter(fn f -> !is_nil(f) end)
-         },
-         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
-         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
-         graded: graded,
-         max_attempts:
-           if graded do
-             5
-           else
-             0
-           end
-       }}
+      %{
+        legacy: %{id: legacy_id, path: legacy_path},
+        tags: transform_tags(page, tag_map),
+        title: Map.get(page, "title"),
+        content: content,
+        author_id: as_author.id,
+        objectives: %{
+          "attached" =>
+            Enum.map(page["objectives"], fn id ->
+              case Map.get(objective_map, id) do
+                nil -> nil
+                r -> r.resource_id
+              end
+            end)
+            |> Enum.filter(fn f -> !is_nil(f) end)
+        },
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page"),
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average"),
+        graded: graded,
+        max_attempts:
+          if graded do
+            5
+          else
+            0
+          end
+      }
+      |> create_resource(project)
     end
   end
 
   defp create_activity(
-         _,
+         project,
          activity,
          as_author,
          registration_by_subtype,
@@ -676,19 +647,19 @@ defmodule Oli.Interop.Ingest do
       legacy_id = Map.get(activity, "legacyId", nil)
       legacy_path = Map.get(activity, "legacyPath", nil)
 
-      {:ok,
-       %{
-         legacy: %{id: legacy_id, path: legacy_path},
-         scope: scope,
-         tags: transform_tags(activity, tag_map),
-         title: title,
-         content: content,
-         author_id: as_author.id,
-         objectives: process_activity_objectives(activity, objective_map),
-         resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
-         activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
-         scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
-       }}
+      %{
+        legacy: %{id: legacy_id, path: legacy_path},
+        scope: scope,
+        tags: transform_tags(activity, tag_map),
+        title: title,
+        content: content,
+        author_id: as_author.id,
+        objectives: process_activity_objectives(activity, objective_map),
+        resource_type_id: Oli.Resources.ResourceType.get_id_by_type("activity"),
+        activity_type_id: Map.get(registration_by_subtype, Map.get(activity, "subType")),
+        scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("average")
+      }
+      |> create_resource(project)
     end
   end
 
@@ -750,8 +721,6 @@ defmodule Oli.Interop.Ingest do
               end
             end)
             |> Enum.filter(fn id -> !is_nil(id) end)
-
-          Map.put(m, e, objectives)
         end)
     end
   end
