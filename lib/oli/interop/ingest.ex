@@ -721,6 +721,8 @@ defmodule Oli.Interop.Ingest do
               end
             end)
             |> Enum.filter(fn id -> !is_nil(id) end)
+
+          Map.put(m, e, objectives)
         end)
     end
   end
