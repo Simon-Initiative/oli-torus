@@ -59,16 +59,16 @@ defmodule OliWeb.PaymentController do
     if user.guest do
       render(conn, "require_account.html", section_slug: section_slug)
     else
-
       # Check the paywall access summary, as this route isn't protected by the
       # plug that inserts the access summary into the assigns.  We allow users
       # view the "make a payment" page only if they are within the grace period
       # or if the course material is now unavailable because they haven't paid
-      allow_payment = case Oli.Delivery.Paywall.summarize_access(user, section) do
-        %AccessSummary{available: false, reason: :not_paid} -> true
-        %AccessSummary{available: true, reason: :within_grace_period} -> true
-        _ -> false
-      end
+      allow_payment =
+        case Oli.Delivery.Paywall.summarize_access(user, section) do
+          %AccessSummary{available: false, reason: :not_paid} -> true
+          %AccessSummary{available: true, reason: :within_grace_period} -> true
+          _ -> false
+        end
 
       if allow_payment do
         case section.amount do
@@ -103,22 +103,34 @@ defmodule OliWeb.PaymentController do
     end
   end
 
+  defp get_contents(conn, data, product_slug) do
+    contents =
+      Enum.map(data, fn p ->
+        Oli.Delivery.Paywall.Payment.to_human_readable(p.code)
+      end)
+      |> Enum.join("\n")
+
+    conn
+    |> send_download({:binary, contents},
+      filename: "codes_#{product_slug}.txt"
+    )
+  end
+
+  @doc """
+  Endpoint that triggers download of a batch of payemnt codes.
+  """
+  def download_codes_generated(conn, %{"product_id" => product_slug}) do
+    codes = Oli.Delivery.Paywall.list_last_payment_codes_generated(conn.params["count"] || 50)
+    get_contents(conn, codes, product_slug)
+  end
+
   @doc """
   Endpoint that triggers creation and download of a batch of payemnt codes.
   """
   def download_codes(conn, %{"count" => count, "product_id" => product_slug}) do
     case Oli.Delivery.Paywall.create_payment_codes(product_slug, String.to_integer(count)) do
       {:ok, payments} ->
-        contents =
-          Enum.map(payments, fn p ->
-            Oli.Delivery.Paywall.Payment.to_human_readable(p.code)
-          end)
-          |> Enum.join("\n")
-
-        conn
-        |> send_download({:binary, contents},
-          filename: "codes_#{product_slug}.txt"
-        )
+        get_contents(conn, payments, product_slug)
 
       _ ->
         conn
