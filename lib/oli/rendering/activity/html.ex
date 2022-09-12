@@ -157,8 +157,12 @@ defmodule Oli.Rendering.Activity.Html do
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
+    page_state = resource_attempt.state
+      |> Poison.encode!()
+      |> HtmlEntities.encode()
+
     [
-      ~s|<#{tag} class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+      ~s|<#{tag} class="activity-container" page-state="#{page_state}" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
 

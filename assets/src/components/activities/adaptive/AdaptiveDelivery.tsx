@@ -1,4 +1,4 @@
-import { evalAssignScript, getLocalizedStateSnapshot } from 'adaptivity/scripting';
+import { evalAssignScript, getEnvState, getLocalizedStateSnapshot } from 'adaptivity/scripting';
 import { EventEmitter } from 'events';
 import { Environment } from 'janus-script';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -206,6 +206,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             // TODO
             return collect;
           }, {});
+          // in the case we are nohost (pageless), we should apply the page state first if we have it
+          const pageStateApplyResults = evalAssignScript(props.pageState, scriptEnv);
+          console.log('PAGE STATE APPLY RESULTS', {
+            res: pageStateApplyResults,
+            state: props.pageState,
+          });
           const testRes = evalAssignScript(attemptStateMap, scriptEnv);
           console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap });
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
@@ -293,6 +299,15 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
         partAttempt?.attemptGuid,
         payload,
       );
+    }
+    // if we are in standalone review mode for manual grading, then we should use the state from the attempt
+    if (!props.onReadUserState || isReviewMode)
+    {
+      const { simId, key } = payload;
+      const allState = getEnvState(scriptEnv);
+      // keys will be like app.simId.key
+      console.log('GET DATA', { simId, key, allState });
+      return allState[`app.${simId}.${key}`];
     }
   };
 
