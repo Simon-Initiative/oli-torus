@@ -1,4 +1,4 @@
-import { DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
+import { remove } from 'components/activities/common/utils';
 import {
   Choice,
   ChoiceId,
@@ -92,7 +92,9 @@ export class Actions {
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
 const updateResponseRules = (model: Ordering) => {
-  getCorrectResponse(model, DEFAULT_PART_ID).rule = matchInOrderRule(getCorrectChoiceIds(model));
+  getCorrectResponse(model, model.authoring.parts[0].id).rule = matchInOrderRule(
+    getCorrectChoiceIds(model),
+  );
 
   model.authoring.targeted.forEach((assoc) => {
     getResponseBy(model, (r) => r.id === getResponseId(assoc)).rule = matchInOrderRule(

@@ -114,7 +114,7 @@ export const VlabComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptyPartInputs);
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

@@ -28,7 +28,6 @@ import { DeliveryElement, DeliveryElementProps } from 'components/activities/Del
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest } from 'components/activities/types';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Maybe } from 'tsmonad';
 import { MathInput } from '../common/delivery/inputs/MathInput';
 
@@ -77,8 +76,10 @@ export const ShortAnswerComponent: React.FC = () => {
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [''] });
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
+      [model.authoring.parts[0].id]: [''],
+    });
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(
@@ -88,7 +89,7 @@ export const ShortAnswerComponent: React.FC = () => {
         safelySelectStringInputs(activityState).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [DEFAULT_PART_ID]: [''],
+            [model.authoring.parts[0].id]: [''],
           }),
         }),
         model,
@@ -105,7 +106,7 @@ export const ShortAnswerComponent: React.FC = () => {
   const onInputChange = (input: string) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
-        partId: DEFAULT_PART_ID,
+        partId: model.authoring.parts[0].id,
         studentInput: [input],
       }),
     );
@@ -125,17 +126,23 @@ export const ShortAnswerComponent: React.FC = () => {
           inputType={(uiState.model as ShortAnswerModelSchema).inputType}
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
-          input={Maybe.maybe(uiState.partState[DEFAULT_PART_ID]?.studentInput).valueOr([''])[0]}
+          input={
+            Maybe.maybe(uiState.partState[model.authoring.parts[0].id]?.studentInput).valueOr([
+              '',
+            ])[0]
+          }
           isEvaluated={isEvaluated(uiState)}
           isSubmitted={isSubmitted(uiState)}
           onChange={onInputChange}
         />
 
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [''] }))}
+          onReset={() =>
+            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [''] }))
+          }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
         <EvaluationConnected />
       </div>
     </div>

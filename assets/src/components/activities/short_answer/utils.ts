@@ -1,5 +1,4 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import {
   getCorrectResponse,
@@ -16,7 +15,7 @@ export const defaultModel: () => ShortAnswerModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: DEFAULT_PART_ID,
+          id: '1',
           scoringStrategy: ScoringStrategy.average,
           responses: Responses.forTextInput(),
           hints: [makeHint(''), makeHint(''), makeHint('')],

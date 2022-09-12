@@ -311,6 +311,7 @@ defmodule Oli.Resources do
           scope: previous_revision.scope,
           retake_mode: previous_revision.retake_mode,
           parameters: previous_revision.parameters,
+          legacy: previous_revision.legacy,
           tags: previous_revision.tags
         },
         convert_strings_to_atoms(attrs)

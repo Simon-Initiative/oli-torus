@@ -1,5 +1,5 @@
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { addOrRemove, DEFAULT_PART_ID, remove } from 'components/activities/common/utils';
+import { addOrRemove, remove } from 'components/activities/common/utils';
 import { Choices } from 'data/activities/model/choices';
 import {
   getChoiceIds,
@@ -52,7 +52,7 @@ export const CATAActions = {
       const choiceIds = Choices.getAll(model).map((c) => c.id);
       const response = makeResponse(matchListRule(choiceIds, []), 0, '');
 
-      ResponseActions.addResponse(response, DEFAULT_PART_ID)(model);
+      ResponseActions.addResponse(response, model.authoring.parts[0].id)(model);
       model.authoring.targeted.push([[], response.id]);
     };
   },
@@ -72,7 +72,7 @@ export const CATAActions = {
 // Update all response rules based on a model with new choices that
 // are not yet reflected by the rules.
 const updateResponseRules = (model: CATA) => {
-  getCorrectResponse(model, DEFAULT_PART_ID).rule = matchListRule(
+  getCorrectResponse(model, model.authoring.parts[0].id).rule = matchListRule(
     model.choices.map((c: any) => c.id),
     getCorrectChoiceIds(model),
   );

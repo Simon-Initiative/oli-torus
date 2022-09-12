@@ -1,6 +1,5 @@
 import { Hints as HintsAuthoring } from 'components/activities/common/hints/authoring/HintsAuthoringConnected';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { CloseButton } from 'components/misc/CloseButton';
 import { Heading } from 'components/misc/Heading';
@@ -194,10 +193,10 @@ const ImageCoding = (props: AuthoringElementProps<ImageCodingModelSchema>) => {
 
           <TabbedNavigation.Tabs>
             <TabbedNavigation.Tab label="Hints">
-              <HintsAuthoring partId={DEFAULT_PART_ID} />
+              <HintsAuthoring partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
             <TabbedNavigation.Tab label="Explanation">
-              <Explanation partId={DEFAULT_PART_ID} />
+              <Explanation partId={model.authoring.parts[0].id} />
             </TabbedNavigation.Tab>
           </TabbedNavigation.Tabs>
 

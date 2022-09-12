@@ -14,18 +14,13 @@ defmodule Oli.Interop.Ingest do
   Ingest a course digest archive that is sitting on the file system
   and turn it into a course project.  Gives the author specified access
   to the new project.
-
   A course digest archive is a zip file containing a flat list of JSON files.
-
   There are three required files in a course archive:
-
   _project.json: a document containing top-level project meta data
   _hierarchy.json: a document that specifies the course project container hierarchy
   _media-manifest.json: a manifest listing all of the media items referenced by the digest
-
   Any number of other JSON files corresponding to pages and activities can exist
   in the digest archive.
-
   Returns {:ok, project} on success and {:error, error} on failure
   """
   def ingest(file, as_author) do
@@ -302,9 +297,17 @@ defmodule Oli.Interop.Ingest do
   # Process the _project file to create the project structure
   defp create_project(project_details, as_author) do
     case Map.get(project_details, "title") do
-      nil -> {:error, :missing_project_title}
-      "" -> {:error, :empty_project_title}
-      title -> Oli.Authoring.Course.create_project(title, as_author)
+      nil ->
+        {:error, :missing_project_title}
+
+      "" ->
+        {:error, :empty_project_title}
+
+      title ->
+        Oli.Authoring.Course.create_project(title, as_author, %{
+          description: Map.get(project_details, "description"),
+          legacy_svn_root: Map.get(project_details, "svnRoot")
+        })
     end
   end
 
@@ -584,7 +587,11 @@ defmodule Oli.Interop.Ingest do
          {:ok, content} <- rewire_citation_references(content, bib_map) do
       graded = Map.get(page, "isGraded", false)
 
+      legacy_id = Map.get(page, "legacyId", nil)
+      legacy_path = Map.get(page, "legacyPath", nil)
+
       %{
+        legacy: %{id: legacy_id, path: legacy_path},
         tags: transform_tags(page, tag_map),
         title: Map.get(page, "title"),
         content: content,
@@ -637,7 +644,11 @@ defmodule Oli.Interop.Ingest do
           _ -> :embedded
         end
 
+      legacy_id = Map.get(activity, "legacyId", nil)
+      legacy_path = Map.get(activity, "legacyPath", nil)
+
       %{
+        legacy: %{id: legacy_id, path: legacy_path},
         scope: scope,
         tags: transform_tags(activity, tag_map),
         title: title,
@@ -679,7 +690,17 @@ defmodule Oli.Interop.Ingest do
         |> Enum.reduce(%{}, fn k, m ->
           mapped =
             Map.get(activity, "objectives")[k]
-            |> Enum.map(fn id -> Map.get(objective_map, id).resource_id end)
+            |> Enum.map(fn id ->
+              case Map.get(objective_map, id) do
+                nil ->
+                  IO.inspect("Missing objective #{id}")
+                  nil
+
+                o ->
+                  o.resource_id
+              end
+            end)
+            |> Enum.filter(fn id -> !is_nil(id) end)
 
           Map.put(m, k, mapped)
         end)
@@ -688,7 +709,19 @@ defmodule Oli.Interop.Ingest do
         activity["content"]["authoring"]["parts"]
         |> Enum.map(fn %{"id" => id} -> id end)
         |> Enum.reduce(%{}, fn e, m ->
-          objectives = Enum.map(list, fn id -> Map.get(objective_map, id).resource_id end)
+          objectives =
+            Enum.map(list, fn id ->
+              case Map.get(objective_map, id) do
+                nil ->
+                  IO.inspect("Missing objective #{id}")
+                  nil
+
+                o ->
+                  o.resource_id
+              end
+            end)
+            |> Enum.filter(fn id -> !is_nil(id) end)
+
           Map.put(m, e, objectives)
         end)
     end
@@ -727,8 +760,11 @@ defmodule Oli.Interop.Ingest do
       end
 
     parameters = Map.get(objective, "parameters", nil)
+    legacy_id = Map.get(objective, "legacyId", nil)
+    legacy_path = Map.get(objective, "legacyPath", nil)
 
     %{
+      legacy: %{id: legacy_id, path: legacy_path},
       tags: transform_tags(objective, tag_map),
       title: title,
       content: %{},

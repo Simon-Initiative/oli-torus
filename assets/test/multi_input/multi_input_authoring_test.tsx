@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthoringElementProvider } from 'components/activities/AuthoringElementProvider';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MultiInputActions } from 'components/activities/multi_input/actions';
 import { MultiInputComponent } from 'components/activities/multi_input/MultiInputAuthoring';
 import {
@@ -27,6 +26,7 @@ import { Operations } from 'utils/pathOperations';
 import { dispatch } from 'utils/test_utils';
 import { defaultAuthoringElementProps } from '../utils/activity_mocks';
 
+const DEFAULT_PART_ID = '1';
 const input = Model.inputRef();
 const choices = [makeChoice('Choice A'), makeChoice('Choice B')];
 

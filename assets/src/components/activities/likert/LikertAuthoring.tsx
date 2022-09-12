@@ -5,12 +5,10 @@ import {
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { Choices as ChoicesAuthoring } from 'components/activities/common/choices/authoring/ChoicesAuthoring';
 import { Choices, Items } from 'data/activities/model/choices';
-import * as ContentModel from 'data/content/model/elements/types';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
-import guid from 'utils/guid';
 import { AuthoringElement, AuthoringElementProps } from '../AuthoringElement';
 import * as ActivityTypes from '../types';
 import { LikertActions } from './actions';
@@ -28,7 +26,6 @@ import { VariableEditorOrNot } from '../common/variables/VariableEditorOrNot';
 import { VariableActions } from '../common/variables/variableActions';
 import { useAuthoringElementContext, AuthoringElementProvider } from '../AuthoringElementProvider';
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
-import { DEFAULT_PART_ID } from '../common/utils';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
   const { dispatch, model, editMode } = useAuthoringElementContext<LikertModelSchema>();
@@ -94,7 +91,9 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
             toggleChoice={(choiceId, mapping) => {
               dispatch(MCActions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
             }}
-            addTargetedResponse={() => dispatch(MCActions.addTargetedFeedback())}
+            addTargetedResponse={() =>
+              dispatch(MCActions.addTargetedFeedback(model.authoring.parts[0].id))
+            }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
           />
