@@ -962,6 +962,7 @@ defmodule OliWeb.Router do
 
     # Course Ingestion
     live("/ingest", Admin.Ingest)
+    live("/scalable-ingest", Admin.IngestV2)
 
     # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)

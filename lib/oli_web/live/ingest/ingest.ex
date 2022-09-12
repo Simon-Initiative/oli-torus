@@ -10,7 +10,6 @@ defmodule OliWeb.Admin.Ingest do
   alias OliWeb.Admin.Ingest.FAQ
 
   prop author, :any
-
   data breadcrumbs, :any
   data title, :string, default: "Ingest Project"
 
@@ -58,13 +57,13 @@ defmodule OliWeb.Admin.Ingest do
   def handle_event("ingest", _params, socket) do
     %{author: author} = socket.assigns
 
-    with path_upload <- consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
+    with path_upload <-
+           consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end),
          {:ok, project} <- Ingest.ingest(hd(path_upload), author) do
-      {:noreply , redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
+      {:noreply, redirect(socket, to: Routes.project_path(OliWeb.Endpoint, :overview, project))}
     else
       error ->
         {:noreply, assign(socket, error: error)}
     end
   end
-
 end
