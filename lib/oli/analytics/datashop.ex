@@ -104,6 +104,7 @@ defmodule Oli.Analytics.Datashop do
               Map.merge(
                 context,
                 %{
+                  date: part_attempt.date_submitted,
                   transaction_id: Utils.make_unique_id(activity_slug, part_id),
                   part_attempt: part_attempt,
                   skill_ids:
