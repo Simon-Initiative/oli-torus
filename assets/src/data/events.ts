@@ -7,16 +7,24 @@ export interface ShowContentPage {
   index: number;
 }
 
+export interface ReviewModeAttemptChange {
+  forId: number;
+  state: Record<string, unknown>;
+  model: Record<string, unknown>;
+}
+
 export interface TorusEventMap {
   'oli-survey-submit': CustomEvent<SurveyDetails>;
   'oli-survey-reset': CustomEvent<SurveyDetails>;
   'oli-show-content-page': CustomEvent<ShowContentPage>;
+  'oli-review-mode-attempt-change': CustomEvent<ReviewModeAttemptChange>;
 }
 
 export enum Registry {
   SurveySubmit = 'oli-survey-submit',
   SurveyReset = 'oli-survey-reset',
   ShowContentPage = 'oli-show-content-page',
+  ReviewModeAttemptChange = 'oli-review-mode-attempt-change',
 }
 
 export function makeSurveySubmitEvent(detail: SurveyDetails) {
@@ -29,6 +37,10 @@ export function makeSurveyResetEvent(detail: SurveyDetails) {
 
 export function makeShowContentPage(detail: ShowContentPage) {
   return new CustomEvent(Registry.ShowContentPage, { detail });
+}
+
+export function makeReviewModeAttemptChange(detail: ReviewModeAttemptChange) {
+  return new CustomEvent(Registry.ReviewModeAttemptChange, { detail });
 }
 
 declare global {

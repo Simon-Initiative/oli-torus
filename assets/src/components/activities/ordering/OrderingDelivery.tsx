@@ -14,6 +14,7 @@ import {
   isSubmitted,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
+  listenForReviewAttemptChange,
   resetAction,
   StudentInput,
 } from 'data/activities/DeliveryState';
@@ -64,6 +65,7 @@ export const OrderingComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, defaultPartInputs);
+    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

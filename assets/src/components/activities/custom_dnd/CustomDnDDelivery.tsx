@@ -11,6 +11,7 @@ import {
   resetAction,
   listenForParentSurveyReset,
   listenForParentSurveySubmit,
+  listenForReviewAttemptChange,
   submitPart,
   resetAndSubmitPart,
 } from 'data/activities/DeliveryState';
@@ -54,6 +55,7 @@ export const CustomDnDComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
+    listenForReviewAttemptChange(state.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(

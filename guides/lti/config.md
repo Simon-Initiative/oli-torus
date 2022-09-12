@@ -141,7 +141,7 @@ To manually configure an LTI 1.3 integration in Torus, we need to gather some im
 - **Key Set Url** (e.g. https://canvas.oli.cmu.edu/api/lti/security/jwks)
 - **Auth Token Url** (e.g. https://canvas.oli.cmu.edu/login/oauth2/token)
 - **Auth Login Url** (e.g. https://canvas.oli.cmu.edu/api/lti/authorize_redirect)
-- **Auth Server Url** (e.g. https://canvas.oli.cmu.edu)
+- **Auth Server Url** (e.g. https://canvas.oli.cmu.edu/login/oauth2/token)
 - **KID** (e.g. 2018-05-18T22:33:20Z). This can also be obtained by entering the **Key Set URL** in your browser and extracting the first value for `"kid":"2018-05-18T22:33:20Z"`
 - **Deployment ID** This is obtained by creating an LTI 1.3 Deployment in the LMS. See specific instructions below depending on your LMS.
 

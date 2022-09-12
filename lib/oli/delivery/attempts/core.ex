@@ -683,6 +683,14 @@ defmodule Oli.Delivery.Attempts.Core do
     {:ok, results}
   end
 
+  def get_all_activity_attempts(resource_attempt_id) do
+    Repo.all(
+      from(activity_attempt in ActivityAttempt,
+        where: activity_attempt.resource_attempt_id == ^resource_attempt_id
+      )
+    )
+  end
+
   @doc """
   Gets an activity attempt by a clause.
   ## Examples
