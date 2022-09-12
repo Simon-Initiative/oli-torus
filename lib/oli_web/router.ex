@@ -317,6 +317,12 @@ defmodule OliWeb.Router do
     live("/products/:section_slug/updates", Delivery.ManageUpdates)
     live("/products/:section_slug/remix", Delivery.RemixSection, as: :product_remix)
 
+    get(
+      "/products/:product_id/payments/donwload_codes",
+      PaymentController,
+      :download_codes_generated
+    )
+
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
 
     live("/account", Workspace.AccountDetailsLive)
