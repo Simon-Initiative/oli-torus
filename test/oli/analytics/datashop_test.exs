@@ -278,12 +278,8 @@ defmodule Oli.Analytics.DatashopTest do
     test "uses correct timestamp for context tool and tutor messages", %{
       project: project,
       user1: user1,
-      user2_guest: user2_guest,
-      datashop_session_id_user1: datashop_session_id_user1,
-      graded_page: graded_page,
       activity_2: graded_page_activity,
-      user1_graded_page_attempt: user1_graded_page_attempt,
-      user1_graded_page_activity_2_part_1_attempt: user1_graded_page_activity_2_part_1_attempt
+      user1_graded_page_attempt: user1_graded_page_attempt
     } do
       xml = Datashop.export(project.id)
 
