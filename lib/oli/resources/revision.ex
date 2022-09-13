@@ -51,6 +51,7 @@ defmodule Oli.Resources.Revision do
     field :retake_mode, Ecto.Enum, values: [:normal, :targeted], default: :normal
     field :parameters, :map
 
+    embeds_one :legacy, Oli.Resources.Legacy, on_replace: :delete
     embeds_one :explanation_strategy, Oli.Resources.ExplanationStrategy, on_replace: :delete
 
     belongs_to :scoring_strategy, Oli.Resources.ScoringStrategy
@@ -91,6 +92,7 @@ defmodule Oli.Resources.Revision do
       :scoring_strategy_id,
       :activity_type_id
     ])
+    |> cast_embed(:legacy)
     |> cast_embed(:explanation_strategy)
     |> validate_required([:title, :deleted, :author_id, :resource_id, :resource_type_id])
     |> Slug.update_on_change("revisions")

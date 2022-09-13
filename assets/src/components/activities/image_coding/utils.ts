@@ -1,6 +1,5 @@
 import { ImageCodingModelSchema } from './schema';
 import { ScoringStrategy, makeFeedback, makeStem, makeHint } from '../types';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const defaultICModel: () => ImageCodingModelSchema = () => {
   return {
@@ -19,7 +18,7 @@ export const defaultICModel: () => ImageCodingModelSchema = () => {
     authoring: {
       parts: [
         {
-          id: DEFAULT_PART_ID,
+          id: '1',
           scoringStrategy: ScoringStrategy.average,
           responses: [],
           hints: [makeHint(''), makeHint(''), makeHint('')],

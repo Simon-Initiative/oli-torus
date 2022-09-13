@@ -1,4 +1,3 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MCSchema } from 'components/activities/multiple_choice/schema';
 import {
   Choice,
@@ -27,7 +26,7 @@ export const defaultMCModel: () => MCSchema = () => {
         makePart(
           Responses.forMultipleChoice(choiceA.id),
           [makeHint(''), makeHint(''), makeHint('')],
-          DEFAULT_PART_ID,
+          '1',
         ),
       ],
       targeted: [],
@@ -37,7 +36,7 @@ export const defaultMCModel: () => MCSchema = () => {
   };
 };
 
-export const getCorrectChoice = (model: HasParts, partId = DEFAULT_PART_ID) => {
+export const getCorrectChoice = (model: HasParts, partId: string) => {
   const responseIdMatch = Maybe.maybe(
     getCorrectResponse(model, partId).rule.match(/{(.*)}/),
   ).valueOrThrow(new Error('Could not find choice id in correct response'));

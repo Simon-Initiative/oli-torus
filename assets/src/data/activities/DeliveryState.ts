@@ -510,6 +510,7 @@ export const listenForParentSurveyReset = (
   );
 
 export const listenForReviewAttemptChange = (
+  model: ActivityModelSchema,
   activityId: number,
   dispatch: Dispatch<any>,
   context: ActivityContext,
@@ -520,7 +521,7 @@ export const listenForReviewAttemptChange = (
       dispatch(
         initializeState(
           e.detail.state as any,
-          initialPartInputs(e.detail.state as any),
+          initialPartInputs(model, e.detail.state as any),
           e.detail.model as any,
           context,
         ),

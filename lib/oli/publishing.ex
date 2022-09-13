@@ -1074,7 +1074,7 @@ defmodule Oli.Publishing do
     select
       rev.resource_id,
       rev.slug,
-      jsonb_path_query(content, '$.model[*] ? (@.type == "activity-reference")')
+      jsonb_path_query(content, '$.model.** ? (@.type == "activity-reference")')
     from published_resources as mapping
     join revisions as rev
     on mapping.revision_id = rev.id
@@ -1090,6 +1090,30 @@ defmodule Oli.Publishing do
     end)
     |> Enum.reduce(%{}, fn [id, slug, %{"activity_id" => activity_id}], map ->
       Map.put(map, activity_id, %{slug: slug, id: id})
+    end)
+  end
+
+  def determine_parent_pages(publication_id) do
+    page_id = ResourceType.get_id_by_type("page")
+
+    sql = """
+    select
+      rev.resource_id,
+      rev.slug,
+      rev.title,
+      jsonb_path_query(content, '$.model.** ? (@.type == "activity-reference")')
+    from published_resources as mapping
+    join revisions as rev
+    on mapping.revision_id = rev.id
+    where mapping.publication_id = #{publication_id}
+      and rev.resource_type_id = #{page_id}
+      and rev.deleted is false
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+
+    Enum.reduce(results, %{}, fn [id, slug, title, %{"activity_id" => activity_id}], map ->
+      Map.put(map, activity_id, %{slug: slug, id: id, title: title})
     end)
   end
 

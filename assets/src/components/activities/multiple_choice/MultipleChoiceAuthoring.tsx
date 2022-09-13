@@ -7,7 +7,6 @@ import { SimpleFeedback } from 'components/activities/common/responses/SimpleFee
 import { TargetedFeedback } from 'components/activities/common/responses/TargetedFeedback';
 import { Stem } from 'components/activities/common/stem/authoring/StemAuthoringConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { mcV1toV2 } from 'components/activities/multiple_choice/transformations/v2';
 import { getCorrectChoice } from 'components/activities/multiple_choice/utils';
 import { Radio } from 'components/misc/icons/radio/Radio';
@@ -37,14 +36,13 @@ const MultipleChoice: React.FC = () => {
       <TabbedNavigation.Tabs>
         <TabbedNavigation.Tab label="Question">
           <Stem />
-
           <ChoicesAuthoring
             icon={<Radio.Unchecked />}
             choices={model.choices}
             addOne={() => dispatch(Choices.addOne(ActivityTypes.makeChoice('')))}
             setAll={(choices: ActivityTypes.Choice[]) => dispatch(Choices.setAll(choices))}
             onEdit={(id, content) => dispatch(Choices.setContent(id, content))}
-            onRemove={(id) => dispatch(Actions.removeChoice(id))}
+            onRemove={(id) => dispatch(Actions.removeChoice(id, model.authoring.parts[0].id))}
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
@@ -54,28 +52,32 @@ const MultipleChoice: React.FC = () => {
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
             choices={model.choices}
-            selected={[getCorrectChoice(model).id]}
-            onSelect={(id) => dispatch(Actions.toggleChoiceCorrectness(id))}
+            selected={[getCorrectChoice(model, model.authoring.parts[0].id).id]}
+            onSelect={(id) =>
+              dispatch(Actions.toggleChoiceCorrectness(id, model.authoring.parts[0].id))
+            }
             isEvaluated={false}
             context={defaultWriterContext()}
           />
-          <SimpleFeedback partId={DEFAULT_PART_ID} />
+          <SimpleFeedback partId={model.authoring.parts[0].id} />
           <TargetedFeedback
             toggleChoice={(choiceId, mapping) => {
               dispatch(Actions.editTargetedFeedbackChoice(mapping.response.id, choiceId));
             }}
-            addTargetedResponse={() => dispatch(Actions.addTargetedFeedback())}
+            addTargetedResponse={() =>
+              dispatch(Actions.addTargetedFeedback(model.authoring.parts[0].id))
+            }
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
           />
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Hints">
-          <Hints partId={DEFAULT_PART_ID} />
+          <Hints partId={model.authoring.parts[0].id} />
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Explanation">
-          <Explanation partId={DEFAULT_PART_ID} />
+          <Explanation partId={model.authoring.parts[0].id} />
         </TabbedNavigation.Tab>
 
         <TabbedNavigation.Tab label="Dynamic Variables">

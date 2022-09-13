@@ -26,7 +26,6 @@ import { GradedPointsConnected } from 'components/activities/common/delivery/gra
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { CATASchema } from 'components/activities/check_all_that_apply/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 
 export const CheckAllThatApplyComponent: React.FC = () => {
   const {
@@ -42,10 +41,14 @@ export const CheckAllThatApplyComponent: React.FC = () => {
   const { surveyId } = context;
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
+      [model.authoring.parts[0].id]: [],
+    });
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
+    dispatch(
+      initializeState(activityState, initialPartInputs(model, activityState), model, context),
+    );
   }, []);
 
   // First render initializes state
@@ -59,7 +62,7 @@ export const CheckAllThatApplyComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          partId={DEFAULT_PART_ID}
+          partId={model.authoring.parts[0].id}
           unselectedIcon={<Checkbox.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -70,13 +73,17 @@ export const CheckAllThatApplyComponent: React.FC = () => {
               <Checkbox.Incorrect />
             )
           }
-          onSelect={(id) => dispatch(setSelection(DEFAULT_PART_ID, id, onSaveActivity, 'multiple'))}
+          onSelect={(id) =>
+            dispatch(setSelection(model.authoring.parts[0].id, id, onSaveActivity, 'multiple'))
+          }
         />
         <ResetButtonConnected
-          onReset={() => dispatch(resetAction(onResetActivity, { [DEFAULT_PART_ID]: [] }))}
+          onReset={() =>
+            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [] }))
+          }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
         <EvaluationConnected />
       </div>
     </div>

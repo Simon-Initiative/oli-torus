@@ -1,4 +1,4 @@
-import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
+import { setDifference, setUnion } from 'components/activities/common/utils';
 import {
   VlabInput,
   VlabSchema,
@@ -39,7 +39,7 @@ export const defaultModel = (): VlabSchema => {
   return {
     stem: vlabStem(input),
     choices: [],
-    inputs: [{ inputType: 'numeric', id: input.id, partId: DEFAULT_PART_ID }],
+    inputs: [{ inputType: 'numeric', id: input.id, partId: '1' }],
     assignmentSource: 'builtIn',
     assignmentPath: 'default',
     assignment: DEFAULT_ASSIGNMENT,
@@ -49,7 +49,7 @@ export const defaultModel = (): VlabSchema => {
     species: DEFAULT_SPECIES,
     spectra: DEFAULT_SPECTRA,
     authoring: {
-      parts: [makePart(Responses.forNumericInput(), [makeHint('')], DEFAULT_PART_ID)],
+      parts: [makePart(Responses.forNumericInput(), [makeHint('')], '1')],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: 'Example question with a fill in the blank',

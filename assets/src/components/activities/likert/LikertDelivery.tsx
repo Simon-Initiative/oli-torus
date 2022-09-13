@@ -22,7 +22,6 @@ import { initialPartInputs } from 'data/activities/utils';
 import { SubmitButtonConnected } from '../common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from '../common/hints/delivery/HintsDeliveryConnected';
 import { EvaluationConnected } from '../common/delivery/evaluation/EvaluationConnected';
-import { DEFAULT_PART_ID } from '../common/utils';
 import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
 import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
@@ -49,9 +48,11 @@ const LikertComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(context.surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(context.surveyId, dispatch, onResetActivity, emptySelectionMap);
-    listenForReviewAttemptChange(activityState.activityId as number, dispatch, context);
+    listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
-    dispatch(initializeState(activityState, initialPartInputs(activityState), model, context));
+    dispatch(
+      initializeState(activityState, initialPartInputs(model, activityState), model, context),
+    );
   }, []);
 
   // First render initializes state
@@ -84,7 +85,7 @@ const LikertComponent: React.FC = () => {
         onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
       />
       <SubmitButtonConnected />
-      <HintsDeliveryConnected partId={DEFAULT_PART_ID} />
+      <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
       <EvaluationConnected />
     </div>
   );
