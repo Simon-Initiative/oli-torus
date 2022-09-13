@@ -1,7 +1,6 @@
 import { CATAActions } from 'components/activities/check_all_that_apply/actions';
 import { defaultCATAModel } from 'components/activities/check_all_that_apply/utils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { makeChoice } from 'components/activities/types';
 import { Hints } from 'data/activities/model/hints';
 import {
@@ -14,6 +13,7 @@ import {
 } from 'data/activities/model/responses';
 import { dispatch } from 'utils/test_utils';
 
+const DEFAULT_PART_ID = '1';
 const testDefaultModel = defaultCATAModel;
 
 describe('check all that apply question functionality', () => {

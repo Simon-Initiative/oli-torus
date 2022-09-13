@@ -1,5 +1,5 @@
 import { SelectOption } from 'components/activities/common/authoring/InputTypeDropdown';
-import { DEFAULT_PART_ID, setDifference, setUnion } from 'components/activities/common/utils';
+import { setDifference, setUnion } from 'components/activities/common/utils';
 import {
   MultiInput,
   MultiInputSchema,
@@ -44,9 +44,9 @@ export const defaultModel = (): MultiInputSchema => {
   return {
     stem: multiInputStem(input),
     choices: [],
-    inputs: [{ inputType: 'text', id: input.id, partId: DEFAULT_PART_ID }],
+    inputs: [{ inputType: 'text', id: input.id, partId: '1' }],
     authoring: {
-      parts: [makePart(Responses.forTextInput(), [makeHint('')], DEFAULT_PART_ID)],
+      parts: [makePart(Responses.forTextInput(), [makeHint('')], '1')],
       targeted: [],
       transformations: [makeTransformation('choices', Transform.shuffle)],
       previewText: 'Example question with a fill in the blank',

@@ -1,4 +1,3 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { OrderingSchemaV1 as V1 } from 'components/activities/ordering/transformations/v1';
 import {
   ActivityModelSchema,
@@ -50,7 +49,7 @@ export const orderingV1toV2 = (model: V1): OrderingSchemaV2 => {
 
   if (getChoiceIds(newModel.authoring.correct).length !== newModel.choices.length) {
     newModel.authoring.correct[0] = newModel.choices.map((c) => c.id);
-    getCorrectResponse(newModel, DEFAULT_PART_ID).rule = matchInOrderRule(
+    getCorrectResponse(newModel, model.authoring.parts[0].id).rule = matchInOrderRule(
       newModel.authoring.correct[0],
     );
   }
@@ -69,7 +68,7 @@ export const orderingV1toV2 = (model: V1): OrderingSchemaV2 => {
   Maybe.maybe(
     getResponses(newModel).find(
       (response) =>
-        response !== getCorrectResponse(newModel, DEFAULT_PART_ID) &&
+        response !== getCorrectResponse(newModel, model.authoring.parts[0].id) &&
         !getTargetedResponses(newModel).includes(response),
     ),
   ).caseOf({

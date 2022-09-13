@@ -1,4 +1,3 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { FileUploadSchema, FileSpec } from 'components/activities/file_upload/schema';
 import { Responses } from 'data/activities/model/responses';
 import { GradingApproach, makeHint, makeStem, ScoringStrategy } from '../types';
@@ -10,7 +9,7 @@ export const defaultModel: () => FileUploadSchema = () => {
     authoring: {
       parts: [
         {
-          id: DEFAULT_PART_ID,
+          id: '1',
           scoringStrategy: ScoringStrategy.average,
           gradingApproach: GradingApproach.manual,
           responses: Responses.forTextInput(),

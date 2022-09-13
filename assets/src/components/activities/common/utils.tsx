@@ -1,9 +1,6 @@
 import React from 'react';
 import { makeTransformation, Transform, Transformation } from '../types';
 
-// Activities with one part have a hard-coded ID. This makes some lookup logic simpler.
-export const DEFAULT_PART_ID = '1';
-
 export const isShuffled = (transformations: Transformation[]): boolean =>
   !!transformations.find((xform) => xform.operation === Transform.shuffle);
 
