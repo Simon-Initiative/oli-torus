@@ -208,12 +208,12 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
           const pageStateApplyResults = evalAssignScript(props.pageState, scriptEnv);
-          console.log('PAGE STATE APPLY RESULTS', {
+          /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
             state: props.pageState,
-          });
+          }); */
           const testRes = evalAssignScript(attemptStateMap, scriptEnv);
-          console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap });
+          /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
           const snapshot = getLocalizedStateSnapshot([activityId], scriptEnv);
           // if for some reason this isn't defined, don't leave it hanging
           console.log('PARTS READY NO ONREADY HOST (REVIEW MODE)', {
@@ -301,12 +301,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
       );
     }
     // if we are in standalone review mode for manual grading, then we should use the state from the attempt
-    if (!props.onReadUserState || isReviewMode)
-    {
+    if (!props.onReadUserState || isReviewMode) {
       const { simId, key } = payload;
       const allState = getEnvState(scriptEnv);
       // keys will be like app.simId.key
-      console.log('GET DATA', { simId, key, allState });
+      /* console.log('GET DATA', { simId, key, allState }); */
       return allState[`app.${simId}.${key}`];
     }
   };
