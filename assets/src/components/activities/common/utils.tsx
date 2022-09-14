@@ -1,5 +1,12 @@
 import React from 'react';
-import { makeTransformation, Transform, Transformation } from '../types';
+import { maybe } from 'tsmonad';
+import {
+  ActivityModelSchema,
+  makeTransformation,
+  PartId,
+  Transform,
+  Transformation,
+} from '../types';
 
 export const isShuffled = (transformations: Transformation[]): boolean =>
   !!transformations.find((xform) => xform.operation === Transform.shuffle);
@@ -60,3 +67,5 @@ export function setDifference<T>(subtractedFrom: T[], toSubtract: T[]) {
 export function setUnion<T>(list1: T[], list2: T[]) {
   return [...list2.reduce((acc, curr) => acc.add(curr), new Set(list1))];
 }
+
+export const castPartId = (partId: string | number): PartId => `${partId}`;
