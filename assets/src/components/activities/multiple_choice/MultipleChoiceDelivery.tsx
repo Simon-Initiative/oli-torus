@@ -42,8 +42,6 @@ export const MultipleChoiceComponent: React.FC = () => {
   const { surveyId } = context;
 
   useEffect(() => {
-    console.log(model, activityState);
-
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
       [activityState.parts[0].partId]: [],
