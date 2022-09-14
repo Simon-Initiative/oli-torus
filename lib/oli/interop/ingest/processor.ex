@@ -58,7 +58,8 @@ defmodule Oli.Interop.Ingest.Processor do
       | legacy_to_resource_id_map: %{},
         registration_by_subtype: registration_by_subtype,
         container_id_map: %{},
-        force_rollback: nil
+        force_rollback: nil,
+        slug_prefix: Oli.Utils.Slug.get_unique_prefix("revisions")
     }
   end
 end

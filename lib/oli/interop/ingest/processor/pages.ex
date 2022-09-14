@@ -33,6 +33,7 @@ defmodule Oli.Interop.Ingest.Processor.Pages do
       |> Rewiring.rewire_citation_references(state.legacy_to_resource_id_map)
 
     %{
+      slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
       resource_id: resource_id,
       tags: transform_tags(resource, state.legacy_to_resource_id_map),

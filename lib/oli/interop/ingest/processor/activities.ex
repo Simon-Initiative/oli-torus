@@ -29,6 +29,7 @@ defmodule Oli.Interop.Ingest.Processor.Activities do
       end
 
     %{
+      slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
       resource_id: resource_id,
       scope: scope,

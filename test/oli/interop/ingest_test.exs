@@ -116,13 +116,16 @@ defmodule Oli.Interop.IngestTest do
 
       # verify that citations are rewired correctly
       page_with_citation = Enum.filter(practice_pages, fn p -> p.title == "Feedback" end) |> hd
-      citation = Enum.at(page_with_citation.content["model"], 0)
+
+      citation =
+        Enum.at(page_with_citation.content["model"], 0)
         |> Map.get("children")
         |> Enum.at(0)
         |> Map.get("children")
         |> Enum.at(1)
 
-      bib_entries = Oli.Publishing.get_unpublished_revisions(project, [Map.get(citation, "bibref")])
+      bib_entries =
+        Oli.Publishing.get_unpublished_revisions(project, [Map.get(citation, "bibref")])
 
       assert length(bib_entries) == 1
 
@@ -147,8 +150,7 @@ defmodule Oli.Interop.IngestTest do
         |> Enum.at(1)
 
       assert link["type"] == "a"
-      assert link["href"] == "/course/link/#{dest.slug}"
-      assert link["target"] == "self"
+      assert String.ends_with?(link["href"], dest.slug)
 
       # spot check some elements to ensure that they were correctly constructed:
 

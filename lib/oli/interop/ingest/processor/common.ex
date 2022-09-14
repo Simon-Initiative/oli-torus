@@ -57,15 +57,17 @@ defmodule Oli.Interop.Ingest.Processor.Common do
     }
   end
 
-  def standard_mapper(_, resource_id, resource) do
+  def standard_mapper(%State{slug_prefix: slug_prefix}, resource_id, resource) do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
+    title = Map.get(resource, "title", "missing title")
 
     %{
+      slug: Oli.Utils.Slug.slug_with_prefix(slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
       resource_id: resource_id,
       tags: {:placeholder, :tags},
-      title: Map.get(resource, "title", "missing title"),
+      title: title,
       content: {:placeholder, :content},
       author_id: {:placeholder, :author_id},
       objectives: {:placeholder, :objectives},

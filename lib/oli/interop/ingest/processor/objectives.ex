@@ -2,7 +2,7 @@ defmodule Oli.Interop.Ingest.Processor.Objectives do
   alias Oli.Interop.Ingest.State
   import Oli.Interop.Ingest.Processor.Common
 
-  def process(%State{objectives: objectives} = state) do
+  def process(%State{} = state) do
     without_children = fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() == 0 end
     with_children = fn {_, o} -> Map.get(o, "objectives", []) |> Enum.count() > 0 end
 
@@ -17,13 +17,15 @@ defmodule Oli.Interop.Ingest.Processor.Objectives do
     legacy_id = Map.get(resource, "legacyId", nil)
     legacy_path = Map.get(resource, "legacyPath", nil)
     parameters = Map.get(resource, "parameters", nil)
+    title = Map.get(resource, "title", "missing title")
 
     %{
+      slug: Oli.Utils.Slug.slug_with_prefix(state.slug_prefix, title),
       legacy: %Oli.Resources.Legacy{id: legacy_id, path: legacy_path},
       resource_id: resource_id,
       parameters: parameters,
       tags: transform_tags(resource, state.legacy_to_resource_id_map),
-      title: Map.get(resource, "title", "missing title"),
+      title: title,
       objectives: {:placeholder, :objectives},
       content: {:placeholder, :content},
       author_id: {:placeholder, :author_id},

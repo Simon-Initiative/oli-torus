@@ -43,7 +43,7 @@ export const MultipleChoiceComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
-      [model.authoring.parts[0].id]: [],
+      [activityState.parts[0].partId]: [],
     });
 
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);

@@ -26,6 +26,7 @@ defmodule Oli.Interop.Ingest.State do
     :publication,
     :root_revision,
     :author,
+    :slug_prefix,
     :resource_id_pool,
     :legacy_to_resource_id_map,
     :container_id_map,
