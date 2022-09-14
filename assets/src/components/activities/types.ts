@@ -249,6 +249,10 @@ export interface PartState {
    */
   feedback: Feedback | null;
   /**
+   * Feedback received, if this attempt has been evaluated.
+   */
+  explanation: Explanation | null;
+  /**
    * Hints that were requested and received by the student.
    */
   hints: [];
@@ -377,6 +381,10 @@ export const makeHint: (text: string) => Hint = makeContent;
  */
 export interface Feedback extends Identifiable, HasContent {}
 /**
+ * Defines explanation entity.
+ */
+export interface Explanation extends Identifiable, HasContent {}
+/**
  * Helper function to create Feedback from simple text.
  */
 export const makeFeedback: (text: string) => Feedback = makeContent;
@@ -479,6 +487,7 @@ export interface FeedbackAction extends IsAction {
   out_of: number;
   score: number;
   feedback: Feedback;
+  explanation: Explanation | null;
   show_page: number | null;
 }
 

@@ -23,18 +23,34 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
   const errorText = makeContent('There was an error processing this response');
   const error = partState.error;
   const feedback = partState.feedback?.content;
+  const explanation = partState.explanation?.content;
+
   return (
-    <Component
-      key={partState.partId}
-      resultClass={resultClass(partState.score, partState.outOf, partState.error)}
-      score={partState.score}
-      outOf={partState.outOf}
-    >
-      <HtmlContentModelRenderer
-        content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
-        context={context}
-      />
-    </Component>
+    <React.Fragment>
+      <Component
+        key={`${partState.partId}-feedback`}
+        resultClass={resultClass(partState.score, partState.outOf, partState.error)}
+        score={partState.score}
+        outOf={partState.outOf}
+      >
+        <HtmlContentModelRenderer
+          content={error ? errorText.content : feedback ? feedback : makeFeedback('').content}
+          context={context}
+        />
+      </Component>
+      {explanation && (
+        <Component key={`${partState.partId}-explanation`} resultClass="explanation">
+          <div>
+            <div className="mb-1">
+              <b>Explanation:</b>
+            </div>
+            <div>
+              <HtmlContentModelRenderer content={explanation} context={context} />
+            </div>
+          </div>
+        </Component>
+      )}
+    </React.Fragment>
   );
 }
 
@@ -68,22 +84,25 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
 
 interface ComponentProps {
   resultClass: string;
-  score: number | null;
-  outOf: number | null;
+  score?: number | null;
+  outOf?: number | null;
 }
 const Component: React.FC<ComponentProps> = (props) => {
   return (
     <div aria-label="result" className={`evaluation feedback ${props.resultClass} my-1`}>
-      <div className="result">
-        <span aria-label="score" className="score">
-          {props.score}
-        </span>
-        <span className="result-divider">/</span>
-        <span aria-label="out of" className="out-of">
-          {props.outOf}
-        </span>
-      </div>
+      {(props.score || props.outOf) && (
+        <div className="result">
+          <span aria-label="score" className="score">
+            {props.score}
+          </span>
+          <span className="result-divider">/</span>
+          <span aria-label="out of" className="out-of">
+            {props.outOf}
+          </span>
+        </div>
+      )}
       {props.children}
+      <div></div>
     </div>
   );
 };

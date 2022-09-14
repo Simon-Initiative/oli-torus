@@ -245,6 +245,8 @@ html.preview.dark {
   $feedback-correct-color: $green;
   $feedback-incorrect-bg: lighten($red, 40%);
   $feedback-incorrect-color: $red;
+  $feedback-explanation-bg: lighten($blue, 45%);
+  $feedback-explanation-color: $blue;
   $feedback-error-bg: lighten($orange, 42%);
   $feedback-error-color: $orange;
 

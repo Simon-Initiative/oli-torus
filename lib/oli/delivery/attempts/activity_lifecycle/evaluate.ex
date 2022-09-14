@@ -1,18 +1,18 @@
 defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
+  import Oli.Delivery.Attempts.Core
+  import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
+
+  require Logger
+
   alias Oli.Repo
   alias Oli.Delivery.Evaluation.{Result, EvaluationContext, Standard}
   alias Oli.Delivery.Attempts.Core.{ActivityAttempt, ClientEvaluation, StudentInput}
   alias Oli.Delivery.Snapshots
   alias Oli.Delivery.Attempts.Scoring
-
   alias Oli.Delivery.Evaluation.EvaluationContext
   alias Oli.Activities.Model
-
-  alias Oli.Activities.Model
-  import Oli.Delivery.Attempts.Core
-  import Oli.Delivery.Attempts.ActivityLifecycle.Persistence
-
-  require Logger
+  alias Oli.Delivery.Evaluation.Explanation
+  alias Oli.Delivery.Evaluation.ExplanationContext
 
   def evaluate_activity(section_slug, activity_attempt_guid, part_inputs, datashop_session_id) do
     activity_attempt =
@@ -295,7 +295,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   @doc """
   Processes a student submission for some number of parts for the given
   activity attempt guid.  If this collection of part attempts completes the activity
-  the results of the part evalutions (including ones already having been evaluated)
+  the results of the part evaluations (including ones already having been evaluated)
   will be rolled up to the activity attempt record.
 
   On success returns an `{:ok, results}` tuple where results in an array of maps. Each
@@ -329,7 +329,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   end
 
   @doc """
-  Processes a preview mode, or test, evaulation.
+  Processes a preview mode or test evaluation.
   """
   @spec evaluate_from_preview(map(), [map()]) :: {:ok, [map()]} | {:error, any}
   def evaluate_from_preview(model, part_inputs) do
@@ -609,7 +609,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
   defp evaluate_submissions(activity_attempt_guid, part_inputs, part_attempts) do
     activity_attempt =
       get_activity_attempt_by(attempt_guid: activity_attempt_guid)
-      |> Repo.preload([:resource_attempt])
+      |> Repo.preload(resource_attempt: [:revision], revision: [])
 
     %ActivityAttempt{
       resource_attempt: resource_attempt,
@@ -631,6 +631,7 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
           attempt_map =
             Enum.reduce(part_attempts, %{}, fn p, m -> Map.put(m, p.attempt_guid, p) end)
 
+          # flat map the results since the results may contain an additional explanation action
           Enum.map(part_inputs, fn %{attempt_guid: attempt_guid, input: input} ->
             attempt = Map.get(attempt_map, attempt_guid)
             part = Map.get(part_map, attempt.part_id)
@@ -644,6 +645,13 @@ defmodule Oli.Delivery.Attempts.ActivityLifecycle.Evaluate do
             }
 
             Standard.perform(attempt_guid, context, part)
+            |> Explanation.maybe_set_feedback_action_explanation(%ExplanationContext{
+              part: part,
+              part_attempt: attempt,
+              activity_attempt: activity_attempt,
+              resource_attempt: resource_attempt,
+              resource_revision: resource_attempt.revision
+            })
           end)
 
         _ ->

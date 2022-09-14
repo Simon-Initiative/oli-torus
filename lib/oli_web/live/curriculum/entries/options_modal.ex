@@ -7,6 +7,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources
+  alias Oli.Resources.ExplanationStrategy
 
   def update(%{revision: revision} = assigns, socket) do
     changeset = Resources.change_revision(revision)
@@ -67,6 +68,30 @@ defmodule OliWeb.Curriculum.OptionsModal do
                   </div>
 
                   <div class="form-group">
+                    <%= label f, "Explanation Strategy" %>
+                    <%= inputs_for f, :explanation_strategy, fn es -> %>
+                      <div class="d-flex d-flex-row">
+                        <%= select es, :type,
+                            Enum.map(ExplanationStrategy.types(), & {Oli.Utils.snake_case_to_friendly(&1), &1}),
+                            class: "custom-select form-control",
+                            aria_describedby: "explanationStrategy",
+                            placeholder: "Explanation Strategy" %>
+
+                        <%= case fetch_field(es.source, :type) do %>
+                          <% :after_set_num_attempts -> %>
+                            <div class="ml-2">
+                              <%= number_input es, :set_num_attempts, class: "form-control", aria_describedby: "numberOfAttempts", placeholder: "# of Attempts" %>
+                            </div>
+
+                          <% _ -> %>
+
+                        <% end %>
+                      </div>
+                      <small id="scoringStrategy" class="form-text text-muted">Explanation strategy determines how activity explanations will be shown to learners.</small>
+                    <% end %>
+                  </div>
+
+                  <div class="form-group">
                     <%= label f, "Number of Attempts" %>
                     <%= select f, :max_attempts, attempt_options, class: "custom-select", disabled: is_disabled(changeset, revision), class: "form-control", aria_describedby: "numberOfAttempts", placeholder: "Number of Attempts" %>
                     <small id="numberOfAttempts" class="form-text text-muted">Graded assessments allow a configurable number of attempts, while practice pages offer unlimited attempts.</small>
@@ -108,6 +133,12 @@ defmodule OliWeb.Curriculum.OptionsModal do
     """
   end
 
+  def fetch_field(f, field) do
+    case Ecto.Changeset.fetch_field(f, field) do
+      {_, value} -> value
+    end
+  end
+
   def handle_event("validate", %{"revision" => revision_params}, socket) do
     changeset =
       socket.assigns.revision
@@ -118,6 +149,15 @@ defmodule OliWeb.Curriculum.OptionsModal do
   end
 
   def handle_event("save", %{"revision" => revision_params}, socket) do
+    revision_params =
+      case revision_params do
+        %{"explanation_strategy" => %{"type" => "none"}} ->
+          Map.put(revision_params, "explanation_strategy", nil)
+
+        _ ->
+          revision_params
+      end
+
     save_revision(socket, revision_params)
   end
 
