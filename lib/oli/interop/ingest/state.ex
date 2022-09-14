@@ -1,4 +1,4 @@
-defmodule Oli.Interop.IngestState do
+defmodule Oli.Interop.Ingest.State do
   defstruct [
     # Unzipped raw entries
     :entries,
@@ -8,7 +8,7 @@ defmodule Oli.Interop.IngestState do
     :resource_map,
 
     # The three well-known resources
-    :project,
+    :project_details,
     :media_manifest,
     :hierarchy,
 
@@ -22,20 +22,19 @@ defmodule Oli.Interop.IngestState do
 
     # The processed state
     # -------------------
+    :project,
     :publication,
+    :root_revision,
     :author,
-
-    # Maps of legacy id to the revision for each resource type
-    :tag_map,
-    :bib_map,
-    :objective_map,
-    :page_map,
-    :activity_map,
-    :container_map,
+    :resource_id_pool,
+    :legacy_to_resource_id_map,
+    :container_id_map,
+    :registration_by_subtype,
 
     # List of all errors encountered
     # ------------------------------
     :errors,
+    :force_rollback,
 
     # Progress notification functions
     # -------------------------------
@@ -57,25 +56,28 @@ defmodule Oli.Interop.IngestState do
     }
   end
 
-  def steps() do
-    [
-      :unzip,
-      :parse_json,
-      :validate_idrefs,
-      :migrate_content,
-      :validate_activities,
-      :validate_pages
-    ]
-  end
-
   def step_descriptors() do
     [
+      # Unip
       {:unzip, "Unzipping archive"},
+      # Preprocessing steps
       {:parse_json, "Parsing and verifying JSON files"},
       {:validate_idrefs, "Validate cross file id references"},
       {:migrate_content, "Migrating content to latest versions"},
       {:validate_activities, "Validating Activity JSON"},
-      {:validate_pages, "Validating Page JSON"}
+      {:validate_pages, "Validating Page JSON"},
+      # Processing steps
+      {:project, "Creating project records"},
+      {:bulk_allocate, "Bulk allocating all project resource records"},
+      {:tags, "Creating tag records"},
+      {:objectives, "Creating objective records"},
+      {:bib_entries, "Creating bibliography records"},
+      {:activities, "Creating activity records"},
+      {:pages, "Creating page records"},
+      {:hierarchy, "Creating root hierarchy records"},
+      {:products, "Creating products"},
+      {:publish_resources, "Creating all published resources"},
+      {:hyperlinks, "Rewriting internal page to page hyperlinks"}
     ]
   end
 

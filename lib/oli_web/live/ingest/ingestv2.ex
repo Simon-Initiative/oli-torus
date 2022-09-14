@@ -5,7 +5,7 @@ defmodule OliWeb.Admin.IngestV2 do
   alias Oli.Accounts.Author
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Breadcrumb
-  alias Oli.Interop.ScalableIngest, as: Ingest
+  alias Oli.Interop.Ingest.ScalableIngest, as: Ingest
 
   prop author, :any
   data breadcrumbs, :any
@@ -29,13 +29,14 @@ defmodule OliWeb.Admin.IngestV2 do
   def mount(_, %{"current_author_id" => author_id}, socket) do
     author = Repo.get(Author, author_id)
 
-    state = Oli.Interop.IngestState.new()
+    state = Oli.Interop.Ingest.State.new()
 
     pid = self()
 
     state = %{
       state
-      | notify_step_start: fn step, num_tasks -> send(pid, {:step_start, step, num_tasks}) end,
+      | author: author,
+        notify_step_start: fn step, num_tasks -> send(pid, {:step_start, step, num_tasks}) end,
         notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
     }
 
@@ -51,6 +52,7 @@ defmodule OliWeb.Admin.IngestV2 do
        progress_total_tasks: 0,
        progress_task_detail: "",
        progress_count_tasks: 0,
+       preprocessed: false,
        state: state
      )
      |> allow_upload(:digest, accept: ~w(.zip), max_entries: 1)}
@@ -73,10 +75,10 @@ defmodule OliWeb.Admin.IngestV2 do
         </div>
 
         <div class="form-group">
-          <label>Step 2. Upload Course Archive for Ingestion</label>
+          <label>Step 2. Upload Course Archive for Ingestion Validation and Preprocessing</label>
           <div>
             <button type="submit" class="btn btn-primary" phx-disable-with="Processing...">
-              Ingest
+              Upload
             </button>
           </div>
         </div>
@@ -102,11 +104,17 @@ defmodule OliWeb.Admin.IngestV2 do
         </div>
       {/if}
 
-      <ul>
-      {#for e <- @state.errors}
-        <li>{e}</li>
-      {/for}
-      </ul>
+      {#if @preprocessed}
+        <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
+          Ingest
+        </button>
+
+        <ul>
+        {#for e <- @state.errors}
+          <li>{e}</li>
+        {/for}
+        </ul>
+      {/if}
 
     </div>
     """
@@ -118,6 +126,16 @@ defmodule OliWeb.Admin.IngestV2 do
 
   defp now(assigns) do
     "#{assigns.progress_count_tasks / assigns.progress_total_tasks * 100}"
+  end
+
+  def handle_event("process", _params, socket) do
+    socket =
+      case Oli.Interop.Ingest.Processor.process(socket.assigns.state) do
+        {:ok, state} -> assign(socket, state: state)
+        {:error, e} -> assign(socket, error: e)
+      end
+
+    {:noreply, socket}
   end
 
   @impl Phoenix.LiveView
@@ -134,7 +152,7 @@ defmodule OliWeb.Admin.IngestV2 do
   def handle_event("ingest", _params, socket) do
     with path_upload <-
            consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end) do
-      state = Oli.Interop.IngestState.new()
+      state = Oli.Interop.Ingest.State.new()
 
       pid = self()
 
@@ -149,7 +167,7 @@ defmodule OliWeb.Admin.IngestV2 do
         send(pid, {:finish_preprocess, state})
       end)
 
-      {:noreply, assign(socket, state: state)}
+      {:noreply, assign(socket, state: state, preprocessed: false)}
     else
       error ->
         {:noreply, assign(socket, error: error)}
@@ -159,7 +177,7 @@ defmodule OliWeb.Admin.IngestV2 do
   @impl true
   def handle_info({:step_start, step, num_tasks}, socket) do
     step_descriptor =
-      Oli.Interop.IngestState.step_descriptors()
+      Oli.Interop.Ingest.State.step_descriptors()
       |> Map.new()
       |> Map.get(step)
 
@@ -184,7 +202,8 @@ defmodule OliWeb.Admin.IngestV2 do
     {:noreply,
      assign(socket,
        state: state,
-       progress_step: ""
+       progress_step: "",
+       preprocessed: true
      )}
   end
 
