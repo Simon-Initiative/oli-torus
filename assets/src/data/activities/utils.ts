@@ -1,4 +1,3 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   ActivityModelSchema,
   ActivityState,
@@ -63,8 +62,9 @@ export const safelySelectFiles = (activityState: ActivityState | undefined): May
 };
 
 export const initialPartInputs = (
+  model: ActivityModelSchema,
   activityState: ActivityState | undefined,
-  defaultPartInputs: PartInputs = { [DEFAULT_PART_ID]: [] },
+  defaultPartInputs: PartInputs = { [model.authoring.parts[0].id]: [] },
 ): PartInputs => {
   const savedPartInputs = activityState?.parts
     .filter((part) => part?.response?.input !== undefined)

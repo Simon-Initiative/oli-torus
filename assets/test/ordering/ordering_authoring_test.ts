@@ -1,5 +1,4 @@
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { Actions } from 'components/activities/ordering/actions';
 import { defaultOrderingModel } from 'components/activities/ordering/utils';
 import { Hints } from 'data/activities/model/hints';
@@ -15,6 +14,7 @@ import {
 } from 'data/activities/model/responses';
 import { dispatch } from 'utils/test_utils';
 
+const DEFAULT_PART_ID = '1';
 const testDefaultModel = defaultOrderingModel;
 
 describe('ordering question', () => {

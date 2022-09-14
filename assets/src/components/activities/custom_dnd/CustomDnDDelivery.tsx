@@ -23,7 +23,6 @@ import { DeliveryElement, DeliveryElementProps } from 'components/activities/Del
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { Manifest, PartState } from 'components/activities/types';
 import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { DragCanvas, ResetListener } from './DragCanvas';
 import { FocusedFeedback } from './FocusedFeedback';
 import { FocusedHints } from './FocusedHints';
@@ -54,8 +53,10 @@ export const CustomDnDComponent: React.FC = () => {
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
-    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, { [DEFAULT_PART_ID]: [] });
-    listenForReviewAttemptChange(state.activityId as number, dispatch, context);
+    listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
+      [model.authoring.parts[0].id]: [],
+    });
+    listenForReviewAttemptChange(model, state.activityId as number, dispatch, context);
 
     dispatch(
       initializeState(
@@ -63,7 +64,7 @@ export const CustomDnDComponent: React.FC = () => {
         safelySelectFiles(state).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [DEFAULT_PART_ID]: [],
+            [model.authoring.parts[0].id]: [],
           }),
         }),
         model,

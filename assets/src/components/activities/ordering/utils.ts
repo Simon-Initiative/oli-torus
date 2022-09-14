@@ -2,7 +2,6 @@ import { Responses } from 'data/activities/model/responses';
 import { matchInOrderRule } from 'data/activities/model/rules';
 import guid from 'utils/guid';
 import { makeChoice, makeHint, makePart, makeResponse, makeStem, Transform } from '../types';
-import { DEFAULT_PART_ID } from './../common/utils';
 import { OrderingSchema as Ordering } from './schema';
 
 // Model creation
@@ -21,7 +20,7 @@ export const defaultOrderingModel = (): Ordering => {
         makePart(
           [correctResponse, Responses.catchAll()],
           [makeHint(''), makeHint(''), makeHint('')],
-          DEFAULT_PART_ID,
+          '1',
         ),
       ],
       targeted: [],

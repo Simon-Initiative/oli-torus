@@ -13,6 +13,7 @@ defmodule Oli.Authoring.Course.Project do
     field :visibility, Ecto.Enum, values: [:authors, :selected, :global], default: :authors
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
     field :allow_duplication, :boolean, default: false
+    field :legacy_svn_root, :string
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
     belongs_to :family, Oli.Authoring.Course.Family
@@ -52,6 +53,7 @@ defmodule Oli.Authoring.Course.Project do
       :visibility,
       :status,
       :allow_duplication,
+      :legacy_svn_root,
       :publisher_id
     ])
     |> validate_required([:title, :version, :family_id, :publisher_id])

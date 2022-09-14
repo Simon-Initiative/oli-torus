@@ -1,4 +1,3 @@
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import { MCSchemaV1 } from 'components/activities/multiple_choice/transformations/v1';
 import {
   ActivityModelSchema,
@@ -38,7 +37,7 @@ export const mcV1toV2 = (model: MCSchemaV1): MCSchemaV2 => {
 
   if (!getResponses(newModel).find((r) => r.rule === matchRule('.*'))) {
     newModel.authoring.parts[0].responses = [
-      getCorrectResponse(newModel, DEFAULT_PART_ID),
+      getCorrectResponse(newModel, model.authoring.parts[0].id),
       Responses.catchAll(),
     ];
   }

@@ -10,6 +10,7 @@ import { DateTimeLocalInputListener } from './datetimelocal_input_listener';
 import { CopyListener } from './copy_listener';
 import { SystemMessage } from './system_message';
 import { MonacoEditor } from './monaco_editor';
+import { ReviewActivity } from './review_activity';
 import { TooltipInit } from './tooltip';
 import { BeforeUnloadListener } from './before_unload';
 import { ThemeToggle } from './theme_toggle';
@@ -22,6 +23,7 @@ export const Hooks = {
   InputAutoSelect,
   ProjectsTypeahead,
   TextInputListener,
+  ReviewActivity,
   CheckboxListener,
   SelectListener,
   DateTimeLocalInputListener,

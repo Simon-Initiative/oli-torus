@@ -1,5 +1,4 @@
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   ChoiceId,
   ChoiceIdsToResponseId,
@@ -16,7 +15,7 @@ import { clone } from 'utils/common';
 import { Operations } from 'utils/pathOperations';
 
 export const MCActions = {
-  removeChoice(id: string, partId = DEFAULT_PART_ID) {
+  removeChoice(id: string, partId: string) {
     return (model: any & HasParts, post: PostUndoable) => {
       const choice = Choices.getOne(model, id);
       const index = Choices.getAll(model).findIndex((c) => c.id === id);
@@ -38,7 +37,7 @@ export const MCActions = {
     };
   },
 
-  toggleChoiceCorrectness(id: string, partId = DEFAULT_PART_ID) {
+  toggleChoiceCorrectness(id: string, partId: string) {
     return (model: HasParts, _post: PostUndoable) => {
       getCorrectResponse(model, partId).rule = matchRule(id);
     };
@@ -58,7 +57,7 @@ export const MCActions = {
     };
   },
 
-  addTargetedFeedback(partId = DEFAULT_PART_ID, choiceId?: string) {
+  addTargetedFeedback(partId: string, choiceId?: string) {
     return (model: HasParts & { authoring: { targeted: ChoiceIdsToResponseId[] } }) => {
       const firstChoice = Choices.getAll(model)[0];
       const response = makeResponse(matchRule(choiceId || firstChoice.id), 0, '');

@@ -32,7 +32,10 @@ describe('multiple choice question', () => {
 
   it('can remove a choice', () => {
     const firstChoice = model.choices[0];
-    const newModel = dispatch(model, MCActions.removeChoice(firstChoice.id));
+    const newModel = dispatch(
+      model,
+      MCActions.removeChoice(firstChoice.id, model.authoring.parts[0].id),
+    );
     expect(newModel.choices).toHaveLength(1);
     expect(newModel.authoring.parts[0].responses).toHaveLength(2);
   });

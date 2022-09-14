@@ -1,5 +1,4 @@
 import { eqRule } from '../../src/data/activities/model/rules';
-import { DEFAULT_PART_ID } from './../../src/components/activities/common/utils';
 import { ShortAnswerActions } from 'components/activities/short_answer/actions';
 import { defaultModel } from 'components/activities/short_answer/utils';
 import { ResponseActions } from 'components/activities/common/responses/responseActions';
@@ -7,6 +6,7 @@ import { dispatch } from 'utils/test_utils';
 import { makeResponse } from 'components/activities/types';
 import { containsRule } from 'data/activities/model/rules';
 
+const DEFAULT_PART_ID = '1';
 describe('short answer question', () => {
   const model = defaultModel();
 

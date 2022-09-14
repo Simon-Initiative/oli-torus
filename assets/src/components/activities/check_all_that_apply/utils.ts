@@ -1,5 +1,4 @@
 import { CATASchema as CATA } from 'components/activities/check_all_that_apply/schema';
-import { DEFAULT_PART_ID } from 'components/activities/common/utils';
 import {
   makeChoice,
   makeHint,
@@ -31,7 +30,7 @@ export const defaultCATAModel = (): CATA => {
         makePart(
           [correctResponse, Responses.catchAll()],
           [makeHint(''), makeHint(''), makeHint('')],
-          DEFAULT_PART_ID,
+          '1',
         ),
       ],
       correct: [[correctChoice.id], correctResponse.id],
