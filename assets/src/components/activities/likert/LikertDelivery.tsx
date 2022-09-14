@@ -26,6 +26,7 @@ import { GradedPointsConnected } from '../common/delivery/graded_points/GradedPo
 import { ResetButtonConnected } from '../common/delivery/reset_button/ResetButtonConnected';
 import { useDeliveryElementContext, DeliveryElementProvider } from '../DeliveryElementProvider';
 import { LikertTable } from './Sections/LikertTable';
+import { castPartId } from '../common/utils';
 
 const LikertComponent: React.FC = () => {
   const {
@@ -85,7 +86,7 @@ const LikertComponent: React.FC = () => {
         onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
       />
       <SubmitButtonConnected />
-      <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
+      <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
       <EvaluationConnected />
     </div>
   );

@@ -30,6 +30,7 @@ import { Manifest } from 'components/activities/types';
 import { InputType, ShortAnswerModelSchema } from 'components/activities/short_answer/schema';
 import { Maybe } from 'tsmonad';
 import { MathInput } from '../common/delivery/inputs/MathInput';
+import { castPartId } from '../common/utils';
 
 type InputProps = {
   input: string;
@@ -77,7 +78,7 @@ export const ShortAnswerComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
-      [model.authoring.parts[0].id]: [''],
+      [castPartId(activityState.parts[0].partId)]: [''],
     });
     listenForReviewAttemptChange(model, activityState.activityId as number, dispatch, context);
 
@@ -89,7 +90,7 @@ export const ShortAnswerComponent: React.FC = () => {
         safelySelectStringInputs(activityState).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [model.authoring.parts[0].id]: [''],
+            [castPartId(activityState.parts[0].partId)]: [''],
           }),
         }),
         model,
@@ -106,7 +107,7 @@ export const ShortAnswerComponent: React.FC = () => {
   const onInputChange = (input: string) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
-        partId: model.authoring.parts[0].id,
+        partId: castPartId(activityState.parts[0].partId),
         studentInput: [input],
       }),
     );
@@ -127,9 +128,9 @@ export const ShortAnswerComponent: React.FC = () => {
           // Short answers only have one selection, but are modeled as an array.
           // Select the first element.
           input={
-            Maybe.maybe(uiState.partState[model.authoring.parts[0].id]?.studentInput).valueOr([
-              '',
-            ])[0]
+            Maybe.maybe(
+              uiState.partState[castPartId(activityState.parts[0].partId)]?.studentInput,
+            ).valueOr([''])[0]
           }
           isEvaluated={isEvaluated(uiState)}
           isSubmitted={isSubmitted(uiState)}
@@ -138,11 +139,13 @@ export const ShortAnswerComponent: React.FC = () => {
 
         <ResetButtonConnected
           onReset={() =>
-            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [''] }))
+            dispatch(
+              resetAction(onResetActivity, { [castPartId(activityState.parts[0].partId)]: [''] }),
+            )
           }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
+        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
     </div>
