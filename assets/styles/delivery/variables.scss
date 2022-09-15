@@ -22,6 +22,8 @@ $feedback-partially-correct-bg: lighten($yellow, 45%) !default;
 $feedback-partially-correct-color: $yellow !default;
 $feedback-incorrect-bg: lighten($red, 40%) !default;
 $feedback-incorrect-color: $red !default;
+$feedback-explanation-bg: lighten($blue, 45%) !default;
+$feedback-explanation-color: $blue !default;
 $feedback-error-bg: lighten($orange, 42%) !default;
 $feedback-error-color: $orange !default;
 

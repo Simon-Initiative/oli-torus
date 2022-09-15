@@ -61,9 +61,21 @@ export const AttemptSelector = (props: AttemptSelectorProps) => {
   });
 
   if (choices.length > 1) {
-    choices.splice(0, 0, <h6 className="dropdown-header">Previous attempts</h6>);
+    choices.splice(
+      0,
+      0,
+      <h6 key="previous" className="dropdown-header">
+        Previous attempts
+      </h6>,
+    );
   }
-  choices.splice(choices.length - 1, 0, <h6 className="dropdown-header">Most recent attempt</h6>);
+  choices.splice(
+    choices.length - 1,
+    0,
+    <h6 key="recent" className="dropdown-header">
+      Most recent attempt
+    </h6>,
+  );
 
   return (
     <div className="btn-group">

@@ -127,6 +127,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
     outOf: null,
     response: '',
     feedback: makeFeedback(''),
+    explanation: null,
     hints: [],
     partId: 1,
     hasMoreAttempts: false,

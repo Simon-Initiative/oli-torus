@@ -1,5 +1,14 @@
 defmodule Oli.Activities.Model.Part do
-  defstruct [:id, :scoring_strategy, :responses, :hints, :parts, :grading_approach, :out_of]
+  defstruct [
+    :id,
+    :scoring_strategy,
+    :responses,
+    :hints,
+    :parts,
+    :grading_approach,
+    :out_of,
+    :explanation
+  ]
 
   def parse(%{"id" => id} = part) do
     scoring_strategy =
@@ -8,6 +17,7 @@ defmodule Oli.Activities.Model.Part do
     hints = Map.get(part, "hints", [])
     parts = Map.get(part, "parts", [])
     responses = Map.get(part, "responses", [])
+    explanation = Map.get(part, "explanation")
 
     grading_approach =
       Map.get(part, "gradingApproach", "automatic")
@@ -17,7 +27,8 @@ defmodule Oli.Activities.Model.Part do
 
     with {:ok, responses} <- Oli.Activities.Model.Response.parse(responses),
          {:ok, hints} <- Oli.Activities.Model.Hint.parse(hints),
-         {:ok, parts} <- Oli.Activities.Model.Part.parse(parts) do
+         {:ok, parts} <- Oli.Activities.Model.Part.parse(parts),
+         {:ok, explanation} <- Oli.Activities.Model.Explanation.parse(explanation) do
       {:ok,
        %Oli.Activities.Model.Part{
          responses: responses,
@@ -26,7 +37,8 @@ defmodule Oli.Activities.Model.Part do
          id: id,
          scoring_strategy: scoring_strategy,
          grading_approach: grading_approach,
-         out_of: out_of
+         out_of: out_of,
+         explanation: explanation
        }}
     else
       error -> error

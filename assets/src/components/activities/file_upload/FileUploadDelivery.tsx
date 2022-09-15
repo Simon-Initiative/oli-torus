@@ -42,6 +42,7 @@ import { uploadActivityFile } from 'data/persistence/state/intrinsic';
 import { defaultMaxFileSize } from './utils';
 import { Dispatch } from '@reduxjs/toolkit';
 import * as Events from 'data/events';
+import { castPartId } from '../common/utils';
 
 function onUploadClick(id: string) {
   (window as any).$('#' + id).trigger('click');
@@ -253,7 +254,7 @@ export const FileUploadComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
-      [model.authoring.parts[0].id]: [],
+      [castPartId(state.parts[0].partId)]: [],
     });
     listenForReviewAttemptChange(model, state.activityId as number, dispatch, context);
 
@@ -265,7 +266,7 @@ export const FileUploadComponent: React.FC = () => {
         safelySelectFiles(state).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [model.authoring.parts[0].id]: [],
+            [castPartId(state.parts[0].partId)]: [],
           }),
         }),
         model,
@@ -289,12 +290,14 @@ export const FileUploadComponent: React.FC = () => {
           sectionSlug={sectionSlug as any}
           model={uiState.model as any}
           state={state}
-          onSavePart={(a, p, s) => dispatch(savePart(model.authoring.parts[0].id, s, onSavePart))}
+          onSavePart={(a, p, s) =>
+            dispatch(savePart(castPartId(state.parts[0].partId), s, onSavePart))
+          }
         />
 
         <ResetButtonConnected
           onReset={() =>
-            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [] }))
+            dispatch(resetAction(onResetActivity, { [castPartId(state.parts[0].partId)]: [] }))
           }
         />
         <SubmitButton
@@ -302,7 +305,7 @@ export const FileUploadComponent: React.FC = () => {
           disabled={getFilesFromState(uiState).length === 0}
           onClick={() => dispatch(submitFiles(onSubmitActivity, getFilesFromState))}
         />
-        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
+        <HintsDeliveryConnected partId={castPartId(state.parts[0].partId)} />
         <EvaluationConnected />
       </div>
     </div>

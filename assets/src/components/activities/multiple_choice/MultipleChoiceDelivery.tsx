@@ -26,6 +26,7 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
+import { castPartId } from '../common/utils';
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -63,7 +64,7 @@ export const MultipleChoiceComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ChoicesDeliveryConnected
-          partId={model.authoring.parts[0].id}
+          partId={castPartId(activityState.parts[0].partId)}
           unselectedIcon={<Radio.Unchecked disabled={isEvaluated(uiState)} />}
           selectedIcon={
             !isEvaluated(uiState) ? (
@@ -75,16 +76,18 @@ export const MultipleChoiceComponent: React.FC = () => {
             )
           }
           onSelect={(id) =>
-            dispatch(setSelection(model.authoring.parts[0].id, id, onSaveActivity, 'single'))
+            dispatch(
+              setSelection(castPartId(activityState.parts[0].partId), id, onSaveActivity, 'single'),
+            )
           }
         />
         <ResetButtonConnected
           onReset={() =>
-            dispatch(resetAction(onResetActivity, { [model.authoring.parts[0].id]: [] }))
+            dispatch(resetAction(onResetActivity, { [activityState.parts[0].partId]: [] }))
           }
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
+        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
     </div>

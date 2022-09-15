@@ -7,6 +7,7 @@ import {
   makeHint,
   DeliveryMode,
   PartState,
+  ActivityModelSchema,
 } from 'components/activities/types';
 
 const partState: PartState = {
@@ -45,6 +46,7 @@ const feedbackAction: Action = {
   score: 1,
   show_page: null,
   feedback: makeFeedback('correct feedback'),
+  explanation: null,
 };
 
 const evaluationResponse: EvaluationResponse = {
@@ -81,7 +83,9 @@ export const defaultDeliveryElementProps = {
   userId: 1,
 };
 
-export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringElementProps<T> => {
+export const defaultAuthoringElementProps = <T extends ActivityModelSchema>(
+  initialModel: T,
+): AuthoringElementProps<T> => {
   const model = initialModel;
   return {
     projectSlug: '',
@@ -90,6 +94,6 @@ export const defaultAuthoringElementProps = <T>(initialModel: T): AuthoringEleme
     model,
     onPostUndoable: jest.fn(),
     onRequestMedia: jest.fn(),
-    onEdit: (newModel) => Object.assign(model, newModel),
+    onEdit: (newModel) => Object.assign(model as any, newModel),
   };
 };
