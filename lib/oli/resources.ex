@@ -312,7 +312,8 @@ defmodule Oli.Resources do
           retake_mode: previous_revision.retake_mode,
           parameters: previous_revision.parameters,
           legacy: previous_revision.legacy,
-          tags: previous_revision.tags
+          tags: previous_revision.tags,
+          explanation_strategy: previous_revision.explanation_strategy
         },
         convert_strings_to_atoms(attrs)
       )

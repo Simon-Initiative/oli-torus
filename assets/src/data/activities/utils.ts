@@ -63,8 +63,8 @@ export const safelySelectFiles = (activityState: ActivityState | undefined): May
 
 export const initialPartInputs = (
   model: ActivityModelSchema,
-  activityState: ActivityState | undefined,
-  defaultPartInputs: PartInputs = { [model.authoring.parts[0].id]: [] },
+  activityState: ActivityState,
+  defaultPartInputs: PartInputs = { [activityState.parts[0].partId]: [] },
 ): PartInputs => {
   const savedPartInputs = activityState?.parts
     .filter((part) => part?.response?.input !== undefined)

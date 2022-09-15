@@ -65,6 +65,8 @@ export const friendlyType = (type: VlabInputType) => {
       ? 'Vlab Value'
       : type === 'numeric'
       ? 'Input (Number)'
+      : type === 'math'
+      ? 'Input (Math)'
       : 'Input (Text)'
   }`;
 };

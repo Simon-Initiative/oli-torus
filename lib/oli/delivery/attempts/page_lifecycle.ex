@@ -81,7 +81,7 @@ defmodule Oli.Delivery.Attempts.PageLifecycle do
   @doc """
   Attempt to visit a page to either resume an existing or start a new attempt.maybe_improper_list(
 
-  Depending on the state of the attempts and other contraints
+  Depending on the state of the attempts and other constraints
   regarding the page and user, returns one of:
 
   If a resource attempt is in progress, returns a tuple of the form:

@@ -26,6 +26,7 @@ import { CustomDnDSchema } from 'components/activities/custom_dnd/schema';
 import { DragCanvas, ResetListener } from './DragCanvas';
 import { FocusedFeedback } from './FocusedFeedback';
 import { FocusedHints } from './FocusedHints';
+import { castPartId } from '../common/utils';
 
 export const CustomDnDComponent: React.FC = () => {
   const {
@@ -54,7 +55,7 @@ export const CustomDnDComponent: React.FC = () => {
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
     listenForParentSurveyReset(surveyId, dispatch, onResetActivity, {
-      [model.authoring.parts[0].id]: [],
+      [castPartId(state.parts[0].partId)]: [],
     });
     listenForReviewAttemptChange(model, state.activityId as number, dispatch, context);
 
@@ -64,7 +65,7 @@ export const CustomDnDComponent: React.FC = () => {
         safelySelectFiles(state).caseOf({
           just: (input) => input,
           nothing: () => ({
-            [model.authoring.parts[0].id]: [],
+            [castPartId(state.parts[0].partId)]: [],
           }),
         }),
         model,

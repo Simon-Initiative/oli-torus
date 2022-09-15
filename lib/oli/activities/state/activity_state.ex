@@ -96,6 +96,7 @@ defmodule Oli.Activities.State.ActivityState do
             outOf: nil,
             response: nil,
             feedback: nil,
+            explanation: nil,
             hints: [],
             # Activities save empty hints to preserve the "deer in headlights" / "cognitive" / "bottom out"
             # hint ordering. Empty hints are filtered out here.

@@ -88,6 +88,7 @@ function updatePartsStates(
       score: feedbackAction.score,
       outOf: feedbackAction.out_of,
       feedback: feedbackAction.feedback,
+      explanation: feedbackAction.explanation,
       error: feedbackAction.error,
       dateEvaluated: new Date(),
     } as Partial<PartState>);

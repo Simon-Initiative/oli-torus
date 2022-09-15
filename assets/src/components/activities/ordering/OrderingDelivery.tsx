@@ -24,6 +24,7 @@ import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
 import { Maybe } from 'tsmonad';
+import { castPartId } from '../common/utils';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import * as ActivityTypes from '../types';
@@ -44,7 +45,7 @@ export const OrderingComponent: React.FC = () => {
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
     dispatch(
       activityDeliverySlice.actions.setStudentInputForPart({
-        partId: model.authoring.parts[0].id,
+        partId: castPartId(activityState.parts[0].partId),
         studentInput,
       }),
     );
@@ -58,7 +59,7 @@ export const OrderingComponent: React.FC = () => {
   };
 
   const defaultPartInputs = {
-    [model.authoring.parts[0].id]: model.choices.map((choice) => choice.id),
+    [castPartId(activityState.parts[0].partId)]: model.choices.map((choice) => choice.id),
   };
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export const OrderingComponent: React.FC = () => {
       initializeState(
         activityState,
         initialPartInputs(model, activityState, {
-          [model.authoring.parts[0].id]: model.choices.map((c) => c.id),
+          [castPartId(activityState.parts[0].partId)]: model.choices.map((c) => c.id),
         }),
         model,
         context,
@@ -81,7 +82,7 @@ export const OrderingComponent: React.FC = () => {
     // the initial choice ordering.  This allows submissions without student interaction
     // to be evaluated correctly.
     setTimeout(() => {
-      if (activityState.parts[0].response === null) {
+      if (activityState.parts[0].response === null && uiState.model) {
         const selection = (uiState.model as OrderingSchema).choices.map((choice) => choice.id);
         const input = studentInputToString(selection);
         onSaveActivity(activityState.attemptGuid, [
@@ -92,7 +93,7 @@ export const OrderingComponent: React.FC = () => {
         ]);
       }
     }, 0);
-  }, []);
+  }, [uiState.model]);
 
   // First render initializes state
   if (!uiState.partState) {
@@ -105,7 +106,9 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={Maybe.maybe(uiState.partState[model.authoring.parts[0].id]?.studentInput)
+          choices={Maybe.maybe(
+            uiState.partState[castPartId(activityState.parts[0].partId)]?.studentInput,
+          )
             .valueOr<StudentInput>([])
             .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
@@ -115,7 +118,7 @@ export const OrderingComponent: React.FC = () => {
           onReset={() => dispatch(resetAction(onResetActivity, defaultPartInputs))}
         />
         <SubmitButtonConnected />
-        <HintsDeliveryConnected partId={model.authoring.parts[0].id} />
+        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
     </div>
