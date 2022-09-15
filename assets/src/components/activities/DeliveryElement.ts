@@ -56,6 +56,7 @@ export interface ActivityContext {
   surveyId: string | null;
   bibParams: any;
   pageAttemptGuid: string;
+  pageState?: any;
 }
 
 /**
