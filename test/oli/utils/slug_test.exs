@@ -22,6 +22,19 @@ defmodule Oli.Utils.SlugTest do
       map
     end
 
+    test "get unique prefix", _ do
+      assert Slug.get_unique_prefix("revisions") |> String.length() == 5
+    end
+
+    test "slug with prefix", _ do
+      slug = Slug.slug_with_prefix("12345", "title")
+      assert String.length(slug) == 17
+      parts = String.split(slug, "_")
+      assert Enum.count(parts) == 3
+      assert Enum.at(parts, 0) == "12345"
+      assert Enum.at(parts, 1) == "title"
+    end
+
     test "alpha numeric only", _ do
       alpha_numeric = Slug.alpha_numeric_only("My_Test Project ~!@#$%^&*()--+=[]{}\|;:'<>,./?")
       assert alpha_numeric == "My_TestProject"

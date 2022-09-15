@@ -8,7 +8,7 @@ defmodule Oli.Interop.Ingest.ScalableIngest do
     end
   end
 
-  def unzip(%State{errors: errors} = state, file) do
+  def unzip(%State{} = state, file) do
     state = State.notify_step_start(state, :unzip)
 
     case :zip.unzip(to_charlist(file), [:memory]) do
