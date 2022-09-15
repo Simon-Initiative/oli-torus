@@ -512,6 +512,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
             out_of: 1,
@@ -548,6 +549,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
             out_of: 1,
@@ -574,6 +576,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :active,
             date_evaluated: nil,
+            date_submitted: nil,
             attempt_number: 3,
             score: nil,
             out_of: nil,
@@ -618,6 +621,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
             out_of: 1,
@@ -664,6 +668,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 1,
             score: 0,
             out_of: 1,
@@ -700,6 +705,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 2,
             score: 1,
             out_of: 1,
@@ -744,6 +750,7 @@ defmodule Oli.DatashopTest do
           %{
             lifecycle_state: :evaluated,
             date_evaluated: DateTime.utc_now(),
+            date_submitted: DateTime.utc_now(),
             attempt_number: 1,
             score: 1,
             out_of: 1,
