@@ -3,6 +3,11 @@ defmodule Oli.Interop.Ingest.Preprocessor do
   alias Oli.Interop.Ingest.Preprocessor.{Migrate, Parse, Verify, Validate}
   import Oli.Interop.Ingest.Preprocessor.Common
 
+  @moduledoc """
+  The ingest preprocesser adjusts and validates content for preparation to process
+  for an ingestion.
+  """
+
   @type_to_key [
                  {"Product", :products},
                  {"Bibentry", :bib_entries},

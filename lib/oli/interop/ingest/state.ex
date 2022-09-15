@@ -78,7 +78,8 @@ defmodule Oli.Interop.Ingest.State do
       {:hierarchy, "Creating root hierarchy records"},
       {:products, "Creating products"},
       {:publish_resources, "Creating all published resources"},
-      {:hyperlinks, "Rewriting internal page to page hyperlinks"}
+      {:hyperlinks, "Rewriting internal page to page hyperlinks"},
+      {:media_items, "Creating media item records"}
     ]
   end
 

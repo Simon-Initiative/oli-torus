@@ -6,10 +6,19 @@ defmodule OliWeb.Admin.IngestV2 do
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.Breadcrumb
   alias Oli.Interop.Ingest.ScalableIngest, as: Ingest
+  alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
+  alias Oli.Interop.Ingest.Preprocessor
+  alias OliWeb.Common.PagedTable
+  alias OliWeb.Admin.Ingest.ErrorsTableModel
+  import OliWeb.DelegatedEvents
 
   prop author, :any
   data breadcrumbs, :any
   data title, :string, default: "Ingest Project"
+
+  defp ingest_file(author) do
+    "_digests/#{author.id}-digest.zip"
+  end
 
   defp set_breadcrumbs() do
     OliWeb.Admin.AdminView.breadcrumb()
@@ -30,32 +39,126 @@ defmodule OliWeb.Admin.IngestV2 do
     author = Repo.get(Author, author_id)
 
     state = Oli.Interop.Ingest.State.new()
+    ingest_file = ingest_file(author)
 
-    pid = self()
+    if File.exists?(ingest_file) do
+      pid = self()
 
-    state = %{
-      state
-      | author: author,
-        notify_step_start: fn step, num_tasks -> send(pid, {:step_start, step, num_tasks}) end,
-        notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
-    }
+      state = %{
+        state
+        | author: author,
+          errors: [],
+          notify_step_start: fn step, num_tasks ->
+            send(pid, {:step_start, step, num_tasks})
+          end,
+          notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
+      }
 
-    {:ok,
-     assign(socket,
-       breadcrumbs: set_breadcrumbs(),
-       author: author,
-       uploaded_files: [],
-       uploaded_content: nil,
-       upload_errors: [],
-       error: nil,
-       progress_step: "",
-       progress_total_tasks: 0,
-       progress_task_detail: "",
-       progress_count_tasks: 0,
-       preprocessed: false,
-       state: state
-     )
-     |> allow_upload(:digest, accept: ~w(.zip), max_entries: 1)}
+      Task.async(fn ->
+        state =
+          Ingest.unzip(state, ingest_file)
+          |> Preprocessor.preprocess()
+
+        send(pid, {:finish_preprocess, state})
+      end)
+
+      {:ok,
+       assign(socket,
+         breadcrumbs: set_breadcrumbs(),
+         author: author,
+         error: nil,
+         progress_step: "",
+         progress_total_tasks: 0,
+         progress_task_detail: "",
+         progress_count_tasks: 0,
+         # [:working, :preprocessed, :processed, :failed]
+         ingestion_step: :working,
+         resource_counts: %{},
+         state: state,
+         offset: 0,
+         limit: 20,
+         table_model: nil,
+         total_count: 0
+       )}
+    else
+      {:ok, Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index))}
+    end
+  end
+
+  defp render_preprocessed(assigns) do
+    ~F"""
+    {#if @ingestion_step == :preprocessed}
+    <Groups>
+      <Group label="Project" description="Details about the project">
+        <ReadOnly label="Title" value={@state.project_details["title"]}/>
+        <ReadOnly label="Description" value={@state.project_details["description"]}/>
+        <ReadOnly label="SVN URL" value={@state.project_details["svnRoot"]}/>
+      </Group>
+      <Group label="Resource Counts" description="Details about the resources">
+        <ReadOnly label="Tags" value={@resource_counts.tags}/>
+        <ReadOnly label="Bibliography Entries" value={@resource_counts.bib_entries}/>
+        <ReadOnly label="Objectives" value={@resource_counts.objectives}/>
+        <ReadOnly label="Activities" value={@resource_counts.activities}/>
+        <ReadOnly label="Pages" value={@resource_counts.pages}/>
+        <ReadOnly label="Products" value={@resource_counts.products}/>
+        <ReadOnly label="Media Items" value={@resource_counts.media_items}/>
+      </Group>
+      <Group label="Errors" description="Errors encountered during preprocessing">
+        <PagedTable
+          allow_selection={false}
+          filter={nil}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}/>
+      </Group>
+      <Group label="Process" description="">
+        <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
+          Proceed and ingest this course project
+        </button>
+      </Group>
+    </Groups>
+    {/if}
+    """
+  end
+
+  defp render_processed(assigns) do
+    ~F"""
+    {#if @ingestion_step == :processed}
+      <h4>Ingest succeeded</h4>
+
+      <a href={Routes.project_path(OliWeb.Endpoint, :overview, @state.project.slug)}>Access your new course here</a>
+    {/if}
+    """
+  end
+
+  defp render_progress(assigns) do
+    ~F"""
+      {#if @progress_step != ""}
+      <div class="alert alert-secondary" role="alert">
+        <h4 class="alert-heading">{@progress_step}</h4>
+
+      {#if @progress_total_tasks > 0}
+        <div class="progress">
+          <div id={@progress_step} class="progress-bar" role="progressbar" style={width(assigns)} aria-valuenow={now(assigns)} aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      {/if}
+
+      </div>
+
+    {/if}
+    """
+  end
+
+  defp render_failed(assigns) do
+    ~F"""
+    {#if @ingestion_step == :failed}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">Ingest Processing Failed</h4>
+      {@error}
+    </div>
+    {/if}
+    """
   end
 
   @impl true
@@ -63,58 +166,12 @@ defmodule OliWeb.Admin.IngestV2 do
     ~F"""
     <div class="container">
       <h3 class="display-6">Course Ingestion</h3>
-      <p class="lead">Upload a course digest archive and convert into a Torus project.</p>
       <hr class="my-4"/>
 
-      <form id="json-upload" phx-change="validate" phx-submit="ingest">
-        <div class="form-group">
-          <label>Step 1. Select a Course Archive</label>
-          <div class="flex my-3" phx-drop-target={@uploads.digest.ref}>
-            { live_file_input @uploads.digest }
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Step 2. Upload Course Archive for Ingestion Validation and Preprocessing</label>
-          <div>
-            <button type="submit" class="btn btn-primary" phx-disable-with="Processing...">
-              Upload
-            </button>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Step 3. Upon successful ingestion, you will then be redirected
-          to the Overview page of the new project.</label>
-        </div>
-      </form>
-
-      <hr class="my-4"/>
-
-      {#if @progress_step != ""}
-        <div class="alert alert-secondary" role="alert">
-          <h4 class="alert-heading">{@progress_step}</h4>
-
-        {#if @progress_total_tasks > 0}
-          <div class="progress">
-            <div class="progress-bar" role="progressbar" style={width(assigns)} aria-valuenow={now(assigns)} aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        {/if}
-
-        </div>
-      {/if}
-
-      {#if @preprocessed}
-        <button class="btn btn-primary" phx-click="process" phx-disable-with="Processing...">
-          Ingest
-        </button>
-
-        <ul>
-        {#for e <- @state.errors}
-          <li>{e}</li>
-        {/for}
-        </ul>
-      {/if}
+      {render_preprocessed(assigns)}
+      {render_processed(assigns)}
+      {render_failed(assigns)}
+      {render_progress(assigns)}
 
     </div>
     """
@@ -128,50 +185,42 @@ defmodule OliWeb.Admin.IngestV2 do
     "#{assigns.progress_count_tasks / assigns.progress_total_tasks * 100}"
   end
 
+  @impl true
   def handle_event("process", _params, socket) do
-    socket =
+    pid = self()
+
+    Task.async(fn ->
       case Oli.Interop.Ingest.Processor.process(socket.assigns.state) do
-        {:ok, state} -> assign(socket, state: state)
-        {:error, e} -> assign(socket, error: e)
+        {:ok, state} -> send(pid, {:finish_process, state})
+        {:error, e} -> send(pid, {:failed_process, e})
+        _ -> send(pid, {:failed_process, "unknown"})
       end
+    end)
 
     {:noreply, socket}
   end
 
-  @impl Phoenix.LiveView
-  def handle_event("validate", _params, socket) do
-    {:noreply, socket}
+  def handle_event(event, params, socket) do
+    {event, params, socket, &__MODULE__.patch_with/2}
+    |> delegate_to([
+      &PagedTable.handle_delegated/4
+    ])
   end
 
-  @impl Phoenix.LiveView
-  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :digest, ref)}
-  end
+  def patch_with(socket, changes) do
+    {offset, _} =
+      Map.get(changes, :offset, socket.assigns.offset |> Integer.to_string())
+      |> Integer.parse()
 
-  @impl Phoenix.LiveView
-  def handle_event("ingest", _params, socket) do
-    with path_upload <-
-           consume_uploaded_entries(socket, :digest, fn %{path: path}, _entry -> path end) do
-      state = Oli.Interop.Ingest.State.new()
+    rows = Enum.slice(socket.assigns.state.errors, offset, socket.assigns.limit)
 
-      pid = self()
+    table_model =
+      ErrorsTableModel.update_rows(
+        socket.assigns.table_model,
+        rows
+      )
 
-      state = %{
-        state
-        | notify_step_start: fn step, num_tasks -> send(pid, {:step_start, step, num_tasks}) end,
-          notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
-      }
-
-      Task.async(fn ->
-        state = Ingest.unzip_then_preprocess(socket.assigns.state, hd(path_upload))
-        send(pid, {:finish_preprocess, state})
-      end)
-
-      {:noreply, assign(socket, state: state, preprocessed: false)}
-    else
-      error ->
-        {:noreply, assign(socket, error: error)}
-    end
+    {:noreply, assign(socket, offset: offset, table_model: table_model)}
   end
 
   @impl true
@@ -199,11 +248,48 @@ defmodule OliWeb.Admin.IngestV2 do
   end
 
   def handle_info({:finish_preprocess, state}, socket) do
+    socket.assigns.author
+    |> ingest_file
+    |> File.rm()
+
+    {:ok, table_model} =
+      Enum.slice(state.errors, socket.assigns.offset, socket.assigns.limit)
+      |> ErrorsTableModel.new()
+
     {:noreply,
      assign(socket,
        state: state,
        progress_step: "",
-       preprocessed: true
+       resource_counts: %{
+         tags: Enum.count(state.tags),
+         bib_entries: Enum.count(state.bib_entries),
+         objectives: Enum.count(state.objectives),
+         activities: Enum.count(state.activities),
+         pages: Enum.count(state.pages),
+         products: Enum.count(state.products),
+         media_items: Enum.count(state.media_manifest["mediaItems"])
+       },
+       total_count: Enum.count(state.errors),
+       table_model: table_model,
+       ingestion_step: :preprocessed
+     )}
+  end
+
+  def handle_info({:finish_process, state}, socket) do
+    {:noreply,
+     assign(socket,
+       state: state,
+       progress_step: "",
+       ingestion_step: :processed
+     )}
+  end
+
+  def handle_info({:failed_process, e}, socket) do
+    {:noreply,
+     assign(socket,
+       progress_step: "",
+       error: e,
+       ingestion_step: :failed
      )}
   end
 

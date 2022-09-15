@@ -8,7 +8,7 @@ defmodule Oli.Interop.Ingest.ScalableIngest do
     end
   end
 
-  defp unzip(%State{errors: errors} = state, file) do
+  def unzip(%State{errors: errors} = state, file) do
     state = State.notify_step_start(state, :unzip)
 
     case :zip.unzip(to_charlist(file), [:memory]) do
@@ -16,8 +16,7 @@ defmodule Oli.Interop.Ingest.ScalableIngest do
         %{state | entries: entries}
 
       _ ->
-        %{state | errors: ["Could not unzip file. Perhaps it is not a valid zip file?" | errors]}
+        %{state | errors: ["Could not unzip file. Perhaps it is not a valid zip file?"]}
     end
   end
-
 end

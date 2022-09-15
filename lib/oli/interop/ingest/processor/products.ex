@@ -10,26 +10,27 @@ defmodule Oli.Interop.Ingest.Processor.Products do
       ) do
     State.notify_step_start(state, :products)
 
-    result = case products do
-      [] ->
-        state
+    result =
+      case products do
+        [] ->
+          {:ok, state}
 
-      _ ->
-        # Products can only be created with the project published, so do that first
-        Oli.Publishing.publish_project(project, "Initial publication")
+        _ ->
+          # Products can only be created with the project published, so do that first
+          Oli.Publishing.publish_project(project, "Initial publication")
 
-        # Create each product, all the while tracking any newly created containers in the container map
-        Enum.reduce_while(products, {:ok, state}, fn {_, product}, {:ok, state} ->
-          case create_product(state, product) do
-            {:ok, state} -> {:cont, {:ok, state}}
-            {:error, e} -> {:halt, {:error, e}}
-          end
-        end)
-    end
+          # Create each product, all the while tracking any newly created containers in the container map
+          Enum.reduce_while(products, {:ok, state}, fn {_, product}, {:ok, state} ->
+            case create_product(state, product) do
+              {:ok, state} -> {:cont, {:ok, state}}
+              {:error, e} -> {:halt, {:error, e}}
+            end
+          end)
+      end
 
     case result do
       {:ok, state} -> state
-      {:error, e} -> %{ state | force_rollback: e}
+      {:error, e} -> %{state | force_rollback: e}
     end
   end
 

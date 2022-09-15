@@ -1,4 +1,9 @@
 defmodule Oli.Interop.Ingest.Processor do
+  @moduledoc """
+  The ingest processer takes an already pre-processed ingest state struct and
+  executes all the database writes necessary to complete the ingest.
+  """
+
   alias Oli.Interop.Ingest.State
   alias Oli.Repo
 
@@ -12,7 +17,8 @@ defmodule Oli.Interop.Ingest.Processor do
     Products,
     BibEntries,
     Hyperlinks,
-    PublishedResources
+    PublishedResources,
+    MediaItems
   }
 
   def process(%State{} = state) do
@@ -30,6 +36,7 @@ defmodule Oli.Interop.Ingest.Processor do
       |> Hyperlinks.process()
       |> Hierarchy.process()
       |> Products.process()
+      |> MediaItems.process()
       |> force_rollback_if_error()
     end)
   end
