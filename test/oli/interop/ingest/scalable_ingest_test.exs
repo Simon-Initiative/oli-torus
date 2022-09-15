@@ -1,7 +1,6 @@
 defmodule Oli.Interop.Ingest.ScalableIngestTest do
-  alias Oli.Interop.Ingest.{State, ScalableIngest, Preprocessor, Processor}
+  alias Oli.Interop.Ingest.{State, Preprocessor, Processor}
 
-  alias Oli.Interop.Export
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
