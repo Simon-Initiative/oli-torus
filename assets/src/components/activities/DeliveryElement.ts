@@ -56,6 +56,7 @@ export interface ActivityContext {
   surveyId: string | null;
   bibParams: any;
   pageAttemptGuid: string;
+  pageState?: any;
 }
 
 /**
@@ -316,14 +317,11 @@ export abstract class DeliveryElement<T extends ActivityModelSchema> extends HTM
     const state = JSON.parse(this.getAttribute('state') as any) as ActivityState;
     const mode = valueOr(this.getAttribute('mode'), 'delivery') as DeliveryMode;
 
-    const pageState = JSON.parse(valueOr(this.getAttribute('page-state'), '{}') as any);
-
     this.review = mode === 'review';
 
     return {
       model,
       state,
-      pageState,
       context,
       mode,
       notify: this._notify,

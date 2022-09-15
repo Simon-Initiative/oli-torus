@@ -207,10 +207,10 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             return collect;
           }, {});
           // in the case we are nohost (pageless), we should apply the page state first if we have it
-          const pageStateApplyResults = evalAssignScript(props.pageState, scriptEnv);
+          const pageStateApplyResults = evalAssignScript(props.context.pageState, scriptEnv);
           /* console.log('PAGE STATE APPLY RESULTS', {
             res: pageStateApplyResults,
-            state: props.pageState,
+            state: props.context.pageState,
           }); */
           const testRes = evalAssignScript(attemptStateMap, scriptEnv);
           /* console.log('ACTIVITY READY RESULTS', { testRes, attemptStateMap }); */
@@ -233,7 +233,7 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
             initStateBindToFacts: {},
           };
           partsInitDeferred.resolve(context);
-          console.log('AD EMIT CONTEXT CHANGED', context);
+          /* console.log('AD EMIT CONTEXT CHANGED', context); */
           pusher.emit(NotificationType.CONTEXT_CHANGED, context);
         }
       }
@@ -243,11 +243,11 @@ const Adaptive = (props: DeliveryElementProps<AdaptiveModelSchema>) => {
   );
 
   const handlePartInit = async (payload: { id: string | number; responses: any[] }) => {
-    console.log('onPartInit', payload);
+    /* console.log('onPartInit', payload); */
     // a part should send initial state values
     if (payload.responses.length) {
       const saveResults = await handlePartSave(payload);
-      console.log('onPartInit saveResults', payload.id, saveResults);
+      /* console.log('onPartInit saveResults', payload.id, saveResults); */
     }
 
     const { snapshot, context, env } = await partInit(payload.id.toString());

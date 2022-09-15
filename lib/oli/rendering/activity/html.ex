@@ -152,22 +152,19 @@ defmodule Oli.Rendering.Activity.Html do
             ""
           else
             resource_attempt.attempt_guid
+          end,
+        pageState:
+          if is_nil(resource_attempt) do
+            "{}"
+          else
+            resource_attempt.state
           end
       }
       |> Poison.encode!()
       |> HtmlEntities.encode()
 
-    page_state =
-      if is_nil(resource_attempt) do
-        "{}"
-      else
-        resource_attempt.state
-        |> Poison.encode!()
-        |> HtmlEntities.encode()
-      end
-
     [
-      ~s|<#{tag} class="activity-container" page-state="#{page_state}" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
+      ~s|<#{tag} class="activity-container" state="#{state}" model="#{model_json}" mode="#{mode}" context="#{activity_context}"></#{tag}>\n|
     ]
   end
 
