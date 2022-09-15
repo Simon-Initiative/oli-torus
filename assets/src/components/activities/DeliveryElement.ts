@@ -75,11 +75,6 @@ export interface DeliveryElementProps<T extends ActivityModelSchema> {
   state: ActivityState;
 
   /**
-   * The state of the page attempt. Usually only necessary for standalone activity review.
-   */
-  pageState?: any;
-
-  /**
    * The larger context that this activity operates within.
    */
   context: ActivityContext;
