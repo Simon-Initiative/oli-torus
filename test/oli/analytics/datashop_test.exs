@@ -182,6 +182,8 @@ defmodule Oli.Analytics.DatashopTest do
         )
         |> Seeder.ensure_published()
         |> Seeder.create_section_resources()
+        # ensure the timestamps are actually different by introducing some delay
+        |> simulate_student_delay(1000)
         |> Seeder.simulate_student_attempt(%StudentAttemptSeed{
           user: :user1,
           datashop_session_id: datashop_session_id_user1,
@@ -284,7 +286,7 @@ defmodule Oli.Analytics.DatashopTest do
       xml = Datashop.export(project.id)
 
       attempts = Hierarchy.get_latest_attempts(user1_graded_page_attempt.id)
-      {_, part_map} = Map.get(attempts, graded_page_activity.resource.id)
+      {_activity_attempt, part_map} = Map.get(attempts, graded_page_activity.resource.id)
 
       date_accessed = user1_graded_page_attempt.inserted_at |> format_date()
       date_submitted = Map.get(part_map, "1").date_submitted |> format_date()
@@ -306,5 +308,11 @@ defmodule Oli.Analytics.DatashopTest do
   defp format_date(date) do
     {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}:{0s}")
     time
+  end
+
+  defp simulate_student_delay(map, timeout) do
+    Process.sleep(timeout)
+
+    map
   end
 end
