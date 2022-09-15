@@ -1,6 +1,6 @@
 defmodule Oli.PublishingTest do
   use Oli.DataCase
-
+  import Ecto.Query, warn: false
   import Oli.Factory
   import Ecto.Query
 
@@ -40,6 +40,48 @@ defmodule Oli.PublishingTest do
       )
 
     revision
+  end
+
+  describe "create_resource_batch tests" do
+    setup do
+      Seeder.base_project_with_resource2()
+    end
+
+    test "create_resource_batch", %{
+      project: project
+    } do
+      resource_ids = Publishing.create_resource_batch(project, 2)
+      assert Enum.count(resource_ids) == 2
+
+      assert Oli.Repo.all(
+               from pr in Oli.Authoring.Course.ProjectResource,
+                 where: pr.project_id == ^project.id and pr.resource_id in ^resource_ids
+             )
+             |> Enum.count() == 2
+
+      assert Oli.Repo.all(
+               from pr in Oli.Resources.Resource,
+                 where: pr.id in ^resource_ids
+             )
+             |> Enum.count() == 2
+    end
+
+    test "ignores expired locks", %{
+      author: author,
+      project: project,
+      publication: publication,
+      container: %{resource: container_resource}
+    } do
+      assert Locks.acquire(project.slug, publication.id, container_resource.id, author.id) ==
+               {:acquired}
+
+      [published_resource] =
+        Publishing.retrieve_lock_info([container_resource.id], publication.id)
+
+      Publishing.update_published_resource(published_resource, %{lock_updated_at: yesterday()})
+
+      assert [] = Publishing.retrieve_lock_info([container_resource.id], publication.id)
+    end
   end
 
   describe "retrieve_lock_info" do
@@ -293,7 +335,7 @@ defmodule Oli.PublishingTest do
 
       # mappings should now be replaced with new mappings in the new publication
       assert unpublished_mappings !=
-        Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
+               Publishing.get_published_resources_by_publication(new_unpublished_publication.id)
     end
 
     test "publish_project/1 publishes all currently locked resources and any new edits to the locked resource result in creation of a new revision for both pages and activities",
@@ -369,9 +411,11 @@ defmodule Oli.PublishingTest do
 
       Publishing.publish_project(project, "Some description")
 
-      assert Repo.all(from pm in "part_mapping",
-      where: pm.revision_id == ^revision.id,
-      select: pm.grading_approach) == ["manual"]
+      assert Repo.all(
+               from pm in "part_mapping",
+                 where: pm.revision_id == ^revision.id,
+                 select: pm.grading_approach
+             ) == ["manual"]
     end
 
     test "broadcasting the new publication works when publishing", %{project: project} do
