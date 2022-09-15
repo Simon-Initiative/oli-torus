@@ -104,6 +104,7 @@ defmodule Oli.Analytics.Datashop do
               Map.merge(
                 context,
                 %{
+                  date: part_attempt.date_submitted,
                   transaction_id: Utils.make_unique_id(activity_slug, part_id),
                   part_attempt: part_attempt,
                   skill_ids:
@@ -202,6 +203,8 @@ defmodule Oli.Analytics.Datashop do
     |> Enum.flat_map(fn {hint_content, hint_index} ->
       context =
         Map.merge(context, %{
+          # TODO: add better hint request timestamp tracking. For now, just use the part attempt inserted_at
+          date: part_attempt.inserted_at,
           current_hint_number: hint_index + 1,
           hint_text: Utils.hint_text(hint_content)
         })

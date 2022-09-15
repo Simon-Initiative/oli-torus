@@ -7,6 +7,7 @@ defmodule Oli.Analytics.DatashopTest do
   alias Oli.Utils.Seeder.StudentAttemptSeed
   alias Oli.Analytics.Datashop
   alias Oli.Delivery.Attempts.Core.StudentInput
+  alias Oli.Delivery.Attempts.PageLifecycle.Hierarchy
 
   describe "datashop export" do
     setup do
@@ -148,13 +149,6 @@ defmodule Oli.Analytics.DatashopTest do
           :author,
           :activity_2
         )
-        |> Seeder.add_activity(
-          %{title: "activity 3", content: content},
-          :publication,
-          :project,
-          :author,
-          :activity_3
-        )
 
       map =
         map
@@ -188,6 +182,8 @@ defmodule Oli.Analytics.DatashopTest do
         )
         |> Seeder.ensure_published()
         |> Seeder.create_section_resources()
+        # ensure the timestamps are actually different by introducing some delay
+        |> simulate_student_delay(1000)
         |> Seeder.simulate_student_attempt(%StudentAttemptSeed{
           user: :user1,
           datashop_session_id: datashop_session_id_user1,
@@ -195,8 +191,8 @@ defmodule Oli.Analytics.DatashopTest do
           activity: :activity_1,
           get_part_inputs: &[%{attempt_guid: &1, input: %StudentInput{input: "3222237681"}}],
           transformed_model: content,
-          resource_attempt_tag: :user1_graded_page_attempt,
-          activity_attempt_tag: :user1_graded_page_activity_1_attempt,
+          resource_attempt_tag: :user1_ungraded_page_attempt,
+          activity_attempt_tag: :user1_ungraded_page_activity_1_attempt,
           part_attempt_tag: :user1_graded_page_activity_1_part_1_attempt
         })
         |> Seeder.simulate_student_attempt(%StudentAttemptSeed{
@@ -206,9 +202,24 @@ defmodule Oli.Analytics.DatashopTest do
           activity: :activity_1,
           get_part_inputs: &[%{attempt_guid: &1, input: %StudentInput{input: "3222237681"}}],
           transformed_model: content,
-          resource_attempt_tag: :user1_graded_page_attempt,
-          activity_attempt_tag: :user1_graded_page_activity_1_attempt,
+          resource_attempt_tag: :user1_ungraded_page_attempt,
+          activity_attempt_tag: :user1_ungraded_page_activity_1_attempt,
           part_attempt_tag: :user1_graded_page_activity_1_part_1_attempt
+        })
+        |> Seeder.simulate_student_attempt(%StudentAttemptSeed{
+          user: :user1,
+          datashop_session_id: datashop_session_id_user1,
+          resource: :graded_page,
+          activity: :activity_2,
+          get_part_inputs: &[%{attempt_guid: &1, input: %StudentInput{input: "3222237681"}}],
+          transformed_model: content,
+          resource_attempt_tag: :user1_graded_page_attempt,
+          activity_attempt_tag: :user1_graded_page_activity_2_attempt,
+          part_attempt_tag: :user1_graded_page_activity_2_part_1_attempt
+        })
+        |> Seeder.finalize_graded_attempt(datashop_session_id_user1, nil, %{
+          section: :section,
+          attempt: :user1_graded_page_attempt
         })
 
       map =
@@ -265,5 +276,43 @@ defmodule Oli.Analytics.DatashopTest do
              )
              |> to_string() == datashop_session_id_user2
     end
+
+    test "uses correct timestamp for context tool and tutor messages", %{
+      project: project,
+      user1: user1,
+      activity_2: graded_page_activity,
+      user1_graded_page_attempt: user1_graded_page_attempt
+    } do
+      xml = Datashop.export(project.id)
+
+      attempts = Hierarchy.get_latest_attempts(user1_graded_page_attempt.id)
+      {_activity_attempt, part_map} = Map.get(attempts, graded_page_activity.resource.id)
+
+      date_accessed = user1_graded_page_attempt.inserted_at |> format_date()
+      date_submitted = Map.get(part_map, "1").date_submitted |> format_date()
+
+      assert xml
+             |> xpath(~x"//context_message/meta[user_id/text() = '#{user1.email}']/time/text()")
+             |> to_string() == date_accessed
+
+      assert xml
+             |> xpath(~x"//tool_message/meta[user_id/text() = '#{user1.email}']/time/text()")
+             |> to_string() == date_submitted
+
+      assert xml
+             |> xpath(~x"//tutor_message/meta[user_id/text() = '#{user1.email}']/time/text()")
+             |> to_string() == date_submitted
+    end
+  end
+
+  defp format_date(date) do
+    {:ok, time} = Timex.format(date, "{YYYY}-{0M}-{0D} {0h24}:{0m}:{0s}")
+    time
+  end
+
+  defp simulate_student_delay(map, timeout) do
+    Process.sleep(timeout)
+
+    map
   end
 end
