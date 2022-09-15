@@ -21,11 +21,12 @@ defmodule Oli.Interop.Ingest.Preprocessor do
   @doc """
   Takes an in memory, unzipped representation of a course digest archive and preprocesses it to
   prepare for ingest.  During preprocessing, we:
-  1. Validate all internal idrefs
-  2. Validate page and activity schemas
-  3. Perform any necessary content adjustments
+  1. Parse the JSON
+  2. Verify all internal idrefs
+  3. Perform any necessary content adjustments / migrations
+  4. Validate page and activity schemas
 
-  Returns `%PreprocessedIngest` struct
+  Returns the modified ingest `%State` struct
   """
   def preprocess(%State{entries: nil} = state), do: state
 
@@ -41,7 +42,6 @@ defmodule Oli.Interop.Ingest.Preprocessor do
   # Convert the list of tuples of unzipped entries into a map
   # where the keys are the ids (with the .json extension dropped)
   # and the values are the JSON content, parsed into maps
-
   defp bucket_by_resource_type(%State{resource_map: resource_map} = state) do
     known_keys = MapSet.new(well_known_keys())
 

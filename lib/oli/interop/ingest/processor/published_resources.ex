@@ -13,6 +13,8 @@ defmodule Oli.Interop.Ingest.Processor.PublishedResources do
 
     resource_ids = Map.values(legacy_to_resource_id_map)
 
+    # Bulk create published_resource records based off of the revisions that
+    # we have created for resource_ids tracked in the legacy_to_resource_id_map
     query =
       from p in Revision,
         where: p.resource_id in ^resource_ids,

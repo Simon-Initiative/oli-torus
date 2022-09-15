@@ -1,4 +1,9 @@
 defmodule Oli.Interop.Ingest.State do
+  @moduledoc """
+  Represents the state of an end-to-end ingest procress, from unzipping to preprocessing to
+  processing and creation database records.
+  """
+
   defstruct [
     # Unzipped raw entries
     :entries,
@@ -12,7 +17,7 @@ defmodule Oli.Interop.Ingest.State do
     :media_manifest,
     :hierarchy,
 
-    # Lists of id. resource JSON tuples partitioned by type
+    # Lists of {id, resource JSON} tuples partitioned by type
     :tags,
     :bib_entries,
     :activities,

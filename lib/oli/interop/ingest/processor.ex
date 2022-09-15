@@ -41,20 +41,6 @@ defmodule Oli.Interop.Ingest.Processor do
     end)
   end
 
-  defp force_rollback_if_error(%State{force_rollback: nil} = state), do: state
-  defp force_rollback_if_error(%State{force_rollback: e}), do: Repo.rollback(e)
-
-  defp bulk_allocate_resources(%State{project: project} = state) do
-    total_needed =
-      Enum.count(state.tags) + Enum.count(state.bib_entries) + Enum.count(state.objectives) +
-        Enum.count(state.activities) + Enum.count(state.pages)
-
-    %{
-      state
-      | resource_id_pool: Oli.Publishing.create_resource_batch(project, total_needed)
-    }
-  end
-
   defp init(%State{} = state) do
     registration_by_subtype =
       Oli.Activities.list_activity_registrations()
@@ -69,4 +55,21 @@ defmodule Oli.Interop.Ingest.Processor do
         slug_prefix: Oli.Utils.Slug.get_unique_prefix("revisions")
     }
   end
+
+  # For all resource types except containers, we bulk allocate the %Resource and %ProjectResource
+  # records in the most efficent manner possible: leveraging a custom database function to do this
+  # bulk creation.
+  defp bulk_allocate_resources(%State{project: project} = state) do
+    total_needed =
+      Enum.count(state.tags) + Enum.count(state.bib_entries) + Enum.count(state.objectives) +
+        Enum.count(state.activities) + Enum.count(state.pages)
+
+    %{
+      state
+      | resource_id_pool: Oli.Publishing.create_resource_batch(project, total_needed)
+    }
+  end
+
+  defp force_rollback_if_error(%State{force_rollback: nil} = state), do: state
+  defp force_rollback_if_error(%State{force_rollback: e}), do: Repo.rollback(e)
 end

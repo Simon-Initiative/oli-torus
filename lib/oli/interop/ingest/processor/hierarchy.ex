@@ -3,6 +3,11 @@ defmodule Oli.Interop.Ingest.Processor.Hierarchy do
   import Oli.Interop.Ingest.Processor.Common
   alias Oli.Publishing.ChangeTracker
 
+  @doc """
+  We cannot (easily) bulk allocate containers, because of how many
+  dependencies there are between them.  So instead, we continue with the
+  'create one record at a time' approach.
+  """
   def process(
         %State{
           root_revision: root_revision,
