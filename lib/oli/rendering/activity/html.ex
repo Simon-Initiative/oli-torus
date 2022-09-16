@@ -152,6 +152,12 @@ defmodule Oli.Rendering.Activity.Html do
             ""
           else
             resource_attempt.attempt_guid
+          end,
+        pageState:
+          if is_nil(resource_attempt) do
+            "{}"
+          else
+            resource_attempt.state
           end
       }
       |> Poison.encode!()

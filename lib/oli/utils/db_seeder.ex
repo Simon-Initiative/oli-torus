@@ -727,7 +727,11 @@ defmodule Oli.Seeder do
     attempt_tag = Map.get(selector_tags, :attempt, :attempt)
 
     {:ok, %ResourceAccess{} = resource_access} =
-      PageLifecycle.finalize(map[section_tag], map[attempt_tag].attempt_guid, datashop_session_id)
+      PageLifecycle.finalize(
+        map[section_tag].slug,
+        map[attempt_tag].attempt_guid,
+        datashop_session_id
+      )
 
     case tag do
       nil -> map
