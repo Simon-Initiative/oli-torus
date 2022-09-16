@@ -9,6 +9,7 @@ defmodule OliWeb.Admin.IngestV2 do
   alias OliWeb.Common.Properties.{Groups, Group, ReadOnly}
   alias Oli.Interop.Ingest.Preprocessor
   alias OliWeb.Common.PagedTable
+  alias OliWeb.Common.Check
   alias OliWeb.Admin.Ingest.ErrorsTableModel
   import OliWeb.DelegatedEvents
 
@@ -42,26 +43,6 @@ defmodule OliWeb.Admin.IngestV2 do
     ingest_file = ingest_file(author)
 
     if File.exists?(ingest_file) do
-      pid = self()
-
-      state = %{
-        state
-        | author: author,
-          errors: [],
-          notify_step_start: fn step, num_tasks ->
-            send(pid, {:step_start, step, num_tasks})
-          end,
-          notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
-      }
-
-      Task.async(fn ->
-        state =
-          Ingest.unzip(state, ingest_file)
-          |> Preprocessor.preprocess()
-
-        send(pid, {:finish_preprocess, state})
-      end)
-
       {:ok,
        assign(socket,
          breadcrumbs: set_breadcrumbs(),
@@ -71,18 +52,33 @@ defmodule OliWeb.Admin.IngestV2 do
          progress_total_tasks: 0,
          progress_task_detail: "",
          progress_count_tasks: 0,
-         # [:working, :preprocessed, :processed, :failed]
-         ingestion_step: :working,
+         # [:ready, :waiting, :preprocessed, :processed, :failed]
+         ingestion_step: :ready,
          resource_counts: %{},
          state: state,
          offset: 0,
          limit: 20,
          table_model: nil,
+         bypass_validation: false,
          total_count: 0
        )}
     else
       {:ok, Phoenix.LiveView.redirect(socket, to: Routes.ingest_path(OliWeb.Endpoint, :index))}
     end
+  end
+
+  defp render_ready(assigns) do
+    ~F"""
+    {#if @ingestion_step == :ready}
+      <div class="alert alert-secondary mb-3" role="alert">
+        <h4 class="alert-heading">Ready for Ingest</h4>
+        <Check checked={@bypass_validation} click="bypass">Bypass JSON validation <strong>(only use in development use cases)</strong></Check>
+        <div class="mt-4">
+          <button class="btn btn-primary" phx-click="preprocess">Preprocess</button>
+        </div>
+      </div>
+    {/if}
+    """
   end
 
   defp render_preprocessed(assigns) do
@@ -168,6 +164,7 @@ defmodule OliWeb.Admin.IngestV2 do
       <h3 class="display-6">Course Ingestion</h3>
       <hr class="my-4"/>
 
+      {render_ready(assigns)}
       {render_preprocessed(assigns)}
       {render_processed(assigns)}
       {render_failed(assigns)}
@@ -183,6 +180,37 @@ defmodule OliWeb.Admin.IngestV2 do
 
   defp now(assigns) do
     "#{assigns.progress_count_tasks / assigns.progress_total_tasks * 100}"
+  end
+
+  @impl true
+  def handle_event("bypass", _params, socket) do
+    {:noreply, assign(socket, bypass_validation: !socket.assigns.bypass_validation)}
+  end
+
+  def handle_event("preprocess", _, socket) do
+    pid = self()
+    state = Oli.Interop.Ingest.State.new()
+
+    state = %{
+      state
+      | author: socket.assigns.author,
+        errors: [],
+        bypass_validation: socket.assigns.bypass_validation,
+        notify_step_start: fn step, num_tasks ->
+          send(pid, {:step_start, step, num_tasks})
+        end,
+        notify_step_progress: fn detail -> send(pid, {:step_progress, detail}) end
+    }
+
+    Task.async(fn ->
+      state =
+        Ingest.unzip(state, ingest_file(socket.assigns.author))
+        |> Preprocessor.preprocess()
+
+      send(pid, {:finish_preprocess, state})
+    end)
+
+    {:noreply, assign(socket, ingestion_step: :waiting)}
   end
 
   @impl true

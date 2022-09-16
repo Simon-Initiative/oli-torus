@@ -2,6 +2,8 @@ defmodule Oli.Interop.Ingest.Preprocessor.Validate do
   alias Oli.Interop.Ingest.State
   alias Oli.Utils.SchemaResolver
 
+  def process(%State{bypass_validation: true} = state), do: state
+
   def process(%State{} = state) do
     state
     |> State.notify_step_start(:validate_activities, fn s ->

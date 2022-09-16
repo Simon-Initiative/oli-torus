@@ -11,6 +11,7 @@ defmodule Oli.Interop.Ingest.State do
     # The preprocessed state
     # ----------------------
     :resource_map,
+    :bypass_validation,
 
     # The three well-known resources
     :project_details,
@@ -50,6 +51,7 @@ defmodule Oli.Interop.Ingest.State do
 
   def new() do
     %__MODULE__{
+      bypass_validation: false,
       errors: [],
       entries: nil,
       resource_map: nil,
