@@ -961,7 +961,10 @@ defmodule OliWeb.Router do
     live("/publishers/:publisher_id", PublisherLive.ShowView)
 
     # Course Ingestion
+    get("/ingest/upload", IngestController, :index)
+    post("/ingest/ingest", IngestController, :upload)
     live("/ingest", Admin.Ingest)
+    live("/ingest/process", Admin.IngestV2)
 
     # Authoring Activity Management
     get("/manage_activities", ActivityManageController, :index)

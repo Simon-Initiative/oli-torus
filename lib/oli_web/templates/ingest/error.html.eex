@@ -1,0 +1,7 @@
+<div class="container">
+  <h3 class="display-6">Course Ingestion</h3>
+  <p>Course Ingest Error:</p>
+
+  <%= @error %>
+
+</div>

@@ -1,6 +1,6 @@
-defmodule Oli.Interop.IngestTest do
-  alias Oli.Interop.Ingest
-  alias Oli.Interop.Export
+defmodule Oli.Interop.Ingest.ScalableIngestTest do
+  alias Oli.Interop.Ingest.{State, Preprocessor, Processor}
+
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources.Revision
   alias Oli.Repo
@@ -64,22 +64,17 @@ defmodule Oli.Interop.IngestTest do
       Oli.Seeder.base_project_with_resource2()
     end
 
-    test "ingest/1 and then export/1 works end to end", %{author: author} do
-      {:ok, project} =
-        simulate_unzipping()
-        |> Ingest.process(author)
-
-      Export.export(project)
-      |> unzip_to_memory()
-      |> verify_export()
-    end
-
     test "ingest/1 processes the digest files and creates a course and a product", %{
       author: author
     } do
-      {:ok, p} =
-        simulate_unzipping()
-        |> Ingest.process(author)
+      entries = simulate_unzipping()
+
+      {:ok, state} =
+        %State{author: author, entries: entries}
+        |> Preprocessor.preprocess()
+        |> Processor.process()
+
+      p = state.project
 
       # verify project
       project = Repo.get(Oli.Authoring.Course.Project, p.id)
@@ -186,140 +181,6 @@ defmodule Oli.Interop.IngestTest do
         Oli.Repo.get!(Oli.Delivery.Sections.SectionResource, product.root_section_resource_id)
 
       assert Enum.count(product_root.children) == 2
-    end
-
-    test "returns :invalid_digest error when digest is invalid", %{author: author} do
-      assert [] |> Ingest.process(author) == {:error, :invalid_digest}
-
-      assert [
-               {'file1', "some content"},
-               {'_media-manifest', "{}"},
-               {'_hierarchy', "{}"}
-             ]
-             |> Ingest.process(author) == {:error, :invalid_digest}
-
-      assert [
-               {'_project', "{}"},
-               {'file1', "some content"},
-               {'_hierarchy', "{}"}
-             ]
-             |> Ingest.process(author) == {:error, :invalid_digest}
-
-      assert [
-               {'_project', "{}"},
-               {'_media-manifest', "{}"},
-               {'file1', "some content"}
-             ]
-             |> Ingest.process(author) == {:error, :invalid_digest}
-    end
-
-    test "returns :missing_project_title error when project title is missing", %{author: author} do
-      assert simulate_unzipping()
-             |> Enum.map(fn item ->
-               case item do
-                 {'_project.json', contents} ->
-                   without_title =
-                     Jason.decode!(contents)
-                     |> Map.delete("title")
-                     |> Jason.encode!()
-
-                   {'_project.json', without_title}
-
-                 _ ->
-                   item
-               end
-             end)
-             |> Ingest.process(author) == {:error, :missing_project_title}
-    end
-
-    test "returns :empty_project_title error when project title is empty", %{author: author} do
-      assert simulate_unzipping()
-             |> Enum.map(fn item ->
-               case item do
-                 {'_project.json', contents} ->
-                   without_title =
-                     Jason.decode!(contents)
-                     |> Map.put("title", "")
-                     |> Jason.encode!()
-
-                   {'_project.json', without_title}
-
-                 _ ->
-                   item
-               end
-             end)
-             |> Ingest.process(author) == {:error, :empty_project_title}
-    end
-
-    test "returns :invalid_idrefs error when invalid iderefs are found", %{author: author} do
-      assert simulate_unzipping()
-             |> Enum.map(fn item ->
-               case item do
-                 {'_hierarchy.json', contents} ->
-                   with_invalid_idref =
-                     Jason.decode!(contents)
-                     |> update_in(
-                       ["children", Access.at(0), "children"],
-                       fn children ->
-                         children ++
-                           [
-                             %{
-                               "type" => "item",
-                               "children" => [],
-                               "idref" => "some-invalid-idref"
-                             }
-                           ]
-                       end
-                     )
-                     |> Jason.encode!()
-
-                   {'_hierarchy.json', with_invalid_idref}
-
-                 _ ->
-                   item
-               end
-             end)
-             |> Ingest.process(author) == {:error, {:invalid_idrefs, ["some-invalid-idref"]}}
-    end
-
-    test "returns :invalid_json error when json fails schema validation", %{author: author} do
-      assert {:error,
-              {
-                :invalid_json,
-                _schema,
-                [
-                  {"Expected exactly one of the schemata to match, but none of them did.", "#"}
-                ],
-                _json
-              }} =
-               simulate_unzipping()
-               |> Enum.map(fn item ->
-                 case item do
-                   {'35.json', contents} ->
-                     with_invalid_json =
-                       Jason.decode!(contents)
-                       |> update_in(
-                         ["content", "model"],
-                         fn model ->
-                           model ++
-                             [
-                               %{
-                                 "invalid-type" => "invalid",
-                                 "missing-children-id-purpose" => nil,
-                                 "invalid-idref" => "some-invalid-idref"
-                               }
-                             ]
-                         end
-                       )
-                       |> Jason.encode!()
-
-                     {'35.json', with_invalid_json}
-
-                   _ ->
-                     item
-                 end
-               end)
-               |> Ingest.process(author)
     end
   end
 end

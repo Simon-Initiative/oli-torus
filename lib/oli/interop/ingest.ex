@@ -683,50 +683,6 @@ defmodule Oli.Interop.Ingest do
     end
   end
 
-  defp process_activity_objectives(activity, objective_map) do
-    case Map.get(activity, "objectives", []) do
-      map when is_map(map) ->
-        Map.keys(map)
-        |> Enum.reduce(%{}, fn k, m ->
-          mapped =
-            Map.get(activity, "objectives")[k]
-            |> Enum.map(fn id ->
-              case Map.get(objective_map, id) do
-                nil ->
-                  IO.inspect("Missing objective #{id}")
-                  nil
-
-                o ->
-                  o.resource_id
-              end
-            end)
-            |> Enum.filter(fn id -> !is_nil(id) end)
-
-          Map.put(m, k, mapped)
-        end)
-
-      list when is_list(list) ->
-        activity["content"]["authoring"]["parts"]
-        |> Enum.map(fn %{"id" => id} -> id end)
-        |> Enum.reduce(%{}, fn e, m ->
-          objectives =
-            Enum.map(list, fn id ->
-              case Map.get(objective_map, id) do
-                nil ->
-                  IO.inspect("Missing objective #{id}")
-                  nil
-
-                o ->
-                  o.resource_id
-              end
-            end)
-            |> Enum.filter(fn id -> !is_nil(id) end)
-
-          Map.put(m, e, objectives)
-        end)
-    end
-  end
-
   defp create_tag(project, tag, as_author) do
     %{
       tags: [],
@@ -922,6 +878,50 @@ defmodule Oli.Interop.Ingest do
            )}
       end
     end)
+  end
+
+  defp process_activity_objectives(activity, objective_map) do
+    case Map.get(activity, "objectives", []) do
+      map when is_map(map) ->
+        Map.keys(map)
+        |> Enum.reduce(%{}, fn k, m ->
+          mapped =
+            Map.get(activity, "objectives")[k]
+            |> Enum.map(fn id ->
+              case Map.get(objective_map, id) do
+                nil ->
+                  IO.inspect("Missing objective #{id}")
+                  nil
+
+                o ->
+                  o.resource_id
+              end
+            end)
+            |> Enum.filter(fn id -> !is_nil(id) end)
+
+          Map.put(m, k, mapped)
+        end)
+
+      list when is_list(list) ->
+        activity["content"]["authoring"]["parts"]
+        |> Enum.map(fn %{"id" => id} -> id end)
+        |> Enum.reduce(%{}, fn e, m ->
+          objectives =
+            Enum.map(list, fn id ->
+              case Map.get(objective_map, id) do
+                nil ->
+                  IO.inspect("Missing objective #{id}")
+                  nil
+
+                o ->
+                  o.resource_id
+              end
+            end)
+            |> Enum.filter(fn id -> !is_nil(id) end)
+
+          Map.put(m, e, objectives)
+        end)
+    end
   end
 
   def prettify_error({:error, :invalid_archive}) do

@@ -1,6 +1,4 @@
 defmodule Oli.Ingest.RewireLinks do
-  alias Oli.Publishing.ChangeTracker
-
   # Any internal hyperlinks have to be rewired to point to the new resource_id of the
   # page being linked to.  This function takes all pages and rewires
   # all links that it finds in their contents, only saving new revisions for those that
@@ -24,7 +22,7 @@ defmodule Oli.Ingest.RewireLinks do
 
     case rewire(revision.content, link_builder) do
       {true, content} ->
-        ChangeTracker.track_revision(course, revision, %{content: content})
+        Oli.Resources.update_revision(revision, %{content: content})
 
       {false, _} ->
         {:ok, revision}
