@@ -52,13 +52,18 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
     const choices = model.choices.filter((choice) =>
       (props.input as Dropdown).choiceIds.includes(choice.id),
     );
+
+    const choice = getCorrectChoice(model, props.input.partId);
+
+    const correctChoice = choice === null || choice === undefined ? choices[0] : choice;
+
     return (
       <>
         <ChoicesDelivery
           unselectedIcon={<Radio.Unchecked />}
           selectedIcon={<Radio.Checked />}
           choices={choices}
-          selected={[getCorrectChoice(model, props.input.partId).id]}
+          selected={[correctChoice.id]}
           onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
           isEvaluated={false}
           context={defaultWriterContext()}
