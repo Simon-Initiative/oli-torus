@@ -26,6 +26,19 @@ defmodule Oli.Publishing do
   alias Oli.Groups
 
   @doc """
+  Bulk creates a number of resource, revision, project_resource and published_resource
+  records.  Useful for optimal execution of project ingest and project duplication.
+  """
+  def create_resource_batch(project, batch_size) do
+    sql = """
+    SELECT * FROM create_resource_batch(#{project.id}, #{batch_size});
+    """
+
+    {:ok, %{rows: results}} = Ecto.Adapters.SQL.query(Oli.Repo, sql, [])
+    Enum.map(results, fn [resource_id] -> resource_id end)
+  end
+
+  @doc """
   Returns true if editing this revision requires the creation of a new revision first.
 
   A new revision is needed if there exists either:
@@ -85,6 +98,8 @@ defmodule Oli.Publishing do
     |> Repo.preload(:resource_type)
   end
 
+  @spec get_published_activity_revisions(any, any) ::
+          nil | [%{optional(atom) => any}] | %{optional(atom) => any}
   @doc """
   Returns the activity revisions for a list of activity ids
   that pertain to a given publication.

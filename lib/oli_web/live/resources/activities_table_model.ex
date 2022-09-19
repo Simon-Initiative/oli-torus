@@ -110,5 +110,7 @@ defmodule OliWeb.Resources.ActivitiesTableModel do
     end
   end
 
+  defp extract(%{"text" => t}), do: t
   defp extract(%{"type" => t}), do: "[#{t}]"
+  defp extract(_), do: "[Unknown]"
 end

@@ -54,6 +54,22 @@ defmodule Oli.Utils.Slug do
     end
   end
 
+  def get_unique_prefix(table) do
+    prefix = random_string(5)
+
+    query =
+      Ecto.Adapters.SQL.query(
+        Oli.Repo,
+        "SELECT * FROM #{table} WHERE slug like '#{prefix}%';",
+        []
+      )
+
+    case query do
+      {:ok, %{num_rows: 0}} -> prefix
+      {:ok, _results} -> get_unique_prefix(table)
+    end
+  end
+
   def handle_update(changeset, table, title) do
     Ecto.Changeset.put_change(changeset, :slug, generate(table, title))
   end
@@ -121,6 +137,10 @@ defmodule Oli.Utils.Slug do
       [Enum.random(@chars) | acc]
     end)
     |> Enum.join("")
+  end
+
+  def slug_with_prefix(prefix, title) do
+    "#{prefix}_#{slugify(title)}_#{random_string(5)}"
   end
 
   def slugify(nil), do: ""

@@ -124,7 +124,7 @@
                                 "text": "Galicia"
                               }
                             ],
-                            "href": "/course/link/food_and_drink_of_galicia",
+                            "idref": "32",
                             "id": "2184727840",
                             "target": "self",
                             "type": "a"
@@ -186,7 +186,7 @@
                                 "text": "Asturias"
                               }
                             ],
-                            "href": "/course/link/cuisine_of_asturias_y9u8f",
+                            "idref": "35",
                             "id": "1368047551",
                             "target": "self",
                             "type": "a"
