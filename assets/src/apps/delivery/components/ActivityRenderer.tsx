@@ -375,7 +375,7 @@ const ActivityRenderer: React.FC<ActivityRendererProps> = ({
         initObject.type !== CapiVariableTypes.MATH_EXPR &&
         value.indexOf('{') !== -1 &&
         value.indexOf('}') !== -1
-          ? templatizeText(updatedValue, snapshot, defaultGlobalEnv, true, false)
+          ? templatizeText(updatedValue, {}, defaultGlobalEnv, true, false)
           : updatedValue;
       acc[initObject.target.trim()] = evaluatedValue;
       return acc;
