@@ -585,7 +585,7 @@ export const templatizeText = (
   isFromTrapStates = false,
   useFormattedText = true,
 ): string => {
-  let innerEnv = env; // TODO: this should be a child scope
+  let innerEnv = new Environment(env); // TODO: this should be a child scope
   // if the text contains backslash, it is probably a math expr like: '16^{\\frac{1}{2}}=\\sqrt {16}={\\editable{}}'
   // and we should just return it as is; if it has variables inside, then we still need to evaluate it
   if (
