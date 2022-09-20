@@ -311,7 +311,7 @@ defmodule Oli.Resources do
           scope: previous_revision.scope,
           retake_mode: previous_revision.retake_mode,
           parameters: previous_revision.parameters,
-          legacy: previous_revision.legacy,
+          legacy: previous_revision.legacy |> convert_legacy,
           tags: previous_revision.tags,
           explanation_strategy: previous_revision.explanation_strategy
         },
@@ -320,6 +320,11 @@ defmodule Oli.Resources do
 
     create_revision(attrs)
   end
+
+  defp convert_legacy(nil), do: nil
+  defp convert_legacy(legacy) when is_struct(legacy), do: Map.from_struct(legacy)
+  defp convert_legacy(legacy) when is_map(legacy), do: legacy
+  defp convert_legacy(item), do: item
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking revision changes.
