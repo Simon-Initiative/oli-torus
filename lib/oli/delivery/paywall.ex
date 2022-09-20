@@ -363,6 +363,24 @@ defmodule Oli.Delivery.Paywall do
   end
 
   @doc """
+  Get the last X(quantity) payment codes for the given product.
+  """
+  def get_payment_codes(count, product_slug) do
+    query =
+      from(
+        p in Payment,
+        left_join: s in Section,
+        on: p.section_id == s.id,
+        where: s.slug == ^product_slug,
+        limit: ^count,
+        select: p,
+        order_by: [desc: :inserted_at]
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Retrieve a payment for a specific provider and id.
   """
   def get_provider_payment(provider_type, provider_id) do
@@ -572,17 +590,5 @@ defmodule Oli.Delivery.Paywall do
     end
     |> Discount.changeset(attrs)
     |> Repo.insert_or_update()
-  end
-
-  def list_last_payment_codes_generated(count) do
-    query =
-      from(
-        p in Payment,
-        limit: ^count,
-        select: p,
-        order_by: [desc: :inserted_at]
-      )
-
-    Repo.all(query)
   end
 end
