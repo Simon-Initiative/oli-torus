@@ -92,7 +92,7 @@ export const CustomDnDComponent: React.FC = () => {
         resetAndSubmitPart(
           uiState.attemptState.attemptGuid,
           findPart(partId).attemptGuid,
-          toStudentResponse(value),
+          toStudentResponse(partId + '_' + value),
           onResetPart,
           onSubmitPart,
         ),
@@ -102,7 +102,7 @@ export const CustomDnDComponent: React.FC = () => {
         submitPart(
           uiState.attemptState.attemptGuid,
           findPart(partId).attemptGuid,
-          toStudentResponse(value),
+          toStudentResponse(partId + '_' + value),
           onSubmitPart,
         ),
       );
