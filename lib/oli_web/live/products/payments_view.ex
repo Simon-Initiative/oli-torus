@@ -22,7 +22,7 @@ defmodule OliWeb.Products.PaymentsView do
   data limit, :integer, default: 20
   data query, :string, default: ""
   data applied_query, :string, default: ""
-  data enabled_download, :boolean, default: false
+  data download_enabled, :boolean, default: false
 
   @table_filter_fn &OliWeb.Products.PaymentsView.filter_rows/3
   @table_push_patch_path &OliWeb.Products.PaymentsView.live_path/2
@@ -74,7 +74,7 @@ defmodule OliWeb.Products.PaymentsView do
     ~F"""
     <div>
 
-      <CreateCodes id="create_codes" disabled={!@product.requires_payment} count={@code_count} product_slug={@product_slug} enabled_download={@enabled_download} click="create" change="change_count"/>
+      <CreateCodes id="create_codes" disabled={!@product.requires_payment} count={@code_count} product_slug={@product_slug} download_enabled={@download_enabled} create_codes="create" change="change_count"/>
 
       <hr class="mt-5 mb-5"/>
 
@@ -113,10 +113,13 @@ defmodule OliWeb.Products.PaymentsView do
   end
 
   def handle_event("create", _, socket) do
-    case Oli.Delivery.Paywall.create_payment_codes(
-           socket.assigns.product_slug,
-           socket.assigns.code_count
-         ) do
+    create_payment_codes =
+      Oli.Delivery.Paywall.create_payment_codes(
+        socket.assigns.product_slug,
+        socket.assigns.code_count
+      )
+
+    case create_payment_codes do
       {:ok, _} ->
         payments = list_payments(socket.assigns.product_slug)
 
@@ -135,7 +138,7 @@ defmodule OliWeb.Products.PaymentsView do
            payments: payments,
            total_count: total_count,
            table_model: table_model,
-           enabled_download: true
+           download_enabled: true
          )}
 
       _ ->
@@ -152,6 +155,6 @@ defmodule OliWeb.Products.PaymentsView do
         _ -> 1
       end
 
-    {:noreply, assign(socket, code_count: count, enabled_download: false)}
+    {:noreply, assign(socket, code_count: count, download_enabled: false)}
   end
 end

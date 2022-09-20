@@ -320,7 +320,7 @@ defmodule OliWeb.Router do
     get(
       "/products/:product_id/payments/donwload_codes",
       PaymentController,
-      :download_codes_generated
+      :download_payment_codes
     )
 
     get("/products/:product_id/payments/:count", PaymentController, :download_codes)
