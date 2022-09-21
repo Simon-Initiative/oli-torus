@@ -15,7 +15,6 @@ import { getJanusCAPIRequestTypeString, JanusCAPIRequestTypes } from './JanusCAP
 import { CapiIframeModel } from './schema';
 
 const externalActivityeventsMap: Record<string, number[]> = {};
-const externalActivityGetDataRequestMap: Record<string, any> = {};
 let context = 'VIEWER';
 function addExternalActivityeventsKey(key: string, value: number) {
   const eventStatus = externalActivityeventsMap[key] || [];
@@ -446,7 +445,7 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
   const writeCapiLog = (msg: any, ...rest: any[]) => {
     // TODO: change to a config value?
-    const boolWriteLog = false;
+    const boolWriteLog = true;
     let colorStyle = 'background: #222; color: #bada55';
     const [logStyle] = rest;
     const args = rest;
@@ -519,18 +518,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
                 JanusCAPIRequestTypes.CHECK_COMPLETE_RESPONSE,
                 {},
               );
-              const events = externalActivityeventsMap[id];
-              const pendingGetDataResponse = events.filter(
-                (event) => event === JanusCAPIRequestTypes.GET_DATA_REQUEST,
-              );
-              if (
-                pendingGetDataResponse?.length &&
-                Object.keys(externalActivityGetDataRequestMap)?.length
-              ) {
-                //need to send GET_DATA_RESPONSE
-                const dataRequest = externalActivityGetDataRequestMap[id];
-                if (dataRequest) handleGetData(dataRequest.data);
-              }
             }
             break;
           case NotificationType.STATE_CHANGED:
@@ -1017,15 +1004,16 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
 
         case JanusCAPIRequestTypes.GET_DATA_REQUEST:
           addExternalActivityeventsKey(`${id}`, JanusCAPIRequestTypes.GET_DATA_REQUEST);
-
           const eventStatus = externalActivityeventsMap[`${id}`] || [];
-          const { key, simId } = data.values;
-          externalActivityGetDataRequestMap[id] = { key, simId, data };
           if (
             eventStatus &&
             Array.isArray(eventStatus) &&
-            !eventStatus.includes(JanusCAPIRequestTypes.CHECK_START_RESPONSE)
+            eventStatus.includes(JanusCAPIRequestTypes.CHECK_START_RESPONSE)
           ) {
+            setTimeout(() => {
+              handleGetData(data);
+            }, 2000);
+          } else {
             handleGetData(data);
           }
           break;
@@ -1063,7 +1051,6 @@ const ExternalActivity: React.FC<PartComponentProps<CapiIframeModel>> = (props) 
       // unlisten to post message calls
       window.removeEventListener('message', messageListener.current);
       delete externalActivityeventsMap[id];
-      delete externalActivityGetDataRequestMap[id];
     };
   }, [simFrame, scriptEnv]);
 
