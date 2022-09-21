@@ -518,7 +518,7 @@ defmodule Oli.Rendering.Content.Html do
       <span
         tabindex="0"
         role="button"
-        class="popup__anchorText#{if !String.contains?(trigger, "hover") do
+        class="term popup__anchorText#{if !String.contains?(trigger, "hover") do
         " popup__click"
       else
         ""

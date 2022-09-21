@@ -37,9 +37,11 @@ export const defaultMCModel: () => MCSchema = () => {
 };
 
 export const getCorrectChoice = (model: HasParts, partId: string) => {
-  const responseIdMatch = Maybe.maybe(
-    getCorrectResponse(model, partId).rule.match(/{(.*)}/),
-  ).valueOrThrow(new Error('Could not find choice id in correct response'));
+  const responseIdMatch = getCorrectResponse(model, partId).rule.match(/{(.*)}/);
+
+  if (responseIdMatch === null) {
+    return null;
+  }
 
   return Choices.getOne(model, responseIdMatch[1]);
 };
