@@ -13,7 +13,7 @@ export type ExtrinsicUpsert = {
 export type ExtrinsicDelete = {
   result: 'success';
 };
-
+const userStateCache: Record<any, any> = {};
 const setQ = new Set();
 const lastSet = () => {
   const arr = Array.from(setQ);
@@ -52,10 +52,35 @@ export const readGlobalUserState = async (
     if (lastSet()) {
       await lastSet();
     }
-    const serverUserState = await readGlobal(keys);
-    // merge server state with result
-    if ((serverUserState as any).type !== 'ServerError') {
-      result = serverUserState;
+    let cacheMissingRequestedKey = false;
+    if (keys) {
+      const lastchacheTimeStamp = userStateCache['timestamp'];
+      //If cache is not older than 20 sec then lets fetch the data from cache
+      if (Date.now() - lastchacheTimeStamp < 20000) {
+        keys.forEach((key) => {
+          if (!userStateCache[key]) {
+            //if cache does not have any of the requested keys, we should make the server call
+            cacheMissingRequestedKey = true;
+          }
+          result[key] = userStateCache[key];
+        });
+      } else {
+        const serverUserState = await readGlobal(keys);
+        // merge server state with result
+        if ((serverUserState as any).type !== 'ServerError') {
+          result = serverUserState;
+        }
+      }
+    } else {
+      result = userStateCache;
+    }
+    if (cacheMissingRequestedKey) {
+      //if cache does not have any of the requested keys, we should make the server call
+      const serverUserState = await readGlobal(keys);
+      // merge server state with result
+      if ((serverUserState as any).type !== 'ServerError') {
+        result = serverUserState;
+      }
     }
   }
   return result;
@@ -100,7 +125,19 @@ export const updateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
 ) => {
-  /* console.log('updateGlobalUserState called', { updates, useLocalStorage }); */
+  //Lets update the cache with latest changes.
+  const topLevelKeys = Object.keys(updates);
+  userStateCache['timestamp'] = Date.now();
+  topLevelKeys.forEach((topKey: any) => {
+    const actualKeys = Object.keys(updates[topKey]);
+    actualKeys.forEach((actualKey) => {
+      userStateCache[`${topKey}`] = {
+        ...userStateCache[topKey],
+        [actualKey]: updates[topKey][actualKey],
+      };
+    });
+  });
+  /*console.log('updateGlobalUserState called', { updates, useLocalStorage });*/
   const result = await batchedUpdate(updates, useLocalStorage);
   /* console.log('updateGlobalUserState result', { result, updates }); */
   return result;
