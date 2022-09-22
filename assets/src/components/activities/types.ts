@@ -353,7 +353,7 @@ export interface Stem extends Identifiable, HasContent {}
 /**
  * Marker interface for an entity that has a question stem.
  */
-export interface HasStem {
+export interface HasStem extends ActivityModelSchema {
   stem: Stem;
 }
 /**
