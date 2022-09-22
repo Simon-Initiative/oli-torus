@@ -5,6 +5,8 @@ defmodule OliWeb.PaymentControllerTest do
 
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
+  alias OliWeb.PaymentController
+  alias Oli.Delivery.Paywall
 
   describe "payment controller tests" do
     setup [:setup_session]
@@ -147,6 +149,25 @@ defmodule OliWeb.PaymentControllerTest do
       assert html_response(conn, 200) =~ "<input type=\"text\" disabled value=\"$100.00\"/>"
 
       reset_test_payment_config()
+    end
+
+    test "download a file with the last payment codes created", %{conn: conn} do
+      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
+      Paywall.create_payment_codes(product.slug, 2)
+      codes = Paywall.get_payment_codes(2, product.slug)
+
+      assert response(
+               PaymentController.create_payment_codes_file(conn, codes, product.slug),
+               200
+             )
+    end
+
+    test "call 'get_payment_codes/2' return codes for a specific section" do
+      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
+      Paywall.create_payment_codes(product.slug, 3)
+      codes = Paywall.get_payment_codes(3, product.slug)
+
+      assert length(codes) == 3
     end
   end
 

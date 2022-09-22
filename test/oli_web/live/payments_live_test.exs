@@ -7,6 +7,7 @@ defmodule OliWeb.PaymentsLiveTest do
 
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Paywall.Payment
+  alias Oli.Delivery.Paywall
 
   defp create_product(_conn) do
     product =
@@ -19,34 +20,39 @@ defmodule OliWeb.PaymentsLiveTest do
     Routes.live_path(OliWeb.Endpoint, OliWeb.Products.PaymentsView, product_slug)
   end
 
-  @live_view_payment_route Routes.live_path(
-                             OliWeb.Endpoint,
-                             OliWeb.Products.PaymentsView,
-                             "test_product"
-                           )
-
-  @live_view_product_route Routes.live_path(
-                             OliWeb.Endpoint,
-                             OliWeb.Products.ProductsView,
-                             "test_product"
-                           )
+  defp live_view_product_route(product_slug) do
+    Routes.live_path(OliWeb.Endpoint, OliWeb.Products.ProductsView, product_slug)
+  end
 
   describe "user cannot access when is not logged in" do
-    test "redirects to new session when accessing the index view", %{conn: conn} do
-      {:error,
-       {:redirect,
-        %{
-          to:
-            "/authoring/session/new?request_path=%2Fauthoring%2Fproducts%2Ftest_product%2Fpayments"
-        }}} = live(conn, @live_view_payment_route)
+    setup [:create_product]
+
+    test "redirects to new session when accessing the product detail view", %{
+      conn: conn,
+      product: product
+    } do
+      product_slug = product.slug
+
+      redirect_path =
+        "/authoring/session/new?request_path=%2Fauthoring%2Fproducts%2F#{product_slug}%2Fpayments"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_payments_route(product_slug))
     end
   end
 
-  describe "user cannot access when is logged in as an author but is not a system admin" do
-    setup [:author_conn]
+  describe "user cannot access when is logged in as author of another project and is not a system administrator" do
+    setup [:author_project_conn, :create_product]
 
-    test "redirects to projects overview when accessing the payments view", %{conn: conn} do
-      {:error, {:redirect, %{to: "/authoring/projects"}}} = live(conn, @live_view_product_route)
+    test "redirects to projects overview when accessing the payments view", %{
+      conn: conn,
+      product: product
+    } do
+      product_slug = product.slug
+      redirect_path = "/authoring/projects"
+
+      {:error, {:redirect, %{to: ^redirect_path}}} =
+        live(conn, live_view_product_route(product_slug))
     end
   end
 
@@ -56,10 +62,6 @@ defmodule OliWeb.PaymentsLiveTest do
     test "loads correctly when there are no payments", %{conn: conn, product: product} do
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
-      assert has_element?(view, "button", "Create")
-      assert has_element?(view, "a", "Download last created")
-      assert has_element?(view, "input[phx-change=\"change_search\"]")
-      assert has_element?(view, "p", "None exist")
       refute has_element?(view, ".table .table-striped .table-bordered .table-sm")
     end
 
@@ -69,9 +71,11 @@ defmodule OliWeb.PaymentsLiveTest do
     } do
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
-      assert view
-             |> element("a")
-             |> render() =~ "disabled"
+      assert has_element?(
+               view,
+               "a[class*=\"disabled\"]",
+               "Download last created"
+             )
     end
 
     test "download button is enabled if any code has been created", %{
@@ -84,23 +88,28 @@ defmodule OliWeb.PaymentsLiveTest do
       |> element("button[phx-click=\"create\"]")
       |> render_click()
 
-      refute view
-             |> element("a", "Download last created")
-             |> render() =~ "disabled"
+      refute has_element?(
+               view,
+               "a[class*=\"disabled\"]",
+               "Download last created"
+             )
     end
 
-    test "When create codes button is clicked, codes are created and listing in a table", %{
+    test "When create codes button is clicked, codes are created and displayed in a table", %{
       conn: conn,
       product: product
     } do
+      {:ok, [payment | _tail]} = Paywall.create_payment_codes(product.slug, 1)
+      code = Payment.to_human_readable(payment.code)
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
       view
       |> element("button[phx-click=\"create\"]")
       |> render_click()
 
-      assert has_element?(view, ".table")
-      assert has_element?(view, "td")
+      assert view
+             |> element("tr:last-child > td:first-child > div")
+             |> render() =~ code
     end
   end
 end
