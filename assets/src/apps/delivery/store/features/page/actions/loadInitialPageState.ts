@@ -4,6 +4,7 @@ import { writePageAttemptState } from 'data/persistence/state/intrinsic';
 import guid from 'utils/guid';
 import {
   defaultGlobalEnv,
+  evalAssignScript,
   evalScript,
   getAssignScript,
   getEnvState,
@@ -134,6 +135,23 @@ export const loadInitialPageState = createAsyncThunk(
         const resumeId = snapshot['session.resume'];
 
         /* console.log('VISIT HISTORY', { visitHistory, resumeId, snapshot }); */
+
+        /* console.log('RESUMING!: ', { attempts, resumeId }); */
+        // if we are resuming, then session.tutorialScore should be set based on the total attempt.score
+        // and session.currentQuestionScore should be 0
+        const totalScore = attempts.reduce((acc: number, attempt: any) => {
+          acc += attempt.score;
+          return acc;
+        }, 0);
+        evalAssignScript(
+          { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
+          defaultGlobalEnv,
+        );
+        sessionState['session.tutorialScore'] = totalScore;
+        sessionState['session.currentQuestionScore'] = 0;
+        if (!params.previewMode) {
+          await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+        }
 
         let resumeSequenceId = sequence[0].custom.sequenceId;
         if (resumeId) {

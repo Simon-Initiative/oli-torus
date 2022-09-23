@@ -80,14 +80,14 @@ const LikertComponent: React.FC = () => {
           disabled={isEvaluated(uiState)}
           context={writerContext}
         />
+        <GradedPointsConnected />
+        <ResetButtonConnected
+          onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
+        />
+        <SubmitButtonConnected />
+        <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
+        <EvaluationConnected />
       </div>
-      <GradedPointsConnected />
-      <ResetButtonConnected
-        onReset={() => dispatch(resetAction(onResetActivity, emptySelectionMap))}
-      />
-      <SubmitButtonConnected />
-      <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
-      <EvaluationConnected />
     </div>
   );
 };
