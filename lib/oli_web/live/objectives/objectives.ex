@@ -13,7 +13,8 @@ defmodule OliWeb.Objectives.Objectives do
     CreateNew,
     DeleteModal,
     SelectionsModal,
-    BreakdownModal
+    BreakdownModal,
+    SelectExistingSubModal
   }
 
   alias Oli.Publishing.ObjectiveMappingTransfer
@@ -251,6 +252,59 @@ defmodule OliWeb.Objectives.Objectives do
     else
       {:noreply, socket}
     end
+  end
+
+  def handle_event("show_select_existing_sub_modal", %{"slug" => slug}, socket) do
+    # TO DO: refactor to less iterations
+    click_objective =
+      Enum.find(socket.assigns.objectives_tree, fn objective -> objective.mapping.revision.slug == slug end)
+
+    sub_objectives = Enum.reduce(socket.assigns.objectives_tree, [], fn parent_objective, sub_objectives ->
+      if parent_objective.mapping.revision.slug != slug do
+        Enum.reduce(parent_objective.children, sub_objectives, fn child, sub_objectives ->
+          in_sub_objectives =
+            Enum.find(sub_objectives, fn sub_objective -> sub_objective.mapping.revision.slug == child.mapping.revision.slug end)
+          in_parent_chidren =
+            Enum.find(click_objective.children, fn click_children -> click_children.mapping.revision.slug == child.mapping.revision.slug end)
+
+          case {in_sub_objectives, in_parent_chidren} do
+            {nil, nil} -> [child | sub_objectives]
+            _ -> sub_objectives
+          end
+        end)
+      else
+        sub_objectives
+      end
+    end)
+
+    {:noreply,
+      assign(socket,
+        modal: %{
+          component: SelectExistingSubModal,
+          assigns: %{
+            id: "select_existing_sub_modal",
+            parent_slug: slug,
+            sub_objectives: sub_objectives,
+            add: "add_existing_sub"
+          }
+        }
+      )}
+  end
+
+  def handle_event("add_existing_sub", %{"slug" => slug, "parent_slug" => parent_slug} = _params, socket) do
+    %{project: project, author: author} = socket.assigns
+
+    socket = case ObjectiveEditor.add_new_parent_for_sub_objective(
+        slug,
+        parent_slug,
+        project.slug,
+        author
+      ) do
+      {:ok, _revision} -> put_flash(socket, :info, "Sub-objective successfully added")
+      _ -> put_flash(socket, :error, "Could not add sub-objective")
+    end
+
+    {:noreply, hide_modal(socket)}
   end
 
   # handle processing deletion of item

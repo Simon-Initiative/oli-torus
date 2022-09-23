@@ -62,6 +62,31 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
     end
   end
 
+  def add_new_parent_for_sub_objective(slug, container_slug, project_slug, author) do
+    result =
+      Repo.transaction(fn ->
+        with {:ok, resource} <- Resources.get_resource_from_slug(slug) |> trap_nil(),
+             publication <- Publishing.project_working_publication(project_slug),
+             {:ok, revision_to_attach} <-
+               Publishing.get_published_revision(publication.id, resource.id)
+               |> trap_nil(),
+             {:ok, revision} <-
+              append_to_container(container_slug, publication, revision_to_attach, project_slug, author) do
+          revision
+        else
+          error -> Repo.rollback(error)
+        end
+      end)
+
+    case result do
+      {:ok, revision} ->
+        Broadcaster.broadcast_revision(revision, project_slug)
+        {:ok, revision}
+
+      e -> e
+    end
+  end
+
   def add_new_parent_for_objective(attrs, %Author{} = author, %Project{} = project, slug) do
     attrs =
       Map.merge(attrs, %{

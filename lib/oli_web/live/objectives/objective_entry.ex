@@ -34,19 +34,20 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
         <% @depth < 2 -> %>
           <% # this objective has one or more children, it is a container objective and more sub-objectives can be created %>
-          <div class="row create-sub-objective py-1">
-            <div class="col-12 pb-2">
-              <div style="margin-left: <%= @depth * 40 %>px">
+          <div class="row py-1 d-flex">
+            <button
+              class="ml-5 btn btn-xs btn-light"
+              phx-click="add_sub"
+              phx-value-slug="add_sub_<%= @objective_mapping.revision.slug %>">
+              <i class="fas fa-plus fa-lg"></i> Create new Sub-Objective
+            </button>
 
-                <button
-                  class="ml-1 btn btn-xs btn-light"
-                  phx-click="add_sub"
-                  phx-value-slug="add_sub_<%= @objective_mapping.revision.slug %>">
-                  <i class="fas fa-plus fa-lg"></i> Create Sub-Objective
-                </button>
-
-              </div>
-            </div>
+            <button
+              class="ml-2 btn btn-xs btn-light"
+              phx-click="show_select_existing_sub_modal"
+              phx-value-slug="<%= @objective_mapping.revision.slug %>">
+              <i class="fas fa-plus fa-lg"></i> Add existing Sub-Objective
+            </button>
           </div>
         <% true -> %>
 
