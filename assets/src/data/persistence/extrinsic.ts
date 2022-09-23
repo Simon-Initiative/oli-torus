@@ -52,29 +52,26 @@ export const readGlobalUserState = async (
     if (lastSet()) {
       await lastSet();
     }
-    let cacheMissingRequestedKey = false;
+    let refreshFromServer = false;
     if (keys) {
-      const lastchacheTimeStamp = userStateCache['timestamp'];
+      const cacheTimeThreshold = 50000;
+      const { timestamp: lastCacheTimeStamp } = userStateCache;
       //If cache is not older than 20 sec then lets fetch the data from cache
-      if (Date.now() - lastchacheTimeStamp < 20000) {
+      if (Date.now() - lastCacheTimeStamp < cacheTimeThreshold) {
         keys.forEach((key) => {
           if (!userStateCache[key]) {
             //if cache does not have any of the requested keys, we should make the server call
-            cacheMissingRequestedKey = true;
+            refreshFromServer = true;
           }
           result[key] = userStateCache[key];
         });
       } else {
-        const serverUserState = await readGlobal(keys);
-        // merge server state with result
-        if ((serverUserState as any).type !== 'ServerError') {
-          result = serverUserState;
-        }
+        refreshFromServer = true;
       }
     } else {
       result = userStateCache;
     }
-    if (cacheMissingRequestedKey) {
+    if (refreshFromServer) {
       //if cache does not have any of the requested keys, we should make the server call
       const serverUserState = await readGlobal(keys);
       // merge server state with result
@@ -127,7 +124,7 @@ export const updateGlobalUserState = async (
 ) => {
   //Lets update the cache with latest changes.
   const topLevelKeys = Object.keys(updates);
-  userStateCache['timestamp'] = Date.now();
+  userStateCache.timestamp = Date.now();
   topLevelKeys.forEach((topKey: any) => {
     const actualKeys = Object.keys(updates[topKey]);
     actualKeys.forEach((actualKey) => {
