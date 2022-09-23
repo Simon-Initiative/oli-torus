@@ -21,6 +21,28 @@
     }
   }
 
+  &.objectives {
+    border: 1px solid $content-purpose-objectives-color;
+
+    .content-purpose-label {
+      background-color: $content-purpose-objectives-color;
+      color: $white;
+
+      /** icon */
+      &::before {
+        font-family: 'Line Awesome Free';
+        font-weight: 900;
+        margin-left: 8px;
+        margin-right: 8px;
+        content: '\f11e';
+      }
+    }
+
+    .content-purpose-content {
+      font-size: 1.3em;
+    }
+  }
+
   &.checkpoint {
     border: 1px solid $content-purpose-checkpoint-color;
 
@@ -58,11 +80,11 @@
   }
 
   &.example {
-    border: 1px solid $content-purpose-example-color;
+    border-bottom: 1px dashed $content-purpose-example-color;
 
     .content-purpose-label {
-      background-color: $content-purpose-example-color;
-      color: $white;
+      border-bottom: 1px dashed $content-purpose-example-color;
+      font-weight: 700;
 
       /** icon */
       &::before {
