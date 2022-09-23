@@ -1,6 +1,6 @@
 import { ChoicesDelivery } from 'components/activities/common/choices/delivery/ChoicesDelivery';
 import { useDeliveryElementContext } from 'components/activities/DeliveryElementProvider';
-import { ChoiceId, HasChoices, PartId } from 'components/activities/types';
+import { ActivityModelSchema, ChoiceId, HasChoices, PartId } from 'components/activities/types';
 import { ActivityDeliveryState, isEvaluated } from 'data/activities/DeliveryState';
 import React from 'react';
 import { useSelector } from 'react-redux';
@@ -17,7 +17,7 @@ export const ChoicesDeliveryConnected: React.FC<Props> = ({
   selectedIcon,
   partId,
 }) => {
-  const { model, writerContext } = useDeliveryElementContext<HasChoices>();
+  const { model, writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   return (
     <ChoicesDelivery
