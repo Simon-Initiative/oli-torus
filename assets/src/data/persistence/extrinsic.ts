@@ -83,6 +83,19 @@ export const readGlobalUserState = async (
   return result;
 };
 
+const formatUserState = (updates: any, userSate: any) => {
+  const topLevelKeys = Object.keys(updates);
+  topLevelKeys.forEach((topKey: any) => {
+    const actualKeys = Object.keys(updates[topKey]);
+    actualKeys.forEach((actualKey) => {
+      userSate[`${topKey}`] = {
+        ...userSate[topKey],
+        [actualKey]: updates[topKey][actualKey],
+      };
+    });
+  });
+};
+
 export const internalUpdateGlobalUserState = async (
   updates: { [topKey: string]: { [key: string]: any } },
   useLocalStorage = false,
@@ -92,12 +105,7 @@ export const internalUpdateGlobalUserState = async (
   const currentState = await readGlobalUserState(topLevelKeys, useLocalStorage);
 
   const newState = { ...currentState };
-  topLevelKeys.forEach((topKey) => {
-    const actualKeys = Object.keys(updates[topKey]);
-    actualKeys.forEach((actualKey) => {
-      newState[topKey] = { ...newState[topKey], [actualKey]: updates[topKey][actualKey] };
-    });
-  });
+  formatUserState(updates, newState);
 
   if (useLocalStorage) {
     const existingState = localStorage.getItem('torus.userState') || '{}';
@@ -123,17 +131,8 @@ export const updateGlobalUserState = async (
   useLocalStorage = false,
 ) => {
   //Lets update the cache with latest changes.
-  const topLevelKeys = Object.keys(updates);
   userStateCache.timestamp = Date.now();
-  topLevelKeys.forEach((topKey: any) => {
-    const actualKeys = Object.keys(updates[topKey]);
-    actualKeys.forEach((actualKey) => {
-      userStateCache[`${topKey}`] = {
-        ...userStateCache[topKey],
-        [actualKey]: updates[topKey][actualKey],
-      };
-    });
-  });
+  formatUserState(updates, userStateCache);
   /*console.log('updateGlobalUserState called', { updates, useLocalStorage });*/
   const result = await batchedUpdate(updates, useLocalStorage);
   /* console.log('updateGlobalUserState result', { result, updates }); */
