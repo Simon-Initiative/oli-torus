@@ -1,40 +1,33 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { v4 } from 'uuid';
 import * as ContentModel from 'data/content/model/elements/types';
 import { InlineEditor } from '../common/settings/InlineEditor';
 import { CommandContext } from '../commands/interfaces';
 
 import { Model } from '../../../../data/content/model/elements/factories';
-import { selectAudio } from './definitionActions';
+
+import { PronunciationEditor } from '../PronunciationEditor';
 
 export const DefinitionInlineEditor: React.FC<{
   definition: ContentModel.Definition;
   commandContext: CommandContext;
   onEdit: (definition: Partial<ContentModel.Definition>) => void;
 }> = ({ definition, onEdit, commandContext }) => {
-  const previewPlayer = useRef<HTMLAudioElement>(null);
   const onEditTerm = (event: React.ChangeEvent<HTMLInputElement>) => {
     onEdit({ term: event.target.value });
   };
 
   // Need unique ID's in case there's more than one definition editor on screen
   const termId = useMemo(() => v4(), []);
-  const pronunciationId = useMemo(() => v4(), []);
 
   const onPronunciationEdit = useCallback(
-    (edit: ContentModel.TextBlock[]) => {
-      if (definition.pronunciation) {
-        onEdit({
-          pronunciation: {
-            ...definition.pronunciation,
-            children: edit,
-          },
-        });
-      } else {
-        onEdit({ pronunciation: Model.definitionPronunciation({ children: edit }) });
-      }
+    (newVal) => {
+      onEdit({
+        ...definition,
+        pronunciation: newVal,
+      });
     },
-    [definition.pronunciation, onEdit],
+    [definition, onEdit],
   );
 
   const onMeaningEdit = useCallback(
@@ -101,33 +94,8 @@ export const DefinitionInlineEditor: React.FC<{
     [definition.translations, onEdit],
   );
 
-  const onChangeAudio = useCallback(() => {
-    selectAudio(commandContext.projectSlug, definition.pronunciation?.src).then(
-      ({ url, contenttype }: ContentModel.AudioSource) => {
-        onEdit({ pronunciation: { ...definition.pronunciation, src: url, contenttype } });
-      },
-    );
-  }, [commandContext.projectSlug, definition.pronunciation, onEdit]);
-
-  const onPreviewAudio = useCallback(() => {
-    if (!previewPlayer.current) return;
-    if (previewPlayer.current.paused) {
-      previewPlayer.current.currentTime = 0;
-      previewPlayer.current.play();
-    } else {
-      previewPlayer.current.pause();
-    }
-  }, []);
-
-  const onRemoveAudio = useCallback(() => {
-    previewPlayer.current?.pause();
-    onEdit({
-      pronunciation: { ...definition.pronunciation, src: '', contenttype: '' },
-    });
-  }, [definition.pronunciation, onEdit]);
-
   return (
-    <div>
+    <div className="definition-editor">
       <div className="form-group">
         <label htmlFor={termId}>Term</label>
         <input
@@ -138,7 +106,6 @@ export const DefinitionInlineEditor: React.FC<{
           className="form-control"
         />
       </div>
-
       <div className="form-group">
         <label>Definitions</label>
         {definition.meanings.map((meaning: ContentModel.DefinitionMeaning, index: number) => (
@@ -168,7 +135,6 @@ export const DefinitionInlineEditor: React.FC<{
           </button>
         </div>
       </div>
-
       <div className="form-group">
         <label>
           Translations <small className="text-muted">Optional</small>
@@ -198,58 +164,11 @@ export const DefinitionInlineEditor: React.FC<{
           Add
         </button>
       </div>
-
-      <div className="form-group">
-        <label htmlFor={pronunciationId}>
-          Pronunciation <small className="text-muted">Optional</small>
-        </label>
-
-        <div className="form-control definition-input">
-          <InlineEditor
-            id={pronunciationId}
-            commandContext={commandContext}
-            placeholder=""
-            content={
-              Array.isArray(definition.pronunciation?.children)
-                ? definition.pronunciation.children
-                : []
-            }
-            onEdit={onPronunciationEdit}
-          />
-        </div>
-
-        {definition.pronunciation && (
-          <div className="definition-row audio-row">
-            <label>Pronunciation Audio: </label>
-            <button
-              onClick={onChangeAudio}
-              type="button"
-              className="btn btn-outline-secondary btn-pronunciation-audio"
-            >
-              <span className="material-icons ">folder</span>
-            </button>
-            {definition.pronunciation?.src && (
-              <>
-                <audio src={definition.pronunciation?.src} ref={previewPlayer} />
-                <button
-                  type="button"
-                  onClick={onPreviewAudio}
-                  className="btn btn-outline-success btn-pronunciation-audio "
-                >
-                  <span className="material-icons">play_circle</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={onRemoveAudio}
-                  className="btn btn-outline-danger btn-pronunciation-audio "
-                >
-                  <span className="material-icons">delete</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+      <PronunciationEditor
+        commandContext={commandContext}
+        pronunciation={definition.pronunciation}
+        onEdit={onPronunciationEdit}
+      />
     </div>
   );
 };

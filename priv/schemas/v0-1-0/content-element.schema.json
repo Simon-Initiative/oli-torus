@@ -115,6 +115,9 @@
         },
         {
           "$ref": "#/$defs/dialog"
+        },
+        {
+          "$ref": "#/$defs/conjugation"
         }
       ]
     },
@@ -563,6 +566,9 @@
         },
         {
           "$ref": "#/$defs/table-data"
+        },
+        {
+          "$ref": "#/$defs/table-conjugation"
         }
       ]
     },
@@ -606,6 +612,73 @@
         "align": {
           "enum": ["left", "center", "right"]
         },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
+
+    "table-conjugation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tc"
+        },
+        "audioSrc": {
+          "type": "string"
+        },
+        "audioType": {
+          "type": "string"
+        },
+        "pronouns": {
+          "type": "string"
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "rowspan": {
+          "type": "number"
+        },
+        "align": {
+          "enum": ["left", "center", "right"]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
+
+    "conjugation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "conjugation"
+        },
+
+        "title": {
+          "type": "string"
+        },
+
+        "verb": {
+          "type": "string"
+        },
+
+        "pronunciation": {
+          "$ref": "#/$defs/pronunciation"
+        },
+
+        "table": {
+          "$ref": "#/$defs/table"
+        },
+
         "children": {
           "type": "array",
           "items": {
@@ -913,7 +986,7 @@
       ]
     },
 
-    "definition-pronunciation": {
+    "pronunciation": {
       "properties": {
         "type": {
           "const": "pronunciation"
@@ -930,7 +1003,8 @@
             "$ref": "#/$defs/text-block"
           }
         }
-      }
+      },
+      "required": ["type", "children"]
     },
     "definition-translation": {
       "properties": {
@@ -969,7 +1043,7 @@
           "type": "string"
         },
         "pronunciation": {
-          "$ref": "#/$defs/definition-pronunciation"
+          "$ref": "#/$defs/pronunciation"
         },
         "translations": {
           "type": "array",
