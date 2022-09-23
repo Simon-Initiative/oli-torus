@@ -2,14 +2,16 @@ import { Maybe } from 'tsmonad';
 import React, { useContext } from 'react';
 import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { DeliveryElementProps } from './DeliveryElement';
+import { ActivityModelSchema } from './types';
 
-export interface DeliveryElementState<T> extends DeliveryElementProps<T> {
+export interface DeliveryElementState<T extends ActivityModelSchema>
+  extends DeliveryElementProps<T> {
   writerContext: WriterContext;
 }
 const DeliveryElementContext = React.createContext<DeliveryElementState<any> | undefined>(
   undefined,
 );
-export function useDeliveryElementContext<T>() {
+export function useDeliveryElementContext<T extends ActivityModelSchema>() {
   return Maybe.maybe(
     useContext<DeliveryElementState<T> | undefined>(DeliveryElementContext),
   ).valueOrThrow(

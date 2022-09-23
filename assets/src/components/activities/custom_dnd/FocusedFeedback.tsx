@@ -10,14 +10,32 @@ export type FocusedFeedbackProps = {
 
 export const FocusedFeedback: React.FC<FocusedFeedbackProps> = (props: FocusedFeedbackProps) => {
   const { focusedPart } = props;
-  const { graded, mode, surveyId, writerContext } = useDeliveryElementContext();
+  const {
+    mode,
+    context: { graded, surveyId },
+    writerContext,
+  } = useDeliveryElementContext();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
 
-  // If not item is selected, or this is within a survey, or if it is graded but not in review mode, do not show feedback
-  if (focusedPart === null || surveyId !== undefined || (graded && mode !== 'review')) {
+  // if this is within a survey or if it is graded but not in review mode, do not show feedback
+  if (surveyId || (graded && mode !== 'review')) {
     return null;
   }
 
-  const part = uiState.attemptState.parts.find((ps) => ps.partId === focusedPart);
-  return part !== undefined ? renderPartFeedback(part, writerContext) : null;
+  if (graded) {
+    // if we are showing feedback in a graded review context, render all part feedbacks
+    return (
+      <React.Fragment>
+        {uiState.attemptState.parts.map((part) => (
+          <React.Fragment key={part.partId}>
+            {renderPartFeedback(part, writerContext)}
+          </React.Fragment>
+        ))}
+      </React.Fragment>
+    );
+  } else {
+    // otherwise, only render the currently focused part feedback
+    const part = uiState.attemptState.parts.find((ps) => ps.partId === focusedPart);
+    return part !== undefined ? renderPartFeedback(part, writerContext) : null;
+  }
 };
