@@ -244,4 +244,10 @@ export const schema: Schema = {
     isTopLevel: true,
     validChildren: {},
   },
+  activity_link: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
 };

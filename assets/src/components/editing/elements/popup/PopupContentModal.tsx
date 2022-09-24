@@ -1,10 +1,10 @@
+import React from 'react';
 import { RichText } from 'components/activities/types';
 import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
-import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
 import * as ContentModel from 'data/content/model/elements/types';
-import React from 'react';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
+import Modal, { ModalSize } from 'components/modal/Modal';
 
 interface Props {
   onDone: (changes: Partial<ContentModel.Popup>) => void;
@@ -52,9 +52,13 @@ export const PopupContentModal = (props: Props) => {
   );
 
   return (
-    <FullScreenModal
-      onCancel={(_e) => props.onCancel()}
-      onDone={(_e) => props.onDone({ content, trigger })}
+    <Modal
+      title=""
+      size={ModalSize.MEDIUM}
+      okLabel="Save"
+      cancelLabel="Cancel"
+      onCancel={props.onCancel}
+      onInsert={() => props.onDone({ content, trigger })}
     >
       <div className="row">
         <div className="col-12">
@@ -71,6 +75,6 @@ export const PopupContentModal = (props: Props) => {
           </div>
         </div>
       </div>
-    </FullScreenModal>
+    </Modal>
   );
 };

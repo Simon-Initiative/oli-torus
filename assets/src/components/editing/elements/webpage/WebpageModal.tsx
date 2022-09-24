@@ -1,6 +1,6 @@
-import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
 import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
+import Modal, { ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -13,7 +13,14 @@ export const WebpageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [width, setWidth] = useState(model.width);
 
   return (
-    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone({ alt, width, src })}>
+    <Modal
+      title=""
+      size={ModalSize.MEDIUM}
+      okLabel="Save"
+      cancelLabel="Cancel"
+      onCancel={onCancel}
+      onInsert={() => onDone({ alt, width, src })}
+    >
       <div>
         <h3 className="mb-2">Settings</h3>
         <h4 className="mb-2">Change Webpage Embed URL</h4>
@@ -41,6 +48,6 @@ export const WebpageModal = ({ onDone, onCancel, model }: ModalProps) => {
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
         />
       </div>
-    </FullScreenModal>
+    </Modal>
   );
 };

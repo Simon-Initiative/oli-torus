@@ -224,6 +224,52 @@
   }
 }
 
+.activity-link {
+  &.none {
+    border: 1px solid $gray-500;
+  }
+
+  &.checkpoint {
+    background-color: rgba($content-purpose-checkpoint-color, 0.2);
+  }
+
+  &.didigetthis {
+    background-color: rgba($content-purpose-didigetthis-color, 0.2);
+  }
+
+  &.example {
+    background-color: $body-bg;
+  }
+
+  &.labactivity {
+    background-color: rgba($content-purpose-labactivity-color, 0.2);
+  }
+
+  &.learnbydoing {
+    background-color: rgba($content-purpose-learnbydoing-color, 0.2);
+  }
+
+  &.learnmore {
+    background-color: rgba($content-purpose-learnmore-color, 0.2);
+  }
+
+  &.manystudentswonder {
+    background-color: rgba($content-purpose-manystudentswonder-color, 0.2);
+  }
+
+  &.quiz {
+    background-color: rgba($content-purpose-quiz-color, 0.2);
+  }
+
+  &.simulation {
+    background-color: rgba($content-purpose-simulation-color, 0.2);
+  }
+
+  &.walkthrough {
+    background-color: rgba($content-purpose-walkthrough-color, 0.2);
+  }
+}
+
 // activity-purpose is deprecated but is left here to support existing content
 .activity-purpose {
   padding: 4px 8px;

@@ -402,7 +402,7 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
         :ok
 
       json ->
-        schema = SchemaResolver.schema("activity-content.schema.json")
+        schema = SchemaResolver.resolve("activity-content.schema.json")
 
         case ExJsonSchema.Validator.validate(schema, json) do
           :ok ->
@@ -426,7 +426,9 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   defp activity_content(_), do: nil
 
   # if objectives to attach are provided, attach them to all parts
-  defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{}, do: attach_objectives_to_all_parts(model, objectives_to_attach)
+  defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{},
+    do: attach_objectives_to_all_parts(model, objectives_to_attach)
+
   # if the objectives map is already built and can be used directly
   defp attach_objectives(_model, _objectives = [], raw_objectives), do: {:ok, raw_objectives}
 
@@ -603,7 +605,16 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
           | {:error, {:not_found}}
           | {:error, {:error}}
           | {:error, {:not_authorized}}
-  def create(project_slug, activity_type_slug, author, model, all_parts_objectives, scope \\ "embedded", title \\ nil, raw_objectives \\ %{}) do
+  def create(
+        project_slug,
+        activity_type_slug,
+        author,
+        model,
+        all_parts_objectives,
+        scope \\ "embedded",
+        title \\ nil,
+        raw_objectives \\ %{}
+      ) do
     Repo.transaction(fn ->
       with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
            {:ok} <- authorize_user(author, project),
@@ -754,12 +765,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   end
 
   defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
-    case ContentMigrator.migrate(content, :activity, to: :latest) do
-      {:migrated, migrated_content} ->
-        {:ok, %Revision{revision | content: migrated_content}}
-
-      {:skipped, _content} ->
-        {:ok, revision}
-    end
+    {:ok, %Revision{revision | content: ContentMigrator.migrate(content, :activity, to: :latest)}}
   end
 end

@@ -1,0 +1,29 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-1/content-survey.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Survey",
+  "description": "A grouping of content with a particular layout",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "survey"
+    },
+    "id": {
+      "type": [
+        "integer",
+        "string"
+      ]
+    },
+    "title": {
+      "type": "string"
+    },
+    "children": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-1/elements.schema.json"
+    }
+  },
+  "required": [
+    "type",
+    "id",
+    "children"
+  ]
+}

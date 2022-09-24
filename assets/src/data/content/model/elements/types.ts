@@ -24,7 +24,8 @@ export type TopLevel =
   | Blockquote
   | FormulaBlock
   | Video
-  | Semantic;
+  | Semantic
+  | ActivityLink;
 
 export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
 
@@ -322,6 +323,12 @@ export interface Popup extends SlateElement<Text[]> {
   type: 'popup';
   trigger: any;
   content: RichText;
+}
+
+export interface ActivityLink extends SlateElement<Text[]> {
+  type: 'activity_link';
+  ref: string;
+  purpose: string;
 }
 
 // Captions were formerly only strings

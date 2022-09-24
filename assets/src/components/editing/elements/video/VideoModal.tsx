@@ -1,9 +1,9 @@
-import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
 import React, { useCallback, useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import { selectVideo } from './videoActions';
 import { Maybe } from 'tsmonad';
 import { selectImage } from '../image/imageActions';
+import Modal, { ModalSize } from 'components/modal/Modal';
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -80,7 +80,14 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
   );
 
   return (
-    <FullScreenModal onCancel={onCancel} onDone={onModalDone}>
+    <Modal
+      title=""
+      size={ModalSize.MEDIUM}
+      okLabel="Save"
+      cancelLabel="Cancel"
+      onCancel={onCancel}
+      onInsert={onModalDone}
+    >
       <h3 className="mb-2">Video Settings</h3>
       <h4 className="mb-2">Video Source(s)</h4>
       <p className="mb-2">
@@ -146,6 +153,6 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
           />
         </span>
       </div>
-    </FullScreenModal>
+    </Modal>
   );
 };

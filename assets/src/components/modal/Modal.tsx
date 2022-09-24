@@ -1,16 +1,16 @@
 import * as React from 'react';
 
-interface ModalSelection {
+interface Modal {
   modal: any;
 }
 
-export enum sizes {
-  small = 'sm',
-  medium = 'md',
-  large = 'lg',
-  extraLarge = 'xlg',
+export enum ModalSize {
+  SMALL = 'sm',
+  MEDIUM = 'md',
+  LARGE = 'lg',
+  X_LARGE = 'xlg',
 }
-export interface ModalSelectionProps {
+export interface ModalProps {
   okLabel?: string;
   okClassName?: string;
   cancelLabel?: string;
@@ -20,25 +20,31 @@ export interface ModalSelectionProps {
   hideOkButton?: boolean;
   onInsert?: () => void;
   onCancel?: () => void;
-  size?: sizes;
+  size?: ModalSize;
   footer?: any;
 }
 
-interface ModalSelectionState {
+interface ModalState {
   disableInsert: boolean;
 }
 
-class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelectionState> {
+class Modal extends React.PureComponent<ModalProps, ModalState> {
   state = {
     disableInsert: this.props.disableInsert === undefined ? false : this.props.disableInsert,
   };
 
   componentDidMount() {
     (window as any).$(this.modal).modal('show');
+    document.body.style.overflow = 'hidden';
+
+    $(this.modal).on('hidden.bs.modal', (e) => {
+      this.onCancel(e);
+    });
   }
 
   componentWillUnmount() {
     (window as any).$(this.modal).modal('hide');
+    document.body.style.overflow = 'unset';
   }
 
   onInsert = (e: any) => {
@@ -121,4 +127,4 @@ class ModalSelection extends React.PureComponent<ModalSelectionProps, ModalSelec
   }
 }
 
-export default ModalSelection;
+export default Modal;

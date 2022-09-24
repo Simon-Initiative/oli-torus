@@ -2,7 +2,7 @@ import React from 'react';
 import { Editor, Transforms } from 'slate';
 import * as ContentModel from 'data/content/model/elements/types';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import ModalSelection from 'components/modal/ModalSelection';
+import Modal from 'components/modal/Modal';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
@@ -25,7 +25,7 @@ export function selectAudio(
 
     const mediaLibrary = (
       <Provider store={store}>
-        <ModalSelection
+        <Modal
           title="Embed audio"
           onInsert={() => {
             dismiss();
@@ -44,7 +44,7 @@ export function selectAudio(
               selected.audio = Model.audio(audios[0].url);
             }}
           />
-        </ModalSelection>
+        </Modal>
       </Provider>
     );
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import ModalSelection, { sizes } from 'components/modal/ModalSelection';
+import Modal, { ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
@@ -73,9 +73,9 @@ export function selectVideo(
 
     const mediaLibrary = (
       <Provider store={store}>
-        <ModalSelection
+        <Modal
           title="Select Video"
-          size={sizes.extraLarge}
+          size={ModalSize.X_LARGE}
           onInsert={() => {
             dismiss();
             resolve(selected);
@@ -93,7 +93,7 @@ export function selectVideo(
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={[]}
           />
-        </ModalSelection>
+        </Modal>
       </Provider>
     );
 

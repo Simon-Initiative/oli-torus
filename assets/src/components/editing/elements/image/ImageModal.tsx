@@ -1,6 +1,6 @@
-import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
 import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
+import Modal, { ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -12,7 +12,14 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [width, setWidth] = useState(model.width);
 
   return (
-    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone({ alt, width })}>
+    <Modal
+      title=""
+      size={ModalSize.MEDIUM}
+      okLabel="Save"
+      cancelLabel="Cancel"
+      onCancel={() => onCancel()}
+      onInsert={() => onDone({ alt, width })}
+    >
       <div>
         <h3 className="mb-2">Settings</h3>
         <div
@@ -55,6 +62,6 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
           placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
         />
       </div>
-    </FullScreenModal>
+    </Modal>
   );
 };

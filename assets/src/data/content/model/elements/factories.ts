@@ -35,7 +35,7 @@ import {
   AllModelElements,
   Dialog,
   DialogLine,
-  DialogSpeaker,
+  ActivityLink,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -97,6 +97,9 @@ export const Model = {
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+
+  activity_link: (ref = '', purpose = 'none') =>
+    create<ActivityLink>({ type: 'activity_link', ref, purpose }),
 
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),

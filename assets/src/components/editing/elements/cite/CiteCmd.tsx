@@ -9,7 +9,7 @@ import React from 'react';
 import { configureStore } from 'state/store';
 import { modalActions } from 'actions/modal';
 import { CitationEditor } from './CitationEditor';
-import ModalSelection from 'components/modal/ModalSelection';
+import Modal from 'components/modal/Modal';
 import { Provider } from 'react-redux';
 import * as ContentModel from 'data/content/model/elements/types';
 
@@ -26,7 +26,7 @@ export function selectCitation(
 
     const mediaLibrary = (
       <Provider store={store}>
-        <ModalSelection
+        <Modal
           title="Select citation"
           onInsert={() => {
             dismiss();
@@ -40,7 +40,7 @@ export function selectCitation(
               selected = selection;
             }}
           />
-        </ModalSelection>
+        </Modal>
       </Provider>
     );
 

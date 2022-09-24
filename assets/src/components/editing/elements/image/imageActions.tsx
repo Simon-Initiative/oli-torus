@@ -1,7 +1,7 @@
 import React from 'react';
 import { BaseSelection, Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import ModalSelection, { sizes } from 'components/modal/ModalSelection';
+import Modal, { ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command } from 'components/editing/elements/commands/interfaces';
@@ -26,9 +26,9 @@ export function selectImage(
 
     const mediaLibrary = (
       <Provider store={store}>
-        <ModalSelection
+        <Modal
           title="Select Image"
-          size={sizes.extraLarge}
+          size={ModalSize.X_LARGE}
           onInsert={() => {
             dismiss();
             resolve(selectedUrl);
@@ -46,7 +46,7 @@ export function selectImage(
             selectionType={SELECTION_TYPES.SINGLE}
             initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
           />
-        </ModalSelection>
+        </Modal>
       </Provider>
     );
 

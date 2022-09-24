@@ -1,0 +1,32 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-1/elements.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Elements",
+  "description": "List of basic page elements",
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-1/content-block.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-1/content-group.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-1/content-survey.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/content-break.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-reference.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-bank-selection.schema.json"
+      },
+      {
+        "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/activity-sequence.schema.json"
+      }
+    ]
+  }
+}

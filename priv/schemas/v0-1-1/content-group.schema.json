@@ -1,0 +1,43 @@
+{
+  "$id": "http://torus.oli.cmu.edu/schemas/v0-1-1/content-group.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "Content Group",
+  "description": "A grouping of content with a particular layout",
+  "type": "object",
+  "properties": {
+    "type": {
+      "const": "group"
+    },
+    "id": {
+      "type": [
+        "integer",
+        "string"
+      ]
+    },
+    "layout": {
+      "enum": [
+        "vertical",
+        "deck"
+      ]
+    },
+    "paginationMode": {
+      "enum": [
+        "normal",
+        "manualReveal",
+        "automatedReveal"
+      ]
+    },
+    "purpose": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
+    },
+    "children": {
+      "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-1/elements.schema.json"
+    }
+  },
+  "required": [
+    "type",
+    "layout",
+    "purpose",
+    "children"
+  ]
+}

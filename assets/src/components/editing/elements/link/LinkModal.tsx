@@ -1,4 +1,3 @@
-import { FullScreenModal } from 'components/editing/toolbar/FullScreenModal';
 import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
@@ -11,6 +10,7 @@ import {
 } from 'data/content/model/elements/utils';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Maybe } from 'tsmonad';
+import Modal, { ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -148,8 +148,15 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
   }
 
   return (
-    <FullScreenModal onCancel={(_e) => onCancel()} onDone={() => onDone({ href })}>
+    <Modal
+      title=""
+      size={ModalSize.MEDIUM}
+      okLabel="Save"
+      cancelLabel="Cancel"
+      onCancel={onCancel}
+      onInsert={() => onDone({ href })}
+    >
       {renderedState}
-    </FullScreenModal>
+    </Modal>
   );
 };

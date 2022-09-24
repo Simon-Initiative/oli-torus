@@ -7,14 +7,13 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import * as ActivityTypes from 'components/activities/types';
 import { OliEmbeddedActions } from 'components/activities/oli_embedded/actions';
-
 import guid from 'utils/guid';
 import { uploadFiles } from 'components/media/manager/upload';
 import { CloseButton } from 'components/misc/CloseButton';
 import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
 import { lastPart } from 'components/activities/oli_embedded/utils';
 import { XmlEditor } from 'components/common/XmlEditor';
-import ModalSelection from 'components/modal/ModalSelection';
+import Modal from 'components/modal/Modal';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
@@ -128,7 +127,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
     );
 
     return (
-      <ModalSelection
+      <Modal
         title="File Upload"
         footer={footer}
         onCancel={() => {
@@ -136,7 +135,7 @@ const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {
         }}
       >
         <div className="alert alert-warning">{error}</div>
-      </ModalSelection>
+      </Modal>
     );
   };
 
