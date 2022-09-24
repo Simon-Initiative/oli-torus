@@ -4,7 +4,7 @@ import * as monaco from 'monaco-editor';
 import { Formula } from '../../../common/Formula';
 import { isDarkMode } from '../../../../utils/browser';
 import { FormulaToolbar } from './FormulaToolbar';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 const MonacoEditor = React.lazy(() => import('@uiw/react-monacoeditor'));
 
@@ -37,7 +37,7 @@ export const FormulaModal = ({ onDone, onCancel, model }: ModalProps) => {
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={() => onCancel()}
-      onInsert={() => onDone({ src, subtype })}
+      onOk={() => onDone({ src, subtype })}
     >
       <div className="formula-editor">
         <h3 className="mb-2">Formula Editor</h3>

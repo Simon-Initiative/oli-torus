@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
 
 interface Modal {
   modal: any;
@@ -10,6 +10,7 @@ export enum ModalSize {
   LARGE = 'lg',
   X_LARGE = 'xlg',
 }
+
 export interface ModalProps {
   okLabel?: string;
   okClassName?: string;
@@ -18,113 +19,96 @@ export interface ModalProps {
   hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
-  onInsert?: () => void;
+  onOk?: () => void;
   onCancel?: () => void;
   size?: ModalSize;
   footer?: any;
 }
 
-interface ModalState {
-  disableInsert: boolean;
-}
+export const Modal = (props: PropsWithChildren<ModalProps>) => {
+  const { children } = props;
+  const modal = useRef<HTMLDivElement>(null);
+  const [disableInsert, setDisableInsert] = useState(props.disableInsert || false);
 
-class Modal extends React.PureComponent<ModalProps, ModalState> {
-  state = {
-    disableInsert: this.props.disableInsert === undefined ? false : this.props.disableInsert,
-  };
+  const okLabel = props.okLabel !== undefined ? props.okLabel : 'Insert';
+  const cancelLabel = props.cancelLabel !== undefined ? props.cancelLabel : 'Cancel';
+  const okClassName = props.okClassName !== undefined ? props.okClassName : 'primary';
+  const size = props.size || 'lg';
 
-  componentDidMount() {
-    (window as any).$(this.modal).modal('show');
-    document.body.style.overflow = 'hidden';
+  useEffect(() => {
+    if (modal.current) {
+      const currentModal = modal.current;
+      (window as any).$(currentModal).modal('show');
+      document.body.style.overflow = 'hidden';
 
-    $(this.modal).on('hidden.bs.modal', (e) => {
-      this.onCancel(e);
-    });
-  }
+      $(currentModal).on('hidden.bs.modal', (e) => {
+        onCancel(e);
+      });
 
-  componentWillUnmount() {
-    (window as any).$(this.modal).modal('hide');
-    document.body.style.overflow = 'unset';
-  }
+      return () => {
+        (window as any).$(currentModal).modal('hide');
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [modal]);
 
-  onInsert = (e: any) => {
+  const onCancel = (e: any) => {
     e.preventDefault();
-    if (this.props.onInsert) this.props.onInsert();
+    if (props.onCancel) props.onCancel();
   };
 
-  onCancel = (e: any) => {
+  const onOk = (e: any) => {
     e.preventDefault();
-    if (this.props.onCancel) this.props.onCancel();
+    if (props.onOk) props.onOk();
   };
 
-  render() {
-    const disableInsert = this.state.disableInsert;
-    const okLabel = this.props.okLabel !== undefined ? this.props.okLabel : 'Insert';
-    const cancelLabel = this.props.cancelLabel !== undefined ? this.props.cancelLabel : 'Cancel';
-    const okClassName = this.props.okClassName !== undefined ? this.props.okClassName : 'primary';
-    const size = this.props.size || 'lg';
-
-    return (
-      <div
-        ref={(modal) => {
-          this.modal = modal;
-        }}
-        data-backdrop="true"
-        className="modal"
-      >
-        <div className={`modal-dialog modal-dialog-centered modal-${size}`} role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">{this.props.title}</h5>
-              {this.props.hideDialogCloseButton === true ? null : (
+  return (
+    <div ref={modal} data-backdrop="true" className="modal">
+      <div className={`modal-dialog modal-dialog-centered modal-${size}`} role="document">
+        <div className="modal-content">
+          <div className="modal-header">
+            <h5 className="modal-title">{props.title}</h5>
+            {props.hideDialogCloseButton === true ? null : (
+              <button type="button" className="close" onClick={onCancel} data-dismiss="modal">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            )}
+          </div>
+          <div className="modal-body">
+            {React.Children.map(children, (child) =>
+              React.cloneElement(child as React.ReactElement<any>, {
+                toggleDisableInsert: (bool: boolean) => setDisableInsert(bool),
+              }),
+            )}
+          </div>
+          <div className="modal-footer">
+            {props.footer ? (
+              props.footer
+            ) : (
+              <>
                 <button
                   type="button"
-                  className="close"
-                  onClick={this.onCancel}
+                  className="btn btn-link"
+                  onClick={onCancel}
                   data-dismiss="modal"
                 >
-                  <span aria-hidden="true">&times;</span>
+                  {cancelLabel}
                 </button>
-              )}
-            </div>
-            <div className="modal-body">
-              {React.Children.map(this.props.children, (child) =>
-                React.cloneElement(child as React.ReactElement<any>, {
-                  toggleDisableInsert: (bool: boolean) => this.setState({ disableInsert: bool }),
-                }),
-              )}
-            </div>
-            <div className="modal-footer">
-              {this.props.footer ? (
-                this.props.footer
-              ) : (
-                <>
+                {props.hideOkButton === true ? null : (
                   <button
+                    disabled={disableInsert}
                     type="button"
-                    className="btn btn-link"
-                    onClick={this.onCancel}
-                    data-dismiss="modal"
+                    onClick={onOk}
+                    className={`btn btn-${okClassName}`}
                   >
-                    {cancelLabel}
+                    {okLabel}
                   </button>
-                  {this.props.hideOkButton === true ? null : (
-                    <button
-                      disabled={disableInsert}
-                      type="button"
-                      onClick={this.onInsert}
-                      className={`btn btn-${okClassName}`}
-                    >
-                      {okLabel}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
-    );
-  }
-}
-
-export default Modal;
+    </div>
+  );
+};

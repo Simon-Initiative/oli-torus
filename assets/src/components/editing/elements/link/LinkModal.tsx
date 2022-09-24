@@ -10,7 +10,7 @@ import {
 } from 'data/content/model/elements/utils';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Maybe } from 'tsmonad';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -154,7 +154,7 @@ export const LinkModal = ({ onDone, onCancel, model, commandContext }: ModalProp
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onInsert={() => onDone({ href })}
+      onOk={() => onDone({ href })}
     >
       {renderedState}
     </Modal>

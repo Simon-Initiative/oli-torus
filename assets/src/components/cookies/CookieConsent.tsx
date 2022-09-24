@@ -1,5 +1,5 @@
 import React from 'react';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { consentOptions, setCookies } from 'components/cookies/utils';
 import {
   selectCookiePreferences,

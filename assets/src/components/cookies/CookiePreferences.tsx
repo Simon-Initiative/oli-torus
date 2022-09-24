@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { consentOptions, setCookies } from 'components/cookies/utils';
 import ReactDOM from 'react-dom';
 
@@ -392,7 +392,7 @@ export function selectCookiePreferences(props: CookiePreferencesProps): void {
   const cookiePreference = (
     <Modal
       title="Cookie Preferences"
-      onInsert={() => {
+      onOk={() => {
         dismiss();
         savePreferences();
       }}

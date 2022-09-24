@@ -1,7 +1,7 @@
 import React from 'react';
 import { BaseSelection, Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { Command } from 'components/editing/elements/commands/interfaces';
@@ -29,7 +29,7 @@ export function selectImage(
         <Modal
           title="Select Image"
           size={ModalSize.X_LARGE}
-          onInsert={() => {
+          onOk={() => {
             dismiss();
             resolve(selectedUrl);
           }}

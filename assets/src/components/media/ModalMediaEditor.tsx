@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 // eslint-disable-next-line
 interface ModalMediaEditor {}
 
@@ -48,7 +48,7 @@ class ModalMediaEditor extends React.PureComponent<ModalMediaEditorProps, ModalM
         okLabel="Done"
         cancelLabel="Cancel"
         onCancel={this.props.onCancel}
-        onInsert={() => this.props.onInsert(this.state.model)}
+        onOk={() => this.props.onInsert(this.state.model)}
       >
         {this.renderChildren()}
       </Modal>

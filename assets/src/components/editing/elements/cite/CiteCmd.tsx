@@ -9,7 +9,7 @@ import React from 'react';
 import { configureStore } from 'state/store';
 import { modalActions } from 'actions/modal';
 import { CitationEditor } from './CitationEditor';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { Provider } from 'react-redux';
 import * as ContentModel from 'data/content/model/elements/types';
 
@@ -28,7 +28,7 @@ export function selectCitation(
       <Provider store={store}>
         <Modal
           title="Select citation"
-          onInsert={() => {
+          onOk={() => {
             dismiss();
             if (selected) resolve(selected);
           }}

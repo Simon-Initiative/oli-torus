@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Transforms } from 'slate';
 import { modalActions } from 'actions/modal';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { useState } from 'react';
 import { Model } from 'data/content/model/elements/factories';
 import * as Settings from 'components/editing/elements/common/settings/Settings';
@@ -46,7 +46,7 @@ export function selectWebpage(): Promise<string | null> {
     const mediaLibrary = (
       <Modal
         title="Insert Webpage"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(selected.src ? selected.src : '');
         }}

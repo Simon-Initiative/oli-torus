@@ -6,7 +6,7 @@ import * as BibPersistence from 'data/persistence/bibentry';
 import * as Immutable from 'immutable';
 import { BibEntryView } from './BibEntryView';
 import { modalActions } from 'actions/modal';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import Ajv from 'ajv';
 import { Banner } from 'components/messages/Banner';
 import { createMessage, Message, Severity } from 'data/messages/messages';
@@ -33,7 +33,7 @@ export function confirmDelete(): Promise<boolean> {
     const modelOpen = (
       <Modal
         title="Delete Entry"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(true);
         }}
@@ -60,7 +60,7 @@ export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
     const modelOpen = (
       <Modal
         title={bibEntry ? 'Edit Entry' : 'Create Entry'}
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(bibContent);
         }}
@@ -92,7 +92,7 @@ export function confirmUiBibEditor(
     const modelOpen = (
       <Modal
         title={bibEntry ? 'Edit Entry' : 'Create Entry'}
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(Maybe.just(bibContent));
         }}

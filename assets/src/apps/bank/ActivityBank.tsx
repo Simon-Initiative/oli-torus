@@ -9,7 +9,7 @@ import {
 } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Banner } from 'components/messages/Banner';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import * as BankTypes from 'data/content/bank';
@@ -76,7 +76,7 @@ export function confirmDelete(): Promise<boolean> {
     const mediaLibrary = (
       <Modal
         title="Delete Activity"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(true);
         }}
@@ -102,7 +102,7 @@ export function showFailedToLockMessage(): Promise<boolean> {
     const mediaLibrary = (
       <Modal
         title="Edit Activity"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(false);
         }}

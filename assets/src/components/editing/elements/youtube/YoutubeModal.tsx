@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -19,7 +19,7 @@ export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={() => onCancel()}
-      onInsert={() => onDone({ alt, width, src })}
+      onOk={() => onDone({ alt, width, src })}
     >
       <div>
         <h3 className="mb-2">Settings</h3>
@@ -38,14 +38,14 @@ export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
 
         <h4 className="mb-2">Alternative Text</h4>
         <p className="mb-4">
-          Write a short description of this image for visitors who are unable to see it.
+          Specify alternative text to be rendered when the video cannot be rendered.
         </p>
 
         <input
           className="form-control"
           value={alt}
           onChange={(e) => setAlt(e.target.value)}
-          placeholder={'E.g., "Stack of blueberry pancakes with powdered sugar"'}
+          placeholder="Enter a short description of this video"
         />
       </div>
     </Modal>

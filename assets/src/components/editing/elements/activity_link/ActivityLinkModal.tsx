@@ -4,7 +4,7 @@ import * as Persistence from 'data/persistence/resource';
 import { toInternalLink, getCurrentSlugFromRef } from 'data/content/model/elements/utils';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Maybe } from 'tsmonad';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -91,7 +91,7 @@ export const ActivityLinkModal = ({ onDone, onCancel, model, commandContext }: M
       okLabel="Done"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onInsert={() =>
+      onOk={() =>
         selectedPage.caseOf({
           just: (s) => onDone({ ref: toInternalLink(s) }),
           nothing: () => {},

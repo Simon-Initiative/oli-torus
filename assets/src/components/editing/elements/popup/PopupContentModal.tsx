@@ -4,7 +4,7 @@ import { RichTextEditor } from 'components/content/RichTextEditor';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import * as ContentModel from 'data/content/model/elements/types';
 import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 interface Props {
   onDone: (changes: Partial<ContentModel.Popup>) => void;
@@ -58,7 +58,7 @@ export const PopupContentModal = (props: Props) => {
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={props.onCancel}
-      onInsert={() => props.onDone({ content, trigger })}
+      onOk={() => props.onDone({ content, trigger })}
     >
       <div className="row">
         <div className="col-12">

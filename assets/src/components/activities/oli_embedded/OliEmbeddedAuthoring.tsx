@@ -13,7 +13,7 @@ import { CloseButton } from 'components/misc/CloseButton';
 import { MediaItemRequest, ScoringStrategy } from 'components/activities/types';
 import { lastPart } from 'components/activities/oli_embedded/utils';
 import { XmlEditor } from 'components/common/XmlEditor';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 const store = configureStore();
 
 const Embedded = (props: AuthoringElementProps<OliEmbeddedModelSchema>) => {

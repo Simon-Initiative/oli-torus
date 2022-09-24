@@ -4,7 +4,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import React, { useState } from 'react';
 import { modalActions } from 'actions/modal';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 
 export const insertYoutube = createButtonCommandDesc({
@@ -71,7 +71,7 @@ export function selectYoutube(): Promise<string | null> {
     const selection = (
       <Modal
         title="Insert YouTube"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(selected.src ? selected.src : '');
         }}

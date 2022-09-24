@@ -3,7 +3,7 @@ import * as ContentModel from 'data/content/model/elements/types';
 import { selectVideo } from './videoActions';
 import { Maybe } from 'tsmonad';
 import { selectImage } from '../image/imageActions';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -86,7 +86,7 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
-      onInsert={onModalDone}
+      onOk={onModalDone}
     >
       <h3 className="mb-2">Video Settings</h3>
       <h4 className="mb-2">Video Source(s)</h4>

@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
@@ -48,7 +48,7 @@ export function selectPortrait(projectSlug: string): Promise<string | undefined>
         <Modal
           title="Select Image"
           size={ModalSize.X_LARGE}
-          onInsert={() => {
+          onOk={() => {
             dismiss();
             resolve(selected);
           }}

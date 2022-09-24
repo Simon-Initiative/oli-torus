@@ -10,7 +10,7 @@ import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton'
 import { createButtonCommandDesc } from '../commands/commandFactories';
 import { configureStore } from 'state/store';
 import { modalActions } from 'actions/modal';
-import Modal from 'components/modal/Modal';
+import { Modal } from 'components/modal/Modal';
 import { Provider } from 'react-redux';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
@@ -47,7 +47,7 @@ export const CiteEditor = (props: Props) => {
           <Modal
             title="Bibliography"
             onCancel={onCancel}
-            onInsert={() => onDone({ ...selected })}
+            onOk={() => onDone({ ...selected })}
             disableInsert={false}
           >
             <CitationEditor

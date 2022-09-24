@@ -1,7 +1,7 @@
 import React from 'react';
 import { Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import Modal, { ModalSize } from 'components/modal/Modal';
+import { Modal, ModalSize } from 'components/modal/Modal';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
 import { UrlOrUpload } from 'components/media/UrlOrUpload';
@@ -76,7 +76,7 @@ export function selectVideo(
         <Modal
           title="Select Video"
           size={ModalSize.X_LARGE}
-          onInsert={() => {
+          onOk={() => {
             dismiss();
             resolve(selected);
           }}
