@@ -18,8 +18,6 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedPage, setSelectedPage] = useState<Maybe<Persistence.Page>>(Maybe.nothing());
 
-  console.log('pages, selectedPage', pages, selectedPage);
-
   React.useEffect(() => {
     Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model?.ref)).then(
       (result) => {
