@@ -42,14 +42,16 @@ export function installNormalizer(editor: Editor, context: NormalizerContext = {
         }
       }
 
-      spacesNormalize(editor, node, path);
-      blockNormalize(editor, node, path);
-      codeNormalize(editor, node, path);
-      listNormalize(editor, node, path);
-      tableNormalize(editor, node, path);
+      // These normalizers should return true if they made a change. In those cases, we should just return here
+      // instead of continuning to the next normalizer so slate can set us up for another round of normalization.
+      if (spacesNormalize(editor, node, path)) return;
+      if (blockNormalize(editor, node, path)) return;
+      if (codeNormalize(editor, node, path)) return;
+      if (listNormalize(editor, node, path)) return;
+      if (tableNormalize(editor, node, path)) return;
     } catch (e) {
       // tslint:disable-next-line
-      console.error(e);
+      console.error('Normalization Error:', e);
     }
     normalizeNode(entry);
   };

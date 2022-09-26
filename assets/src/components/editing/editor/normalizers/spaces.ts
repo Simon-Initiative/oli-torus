@@ -18,7 +18,11 @@ const spacesRequiredBetween = Immutable.Set<string>([
   'dialog',
 ]);
 
-export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
+export const normalize = (
+  editor: Editor,
+  node: ModelElement | FormattedText,
+  path: Path,
+): boolean => {
   // Ensure that certain blocks types, when found next to each other,
   // get a paragraph inserted in between them
 
@@ -38,9 +42,10 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
             node.type,
             nextNode.type,
           );
-          return; // Return here necessary to enable multi-pass normalization
+          return true; // Return here necessary to enable multi-pass normalization
         }
       }
     }
   }
+  return false;
 };

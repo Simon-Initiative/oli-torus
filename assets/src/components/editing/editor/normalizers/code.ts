@@ -4,7 +4,11 @@ import { FormattedText } from 'data/content/model/text';
 import { schema } from 'data/content/model/schema';
 import guid from 'utils/guid';
 
-export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
+export const normalize = (
+  editor: Editor,
+  node: ModelElement | FormattedText,
+  path: Path,
+): boolean => {
   const [parent] = Editor.parent(editor, path);
 
   if (Element.isElement(parent)) {
@@ -14,13 +18,14 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
       if (Text.isText(node)) {
         Transforms.wrapNodes(editor, { type: 'code_line', id: guid(), children: [] }, { at: path });
         console.warn('Normalizing content: wrapping code_line in code block');
-        return;
+        return true;
       }
       if (Element.isElement(node) && !config.validChildren[node.type]) {
         Transforms.setNodes(editor, { type: 'code_line' }, { at: path });
         console.warn('Normalizing content: setting code_line type inside code block');
-        return;
+        return true;
       }
     }
   }
+  return false;
 };
