@@ -224,49 +224,89 @@
   }
 }
 
+@mixin activity_link_style($color) {
+  a.internal-link,
+  a.internal-link:link,
+  a.internal-link:visited {
+    text-decoration: none;
+
+    .content-purpose-content {
+      .title {
+        font-size: 1.3em;
+        color: $body-color;
+      }
+
+      i {
+        color: $color;
+      }
+    }
+  }
+
+  a.internal-link:hover,
+  a.internal-link:active {
+    .content-purpose-content {
+      i {
+        color: darken($body-color, 15%);
+      }
+    }
+  }
+}
+
 .activity-link {
   &.none {
     border: 1px solid $gray-500;
+    background-color: rgba($gray-500, 0.2);
+    @include activity_link_style($link-color);
   }
 
   &.checkpoint {
     background-color: rgba($content-purpose-checkpoint-color, 0.2);
+    @include activity_link_style($content-purpose-checkpoint-color);
   }
 
   &.didigetthis {
     background-color: rgba($content-purpose-didigetthis-color, 0.2);
+    @include activity_link_style($content-purpose-didigetthis-color);
   }
 
   &.example {
     background-color: $body-bg;
+    @include activity_link_style($link-color);
   }
 
   &.labactivity {
     background-color: rgba($content-purpose-labactivity-color, 0.2);
+    @include activity_link_style(darken($content-purpose-labactivity-color, 10%));
   }
 
   &.learnbydoing {
     background-color: rgba($content-purpose-learnbydoing-color, 0.2);
+    @include activity_link_style($content-purpose-learnbydoing-color);
   }
 
   &.learnmore {
     background-color: rgba($content-purpose-learnmore-color, 0.2);
+    @include activity_link_style($content-purpose-learnmore-color);
   }
 
   &.manystudentswonder {
     background-color: rgba($content-purpose-manystudentswonder-color, 0.2);
+    @include activity_link_style($content-purpose-manystudentswonder-color);
   }
 
   &.quiz {
     background-color: rgba($content-purpose-quiz-color, 0.2);
+    @include activity_link_style($content-purpose-quiz-color);
   }
 
   &.simulation {
     background-color: rgba($content-purpose-simulation-color, 0.2);
+    @include activity_link_style($content-purpose-simulation-color);
   }
 
   &.walkthrough {
     background-color: rgba($content-purpose-walkthrough-color, 0.2);
+    @include activity_link_style($content-purpose-walkthrough-color);
   }
 }
 

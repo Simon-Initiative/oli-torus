@@ -108,7 +108,7 @@ defmodule Oli.Publishing.AuthoringResolver do
         on: rev.id == m.revision_id,
         where:
           m.publication_id in subquery(project_working_publication(project_slug)) and
-            rev.resource_type_id == ^page_id,
+            rev.resource_type_id == ^page_id and rev.deleted == false,
         select: rev
       )
       |> Repo.all()

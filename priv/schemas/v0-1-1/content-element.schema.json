@@ -998,6 +998,9 @@
         "type": {
           "const": "activity_link"
         },
+        "title": {
+          "type": "string"
+        },
         "ref": {
           "type": "string"
         },

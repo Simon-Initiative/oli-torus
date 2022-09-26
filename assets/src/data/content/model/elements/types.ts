@@ -327,6 +327,7 @@ export interface Popup extends SlateElement<Text[]> {
 
 export interface ActivityLink extends SlateElement<Text[]> {
   type: 'activity_link';
+  title: string;
   ref: string;
   purpose: string;
 }

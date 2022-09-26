@@ -93,7 +93,7 @@ export const ActivityLinkModal = ({ onDone, onCancel, model, commandContext }: M
       onCancel={onCancel}
       onOk={() =>
         selectedPage.caseOf({
-          just: (s) => onDone({ ref: toInternalLink(s) }),
+          just: (s) => onDone({ title: s.title, ref: toInternalLink(s) }),
           nothing: () => {},
         })
       }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { useEditModelCallback } from 'components/editing/elements/utils';
 import * as ContentModel from 'data/content/model/elements/types';
@@ -7,33 +7,14 @@ import { modalActions } from 'actions/modal';
 import styles from './ActivityLink.modules.scss';
 import { classNames } from 'utils/classNames';
 import { Maybe } from 'tsmonad';
-import { toInternalLink, getCurrentSlugFromRef } from 'data/content/model/elements/utils';
-import * as Persistence from 'data/persistence/resource';
 import { Purpose } from 'components/content/Purpose';
 import { PurposeTypes } from 'data/content/resource';
 import { useElementSelected } from 'data/content/utils';
 
 export interface Props extends EditorProps<ContentModel.ActivityLink> {}
 export const ActivityLinkEditor = ({ model, commandContext, attributes }: Props) => {
-  const [pages, setPages] = useState<Maybe<Persistence.Page[]>>(
-    Maybe.nothing<Persistence.Page[]>(),
-  );
   const onEdit = useEditModelCallback(model);
   const selected = useElementSelected();
-
-  React.useEffect(() => {
-    Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model.ref)).then(
-      (result) => {
-        if (result.type === 'success') {
-          setPages(Maybe.just(result.pages));
-        }
-      },
-    );
-  }, []);
-
-  const selectedPageName = pages.bind((pages) =>
-    Maybe.maybe(pages.find((p) => toInternalLink(p) === model.ref)),
-  );
 
   const showModal = () =>
     window.oliDispatch(
@@ -41,9 +22,9 @@ export const ActivityLinkEditor = ({ model, commandContext, attributes }: Props)
         <ActivityLinkModal
           model={model}
           commandContext={commandContext}
-          onDone={({ ref }: Partial<ContentModel.ActivityLink>) => {
+          onDone={({ title, ref }: Partial<ContentModel.ActivityLink>) => {
             window.oliDispatch(modalActions.dismiss());
-            onEdit({ ref });
+            onEdit({ title, ref });
           }}
           onCancel={() => window.oliDispatch(modalActions.dismiss())}
         />,
@@ -81,14 +62,7 @@ export const ActivityLinkEditor = ({ model, commandContext, attributes }: Props)
       >
         {purposeLabel}
         <div className="d-flex flex-row p-3">
-          {selectedPageName.caseOf({
-            just: (page) => <div className={styles.pageTitle}>{page.title}</div>,
-            nothing: () => (
-              <div className={styles.pageTitle}>
-                <em>Loading...</em>
-              </div>
-            ),
-          })}
+          {<div className={styles.pageTitle}>{model.title}</div>}
           <div className="flex-grow-1"></div>
           <button className="btn btn-primary" onClick={showModal}>
             Select Page

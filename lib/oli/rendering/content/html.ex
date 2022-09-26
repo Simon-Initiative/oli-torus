@@ -11,6 +11,7 @@ defmodule Oli.Rendering.Content.Html do
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
   import Oli.Rendering.Utils
+  alias Oli.Utils.Purposes
 
   @behaviour Oli.Rendering.Content
 
@@ -461,7 +462,8 @@ defmodule Oli.Rendering.Content.Html do
   defp internal_link(
          %Context{section_slug: section_slug, mode: mode, project_slug: project_slug},
          next,
-         href
+         href,
+         opts \\ []
        ) do
     href =
       case section_slug do
@@ -485,11 +487,43 @@ defmodule Oli.Rendering.Content.Html do
           end
       end
 
-    [~s|<a class="internal-link" href="#{escape_xml!(href)}">|, next.(), "</a>\n"]
+    target =
+      case Keyword.get(opts, :target) do
+        nil -> ""
+        target -> ~s| target="#{target}"|
+      end
+
+    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target}>|, next.(), "</a>\n"]
   end
 
   defp external_link(%Context{} = _context, next, href) do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+  end
+
+  def activity_link(%Context{} = context, _next, %{
+        "title" => title,
+        "ref" => ref,
+        "purpose" => purpose
+      }) do
+    [
+      ~s|<div class="activity-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
+      internal_link(
+        context,
+        fn ->
+          [
+            ~s|<div class="content-purpose-content p-4 d-flex flex-row">|,
+            ~s|<div class="title flex-grow-1">|,
+            escape_xml!(title),
+            "</div>",
+            ~s|<i class="las la-external-link-square-alt la-2x"></i>|,
+            "</div>\n"
+          ]
+        end,
+        ref,
+        target: "_blank"
+      ),
+      "</div>"
+    ]
   end
 
   def cite(%Context{} = context, next, a) do

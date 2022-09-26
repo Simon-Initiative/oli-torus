@@ -11,16 +11,21 @@ import { ActivityLinkModal } from './ActivityLinkModal';
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
-export function selectPage(commandContext: CommandContext): Promise<string | undefined> {
-  return new Promise((resolve, _reject) => {
+export function selectPage(
+  commandContext: CommandContext,
+): Promise<{ title: string; ref: string }> {
+  return new Promise((resolve, reject) => {
     display(
       <ActivityLinkModal
         commandContext={commandContext}
-        onDone={({ ref }: Partial<ActivityLink>) => {
+        onDone={({ title, ref }: { title: string; ref: string }) => {
           dismiss();
-          resolve(ref);
+          resolve({ title, ref });
         }}
-        onCancel={() => dismiss()}
+        onCancel={() => {
+          dismiss();
+          reject();
+        }}
       />,
     );
   });
@@ -43,10 +48,10 @@ export const insertActivityLink = createButtonCommandDesc({
   icon: 'label',
   description: 'Activity Link',
   execute: (context, editor) =>
-    selectPage(context).then((ref) => {
+    selectPage(context).then(({ title, ref }) => {
       if (ref) {
         const at = editor.selection as Location;
-        Transforms.insertNodes(editor, Model.activity_link(ref), { at });
+        Transforms.insertNodes(editor, Model.activity_link(title, ref), { at });
       }
     }),
   precondition: (editor) => !isActive(editor, ['code']),
