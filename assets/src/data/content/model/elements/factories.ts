@@ -83,8 +83,10 @@ export const Model = {
 
   conjugationTable: () =>
     Model.table([
-      Model.tr([Model.th(''), Model.th('Form'), Model.th('Meaning')]),
-      Model.tr([Model.th(''), Model.tc(''), Model.tc('')]),
+      Model.tr([Model.th(''), Model.th('Singular'), Model.th('Plural')]),
+      Model.tr([Model.th('1st Person'), Model.tc(''), Model.tc('')]),
+      Model.tr([Model.th('2nd Person'), Model.tc(''), Model.tc('')]),
+      Model.tr([Model.th('3rd Person'), Model.tc(''), Model.tc('')]),
     ]),
 
   conjugation: (title = '') =>
