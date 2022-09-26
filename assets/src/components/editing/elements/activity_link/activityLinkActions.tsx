@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { Transforms, Editor, Element, Location } from 'slate';
+import React from 'react';
+import { Transforms, Location } from 'slate';
 import { isActive } from '../../slateUtils';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from '../commands/commandFactories';
-import { ActivityLink } from 'data/content/model/elements/types';
 import { CommandContext } from '../commands/interfaces';
 import { modalActions } from 'actions/modal';
 import { ActivityLinkModal } from './ActivityLinkModal';
@@ -33,7 +32,7 @@ export function selectPage(
 
 // export const insertActivityLink = createButtonCommandDesc({
 //   icon: 'label',
-//   description: 'Activity Link',
+//   description: 'Page Link',
 //   execute: (_context, editor, _params) => {
 //     const selection = editor.selection;
 //     if (!selection) return;
@@ -46,7 +45,7 @@ export function selectPage(
 // });
 export const insertActivityLink = createButtonCommandDesc({
   icon: 'label',
-  description: 'Activity Link',
+  description: 'Page Link',
   execute: (context, editor) =>
     selectPage(context).then(({ title, ref }) => {
       if (ref) {

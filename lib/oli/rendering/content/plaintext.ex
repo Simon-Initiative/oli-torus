@@ -258,6 +258,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Activity Bank Selection]"]
   end
 
+  def activity_link(%Context{} = _context, _, _selection) do
+    ["[Page Link]"]
+  end
+
   def error(%Context{} = _context, element, error) do
     case error do
       {:unsupported, error_id, _error_msg} ->
