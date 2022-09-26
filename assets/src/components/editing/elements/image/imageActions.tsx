@@ -18,7 +18,10 @@ const display = (c: any) => window.oliDispatch(modalActions.display(c));
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const store = configureStore();
 
-export function selectImage(projectSlug: string): Promise<string | undefined> {
+export function selectImage(
+  projectSlug: string,
+  selectedUrl?: string,
+): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
     const MediaLibrary = () => {
       const [selection, setSelection] = useState(Maybe.nothing<string>());
@@ -53,6 +56,10 @@ export function selectImage(projectSlug: string): Promise<string | undefined> {
               projectSlug={projectSlug}
               mimeFilter={MIMETYPE_FILTERS.IMAGE}
               selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={Maybe.maybe(selectedUrl).caseOf({
+                just: (s) => [s],
+                nothing: () => undefined,
+              })}
             />
           </Modal>
         </Provider>
