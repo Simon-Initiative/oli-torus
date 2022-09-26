@@ -46,9 +46,8 @@ h1.title {
 }
 
 .content {
-  max-width: 770px;
   margin: 0 auto;
-
+  font-size: 1.1em;
   & > * {
     margin-bottom: 1.5rem;
   }
