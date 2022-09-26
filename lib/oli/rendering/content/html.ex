@@ -500,18 +500,18 @@ defmodule Oli.Rendering.Content.Html do
     [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
   end
 
-  def activity_link(%Context{} = context, _next, %{
+  def page_link(%Context{} = context, _next, %{
         "title" => title,
         "ref" => ref,
         "purpose" => purpose
       }) do
     [
-      ~s|<div class="activity-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
+      ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(
         context,
         fn ->
           [
-            ~s|<div class="content-purpose-content p-4 d-flex flex-row">|,
+            ~s|<div class="content-purpose-content d-flex flex-row">|,
             ~s|<div class="title flex-grow-1">|,
             escape_xml!(title),
             "</div>",

@@ -35,7 +35,7 @@ import {
   AllModelElements,
   Dialog,
   DialogLine,
-  ActivityLink,
+  PageLink,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -98,8 +98,8 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  activity_link: (title = '', ref = '', purpose = 'none') =>
-    create<ActivityLink>({ type: 'activity_link', title, ref, purpose }),
+  page_link: (title = '', ref = '', purpose = 'none') =>
+    create<PageLink>({ type: 'page_link', title, ref, purpose }),
 
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),

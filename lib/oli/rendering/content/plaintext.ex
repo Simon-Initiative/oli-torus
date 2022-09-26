@@ -258,8 +258,8 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[Activity Bank Selection]"]
   end
 
-  def activity_link(%Context{} = _context, _, _selection) do
-    ["[Page Link]"]
+  def page_link(%Context{} = _context, _, %{"title" => title, "ref" => ref, "purpose" => purpose}) do
+    ["[Page Link: \"#{title}\" ref=\"#{ref}\" purpose=\"#{purpose}\"]"]
   end
 
   def error(%Context{} = _context, element, error) do

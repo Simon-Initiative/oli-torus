@@ -9,11 +9,11 @@ import { Modal, ModalSize } from 'components/modal/Modal';
 interface ModalProps {
   onDone: (x: any) => void;
   onCancel: () => void;
-  model?: ContentModel.ActivityLink;
+  model?: ContentModel.PageLink;
   commandContext: CommandContext;
 }
 
-export const ActivityLinkModal = ({ onDone, onCancel, model, commandContext }: ModalProps) => {
+export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: ModalProps) => {
   const [pages, setPages] = useState<Maybe<Persistence.Page[]>>(Maybe.nothing());
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedPage, setSelectedPage] = useState<Maybe<Persistence.Page>>(Maybe.nothing());
@@ -86,7 +86,7 @@ export const ActivityLinkModal = ({ onDone, onCancel, model, commandContext }: M
 
   return (
     <Modal
-      title="Select Page"
+      title="Select a Page"
       size={ModalSize.MEDIUM}
       okLabel="Done"
       cancelLabel="Cancel"

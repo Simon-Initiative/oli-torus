@@ -110,7 +110,7 @@ defmodule OliWeb.Sections.OverviewView do
             <span class="badge badge-info">Coming Soon</span>
           {/if}
         </li>
-        <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)}>Enter Course as a Student</a></li>
+        <li><a href={Routes.page_delivery_path(OliWeb.Endpoint, :index, @section.slug)} target="_blank"><span>Enter Course as a Student</span> <i class="las la-external-link-alt align-self-center ml-1"></i></a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Delivery.RemixSection, @section.slug)}>Customize Curriculum</a></li>
         <li><a href={Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.GatingAndScheduling, @section.slug)}>Gating and Scheduling</a></li>
           <li>

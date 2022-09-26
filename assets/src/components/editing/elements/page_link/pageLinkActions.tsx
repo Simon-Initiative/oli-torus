@@ -5,8 +5,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from '../commands/commandFactories';
 import { CommandContext } from '../commands/interfaces';
 import { modalActions } from 'actions/modal';
-import { ActivityLinkModal } from './ActivityLinkModal';
-
+import { PageLinkModal } from './PageLinkModal';
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
@@ -15,7 +14,7 @@ export function selectPage(
 ): Promise<{ title: string; ref: string }> {
   return new Promise((resolve, reject) => {
     display(
-      <ActivityLinkModal
+      <PageLinkModal
         commandContext={commandContext}
         onDone={({ title, ref }: { title: string; ref: string }) => {
           dismiss();
@@ -30,29 +29,16 @@ export function selectPage(
   });
 }
 
-// export const insertActivityLink = createButtonCommandDesc({
-//   icon: 'label',
-//   description: 'Page Link',
-//   execute: (_context, editor, _params) => {
-//     const selection = editor.selection;
-//     if (!selection) return;
-
-//     const at = editor.selection as any;
-//     Transforms.insertNodes(editor, Model.activity_link(), { at });
-//   },
-//   precondition: (editor) => !isActive(editor, ['code']),
-//   active: (e) => isActive(e, 'activity_link'),
-// });
-export const insertActivityLink = createButtonCommandDesc({
+export const insertPageLink = createButtonCommandDesc({
   icon: 'label',
   description: 'Page Link',
   execute: (context, editor) =>
     selectPage(context).then(({ title, ref }) => {
       if (ref) {
         const at = editor.selection as Location;
-        Transforms.insertNodes(editor, Model.activity_link(title, ref), { at });
+        Transforms.insertNodes(editor, Model.page_link(title, ref), { at });
       }
     }),
   precondition: (editor) => !isActive(editor, ['code']),
-  active: (e) => isActive(e, 'activity_link'),
+  active: (e) => isActive(e, 'page_link'),
 });
