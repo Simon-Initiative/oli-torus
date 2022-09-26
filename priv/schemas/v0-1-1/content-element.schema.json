@@ -976,6 +976,9 @@
         "href": {
           "type": "string"
         },
+        "idref": {
+          "type": "string"
+        },
         "target": {
           "type": "string"
         },
@@ -988,7 +991,6 @@
       },
       "required": [
         "type",
-        "href",
         "children"
       ]
     },

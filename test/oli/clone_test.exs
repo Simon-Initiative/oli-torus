@@ -184,7 +184,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -214,7 +214,7 @@ defmodule Oli.CloneTest do
 
       some_new_content = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }

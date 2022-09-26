@@ -3,6 +3,12 @@ defmodule Oli.Resources.ContentMigrator do
 
   alias Oli.Utils.SchemaResolver
 
+  # TODO: implement migration for adaptive pages when schemas are finalized.
+  # For now, we skip all migrations for adaptive content
+  def migrate(%{"advancedAuthoring" => true} = content, :page, to: _any) do
+    content
+  end
+
   @doc """
   Migrates a resource content model to version specified.
 
@@ -77,12 +83,6 @@ defmodule Oli.Resources.ContentMigrator do
       _ ->
         content
     end
-  end
-
-  # TODO: implement migration for adaptive pages when schemas are finalized.
-  # For now, we skip all migrations for adaptive content
-  def migrate(%{"advancedAuthoring" => true} = content, :page, to: _any) do
-    content
   end
 
   # TODO: implement migration for activities when schemas are finalized.

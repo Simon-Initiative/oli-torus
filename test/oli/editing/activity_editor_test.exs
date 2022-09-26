@@ -182,7 +182,7 @@ defmodule Oli.ActivityEditingTest do
       # Verify that we can issue a resource edit that attaches the activity
       update = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [
             %{
               "type" => "activity-reference",
@@ -233,7 +233,7 @@ defmodule Oli.ActivityEditingTest do
       # Verify that we can issue a resource edit that attaches the activity
       update = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [
             %{
               "type" => "activity-reference",
@@ -274,7 +274,7 @@ defmodule Oli.ActivityEditingTest do
       # attach the activity
       update = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [
             %{
               "type" => "activity-reference",

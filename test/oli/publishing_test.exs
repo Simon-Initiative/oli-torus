@@ -242,7 +242,7 @@ defmodule Oli.PublishingTest do
       update = %{
         "objectives" => %{"attached" => [obj1.resource_id]},
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [
             %{
               "type" => "activity-reference",
@@ -377,7 +377,7 @@ defmodule Oli.PublishingTest do
       # Update a page
       page_content = %{
         "content" => %{
-          "version" => "0.1.0",
+          "version" => "0.1.1",
           "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
         }
       }
@@ -457,7 +457,7 @@ defmodule Oli.PublishingTest do
 
       # make some edits
       content = %{
-        "version" => "0.1.0",
+        "version" => "0.1.1",
         "model" => [%{"type" => "content", "children" => [%{"text" => "A paragraph."}]}]
       }
 

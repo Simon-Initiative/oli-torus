@@ -2,6 +2,7 @@ defmodule OliWeb.RevisionHistory.Details do
   use Surface.Component
 
   alias OliWeb.Common.MonacoEditor
+  alias Oli.Utils.SchemaResolver
 
   prop revision, :map
 
@@ -15,7 +16,7 @@ defmodule OliWeb.RevisionHistory.Details do
         id={"details-editor-#{@revision.id}"}
         height="500px"
         language="json"
-        validate_schema_uri="http://torus.oli.cmu.edu/schemas/v0-1-0/page-content.schema.json"
+        validate_schema_uri={SchemaResolver.get("page-content.schema.json").uri}
         default_value={json_encode_pretty(Map.get(@revision, :content))}
         default_options={%{
           "readOnly" => true,

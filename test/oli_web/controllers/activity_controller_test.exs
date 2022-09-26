@@ -388,7 +388,7 @@ defmodule OliWeb.ActivityControllerTest do
 
     update = %{
       "content" => %{
-        "version" => "0.1.0",
+        "version" => "0.1.1",
         "model" => [
           %{
             "type" => "activity-reference",
