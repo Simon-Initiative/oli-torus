@@ -66,7 +66,6 @@ export function selectPortrait(projectSlug: string): Promise<string | undefined>
               onUrlChange={onUrlSelection}
               onMediaSelectionChange={onMediaSelection}
               projectSlug={projectSlug}
-              onEdit={() => {}}
               mimeFilter={MIMETYPE_FILTERS.IMAGE}
               selectionType={SELECTION_TYPES.SINGLE}
             />

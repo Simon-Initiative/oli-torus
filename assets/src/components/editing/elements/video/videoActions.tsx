@@ -98,7 +98,6 @@ export function selectVideo(
               onUrlChange={onUrlSelection}
               onMediaSelectionChange={onMediaSelection}
               projectSlug={projectSlug}
-              onEdit={() => {}}
               mimeFilter={MIMETYPE_FILTERS.VIDEO}
               selectionType={SELECTION_TYPES.SINGLE}
             />

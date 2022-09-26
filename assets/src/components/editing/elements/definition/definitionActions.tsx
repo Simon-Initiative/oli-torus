@@ -80,7 +80,6 @@ export function selectAudio(
               onUrlChange={onUrlSelection}
               onMediaSelectionChange={onMediaSelection}
               projectSlug={projectSlug}
-              onEdit={() => {}}
               mimeFilter={MIMETYPE_FILTERS.AUDIO}
               selectionType={SELECTION_TYPES.SINGLE}
               initialSelectionPaths={[]}
