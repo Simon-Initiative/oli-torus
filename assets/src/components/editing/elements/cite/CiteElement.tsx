@@ -48,7 +48,7 @@ export const CiteEditor = (props: Props) => {
             title="Bibliography"
             onCancel={onCancel}
             onOk={() => onDone({ ...selected })}
-            disableInsert={false}
+            disableOk={false}
           >
             <CitationEditor
               commandContext={props.commandContext}

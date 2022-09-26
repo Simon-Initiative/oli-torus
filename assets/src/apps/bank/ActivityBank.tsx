@@ -73,7 +73,7 @@ const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
   return new Promise((resolve, _reject) => {
-    const mediaLibrary = (
+    const ConfirmDeleteActivityModal = () => (
       <Modal
         title="Delete Activity"
         onOk={() => {
@@ -93,26 +93,19 @@ export function confirmDelete(): Promise<boolean> {
       </Modal>
     );
 
-    display(mediaLibrary);
+    display(<ConfirmDeleteActivityModal />);
   });
 }
 
 export function showFailedToLockMessage(): Promise<boolean> {
   return new Promise((resolve, _reject) => {
-    const mediaLibrary = (
+    const CannotEditModal = () => (
       <Modal
         title="Edit Activity"
         onOk={() => {
           dismiss();
           resolve(false);
         }}
-        onCancel={() => {
-          dismiss();
-          resolve(false);
-        }}
-        disableInsert={true}
-        cancelLabel="Ok"
-        hideOkButton={true}
         hideDialogCloseButton={true}
       >
         <div>
@@ -122,7 +115,7 @@ export function showFailedToLockMessage(): Promise<boolean> {
       </Modal>
     );
 
-    display(mediaLibrary);
+    display(<CannotEditModal />);
   });
 }
 

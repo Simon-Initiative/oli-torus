@@ -14,7 +14,7 @@ export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
 
   return (
     <Modal
-      title=""
+      title="YouTube Video Settings"
       size={ModalSize.MEDIUM}
       okLabel="Save"
       cancelLabel="Cancel"
@@ -22,7 +22,6 @@ export const YouTubeModal = ({ onDone, onCancel, model }: ModalProps) => {
       onOk={() => onDone({ alt, width, src })}
     >
       <div>
-        <h3 className="mb-2">Settings</h3>
         <h4 className="mb-2">Change Video</h4>
         <div className="mb-4">
           <span>

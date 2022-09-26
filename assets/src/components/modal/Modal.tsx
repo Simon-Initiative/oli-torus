@@ -16,10 +16,11 @@ export interface ModalProps {
   okLabel?: string;
   okClassName?: string;
   cancelLabel?: string;
-  disableInsert?: boolean;
+  disableOk?: boolean;
   hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
+  hideCancelButton?: boolean;
   onOk?: () => void;
   onCancel?: () => void;
   size?: ModalSize;
@@ -29,7 +30,6 @@ export interface ModalProps {
 export const Modal = (props: PropsWithChildren<ModalProps>) => {
   const { children } = props;
   const modal = useRef<HTMLDivElement>(null);
-  const [disableInsert, setDisableInsert] = useState(props.disableInsert || false);
 
   const okLabel = props.okLabel !== undefined ? props.okLabel : 'Insert';
   const cancelLabel = props.cancelLabel !== undefined ? props.cancelLabel : 'Cancel';
@@ -75,29 +75,25 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
               </button>
             )}
           </div>
-          <div className="modal-body">
-            {React.Children.map(children, (child) =>
-              React.cloneElement(child as React.ReactElement<any>, {
-                toggleDisableInsert: (bool: boolean) => setDisableInsert(bool),
-              }),
-            )}
-          </div>
+          <div className="modal-body">{children}</div>
           <div className="modal-footer">
             {props.footer ? (
               props.footer
             ) : (
               <>
-                <button
-                  type="button"
-                  className="btn btn-link"
-                  onClick={onCancel}
-                  data-dismiss="modal"
-                >
-                  {cancelLabel}
-                </button>
+                {props.hideCancelButton === true ? null : (
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    onClick={onCancel}
+                    data-dismiss="modal"
+                  >
+                    {cancelLabel}
+                  </button>
+                )}
                 {props.hideOkButton === true ? null : (
                   <button
-                    disabled={disableInsert}
+                    disabled={props.disableOk}
                     type="button"
                     onClick={onOk}
                     className={`btn btn-${okClassName}`}

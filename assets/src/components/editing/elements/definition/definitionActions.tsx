@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
@@ -11,6 +11,7 @@ import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
 import { AudioSource } from '../../../../data/content/model/elements/types';
 import { insideSemanticElement } from '../utils';
+import { Maybe } from 'tsmonad';
 
 export const insertDefinition = createButtonCommandDesc({
   icon: 'menu_book',
@@ -32,53 +33,63 @@ export function selectAudio(
   _selectedUrl?: string,
 ): Promise<AudioSource | undefined> {
   return new Promise((resolve, _reject) => {
-    let selected: AudioSource | undefined = undefined;
+    const MediaLibrary = () => {
+      const [selection, setSelection] = useState(Maybe.nothing<AudioSource>());
 
-    const onUrlSelection = (url: string) => {
-      selected = {
-        url,
-        contenttype: 'audio/mp3',
+      const onUrlSelection = (url: string) => {
+        if (url.length > 0) {
+          setSelection(
+            Maybe.just({
+              url,
+              contenttype: 'audio/mp3',
+            }),
+          );
+        } else {
+          setSelection(Maybe.nothing());
+        }
       };
+
+      const onMediaSelection = (mediaOrUrl: MediaItem[]) => {
+        if (mediaOrUrl && mediaOrUrl.length > 0) {
+          // The user picked a MediaItem from the media library which has mime info with it.
+          setSelection(
+            Maybe.just({
+              url: mediaOrUrl[0].url,
+              contenttype: mediaOrUrl[0].mimeType,
+            }),
+          );
+        } else {
+          setSelection(Maybe.nothing());
+        }
+      };
+
+      return (
+        <Provider store={store}>
+          <Modal
+            title="Select Audio"
+            size={ModalSize.X_LARGE}
+            onOk={() => {
+              dismiss();
+              resolve(selection.valueOrThrow());
+            }}
+            onCancel={dismiss}
+            disableOk={selection.caseOf({ just: () => false, nothing: () => true })}
+            okLabel="Select"
+          >
+            <UrlOrUpload
+              onUrlChange={onUrlSelection}
+              onMediaSelectionChange={onMediaSelection}
+              projectSlug={projectSlug}
+              onEdit={() => {}}
+              mimeFilter={MIMETYPE_FILTERS.AUDIO}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={[]}
+            />
+          </Modal>
+        </Provider>
+      );
     };
 
-    const onMediaSelection = (mediaOrUrl: MediaItem[]) => {
-      if (!mediaOrUrl || mediaOrUrl.length === 0) {
-        selected = undefined;
-      } else {
-        // The user picked a MediaItem from the media library which has mime info with it.
-        selected = {
-          url: mediaOrUrl[0].url,
-          contenttype: mediaOrUrl[0].mimeType,
-        };
-      }
-    };
-
-    const mediaLibrary = (
-      <Provider store={store}>
-        <Modal
-          title="Select Audio"
-          size={ModalSize.X_LARGE}
-          onOk={() => {
-            dismiss();
-            resolve(selected);
-          }}
-          onCancel={dismiss}
-          disableInsert={true}
-          okLabel="Select"
-        >
-          <UrlOrUpload
-            onUrlChange={onUrlSelection}
-            onMediaSelectionChange={onMediaSelection}
-            projectSlug={projectSlug}
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.AUDIO}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={[]}
-          />
-        </Modal>
-      </Provider>
-    );
-
-    display(mediaLibrary);
+    display(<MediaLibrary />);
   });
 }

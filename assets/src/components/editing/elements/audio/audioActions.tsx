@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Editor, Transforms } from 'slate';
 import * as ContentModel from 'data/content/model/elements/types';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
@@ -11,6 +11,7 @@ import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
+import { Maybe } from 'tsmonad';
 
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
@@ -21,34 +22,35 @@ export function selectAudio(
   model: ContentModel.Audio,
 ): Promise<ContentModel.Audio> {
   return new Promise((resolve, _reject) => {
-    const selected: { audio: null | ContentModel.Audio } = { audio: null };
+    const MediaLibrary = () => {
+      const [selection, setSelection] = useState(Maybe.nothing<ContentModel.Audio>());
 
-    const mediaLibrary = (
-      <Provider store={store}>
-        <Modal
-          title="Embed audio"
-          onOk={() => {
-            dismiss();
-            if (selected.audio) resolve(selected.audio);
-          }}
-          onCancel={() => dismiss()}
-          disableInsert={true}
-        >
-          <MediaManager
-            projectSlug={projectSlug}
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.AUDIO}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={[model.src || '']}
-            onSelectionChange={(audios: MediaItem[]) => {
-              selected.audio = Model.audio(audios[0].url);
+      return (
+        <Provider store={store}>
+          <Modal
+            title="Embed audio"
+            onOk={() => {
+              dismiss();
+              resolve(selection.valueOrThrow());
             }}
-          />
-        </Modal>
-      </Provider>
-    );
+            onCancel={() => dismiss()}
+            disableOk={selection.caseOf({ just: () => false, nothing: () => true })}
+          >
+            <MediaManager
+              projectSlug={projectSlug}
+              mimeFilter={MIMETYPE_FILTERS.AUDIO}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={[model.src || '']}
+              onSelectionChange={(audios: MediaItem[]) =>
+                setSelection(Maybe.just(Model.audio(audios[0].url)))
+              }
+            />
+          </Modal>
+        </Provider>
+      );
+    };
 
-    display(mediaLibrary);
+    display(<MediaLibrary />);
   });
 }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Transforms } from 'slate';
 import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
 import { Modal, ModalSize } from 'components/modal/Modal';
@@ -10,9 +10,10 @@ import { createButtonCommandDesc } from 'components/editing/elements/commands/co
 import { configureStore } from 'state/store';
 import { Provider } from 'react-redux';
 import { VideoSource } from '../../../../data/content/model/elements/types';
+import { Maybe } from 'tsmonad';
 
 export const insertVideo = createButtonCommandDesc({
-  icon: 'smart_display',
+  icon: 'play_circle_filled',
   description: 'Video',
   execute: (_context, editor) => {
     const at = editor.selection;
@@ -43,60 +44,69 @@ export function selectVideo(
   _selectedUrl?: string,
 ): Promise<VideoSource | undefined> {
   return new Promise((resolve, _reject) => {
-    let selected: VideoSource | undefined = undefined;
+    const MediaLibrary = () => {
+      const [selection, setSelection] = useState(Maybe.nothing<VideoSource>());
 
-    const onUrlSelection = (url: string) => {
-      // The user used the url-input to specify a video url uploaded elsewhere, and we don't have the content type of that.
-      // Try to infer it from the filename.
-      const knownExtension =
-        Object.keys(VIDEO_TYPES).find(
-          (extension) => url.substring(url.length - extension.length) === extension,
-        ) || DEFAULT_TYPE;
+      const onUrlSelection = (url: string) => {
+        if (url.length > 0) {
+          // The user used the url-input to specify a video url uploaded elsewhere, and we don't have the content type of that.
+          // Try to infer it from the filename.
+          const knownExtension =
+            Object.keys(VIDEO_TYPES).find(
+              (extension) => url.substring(url.length - extension.length) === extension,
+            ) || DEFAULT_TYPE;
 
-      selected = {
-        url,
-        contenttype: VIDEO_TYPES[knownExtension],
+          setSelection(
+            Maybe.just({
+              url,
+              contenttype: VIDEO_TYPES[knownExtension],
+            }),
+          );
+        } else {
+          setSelection(Maybe.nothing());
+        }
       };
+
+      const onMediaSelection = (mediaOrUrl: MediaItem[]) => {
+        if (mediaOrUrl && mediaOrUrl.length > 0) {
+          // The user picked a MediaItem from the media library which has mime info with it.
+          setSelection(
+            Maybe.just({
+              url: mediaOrUrl[0].url,
+              contenttype: mediaOrUrl[0].mimeType,
+            }),
+          );
+        } else {
+          setSelection(Maybe.nothing());
+        }
+      };
+
+      return (
+        <Provider store={store}>
+          <Modal
+            title="Select Video"
+            size={ModalSize.X_LARGE}
+            onOk={() => {
+              dismiss();
+              resolve(selection.valueOrThrow());
+            }}
+            onCancel={dismiss}
+            disableOk={selection.caseOf({ just: () => false, nothing: () => true })}
+            okLabel="Select"
+          >
+            <UrlOrUpload
+              onUrlChange={onUrlSelection}
+              onMediaSelectionChange={onMediaSelection}
+              projectSlug={projectSlug}
+              onEdit={() => {}}
+              mimeFilter={MIMETYPE_FILTERS.VIDEO}
+              selectionType={SELECTION_TYPES.SINGLE}
+            />
+          </Modal>
+        </Provider>
+      );
     };
 
-    const onMediaSelection = (mediaOrUrl: MediaItem[]) => {
-      if (!mediaOrUrl || mediaOrUrl.length === 0) {
-        selected = undefined;
-      } else {
-        // The user picked a MediaItem from the media library which has mime info with it.
-        selected = {
-          url: mediaOrUrl[0].url,
-          contenttype: mediaOrUrl[0].mimeType,
-        };
-      }
-    };
-
-    const mediaLibrary = (
-      <Provider store={store}>
-        <Modal
-          title="Select Video"
-          size={ModalSize.X_LARGE}
-          onOk={() => {
-            dismiss();
-            resolve(selected);
-          }}
-          onCancel={dismiss}
-          disableInsert={true}
-          okLabel="Select"
-        >
-          <UrlOrUpload
-            onUrlChange={onUrlSelection}
-            onMediaSelectionChange={onMediaSelection}
-            projectSlug={projectSlug}
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.VIDEO}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={[]}
-          />
-        </Modal>
-      </Provider>
-    );
-
-    display(mediaLibrary);
+    display(<MediaLibrary />);
   });
 }

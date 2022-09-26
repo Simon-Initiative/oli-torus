@@ -18,6 +18,8 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
   const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
   const [selectedPage, setSelectedPage] = useState<Maybe<Persistence.Page>>(Maybe.nothing());
 
+  console.log('pages, selectedPage', pages, selectedPage);
+
   React.useEffect(() => {
     Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model?.ref)).then(
       (result) => {
@@ -41,7 +43,7 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
   );
   const renderFailed = (errorMsg: string) => (
     <div>
-      <div>Failed to initialize. Close this window and try again.</div>
+      <div>Failed to load pages. Close this window and try again.</div>
       <div>Error: ${errorMsg}</div>
     </div>
   );
@@ -65,9 +67,9 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
           if (item) setSelectedPage(Maybe.just(item));
         }}
         style={{ minWidth: '300px' }}
-        defaultValue="none"
+        defaultValue=""
       >
-        <option key="none" value="none" disabled hidden>
+        <option key="none" value="" hidden>
           Select a Page
         </option>
         {pages.map(PageOption)}
@@ -88,7 +90,7 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
     <Modal
       title="Select a Page"
       size={ModalSize.MEDIUM}
-      okLabel="Done"
+      okLabel="Select"
       cancelLabel="Cancel"
       onCancel={onCancel}
       onOk={() =>
@@ -97,6 +99,7 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
           nothing: () => {},
         })
       }
+      disableOk={selectedPage.caseOf({ just: () => false, nothing: () => true })}
     >
       {error.caseOf({
         just: (errorMsg) => renderFailed(errorMsg),
