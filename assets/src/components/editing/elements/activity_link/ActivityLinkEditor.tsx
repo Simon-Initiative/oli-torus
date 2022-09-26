@@ -91,7 +91,7 @@ export const ActivityLinkEditor = ({ model, commandContext, attributes }: Props)
           })}
           <div className="flex-grow-1"></div>
           <button className="btn btn-primary" onClick={showModal}>
-            Choose Page
+            Select Page
           </button>
         </div>
       </div>

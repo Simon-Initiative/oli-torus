@@ -11,9 +11,11 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
   const [alt, setAlt] = useState(model.alt);
   const [width, setWidth] = useState(model.width);
 
+  const clearWidth = () => setWidth(undefined);
+
   return (
     <Modal
-      title=""
+      title="Image Settings"
       size={ModalSize.LARGE}
       okLabel="Save"
       cancelLabel="Cancel"
@@ -21,7 +23,6 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
       onOk={() => onDone({ alt, width })}
     >
       <div>
-        <h3 className="mb-2">Settings</h3>
         <div
           className="mx-auto mb-4"
           style={{
@@ -42,13 +43,18 @@ export const ImageModal = ({ onDone, onCancel, model }: ModalProps) => {
             Width:{' '}
             <input
               type="number"
-              value={width}
+              value={width || ''}
               onChange={(e) => {
                 const width = parseInt(e.target.value);
                 !Number.isNaN(width) && setWidth(width);
               }}
             />
           </span>
+          {width && (
+            <button className="btn btn-sm btn-secondary ml-2" onClick={clearWidth}>
+              Clear
+            </button>
+          )}
         </div>
         <h4 className="mb-2">Alternative Text</h4>
         <p className="mb-4">

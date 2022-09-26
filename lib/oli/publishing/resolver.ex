@@ -32,6 +32,11 @@ defmodule Oli.Publishing.Resolver do
   @callback root_container(String.t()) :: %Revision{}
 
   @doc """
+  Resolves the revisions of all pages for a given context slug.
+  """
+  @callback all_pages(String.t()) :: [%Revision{}]
+
+  @doc """
   Resolves all the revisions for a given context slug.
   """
   @callback all_revisions(String.t()) :: [%Revision{}]

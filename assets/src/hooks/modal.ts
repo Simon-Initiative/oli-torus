@@ -1,10 +1,12 @@
+import { lockScroll, unlockScroll } from 'components/modal/utils';
+
 export const ModalLaunch = {
   mounted(): void {
     // initialize the bootstrap modal
     const id = this.el.getAttribute('id');
     ($('#' + id) as any).modal({});
 
-    this.lockScroll();
+    const scrollPosition = lockScroll();
 
     // wire up server-side hide event
     (this as any).handleEvent('_bsmodal.hide', () => {
@@ -15,30 +17,7 @@ export const ModalLaunch = {
     // (modal close button, escape key, etc...)
     $(`#${id}`).on('hidden.bs.modal', () => {
       (this as any).pushEvent('_bsmodal.unmount');
-      this.unlockScroll();
+      unlockScroll(scrollPosition);
     });
-  },
-  lockScroll(): void {
-    // From https://github.com/excid3/tailwindcss-stimulus-components/blob/master/src/modal.js
-    // Add right padding to the body so the page doesn't shift when we disable scrolling
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-    // Save the scroll position
-    this.scrollPosition = window.pageYOffset || document.body.scrollTop;
-    // Add classes to body to fix its position
-    document.body.classList.add('fix-position');
-    // Add negative top position in order for body to stay in place
-    document.body.style.top = `-${this.scrollPosition}px`;
-  },
-  unlockScroll(): void {
-    // From https://github.com/excid3/tailwindcss-stimulus-components/blob/master/src/modal.js
-    // Remove tweaks for scrollbar
-    document.body.style.paddingRight = '';
-    // Remove classes from body to unfix position
-    document.body.classList.remove('fix-position');
-    // Restore the scroll position of the body before it got locked
-    document.documentElement.scrollTop = this.scrollPosition;
-    // Remove the negative top inline style from body
-    document.body.style.top = '';
   },
 };

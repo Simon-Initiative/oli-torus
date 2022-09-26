@@ -86,7 +86,7 @@ export const ActivityLinkModal = ({ onDone, onCancel, model, commandContext }: M
 
   return (
     <Modal
-      title="Edit"
+      title="Select Page"
       size={ModalSize.MEDIUM}
       okLabel="Done"
       cancelLabel="Cancel"
