@@ -52,7 +52,11 @@ defmodule OliWeb.Common.SortableTable.Table do
       if id_field(row, assigns.model) == assigns.model.selected do
         "table-active"
       else
-        ""
+        if assigns.select != nil do
+          "selectable"
+        else
+          ""
+        end
       end
 
     ~F"""
