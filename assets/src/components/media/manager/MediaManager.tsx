@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as Immutable from 'immutable';
 import { Maybe } from 'tsmonad';
 import { MediaIcon } from './MediaIcon';
-import { MediaLibraryOption, MediaItem } from 'types/media';
+import { MediaItem } from 'types/media';
 import guid from 'utils/guid';
 import { convert, stringFormat } from 'utils/format';
 import { OrderedMediaLibrary } from '../OrderedMediaLibrary';
@@ -98,8 +98,7 @@ export interface MediaManagerProps {
   media: OrderedMediaLibrary;
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
-  initialSelectionPaths: string[];
-  onEdit: (updated: MediaLibraryOption) => void;
+  initialSelectionPaths?: string[];
   onLoadCourseMediaNextPage: (
     projectSlug: string,
     mimeFilter: string[] | undefined,
@@ -110,7 +109,6 @@ export interface MediaManagerProps {
   onResetMedia: () => void;
   onSelectionChange: (selection: MediaItem[]) => void;
   onLoadMediaItemByPath: (projectSlug: string, path: string) => Promise<Maybe<MediaItem>>;
-  toggleDisableInsert?: (b: boolean) => void;
 }
 
 export interface MediaManagerState {
@@ -332,7 +330,6 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
       onSelectionChange(
         updatedSelection.map((s) => mediaLibrary.getItem(s)).toArray() as MediaItem[],
       );
-      this.props.toggleDisableInsert && this.props.toggleDisableInsert(false);
     }
   }
 

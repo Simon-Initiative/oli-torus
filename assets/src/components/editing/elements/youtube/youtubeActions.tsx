@@ -4,11 +4,11 @@ import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import React, { useState } from 'react';
 import { modalActions } from 'actions/modal';
-import ModalSelection from 'components/modal/ModalSelection';
+import { Modal } from 'components/modal/Modal';
 import { onEnterApply } from 'components/editing/elements/common/settings/Settings';
 
 export const insertYoutube = createButtonCommandDesc({
-  icon: 'play_circle_filled',
+  icon: 'smart_display',
   description: 'YouTube',
   execute: (_context, editor, _params) => {
     const at = editor.selection;
@@ -69,9 +69,9 @@ export function selectYoutube(): Promise<string | null> {
     const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
     const selection = (
-      <ModalSelection
+      <Modal
         title="Insert YouTube"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(selected.src ? selected.src : '');
         }}
@@ -86,7 +86,7 @@ export function selectYoutube(): Promise<string | null> {
             selected.src = src;
           }}
         />
-      </ModalSelection>
+      </Modal>
     );
 
     display(selection);

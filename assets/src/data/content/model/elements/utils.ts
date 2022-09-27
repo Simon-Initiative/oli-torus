@@ -36,3 +36,6 @@ export const translateDeliveryToAuthoring = (href: string, projectSlug: string) 
 };
 
 export const normalizeHref = (href: string) => addProtocol(href.trim());
+
+export const getCurrentSlugFromRef = (ref?: string) =>
+  ref?.startsWith('/course/link/') ? ref.slice(ref.lastIndexOf('/') + 1) : undefined;

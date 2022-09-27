@@ -46,7 +46,7 @@ const listCommandMaker = (listType: 'ul' | 'ol'): Command => {
           mode: 'all',
         });
 
-        Transforms.setNodes(editor, { type: 'p' });
+        // Transforms.setNodes(editor, { type: 'p' });
       });
     },
     precondition: (editor) => {

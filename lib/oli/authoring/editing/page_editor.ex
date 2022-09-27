@@ -118,7 +118,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
         :ok
 
       json ->
-        schema = SchemaResolver.schema("page-content.schema.json")
+        schema = SchemaResolver.resolve("page-content.schema.json")
 
         case ExJsonSchema.Validator.validate(schema, json) do
           :ok ->
@@ -275,13 +275,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
   end
 
   defp maybe_migrate_revision_content(%Revision{content: content} = revision) do
-    case ContentMigrator.migrate(content, :page, to: :latest) do
-      {:migrated, migrated_content} ->
-        {:ok, %Revision{revision | content: migrated_content}}
-
-      {:skipped, _content} ->
-        {:ok, revision}
-    end
+    {:ok, %Revision{revision | content: ContentMigrator.migrate(content, :page, to: :latest)}}
   end
 
   def render_page_html(project_slug, content, author, options \\ []) do

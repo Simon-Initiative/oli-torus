@@ -97,8 +97,7 @@ defmodule Oli.Resources.ContentMigratorTest do
       %{revision: revision} =
         Seeder.create_page("Page with Unversioned Model", publication, project, author, @content)
 
-      assert {:migrated, migrated_content} =
-               ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
+      migrated_content = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
 
       assert migrated_content |> Map.get("version") == "0.1.0"
 
@@ -199,7 +198,7 @@ defmodule Oli.Resources.ContentMigratorTest do
           @adaptive_content
         )
 
-      assert {:skipped, content} = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
+      content = ContentMigrator.migrate(revision.content, :page, to: :v0_1_0)
 
       assert content |> Map.get("version") == nil
 

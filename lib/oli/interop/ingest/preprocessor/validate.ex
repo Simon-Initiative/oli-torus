@@ -17,7 +17,7 @@ defmodule Oli.Interop.Ingest.Preprocessor.Validate do
   end
 
   defp validate_json(%State{errors: errors} = state, key, schema_ref, attr \\ nil) do
-    schema = SchemaResolver.schema(schema_ref)
+    schema = SchemaResolver.resolve(schema_ref)
 
     errors =
       Map.get(state, key)

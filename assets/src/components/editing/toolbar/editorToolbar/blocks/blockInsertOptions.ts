@@ -16,6 +16,7 @@ import { insertVideo } from '../../../elements/video/videoActions';
 import { insertDefinition } from '../../../elements/definition/definitionActions';
 import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertDialog } from '../../../elements/dialog/dialogActions';
+import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
@@ -31,6 +32,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertDefinition,
   insertFigure,
   insertDialog,
+  insertPageLink,
   insertConjugation,
 ];
 
@@ -59,7 +61,6 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
         insertFormula,
       ];
     case 'all':
-      return allBlockInsertActions(onRequestMedia);
     default:
       return allBlockInsertActions(onRequestMedia);
   }

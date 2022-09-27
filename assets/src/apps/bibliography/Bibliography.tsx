@@ -3,12 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { configureStore } from 'state/store';
 import * as BibPersistence from 'data/persistence/bibentry';
-
 import * as Immutable from 'immutable';
-// import { DeleteBibEntry } from './DeleteBibEntry';
 import { BibEntryView } from './BibEntryView';
 import { modalActions } from 'actions/modal';
-import ModalSelection from 'components/modal/ModalSelection';
+import { Modal } from 'components/modal/Modal';
 import Ajv from 'ajv';
 import { Banner } from 'components/messages/Banner';
 import { createMessage, Message, Severity } from 'data/messages/messages';
@@ -33,9 +31,9 @@ const display = (c: any) => window.oliDispatch(modalActions.display(c));
 export function confirmDelete(): Promise<boolean> {
   return new Promise((resolve, _reject) => {
     const modelOpen = (
-      <ModalSelection
+      <Modal
         title="Delete Entry"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(true);
         }}
@@ -49,7 +47,7 @@ export function confirmDelete(): Promise<boolean> {
           <h5>Are you sure you want to delete this Activity?</h5>
           <p>This is a permanent operation that cannot be undone.</p>
         </div>
-      </ModalSelection>
+      </Modal>
     );
 
     display(modelOpen);
@@ -60,9 +58,9 @@ export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
   return new Promise((resolve, _reject) => {
     let bibContent = '';
     const modelOpen = (
-      <ModalSelection
+      <Modal
         title={bibEntry ? 'Edit Entry' : 'Create Entry'}
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(bibContent);
         }}
@@ -78,7 +76,7 @@ export function confirmTextBibEditor(bibEntry?: BibEntry): Promise<string> {
             bibContent = content;
           }}
         />
-      </ModalSelection>
+      </Modal>
     );
 
     display(modelOpen);
@@ -92,9 +90,9 @@ export function confirmUiBibEditor(
   return new Promise((resolve, _reject) => {
     let bibContent = model;
     const modelOpen = (
-      <ModalSelection
+      <Modal
         title={bibEntry ? 'Edit Entry' : 'Create Entry'}
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(Maybe.just(bibContent));
         }}
@@ -111,7 +109,7 @@ export function confirmUiBibEditor(
             bibContent = content;
           }}
         />
-      </ModalSelection>
+      </Modal>
     );
 
     display(modelOpen);

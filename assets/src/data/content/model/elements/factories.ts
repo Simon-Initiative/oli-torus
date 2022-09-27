@@ -35,6 +35,7 @@ import {
   AllModelElements,
   Dialog,
   DialogLine,
+  PageLink,
   DialogSpeaker,
   Conjugation,
   TableHeader,
@@ -121,6 +122,9 @@ export const Model = {
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+
+  page_link: (title = '', ref = '', purpose = 'none') =>
+    create<PageLink>({ type: 'page_link', title, ref, purpose }),
 
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),

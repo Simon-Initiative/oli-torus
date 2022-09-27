@@ -59,6 +59,7 @@ defmodule Oli.Rendering.Content do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
+  @callback page_link(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
   @callback cite(%Context{}, next, %{}) :: [any()]
@@ -326,6 +327,9 @@ defmodule Oli.Rendering.Content do
 
       "a" ->
         writer.a(context, next, element)
+
+      "page_link" ->
+        writer.page_link(context, next, element)
 
       "cite" ->
         writer.cite(context, next, element)

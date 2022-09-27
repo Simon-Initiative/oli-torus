@@ -119,6 +119,21 @@ defmodule Oli.Publishing.DeliveryResolver do
   end
 
   @impl Resolver
+  def all_pages(section_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    fn ->
+      from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),
+        where: rev.resource_type_id == ^page_id,
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :delivery], :duration)
+  end
+
+  @impl Resolver
   def all_revisions(section_slug) do
     fn ->
       from([s: s, sr: sr, rev: rev] in section_resource_revisions(section_slug),

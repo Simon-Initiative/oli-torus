@@ -262,4 +262,10 @@ export const schema: Schema = {
     isTopLevel: true,
     validChildren: {},
   },
+  page_link: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
+  },
 };

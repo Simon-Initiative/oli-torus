@@ -19,7 +19,7 @@ import { CommandButton } from 'components/editing/toolbar/buttons/CommandButton'
 const toLink = (src = '') => 'https://www.youtube.com/embed/' + (src === '' ? CUTE_OTTERS : src);
 
 export const ytCmdDesc = createButtonCommandDesc({
-  icon: 'play_circle_filled',
+  icon: 'smart_display',
   description: 'YouTube',
   execute: (_context, editor, src: string) => {
     const at = editor.selection;

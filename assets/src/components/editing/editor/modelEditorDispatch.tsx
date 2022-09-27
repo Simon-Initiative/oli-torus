@@ -3,6 +3,7 @@ import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeEleme
 import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
 import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
 import { LinkEditor } from 'components/editing/elements/link/LinkElement';
+import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
 import { TableEditor } from 'components/editing/elements/table/TableElement';
 import { TdEditor } from 'components/editing/elements/table/TdElement';
@@ -87,6 +88,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'page_link':
+      return <PageLinkEditor {...(editorProps as EditorProps<ContentModel.PageLink>)} />;
     case 'cite':
       return <CiteEditor {...(editorProps as EditorProps<ContentModel.Citation>)} />;
     case 'popup':

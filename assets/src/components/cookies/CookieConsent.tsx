@@ -1,5 +1,5 @@
 import React from 'react';
-import ModalSelection from 'components/modal/ModalSelection';
+import { Modal } from 'components/modal/Modal';
 import { consentOptions, setCookies } from 'components/cookies/utils';
 import {
   selectCookiePreferences,
@@ -49,7 +49,7 @@ export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): 
     </>
   );
   const cookieConsent = (
-    <ModalSelection
+    <Modal
       title="We use cookies"
       footer={footer}
       onCancel={() => {
@@ -57,7 +57,7 @@ export function selectCookieConsent(cookiePreferences: CookiePreferencesProps): 
       }}
     >
       <CookieConsent privacyPoliciesUrl={cookiePreferences.privacyPoliciesUrl} />
-    </ModalSelection>
+    </Modal>
   );
 
   display(cookieConsent);

@@ -22,7 +22,7 @@ export function VideoPlaceholder(props: Props) {
     <Placeholder
       heading={
         <h3 className="d-flex align-items-center">
-          <span className="material-icons mr-2">smart_display</span>Video
+          <span className="material-icons mr-2">play_circle_filled</span>Video
         </h3>
       }
       attributes={props.attributes}

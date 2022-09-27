@@ -124,7 +124,14 @@ config :oli, OliWeb.Endpoint,
 config :oli, Oban,
   repo: Oli.Repo,
   plugins: [Oban.Plugins.Pruner],
-  queues: [default: 10, snapshots: 20, selections: 2, updates: 10, grades: 30, part_mapping_refresh: 1]
+  queues: [
+    default: 10,
+    snapshots: 20,
+    selections: 2,
+    updates: 10,
+    grades: 30,
+    part_mapping_refresh: 1
+  ]
 
 config :ex_money,
   auto_start_exchange_rate_service: false,
@@ -208,7 +215,7 @@ config :oli, :footer,
 
 config :ex_json_schema,
        :remote_schema_resolver,
-       {Oli.Utils.SchemaResolver, :resolve}
+       {Oli.Utils.SchemaResolver, :resolve_uri}
 
 # Configure if age verification checkbox appears on learner account creation
 config :oli, :age_verification, is_enabled: System.get_env("IS_AGE_VERIFICATION_ENABLED", "")

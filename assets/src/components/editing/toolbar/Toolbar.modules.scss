@@ -31,6 +31,7 @@
     color: var(--authoring-toolbar-color);
     text-align: center;
     vertical-align: middle;
+    align-items: center;
     user-select: none;
     background-color: transparent;
     padding: 0.2rem 0.5rem;
@@ -94,7 +95,6 @@
     display: flex;
     flex-direction: column;
     padding: 8px;
-    max-height: 400px;
     overflow-y: auto;
     background: var(--authoring-toolbar-bg);
     border: 2px solid var(--authoring-toolbar-border-color);

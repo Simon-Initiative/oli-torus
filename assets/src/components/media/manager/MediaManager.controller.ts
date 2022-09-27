@@ -31,7 +31,6 @@ interface OwnProps {
   mimeFilter?: string[] | undefined;
   selectionType: SELECTION_TYPES;
   initialSelectionPaths?: string[];
-  onEdit: (updated: MediaLibraryOption) => void;
   onSelectionChange: (selection: MediaItem[]) => void;
 }
 

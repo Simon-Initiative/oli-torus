@@ -10,7 +10,6 @@ export const normalize = (
   path: Path,
 ): boolean => {
   const [parent] = Editor.parent(editor, path);
-
   if (Element.isElement(parent)) {
     const config = schema[parent.type];
     if (['ol', 'ul'].includes(parent.type)) {

@@ -37,7 +37,7 @@ interface SettingsButtonProps {
 const SettingsButton = (props: SettingsButtonProps) => (
   <DescriptiveButton
     description={createButtonCommandDesc({
-      icon: 'smart_display',
+      icon: 'play_circle_filled',
       description: 'Settings',
       execute: (_context, _editor, _params) =>
         window.oliDispatch(
