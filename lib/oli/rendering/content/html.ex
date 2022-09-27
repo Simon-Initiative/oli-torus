@@ -553,7 +553,11 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp external_link(%Context{} = _context, next, href) do
-    [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+    [
+      ~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank" rel="noreferrer">|,
+      next.(),
+      "</a>\n"
+    ]
   end
 
   def page_link(%Context{} = context, _next, %{

@@ -12,7 +12,7 @@
   }
 
   &.none {
-    .content-purpose-label {
+    & > .content-purpose-label {
       display: none;
     }
 
@@ -24,7 +24,7 @@
   &.objectives {
     border: 1px solid $content-purpose-objectives-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-objectives-color;
       color: $white;
 
@@ -46,7 +46,7 @@
   &.checkpoint {
     border: 1px solid $content-purpose-checkpoint-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-checkpoint-color;
       color: $white;
 
@@ -64,7 +64,7 @@
   &.didigetthis {
     border: 1px solid $content-purpose-didigetthis-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-didigetthis-color;
       color: $white;
 
@@ -82,7 +82,7 @@
   &.example {
     border-bottom: 1px dashed $content-purpose-example-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       border-bottom: 1px dashed $content-purpose-example-color;
       font-weight: 700;
 
@@ -100,7 +100,7 @@
   &.labactivity {
     border: 1px solid $content-purpose-labactivity-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-labactivity-color;
       color: $white;
 
@@ -118,7 +118,7 @@
   &.learnbydoing {
     border: 1px solid $content-purpose-learnbydoing-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-learnbydoing-color;
       color: $white;
 
@@ -136,7 +136,7 @@
   &.learnmore {
     border: 1px solid $content-purpose-learnmore-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-learnmore-color;
       color: $white;
 
@@ -154,7 +154,7 @@
   &.manystudentswonder {
     border: 1px solid $content-purpose-manystudentswonder-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-manystudentswonder-color;
       color: $white;
 
@@ -172,7 +172,7 @@
   &.quiz {
     border: 1px solid $content-purpose-quiz-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-quiz-color;
       color: $white;
 
@@ -190,7 +190,7 @@
   &.simulation {
     border: 1px solid $content-purpose-simulation-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-simulation-color;
       color: $white;
 
@@ -208,7 +208,7 @@
   &.walkthrough {
     border: 1px solid $content-purpose-walkthrough-color;
 
-    .content-purpose-label {
+    & > .content-purpose-label {
       background-color: $content-purpose-walkthrough-color;
       color: $white;
 
@@ -239,7 +239,6 @@
       .title {
         font-size: 1.3em;
         color: $body-color;
-        // color: darken($color, 15%);
       }
 
       i {
@@ -253,9 +252,7 @@
     .content-purpose-content {
       background-color: rgba($bg, 0.3);
 
-      // .title,
       i {
-        // color: darken($body-color, 15%);
         color: darken($color, 25%);
       }
     }

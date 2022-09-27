@@ -34,6 +34,7 @@ import {
   MathLine,
   ModelElement,
   OrderedList,
+  PageLink,
   Paragraph,
   Popup,
   Table,
@@ -68,6 +69,7 @@ import { Figure as FigureElement } from '../../../components/common/Figure';
 import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
+import { classNames } from 'utils/classNames';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -386,6 +388,33 @@ export class HtmlParser implements WriterImpl {
       <a className="external-link" href={this.escapeXml(href)} target="_blank" rel="noreferrer">
         {next()}
       </a>
+    );
+  }
+  pageLink(context: WriterContext, _next: Next, { title, ref, purpose }: PageLink) {
+    const revisionSlug = ref.replace(/^\/course\/link\//, '');
+
+    let internalHref;
+    if (context.sectionSlug) {
+      internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
+    } else {
+      internalHref = '#';
+    }
+
+    return (
+      <div className={classNames('content-page-link content-purpose', purpose)}>
+        <div className="content-purpose-label">Checkpoint</div>
+        <a
+          className="internal-link"
+          href={this.escapeXml(internalHref)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <div className="content-purpose-content d-flex flex-row">
+            <div className="title flex-grow-1">{title}</div>
+            <i className="las la-external-link-square-alt la-2x"></i>
+          </div>
+        </a>
+      </div>
     );
   }
   inputRef(context: WriterContext, _next: Next, inputRef: InputRef) {
