@@ -120,7 +120,7 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
           placeholder={props.placeholder ?? 'Type here or use + to begin...'}
           onKeyDown={onKeyDown}
           onFocus={emptyOnFocus}
-          onPaste={(e) => {
+          onPaste={(e: React.ClipboardEvent<HTMLDivElement>) => {
             if (props.onPaste) return props.onPaste(e);
 
             const pastedText = e.clipboardData?.getData('text')?.trim();
