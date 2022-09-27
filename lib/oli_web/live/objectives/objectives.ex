@@ -88,7 +88,8 @@ defmodule OliWeb.Objectives.Objectives do
         <div class="mt-3">
           <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
             <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, can_delete?: @can_delete? %>
+              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, can_delete?: @can_delete?,
+              parent_slug: @parent_slug, parent_slug_value: objective_tree.mapping.revision.slug %>
           <% end %>
         </div>
 
@@ -210,11 +211,21 @@ defmodule OliWeb.Objectives.Objectives do
     {:noreply, assign(socket, :edit, :none)}
   end
 
-  def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
-    %{can_delete?: can_delete?, project: project, force_render: force_render} = socket.assigns
+  def handle_event("show_delete_modal", %{"slug" => slug, "parent_slug" => parent_slug}, socket) do
+    socket = clear_flash(socket)
 
-    if can_delete? do
-      publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
+    %{can_delete?: can_delete?, project: project, force_render: force_render, objectives_tree: objectives_tree} = socket.assigns
+
+    has_children? =
+      case Enum.find(objectives_tree, fn objective -> objective.mapping.revision.slug == slug end) do
+        nil -> false
+        obj -> length(obj.children) > 0
+      end
+
+    cond do
+      has_children? -> {:noreply, put_flash(socket, :error, "Could not remove objective if it has sub-objectives associated")}
+      can_delete? ->
+        publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
       %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
       case Oli.Publishing.find_objective_in_selections(resource_id, publication_id) do
@@ -222,35 +233,35 @@ defmodule OliWeb.Objectives.Objectives do
           attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
 
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: DeleteModal,
-               assigns: %{
-                 id: "delete_objective_modal",
-                 slug: slug,
-                 project: project,
-                 attachment_summary: attachment_summary,
-                 force_render: force_render + 1
-               }
-             }
-           )}
+            assign(socket,
+              modal: %{
+                component: DeleteModal,
+                assigns: %{
+                  id: "delete_objective_modal",
+                  slug: slug,
+                  parent_slug_value: parent_slug,
+                  project: project,
+                  attachment_summary: attachment_summary,
+                  force_render: force_render + 1
+                }
+              }
+            )}
 
         selections ->
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: SelectionsModal,
-               assigns: %{
-                 id: "selections_modal",
-                 selections: selections,
-                 project_slug: project.slug,
-                 force_render: force_render + 1
-               }
-             }
-           )}
+            assign(socket,
+              modal: %{
+                component: SelectionsModal,
+                assigns: %{
+                  id: "selections_modal",
+                  selections: selections,
+                  project_slug: project.slug,
+                  force_render: force_render + 1
+                }
+              }
+            )}
       end
-    else
-      {:noreply, socket}
+      true -> {:noreply, socket}
     end
   end
 
@@ -292,6 +303,8 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   def handle_event("add_existing_sub", %{"slug" => slug, "parent_slug" => parent_slug} = _params, socket) do
+    socket = clear_flash(socket)
+
     %{project: project, author: author} = socket.assigns
 
     socket = case ObjectiveEditor.add_new_parent_for_sub_objective(
@@ -308,8 +321,10 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # handle processing deletion of item
-  def handle_event("delete", %{"slug" => slug}, socket) do
-    %{project: project, author: author} = socket.assigns
+  def handle_event("delete", %{"slug" => slug, "parent_slug" => parent_slug}, socket) do
+    socket = clear_flash(socket)
+
+    %{project: project, author: author, objectives_tree: objectives_tree} = socket.assigns
 
     %{resource_id: resource_id} =
       AuthoringResolver.from_revision_slug(
@@ -319,27 +334,48 @@ defmodule OliWeb.Objectives.Objectives do
 
     ObjectiveEditor.detach_objective(resource_id, project, author)
 
-    parent_objective = determine_parent_objective(socket, slug)
+    parents = Enum.reduce(objectives_tree, [], fn objective, parents ->
+      case Enum.find(objective.children, fn child -> child.mapping.revision.slug == slug end) do
+        nil -> parents
+        _ -> [objective | parents]
+      end
+    end)
+
+    parent_objective_to_detach =
+      case Enum.find(parents, fn objective -> objective.mapping.revision.slug == parent_slug end) do
+        nil -> nil
+        po -> po.mapping.revision
+      end
 
     socket =
       case ObjectiveEditor.preview_objective_detatchment(resource_id, project) do
         %{attachments: {[], []}} ->
-          case ObjectiveEditor.delete(
-                 slug,
-                 author,
-                 project,
-                 parent_objective
-               ) do
+          delete_fn = if length(parents) <= 1 do
+            fn -> ObjectiveEditor.delete(
+                slug,
+                author,
+                project,
+                parent_objective_to_detach
+              ) end
+          else
+            fn -> ObjectiveEditor.remove_sub_objective_from_parent(
+                slug,
+                author,
+                project,
+                parent_objective_to_detach
+              ) end
+          end
+
+          case delete_fn.() do
             {:ok, _} ->
-              socket
+              put_flash(socket, :info, "Objective successfully removed")
 
             {:error, _} ->
-              socket
-              |> put_flash(:error, "Could not remove objective")
+              put_flash(socket, :error, "Could not remove objective")
           end
 
         _ ->
-          socket
+          put_flash(socket, :error, "Could not remove attached objective")
       end
 
     {:noreply, hide_modal(socket)}
@@ -390,6 +426,8 @@ defmodule OliWeb.Objectives.Objectives do
 
   # handle clicking of the add objective
   def handle_event("new", %{"revision" => objective_params}, socket) do
+    socket = clear_flash(socket)
+
     with_atom_keys =
       Map.keys(objective_params)
       |> Enum.reduce(%{}, fn k, m ->
@@ -414,20 +452,6 @@ defmodule OliWeb.Objectives.Objectives do
       end
 
     {:noreply, assign(socket, edit: :none, changeset: Resources.change_revision(%Revision{}))}
-  end
-
-  defp determine_parent_objective(socket, slug) do
-    child =
-      Enum.find(socket.assigns.objective_mappings, fn %{revision: revision} ->
-        revision.slug == slug
-      end)
-
-    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} ->
-           Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end)
-         end) do
-      nil -> nil
-      o -> o.mapping.revision
-    end
   end
 
   # Here are listening for subscription notifications for newly created resources

@@ -14,7 +14,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
     ~L"""
       <%= for child <- @children do %>
         <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
-              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit %>
+              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit, parent_slug_value: @parent_slug_value %>
       <% end %>
 
       <%= cond do %>
@@ -25,7 +25,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
               <div style="margin-left: <%= @depth * 40 %>px">
 
               <%= live_component ObjectiveForm, changeset: @changeset,
-                project: @project, title_value: "", slug_value: "", parent_slug_value: @objective_mapping.revision.slug, depth: @depth,
+                project: @project, title_value: "", slug_value: "", parent_slug_value: @parent_slug_value, depth: @depth,
                 form_id: "create-sub-objective", place_holder: "", phx_disable_with: "Creating Sub-Objective...", button_text: "Create", method: "new" %>
 
               </div>
@@ -57,23 +57,25 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
 
   def render(assigns) do
     margin_for_depth = (assigns.depth - 1) * 40
+    parent_slug_value = if assigns.depth > 1, do: assigns.parent_slug_value, else: ""
 
     ~L"""
 
     <div id="<%= @objective_mapping.revision.slug %>" class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
       <div class="col-12">
         <%= cond do %>
-          <% @edit == @objective_mapping.revision.slug -> %>
+          <% @edit == @objective_mapping.revision.slug and parent_slug_value == @parent_slug -> %>
             <div class="py-2">
               <%= live_component ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
                 project: @project, slug: @objective_mapping.revision.slug, form_id: "edit-objective", place_holder: @objective_mapping.revision.title,
-                phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: "", depth: @depth,
+                phx_disable_with: "Updating Objective...", button_text: "Save", parent_slug_value: parent_slug_value, depth: @depth,
                 title_value: @objective_mapping.revision.title, can_delete?: @can_delete?,
                 edit: @edit, method: "edit", mode: :edit %>
             </div>
           <% true -> %>
             <%= live_component ObjectiveRender, changeset: @changeset, objective_mapping: @objective_mapping, children: @children,
-            project: @project, slug: @objective_mapping.revision.slug, depth: @depth, mode: :show, can_delete?: @can_delete?, edit: @edit %>
+            project: @project, slug: @objective_mapping.revision.slug, depth: @depth, mode: :show, can_delete?: @can_delete?, edit: @edit,
+            parent_slug_value: parent_slug_value %>
         <% end %>
       </div>
     </div>

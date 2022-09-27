@@ -18,6 +18,7 @@ defmodule OliWeb.Objectives.Actions do
           <%= if @can_delete? do "" else "disabled" end %>
           phx-click="show_delete_modal"
           phx-value-slug="<%= @slug %>"
+          phx-value-parent_slug="<%= @parent_slug_value %>"
           data-backdrop="static"
           data-keyboard="false"
           class="ml-1 btn btn-sm btn-danger">

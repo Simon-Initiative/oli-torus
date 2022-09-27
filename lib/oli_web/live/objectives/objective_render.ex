@@ -16,7 +16,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
       <div class="d-flex flex-row">
         <div class="p-2 my-1 flex-grow-1 objective-title"><%= @objective_mapping.revision.title %></div>
         <%= live_component Actions, slug: @slug, has_children: Enum.count(@objective_mapping.revision.children) > 0,
-          can_delete?: @can_delete?, depth: @depth %>
+          can_delete?: @can_delete?, depth: @depth, parent_slug_value: @parent_slug_value %>
       </div>
 
     <% :edit -> %>

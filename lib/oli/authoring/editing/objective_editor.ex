@@ -188,12 +188,25 @@ defmodule Oli.Authoring.Editing.ObjectiveEditor do
             project
           )
         end
-
         revision
       else
         error -> Repo.rollback(error)
       end
     end)
+  end
+
+  def remove_sub_objective_from_parent(revision_slug, %Author{} = author, %Project{} = project, parent_objective) do
+    resource = Resources.get_resource_from_slug(revision_slug)
+
+    edit(
+        parent_objective.slug,
+        %{
+          children:
+            Enum.filter(parent_objective.children, fn id -> id != resource.id end)
+        },
+        author,
+        project
+      )
   end
 
   @doc """

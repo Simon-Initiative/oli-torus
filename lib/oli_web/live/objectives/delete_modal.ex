@@ -24,6 +24,7 @@ defmodule OliWeb.Objectives.DeleteModal do
                 phx-click="delete"
                 phx-key="enter"
                 phx-value-slug="<%= @slug %>"
+                phx-value-parent_slug="<%= @parent_slug_value %>"
                 class="btn btn-warning">
                 Delete
               </button>
