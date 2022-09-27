@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { readGlobalUserState } from 'data/persistence/extrinsic';
 import { writePageAttemptState } from 'data/persistence/state/intrinsic';
+import { clone } from 'utils/common';
 import guid from 'utils/guid';
 import {
   defaultGlobalEnv,
@@ -147,10 +148,11 @@ export const loadInitialPageState = createAsyncThunk(
           { 'session.tutorialScore': totalScore, 'session.currentQuestionScore': 0 },
           defaultGlobalEnv,
         );
-        sessionState['session.tutorialScore'] = totalScore;
-        sessionState['session.currentQuestionScore'] = 0;
+        const updateSessionState = clone(sessionState);
+        updateSessionState['session.tutorialScore'] = totalScore;
+        updateSessionState['session.currentQuestionScore'] = 0;
         if (!params.previewMode) {
-          await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, sessionState);
+          await writePageAttemptState(params.sectionSlug, resourceAttemptGuid, updateSessionState);
         }
 
         let resumeSequenceId = sequence[0].custom.sequenceId;
