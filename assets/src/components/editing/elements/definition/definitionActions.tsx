@@ -14,4 +14,3 @@ export const insertDefinition = createButtonCommandDesc({
   },
   precondition: (editor) => !insideSemanticElement(editor),
 });
-
