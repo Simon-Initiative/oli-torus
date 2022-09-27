@@ -543,13 +543,13 @@ defmodule Oli.Rendering.Content.Html do
           end
       end
 
-    target =
+    target_rel =
       case Keyword.get(opts, :target) do
         nil -> ""
-        target -> ~s| target="#{target}"|
+        target -> ~s| target="#{target}" rel="noreferrer"|
       end
 
-    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target}>|, next.(), "</a>\n"]
+    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target_rel}>|, next.(), "</a>\n"]
   end
 
   defp external_link(%Context{} = _context, next, href) do
