@@ -1,0 +1,14 @@
+@import 'authoring/variables';
+
+.conjugation-editor {
+  position: relative;
+  padding-top: 1em;
+  padding: 1em;
+  border: 1px dashed $gray-500;
+  .form-control {
+    height: auto;
+  }
+  .tc-content {
+    position: relative;
+  }
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFocused, useSelected, useSlate } from 'slate-react';
+import { ReactEditor, useFocused, useSelected, useSlate } from 'slate-react';
 import * as ContentModel from 'data/content/model/elements/types';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import { DropdownMenu } from './TableDropdownMenu';
