@@ -107,7 +107,7 @@ defmodule OliWeb.PaymentsLiveTest do
       # Simulate entering a number of payment codes to be created
       view
       |> element("input[phx-blur=\"change_count\"]")
-      |> render_blur(%{value: "4"})
+      |> render_blur(%{value: "1"})
 
       # Simulate clicking on the button to create payment codes
       view
@@ -115,15 +115,15 @@ defmodule OliWeb.PaymentsLiveTest do
       |> render_click()
 
       # Get the payment codes generated for a current product
-      [hd | _] = codes = Paywall.list_payments_by_count(product.slug, 4)
+      [hd | _] = codes = Paywall.list_payments_by_count(product.slug, 1)
       code_to_test = Payment.to_human_readable(hd.code)
 
       # Test that payment codes were obtained.
-      assert length(codes) == 4
+      assert length(codes) == 1
 
       # Test that the table contains at least one code
       assert view
-             |> element("tr:last-child > td:first-child > div")
+             |> element("tr:first-child > td:first-child > div")
              |> render() =~ "Code: <code>#{code_to_test}</code>"
     end
   end
