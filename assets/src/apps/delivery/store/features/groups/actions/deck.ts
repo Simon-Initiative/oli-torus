@@ -165,16 +165,18 @@ export const initializeActivity = createAsyncThunk(
     const globalSnapshot = getEnvState(defaultGlobalEnv);
     const trackingStampKey = `session.visitTimestamps.${currentSequenceId}`;
     const isActivityAlreadyVisited = globalSnapshot[trackingStampKey];
-    // looks like SS captures the date when we leave the page but it should
-    // show in the history as soon as we visit but it does not show the timestamp
-    // so we will capture the time on trigger check
-    const targetVisitTimeStampOp: ApplyStateOperation = {
-      target: trackingStampKey,
-      operator: '=',
-      value: 0,
-    };
-    sessionOps.push(targetVisitTimeStampOp);
-
+    // don't update the time if student is revisiting that page
+    if (!isActivityAlreadyVisited) {
+      // looks like SS captures the date when we leave the page but it should
+      // show in the history as soon as we visit but it does not show the timestamp
+      // so we will capture the time on trigger check
+      const targetVisitTimeStampOp: ApplyStateOperation = {
+        target: trackingStampKey,
+        operator: '=',
+        value: 0,
+      };
+      sessionOps.push(targetVisitTimeStampOp);
+    }
     // init state is always "local" but the parts may come from parent layers
     // in that case they actually need to be written to the parent layer values
     const initState = currentActivity?.content?.custom?.facts || [];
