@@ -35,6 +35,7 @@ export type EditorProps = {
   placeholder?: string;
   children?: React.ReactNode;
   onPaste?: React.ClipboardEventHandler<HTMLDivElement>;
+  editorOverride?: SlateEditor;
 };
 
 // Necessary to work around FireFox focus and selection issues with Slate
@@ -54,28 +55,23 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
 }
 
 export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => {
-  const [installed, setInstalled] = useState(false);
-
-  const editor = useMemo(
-    () =>
-      withMarkdown(props.commandContext)(
-        withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
-      ),
-    [],
-  );
-
-  // Install the custom normalizer, only once
-  useEffect(() => {
-    if (!installed) {
-      installNormalizer(editor, props.normalizerContext);
-      setInstalled(true);
+  const editor = useMemo(() => {
+    if (props.editorOverride) {
+      return props.editorOverride;
     }
-  }, [installed]);
+    const editor = withMarkdown(props.commandContext)(
+      withReact(withHistory(withTables(withInlines(withVoids(createEditor()))))),
+    );
+
+    installNormalizer(editor, props.normalizerContext);
+    return editor;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const renderElement = useCallback(
     (renderProps: RenderElementProps) =>
       editorFor(renderProps.element, renderProps, props.commandContext),
-    [props.commandContext, editor],
+    [props.commandContext],
   );
 
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {

@@ -26,6 +26,8 @@ import { VideoEditor } from '../elements/video/VideoEditor';
 import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { FigureEditor } from '../elements/figure/FigureEditor';
 import { DialogEditor } from '../elements/dialog/DialogEditor';
+import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
+import { TcEditor } from '../elements/table/TcElement';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -98,6 +100,8 @@ export function editorFor(
       return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
     case 'code_line':
       return <span {...attributes}>{props.children}</span>;
+    case 'conjugation':
+      return <ConjugationEditor {...(editorProps as EditorProps<ContentModel.Conjugation>)} />;
     case 'dialog':
       return <DialogEditor {...(editorProps as EditorProps<ContentModel.Dialog>)} />;
     case 'table':
@@ -106,6 +110,8 @@ export function editorFor(
       return <TrEditor {...(editorProps as EditorProps<ContentModel.TableRow>)} />;
     case 'td':
       return <TdEditor {...(editorProps as EditorProps<ContentModel.TableData>)} />;
+    case 'tc':
+      return <TcEditor {...(editorProps as EditorProps<ContentModel.TableConjugation>)} />;
     case 'th':
       return <ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
     case 'math':

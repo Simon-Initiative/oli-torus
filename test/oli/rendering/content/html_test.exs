@@ -79,6 +79,9 @@ defmodule Oli.Content.Content.HtmlTest do
 
       assert rendered_html_string =~
                "<div class='figure'><figure><figcaption><p>Figure Title</p>\n</figcaption><div class='figure-content'><p>Figure Content</p>\n</div></figure></div>"
+
+      assert rendered_html_string =~
+               "<div class=\"conjugation\"><div class=\"title\">My Term</div><div class=\"term\">El Verbo<span class='pronunciation'><p>my pronunciation</p>\n</span>\n</div><table class=' '><tr><th>form</th>\n<th>meaning</th>\n</tr>\n<tr><td>my form</td>\n<td>my meaning</td>\n</tr>\n</table>\n</div>"
     end
 
     test "renders malformed content gracefully", %{author: author} do

@@ -29,13 +29,18 @@ import {
   CalloutInline,
   Video,
   DefinitionMeaning,
-  DefinitionPronunciation,
+  Pronunciation,
   DefinitionTranslation,
   Definition,
   AllModelElements,
   Dialog,
   DialogLine,
   PageLink,
+  DialogSpeaker,
+  Conjugation,
+  TableHeader,
+  TableConjugation,
+  TableCell,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -53,9 +58,13 @@ export const Model = {
 
   h2: (text = '') => create<HeadingTwo>({ type: 'h2', children: [{ text }] }),
 
+  th: (text: string) => create<TableHeader>({ type: 'th', children: [Model.p(text)] }),
+
   td: (text: string) => create<TableData>({ type: 'td', children: [Model.p(text)] }),
 
-  tr: (children: TableData[]) => create<TableRow>({ type: 'tr', children }),
+  tc: (text: string) => create<TableConjugation>({ type: 'tc', children: [Model.p(text)] }),
+
+  tr: (children: TableCell[]) => create<TableRow>({ type: 'tr', children }),
 
   table: (children: TableRow[]) => create<Table>({ type: 'table', children }),
 
@@ -72,6 +81,22 @@ export const Model = {
   callout: (text = '') => create<Callout>({ type: 'callout', children: [Model.p(text)] }),
   calloutInline: (text = '') =>
     create<CalloutInline>({ type: 'callout_inline', children: [{ text }] }),
+
+  conjugationTable: () =>
+    Model.table([
+      Model.tr([Model.th(''), Model.th('Singular'), Model.th('Plural')]),
+      Model.tr([Model.th('1st Person'), Model.tc(''), Model.tc('')]),
+      Model.tr([Model.th('2nd Person'), Model.tc(''), Model.tc('')]),
+      Model.tr([Model.th('3rd Person'), Model.tc(''), Model.tc('')]),
+    ]),
+
+  conjugation: (title = '') =>
+    create<Conjugation>({
+      type: 'conjugation',
+      verb: '',
+      title,
+      table: Model.conjugationTable(),
+    }),
 
   dialogSpeaker: (name: string) => ({ name, image: '', id: guid() }),
 
@@ -139,8 +164,8 @@ export const Model = {
 
   definitionMeaning: (overrides?: Partial<DefinitionMeaning>) =>
     create<DefinitionMeaning>({ type: 'meaning', children: [Model.p()], ...overrides }),
-  definitionPronunciation: (overrides?: Partial<DefinitionPronunciation>) =>
-    create<DefinitionPronunciation>({ type: 'pronunciation', children: [Model.p()], ...overrides }),
+  definitionPronunciation: (overrides?: Partial<Pronunciation>) =>
+    create<Pronunciation>({ type: 'pronunciation', children: [Model.p()], ...overrides }),
   definitionTranslation: (overrides?: Partial<DefinitionTranslation>) =>
     create<DefinitionTranslation>({ type: 'translation', children: [Model.p()], ...overrides }),
   definition: (overrides?: Partial<Definition>) =>

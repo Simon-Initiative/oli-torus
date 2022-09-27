@@ -5,9 +5,13 @@ import * as ContentModel from 'data/content/model/elements/types';
  * attributes to set on a <td> or <th> element.
  *
  */
-export const cellAttributes = (attrs: ContentModel.TableHeader | ContentModel.TableData) => {
+export const cellAttributes = (attrs: ContentModel.TableCell, additionalClass = '') => {
   return {
-    className: attrs.align ? `text-${attrs.align}` : undefined,
+    className: attrs.align
+      ? `text-${attrs.align} ${additionalClass}`
+      : additionalClass == ''
+      ? undefined
+      : additionalClass,
     colSpan: attrs.colspan || undefined,
     rowSpan: attrs.rowspan || undefined,
   };

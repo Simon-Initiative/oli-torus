@@ -6,15 +6,17 @@ import { Definition } from '../../../common/Definition';
 import { ContentWriter } from '../../../../data/content/writers/writer';
 import { HtmlParser } from '../../../../data/content/writers/html';
 import { defaultWriterContext, WriterContext } from '../../../../data/content/writers/context';
-import { DefinitionInlineEditor } from './DefinitionInlineEditor';
+
 import { useElementSelected } from '../../../../data/content/utils';
 import { HoverContainer } from '../../toolbar/HoverContainer';
-import { DefinitionSettings } from './DefinitionToolbar';
+import { ConjugationSettings } from './ConjugationToolbar';
+import { Conjugation } from '../../../common/Conjugation';
+import { ConjugationInlineEditor } from './ConjugationInlineEditor';
 
-interface Props extends EditorProps<ContentModel.Definition> {}
-export const DefinitionEditor: React.FC<Props> = ({
-  model,
+interface Props extends EditorProps<ContentModel.Conjugation> {}
+export const ConjugationEditor: React.FC<Props> = ({
   attributes,
+  model,
   children,
   commandContext,
 }) => {
@@ -26,23 +28,13 @@ export const DefinitionEditor: React.FC<Props> = ({
   const writer = new ContentWriter();
   const temporaryContext: WriterContext = defaultWriterContext();
 
-  // Need to use a ContentWriter to recursively render the parts of the definition
-  const meanings =
-    preview && model.meanings && writer.render(temporaryContext, model.meanings, new HtmlParser());
-
   const pronunciation =
-    preview &&
-    model.pronunciation &&
-    writer.render(temporaryContext, model.pronunciation, new HtmlParser());
+    model.pronunciation && writer.render(temporaryContext, model.pronunciation, new HtmlParser());
 
-  const translations =
-    preview &&
-    model.translations &&
-    writer.render(temporaryContext, model.translations, new HtmlParser());
+  const table = model.table && writer.render(temporaryContext, model.table, new HtmlParser());
 
-  const className = preview ? 'definition-editor' : 'definition-editor selected';
   return (
-    <div {...attributes} contentEditable={false} className={className}>
+    <div {...attributes} contentEditable={false}>
       {children}
       <HoverContainer
         style={{ margin: '0 auto', display: 'block' }}
@@ -50,7 +42,7 @@ export const DefinitionEditor: React.FC<Props> = ({
         align="start"
         position="top"
         content={
-          <DefinitionSettings
+          <ConjugationSettings
             commandContext={commandContext}
             model={model}
             editing={!preview}
@@ -58,24 +50,9 @@ export const DefinitionEditor: React.FC<Props> = ({
           />
         }
       >
-        {preview && (
-          <>
-            <Definition
-              meanings={meanings}
-              pronunciation={pronunciation}
-              translations={translations}
-              definition={model}
-            />
-          </>
-        )}
+        {preview && <Conjugation conjugation={model} pronunciation={pronunciation} table={table} />}
         {preview || (
-          <>
-            <DefinitionInlineEditor
-              commandContext={commandContext}
-              definition={model}
-              onEdit={onEdit}
-            />
-          </>
+          <ConjugationInlineEditor model={model} onEdit={onEdit} commandContext={commandContext} />
         )}
       </HoverContainer>
     </div>

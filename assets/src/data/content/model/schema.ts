@@ -12,6 +12,7 @@ const toObj = (arr: SchemaKey[]): ValidChildren =>
 const BlockElements: SchemaKey[] = [
   'table',
   'td',
+  'tc',
   'ol',
   'ul',
   'math',
@@ -23,7 +24,13 @@ const BlockElements: SchemaKey[] = [
   'callout',
 ];
 
-export const SemanticElements: SchemaKey[] = ['callout', 'definition', 'figure', 'dialog'];
+export const SemanticElements: SchemaKey[] = [
+  'callout',
+  'definition',
+  'figure',
+  'dialog',
+  'conjugation',
+];
 
 const HeadingElements: SchemaKey[] = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 const TextBlockElements: SchemaKey[] = ['p', ...HeadingElements];
@@ -53,6 +60,10 @@ const tableCell = {
   isBlock: true,
   isTopLevel: false,
   validChildren: toObj(['p', 'math', 'formula_inline', 'formula', ...MediaElements]),
+};
+
+const tableConjugation = {
+  ...tableCell,
 };
 
 const list = {
@@ -96,6 +107,12 @@ export const schema: Schema = {
     isBlock: true,
     isTopLevel: true,
     validChildren: toObj(SemanticChildrenElements),
+  },
+  conjugation: {
+    isVoid: true,
+    isBlock: true,
+    isTopLevel: true,
+    validChildren: {},
   },
   dialog: {
     isVoid: true,
@@ -170,10 +187,11 @@ export const schema: Schema = {
     isVoid: false,
     isBlock: true,
     isTopLevel: false,
-    validChildren: toObj(['td', 'th']),
+    validChildren: toObj(['td', 'th', 'tc']),
   },
   th: tableCell,
   td: tableCell,
+  tc: tableConjugation,
   ol: list,
   ul: list,
   li: {

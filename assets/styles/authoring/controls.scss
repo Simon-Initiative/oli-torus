@@ -105,3 +105,18 @@
 .tiny-icon {
   font-size: 16px;
 }
+
+.pronunciation-editor {
+  margin: 20px 0;
+}
+
+.audio-picker {
+  margin: 5px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  button {
+    padding: 2px 0px 0px 0px;
+  }
+}
