@@ -394,21 +394,19 @@ export class HtmlParser implements WriterImpl {
     const revisionSlug = ref.replace(/^\/course\/link\//, '');
 
     let internalHref;
+    let targetAndRel;
     if (context.sectionSlug) {
       internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
+      targetAndRel = { target: '_blank', rel: 'noreferrer' };
     } else {
       internalHref = '#';
+      targetAndRel = {};
     }
 
     return (
       <div className={classNames('content-page-link content-purpose', purpose)}>
         <div className="content-purpose-label">Checkpoint</div>
-        <a
-          className="internal-link"
-          href={this.escapeXml(internalHref)}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className="internal-link" href={this.escapeXml(internalHref)} {...targetAndRel}>
           <div className="content-purpose-content d-flex flex-row">
             <div className="title flex-grow-1">{title}</div>
             <i className="las la-external-link-square-alt la-2x"></i>
