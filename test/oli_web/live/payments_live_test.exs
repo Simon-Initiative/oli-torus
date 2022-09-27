@@ -6,8 +6,8 @@ defmodule OliWeb.PaymentsLiveTest do
   import Oli.Factory
 
   alias OliWeb.Router.Helpers, as: Routes
-  alias Oli.Delivery.Paywall.Payment
   alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.Payment
 
   defp create_product(_conn) do
     product =
@@ -27,7 +27,7 @@ defmodule OliWeb.PaymentsLiveTest do
   describe "user cannot access when is not logged in" do
     setup [:create_product]
 
-    test "redirects to new session when accessing the product detail view", %{
+    test "redirects to new session when accessing the payment view", %{
       conn: conn,
       product: product
     } do
@@ -99,17 +99,32 @@ defmodule OliWeb.PaymentsLiveTest do
       conn: conn,
       product: product
     } do
-      {:ok, [payment | _tail]} = Paywall.create_payment_codes(product.slug, 1)
-      code = Payment.to_human_readable(payment.code)
       {:ok, view, _html} = live(conn, live_view_payments_route(product.slug))
 
+      # Test that before I click the create code button, the table has no rows
+      assert has_element?(view, "p", "None exist")
+
+      # Simulate entering a number of payment codes to be created
+      view
+      |> element("input[phx-blur=\"change_count\"]")
+      |> render_blur(%{value: "4"})
+
+      # Simulate clicking on the button to create payment codes
       view
       |> element("button[phx-click=\"create\"]")
       |> render_click()
 
+      # Get the payment codes generated for a current product
+      [hd | _] = codes = Paywall.list_payments_by_count(product.slug, 4)
+      code_to_test = Payment.to_human_readable(hd.code)
+
+      # Test that payment codes were obtained.
+      assert length(codes) == 4
+
+      # Test that the table contains at least one code
       assert view
              |> element("tr:last-child > td:first-child > div")
-             |> render() =~ code
+             |> render() =~ "Code: <code>#{code_to_test}</code>"
     end
   end
 end

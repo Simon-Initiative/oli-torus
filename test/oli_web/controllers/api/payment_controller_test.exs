@@ -5,11 +5,10 @@ defmodule OliWeb.PaymentControllerTest do
 
   alias Oli.Seeder
   alias OliWeb.Router.Helpers, as: Routes
-  alias OliWeb.PaymentController
-  alias Oli.Delivery.Paywall
+  alias Oli.Delivery.Paywall.Payment
 
   describe "payment controller tests" do
-    setup [:setup_session]
+    setup [:setup_session, :admin_conn]
 
     test "can create batches of payment codes", %{
       conn: conn,
@@ -151,23 +150,24 @@ defmodule OliWeb.PaymentControllerTest do
       reset_test_payment_config()
     end
 
-    test "download a file with the last payment codes created", %{conn: conn} do
-      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
-      Paywall.create_payment_codes(product.slug, 2)
-      codes = Paywall.get_payment_codes(2, product.slug)
+    test "download .txt file with the last payment codes created", %{conn: conn} do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
 
-      assert response(
-               PaymentController.create_payment_codes_file(conn, codes, product.slug),
-               200
-             )
-    end
+      payment1 = insert(:payment, section: product, code: 123_456_789)
+      payment2 = insert(:payment, section: product, code: 987_654_321)
+      code1 = Payment.to_human_readable(payment1.code)
+      code2 = Payment.to_human_readable(payment2.code)
 
-    test "call 'get_payment_codes/2' return codes for a specific section" do
-      product = insert(:section, %{amount: Money.new(:USD, "50.00")})
-      Paywall.create_payment_codes(product.slug, 3)
-      codes = Paywall.get_payment_codes(3, product.slug)
+      conn =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+        )
 
-      assert length(codes) == 3
+      assert response(conn, 200) =~ "#{code1}\n#{code2}"
     end
   end
 
