@@ -84,14 +84,20 @@
             }
           ],
           "id": 10435498605
-        },
-        {
-          "type": "page_link",
-          "href": "/course/link/page_two",
-          "purpose": "learnbydoing",
-          "id": 10435498606
         }
       ]
+    },
+    {
+      "type": "page_link",
+      "title": "Page Link to Page Two",
+      "ref": "/course/link/page_link_to_two",
+      "purpose": "learnbydoing",
+      "children": [
+        {
+          "text": ""
+        }
+      ],
+      "id": 10435498606
     },
     {
       "type": "p",
