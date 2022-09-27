@@ -2,8 +2,8 @@ import React from 'react';
 import { CaptionV2 } from 'data/content/model/elements/types';
 import { getEditMode } from 'components/editing/elements/utils';
 import { useSlate } from 'slate-react';
+import { Descendant, Editor as SlateEditor } from 'slate';
 
-import { Descendant } from 'slate';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Editor } from 'components/editing/editor/Editor';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
@@ -18,6 +18,7 @@ interface Props {
   className?: string;
   id?: string;
   allowBlockElements?: boolean;
+  editorOverride?: SlateEditor;
 }
 
 export const InlineEditor: React.FC<Props> = ({
@@ -29,6 +30,7 @@ export const InlineEditor: React.FC<Props> = ({
   id,
   allowBlockElements = false,
   onRequestMedia,
+  editorOverride = undefined,
 }) => {
   const editor = useSlate();
   const editMode = getEditMode(editor);
@@ -42,6 +44,7 @@ export const InlineEditor: React.FC<Props> = ({
         editMode={editMode}
         value={content}
         onEdit={onEdit}
+        editorOverride={editorOverride}
         toolbarInsertDescs={blockInsertOptions({
           type: allowBlockElements ? 'small' : 'inline',
           onRequestMedia: onRequestMedia,

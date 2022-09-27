@@ -16,6 +16,7 @@ export type CommandDescription = {
 export interface CommandContext {
   projectSlug: string;
   resourceSlug?: string;
+  editorType?: string;
   inputRefContext?: {
     setInputType: (id: ID, attrs: MultiInputType) => void;
     inputs: Map<ID, MultiInput>;

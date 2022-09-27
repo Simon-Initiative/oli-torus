@@ -25,6 +25,17 @@ defmodule Oli.Delivery.Attempts.Core do
     GradeUpdateBrowseOptions
   }
 
+  def get_user_from_attempt(%ResourceAttempt{resource_access_id: resource_access_id}) do
+    query =
+      from access in ResourceAccess,
+        join: user in User,
+        on: access.user_id == user.id,
+        select: user,
+        where: access.id == ^resource_access_id
+
+    Repo.one(query)
+  end
+
   @doc """
   For a given user, section, and resource id, determine whether any resource attempts are
   present.

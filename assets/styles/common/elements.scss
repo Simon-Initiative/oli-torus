@@ -178,20 +178,31 @@ span.term {
       cursor: pointer;
     }
 
-    .translation,
-    .pronunciation,
-    .pronunciation-player {
+    .translation {
       p {
         display: inline;
       }
     }
-
-    .pronunciation-player {
-      text-decoration: underline;
-      color: $link-color;
-      cursor: pointer;
-    }
   } // .definition
+
+  .pronunciation .play-button {
+    margin: 0px 2px 0px 5px;
+    position: relative;
+    top: 5px;
+  }
+
+  .pronunciation,
+  .pronunciation-player {
+    p {
+      display: inline;
+    }
+  }
+
+  .pronunciation-player {
+    text-decoration: underline;
+    color: $link-color;
+    cursor: pointer;
+  }
 
   .callout-inline,
   .formula-inline {
@@ -310,5 +321,33 @@ span.term {
     display: block;
     margin-left: auto;
     margin-right: auto;
+  }
+}
+
+.conjugation {
+  .title {
+    color: $green;
+    font-size: 2em;
+    line-height: 2.1em;
+    font-weight: bold;
+  }
+  .verb {
+    margin-bottom: 0.1rem;
+  }
+  .conjugation-cell {
+    p:first-of-type {
+      display: inline;
+      margin-left: 1rem;
+    }
+  }
+  table {
+    margin-top: 1rem;
+    .clickable {
+      color: $primary;
+      cursor: pointer;
+    }
+    .clickable:hover {
+      text-decoration: underline;
+    }
   }
 }

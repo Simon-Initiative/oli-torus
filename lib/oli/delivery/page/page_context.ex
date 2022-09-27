@@ -4,6 +4,7 @@ defmodule Oli.Delivery.Page.PageContext do
   """
 
   @enforce_keys [
+    :user,
     :review_mode,
     :page,
     :progress_state,
@@ -15,6 +16,7 @@ defmodule Oli.Delivery.Page.PageContext do
     :historical_attempts
   ]
   defstruct [
+    :user,
     :review_mode,
     :page,
     :progress_state,
@@ -64,7 +66,8 @@ defmodule Oli.Delivery.Page.PageContext do
           {:error, [], %{}}
       end
 
-    page_revision = hd(resource_attempts).revision
+    resource_attempt = hd(resource_attempts)
+    page_revision = resource_attempt.revision
 
     summaries = if activities != nil, do: Map.values(activities), else: []
 
@@ -80,6 +83,7 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     %PageContext{
+      user: Attempts.get_user_from_attempt(resource_attempt),
       review_mode: true,
       page: page_revision,
       progress_state: progress_state,
@@ -171,6 +175,7 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
     %PageContext{
+      user: user,
       review_mode: false,
       page: page_revision,
       progress_state: progress_state,

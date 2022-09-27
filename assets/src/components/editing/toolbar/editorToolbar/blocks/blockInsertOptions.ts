@@ -16,6 +16,7 @@ import { insertVideo } from '../../../elements/video/videoActions';
 import { insertDefinition } from '../../../elements/definition/definitionActions';
 import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertDialog } from '../../../elements/dialog/dialogActions';
+import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -30,6 +31,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertDefinition,
   insertFigure,
   insertDialog,
+  insertConjugation,
 ];
 
 interface Opts {

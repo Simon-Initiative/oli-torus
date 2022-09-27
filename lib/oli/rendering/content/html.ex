@@ -174,6 +174,28 @@ defmodule Oli.Rendering.Content.Html do
     ["<td#{maybeAlign(attrs)}>", next.(), "</td>\n"]
   end
 
+  def tc(%Context{} = _context, next, attrs) do
+    [click_class, audio_element, play_code] =
+      case attrs["audioSrc"] do
+        nil -> ["", "", ""]
+        src -> ["clickable" | audio_player(src)]
+      end
+
+    pronouns =
+      case attrs["pronouns"] do
+        nil -> []
+        pronouns -> ["<i>", pronouns, "</i> "]
+      end
+
+    [
+      "<td#{maybeAlign(attrs)} class=\"conjugation-cell #{click_class}\" onClick=#{play_code}>",
+      pronouns,
+      next.(),
+      audio_element,
+      "</td>\n"
+    ]
+  end
+
   def ol(%Context{} = _context, next, %{"style" => style}) do
     ["<ol class=\"list-#{style}\">", next.(), "</ol>\n"]
   end
@@ -192,6 +214,33 @@ defmodule Oli.Rendering.Content.Html do
 
   def li(%Context{} = _context, next, _) do
     ["<li>", next.(), "</li>\n"]
+  end
+
+  def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
+    title =
+      case attrs["title"] do
+        nil -> ""
+        title -> title
+      end
+
+    verb =
+      case attrs["verb"] do
+        nil -> ""
+        verb -> verb
+      end
+
+    [
+      "<div class=\"conjugation\">",
+      "<div class=\"title\">",
+      title,
+      "</div>",
+      "<div class=\"term\">",
+      verb,
+      render_pronunciation.(),
+      "</div>",
+      render_table.(),
+      "</div>"
+    ]
   end
 
   def dialog(%Context{}, next, %{"title" => title}) do
@@ -257,21 +306,28 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class='translation'>", next.(), " </span>\n"]
   end
 
-  def definition_pronunciation(%Context{} = _context, next, element) do
+  defp audio_player(src) do
+    audio_id = UUID.uuid4()
+    play_code = "document.getElementById(\"#{audio_id}\").play();"
+    audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
+    [audio_element, play_code]
+  end
+
+  def pronunciation(%Context{} = _context, next, element) do
     case element["src"] do
       nil ->
         ["<span class='pronunciation'>", next.(), "</span>\n"]
 
       src ->
-        audio_id = UUID.uuid4()
-        play_code = "document.getElementById(\"#{audio_id}\").play();"
+        [audio_element, play_code] = audio_player(src)
 
         [
+          "<span class='pronunciation'>",
           "<span class='material-icons-outlined play-button' onClick='#{play_code}'>play_circle</span>",
           "<span class='pronunciation-player' onClick='#{play_code}'>",
-          "<audio id='#{audio_id}' src='#{escape_xml!(src)}'></audio>",
+          audio_element,
           next.(),
-          "</span>\n"
+          "</span></span>\n"
         ]
     end
   end

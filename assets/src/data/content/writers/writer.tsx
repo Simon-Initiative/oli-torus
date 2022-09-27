@@ -27,6 +27,7 @@ export interface WriterImpl {
   iframe: ElementWriter;
   audio: ElementWriter;
   table: ElementWriter;
+  conjugation: ElementWriter;
   definition: ElementWriter;
   definitionMeaning: ElementWriter;
   definitionPronunciation: ElementWriter;
@@ -35,6 +36,7 @@ export interface WriterImpl {
   tr: ElementWriter;
   th: ElementWriter;
   td: ElementWriter;
+  tc: ElementWriter;
   ol: ElementWriter;
   ul: ElementWriter;
   li: ElementWriter;
@@ -125,6 +127,8 @@ export class ContentWriter {
         return impl.callout(context, next, content);
       case 'callout_inline':
         return impl.calloutInline(context, next, content);
+      case 'conjugation':
+        return impl.conjugation(context, next, content);
       case 'dialog':
         return impl.dialog(context, next, content);
       case 'figure':
@@ -149,6 +153,8 @@ export class ContentWriter {
         return impl.th(context, next, content);
       case 'td':
         return impl.td(context, next, content);
+      case 'tc':
+        return impl.tc(context, next, content);
       case 'ol':
         return impl.ol(context, next, content);
       case 'ul':

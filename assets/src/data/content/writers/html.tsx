@@ -15,7 +15,7 @@ import {
   CodeV2,
   Figure,
   Definition as DefinitionModel,
-  DefinitionPronunciation as DefinitionPronunciationModel,
+  Pronunciation as DefinitionPronunciationModel,
   Dialog as DialogModel,
   FormulaBlock,
   FormulaInline,
@@ -44,6 +44,8 @@ import {
   Video,
   Webpage,
   YouTube,
+  Conjugation as ConjugationModel,
+  TableConjugation as TableConjugationModel,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
@@ -61,9 +63,11 @@ import { VideoPlayer } from '../../../components/video_player/VideoPlayer';
 import { WriterContext } from './context';
 import { Next, WriterImpl, ContentWriter } from './writer';
 import { Definition } from '../../../components/common/Definition';
-import { DefinitionPronunciation } from '../../../components/common/DefinitionPronunciation';
+import { Pronunciation } from '../../../components/common/Pronunciation';
 import { Figure as FigureElement } from '../../../components/common/Figure';
 import { Dialog } from '../../../components/Dialog';
+import { Conjugation } from '../../../components/common/Conjugation';
+import { TableConjugation } from '../../../components/common/TableConjugation';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -144,6 +148,17 @@ export class HtmlParser implements WriterImpl {
     );
   }
 
+  conjugation(context: WriterContext, next: Next, element: ConjugationModel) {
+    const writer = new ContentWriter();
+
+    const pronunciation =
+      element.pronunciation && writer.render(context, element.pronunciation, new HtmlParser());
+
+    const table = element.table && writer.render(context, element.table, new HtmlParser());
+
+    return <Conjugation conjugation={element} pronunciation={pronunciation} table={table} />;
+  }
+
   definitionMeaning(context: WriterContext, next: Next, _: any) {
     return <li className="meaning">{next()}</li>;
   }
@@ -157,7 +172,7 @@ export class HtmlParser implements WriterImpl {
     next: Next,
     pronunciation: DefinitionPronunciationModel,
   ) {
-    return <DefinitionPronunciation pronunciation={pronunciation} next={next} />;
+    return <Pronunciation pronunciation={pronunciation} next={next} />;
   }
 
   definition(context: WriterContext, next: Next, definition: DefinitionModel) {
@@ -296,6 +311,9 @@ export class HtmlParser implements WriterImpl {
   }
   td(context: WriterContext, next: Next, attrs: TableData) {
     return <td {...cellAttributes(attrs)}>{next()}</td>;
+  }
+  tc(context: WriterContext, next: Next, attrs: TableConjugationModel) {
+    return <TableConjugation attrs={attrs}>{next()}</TableConjugation>;
   }
   ol(context: WriterContext, next: Next, item: OrderedList) {
     return item.style ? <ol className={`list-${item.style}`}>{next()}</ol> : <ol>{next()}</ol>;

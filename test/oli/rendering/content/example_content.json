@@ -439,6 +439,37 @@
       "src": "x^2 + y^2 = z^2"
     },
     {
+      "type": "conjugation",
+      "title": "My Term",
+      "verb": "El Verbo",
+      "children": [{ "text": "" }],
+      "pronunciation": {
+        "type": "pronunciation",
+        "children": [
+          { "type": "p", "children": [{ "text": "my pronunciation" }] }
+        ]
+      },
+      "table": {
+        "type": "table",
+        "children": [
+          {
+            "type": "tr",
+            "children": [
+              { "type": "th", "children": [{ "text": "form" }] },
+              { "type": "th", "children": [{ "text": "meaning" }] }
+            ]
+          },
+          {
+            "type": "tr",
+            "children": [
+              { "type": "td", "children": [{ "text": "my form" }] },
+              { "type": "td", "children": [{ "text": "my meaning" }] }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "type": "dialog",
       "title": "Sample Dialog",
       "speakers": [
@@ -488,6 +519,7 @@
       "title": [{ "type": "p", "children": [{ "text": "Figure Title" }] }],
       "children": [{ "type": "p", "children": [{ "text": "Figure Content" }] }]
     },
+
     {
       "type": "p",
       "children": [

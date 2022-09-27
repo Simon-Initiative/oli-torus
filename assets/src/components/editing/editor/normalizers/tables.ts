@@ -8,7 +8,7 @@ import { FormattedText } from 'data/content/model/text';
  * col span
  **/
 export const getColumnSpan = (cells: TableCell[]): number =>
-  cells.reduce((acc, curr) => acc + (curr.colspan || 1), 0);
+  cells ? cells.reduce((acc, curr) => acc + (curr.colspan || 1), 0) : 0;
 
 /**
  * Returns the effective number of columns for a table row. This is how many "slots" are taken
