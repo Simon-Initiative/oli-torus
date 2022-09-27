@@ -57,7 +57,7 @@ export function installNormalizer(
     try {
       const [node, path] = entry;
 
-      options.forceRootNode && forceRootNode(editor, node, path, options.forceRootNode);
+      if (options.forceRootNode && forceRootNode(editor, node, path, options.forceRootNode)) return;
 
       if (Editor.isEditor(node)) {
         if (options.insertParagraphStartEnd) {
@@ -91,14 +91,14 @@ export function installNormalizer(
         }
       }
 
-      options.spacesNormalize && spacesNormalize(editor, node, path);
-      options.blockNormalize && blockNormalize(editor, node, path);
-      options.codeNormalize && codeNormalize(editor, node, path);
-      options.listNormalize && listNormalize(editor, node, path);
-      options.tableNormalize && tableNormalize(editor, node, path);
+      if (options.spacesNormalize && spacesNormalize(editor, node, path)) return;
+      if (options.blockNormalize && blockNormalize(editor, node, path)) return;
+      if (options.codeNormalize && codeNormalize(editor, node, path)) return;
+      if (options.listNormalize && listNormalize(editor, node, path)) return;
+      if (options.tableNormalize && tableNormalize(editor, node, path)) return;
     } catch (e) {
       // tslint:disable-next-line
-      console.error(e);
+      console.error('Normalization Error:', e);
     }
     normalizeNode(entry);
   };

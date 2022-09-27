@@ -19,9 +19,9 @@ export const normalize = (
     if (node.children.length == 0) {
       Transforms.insertNodes(editor, defaultNode as Node);
       console.warn(`Normalizing content: inserting default node: ${defaultNode.type}.`);
-      return;
+      return true;
     }
-    return;
+    return false;
   }
 
   const [parent] = Editor.parent(editor, path);
@@ -31,7 +31,8 @@ export const normalize = (
       console.warn(
         `Normalizing content: Removing root node of type ${node.type} because it is not a ${defaultNode.type}`,
       );
-      return;
+      return true;
     }
   }
+  return false;
 };
