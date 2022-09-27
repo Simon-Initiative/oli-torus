@@ -46,6 +46,9 @@
         },
         {
           "$ref": "#/$defs/semantic"
+        },
+        {
+          "$ref": "#/$defs/page-link"
         }
       ]
     },
@@ -83,9 +86,6 @@
           "$ref": "#/$defs/citation"
         },
         {
-          "$ref": "#/$defs/activity-link"
-        },
-        {
           "$ref": "#/$defs/popup"
         },
         {
@@ -115,9 +115,6 @@
         },
         {
           "$ref": "#/$defs/dialog"
-        },
-        {
-          "$ref": "#/$defs/conjugation"
         }
       ]
     },
@@ -688,9 +685,6 @@
         },
         {
           "$ref": "#/$defs/table-data"
-        },
-        {
-          "$ref": "#/$defs/table-conjugation"
         }
       ]
     },
@@ -755,72 +749,6 @@
         "type",
         "children"
       ]
-    },
-    "table-conjugation": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "tc"
-        },
-        "audioSrc": {
-          "type": "string"
-        },
-        "audioType": {
-          "type": "string"
-        },
-        "pronouns": {
-          "type": "string"
-        },
-        "colspan": {
-          "type": "number"
-        },
-        "rowspan": {
-          "type": "number"
-        },
-        "align": {
-          "enum": ["left", "center", "right"]
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
-    },
-
-    "conjugation": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "const": "conjugation"
-        },
-
-        "title": {
-          "type": "string"
-        },
-
-        "verb": {
-          "type": "string"
-        },
-
-        "pronunciation": {
-          "$ref": "#/$defs/pronunciation"
-        },
-
-        "table": {
-          "$ref": "#/$defs/table"
-        },
-
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#"
-          }
-        }
-      },
-      "required": ["type", "children"]
     },
     "callout": {
       "type": "object",
@@ -1060,33 +988,30 @@
       },
       "required": [
         "type",
-        "href",
         "children"
       ]
     },
-    "activity-link": {
+    "page-link": {
       "type": "object",
       "properties": {
         "type": {
-          "const": "a"
+          "const": "page_link"
         },
-        "idref": {
+        "title": {
           "type": "string"
         },
-        "target": {
+        "ref": {
           "type": "string"
         },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/text"
-          }
+        "purpose": {
+          "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
         }
       },
       "required": [
         "type",
-        "idref",
-        "children"
+        "title",
+        "ref",
+        "purpose"
       ]
     },
     "citation": {
@@ -1194,7 +1119,7 @@
         }
       ]
     },
-    "pronunciation": {
+    "definition-pronunciation": {
       "properties": {
         "type": {
           "const": "pronunciation"
@@ -1211,8 +1136,7 @@
             "$ref": "#/$defs/text-block"
           }
         }
-      },
-      "required": ["type", "children"]
+      }
     },
     "definition-translation": {
       "properties": {
@@ -1251,7 +1175,7 @@
           "type": "string"
         },
         "pronunciation": {
-          "$ref": "#/$defs/pronunciation"
+          "$ref": "#/$defs/definition-pronunciation"
         },
         "translations": {
           "type": "array",

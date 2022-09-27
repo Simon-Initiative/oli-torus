@@ -142,7 +142,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       update = %{
         "content" => %{
-          "version" => "0.1.1",
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",
@@ -263,7 +263,7 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       update = %{
         "content" => %{
-          "version" => "0.1.1",
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "activity-reference",

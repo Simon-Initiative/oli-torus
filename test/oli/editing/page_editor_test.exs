@@ -22,7 +22,7 @@ defmodule Oli.EditingTest do
       project: project
     } do
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -57,7 +57,7 @@ defmodule Oli.EditingTest do
 
       some_new_content = %{
         "content" => %{
-          "version" => "0.1.1",
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "content",
@@ -89,7 +89,7 @@ defmodule Oli.EditingTest do
       # Now have author 1 make another edit:
       another_content = %{
         "content" => %{
-          "version" => "0.1.1",
+          "version" => "0.1.0",
           "model" => [
             %{
               "type" => "content",
@@ -120,7 +120,7 @@ defmodule Oli.EditingTest do
       PageEditor.acquire_lock(project.slug, revision1.slug, author.email)
 
       page_content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -152,7 +152,7 @@ defmodule Oli.EditingTest do
       revision1: revision1
     } do
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -219,7 +219,7 @@ defmodule Oli.EditingTest do
         ActivityEditor.create(project.slug, "oli_multiple_choice", author, content, [])
 
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "activity-reference",
@@ -246,7 +246,7 @@ defmodule Oli.EditingTest do
       {:ok, updated_revision2} =
         PageEditor.edit(cloned_project.slug, revision1.slug, author.email, %{
           "content" => %{
-            "version" => "0.1.1",
+            "version" => "0.1.0",
             "model" => []
           }
         })
@@ -289,7 +289,7 @@ defmodule Oli.EditingTest do
       })
 
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -319,7 +319,7 @@ defmodule Oli.EditingTest do
       })
 
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -347,7 +347,7 @@ defmodule Oli.EditingTest do
 
       # now try to make the edit with the original user
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",
@@ -372,7 +372,7 @@ defmodule Oli.EditingTest do
       revision1: revision1
     } do
       content = %{
-        "version" => "0.1.1",
+        "version" => "0.1.0",
         "model" => [
           %{
             "type" => "content",

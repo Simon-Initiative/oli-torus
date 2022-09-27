@@ -20,7 +20,6 @@ defmodule Oli.Resources.ContentMigrator do
       # sequentially to this with block so that they are all executed in order
       content
       |> migrate(:page, to: :v0_1_0)
-      |> migrate(:page, to: :v0_1_1)
     else
       # content version is already up to date
       content
@@ -62,21 +61,6 @@ defmodule Oli.Resources.ContentMigrator do
         migrated_content =
           %{content | "model" => transformed_model}
           |> Map.put("version", "0.1.0")
-
-        migrated_content
-
-      _ ->
-        content
-    end
-  end
-
-  def migrate(%{"model" => _} = content, :page, to: :v0_1_1) do
-    case content["version"] do
-      "0.1.0" ->
-        # theres nothing to do, simply increment the version number
-        migrated_content =
-          content
-          |> Map.put("version", "0.1.1")
 
         migrated_content
 
