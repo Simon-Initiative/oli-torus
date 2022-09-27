@@ -365,7 +365,7 @@ defmodule Oli.Delivery.Paywall do
   @doc """
   Get the last X(quantity) payment codes for the given product.
   """
-  def get_payment_codes(count, product_slug) do
+  def list_payments_by_count(product_slug, count) do
     query =
       from(
         p in Payment,

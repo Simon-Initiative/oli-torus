@@ -103,7 +103,7 @@ defmodule OliWeb.PaymentController do
     end
   end
 
-  def create_payment_codes_file(conn, data, product_slug) do
+  defp create_payment_codes_file(conn, data, product_slug) do
     contents =
       Enum.map(data, fn p ->
         Oli.Delivery.Paywall.Payment.to_human_readable(p.code)
@@ -120,7 +120,7 @@ defmodule OliWeb.PaymentController do
   Endpoint that triggers download of a batch of payemnt codes.
   """
   def download_payment_codes(conn, %{"product_id" => product_slug}) do
-    codes = Oli.Delivery.Paywall.get_payment_codes(conn.params["count"] || 50, product_slug)
+    codes = Oli.Delivery.Paywall.list_payments_by_count(product_slug, conn.params["count"] || 50)
     create_payment_codes_file(conn, codes, product_slug)
   end
 
