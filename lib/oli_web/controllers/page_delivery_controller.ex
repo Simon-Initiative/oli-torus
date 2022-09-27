@@ -144,7 +144,7 @@ defmodule OliWeb.PageDeliveryController do
 
     if Sections.is_enrolled?(user.id, section_slug) do
       PageContext.create_for_visit(section, revision_slug, user, datashop_session_id)
-      |> render_page(conn, section_slug, user, false)
+      |> render_page(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
     end
@@ -154,11 +154,11 @@ defmodule OliWeb.PageDeliveryController do
          %PageContext{
            progress_state: :not_started,
            page: page,
+           user: user,
            resource_attempts: resource_attempts
          } = context,
          conn,
          section_slug,
-         _,
          _
        ) do
     section = conn.assigns.section
@@ -204,8 +204,7 @@ defmodule OliWeb.PageDeliveryController do
     {:ok, {previous, next, current}, _} =
       Oli.Delivery.PreviousNextIndex.retrieve(section, page.resource_id)
 
-    {:ok, summary} =
-      Oli.Delivery.Student.Summary.get_summary(section_slug, conn.assigns.current_user)
+    {:ok, summary} = Oli.Delivery.Student.Summary.get_summary(section_slug, user)
 
     render(conn, "prologue.html", %{
       summary: summary,
@@ -235,10 +234,9 @@ defmodule OliWeb.PageDeliveryController do
 
   # Advanced / adaptive lesson page rendering
   defp render_page(
-         %PageContext{page: %{content: %{"advancedDelivery" => true}}} = context,
+         %PageContext{user: user, page: %{content: %{"advancedDelivery" => true}}} = context,
          conn,
          section_slug,
-         _,
          preview_mode
        ) do
     section = conn.assigns.section
@@ -250,7 +248,6 @@ defmodule OliWeb.PageDeliveryController do
       end
 
     conn = put_root_layout(conn, {OliWeb.LayoutView, layout})
-    user = conn.assigns.current_user
 
     resource_attempt = Enum.at(context.resource_attempts, 0)
 
@@ -268,7 +265,7 @@ defmodule OliWeb.PageDeliveryController do
         resourceId: context.page.resource_id,
         sectionSlug: section_slug,
         userId: user.id,
-        userName: conn.assigns.current_user.name,
+        userName: user.name,
         pageTitle: context.page.title,
         pageSlug: context.page.slug,
         graded: context.page.graded,
@@ -321,13 +318,13 @@ defmodule OliWeb.PageDeliveryController do
     })
   end
 
-  defp render_page(%PageContext{progress_state: :error}, conn, _, _, _) do
+  defp render_page(%PageContext{progress_state: :error}, conn, _, _) do
     render(conn, "error.html")
   end
 
   # This case handles :in_progress and :revised progress states, in addition to
   # handling review mode
-  defp render_page(%PageContext{} = context, conn, section_slug, user, _) do
+  defp render_page(%PageContext{user: user} = context, conn, section_slug, _) do
     section = conn.assigns.section
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
@@ -652,7 +649,7 @@ defmodule OliWeb.PageDeliveryController do
     if Oli.Accounts.is_admin?(author) or
          PageLifecycle.can_access_attempt?(attempt_guid, user, section) do
       PageContext.create_for_review(section_slug, attempt_guid, user)
-      |> render_page(conn, section_slug, user, false)
+      |> render_page(conn, section_slug, false)
     else
       render(conn, "not_authorized.html")
     end

@@ -344,6 +344,14 @@ defmodule Oli.Delivery.AttemptsTest do
       )
     end
 
+    test "ensure we can get the user from just the resource attempt", %{
+      attempt1: attempt1,
+      user1: user1
+    } do
+      %Oli.Accounts.User{id: id} = Attempts.get_user_from_attempt(attempt1)
+      assert id == user1.id
+    end
+
     test "model selection", %{
       activity_a: activity,
       activity_attempt1: activity_attempt1,
