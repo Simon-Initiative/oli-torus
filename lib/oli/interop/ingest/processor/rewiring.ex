@@ -25,6 +25,15 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
             end
 
+          %{"type" => "page_link", "ref" => original} = ref ->
+            case retrieve(activity_map, original) do
+              nil ->
+                {ref, {:error, [original | invalid_refs]}}
+
+              retrieved ->
+                {Map.put(ref, "ref", retrieved), {status, invalid_refs}}
+            end
+
           other ->
             {other, {status, invalid_refs}}
         end
@@ -91,7 +100,7 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
     brefs =
       Enum.reduce(Map.get(content, "bibrefs", []), [], fn k, acc ->
         if Map.has_key?(bib_map, k) do
-          acc ++ [(Map.get(bib_map, k, %{id: k}))]
+          acc ++ [Map.get(bib_map, k, %{id: k})]
         else
           acc
         end
@@ -99,17 +108,17 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
 
     bcontent = Map.put(content, "bibrefs", brefs)
 
-    {mapped, _} = PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _tr_context ->
-      case e do
-        %{"type" => "content"} = ref ->
-          rewire_bib_refs(ref, bib_map)
+    {mapped, _} =
+      PageContent.map_reduce(bcontent, {:ok, []}, fn e, {status, bibrefs}, _tr_context ->
+        case e do
+          %{"type" => "content"} = ref ->
+            rewire_bib_refs(ref, bib_map)
 
-        other ->
-          {other, {status, bibrefs}}
-      end
-    end)
+          other ->
+            {other, {status, bibrefs}}
+        end
+      end)
 
     mapped
   end
-
 end
