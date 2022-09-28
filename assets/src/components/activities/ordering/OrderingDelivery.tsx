@@ -15,16 +15,13 @@ import {
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
   resetAction,
-  StudentInput,
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
-import { HasChoices } from 'oli-torus-sdk';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
-import { Maybe } from 'tsmonad';
 import { castPartId } from '../common/utils';
 import { DeliveryElement, DeliveryElementProps } from '../DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
@@ -104,9 +101,12 @@ export const OrderingComponent: React.FC = () => {
   const studentInput =
     uiState.partState[castPartId(uiState.attemptState.parts[0].partId)]?.studentInput;
 
+  // If there is user state, let that drive the order of choices.  If there is no user state,
+  // just use the ordering inherent in the choices from the model.  This allows student and
+  // instructor review use cases to both work.
   const choices =
     studentInput === null || studentInput.length === 0
-      ? (uiState.model as HasChoices).choices
+      ? (uiState.model as ActivityTypes.HasChoices).choices
       : studentInput.map((id) => Choices.getOne(uiState.model as OrderingSchema, id));
 
   return (
