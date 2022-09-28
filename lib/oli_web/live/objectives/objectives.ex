@@ -55,7 +55,8 @@ defmodule OliWeb.Objectives.Objectives do
        force_render: 0,
        can_delete?: true,
        edit: :none,
-       title: "Objectives | " <> project.title
+       title: "Objectives | " <> project.title,
+       parent_slug: ""
      )}
   end
 
@@ -173,8 +174,12 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   # handle change of edit
-  def handle_event("modify", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, :edit, slug)}
+  def handle_event("modify", %{"slug" => slug, "parent_slug" => parent_slug}, socket) do
+    {:noreply,
+      socket
+      |> assign(:edit, slug)
+      |> assign(:parent_slug, parent_slug)
+    }
   end
 
   def handle_event("add_sub", %{"slug" => slug}, socket) do

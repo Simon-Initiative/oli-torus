@@ -9,6 +9,7 @@ defmodule OliWeb.Objectives.Actions do
         <button
           class="ml-1 btn btn-sm btn-light"
           phx-click="modify"
+          phx-value-parent_slug="<%= @parent_slug_value %>"
           phx-value-slug="<%= @slug %>">
         <i class="las la-i-cursor"></i> Reword
         </button>

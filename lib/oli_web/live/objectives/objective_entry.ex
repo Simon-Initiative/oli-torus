@@ -14,7 +14,8 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
     ~L"""
       <%= for child <- @children do %>
         <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
-              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit, parent_slug_value: @parent_slug_value %>
+              children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit,
+              parent_slug_value: @parent_slug_value, parent_slug: @parent_slug %>
       <% end %>
 
       <%= cond do %>
