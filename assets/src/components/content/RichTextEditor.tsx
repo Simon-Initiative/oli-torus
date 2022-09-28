@@ -34,9 +34,7 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           placeholder={props.placeholder}
           style={props.style}
           editMode={props.editMode}
-          commandContext={
-            props.commandContext ?? { projectSlug: props.projectSlug, pageTitles: {} }
-          }
+          commandContext={props.commandContext ?? { projectSlug: props.projectSlug }}
           onEdit={props.onEdit}
           value={value}
           toolbarInsertDescs={blockInsertOptions({
