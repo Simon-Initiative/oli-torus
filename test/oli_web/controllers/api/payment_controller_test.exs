@@ -7,8 +7,15 @@ defmodule OliWeb.PaymentControllerTest do
   alias OliWeb.Router.Helpers, as: Routes
   alias Oli.Delivery.Paywall.Payment
 
+  defp generate_payment_code(product, code) do
+    :payment
+    |> insert(section: product, code: code)
+    |> Map.get(:code)
+    |> Payment.to_human_readable()
+  end
+
   describe "payment controller tests" do
-    setup [:setup_session, :admin_conn]
+    setup [:setup_session]
 
     test "can create batches of payment codes", %{
       conn: conn,
@@ -156,18 +163,44 @@ defmodule OliWeb.PaymentControllerTest do
           type: :blueprint
         })
 
-      payment1 = insert(:payment, section: product, code: 123_456_789)
-      payment2 = insert(:payment, section: product, code: 987_654_321)
-      code1 = Payment.to_human_readable(payment1.code)
-      code2 = Payment.to_human_readable(payment2.code)
+      admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
 
       conn =
+        conn
+        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+
+      code1 = generate_payment_code(product, 123_456_789)
+
+      code2 = generate_payment_code(product, 987_654_321)
+
+      code3 = generate_payment_code(product, 111_111_111)
+
+      # Simulate response with 2 payment codes
+      conn_with_codes =
         get(
           conn,
           Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
         )
 
-      assert response(conn, 200) =~ "#{code1}\n#{code2}"
+      assert response(conn_with_codes, 200) =~ "#{code1}\n#{code2}"
+
+      # Simulate response with 0 payment codes
+      conn_without_codes =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 0)
+        )
+
+      assert response(conn_without_codes, 200) =~ ""
+
+      # Simulate response without sending the amount of payment codes
+      conn_without_count =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug)
+        )
+
+      assert response(conn_without_count, 200) =~ "#{code1}\n#{code2}\n#{code3}"
     end
   end
 
