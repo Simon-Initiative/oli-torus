@@ -1,17 +1,38 @@
 defmodule Oli.Utils.SchemaResolver do
   require Logger
 
-  @current_version "v0-1-0"
+  @schema_versions %{
+    "activity-bank-selection.schema.json" => "0.1.0",
+    "activity-content.schema.json" => "0.1.0",
+    "activity-reference.schema.json" => "0.1.0",
+    "activity-sequence.schema.json" => "0.1.0",
+    "activity.schema.json" => "0.1.0",
+    "adaptive-activity-content.schema.json" => "0.1.0",
+    "adaptive-activity.schema.json" => "0.1.0",
+    "content-block.schema.json" => "0.1.0",
+    "content-break.schema.json" => "0.1.0",
+    "content-element.schema.json" => "0.1.0",
+    "content-group.schema.json" => "0.1.0",
+    "content-survey.schema.json" => "0.1.0",
+    "elements.schema.json" => "0.1.0",
+    "page-content-adaptive.schema.json" => "0.1.0",
+    "page-content-basic.schema.json" => "0.1.0",
+    "page-content.schema.json" => "0.1.0",
+    "page.schema.json" => "0.1.0",
+    "purpose-type.schema.json" => "0.1.0",
+    "resource.schema.json" => "0.1.0",
+    "selection.schema.json" => "0.1.0"
+  }
 
-  @schemas "priv/schemas/#{@current_version}"
-           |> File.ls!()
-           |> Enum.filter(&String.match?(&1, ~r/\.schema\.json$/))
-           |> Enum.map(fn name ->
+  @schemas Enum.map(@schema_versions, fn {name, version} ->
              with {:ok, json} <-
-                    File.read("#{:code.priv_dir(:oli)}/schemas/#{@current_version}/#{name}"),
+                    File.read(
+                      "#{:code.priv_dir(:oli)}/schemas/v#{String.replace(version, ".", "-")}/#{name}"
+                    ),
                   {:ok, schema} <- Jason.decode(json) do
                %{
                  name: name,
+                 version: version,
                  uri: schema["$id"],
                  schema: schema
                }
@@ -23,28 +44,30 @@ defmodule Oli.Utils.SchemaResolver do
              end
            end)
 
-  def current_version() do
-    @current_version
-  end
-
-  def schemas() do
+  def all() do
     @schemas
   end
 
-  def schema(name) do
+  def get(name) do
+    @schemas
+    |> Enum.find(fn s -> s.name == name end)
+  end
+
+  def resolve(name) do
     @schemas
     |> Enum.find(fn s -> s.name == name end)
     |> Map.get(:schema)
     |> ExJsonSchema.Schema.resolve()
   end
 
-  def resolve(uri) do
+  def resolve_uri(uri) do
     # if uri is relative (local file) or the domain is torus, fetch locally
     if !String.match?(uri, ~r/^https?:\/\//) or
-         String.starts_with?(uri, "http://torus.oli.cmu.edu") do
-      with schema_basename <- Path.basename(uri),
+         String.match?(uri, ~r/^https?:\/\/torus.oli.cmu.edu/) do
+      with [schema_path] <-
+             Regex.run(~r/^https?:\/\/torus.oli.cmu.edu\/(.+)/, uri, capture: :all_but_first),
            {:ok, json} <-
-             File.read("#{:code.priv_dir(:oli)}/schemas/#{@current_version}/#{schema_basename}"),
+             File.read("#{:code.priv_dir(:oli)}/#{schema_path}"),
            {:ok, decoded} <- Jason.decode(json) do
         decoded
       else

@@ -22,6 +22,8 @@ defmodule Oli.Content.Content.PlaintextTest do
 
       assert rendered_text =~ "Introduction"
 
+      assert rendered_text =~ "My Term"
+
       assert rendered_text =~ "a richtext callout"
       assert rendered_text =~ "a richtext inline callout"
 

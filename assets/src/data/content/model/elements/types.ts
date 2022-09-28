@@ -6,6 +6,8 @@ interface SlateElement<Children extends Descendant[]> extends BaseElement, Ident
   children: Children;
 }
 
+type VoidChildren = Text[];
+
 export type ModelElement = TopLevel | Block | Inline;
 
 // A list of all our element types, including those that can't be "bare" inside a children array.
@@ -24,11 +26,12 @@ export type TopLevel =
   | Blockquote
   | FormulaBlock
   | Video
-  | Semantic;
+  | Semantic
+  | PageLink;
 
 export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
 
-export type Semantic = Definition | Callout | Figure | Dialog;
+export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
 export type Inline =
   | Hyperlink
@@ -51,9 +54,9 @@ export type List = OrderedList | UnorderedList;
 export type MediaBlock = ImageBlock | YouTube | Audio | Webpage | Video;
 export type SemanticChildren = TextBlock | Block;
 // These types are only used inside other structured types and not directly as .children5
-type SubElements = DefinitionMeaning | DefinitionPronunciation | DefinitionTranslation | DialogLine;
+type SubElements = DefinitionMeaning | Pronunciation | DefinitionTranslation | DialogLine;
 
-export type TableCell = TableHeader | TableData;
+export type TableCell = TableHeader | TableData | TableConjugation;
 
 type HeadingChildren = Text[];
 export interface Paragraph extends SlateElement<(InputRef | Text | ImageBlock)[]> {
@@ -71,6 +74,14 @@ export interface Callout extends SlateElement<SemanticChildren[]> {
 
 export interface CalloutInline extends SlateElement<(InputRef | Text | ImageInline)[]> {
   type: 'callout_inline';
+}
+
+export interface Conjugation extends SlateElement<VoidChildren> {
+  type: 'conjugation';
+  title: string;
+  verb: string;
+  pronunciation: Pronunciation;
+  table: Table;
 }
 
 export interface HeadingOne extends SlateElement<HeadingChildren> {
@@ -108,6 +119,7 @@ export const OrderedListStyles = [
   'lower-latin',
   'upper-latin',
 ] as const;
+
 export type OrderedListStyle = typeof OrderedListStyles[number];
 
 export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
@@ -123,8 +135,6 @@ export interface UnorderedList extends SlateElement<ListChildren> {
   type: 'ul';
   style?: UnorderedListStyle;
 }
-
-type VoidChildren = Text[];
 
 interface BaseImage extends SlateElement<VoidChildren> {
   src?: string;
@@ -143,9 +153,9 @@ export interface ImageInline extends BaseImage {
   type: 'img_inline';
 }
 
-export interface DefinitionPronunciation extends SlateElement<TextBlock[]> {
-  src: string;
-  contenttype: string;
+export interface Pronunciation extends SlateElement<TextBlock[]> {
+  src?: string;
+  contenttype?: string;
   type: 'pronunciation';
 }
 
@@ -162,7 +172,7 @@ export interface Definition extends SlateElement<VoidChildren> {
   term: string;
   meanings: DefinitionMeaning[];
   translations: DefinitionTranslation[];
-  pronunciation: DefinitionPronunciation;
+  pronunciation: Pronunciation;
 }
 
 export interface DialogSpeaker {
@@ -277,18 +287,26 @@ export interface TableRow extends SlateElement<TableCell[]> {
 }
 
 type TableCellChildren = (Paragraph | ImageBlock | YouTube | Audio | Math)[];
-export interface TableHeader extends SlateElement<TableCellChildren> {
-  type: 'th';
+
+export interface TableCellType extends SlateElement<TableCellChildren> {
   colspan?: number;
   rowspan?: number;
   align?: string;
 }
 
-export interface TableData extends SlateElement<TableCellChildren> {
+export interface TableHeader extends TableCellType {
+  type: 'th';
+}
+
+export interface TableData extends TableCellType {
   type: 'td';
-  colspan?: number;
-  rowspan?: number;
-  align?: string;
+}
+
+export interface TableConjugation extends TableCellType {
+  type: 'tc';
+  audioSrc?: string;
+  audioType?: string;
+  pronouns?: string;
 }
 
 export interface ListItem extends SlateElement<(List | Text)[]> {
@@ -322,6 +340,13 @@ export interface Popup extends SlateElement<Text[]> {
   type: 'popup';
   trigger: any;
   content: RichText;
+}
+
+export interface PageLink extends SlateElement<Text[]> {
+  type: 'page_link';
+  title: string;
+  ref: string;
+  purpose: string;
 }
 
 // Captions were formerly only strings

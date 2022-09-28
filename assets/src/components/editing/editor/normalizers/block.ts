@@ -3,7 +3,11 @@ import { schema } from 'data/content/model/schema';
 import { FormattedText } from 'data/content/model/text';
 import { Editor, Element, Path, Transforms } from 'slate';
 
-export const normalize = (editor: Editor, node: ModelElement | FormattedText, path: Path) => {
+export const normalize = (
+  editor: Editor,
+  node: ModelElement | FormattedText,
+  path: Path,
+): boolean => {
   const [parent, parentPath] = Editor.parent(editor, path);
   if (Element.isElement(parent)) {
     const config = schema[parent.type];
@@ -16,12 +20,12 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
         if (node.type === 'p' && parent.type === 'code') {
           Transforms.removeNodes(editor, { at: parentPath });
           console.warn('Normalizing content: Special case code, removing node', node.type);
-          return;
+          return true;
         }
 
-        Transforms.removeNodes(editor, { at: path });
-        console.warn('Normalizing content: Removing non block node', node.type);
-        return;
+        Transforms.unwrapNodes(editor, { at: path });
+        console.warn('Normalizing content: Invalid child type for parent', node.type, parent.type);
+        return true;
       }
     }
 
@@ -30,8 +34,9 @@ export const normalize = (editor: Editor, node: ModelElement | FormattedText, pa
       if (Editor.isEditor(parent)) {
         Transforms.unwrapNodes(editor, { at: path });
         console.warn('Normalizing content: Unwrapping top level block node', node.type);
-        return;
+        return true;
       }
     }
   }
+  return false;
 };

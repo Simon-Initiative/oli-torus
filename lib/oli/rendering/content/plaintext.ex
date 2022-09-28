@@ -115,6 +115,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     [next.()]
   end
 
+  def tc(%Context{} = _context, next, _) do
+    [next.()]
+  end
+
   def ol(%Context{} = _context, next, _) do
     [next.()]
   end
@@ -175,6 +179,14 @@ defmodule Oli.Rendering.Content.Plaintext do
     [render_title.(), "\n", render_children.(), "\n"]
   end
 
+  def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
+    [
+      attrs["title"],
+      render_pronunciation.(),
+      render_table.()
+    ]
+  end
+
   def definition_meaning(%Context{} = _context, next, _) do
     ["  ", next.(), "\n"]
   end
@@ -183,7 +195,7 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["  Translation: ", next.(), "\n"]
   end
 
-  def definition_pronunciation(%Context{} = _context, next, _) do
+  def pronunciation(%Context{} = _context, next, _) do
     ["  Pronunciation: ", next.(), "\n"]
   end
 
@@ -256,6 +268,10 @@ defmodule Oli.Rendering.Content.Plaintext do
 
   def selection(%Context{} = _context, _, _selection) do
     ["[Activity Bank Selection]"]
+  end
+
+  def page_link(%Context{} = _context, _, %{"title" => title, "ref" => ref, "purpose" => purpose}) do
+    ["[Page Link: \"#{title}\" ref=\"#{ref}\" purpose=\"#{purpose}\"]"]
   end
 
   def error(%Context{} = _context, element, error) do

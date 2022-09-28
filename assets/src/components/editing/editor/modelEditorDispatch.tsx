@@ -3,6 +3,7 @@ import { CodeEditor } from 'components/editing/elements/blockcode/BlockcodeEleme
 import { BlockQuoteEditor } from 'components/editing/elements/blockquote/BlockquoteElement';
 import { InputRefEditor } from 'components/editing/elements/inputref/InputRefEditor';
 import { LinkEditor } from 'components/editing/elements/link/LinkElement';
+import { PageLinkEditor } from '../elements/page_link/PageLinkEditor';
 import { PopupEditor } from 'components/editing/elements/popup/PopupElement';
 import { TableEditor } from 'components/editing/elements/table/TableElement';
 import { TdEditor } from 'components/editing/elements/table/TdElement';
@@ -25,6 +26,8 @@ import { VideoEditor } from '../elements/video/VideoEditor';
 import { DefinitionEditor } from '../elements/definition/DefinitionEditor';
 import { FigureEditor } from '../elements/figure/FigureEditor';
 import { DialogEditor } from '../elements/dialog/DialogEditor';
+import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
+import { TcEditor } from '../elements/table/TcElement';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -85,6 +88,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'page_link':
+      return <PageLinkEditor {...(editorProps as EditorProps<ContentModel.PageLink>)} />;
     case 'cite':
       return <CiteEditor {...(editorProps as EditorProps<ContentModel.Citation>)} />;
     case 'popup':
@@ -95,6 +100,8 @@ export function editorFor(
       return <CodeEditor {...(editorProps as EditorProps<ContentModel.Code>)} />;
     case 'code_line':
       return <span {...attributes}>{props.children}</span>;
+    case 'conjugation':
+      return <ConjugationEditor {...(editorProps as EditorProps<ContentModel.Conjugation>)} />;
     case 'dialog':
       return <DialogEditor {...(editorProps as EditorProps<ContentModel.Dialog>)} />;
     case 'table':
@@ -103,6 +110,8 @@ export function editorFor(
       return <TrEditor {...(editorProps as EditorProps<ContentModel.TableRow>)} />;
     case 'td':
       return <TdEditor {...(editorProps as EditorProps<ContentModel.TableData>)} />;
+    case 'tc':
+      return <TcEditor {...(editorProps as EditorProps<ContentModel.TableConjugation>)} />;
     case 'th':
       return <ThEditor {...(editorProps as EditorProps<ContentModel.TableHeader>)} />;
     case 'math':

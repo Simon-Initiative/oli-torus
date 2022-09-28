@@ -1,56 +1,72 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BaseSelection, Transforms } from 'slate';
-import { MIMETYPE_FILTERS, SELECTION_TYPES } from 'components/media/manager/MediaManager';
-import ModalSelection, { sizes } from 'components/modal/ModalSelection';
-import { modalActions } from 'actions/modal';
-import { MediaItem } from 'types/media';
+import { MIMETYPE_FILTERS } from 'components/media/manager/MediaManager';
 import { Command } from 'components/editing/elements/commands/interfaces';
-import { UrlOrUpload } from 'components/media/UrlOrUpload';
 import { Model } from 'data/content/model/elements/factories';
+import { modalActions } from 'actions/modal';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
-import { configureStore } from 'state/store';
-import { Provider } from 'react-redux';
 import { SlateEditor } from 'data/content/model/slate';
 import { Maybe } from 'tsmonad';
+import { Provider } from 'react-redux';
+import { MediaItem } from 'types/media';
+import { SELECTION_TYPES } from 'components/media/manager/MediaManager';
+import { Modal, ModalSize } from 'components/modal/Modal';
+import { UrlOrUpload } from 'components/media/UrlOrUpload';
+import { configureStore } from 'state/store';
 
-const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
+const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const store = configureStore();
 
 export function selectImage(
   projectSlug: string,
-  _selectedUrl?: string,
+  selectedUrl?: string,
 ): Promise<string | undefined> {
-  return new Promise((resolve, _reject) => {
-    let selectedUrl: string | undefined = undefined;
+  return new Promise((resolve, reject) => {
+    const MediaLibrary = () => {
+      const [selection, setSelection] = useState(Maybe.nothing<string>());
 
-    const mediaLibrary = (
-      <Provider store={store}>
-        <ModalSelection
-          title="Select Image"
-          size={sizes.extraLarge}
-          onInsert={() => {
-            dismiss();
-            resolve(selectedUrl);
-          }}
-          onCancel={dismiss}
-          disableInsert={true}
-          okLabel="Select"
-        >
-          <UrlOrUpload
-            onUrlChange={(url: string) => (selectedUrl = url)}
-            onMediaSelectionChange={(mediaOrUrl: MediaItem[]) => (selectedUrl = mediaOrUrl[0]?.url)}
-            projectSlug={projectSlug}
-            onEdit={() => {}}
-            mimeFilter={MIMETYPE_FILTERS.IMAGE}
-            selectionType={SELECTION_TYPES.SINGLE}
-            initialSelectionPaths={selectedUrl ? [selectedUrl] : []}
-          />
-        </ModalSelection>
-      </Provider>
-    );
+      const onMediaSelection = (mediaOrUrl: MediaItem[]) =>
+        mediaOrUrl && mediaOrUrl.length > 0
+          ? setSelection(Maybe.just(mediaOrUrl[0]?.url))
+          : setSelection(Maybe.nothing());
 
-    display(mediaLibrary);
+      const onUrlChange = (url: string) =>
+        url.length > 0 ? setSelection(Maybe.just(url)) : setSelection(Maybe.nothing());
+
+      return (
+        <Provider store={store}>
+          <Modal
+            title="Select Image"
+            size={ModalSize.X_LARGE}
+            onOk={() => {
+              dismiss();
+              resolve(selection.valueOrThrow());
+            }}
+            onCancel={() => {
+              dismiss();
+              reject();
+            }}
+            disableOk={selection.caseOf({ just: () => false, nothing: () => true })}
+            okLabel="Select"
+          >
+            <UrlOrUpload
+              onUrlChange={onUrlChange}
+              onMediaSelectionChange={onMediaSelection}
+              projectSlug={projectSlug}
+              mimeFilter={MIMETYPE_FILTERS.IMAGE}
+              selectionType={SELECTION_TYPES.SINGLE}
+              initialSelectionPaths={Maybe.maybe(selectedUrl).caseOf({
+                just: (s) => [s],
+                nothing: () => undefined,
+              })}
+            />
+          </Modal>
+        </Provider>
+      );
+    };
+
+    display(<MediaLibrary />);
   });
 }
 

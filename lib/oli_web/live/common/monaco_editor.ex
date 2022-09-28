@@ -24,7 +24,7 @@ defmodule OliWeb.Common.MonacoEditor do
       phx-update="ignore"
       data-language={encode_attr(@language)}
       data-schema-uri={encode_attr(@validate_schema_uri)}
-      data-schemas={if @validate_schema_uri, do: encode_attr(SchemaResolver.schemas())}
+      data-schemas={if @validate_schema_uri, do: encode_attr(SchemaResolver.all())}
       data-width={encode_attr(@width)}
       data-height={encode_attr(@height)}
       data-default-value={encode_attr(@default_value)}
@@ -43,5 +43,4 @@ defmodule OliWeb.Common.MonacoEditor do
     </div>
     """
   end
-
 end

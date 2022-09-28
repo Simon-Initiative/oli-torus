@@ -99,6 +99,25 @@ defmodule Oli.Publishing.AuthoringResolver do
   end
 
   @impl Resolver
+  def all_pages(project_slug) do
+    page_id = Oli.Resources.ResourceType.get_id_by_type("page")
+
+    fn ->
+      from(m in PublishedResource,
+        join: rev in Revision,
+        on: rev.id == m.revision_id,
+        where:
+          m.publication_id in subquery(project_working_publication(project_slug)) and
+            rev.resource_type_id == ^page_id and rev.deleted == false,
+        select: rev
+      )
+      |> Repo.all()
+    end
+    |> run()
+    |> emit([:oli, :resolvers, :authoring], :duration)
+  end
+
+  @impl Resolver
   def all_revisions(project_slug) do
     fn ->
       from(m in PublishedResource,

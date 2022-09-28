@@ -581,7 +581,7 @@ defmodule Oli.Interop.Ingest do
   # Create one page
   defp create_page(project, page, activity_map, objective_map, tag_map, bib_map, as_author) do
     with {:ok, %{"content" => content} = page} <- maybe_migrate_resource_content(page, :page),
-         :ok <- validate_json(content, SchemaResolver.schema("page-content.schema.json")),
+         :ok <- validate_json(content, SchemaResolver.resolve("page-content.schema.json")),
          {:ok, content} <- rewire_activity_references(content, activity_map),
          {:ok, content} <- rewire_bank_selections(content, tag_map),
          {:ok, content} <- rewire_citation_references(content, bib_map) do
@@ -630,7 +630,7 @@ defmodule Oli.Interop.Ingest do
        ) do
     with {:ok, %{"content" => content} = activity} <-
            maybe_migrate_resource_content(activity, :activity),
-         :ok <- validate_json(activity, SchemaResolver.schema("activity.schema.json")) do
+         :ok <- validate_json(activity, SchemaResolver.resolve("activity.schema.json")) do
       title =
         case Map.get(activity, "title") do
           nil -> Map.get(activity, "subType")
@@ -664,13 +664,12 @@ defmodule Oli.Interop.Ingest do
   end
 
   defp maybe_migrate_resource_content(resource, resource_type) do
-    case ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest) do
-      {:migrated, migrated} ->
-        {:ok, Map.put(resource, "content", migrated)}
-
-      {:skipped, _} ->
-        {:ok, resource}
-    end
+    {:ok,
+     Map.put(
+       resource,
+       "content",
+       ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest)
+     )}
   end
 
   defp validate_json(json, schema) do

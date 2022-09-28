@@ -5,7 +5,6 @@ defmodule Oli.Interop.LegacySupport do
   ]
 
   @supported [
-    "activity_link",
     "link",
     "sym",
     "em",
@@ -32,6 +31,7 @@ defmodule Oli.Interop.LegacySupport do
     "title",
     "caption",
     "materials",
+    "page_link",
     "quote",
     "image",
     "example",

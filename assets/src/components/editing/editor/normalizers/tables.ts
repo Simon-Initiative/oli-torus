@@ -8,7 +8,7 @@ import { FormattedText } from 'data/content/model/text';
  * col span
  **/
 export const getColumnSpan = (cells: TableCell[]): number =>
-  cells.reduce((acc, curr) => acc + (curr.colspan || 1), 0);
+  cells ? cells.reduce((acc, curr) => acc + (curr.colspan || 1), 0) : 0;
 
 /**
  * Returns the effective number of columns for a table row. This is how many "slots" are taken
@@ -46,7 +46,11 @@ export const getEffectiveColumns = (row: TableRow, table: Table): number => {
   return getColumnSpan(row.children) + previousRowColumnSpan;
 };
 
-export const normalize = (editor: Editor, table: ModelElement | FormattedText, path: Path) => {
+export const normalize = (
+  editor: Editor,
+  table: ModelElement | FormattedText,
+  path: Path,
+): boolean => {
   if (Element.isElement(table) && table.type === 'table') {
     // Ensure that the number of effective cells in each row is the same
     // First get max count of cells in any row, and see if any rows
@@ -89,6 +93,8 @@ export const normalize = (editor: Editor, table: ModelElement | FormattedText, p
           count = count + 1;
         }
       });
+      return true;
     }
   }
+  return false;
 };

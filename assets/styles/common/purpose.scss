@@ -224,6 +224,91 @@
   }
 }
 
+@mixin page_link_style($color, $bg: $color) {
+  .content-purpose-content {
+    background-color: rgba($bg, 0.2);
+    padding: 1em;
+  }
+
+  a.internal-link,
+  a.internal-link:link,
+  a.internal-link:visited {
+    text-decoration: none;
+
+    .content-purpose-content {
+      .title {
+        font-size: 1.3em;
+        color: $body-color;
+        // color: darken($color, 15%);
+      }
+
+      i {
+        color: darken($color, 15%);
+      }
+    }
+  }
+
+  a.internal-link:hover,
+  a.internal-link:active {
+    .content-purpose-content {
+      background-color: rgba($bg, 0.3);
+
+      // .title,
+      i {
+        // color: darken($body-color, 15%);
+        color: darken($color, 25%);
+      }
+    }
+  }
+}
+
+.content-page-link {
+  &.none {
+    border: 1px solid $gray-500;
+    @include page_link_style($link-color, rgba($gray-500, 0.2));
+  }
+
+  &.checkpoint {
+    @include page_link_style($content-purpose-checkpoint-color);
+  }
+
+  &.didigetthis {
+    @include page_link_style($content-purpose-didigetthis-color);
+  }
+
+  &.example {
+    @include page_link_style($link-color, $body-bg);
+  }
+
+  &.labactivity {
+    @include page_link_style(darken($content-purpose-labactivity-color, 10%));
+  }
+
+  &.learnbydoing {
+    @include page_link_style($content-purpose-learnbydoing-color);
+  }
+
+  &.learnmore {
+    @include page_link_style($content-purpose-learnmore-color);
+  }
+
+  &.manystudentswonder {
+    @include page_link_style($content-purpose-manystudentswonder-color);
+  }
+
+  &.quiz {
+    @include page_link_style($content-purpose-quiz-color);
+  }
+
+  &.simulation {
+    @include page_link_style($content-purpose-simulation-color);
+  }
+
+  &.walkthrough {
+    @include page_link_style($content-purpose-walkthrough-color);
+  }
+}
+
 // activity-purpose is deprecated but is left here to support existing content
 .activity-purpose {
   padding: 4px 8px;

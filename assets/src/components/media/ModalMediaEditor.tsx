@@ -1,5 +1,5 @@
 import * as React from 'react';
-import ModalSelection, { sizes } from 'components/modal/ModalSelection';
+import { Modal, ModalSize } from 'components/modal/Modal';
 // eslint-disable-next-line
 interface ModalMediaEditor {}
 
@@ -42,16 +42,16 @@ class ModalMediaEditor extends React.PureComponent<ModalMediaEditorProps, ModalM
 
   render() {
     return (
-      <ModalSelection
+      <Modal
         title="Edit"
-        size={sizes.extraLarge}
+        size={ModalSize.X_LARGE}
         okLabel="Done"
         cancelLabel="Cancel"
         onCancel={this.props.onCancel}
-        onInsert={() => this.props.onInsert(this.state.model)}
+        onOk={() => this.props.onInsert(this.state.model)}
       >
         {this.renderChildren()}
-      </ModalSelection>
+      </Modal>
     );
   }
 }

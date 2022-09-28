@@ -28,18 +28,23 @@ defmodule OliWeb.RevisionHistory do
   @impl Phoenix.LiveView
   def mount(%{"slug" => slug, "project_id" => project_slug}, session, socket) do
     context = SessionContext.init(session)
+
     case AuthoringResolver.from_revision_slug(project_slug, slug) do
-      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      nil ->
+        {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+
       revision ->
         do_mount(revision, project_slug, socket, context)
     end
-
   end
 
   def mount(%{"resource_id" => resource_id_str, "project_id" => project_slug}, session, socket) do
     context = SessionContext.init(session)
+
     case AuthoringResolver.from_resource_id(project_slug, String.to_integer(resource_id_str)) do
-      nil -> {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+      nil ->
+        {:ok, LiveView.redirect(socket, to: Routes.static_page_path(OliWeb.Endpoint, :not_found))}
+
       revision ->
         do_mount(revision, project_slug, socket, context)
     end
@@ -64,22 +69,28 @@ defmodule OliWeb.RevisionHistory do
 
     selected = fetch_revision(hd(revisions).id)
 
-    resource_schema = case Oli.Resources.ResourceType.get_type_by_id(selected.resource_type_id) do
-      "page" -> SchemaResolver.schema("page-content.schema.json")
-      "activity" ->
-        case selected.activity_type_id do
-          1 -> SchemaResolver.schema("adaptive-activity-content.schema.json")
-          _ -> SchemaResolver.schema("activity-content.schema.json")
-        end
-      _ -> SchemaResolver.schema("page-content.schema.json")
-    end
+    resource_schema =
+      case Oli.Resources.ResourceType.get_type_by_id(selected.resource_type_id) do
+        "page" ->
+          SchemaResolver.resolve("page-content.schema.json")
+
+        "activity" ->
+          case selected.activity_type_id do
+            1 -> SchemaResolver.resolve("adaptive-activity-content.schema.json")
+            _ -> SchemaResolver.resolve("activity-content.schema.json")
+          end
+
+        _ ->
+          SchemaResolver.resolve("page-content.schema.json")
+      end
 
     {:ok,
      socket
      |> assign(
        context: context,
-       breadcrumbs: Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
-        [Breadcrumb.new(%{full_title: "Revision History"})],
+       breadcrumbs:
+         Breadcrumb.trail_to(project_slug, slug, Oli.Publishing.AuthoringResolver) ++
+           [Breadcrumb.new(%{full_title: "Revision History"})],
        view: "table",
        page_size: @page_size,
        tree: tree,
@@ -228,18 +239,17 @@ defmodule OliWeb.RevisionHistory do
     %{resource_schema: resource_schema} = socket.assigns
 
     with uploaded_content <-
-          consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
-            File.read!(path)
-            |> Jason.decode!()
-          end),
+           consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
+             File.read!(path)
+             |> Jason.decode!()
+           end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
       latest_revision = fetch_revision(hd(socket.assigns.revisions).id)
 
       {:noreply,
-        socket
-        |> mimic_edit(latest_revision, hd(uploaded_content))
-        |> assign(upload_errors: [])}
-
+       socket
+       |> mimic_edit(latest_revision, hd(uploaded_content))
+       |> assign(upload_errors: [])}
     else
       {:error, errors} ->
         {:noreply, assign(socket, upload_errors: flatten_validation_errors(errors))}
@@ -252,24 +262,25 @@ defmodule OliWeb.RevisionHistory do
     %{selected: selected} = socket.assigns
 
     {:noreply,
-      socket
-      |> hide_modal()
-      |> mimic_edit(selected, selected.content)}
+     socket
+     |> hide_modal()
+     |> mimic_edit(selected, selected.content)}
   end
 
   @impl Phoenix.LiveView
   def handle_event("select", %{"rev" => str}, socket) do
     id = String.to_integer(str)
     selected = fetch_revision(id)
+
     content_json =
       selected.content
       |> Jason.encode!()
       |> Jason.Formatter.pretty_print()
 
     {:noreply,
-      socket
-      |> assign(:selected, selected)
-      |> reset_editor(content_json)}
+     socket
+     |> assign(:selected, selected)
+     |> reset_editor(content_json)}
   end
 
   @impl Phoenix.LiveView
@@ -317,16 +328,20 @@ defmodule OliWeb.RevisionHistory do
     {:noreply, socket |> push_event("monaco_editor_get_value", %{action: "save"})}
   end
 
-  def handle_event("monaco_editor_get_value", %{"value" => value, "meta" => %{"action" => "save"}}, socket) do
+  def handle_event(
+        "monaco_editor_get_value",
+        %{"value" => value, "meta" => %{"action" => "save"}},
+        socket
+      ) do
     %{revisions: revisions, resource_schema: resource_schema} = socket.assigns
 
     with {:ok, edited} <- Jason.decode(value),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, edited),
          latest_revision <- fetch_revision(hd(revisions).id) do
-        {:noreply,
-          socket
-          |> reset_editor(value)
-          |> mimic_edit(latest_revision, edited)}
+      {:noreply,
+       socket
+       |> reset_editor(value)
+       |> mimic_edit(latest_revision, edited)}
     else
       {:error, %Jason.DecodeError{}} ->
         {:noreply, assign(socket, edit_errors: ["Invalid JSON"])}
@@ -391,5 +406,4 @@ defmodule OliWeb.RevisionHistory do
     errors
     |> Enum.map(fn {msg, el} -> "#{msg} #{el}" end)
   end
-
 end

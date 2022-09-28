@@ -23,13 +23,10 @@ defmodule Oli.Interop.Ingest.Preprocessor.Migrate do
       Enum.reduce(Map.get(state, key), [], fn {id, resource}, all ->
         State.notify_step_progress(state, "#{id}.json")
 
-        case ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest) do
-          {:migrated, migrated} ->
-            [{id, Map.put(resource, "content", migrated)} | all]
+        migrated =
+          ContentMigrator.migrate(Map.get(resource, "content"), resource_type, to: :latest)
 
-          {:skipped, _} ->
-            [{id, resource} | all]
-        end
+        [{id, Map.put(resource, "content", migrated)} | all]
       end)
       |> Map.new()
 

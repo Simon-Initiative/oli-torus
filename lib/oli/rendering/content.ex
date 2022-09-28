@@ -29,15 +29,18 @@ defmodule Oli.Rendering.Content do
   @callback tr(%Context{}, next, %{}) :: [any()]
   @callback th(%Context{}, next, %{}) :: [any()]
   @callback td(%Context{}, next, %{}) :: [any()]
+  @callback tc(%Context{}, next, %{}) :: [any()]
   @callback ol(%Context{}, next, %{}) :: [any()]
   @callback ul(%Context{}, next, %{}) :: [any()]
   @callback li(%Context{}, next, %{}) :: [any()]
+
+  @callback conjugation(%Context{}, next, next, %{}) :: [any()]
 
   @callback definition(%Context{}, next, next, next, %{}) ::
               [any()]
   @callback definition_meaning(%Context{}, next, %{}) :: [any()]
   @callback definition_translation(%Context{}, next, %{}) :: [any()]
-  @callback definition_pronunciation(%Context{}, next, %{}) :: [any()]
+  @callback pronunciation(%Context{}, next, %{}) :: [any()]
 
   @callback dialog(%Context{}, next, %{}) :: [any()]
   @callback dialog_line(%Context{}, next, %{}, %{}) :: [any()]
@@ -56,6 +59,7 @@ defmodule Oli.Rendering.Content do
   @callback code_line(%Context{}, next, %{}) :: [any()]
   @callback blockquote(%Context{}, next, %{}) :: [any()]
   @callback a(%Context{}, next, %{}) :: [any()]
+  @callback page_link(%Context{}, next, %{}) :: [any()]
   @callback popup(%Context{}, next, %{}) :: [any()]
   @callback selection(%Context{}, next, %{}) :: [any()]
   @callback cite(%Context{}, next, %{}) :: [any()]
@@ -149,6 +153,28 @@ defmodule Oli.Rendering.Content do
         writer
       ) do
     writer.formula_inline(context, nil, element)
+  end
+
+  def render(
+        %Context{} = context,
+        %{"type" => "conjugation"} = element,
+        writer
+      ) do
+    render_table = fn ->
+      case element["table"] do
+        nil -> []
+        table -> render(context, table, writer)
+      end
+    end
+
+    render_pronunciation = fn ->
+      case element["pronunciation"] do
+        nil -> []
+        pronunciation -> render(context, pronunciation, writer)
+      end
+    end
+
+    writer.conjugation(context, render_table, render_pronunciation, element)
   end
 
   def render(
@@ -272,6 +298,9 @@ defmodule Oli.Rendering.Content do
       "td" ->
         writer.td(context, next, element)
 
+      "tc" ->
+        writer.tc(context, next, element)
+
       "ol" ->
         writer.ol(context, next, element)
 
@@ -299,6 +328,9 @@ defmodule Oli.Rendering.Content do
       "a" ->
         writer.a(context, next, element)
 
+      "page_link" ->
+        writer.page_link(context, next, element)
+
       "cite" ->
         writer.cite(context, next, element)
 
@@ -318,7 +350,7 @@ defmodule Oli.Rendering.Content do
         writer.definition_translation(context, next, element)
 
       "pronunciation" ->
-        writer.definition_pronunciation(context, next, element)
+        writer.pronunciation(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

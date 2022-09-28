@@ -40,7 +40,7 @@ export const DefinitionEditor: React.FC<Props> = ({
     model.translations &&
     writer.render(temporaryContext, model.translations, new HtmlParser());
 
-  const className = selected ? 'definition-editor selected' : 'definition-editor';
+  const className = preview ? 'definition-editor' : 'definition-editor selected';
   return (
     <div {...attributes} contentEditable={false} className={className}>
       {children}

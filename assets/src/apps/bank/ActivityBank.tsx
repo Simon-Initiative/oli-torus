@@ -9,7 +9,7 @@ import {
 } from 'components/activity/InlineActivityEditor';
 import { PersistenceStatus } from 'components/content/PersistenceStatus';
 import { Banner } from 'components/messages/Banner';
-import ModalSelection from 'components/modal/ModalSelection';
+import { Modal } from 'components/modal/Modal';
 import { UndoToasts } from 'components/resource/undo/UndoToasts';
 import { ActivityEditContext } from 'data/content/activity';
 import * as BankTypes from 'data/content/bank';
@@ -33,7 +33,6 @@ import { Maybe } from 'tsmonad';
 import guid from 'utils/guid';
 import { Operations } from 'utils/pathOperations';
 import { CreateActivity } from './CreateActivity';
-import { DeleteActivity } from './DeleteActivity';
 import { EditButton } from './EditButton';
 import { LogicFilter } from './LogicFilter';
 import '../ResourceEditor.scss';
@@ -74,10 +73,10 @@ const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
 export function confirmDelete(): Promise<boolean> {
   return new Promise((resolve, _reject) => {
-    const mediaLibrary = (
-      <ModalSelection
+    const ConfirmDeleteActivityModal = () => (
+      <Modal
         title="Delete Activity"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(true);
         }}
@@ -91,39 +90,32 @@ export function confirmDelete(): Promise<boolean> {
           <h5>Are you sure you want to delete this Activity?</h5>
           <p>This is a permanent operation that cannot be undone.</p>
         </div>
-      </ModalSelection>
+      </Modal>
     );
 
-    display(mediaLibrary);
+    display(<ConfirmDeleteActivityModal />);
   });
 }
 
 export function showFailedToLockMessage(): Promise<boolean> {
   return new Promise((resolve, _reject) => {
-    const mediaLibrary = (
-      <ModalSelection
+    const CannotEditModal = () => (
+      <Modal
         title="Edit Activity"
-        onInsert={() => {
+        onOk={() => {
           dismiss();
           resolve(false);
         }}
-        onCancel={() => {
-          dismiss();
-          resolve(false);
-        }}
-        disableInsert={true}
-        cancelLabel="Ok"
-        hideOkButton={true}
         hideDialogCloseButton={true}
       >
         <div>
           <h5>Unable to edit activity</h5>
           <p>You are unable to edit this activity as there is another user currently editing it.</p>
         </div>
-      </ModalSelection>
+      </Modal>
     );
 
-    display(mediaLibrary);
+    display(<CannotEditModal />);
   });
 }
 
@@ -499,6 +491,7 @@ export class ActivityBank extends React.Component<ActivityBankProps, ActivityBan
             canRemove={true}
             onRemove={onDelete}
             customToolbarItems={CustomToolbar}
+            contentBreaksExist={false}
             {...context}
           />
         </div>
