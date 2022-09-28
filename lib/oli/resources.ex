@@ -345,4 +345,16 @@ defmodule Oli.Resources do
       end
     end)
   end
+
+  @doc """
+  Returns a map of all pages in a project or section of the slug to title.
+  Uses the given resolver to fetch all pages for the specified project or section.
+  """
+  def page_titles(project_or_section_slug, resolver) do
+    resolver.all_pages(project_or_section_slug)
+    |> Enum.reduce(
+      %{},
+      fn %Revision{slug: slug, title: title}, acc -> Map.put_new(acc, slug, title) end
+    )
+  end
 end

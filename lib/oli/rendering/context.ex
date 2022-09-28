@@ -5,6 +5,7 @@ defmodule Oli.Rendering.Context do
   """
   defstruct user: nil,
             activity_map: %{},
+            page_titles: %{},
             render_opts: %{
               render_errors: true
             },

@@ -52,6 +52,7 @@ export interface ActivityContext {
   graded: boolean;
   sectionSlug: string;
   projectSlug: string;
+  pageTitles: Record<string, string>;
   userId: number;
   groupId: string | null;
   surveyId: string | null;

@@ -560,11 +560,13 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def page_link(%Context{} = context, _next, %{
-        "title" => title,
+  def page_link(%Context{page_titles: page_titles} = context, _next, %{
         "ref" => ref,
         "purpose" => purpose
       }) do
+    slug = revision_slug_from_course_link(ref)
+    title = page_titles[slug]
+
     [
       ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(

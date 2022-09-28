@@ -24,6 +24,7 @@ export interface CommandContext {
     setSelectedInputRef: (ref: InputRef | undefined) => void;
     isMultiInput: boolean;
   };
+  pageTitles: Record<string, string>;
 }
 
 export type Command = {

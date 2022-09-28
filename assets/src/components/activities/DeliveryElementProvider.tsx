@@ -23,6 +23,7 @@ export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (pro
     sectionSlug: props.context.sectionSlug,
     projectSlug: props.context.projectSlug,
     bibParams: props.context.bibParams,
+    pageTitles: props.context.pageTitles,
   });
 
   return (

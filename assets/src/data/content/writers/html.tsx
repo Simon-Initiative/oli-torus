@@ -391,7 +391,7 @@ export class HtmlParser implements WriterImpl {
       </a>
     );
   }
-  pageLink(context: WriterContext, _next: Next, { title, ref, purpose }: PageLink) {
+  pageLink(context: WriterContext, _next: Next, { ref, purpose }: PageLink) {
     const revisionSlug = ref.replace(/^\/course\/link\//, '');
 
     let internalHref;
@@ -405,6 +405,7 @@ export class HtmlParser implements WriterImpl {
       targetAndRel = {};
     }
 
+    const title = context.pageTitles[revisionSlug];
     const purposeLabel = PurposeTypes.find((p) => p.value === purpose)?.label;
 
     return (

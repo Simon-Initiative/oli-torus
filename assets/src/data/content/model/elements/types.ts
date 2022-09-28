@@ -342,9 +342,8 @@ export interface Popup extends SlateElement<Text[]> {
   content: RichText;
 }
 
-export interface PageLink extends SlateElement<Text[]> {
+export interface PageLink extends SlateElement<VoidChildren> {
   type: 'page_link';
-  title: string;
   ref: string;
   purpose: string;
 }
