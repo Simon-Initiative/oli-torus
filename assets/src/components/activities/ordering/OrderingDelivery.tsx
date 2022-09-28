@@ -19,6 +19,7 @@ import {
 } from 'data/activities/DeliveryState';
 import { Choices } from 'data/activities/model/choices';
 import { initialPartInputs, studentInputToString } from 'data/activities/utils';
+import { HasChoices } from 'oli-torus-sdk';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
@@ -93,12 +94,23 @@ export const OrderingComponent: React.FC = () => {
         ]);
       }
     }, 0);
-  }, [uiState.model]);
+  }, []);
 
   // First render initializes state
   if (!uiState.partState) {
     return null;
   }
+
+  const studentInput =
+    uiState.partState[castPartId(uiState.attemptState.parts[0].partId)]?.studentInput;
+
+  const choices =
+    studentInput === null || studentInput.length === 0
+      ? (uiState.model as HasChoices).choices
+      : studentInput.map((id) => Choices.getOne(uiState.model as OrderingSchema, id));
+
+  console.log(studentInput);
+  console.log(choices);
 
   return (
     <div className="activity ordering-activity">
@@ -106,11 +118,7 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
-          choices={Maybe.maybe(
-            uiState.partState[castPartId(activityState.parts[0].partId)]?.studentInput,
-          )
-            .valueOr<StudentInput>([])
-            .map((id) => Choices.getOne(uiState.model as OrderingSchema, id))}
+          choices={choices}
           setChoices={(choices) => onSelectionChange(choices.map((c) => c.id))}
           disabled={isEvaluated(uiState) || isSubmitted(uiState)}
         />
