@@ -23,7 +23,7 @@ export interface WriterContext {
   pageTitles: Record<string, string>;
 }
 
-export const defaultWriterContext = (params: Partial<WriterContext>): WriterContext =>
+export const defaultWriterContext = (params: Partial<WriterContext> = {}): WriterContext =>
   Object.assign(
     {},
     {

@@ -27,7 +27,9 @@ describe('multiple choice delivery', () => {
         userId: 0,
         pageAttemptGuid: '',
         sectionSlug: '',
+        projectSlug: '',
         bibParams: [],
+        pageTitles: {},
       },
       preview: false,
     };

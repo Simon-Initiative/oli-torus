@@ -14,13 +14,13 @@ type Props = {
   projectSlug: ProjectSlug;
   editMode: boolean;
   value: Descendant[];
-  onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   className?: string;
   placeholder?: string;
-  onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
   style?: React.CSSProperties;
   commandContext?: CommandContext;
   normalizerContext?: NormalizerContext;
+  onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
+  onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
 };
 export const RichTextEditor: React.FC<Props> = (props) => {
   // Support content persisted when RichText had a `model` property.
@@ -34,7 +34,9 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           placeholder={props.placeholder}
           style={props.style}
           editMode={props.editMode}
-          commandContext={props.commandContext ?? { projectSlug: props.projectSlug }}
+          commandContext={
+            props.commandContext ?? { projectSlug: props.projectSlug, pageTitles: {} }
+          }
           onEdit={props.onEdit}
           value={value}
           toolbarInsertDescs={blockInsertOptions({

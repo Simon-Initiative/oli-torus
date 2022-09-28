@@ -8,6 +8,7 @@ import { createEditor, Descendant, Element } from 'slate';
 import { editorFor, markFor } from 'components/editing/editor/modelEditorDispatch';
 import { ModelElement, InputRef, Paragraph } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
+import fetchMock from 'jest-fetch-mock';
 
 const exampleContent = require('../writer/example_content.json');
 
@@ -26,7 +27,7 @@ export const TestEditorComponent = () => {
     <Slate editor={testEditor} value={value} onChange={setValue}>
       <Editable
         renderElement={(props) =>
-          editorFor(props.element as ModelElement, props, { projectSlug: '' })
+          editorFor(props.element as ModelElement, props, { projectSlug: '', pageTitles: {} })
         }
         renderLeaf={({ attributes, children, leaf }) => (
           <span {...attributes}>
@@ -42,11 +43,28 @@ export const TestEditorComponent = () => {
   );
 };
 
+beforeEach(() => {
+  fetchMock.resetMocks();
+});
+
 describe('slate editor utils', () => {
   it('can find elements of type', () => {
+    fetchMock.mockResponseOnce(
+      JSON.stringify({
+        pages: [
+          { id: 'page_one', title: 'Page one' },
+          { id: 'page_link_to_two', title: 'Page two' },
+        ],
+        type: 'success',
+      }),
+    );
+
     render(<TestEditorComponent />);
+
     expect(Utils.elementsOfType<InputRef>(testEditor, 'input_ref')).toHaveLength(0);
+
     const paragraphs = Utils.elementsOfType<Paragraph>(testEditor, 'p');
+
     expect(paragraphs).toHaveLength(17);
     expect(paragraphs.every((p) => Element.isElement(p) && p.type === 'p')).toBeTruthy();
   });
