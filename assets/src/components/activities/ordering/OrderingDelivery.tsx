@@ -40,6 +40,8 @@ export const OrderingComponent: React.FC = () => {
     onSaveActivity,
   } = useDeliveryElementContext<OrderingSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
+  const { writerContext } = useDeliveryElementContext();
+
   const dispatch = useDispatch();
   const { surveyId } = context;
   const onSelectionChange = (studentInput: ActivityTypes.ChoiceId[]) => {
@@ -106,6 +108,7 @@ export const OrderingComponent: React.FC = () => {
         <StemDeliveryConnected />
         <GradedPointsConnected />
         <ResponseChoices
+          writerContext={writerContext}
           choices={Maybe.maybe(
             uiState.partState[castPartId(activityState.parts[0].partId)]?.studentInput,
           )

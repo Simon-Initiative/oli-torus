@@ -4,6 +4,7 @@ import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
   sectionSlug?: string;
+  projectSlug?: string;
   bibParams?: any;
   inputRefContext?: {
     onChange: (id: string, value: string) => void;

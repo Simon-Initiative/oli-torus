@@ -1,15 +1,21 @@
 import { Choice } from 'components/activities/types';
 import { Draggable } from 'components/common/DraggableColumn';
-import { defaultWriterContext } from 'data/content/writers/context';
+import { defaultWriterContext, WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
 
 interface Props {
-  setChoices: (choices: Choice[]) => void;
   choices: Choice[];
   disabled?: boolean;
+  writerContext: WriterContext;
+  setChoices: (choices: Choice[]) => void;
 }
-export const ResponseChoices: React.FC<Props> = ({ choices, setChoices, disabled }) => {
+export const ResponseChoices: React.FC<Props> = ({
+  choices,
+  setChoices,
+  disabled,
+  writerContext: { projectSlug },
+}) => {
   return (
     <Draggable.Column displayOutline items={choices} setItems={setChoices}>
       {choices.map((choice, index) => (
@@ -24,7 +30,10 @@ export const ResponseChoices: React.FC<Props> = ({ choices, setChoices, disabled
             <>
               <Draggable.DragIndicator isDragDisabled={disabled ?? false} />
               <div style={{ marginRight: '0.5rem' }}>{index + 1}.</div>
-              <HtmlContentModelRenderer content={choice.content} context={defaultWriterContext()} />
+              <HtmlContentModelRenderer
+                content={choice.content}
+                context={defaultWriterContext({ projectSlug: projectSlug })}
+              />
             </>
           )}
         </Draggable.Item>

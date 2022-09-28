@@ -10,10 +10,13 @@ import { Choices } from 'data/activities/model/choices';
 import { getTargetedResponseMappings } from 'data/activities/model/responses';
 import { ShowPage } from 'components/activities/common/responses/ShowPage';
 import React from 'react';
+import { defaultWriterContext } from 'data/content/writers/context';
 
 export const TargetedFeedback: React.FC = () => {
-  const { model, dispatch, authoringContext, editMode } =
+  const { model, dispatch, authoringContext, editMode, projectSlug } =
     useAuthoringElementContext<OrderingSchema>();
+  const writerContext = defaultWriterContext({ projectSlug });
+
   return (
     <>
       {getTargetedResponseMappings(model).map((mapping) => (
@@ -27,6 +30,7 @@ export const TargetedFeedback: React.FC = () => {
           key={mapping.response.id}
         >
           <ResponseChoices
+            writerContext={writerContext}
             choices={mapping.choiceIds.map((id) => Choices.getOne(model, id))}
             setChoices={(choices) =>
               dispatch(

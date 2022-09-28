@@ -30,7 +30,11 @@ import { Explanation } from '../common/explanation/ExplanationAuthoring';
 const store = configureStore();
 
 const CheckAllThatApply = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<CATASchema>();
+  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<CATASchema>();
+  const writerContext = defaultWriterContext({
+    projectSlug: projectSlug,
+  });
+
   return (
     <TabbedNavigation.Tabs>
       <TabbedNavigation.Tab label="Question">
@@ -46,7 +50,7 @@ const CheckAllThatApply = () => {
       </TabbedNavigation.Tab>
 
       <TabbedNavigation.Tab label="Answer Key">
-        <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+        <StemDelivery stem={model.stem} context={writerContext} />
 
         <ChoicesDelivery
           unselectedIcon={<Checkbox.Unchecked />}
@@ -55,7 +59,7 @@ const CheckAllThatApply = () => {
           selected={getCorrectChoiceIds(model)}
           onSelect={(id) => dispatch(CATAActions.toggleChoiceCorrectness(id))}
           isEvaluated={false}
-          context={defaultWriterContext()}
+          context={writerContext}
         />
         <SimpleFeedback partId={model.authoring.parts[0].id} />
         <TargetedFeedback

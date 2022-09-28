@@ -40,8 +40,8 @@ export const getCorrectChoice = (model: HasParts, partId: string) => {
   const responseIdMatch = getCorrectResponse(model, partId).rule.match(/{(.*)}/);
 
   if (responseIdMatch === null) {
-    return null;
+    return Maybe.nothing<Choice>();
   }
 
-  return Choices.getOne(model, responseIdMatch[1]);
+  return Maybe.just(Choices.getOne(model, responseIdMatch[1]));
 };

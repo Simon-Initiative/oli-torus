@@ -395,10 +395,11 @@ export class HtmlParser implements WriterImpl {
     const revisionSlug = ref.replace(/^\/course\/link\//, '');
 
     let internalHref;
-    let targetAndRel;
+    let targetAndRel: Record<string, string> = { target: '_blank', rel: 'noreferrer' };
     if (context.sectionSlug) {
       internalHref = `/sections/${context.sectionSlug}/page/${revisionSlug}`;
-      targetAndRel = { target: '_blank', rel: 'noreferrer' };
+    } else if (context.projectSlug) {
+      internalHref = `/authoring/project/${context.projectSlug}/preview/${revisionSlug}`;
     } else {
       internalHref = '#';
       targetAndRel = {};

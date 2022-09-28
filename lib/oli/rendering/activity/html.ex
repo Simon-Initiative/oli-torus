@@ -144,6 +144,7 @@ defmodule Oli.Rendering.Activity.Html do
         graded: graded,
         userId: user.id,
         sectionSlug: context.section_slug,
+        projectSlug: context.project_slug,
         surveyId: survey_id,
         groupId: group_id,
         bibParams: bib_params,

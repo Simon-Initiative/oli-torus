@@ -28,11 +28,15 @@ import { useAuthoringElementContext, AuthoringElementProvider } from '../Authori
 import { Explanation } from '../common/explanation/ExplanationAuthoring';
 
 const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<LikertModelSchema>();
+  const { dispatch, model, editMode, projectSlug } =
+    useAuthoringElementContext<LikertModelSchema>();
 
   // for now, we always select the first part for editing correct/feedback/hints.
   const selectedPartId = model.authoring.parts[0].id;
   const selectedItem = model.items.find((i) => i.id == selectedPartId) || model.items[0];
+  const writerContext = defaultWriterContext({
+    projectSlug: projectSlug,
+  });
 
   return (
     <React.Fragment>
@@ -75,16 +79,19 @@ const Likert = (props: AuthoringElementProps<LikertModelSchema>) => {
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          <StemDelivery stem={selectedItem} context={defaultWriterContext()} />
+          <StemDelivery stem={selectedItem} context={writerContext} />
 
           <ChoicesDelivery
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
             choices={model.choices}
-            selected={[getCorrectChoice(model, selectedPartId).id]}
+            selected={getCorrectChoice(model, selectedPartId).caseOf({
+              just: (choice) => [choice.id],
+              nothing: () => [],
+            })}
             onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, selectedPartId))}
             isEvaluated={false}
-            context={defaultWriterContext()}
+            context={writerContext}
           />
           <SimpleFeedback partId={selectedPartId} />
           <TargetedFeedback
