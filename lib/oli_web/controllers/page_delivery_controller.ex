@@ -540,7 +540,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    page_titles = Resources.page_titles(section_slug, DeliveryResolver)
+    page_titles = Resources.page_titles(section_slug, Resolver)
 
     render_context = %Context{
       user: conn.assigns.current_user,

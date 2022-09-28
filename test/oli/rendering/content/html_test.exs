@@ -35,7 +35,7 @@ defmodule Oli.Content.Content.HtmlTest do
                "<a class=\"internal-link\" href=\"/sections/some_section/page/page_two\">Page Two</a>"
 
       assert rendered_html_string =~
-               "<a class=\"external-link\" href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\" target=\"_blank\">Stamp Act Congress</a>"
+               "<a class=\"external-link\" href=\"https://en.wikipedia.org/wiki/Stamp_Act_Congress\" target=\"_blank\" rel=\"noreferrer\">Stamp Act Congress</a>"
 
       assert rendered_html_string =~ "<h3>1651–1748: Early seeds</h3>"
 
