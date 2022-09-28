@@ -109,9 +109,6 @@ export const OrderingComponent: React.FC = () => {
       ? (uiState.model as HasChoices).choices
       : studentInput.map((id) => Choices.getOne(uiState.model as OrderingSchema, id));
 
-  console.log(studentInput);
-  console.log(choices);
-
   return (
     <div className="activity ordering-activity">
       <div className="activity-content">
