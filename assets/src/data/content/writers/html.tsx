@@ -70,6 +70,7 @@ import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
 import { classNames } from 'utils/classNames';
+import { PurposeTypes } from '../resource';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -403,9 +404,11 @@ export class HtmlParser implements WriterImpl {
       targetAndRel = {};
     }
 
+    const purposeLabel = PurposeTypes.find((p) => p.value === purpose)?.label;
+
     return (
       <div className={classNames('content-page-link content-purpose', purpose)}>
-        <div className="content-purpose-label">Checkpoint</div>
+        <div className="content-purpose-label">{purposeLabel}</div>
         <a className="internal-link" href={this.escapeXml(internalHref)} {...targetAndRel}>
           <div className="content-purpose-content d-flex flex-row">
             <div className="title flex-grow-1">{title}</div>
