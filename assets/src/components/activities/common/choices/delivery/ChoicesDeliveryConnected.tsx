@@ -17,13 +17,13 @@ export const ChoicesDeliveryConnected: React.FC<Props> = ({
   selectedIcon,
   partId,
 }) => {
-  const { model, writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
+  const { writerContext } = useDeliveryElementContext<HasChoices & ActivityModelSchema>();
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   return (
     <ChoicesDelivery
       unselectedIcon={unselectedIcon}
       selectedIcon={selectedIcon}
-      choices={model.choices}
+      choices={(uiState.model as HasChoices).choices}
       selected={uiState.partState[partId]?.studentInput || []}
       onSelect={onSelect}
       isEvaluated={isEvaluated(uiState)}
