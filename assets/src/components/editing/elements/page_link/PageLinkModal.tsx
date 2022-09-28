@@ -5,6 +5,7 @@ import { toInternalLink, getCurrentSlugFromRef } from 'data/content/model/elemen
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Maybe } from 'tsmonad';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 interface ModalProps {
   onDone: (x: any) => void;
@@ -35,10 +36,9 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
   }, []);
 
   const renderLoading = () => (
-    <div>
-      <em>Loading...</em>
-    </div>
+    <LoadingSpinner size={LoadingSpinnerSize.Medium}>Loading...</LoadingSpinner>
   );
+
   const renderFailed = (errorMsg: string) => (
     <div>
       <div>Failed to load pages. Close this window and try again.</div>

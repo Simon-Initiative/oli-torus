@@ -12,13 +12,13 @@ import { PurposeTypes } from 'data/content/resource';
 import { useElementSelected } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
 import { getCurrentSlugFromRef, toInternalLink } from 'data/content/model/elements/utils';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 export interface Props extends EditorProps<ContentModel.PageLink> {}
 export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => {
   const onEdit = useEditModelCallback(model);
   const selected = useElementSelected();
   const [pages, setPages] = useState<Maybe<Persistence.Page[]>>(Maybe.nothing());
-  const [error, setError] = useState<Maybe<string>>(Maybe.nothing());
 
   React.useEffect(() => {
     Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model?.ref)).then(
@@ -26,22 +26,16 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
         if (result.type === 'success') {
           setPages(Maybe.just(result.pages));
         } else {
-          setError(Maybe.just(result.message));
+          throw 'Error loading pages: ' + result.message;
         }
       },
     );
   }, []);
 
   const renderLoading = () => (
-    <div>
-      <em>Loading...</em>
-    </div>
-  );
-  const renderFailed = (errorMsg: string) => (
-    <div>
-      <div>Failed to load pages. Close this window and try again.</div>
-      <div>Error: ${errorMsg}</div>
-    </div>
+    <LoadingSpinner size={LoadingSpinnerSize.Medium} className="p-3">
+      Loading...
+    </LoadingSpinner>
   );
 
   const showModal = () =>
@@ -106,12 +100,8 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
     );
   };
 
-  return error.caseOf({
-    just: (errorMsg) => renderFailed(errorMsg),
-    nothing: () =>
-      pages.caseOf({
-        just: (loadedPages) => renderSuccess(loadedPages),
-        nothing: () => renderLoading(),
-      }),
+  return pages.caseOf({
+    just: (loadedPages) => renderSuccess(loadedPages),
+    nothing: () => renderLoading(),
   });
 };
