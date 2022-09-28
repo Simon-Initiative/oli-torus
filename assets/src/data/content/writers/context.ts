@@ -5,6 +5,8 @@ import { ID } from 'data/content/model/other';
 export interface WriterContext {
   sectionSlug?: string;
   bibParams?: any;
+  learningLanguage?: string;
+  //learningLanguage: string;
   inputRefContext?: {
     onChange: (id: string, value: string) => void;
     toggleHints: (id: string) => void;

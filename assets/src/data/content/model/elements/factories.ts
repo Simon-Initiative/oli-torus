@@ -36,11 +36,11 @@ import {
   Dialog,
   DialogLine,
   PageLink,
-  DialogSpeaker,
   Conjugation,
   TableHeader,
   TableConjugation,
   TableCell,
+  Foreign,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -112,6 +112,8 @@ export const Model = {
     }),
 
   figure: () => create<Figure>({ type: 'figure', title: [Model.p()], children: [Model.p()] }),
+
+  foreign: () => create<Foreign>({ type: 'foreign', children: [{ text: '' }] }),
 
   formula: (subtype: FormulaSubTypes = 'latex', src = '1 + 2 = 3') =>
     create<FormulaBlock>({ type: 'formula', src, subtype }),

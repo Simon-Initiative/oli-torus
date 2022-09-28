@@ -37,7 +37,8 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   data author, :any
   data is_admin, :boolean, default: false
-  data changeset, :any, default: Project.changeset(%Project{title: ""})
+
+  data changeset, :any, default: Project.new_project_changeset(%Project{title: ""})
 
   def mount(_, %{"current_author_id" => _} = session, socket) do
     %SessionContext{author: author} = context = SessionContext.init(session)

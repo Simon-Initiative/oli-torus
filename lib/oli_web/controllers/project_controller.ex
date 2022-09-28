@@ -35,7 +35,8 @@ defmodule OliWeb.ProjectController do
         ),
       latest_published_publication: latest_published_publication,
       publishers: Inventories.list_publishers(),
-      title: "Overview | " <> project.title
+      title: "Overview | " <> project.title,
+      attributes: project.attributes
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")

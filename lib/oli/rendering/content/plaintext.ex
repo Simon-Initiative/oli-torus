@@ -179,6 +179,12 @@ defmodule Oli.Rendering.Content.Plaintext do
     [render_title.(), "\n", render_children.(), "\n"]
   end
 
+  def foreign(_context, next, _attrs) do
+    [
+      next.()
+    ]
+  end
+
   def conjugation(%Oli.Rendering.Context{}, render_table, render_pronunciation, attrs) do
     [
       attrs["title"],

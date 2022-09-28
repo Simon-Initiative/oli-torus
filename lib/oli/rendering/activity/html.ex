@@ -134,7 +134,8 @@ defmodule Oli.Rendering.Activity.Html do
            user: user,
            resource_attempt: resource_attempt,
            group_id: group_id,
-           survey_id: survey_id
+           survey_id: survey_id,
+           learning_language: learning_language
          } = context,
          %ActivitySummary{
            state: state,
@@ -151,6 +152,7 @@ defmodule Oli.Rendering.Activity.Html do
         surveyId: survey_id,
         groupId: group_id,
         bibParams: bib_params,
+        learningLanguage: learning_language,
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""
