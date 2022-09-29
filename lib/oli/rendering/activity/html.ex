@@ -130,8 +130,7 @@ defmodule Oli.Rendering.Activity.Html do
            user: user,
            resource_attempt: resource_attempt,
            group_id: group_id,
-           survey_id: survey_id,
-           page_titles: page_titles
+           survey_id: survey_id
          } = context,
          %ActivitySummary{
            state: state,
@@ -146,7 +145,6 @@ defmodule Oli.Rendering.Activity.Html do
         userId: user.id,
         sectionSlug: context.section_slug,
         projectSlug: context.project_slug,
-        pageTitles: page_titles,
         surveyId: survey_id,
         groupId: group_id,
         bibParams: bib_params,

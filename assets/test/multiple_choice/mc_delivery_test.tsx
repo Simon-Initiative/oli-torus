@@ -30,7 +30,6 @@ describe('multiple choice delivery', () => {
         sectionSlug: '',
         projectSlug: '',
         bibParams: [],
-        pageTitles: {},
       },
       graded: false,
       preview: false,

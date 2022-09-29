@@ -5,13 +5,14 @@ defmodule Oli.Rendering.Content.Html do
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   import Oli.Utils
+  import Oli.Rendering.Utils
 
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  import Oli.Rendering.Utils
   alias Oli.Utils.Purposes
+  alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
 
@@ -560,12 +561,12 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
-  def page_link(%Context{page_titles: page_titles} = context, _next, %{
-        "ref" => ref,
+  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
+        "idref" => idref,
         "purpose" => purpose
       }) do
-    slug = revision_slug_from_course_link(ref)
-    title = page_titles[slug]
+    %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
+    href = "/course/link/#{slug}"
 
     [
       ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
@@ -581,7 +582,7 @@ defmodule Oli.Rendering.Content.Html do
             "</div>\n"
           ]
         end,
-        ref,
+        href,
         target: "_blank"
       ),
       "</div>"

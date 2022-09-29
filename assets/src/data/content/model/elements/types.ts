@@ -13,8 +13,12 @@ export type ModelElement = TopLevel | Block | Inline;
 // A list of all our element types, including those that can't be "bare" inside a children array.
 export type AllModelElements = ModelElement | SubElements;
 
-// All allows all SlateElement types. Small disallows full-width items like tables, webpages. Inline is only formatted text and inline elements like links.
-export type ContentModelMode = 'all' | 'small' | 'inline';
+// specifies the type of items that can be inserted using the toolbar
+export type ContentModelMode =
+  | 'all' // all SlateElement types
+  | 'extended' // extended block types including full-width items like tables, webpages
+  | 'limited' // limited block, disallows full-width items
+  | 'inline'; // only formatted text and inline elements like links
 
 export type TopLevel =
   | TextBlock

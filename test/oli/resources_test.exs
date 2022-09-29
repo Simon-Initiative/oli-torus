@@ -6,6 +6,7 @@ defmodule Oli.Resources.ResourcesTest do
   alias Oli.Resources
   alias Oli.Utils.Seeder
   alias Oli.Publishing.{AuthoringResolver, DeliveryResolver}
+  alias Oli.Rendering.Content.ResourceSummary
 
   describe "resources" do
     setup do
@@ -23,7 +24,7 @@ defmodule Oli.Resources.ResourcesTest do
     end
   end
 
-  describe "resources page_titles/2" do
+  describe "resources title/2" do
     setup do
       %{}
       |> Seeder.Project.create_author(author_tag: :author)
@@ -58,23 +59,40 @@ defmodule Oli.Resources.ResourcesTest do
       )
     end
 
-    test "should return a map of page titles for the corresponding resolver", %{
-      project: project,
-      unscored_page1: unscored_page1,
-      scored_page2: scored_page2,
-      new_unpublished_page: new_unpublished_page,
-      section: section
-    } do
-      assert Resources.page_titles(project.slug, AuthoringResolver) == %{
-               unscored_page1.slug => "Unscored page one",
-               scored_page2.slug => "Scored page two",
-               new_unpublished_page.slug => "A new unpublished page"
-             }
+    test "should return the revision title for a given resource_id, project or section slug and resolver",
+         %{
+           project: project,
+           unscored_page1: unscored_page1,
+           scored_page2: scored_page2,
+           new_unpublished_page: new_unpublished_page,
+           section: section
+         } do
+      assert Resources.resource_summary(
+               unscored_page1.resource_id,
+               project.slug,
+               AuthoringResolver
+             ) ==
+               %ResourceSummary{title: "Unscored page one", slug: unscored_page1.slug}
 
-      assert Resources.page_titles(section.slug, DeliveryResolver) == %{
-               unscored_page1.slug => "Unscored page one",
-               scored_page2.slug => "Scored page two"
-             }
+      assert Resources.resource_summary(scored_page2.resource_id, project.slug, AuthoringResolver) ==
+               %ResourceSummary{title: "Scored page two", slug: scored_page2.slug}
+
+      assert Resources.resource_summary(
+               new_unpublished_page.resource_id,
+               project.slug,
+               AuthoringResolver
+             ) ==
+               %ResourceSummary{title: "A new unpublished page", slug: new_unpublished_page.slug}
+
+      assert Resources.resource_summary(
+               unscored_page1.resource_id,
+               section.slug,
+               DeliveryResolver
+             ) ==
+               %ResourceSummary{title: "Unscored page one", slug: unscored_page1.slug}
+
+      assert Resources.resource_summary(scored_page2.resource_id, section.slug, DeliveryResolver) ==
+               %ResourceSummary{title: "Scored page two", slug: scored_page2.slug}
     end
   end
 end

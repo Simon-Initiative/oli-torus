@@ -286,8 +286,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
         :delivery
       end
 
-    page_titles = Resources.page_titles(project_slug, AuthoringResolver)
-
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
@@ -295,7 +293,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            user: author,
            mode: mode,
            activity_map: activities,
-           page_titles: page_titles,
+           resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
            project_slug: project_slug,
            bib_app_params: Keyword.get(options, :bib_app_params, [])
          } do

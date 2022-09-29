@@ -38,6 +38,7 @@ export const RichTextEditor: React.FC<Props> = (props) => {
           onEdit={props.onEdit}
           value={value}
           toolbarInsertDescs={blockInsertOptions({
+            type: 'extended',
             onRequestMedia: props.onRequestMedia,
           })}
         >

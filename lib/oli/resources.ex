@@ -9,6 +9,7 @@ defmodule Oli.Resources do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
+  alias Oli.Rendering.Content.ResourceSummary
 
   @doc """
   Create a new resource with given attributes of a specific resource tyoe.
@@ -347,14 +348,12 @@ defmodule Oli.Resources do
   end
 
   @doc """
-  Returns a map of all pages in a project or section of the slug to title.
-  Uses the given resolver to fetch all pages for the specified project or section.
+  Returns a resource summary for a given resource_id, project or section slug and resolver.
   """
-  def page_titles(project_or_section_slug, resolver) do
-    resolver.all_pages(project_or_section_slug)
-    |> Enum.reduce(
-      %{},
-      fn %Revision{slug: slug, title: title}, acc -> Map.put_new(acc, slug, title) end
-    )
+  def resource_summary(resource_id, project_or_section_slug, resolver) do
+    resolver.from_resource_id(project_or_section_slug, resource_id)
+    |> then(fn %Revision{title: title, slug: slug} ->
+      %ResourceSummary{title: title, slug: slug}
+    end)
   end
 end

@@ -5,7 +5,6 @@ defmodule Oli.Rendering.Context do
   """
   defstruct user: nil,
             activity_map: %{},
-            page_titles: %{},
             render_opts: %{
               render_errors: true
             },
@@ -22,5 +21,6 @@ defmodule Oli.Rendering.Context do
             pagination_mode: "normal",
             bib_app_params: [],
             submitted_surveys: %{},
-            historical_attempts: nil
+            historical_attempts: nil,
+            resource_summary_fn: nil
 end

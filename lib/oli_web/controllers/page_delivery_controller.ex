@@ -359,7 +359,7 @@ defmodule OliWeb.PageDeliveryController do
           :delivery
         end,
       activity_map: context.activities,
-      page_titles: context.page_titles,
+      resource_summary_fn: &Resources.resource_summary(&1, section_slug, DeliveryResolver),
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
       historical_attempts: context.historical_attempts
@@ -540,15 +540,13 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    page_titles = Resources.page_titles(section_slug, Resolver)
-
     render_context = %Context{
       user: conn.assigns.current_user,
       section_slug: section_slug,
       revision_slug: revision.slug,
       mode: :instructor_preview,
       activity_map: activity_map,
-      page_titles: page_titles,
+      resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
       bib_app_params: bib_entrys,
       submitted_surveys: %{}

@@ -10,7 +10,6 @@ defmodule Oli.Delivery.Page.PageContext do
     :progress_state,
     :resource_attempts,
     :activities,
-    :page_titles,
     :objectives,
     :latest_attempts,
     :bib_revisions,
@@ -23,7 +22,6 @@ defmodule Oli.Delivery.Page.PageContext do
     :progress_state,
     :resource_attempts,
     :activities,
-    :page_titles,
     :objectives,
     :latest_attempts,
     :bib_revisions,
@@ -39,7 +37,6 @@ defmodule Oli.Delivery.Page.PageContext do
   alias Oli.Delivery.Page.ObjectivesRollup
   alias Oli.Delivery.Sections.Section
   alias Oli.Utils.BibUtils
-  alias Oli.Resources
 
   @doc """
   Creates the page context required to render a page for reviewing a historical
@@ -85,8 +82,6 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    page_titles = Resources.page_titles(section_slug, DeliveryResolver)
-
     %PageContext{
       user: Attempts.get_user_from_attempt(resource_attempt),
       review_mode: true,
@@ -94,7 +89,6 @@ defmodule Oli.Delivery.Page.PageContext do
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
-      page_titles: page_titles,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,
@@ -180,8 +174,6 @@ defmodule Oli.Delivery.Page.PageContext do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
-    page_titles = Resources.page_titles(section_slug, DeliveryResolver)
-
     %PageContext{
       user: user,
       review_mode: false,
@@ -189,7 +181,6 @@ defmodule Oli.Delivery.Page.PageContext do
       progress_state: progress_state,
       resource_attempts: resource_attempts,
       activities: activities,
-      page_titles: page_titles,
       objectives:
         rollup_objectives(page_revision, latest_attempts, DeliveryResolver, section_slug),
       latest_attempts: latest_attempts,

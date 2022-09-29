@@ -29,7 +29,6 @@ describe('ordering delivery', () => {
         sectionSlug: '',
         projectSlug: '',
         bibParams: [],
-        pageTitles: {},
       },
       preview: false,
     };
