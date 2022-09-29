@@ -236,6 +236,10 @@ span.term {
     }
   }
 
+  table {
+    table-layout: auto;
+  }
+
   .dialog {
     display: flex;
     flex-direction: column;
