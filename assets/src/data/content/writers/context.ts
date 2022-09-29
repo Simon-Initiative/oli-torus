@@ -6,6 +6,7 @@ export interface WriterContext {
   sectionSlug?: string;
   bibParams?: any;
   inputRefContext?: {
+    onBlur: (id: string) => void;
     onChange: (id: string, value: string) => void;
     toggleHints: (id: string) => void;
     inputs: Map<

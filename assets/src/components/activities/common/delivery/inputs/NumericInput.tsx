@@ -5,6 +5,7 @@ interface Props {
   disabled?: boolean;
   placeholder?: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 }
 export const NumericInput: React.FC<Props> = (props) => {
   const input = createRef<HTMLInputElement>();
@@ -20,6 +21,7 @@ export const NumericInput: React.FC<Props> = (props) => {
       aria-label="answer submission textbox"
       className="form-control"
       onChange={(e) => props.onChange(e.target.value)}
+      onBlur={props.onBlur}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
       onWheel={handleScrollWheelChange}

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { assertNever, valueOr } from 'utils/common';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
@@ -31,6 +31,7 @@ import { InputType, ShortAnswerModelSchema } from 'components/activities/short_a
 import { Maybe } from 'tsmonad';
 import { MathInput } from '../common/delivery/inputs/MathInput';
 import { castPartId } from '../common/utils';
+import { initializePersistence } from '../common/delivery/persistence';
 
 type InputProps = {
   input: string;
@@ -38,6 +39,7 @@ type InputProps = {
   isEvaluated: boolean;
   isSubmitted: boolean;
   onChange: (value: string) => void;
+  onBlur?: () => void;
 };
 
 const Input = (props: InputProps) => {
@@ -46,6 +48,7 @@ const Input = (props: InputProps) => {
     onChange: (value: string) => props.onChange(value),
     value,
     disabled: props.isEvaluated || props.isSubmitted,
+    onBlur: props.onBlur,
   };
 
   switch (props.inputType) {
@@ -74,6 +77,7 @@ export const ShortAnswerComponent: React.FC = () => {
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const { surveyId } = context;
   const dispatch = useDispatch();
+  const deferredSave = useRef(initializePersistence());
 
   useEffect(() => {
     listenForParentSurveySubmit(surveyId, dispatch, onSubmitActivity);
@@ -112,9 +116,11 @@ export const ShortAnswerComponent: React.FC = () => {
       }),
     );
 
-    onSaveActivity(uiState.attemptState.attemptGuid, [
-      { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
-    ]);
+    deferredSave.current.save(() =>
+      onSaveActivity(uiState.attemptState.attemptGuid, [
+        { attemptGuid: uiState.attemptState.parts[0].attemptGuid, response: { input } },
+      ]),
+    );
   };
 
   return (
@@ -135,6 +141,7 @@ export const ShortAnswerComponent: React.FC = () => {
           isEvaluated={isEvaluated(uiState)}
           isSubmitted={isSubmitted(uiState)}
           onChange={onInputChange}
+          onBlur={() => deferredSave.current.flushPendingChanges(false)}
         />
 
         <ResetButtonConnected
