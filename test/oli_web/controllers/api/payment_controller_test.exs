@@ -163,11 +163,7 @@ defmodule OliWeb.PaymentControllerTest do
           type: :blueprint
         })
 
-      admin = author_fixture(%{system_role_id: Oli.Accounts.SystemRole.role_id().admin})
-
-      conn =
-        conn
-        |> Pow.Plug.assign_current_user(admin, OliWeb.Pow.PowHelpers.get_pow_config(:author))
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
 
       code1 = generate_payment_code(product, 123_456_789)
 
@@ -201,6 +197,23 @@ defmodule OliWeb.PaymentControllerTest do
         )
 
       assert response(conn_without_count, 200) =~ "#{code1}\n#{code2}\n#{code3}"
+    end
+
+    test "download .txt file of a product that has no payment codes generated", %{conn: conn} do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+
+      {:ok, conn: conn, admin: _admin} = admin_conn(%{conn: conn})
+
+      conn =
+        get(
+          conn,
+          Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
+        )
+
+      assert response(conn, 200) =~ ""
     end
   end
 
