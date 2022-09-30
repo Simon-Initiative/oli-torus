@@ -703,4 +703,47 @@ defmodule Oli.Delivery.PaywallTest do
       assert error =~ "can't be blank"
     end
   end
+
+  describe "payments codes" do
+    setup do
+      product =
+        insert(:section, %{
+          type: :blueprint
+        })
+
+      %{
+        product: product
+      }
+    end
+
+    test "get an amount of payment codes for a specific product", %{product: product} do
+      insert(:payment, section: product, code: 123_456_789)
+      insert(:payment, section: product, code: 987_654_321)
+
+      codes = Paywall.list_payments_by_count(product.slug, 2)
+      assert length(codes) == 2
+    end
+
+    test "request more payment codes than the total number of existing payment codes, returns the amount of total existing payment codes",
+         %{
+           product: product
+         } do
+      insert(:payment, section: product, code: 123_456_789)
+      insert(:payment, section: product, code: 987_654_321)
+
+      codes = Paywall.list_payments_by_count(product.slug, 3)
+      assert length(codes) == 2
+    end
+
+    test "request less payment codes than the total number of existing payment codes, returns the amount of total existing payment codes",
+         %{
+           product: product
+         } do
+      insert(:payment, section: product, code: 123_456_789)
+      insert(:payment, section: product, code: 987_654_321)
+
+      codes = Paywall.list_payments_by_count(product.slug, 1)
+      assert length(codes) == 1
+    end
+  end
 end

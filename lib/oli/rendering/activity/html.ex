@@ -95,31 +95,35 @@ defmodule Oli.Rendering.Activity.Html do
   end
 
   defp render_historical_attempts(activity_id, historical_attempts, section_slug) do
-    case Map.get(historical_attempts, activity_id) do
-      nil ->
-        []
+    case historical_attempts do
+      nil -> []
+      _ ->
+        case Map.get(historical_attempts, activity_id) do
+          nil ->
+            []
 
-      [] ->
-        []
+          [] ->
+            []
 
-      attempts ->
-        {:safe, attempt_selector} =
-          ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
-            activityId: activity_id,
-            attempts:
-              Enum.map(attempts, fn a ->
-                %{
-                  state: a.lifecycle_state,
-                  attemptNumber: a.attempt_number,
-                  attemptGuid: a.attempt_guid,
-                  date:
-                    Timex.format!(a.updated_at, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}")
-                }
-              end),
-            sectionSlug: section_slug
-          })
+          attempts ->
+            {:safe, attempt_selector} =
+              ReactPhoenix.ClientSide.react_component("Components.AttemptSelector", %{
+                activityId: activity_id,
+                attempts:
+                  Enum.map(attempts, fn a ->
+                    %{
+                      state: a.lifecycle_state,
+                      attemptNumber: a.attempt_number,
+                      attemptGuid: a.attempt_guid,
+                      date:
+                        Timex.format!(a.updated_at, "{Mfull} {D}, {YYYY} at {h12}:{m} {AM} {Zabbr}")
+                    }
+                  end),
+                sectionSlug: section_slug
+              })
 
-        [attempt_selector]
+            [attempt_selector]
+        end
     end
   end
 
@@ -130,7 +134,8 @@ defmodule Oli.Rendering.Activity.Html do
            user: user,
            resource_attempt: resource_attempt,
            group_id: group_id,
-           survey_id: survey_id
+           survey_id: survey_id,
+           learning_language: learning_language
          } = context,
          %ActivitySummary{
            state: state,
@@ -148,6 +153,7 @@ defmodule Oli.Rendering.Activity.Html do
         surveyId: survey_id,
         groupId: group_id,
         bibParams: bib_params,
+        learningLanguage: learning_language,
         pageAttemptGuid:
           if is_nil(resource_attempt) do
             ""

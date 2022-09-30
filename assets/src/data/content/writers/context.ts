@@ -6,6 +6,8 @@ export interface WriterContext {
   sectionSlug?: string;
   projectSlug?: string;
   bibParams?: any;
+  learningLanguage?: string;
+  //learningLanguage: string;
   inputRefContext?: {
     onChange: (id: string, value: string) => void;
     toggleHints: (id: string) => void;

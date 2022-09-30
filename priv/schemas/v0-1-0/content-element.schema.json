@@ -99,6 +99,9 @@
         },
         {
           "$ref": "#/$defs/callout-inline"
+        },
+        {
+          "$ref": "#/$defs/foreign"
         }
       ]
     },
@@ -849,6 +852,27 @@
       "properties": {
         "type": {
           "const": "callout_inline"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "foreign": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "foreign"
+        },
+        "lang": {
+          "type": "string"
         },
         "children": {
           "type": "array",

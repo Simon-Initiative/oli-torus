@@ -288,6 +288,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     with {:ok, publication} <-
            Publishing.project_working_publication(project_slug) |> trap_nil(),
+         {:ok, attributes} <- Course.get_project_attributes(project_slug) |> trap_nil(),
          {:ok, activities} <- create_activity_summary_map(publication.id, content),
          render_context <- %Rendering.Context{
            user: author,
@@ -295,7 +296,8 @@ defmodule Oli.Authoring.Editing.PageEditor do
            activity_map: activities,
            resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
            project_slug: project_slug,
-           bib_app_params: Keyword.get(options, :bib_app_params, [])
+           bib_app_params: Keyword.get(options, :bib_app_params, []),
+           learning_language: attributes.learning_language
          } do
       Rendering.Page.render(render_context, content, Rendering.Page.Html)
     else

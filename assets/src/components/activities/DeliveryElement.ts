@@ -53,6 +53,7 @@ export interface ActivityContext {
   sectionSlug: string;
   projectSlug: string;
   userId: number;
+  learningLanguage?: string;
   groupId: string | null;
   surveyId: string | null;
   bibParams: any;

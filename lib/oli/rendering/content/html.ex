@@ -373,6 +373,18 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def foreign(
+        %Oli.Rendering.Context{learning_language: learning_language},
+        next,
+        attrs
+      ) do
+    [
+      "<span class='foreign' lang='#{attrs["lang"] || learning_language}'>",
+      next.(),
+      "</span>"
+    ]
+  end
+
   def formula_class(false), do: "formula"
   def formula_class(true), do: "formula-inline"
 
