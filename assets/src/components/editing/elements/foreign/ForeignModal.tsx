@@ -2,6 +2,7 @@ import { CommandContext } from 'components/editing/elements/commands/interfaces'
 import { Modal, ModalSize } from 'components/modal/Modal';
 import * as ContentModel from 'data/content/model/elements/types';
 import React, { useCallback } from 'react';
+import { iso639_language_codes } from '../../../../utils/language-codes-iso639';
 
 interface Props {
   onDone: (changes: Partial<ContentModel.Foreign>) => void;
@@ -12,7 +13,8 @@ interface Props {
 export const ForeignModal = (props: Props) => {
   const [lang, setLang] = React.useState(props.model.lang || '');
   const onLangChange = useCallback((e) => {
-    setLang(e.target.value);
+    const lang = e.target.value;
+    setLang(lang);
   }, []);
 
   return (
@@ -35,7 +37,14 @@ export const ForeignModal = (props: Props) => {
             <form onSubmit={() => {}} id="popup__trigger_mode">
               <div className="form-group">
                 <label>Target Language</label>
-                <input type="text" className="form-control" onChange={onLangChange} value={lang} />
+                <select onChange={onLangChange} value={lang} className="form-control">
+                  <option value="">Use Project Default</option>
+                  {iso639_language_codes.map(({ code, name }) => (
+                    <option key={code} value={code}>
+                      {name} [{code}]
+                    </option>
+                  ))}
+                </select>
               </div>
             </form>
           </div>

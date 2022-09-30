@@ -53,8 +53,10 @@
 
     <%= inputs_for f, :attributes, fn fp -> %>
       <div class="form-label-group mb-3">
-        <%= label fp, :learning_language, "Learning Language", class: "control-label" %>
-        <%= text_input fp, :learning_language, class: "form-control", required: false %>
+        <%= label fp, :learning_language, "Learning Language (optional)", class: "control-label" %>
+        <%= select fp, :learning_language, @language_codes, class: "form-control", required: false,  prompt: "What language is being taught in this project?" %>
+
+
       </div>
     <% end %>
 

@@ -36,7 +36,8 @@ defmodule OliWeb.ProjectController do
       latest_published_publication: latest_published_publication,
       publishers: Inventories.list_publishers(),
       title: "Overview | " <> project.title,
-      attributes: project.attributes
+      attributes: project.attributes,
+      language_codes: Oli.LanguageCodesIso639.codes()
     }
 
     render(%{conn | assigns: Map.merge(conn.assigns, params)}, "overview.html")
@@ -194,7 +195,8 @@ defmodule OliWeb.ProjectController do
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
-          title: "Overview | " <> project.title
+          title: "Overview | " <> project.title,
+          language_codes: Oli.LanguageCodesIso639.codes()
         }
 
         conn
@@ -271,7 +273,8 @@ defmodule OliWeb.ProjectController do
           latest_published_publication:
             Publishing.get_latest_published_publication_by_slug(project.slug),
           publishers: Inventories.list_publishers(),
-          title: "Overview | " <> project.title
+          title: "Overview | " <> project.title,
+          language_codes: Oli.LanguageCodesIso639.codes()
         }
 
         conn

@@ -21,9 +21,13 @@ export const ForeignEditor = (props: Props) => {
 
   const onModalDone = useCallback(
     (changes: Partial<ContentModel.Foreign>) => {
+      // The modal will pass back an empty string for project default, but we want to
+      // remove the attribute instead of have an empty string in that case.
+      const lang = changes.lang === '' ? undefined : changes.lang;
       onEdit({
         ...props.model,
         ...changes,
+        lang,
       });
       dismiss();
     },

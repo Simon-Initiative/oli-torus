@@ -205,7 +205,11 @@ export class HtmlParser implements WriterImpl {
   }
 
   foreign(ctx: WriterContext, next: Next, element: Foreign) {
-    return <span lang={element.lang || ctx.learningLanguage}>{next()}</span>;
+    return (
+      <span className="foreign" lang={element.lang || ctx.learningLanguage}>
+        {next()}
+      </span>
+    );
   }
 
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
