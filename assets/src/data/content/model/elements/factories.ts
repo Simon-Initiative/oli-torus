@@ -123,7 +123,8 @@ export const Model = {
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
 
-  page_link: (ref = '', purpose = 'none') => create<PageLink>({ type: 'page_link', ref, purpose }),
+  page_link: (idref: number, purpose = 'none') =>
+    create<PageLink>({ type: 'page_link', idref, purpose }),
 
   cite: (text = '', bibref: number) =>
     create<Citation>({ type: 'cite', bibref: bibref, children: [{ text }] }),

@@ -359,7 +359,7 @@ defmodule OliWeb.PageDeliveryController do
           :delivery
         end,
       activity_map: context.activities,
-      resource_summary_fn: &Resources.resource_summary(&1, section_slug, DeliveryResolver),
+      resource_summary_fn: &Resources.resource_summary(&1, section_slug, Resolver),
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
       historical_attempts: context.historical_attempts

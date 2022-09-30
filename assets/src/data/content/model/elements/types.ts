@@ -348,7 +348,7 @@ export interface Popup extends SlateElement<Text[]> {
 
 export interface PageLink extends SlateElement<VoidChildren> {
   type: 'page_link';
-  ref: string;
+  idref: number;
   purpose: string;
 }
 

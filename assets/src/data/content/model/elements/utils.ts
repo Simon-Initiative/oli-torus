@@ -25,7 +25,7 @@ export const isValidHref = (href: string) =>
 export const addProtocol = (href: string) => (isValidHref(href) ? href : 'http://' + href);
 
 // Helper function to turn a Page into a link url
-export const toInternalLink = (p: any) => `${internalLinkPrefix}/${p.id}`;
+export const toInternalLink = (p: any) => `${internalLinkPrefix}/${p.slug}`;
 
 // Takes a delivery oriented internal link and translates it to
 // a link that will resolve at authoring time. This allows

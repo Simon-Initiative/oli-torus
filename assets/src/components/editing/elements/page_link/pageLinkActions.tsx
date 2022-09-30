@@ -9,16 +9,14 @@ import { PageLinkModal } from './PageLinkModal';
 const dismiss = () => window.oliDispatch(modalActions.dismiss());
 const display = (c: any) => window.oliDispatch(modalActions.display(c));
 
-export function selectPage(
-  commandContext: CommandContext,
-): Promise<{ title: string; ref: string }> {
+export function selectPage(commandContext: CommandContext): Promise<{ idref: number }> {
   return new Promise((resolve, reject) => {
     display(
       <PageLinkModal
         commandContext={commandContext}
-        onDone={({ title, ref }: { title: string; ref: string }) => {
+        onDone={({ idref }: { idref: number }) => {
           dismiss();
-          resolve({ title, ref });
+          resolve({ idref });
         }}
         onCancel={() => {
           dismiss();
@@ -33,10 +31,10 @@ export const insertPageLink = createButtonCommandDesc({
   icon: 'label',
   description: 'Page Link',
   execute: (context, editor) =>
-    selectPage(context).then(({ title, ref }) => {
-      if (ref) {
+    selectPage(context).then(({ idref }) => {
+      if (idref) {
         const at = editor.selection as Location;
-        Transforms.insertNodes(editor, Model.page_link(title, ref), { at });
+        Transforms.insertNodes(editor, Model.page_link(idref), { at });
       }
     }),
   precondition: (editor) => !isActive(editor, ['code']),

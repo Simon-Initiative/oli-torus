@@ -11,7 +11,6 @@ import { Purpose } from 'components/content/Purpose';
 import { PurposeTypes } from 'data/content/resource';
 import { useElementSelected } from 'data/content/utils';
 import * as Persistence from 'data/persistence/resource';
-import { getCurrentSlugFromRef, toInternalLink } from 'data/content/model/elements/utils';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 export interface Props extends EditorProps<ContentModel.PageLink> {}
@@ -21,15 +20,13 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
   const [pages, setPages] = useState<Maybe<Persistence.Page[]>>(Maybe.nothing());
 
   React.useEffect(() => {
-    Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model?.ref)).then(
-      (result) => {
-        if (result.type === 'success') {
-          setPages(Maybe.just(result.pages));
-        } else {
-          throw 'Error loading pages: ' + result.message;
-        }
-      },
-    );
+    Persistence.pages(commandContext.projectSlug).then((result) => {
+      if (result.type === 'success') {
+        setPages(Maybe.just(result.pages));
+      } else {
+        throw 'Error loading pages: ' + result.message;
+      }
+    });
   }, []);
 
   const renderLoading = () => (
@@ -44,9 +41,9 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
         <PageLinkModal
           model={model}
           commandContext={commandContext}
-          onDone={({ ref }: Partial<ContentModel.PageLink>) => {
+          onDone={({ idref }: Partial<ContentModel.PageLink>) => {
             window.oliDispatch(modalActions.dismiss());
-            onEdit({ ref });
+            onEdit({ idref });
           }}
           onCancel={() => window.oliDispatch(modalActions.dismiss())}
         />,
@@ -62,7 +59,7 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
     });
 
     const { title } = maybe<Persistence.Page>(
-      pages.find((p) => toInternalLink(p) === model?.ref) as Persistence.Page,
+      pages.find((p) => p.id === model?.idref) as Persistence.Page,
     ).valueOrThrow();
 
     return (

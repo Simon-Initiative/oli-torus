@@ -1073,8 +1073,8 @@
         "type": {
           "const": "page_link"
         },
-        "ref": {
-          "type": "string"
+        "idref": {
+          "type": "number"
         },
         "purpose": {
           "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
@@ -1082,7 +1082,7 @@
       },
       "required": [
         "type",
-        "ref",
+        "idref",
         "purpose"
       ]
     },

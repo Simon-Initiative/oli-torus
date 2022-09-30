@@ -12,24 +12,12 @@ defmodule OliWeb.Api.ResourceController do
         error(conn, 404, "not found")
 
       project ->
-        # we allow a client to supply a current link slug that we will attempt to
-        # match up to the project's current list of page slugs.
-        {linked_resource_id, slug} =
-          case Map.get(conn.query_params, "current", nil) do
-            nil -> {nil, nil}
-            slug -> {AuthoringResolver.from_revision_slug(project_slug, slug), slug}
-          end
-
         pages =
           AuthoringResolver.all_pages(project.slug)
           |> Enum.map(fn r ->
             %{
-              id:
-                if r.resource_id == linked_resource_id do
-                  slug
-                else
-                  r.slug
-                end,
+              id: r.resource_id,
+              slug: r.slug,
               title: r.title
             }
           end)
