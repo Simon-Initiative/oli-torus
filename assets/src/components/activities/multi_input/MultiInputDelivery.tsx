@@ -6,7 +6,7 @@ import { HintsDeliveryConnected } from 'components/activities/common/hints/deliv
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
 import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
-import { MultiInputSchema } from 'components/activities/multi_input/schema';
+import { MultiInputSchema, MultiInput } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
 import { toSimpleText } from 'components/editing/slateUtils';
 import {
@@ -23,10 +23,11 @@ import {
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
 import { defaultWriterContext } from 'data/content/writers/context';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
 import { configureStore } from 'state/store';
+import { initializePersistence } from '../common/delivery/persistence';
 
 export const MultiInputComponent: React.FC = () => {
   const {
@@ -41,6 +42,13 @@ export const MultiInputComponent: React.FC = () => {
   const { surveyId, sectionSlug, bibParams } = context;
   const uiState = useSelector((state: ActivityDeliveryState) => state);
   const [hintsShown, setHintsShown] = React.useState<PartId[]>([]);
+  const deferredSaves = useRef(
+    model.inputs.reduce((m: any, input: MultiInput) => {
+      const p = initializePersistence();
+      m[input.id] = p;
+      return m;
+    }, {}),
+  );
   const dispatch = useDispatch();
 
   const emptyPartInputs = model.inputs.reduce((acc: any, input: any) => {
@@ -117,13 +125,27 @@ export const MultiInputComponent: React.FC = () => {
       }),
     );
 
-    onSaveActivity(uiState.attemptState.attemptGuid, [
-      {
-        attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
-          .attemptGuid,
-        response: { input: value },
-      },
-    ]);
+    const fn = () =>
+      onSaveActivity(uiState.attemptState.attemptGuid, [
+        {
+          attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
+            .attemptGuid,
+          response: { input: value },
+        },
+      ]);
+
+    if (input.inputType === 'dropdown') {
+      fn();
+    } else {
+      deferredSaves.current[id].save(fn);
+    }
+  };
+
+  const onBlur = (id: string) => {
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    if (input.inputType !== 'dropdown') {
+      deferredSaves.current[id].flushPendingChanges(false);
+    }
   };
 
   const writerContext = defaultWriterContext({
@@ -132,6 +154,7 @@ export const MultiInputComponent: React.FC = () => {
     inputRefContext: {
       toggleHints,
       onChange,
+      onBlur,
       inputs,
       disabled: isEvaluated(uiState),
     },

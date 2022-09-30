@@ -62,8 +62,6 @@ describe('multiple choice delivery', () => {
       });
     });
 
-    expect(onSaveActivity).toHaveBeenCalledTimes(1);
-
     // expect a submit button
     const submitButton = screen.getByLabelText('submit');
     expect(submitButton).toBeTruthy();

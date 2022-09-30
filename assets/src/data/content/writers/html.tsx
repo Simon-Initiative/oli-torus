@@ -406,6 +406,7 @@ export class HtmlParser implements WriterImpl {
 
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
+      onBlur: () => inputRefContext.onBlur(inputRef.id),
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',
