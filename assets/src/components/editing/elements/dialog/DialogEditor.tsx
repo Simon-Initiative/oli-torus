@@ -16,7 +16,9 @@ export const DialogEditor: React.FC<Props> = ({ model, attributes, children, com
   const [preview, setPreview] = React.useState(model.lines.length > 0); // Start in edit mode if no lines, since not much renders without any.
   const togglePreview = useCallback(() => setPreview((preview) => !preview), []);
 
-  const temporaryContext: WriterContext = defaultWriterContext();
+  const temporaryContext: WriterContext = defaultWriterContext({
+    projectSlug: commandContext.projectSlug,
+  });
 
   return (
     <div {...attributes} contentEditable={false} className="dialog-editor">

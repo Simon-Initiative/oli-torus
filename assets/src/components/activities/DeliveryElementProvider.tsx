@@ -21,6 +21,7 @@ export function useDeliveryElementContext<T extends ActivityModelSchema>() {
 export const DeliveryElementProvider: React.FC<DeliveryElementProps<any>> = (props) => {
   const writerContext = defaultWriterContext({
     sectionSlug: props.context.sectionSlug,
+    projectSlug: props.context.projectSlug,
     bibParams: props.context.bibParams,
     learningLanguage: props.context.learningLanguage,
   });

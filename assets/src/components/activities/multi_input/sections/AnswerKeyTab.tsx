@@ -45,7 +45,7 @@ interface Props {
   input: MultiInput;
 }
 export const AnswerKeyTab: React.FC<Props> = (props) => {
-  const { model, dispatch, authoringContext, editMode } =
+  const { model, dispatch, authoringContext, editMode, projectSlug } =
     useAuthoringElementContext<MultiInputSchema>();
 
   if (props.input.inputType === 'dropdown') {
@@ -53,9 +53,10 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
       (props.input as Dropdown).choiceIds.includes(choice.id),
     );
 
-    const choice = getCorrectChoice(model, props.input.partId);
-
-    const correctChoice = choice === null || choice === undefined ? choices[0] : choice;
+    const correctChoice = getCorrectChoice(model, props.input.partId).caseOf({
+      just: (choice) => choice,
+      nothing: () => choices[0],
+    });
 
     return (
       <>
@@ -66,7 +67,7 @@ export const AnswerKeyTab: React.FC<Props> = (props) => {
           selected={[correctChoice.id]}
           onSelect={(id) => dispatch(MCActions.toggleChoiceCorrectness(id, props.input.partId))}
           isEvaluated={false}
-          context={defaultWriterContext()}
+          context={defaultWriterContext({ projectSlug: projectSlug })}
         />
         <SimpleFeedback partId={props.input.partId} />
         <TargetedFeedback

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import * as Persistence from 'data/persistence/resource';
-import { toInternalLink, getCurrentSlugFromRef } from 'data/content/model/elements/utils';
 import { CommandContext } from 'components/editing/elements/commands/interfaces';
 import { Maybe } from 'tsmonad';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 interface ModalProps {
-  onDone: (x: any) => void;
+  onDone: (x: { idref: number }) => void;
   onCancel: () => void;
   model?: ContentModel.PageLink;
   commandContext: CommandContext;
@@ -19,26 +19,23 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
   const [selectedPage, setSelectedPage] = useState<Maybe<Persistence.Page>>(Maybe.nothing());
 
   React.useEffect(() => {
-    Persistence.pages(commandContext.projectSlug, getCurrentSlugFromRef(model?.ref)).then(
-      (result) => {
-        if (result.type === 'success') {
-          Maybe.maybe(result.pages.find((p) => toInternalLink(p) === model?.ref)).lift((found) =>
-            setSelectedPage(Maybe.just(found)),
-          );
+    Persistence.pages(commandContext.projectSlug).then((result) => {
+      if (result.type === 'success') {
+        Maybe.maybe(result.pages.find((p) => p.id === model?.idref)).lift((found) =>
+          setSelectedPage(Maybe.just(found)),
+        );
 
-          setPages(Maybe.just(result.pages));
-        } else {
-          setError(Maybe.just(result.message));
-        }
-      },
-    );
+        setPages(Maybe.just(result.pages));
+      } else {
+        setError(Maybe.just(result.message));
+      }
+    });
   }, []);
 
   const renderLoading = () => (
-    <div>
-      <em>Loading...</em>
-    </div>
+    <LoadingSpinner size={LoadingSpinnerSize.Medium}>Loading...</LoadingSpinner>
   );
+
   const renderFailed = (errorMsg: string) => (
     <div>
       <div>Failed to load pages. Close this window and try again.</div>
@@ -48,7 +45,7 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
 
   const renderSuccess = (pages: Persistence.Page[]) => {
     const PageOption = (p: Persistence.Page) => (
-      <option key={p.id} value={toInternalLink(p)}>
+      <option key={p.id} value={p.id}>
         {p.title}
       </option>
     );
@@ -57,15 +54,14 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
       <select
         className="form-control mr-2"
         value={selectedPage.caseOf({
-          just: (s) => toInternalLink(s),
+          just: (s) => `${s.id}`,
           nothing: () => '',
         })}
         onChange={({ target: { value } }) => {
-          const item = pages.find((p) => toInternalLink(p) === value);
+          const item = pages.find((p) => `${p.id}` === value);
           if (item) setSelectedPage(Maybe.just(item));
         }}
         style={{ minWidth: '300px' }}
-        defaultValue=""
       >
         <option key="none" value="" hidden>
           Select a Page
@@ -93,7 +89,7 @@ export const PageLinkModal = ({ onDone, onCancel, model, commandContext }: Modal
       onCancel={onCancel}
       onOk={() =>
         selectedPage.caseOf({
-          just: (s) => onDone({ title: s.title, ref: toInternalLink(s) }),
+          just: (s) => onDone({ idref: s.id }),
           nothing: () => {},
         })
       }

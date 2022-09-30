@@ -24,7 +24,9 @@ export const DefinitionEditor: React.FC<Props> = ({
   const togglePreview = useCallback(() => setPreview((preview) => !preview), []);
 
   const writer = new ContentWriter();
-  const temporaryContext: WriterContext = defaultWriterContext();
+  const temporaryContext: WriterContext = defaultWriterContext({
+    projectSlug: commandContext.projectSlug,
+  });
 
   // Need to use a ContentWriter to recursively render the parts of the definition
   const meanings =

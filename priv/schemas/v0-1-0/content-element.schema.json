@@ -118,6 +118,9 @@
         },
         {
           "$ref": "#/$defs/dialog"
+        },
+        {
+          "$ref": "#/$defs/conjugation"
         }
       ]
     },
@@ -144,7 +147,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "text": {
       "type": "object",
@@ -153,7 +159,9 @@
           "type": "string"
         }
       },
-      "required": ["text"]
+      "required": [
+        "text"
+      ]
     },
     "input-ref": {
       "type": "object",
@@ -168,7 +176,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading": {
       "oneOf": [
@@ -205,7 +216,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading-two": {
       "type": "object",
@@ -220,7 +234,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading-three": {
       "type": "object",
@@ -235,7 +252,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading-four": {
       "type": "object",
@@ -250,7 +270,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading-five": {
       "type": "object",
@@ -265,7 +288,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "heading-six": {
       "type": "object",
@@ -280,7 +306,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "list": {
       "oneOf": [
@@ -343,7 +372,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "unordered-list": {
       "type": "object",
@@ -381,7 +413,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "list-item": {
       "type": "object",
@@ -436,22 +471,33 @@
           "type": "string"
         },
         "height": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "width": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "image-inline": {
       "type": "object",
@@ -463,16 +509,24 @@
           "type": "string"
         },
         "height": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "width": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "alt": {
           "type": "string"
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "youtube": {
       "type": "object",
@@ -484,22 +538,33 @@
           "type": "string"
         },
         "height": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "width": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "audio": {
       "type": "object",
@@ -514,10 +579,15 @@
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "webpage": {
       "type": "object",
@@ -526,25 +596,39 @@
           "const": "iframe"
         },
         "src": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "height": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "width": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "alt": {
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         },
         "display": {
           "type": "string"
         }
       },
-      "required": ["type"]
+      "required": [
+        "type"
+      ]
     },
     "table": {
       "type": "object",
@@ -553,13 +637,22 @@
           "const": "table"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         },
         "border": {
-          "enum": ["hidden", "solid"]
+          "enum": [
+            "hidden",
+            "solid"
+          ]
         },
         "rowstyle": {
-          "enum": ["plain", "alternating"]
+          "enum": [
+            "plain",
+            "alternating"
+          ]
         },
         "children": {
           "type": "array",
@@ -568,7 +661,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "table-row": {
       "type": "object",
@@ -583,7 +679,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "table-cell": {
       "anyOf": [
@@ -592,6 +691,9 @@
         },
         {
           "$ref": "#/$defs/table-data"
+        },
+        {
+          "$ref": "#/$defs/table-conjugation"
         }
       ]
     },
@@ -608,7 +710,11 @@
           "type": "number"
         },
         "align": {
-          "enum": ["left", "center", "right"]
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
         },
         "children": {
           "type": "array",
@@ -617,7 +723,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "table-data": {
       "type": "object",
@@ -632,7 +741,11 @@
           "type": "number"
         },
         "align": {
-          "enum": ["left", "center", "right"]
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
         },
         "children": {
           "type": "array",
@@ -641,7 +754,80 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "table-conjugation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "tc"
+        },
+        "audioSrc": {
+          "type": "string"
+        },
+        "audioType": {
+          "type": "string"
+        },
+        "pronouns": {
+          "type": "string"
+        },
+        "colspan": {
+          "type": "number"
+        },
+        "rowspan": {
+          "type": "number"
+        },
+        "align": {
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
+    },
+    "conjugation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "conjugation"
+        },
+        "title": {
+          "type": "string"
+        },
+        "verb": {
+          "type": "string"
+        },
+        "pronunciation": {
+          "$ref": "#/$defs/pronunciation"
+        },
+        "table": {
+          "$ref": "#/$defs/table"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "callout": {
       "type": "object",
@@ -656,7 +842,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "callout-inline": {
       "type": "object",
@@ -671,9 +860,11 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
-
     "foreign": {
       "type": "object",
       "properties": {
@@ -690,9 +881,11 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
-
     "formula": {
       "type": "object",
       "properties": {
@@ -700,7 +893,10 @@
           "const": "formula"
         },
         "subtype": {
-          "enum": ["mathml", "latex"]
+          "enum": [
+            "mathml",
+            "latex"
+          ]
         },
         "src": {
           "type": "string"
@@ -712,7 +908,11 @@
           }
         }
       },
-      "required": ["type", "subtype", "src"]
+      "required": [
+        "type",
+        "subtype",
+        "src"
+      ]
     },
     "formula-inline": {
       "type": "object",
@@ -721,7 +921,10 @@
           "const": "formula_inline"
         },
         "subtype": {
-          "enum": ["mathml", "latex"]
+          "enum": [
+            "mathml",
+            "latex"
+          ]
         },
         "src": {
           "type": "string"
@@ -733,7 +936,11 @@
           }
         }
       },
-      "required": ["type", "subtype", "src"]
+      "required": [
+        "type",
+        "subtype",
+        "src"
+      ]
     },
     "math": {
       "type": "object",
@@ -748,7 +955,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "math-line": {
       "type": "object",
@@ -763,7 +973,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "code-v1": {
       "type": "object",
@@ -775,7 +988,10 @@
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         },
         "children": {
           "type": "array",
@@ -784,7 +1000,11 @@
           }
         }
       },
-      "required": ["type", "language", "children"]
+      "required": [
+        "type",
+        "language",
+        "children"
+      ]
     },
     "code-line": {
       "type": "object",
@@ -799,7 +1019,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "code-v2": {
       "type": "object",
@@ -814,10 +1037,17 @@
           "type": "string"
         },
         "caption": {
-          "type": ["string", "array"]
+          "type": [
+            "string",
+            "array"
+          ]
         }
       },
-      "required": ["type", "code", "language"]
+      "required": [
+        "type",
+        "code",
+        "language"
+      ]
     },
     "blockquote": {
       "type": "object",
@@ -832,7 +1062,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "hyperlink": {
       "type": "object",
@@ -853,7 +1086,10 @@
           }
         }
       },
-      "required": ["type", "children"]
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "page-link": {
       "type": "object",
@@ -861,17 +1097,18 @@
         "type": {
           "const": "page_link"
         },
-        "title": {
-          "type": "string"
-        },
-        "ref": {
-          "type": "string"
+        "idref": {
+          "type": "number"
         },
         "purpose": {
           "$ref": "http://torus.oli.cmu.edu/schemas/v0-1-0/purpose-type.schema.json"
         }
       },
-      "required": ["type", "title", "ref", "purpose"]
+      "required": [
+        "type",
+        "idref",
+        "purpose"
+      ]
     },
     "citation": {
       "type": "object",
@@ -880,7 +1117,10 @@
           "const": "cite"
         },
         "bibref": {
-          "type": ["string", "number"]
+          "type": [
+            "string",
+            "number"
+          ]
         },
         "slug": {
           "type": "string"
@@ -892,7 +1132,11 @@
           }
         }
       },
-      "required": ["type", "bibref", "children"]
+      "required": [
+        "type",
+        "bibref",
+        "children"
+      ]
     },
     "popup": {
       "type": "object",
@@ -901,7 +1145,11 @@
           "const": "popup"
         },
         "trigger": {
-          "enum": ["hover", "click", "focus"]
+          "enum": [
+            "hover",
+            "click",
+            "focus"
+          ]
         },
         "content": {
           "$ref": "#/$defs/rich-text"
@@ -939,7 +1187,11 @@
           }
         }
       },
-      "required": ["type", "children", "title"]
+      "required": [
+        "type",
+        "children",
+        "title"
+      ]
     },
     "semantic-element-content": {
       "anyOf": [
@@ -963,7 +1215,7 @@
         }
       ]
     },
-    "definition-pronunciation": {
+    "pronunciation": {
       "properties": {
         "type": {
           "const": "pronunciation"
@@ -980,7 +1232,11 @@
             "$ref": "#/$defs/text-block"
           }
         }
-      }
+      },
+      "required": [
+        "type",
+        "children"
+      ]
     },
     "definition-translation": {
       "properties": {
@@ -1019,7 +1275,7 @@
           "type": "string"
         },
         "pronunciation": {
-          "$ref": "#/$defs/definition-pronunciation"
+          "$ref": "#/$defs/pronunciation"
         },
         "translations": {
           "type": "array",
@@ -1134,7 +1390,10 @@
           }
         }
       },
-      "required": ["type", "src"]
+      "required": [
+        "type",
+        "src"
+      ]
     }
   }
 }

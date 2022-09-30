@@ -51,6 +51,7 @@ export interface PartActivityResponse extends Success {
 export interface ActivityContext {
   graded: boolean;
   sectionSlug: string;
+  projectSlug: string;
   userId: number;
   learningLanguage?: string;
   groupId: string | null;

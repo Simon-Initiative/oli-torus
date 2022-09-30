@@ -45,8 +45,11 @@ export const TestEditorComponent = () => {
 describe('slate editor utils', () => {
   it('can find elements of type', () => {
     render(<TestEditorComponent />);
+
     expect(Utils.elementsOfType<InputRef>(testEditor, 'input_ref')).toHaveLength(0);
+
     const paragraphs = Utils.elementsOfType<Paragraph>(testEditor, 'p');
+
     expect(paragraphs).toHaveLength(17);
     expect(paragraphs.every((p) => Element.isElement(p) && p.type === 'p')).toBeTruthy();
   });

@@ -46,7 +46,7 @@ export const InlineEditor: React.FC<Props> = ({
         onEdit={onEdit}
         editorOverride={editorOverride}
         toolbarInsertDescs={blockInsertOptions({
-          type: allowBlockElements ? 'small' : 'inline',
+          type: allowBlockElements ? 'limited' : 'inline',
           onRequestMedia: onRequestMedia,
         })}
       />

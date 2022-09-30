@@ -9,6 +9,7 @@ defmodule Oli.Resources do
   alias Oli.Resources.ScoringStrategy
   alias Oli.Resources.Revision
   alias Oli.Resources.ResourceType
+  alias Oli.Rendering.Content.ResourceSummary
 
   @doc """
   Create a new resource with given attributes of a specific resource tyoe.
@@ -343,6 +344,16 @@ defmodule Oli.Resources do
         s when is_binary(s) -> Map.put(m, String.to_existing_atom(s), Map.get(attrs, s))
         atom -> Map.put(m, atom, Map.get(attrs, atom))
       end
+    end)
+  end
+
+  @doc """
+  Returns a resource summary for a given resource_id, project or section slug and resolver.
+  """
+  def resource_summary(resource_id, project_or_section_slug, resolver) do
+    resolver.from_resource_id(project_or_section_slug, resource_id)
+    |> then(fn %Revision{title: title, slug: slug} ->
+      %ResourceSummary{title: title, slug: slug}
     end)
   end
 end

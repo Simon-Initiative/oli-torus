@@ -433,11 +433,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
               </div>
             ))}
             {isLoadingMedia && !allItemsLoaded ? (
-              <LoadingSpinner
-                key="loading"
-                size={LoadingSpinnerSize.Small}
-                message={PAGE_LOADING_MESSAGE}
-              />
+              <LoadingSpinner key="loading" size={LoadingSpinnerSize.Small} className="p-3">
+                {PAGE_LOADING_MESSAGE}
+              </LoadingSpinner>
             ) : null}
           </div>
         </div>
@@ -489,10 +487,9 @@ export class MediaManager extends React.PureComponent<MediaManagerProps, MediaMa
           ))}
         </div>
         {isLoadingMedia && !allItemsLoaded ? (
-          <div className="loading">
-            <i className="fas fa-circle-notch fa-spin fa-1x fa-fw" />
+          <LoadingSpinner key="loading" size={LoadingSpinnerSize.Small} className="p-3">
             {PAGE_LOADING_MESSAGE}
-          </div>
+          </LoadingSpinner>
         ) : null}
       </div>
     );

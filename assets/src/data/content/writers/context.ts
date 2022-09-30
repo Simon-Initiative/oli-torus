@@ -4,6 +4,7 @@ import { ID } from 'data/content/model/other';
 
 export interface WriterContext {
   sectionSlug?: string;
+  projectSlug?: string;
   bibParams?: any;
   learningLanguage?: string;
   //learningLanguage: string;
@@ -24,5 +25,5 @@ export interface WriterContext {
   };
 }
 
-export const defaultWriterContext = (params: Partial<WriterContext> = {}) =>
+export const defaultWriterContext = (params: Partial<WriterContext> = {}): WriterContext =>
   Object.assign({}, params);

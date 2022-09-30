@@ -41,7 +41,7 @@ export function edit(
   return makeRequest<Edited>(params);
 }
 
-export type Page = { id: string; title: string };
+export type Page = { id: number; slug: string; title: string };
 export type PagesReceived = { type: 'success'; pages: Page[] };
 
 // Requests all of the page details for a course for the purpose
