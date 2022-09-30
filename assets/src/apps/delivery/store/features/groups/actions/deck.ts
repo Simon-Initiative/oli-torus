@@ -273,6 +273,7 @@ const getSessionVisitHistory = async (
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (shouldReturnNextSequenceId: boolean, thunkApi) => {
+    //shouldReturnNextSequenceId should only be true when this is called from trigger Check
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -399,6 +400,7 @@ export const navigateToLastActivity = createAsyncThunk(
 export const navigateToActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToActivity`,
   async (payload: { sequenceId: string; shouldReturnNextSequenceId: boolean }, thunkApi) => {
+    //shouldReturnNextSequenceId should only be true when this is called from trigger Check
     const { sequenceId, shouldReturnNextSequenceId } = payload;
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
