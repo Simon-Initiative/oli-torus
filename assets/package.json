@@ -129,7 +129,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^26.0.0",
-    "jest-fetch-mock": "^3.0.3",
     "jest-html-reporter": "^3.1.0",
     "mini-css-extract-plugin": "^2.6.0",
     "monaco-editor-webpack-plugin": "^7.0.1",

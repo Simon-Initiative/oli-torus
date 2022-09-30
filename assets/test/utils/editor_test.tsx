@@ -8,7 +8,6 @@ import { createEditor, Descendant, Element } from 'slate';
 import { editorFor, markFor } from 'components/editing/editor/modelEditorDispatch';
 import { ModelElement, InputRef, Paragraph } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
-import fetchMock from 'jest-fetch-mock';
 
 const exampleContent = require('../writer/example_content.json');
 
@@ -43,22 +42,8 @@ export const TestEditorComponent = () => {
   );
 };
 
-beforeEach(() => {
-  fetchMock.resetMocks();
-});
-
 describe('slate editor utils', () => {
   it('can find elements of type', () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        pages: [
-          { id: 'page_one', title: 'Page one' },
-          { id: 'page_link_to_two', title: 'Page two' },
-        ],
-        type: 'success',
-      }),
-    );
-
     render(<TestEditorComponent />);
 
     expect(Utils.elementsOfType<InputRef>(testEditor, 'input_ref')).toHaveLength(0);

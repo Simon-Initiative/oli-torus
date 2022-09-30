@@ -88,18 +88,6 @@
       ]
     },
     {
-      "type": "page_link",
-      "title": "Page Link to Page Two",
-      "ref": "/course/link/page_link_to_two",
-      "purpose": "learnbydoing",
-      "children": [
-        {
-          "text": ""
-        }
-      ],
-      "id": 10435498606
-    },
-    {
       "type": "p",
       "id": 2652523413352,
       "children": [

@@ -112,18 +112,6 @@ describe('parser', () => {
     ).toBeTruthy();
   });
 
-  it('renders page link', () => {
-    render(parse(exampleContent, defaultWriterContext({ sectionSlug: 'some_section' })));
-    expect(
-      screen.getByText((content, element) => {
-        return (
-          element?.tagName.toLowerCase() === 'a' &&
-          element.getAttribute('href') === '/sections/some_section/page/page_link_to_two'
-        );
-      }),
-    ).toBeTruthy();
-  });
-
   it('renders malformed page gracefully', () => {
     render(parse(exampleMalformedContent));
 
