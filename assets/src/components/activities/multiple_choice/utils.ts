@@ -37,11 +37,19 @@ export const defaultMCModel: () => MCSchema = () => {
 };
 
 export const getCorrectChoice = (model: HasParts, partId: string) => {
-  const responseIdMatch = getCorrectResponse(model, partId).rule.match(/{(.*)}/);
+  const correct = getCorrectResponse(model, partId);
 
-  if (responseIdMatch === null) {
+  if (correct === null) {
     return Maybe.nothing<Choice>();
   }
 
-  return Maybe.just(Choices.getOne(model, responseIdMatch[1]));
+  let value = correct.rule.substring(correct.rule.indexOf('{') + 1);
+  value = value.substring(0, value.indexOf('}'));
+
+  const choice = Choices.getOne(model, value);
+  if (choice === null || choice === undefined) {
+    return Maybe.nothing<Choice>();
+  }
+
+  return Maybe.just(choice);
 };

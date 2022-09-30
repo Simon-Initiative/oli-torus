@@ -14,7 +14,7 @@ import * as Persistence from 'data/persistence/resource';
 import { LoadingSpinner, LoadingSpinnerSize } from 'components/common/LoadingSpinner';
 
 export interface Props extends EditorProps<ContentModel.PageLink> {}
-export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => {
+export const PageLinkEditor = ({ model, commandContext, attributes, children }: Props) => {
   const onEdit = useEditModelCallback(model);
   const selected = useElementSelected();
   const [pages, setPages] = useState<Maybe<Persistence.Page[]>>(Maybe.nothing());
@@ -68,6 +68,7 @@ export const PageLinkEditor = ({ model, commandContext, attributes }: Props) => 
         className={classNames('my-4', selected && styles.selected)}
         contentEditable={false}
       >
+        {children}
         <div className="d-flex flex-row mb-1">
           <div className="flex-grow-1"></div>
           <Purpose
