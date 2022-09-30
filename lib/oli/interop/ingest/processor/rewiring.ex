@@ -25,15 +25,6 @@ defmodule Oli.Interop.Ingest.Processing.Rewiring do
                 {Map.put(ref, "activity_id", retrieved), {status, invalid_refs}}
             end
 
-          %{"type" => "page_link", "idref" => original} = ref ->
-            case retrieve(activity_map, original) do
-              nil ->
-                {ref, {:error, [original | invalid_refs]}}
-
-              retrieved ->
-                {Map.put(ref, "idref", retrieved), {status, invalid_refs}}
-            end
-
           other ->
             {other, {status, invalid_refs}}
         end
