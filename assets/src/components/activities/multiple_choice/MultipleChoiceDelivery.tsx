@@ -13,6 +13,7 @@ import {
   activityDeliverySlice,
   isEvaluated,
   resetAction,
+  submit,
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
@@ -21,12 +22,19 @@ import { Radio } from 'components/misc/icons/radio/Radio';
 import { initialPartInputs, isCorrect } from 'data/activities/utils';
 import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
-import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { StemDeliveryConnected } from 'components/activities/common/stem/delivery/StemDelivery';
 import { ChoicesDeliveryConnected } from 'components/activities/common/choices/delivery/ChoicesDeliveryConnected';
 import { castPartId } from '../common/utils';
+
+// Used instead of the real 'onSaveActivity' to bypass saving state to the server when we are just
+// about to submit that state with a submission. This saves a network call that isn't necessary and avoids
+// perhaps a weird race condition (where the submit request could arrive before the save)
+const noOpSave = (
+  _guid: string,
+  _partResponses: ActivityTypes.PartResponse[],
+): Promise<ActivityTypes.Success> => Promise.resolve({ type: 'success' });
 
 export const MultipleChoiceComponent: React.FC = () => {
   const {
@@ -58,6 +66,19 @@ export const MultipleChoiceComponent: React.FC = () => {
     return null;
   }
 
+  const saveOrSubmit =
+    context.graded || context.surveyId !== null
+      ? (id: string) =>
+          dispatch(
+            setSelection(castPartId(activityState.parts[0].partId), id, onSaveActivity, 'single'),
+          )
+      : (input: string) => {
+          dispatch(
+            setSelection(castPartId(activityState.parts[0].partId), input, noOpSave, 'single'),
+          );
+          dispatch(submit(onSubmitActivity));
+        };
+
   return (
     <div className="activity mc-activity">
       <div className="activity-content">
@@ -75,18 +96,13 @@ export const MultipleChoiceComponent: React.FC = () => {
               <Radio.Incorrect />
             )
           }
-          onSelect={(id) =>
-            dispatch(
-              setSelection(castPartId(activityState.parts[0].partId), id, onSaveActivity, 'single'),
-            )
-          }
+          onSelect={(id) => saveOrSubmit(id)}
         />
         <ResetButtonConnected
           onReset={() =>
             dispatch(resetAction(onResetActivity, { [activityState.parts[0].partId]: [] }))
           }
         />
-        <SubmitButtonConnected />
         <HintsDeliveryConnected partId={castPartId(activityState.parts[0].partId)} />
         <EvaluationConnected />
       </div>
