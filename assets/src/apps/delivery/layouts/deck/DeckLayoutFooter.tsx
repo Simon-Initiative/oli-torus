@@ -434,7 +434,9 @@ const DeckLayoutFooter: React.FC = () => {
               setHasOnlyMutation(true);
             }
             // assume it's a sequenceId
-            dispatch(navigateToActivity(navTarget));
+            dispatch(
+              navigateToActivity({ sequenceId: navTarget, shouldReturnNextSequenceId: false }),
+            );
         }
       }
     }

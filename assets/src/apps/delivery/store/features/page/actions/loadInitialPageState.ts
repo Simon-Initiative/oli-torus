@@ -182,8 +182,9 @@ export const loadInitialPageState = createAsyncThunk(
           /*  console.log('RESUMING IN HISTORY MODE', { resumeHistoryIndex, visitHistory }); */
           dispatch(setHistoryNavigationTriggered({ historyModeNavigation: true }));
         }
-        /* console.log('RESUME SEQUENCE ID', { resumeSequenceId }); */
-        dispatch(navigateToActivity(resumeSequenceId));
+        dispatch(
+          navigateToActivity({ sequenceId: resumeSequenceId, shouldReturnNextSequenceId: false }),
+        );
       } else {
         dispatch(navigateToFirstActivity());
       }
