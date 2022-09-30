@@ -272,7 +272,7 @@ const getSessionVisitHistory = async (
 
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
-  async (_, thunkApi) => {
+  async (shouldReturnNextSequenceId: boolean, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -330,7 +330,9 @@ export const navigateToNextActivity = createAsyncThunk(
     if (navError) {
       throw new Error(navError);
     }
-
+    if (shouldReturnNextSequenceId) {
+      return nextSequenceEntry?.custom.sequenceId;
+    }
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
   },
 );
@@ -396,7 +398,8 @@ export const navigateToLastActivity = createAsyncThunk(
 
 export const navigateToActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToActivity`,
-  async (sequenceId: string, thunkApi) => {
+  async (payload: { sequenceId: string; shouldReturnNextSequenceId: boolean }, thunkApi) => {
+    const { sequenceId, shouldReturnNextSequenceId } = payload;
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -445,6 +448,9 @@ export const navigateToActivity = createAsyncThunk(
     }
     if (navError) {
       throw new Error(navError);
+    }
+    if (shouldReturnNextSequenceId) {
+      return nextSequenceEntry?.custom.sequenceId;
     }
 
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));

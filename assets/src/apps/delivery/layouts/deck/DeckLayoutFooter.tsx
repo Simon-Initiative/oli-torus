@@ -181,6 +181,21 @@ const NextButton: React.FC<NextButton> = ({
   );
 };
 
+export const processResults = (events: any) => {
+  const actionsByType: any = {
+    feedback: [],
+    mutateState: [],
+    navigation: [],
+  };
+  events.forEach((evt: any) => {
+    const { actions } = evt.params;
+    actions.forEach((action: any) => {
+      actionsByType[action.type].push(action);
+    });
+  });
+  return actionsByType;
+};
+
 const DeckLayoutFooter: React.FC = () => {
   const dispatch = useDispatch();
 
@@ -214,21 +229,6 @@ const DeckLayoutFooter: React.FC = () => {
     }
     // when this changes, notify that check has started
   }, [lastCheckTimestamp]);
-
-  const processResults = (events: any) => {
-    const actionsByType: any = {
-      feedback: [],
-      mutateState: [],
-      navigation: [],
-    };
-    events.forEach((evt: any) => {
-      const { actions } = evt.params;
-      actions.forEach((action: any) => {
-        actionsByType[action.type].push(action);
-      });
-    });
-    return actionsByType;
-  };
 
   const checkIfFirstEventHasNavigation = (event: any) => {
     let isDifferentNavigationExist = false;
@@ -405,7 +405,7 @@ const DeckLayoutFooter: React.FC = () => {
         const navTarget = firstNavAction.params.target;
         switch (navTarget) {
           case 'next':
-            dispatch(navigateToNextActivity());
+            dispatch(navigateToNextActivity(false));
             break;
           case 'prev':
             dispatch(navigateToPrevActivity());
@@ -460,7 +460,9 @@ const DeckLayoutFooter: React.FC = () => {
     if (isGoodFeedback) {
       if (nextActivityId && nextActivityId.trim()) {
         dispatch(
-          nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+          nextActivityId === 'next'
+            ? navigateToNextActivity(false)
+            : navigateToActivity({ sequenceId: nextActivityId, shouldReturnNextSequenceId: false }),
         );
       } else {
         // if there is no navigation, then keep checking
@@ -483,7 +485,9 @@ const DeckLayoutFooter: React.FC = () => {
         //** there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
         //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
         dispatch(
-          nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+          nextActivityId === 'next'
+            ? navigateToNextActivity(false)
+            : navigateToActivity({ sequenceId: nextActivityId, shouldReturnNextSequenceId: false }),
         );
         dispatch(setNextActivityId({ nextActivityId: '' }));
       } else if (!enableHistory) {
@@ -503,7 +507,9 @@ const DeckLayoutFooter: React.FC = () => {
       //** DT - there are cases when wrong trap state gets trigger but user is still allowed to jump to another activity */
       //** if we don't do this then, every time Next button will trigger a check events instead of navigating user to respective activity */
       dispatch(
-        nextActivityId === 'next' ? navigateToNextActivity() : navigateToActivity(nextActivityId),
+        nextActivityId === 'next'
+          ? navigateToNextActivity(false)
+          : navigateToActivity({ sequenceId: nextActivityId, shouldReturnNextSequenceId: false }),
       );
       dispatch(setNextActivityId({ nextActivityId: '' }));
     } else {

@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { processResults } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
@@ -20,6 +21,7 @@ import {
   updateExtrinsicState,
   upsertActivityAttemptState,
 } from '../../attempt/slice';
+import { navigateToActivity, navigateToNextActivity } from '../../groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
@@ -381,6 +383,34 @@ export const triggerCheck = createAsyncThunk(
         extrnisicState,
       }); */
       await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
+    }
+    const actionsByType = processResults(checkResult);
+    const hasFeedback = actionsByType.feedback.length > 0;
+    const hasNavigation = actionsByType.navigation.length > 0;
+    if (hasFeedback && hasNavigation) {
+      const [firstNavAction] = actionsByType.navigation;
+      const navTarget = firstNavAction.params.target;
+      let expectedResumeActivityId = currentActivity.id;
+      if (navTarget !== expectedResumeActivityId) {
+        switch (navTarget) {
+          case 'next':
+            const { payload: nextActivityId } = await dispatch(navigateToNextActivity(true));
+            expectedResumeActivityId = nextActivityId;
+            break;
+          default:
+            const { payload: expectedNextActivityId } = await dispatch(
+              navigateToActivity({ sequenceId: navTarget, shouldReturnNextSequenceId: true }),
+            );
+            expectedResumeActivityId = expectedNextActivityId;
+        }
+        const resumeTarget: ApplyStateOperation = {
+          target: `session.resume`,
+          operator: '=',
+          value: expectedResumeActivityId,
+        };
+
+        console.log({ resumeTarget, checkResult, actionsByType, hasFeedback, hasNavigation });
+      }
     }
 
     await dispatch(
