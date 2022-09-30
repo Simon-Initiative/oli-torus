@@ -51,7 +51,5 @@ export const getCorrectChoice = (model: HasParts, partId: string) => {
     return Maybe.nothing<Choice>();
   }
 
-  console.log(choice);
-
   return Maybe.just(choice);
 };
