@@ -329,6 +329,8 @@ defmodule OliWeb.PageDeliveryController do
 
     preview_mode = Map.get(conn.assigns, :preview_mode, false)
 
+    base_project_attributes = Sections.get_section_attributes(section)
+
     submitted_surveys =
       PageContent.survey_activities(context.page.content)
       |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
@@ -360,7 +362,8 @@ defmodule OliWeb.PageDeliveryController do
       activity_map: context.activities,
       bib_app_params: context.bib_revisions,
       submitted_surveys: submitted_surveys,
-      historical_attempts: context.historical_attempts
+      historical_attempts: context.historical_attempts,
+      learning_language: base_project_attributes.learning_language
     }
 
     this_attempt = context.resource_attempts |> hd
@@ -538,6 +541,8 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.with_index(1)
       |> Enum.map(fn {summary, ordinal} -> BibUtils.serialize_revision(summary, ordinal) end)
 
+    base_project_attributes = Sections.get_section_attributes(section)
+
     render_context = %Context{
       user: conn.assigns.current_user,
       section_slug: section_slug,
@@ -546,6 +551,7 @@ defmodule OliWeb.PageDeliveryController do
       activity_map: activity_map,
       activity_types_map: Enum.reduce(all_activities, %{}, fn a, m -> Map.put(m, a.id, a) end),
       bib_app_params: bib_entrys,
+      learning_language: base_project_attributes.learning_language,
       submitted_surveys: %{}
     }
 

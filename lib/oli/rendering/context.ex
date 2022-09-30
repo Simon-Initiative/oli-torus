@@ -21,5 +21,6 @@ defmodule Oli.Rendering.Context do
             pagination_mode: "normal",
             bib_app_params: [],
             submitted_surveys: %{},
-            historical_attempts: nil
+            historical_attempts: nil,
+            learning_language: nil
 end

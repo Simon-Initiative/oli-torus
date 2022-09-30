@@ -40,6 +40,7 @@ export type Inline =
   | ImageInline
   | Citation
   | FormulaInline
+  | Foreign
   | CalloutInline;
 
 export type TextBlock = Paragraph | Heading;
@@ -191,6 +192,11 @@ export interface Dialog extends SlateElement<VoidChildren> {
   title: string;
   speakers: DialogSpeaker[];
   lines: DialogLine[];
+}
+
+export interface Foreign extends SlateElement<(Inline | Text)[]> {
+  type: 'foreign';
+  lang?: string;
 }
 
 export type FormulaSubTypes = 'mathml' | 'latex';

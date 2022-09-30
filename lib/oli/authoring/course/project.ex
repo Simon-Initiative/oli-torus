@@ -2,6 +2,7 @@ defmodule Oli.Authoring.Course.Project do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Oli.Authoring.Course.ProjectAttributes
   alias Oli.Utils.Slug
 
   @derive {Phoenix.Param, key: :slug}
@@ -14,6 +15,8 @@ defmodule Oli.Authoring.Course.Project do
     field :status, Ecto.Enum, values: [:active, :deleted], default: :active
     field :allow_duplication, :boolean, default: false
     field :legacy_svn_root, :string
+
+    embeds_one :attributes, ProjectAttributes, on_replace: :delete
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id
     belongs_to :family, Oli.Authoring.Course.Family
@@ -42,6 +45,27 @@ defmodule Oli.Authoring.Course.Project do
 
   @doc false
   def changeset(project, attrs \\ %{}) do
+    project
+    |> cast(attrs, [
+      :title,
+      :slug,
+      :description,
+      :version,
+      :family_id,
+      :project_id,
+      :visibility,
+      :status,
+      :allow_duplication,
+      :legacy_svn_root,
+      :publisher_id
+    ])
+    |> cast_embed(:attributes, required: false)
+    |> validate_required([:title, :version, :family_id, :publisher_id])
+    |> foreign_key_constraint(:publisher_id)
+    |> Slug.update_never("projects")
+  end
+
+  def new_project_changeset(project, attrs \\ %{}) do
     project
     |> cast(attrs, [
       :title,

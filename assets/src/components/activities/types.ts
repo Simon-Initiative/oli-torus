@@ -200,6 +200,7 @@ export type Manifest = {
 export interface ActivityModelSchema {
   resourceId?: number;
   authoring?: any;
+  learningLanguage?: string;
   content?: any;
   activityType?: any;
   id?: string; // maybe slug

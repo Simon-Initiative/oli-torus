@@ -28,6 +28,7 @@ import { FigureEditor } from '../elements/figure/FigureEditor';
 import { DialogEditor } from '../elements/dialog/DialogEditor';
 import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { TcEditor } from '../elements/table/TcElement';
+import { ForeignEditor } from '../elements/foreign/ForeignEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -123,6 +124,8 @@ export function editorFor(
       return <DefinitionEditor {...(editorProps as EditorProps<ContentModel.Definition>)} />;
     case 'figure':
       return <FigureEditor {...(editorProps as EditorProps<ContentModel.Figure>)} />;
+    case 'foreign':
+      return <ForeignEditor {...(editorProps as EditorProps<ContentModel.Foreign>)} />;
     case 'formula':
     case 'formula_inline':
       return (

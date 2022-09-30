@@ -17,6 +17,7 @@ export interface WriterImpl {
   h6: ElementWriter;
   formula: ElementWriter;
   formulaInline: ElementWriter;
+  foreign: ElementWriter;
   callout: ElementWriter;
   calloutInline: ElementWriter;
   figure: ElementWriter;
@@ -119,6 +120,8 @@ export class ContentWriter {
         return impl.h5(context, next, content);
       case 'h6':
         return impl.h6(context, next, content);
+      case 'foreign':
+        return impl.foreign(context, next, content);
       case 'formula':
         return impl.formula(context, next, content);
       case 'formula_inline':
