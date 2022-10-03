@@ -48,7 +48,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
                 <button type="button"
                   id="remove_btn"
                   class="btn btn-danger"
-                  title="Remove this page from the curriculum. Pages that are removed are still be accessible from All Pages view."
+                  title="Remove this page from the curriculum. Pages that are removed are still accessible from the All Pages view."
                   phx-click="MoveModal.remove"
                   phx-value-uuid="<%= node.uuid %>"
                   phx-value-from_uuid="<%= from_container_uuid(from_container) %>"
