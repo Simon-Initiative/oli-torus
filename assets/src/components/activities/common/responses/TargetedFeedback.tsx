@@ -43,9 +43,12 @@ export const useTargetedFeedback = () => {
 
 export const TargetedFeedback: React.FC<Props> = (props) => {
   const hook = useTargetedFeedback();
-  const { model, authoringContext, editMode } = useAuthoringElementContext<
+  const { model, authoringContext, editMode, projectSlug } = useAuthoringElementContext<
     HasParts & HasChoices & { authoring: { targeted: ChoiceIdsToResponseId[] } }
   >();
+  const writerContext = defaultWriterContext({
+    projectSlug: projectSlug,
+  });
 
   if (typeof props.children === 'function') {
     return props.children(hook);
@@ -68,7 +71,7 @@ export const TargetedFeedback: React.FC<Props> = (props) => {
             selected={mapping.choiceIds}
             onSelect={(id) => props.toggleChoice(id, mapping)}
             isEvaluated={false}
-            context={defaultWriterContext()}
+            context={writerContext}
           />
           {authoringContext.contentBreaksExist ? (
             <ShowPage

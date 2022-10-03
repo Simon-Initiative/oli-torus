@@ -28,6 +28,7 @@ describe('multiple choice delivery', () => {
         userId: 0,
         pageAttemptGuid: '',
         sectionSlug: '',
+        projectSlug: '',
         bibParams: [],
       },
       graded: false,
@@ -57,11 +58,6 @@ describe('multiple choice delivery', () => {
     });
     expect(await screen.findAllByLabelText(/hint [0-9]/)).toHaveLength(1);
 
-    // expect submit button
-    const submitButton = screen.queryByLabelText('submit');
-    expect(submitButton).toBeTruthy();
-    expect(submitButton).toBeDisabled();
-
     // expect 2 choices
     const choices = screen.queryAllByLabelText(/choice [0-9]/);
     expect(choices).toHaveLength(2);
@@ -70,22 +66,8 @@ describe('multiple choice delivery', () => {
     act(() => {
       fireEvent.click(choices[0]);
     });
-    expect(onSaveActivity).toHaveBeenCalledTimes(1);
-    expect(onSaveActivity).toHaveBeenCalledWith(props.state.attemptGuid, [
-      {
-        attemptGuid: '1',
-        response: { input: model.choices.map((choice) => choice.id)[0] },
-      },
-    ]);
-    expect(onSubmitActivity).toHaveBeenCalledTimes(0);
-
-    expect(submitButton).toBeEnabled();
-
-    act(() => {
-      if (submitButton) {
-        fireEvent.click(submitButton);
-      }
-    });
+    expect(onSaveActivity).toHaveBeenCalledTimes(0);
+    expect(onSubmitActivity).toHaveBeenCalledTimes(1);
 
     expect(onSubmitActivity).toHaveBeenCalledTimes(1);
     expect(onSubmitActivity).toHaveBeenCalledWith(props.state.attemptGuid, [

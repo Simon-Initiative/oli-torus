@@ -46,6 +46,7 @@ import {
   YouTube,
   Conjugation as ConjugationModel,
   TableConjugation as TableConjugationModel,
+  Foreign,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
@@ -201,6 +202,14 @@ export class HtmlParser implements WriterImpl {
 
   dialog(context: WriterContext, next: Next, dialog: DialogModel) {
     return <Dialog dialog={dialog} context={context} />;
+  }
+
+  foreign(ctx: WriterContext, next: Next, element: Foreign) {
+    return (
+      <span className="foreign" lang={element.lang || ctx.learningLanguage}>
+        {next()}
+      </span>
+    );
   }
 
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
@@ -397,6 +406,7 @@ export class HtmlParser implements WriterImpl {
 
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
+      onBlur: () => inputRefContext.onBlur(inputRef.id),
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',

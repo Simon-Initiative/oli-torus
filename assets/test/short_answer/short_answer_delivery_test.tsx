@@ -27,6 +27,7 @@ describe('multiple choice delivery', () => {
         userId: 0,
         pageAttemptGuid: '',
         sectionSlug: '',
+        projectSlug: '',
         bibParams: [],
       },
       preview: false,
@@ -61,8 +62,6 @@ describe('multiple choice delivery', () => {
         target: { value: 'answer' },
       });
     });
-
-    expect(onSaveActivity).toHaveBeenCalledTimes(1);
 
     // expect a submit button
     const submitButton = screen.getByLabelText('submit');

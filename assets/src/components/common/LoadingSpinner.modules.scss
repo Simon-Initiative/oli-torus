@@ -1,21 +1,20 @@
-@use 'authoring/theme' as authoring;
 @import 'common/mixins';
 
-.LoadingSpinner {
+.loadingSpinner {
   text-align: center;
-  color: authoring.$gray-500;
+  color: var(--authoring-gray-600);
+  @include disable-select;
 
   & i {
     margin: '0 5px';
-    animation-duration: '1s';
-    -webkit-animation-duration: '1s';
+    animation-duration: 1s;
   }
 
   &.ls-small {
     font-size: 0.8em;
   }
 
-  &.ls-normal {
+  &.ls-medium {
     font-size: 1em;
   }
 

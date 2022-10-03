@@ -4,13 +4,14 @@
   }
 </style>
 <div class="overview container">
-  <div class="row py-5 border-bottom">
+<%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+  <div class="row py-5 ">
     <div class="col-md-4">
       <h4>Details</h4>
       <div class="text-muted">Your project title and description will be shown to students when you publish this project.</div>
     </div>
     <div class="col-md-8">
-      <%= form_for @changeset, Routes.project_path(@conn, :update, @project), fn f -> %>
+
       <div class="form-label-group mb-3">
         <%= label f, :title, "Project ID", class: "control-label" %>
         <%= text_input f, :slug, class: "form-control", disabled: true %>
@@ -37,10 +38,34 @@
         <%= select f, :publisher_id, Enum.map(@publishers, &{&1.name, &1.id}), class: "form-control", required: true %>
       </div>
 
-      <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
+    </div>
+  </div>
+
+  <div class="row py-5 border-bottom">
+  <div class="col-md-4">
+    <h4>Project Attributes</h4>
+    <div class="text-muted">
+      Project wide configuration, not all options may be relevant for all
+      subject areas.
+    </div>
+  </div>
+  <div class="col-md-8">
+
+    <%= inputs_for f, :attributes, fn fp -> %>
+      <div class="form-label-group mb-3">
+        <%= label fp, :learning_language, "Learning Language (optional)", class: "control-label" %>
+        <%= select fp, :learning_language, @language_codes, class: "form-control", required: false,  prompt: "What language is being taught in this project?" %>
+
+
+      </div>
     <% end %>
+
+    <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
   </div>
 </div>
+
+<% end %>
+
 <div class="row py-5 border-bottom">
   <div class="col-md-4">
     <h4>Collaborators</h4>
@@ -77,6 +102,7 @@
   <%= render_many @collaborators, OliWeb.ProjectView, "_collaborator.html", %{conn: @conn, as: :collaborator, project: @project} %>
 </div>
 </div>
+
 <div class="row py-5 border-bottom">
   <div class="col-md-4">
     <h4>Advanced Activities</h4>
@@ -90,6 +116,9 @@
     </table>
   </div>
 </div>
+
+
+
 <%= live_render @conn, OliWeb.Projects.VisibilityLive, session: %{ "project_slug" => @project.slug } %>
 <div class="row py-5">
   <div class="col-md-4">

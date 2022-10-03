@@ -45,6 +45,8 @@ defmodule Oli.Rendering.Content do
   @callback dialog(%Context{}, next, %{}) :: [any()]
   @callback dialog_line(%Context{}, next, %{}, %{}) :: [any()]
 
+  @callback foreign(%Context{}, next, %{}) :: [any()]
+
   @callback formula(%Context{}, next, %{}) :: [any()]
   @callback formula_inline(%Context{}, next, %{}) :: [any()]
 
@@ -351,6 +353,9 @@ defmodule Oli.Rendering.Content do
 
       "pronunciation" ->
         writer.pronunciation(context, next, element)
+
+      "foreign" ->
+        writer.foreign(context, next, element)
 
       _ ->
         {error_id, error_msg} = log_error("Content element type is not supported", element)

@@ -162,6 +162,14 @@ export const schema: Schema = {
     isTopLevel: true,
     validChildren: toObj(SemanticChildrenElements),
   },
+
+  foreign: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: toObj(['input_ref', 'img']),
+  },
+
   formula: {
     isVoid: true,
     isBlock: true,

@@ -30,7 +30,11 @@ import { Explanation } from '../common/explanation/ExplanationAuthoring';
 const store = configureStore();
 
 const MultipleChoice: React.FC = () => {
-  const { dispatch, model, editMode } = useAuthoringElementContext<MCSchema>();
+  const { dispatch, model, editMode, projectSlug } = useAuthoringElementContext<MCSchema>();
+  const writerContext = defaultWriterContext({
+    projectSlug: projectSlug,
+  });
+
   return (
     <>
       <TabbedNavigation.Tabs>
@@ -46,18 +50,21 @@ const MultipleChoice: React.FC = () => {
           />
         </TabbedNavigation.Tab>
         <TabbedNavigation.Tab label="Answer Key">
-          <StemDelivery stem={model.stem} context={defaultWriterContext()} />
+          <StemDelivery stem={model.stem} context={writerContext} />
 
           <ChoicesDelivery
             unselectedIcon={<Radio.Unchecked />}
             selectedIcon={<Radio.Checked />}
             choices={model.choices}
-            selected={[getCorrectChoice(model, model.authoring.parts[0].id).id]}
+            selected={getCorrectChoice(model, model.authoring.parts[0].id).caseOf({
+              just: (c) => [c.id],
+              nothing: () => [],
+            })}
             onSelect={(id) =>
               dispatch(Actions.toggleChoiceCorrectness(id, model.authoring.parts[0].id))
             }
             isEvaluated={false}
-            context={defaultWriterContext()}
+            context={writerContext}
           />
           <SimpleFeedback partId={model.authoring.parts[0].id} />
           <TargetedFeedback

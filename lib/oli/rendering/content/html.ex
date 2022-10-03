@@ -5,13 +5,14 @@ defmodule Oli.Rendering.Content.Html do
   Important: any changes to this file must be replicated in writers/html.ts for activity rendering.
   """
   import Oli.Utils
+  import Oli.Rendering.Utils
 
   alias Oli.Rendering.Context
   alias Phoenix.HTML
   alias Oli.Rendering.Content.MathMLSanitizer
   alias HtmlSanitizeEx.Scrubber
-  import Oli.Rendering.Utils
   alias Oli.Utils.Purposes
+  alias Oli.Rendering.Content.ResourceSummary
 
   @behaviour Oli.Rendering.Content
 
@@ -372,6 +373,18 @@ defmodule Oli.Rendering.Content.Html do
     ]
   end
 
+  def foreign(
+        %Oli.Rendering.Context{learning_language: learning_language},
+        next,
+        attrs
+      ) do
+    [
+      "<span class='foreign' lang='#{attrs["lang"] || learning_language}'>",
+      next.(),
+      "</span>"
+    ]
+  end
+
   def formula_class(false), do: "formula"
   def formula_class(true), do: "formula-inline"
 
@@ -543,24 +556,30 @@ defmodule Oli.Rendering.Content.Html do
           end
       end
 
-    target =
+    target_rel =
       case Keyword.get(opts, :target) do
         nil -> ""
-        target -> ~s| target="#{target}"|
+        target -> ~s| target="#{target}" rel="noreferrer"|
       end
 
-    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target}>|, next.(), "</a>\n"]
+    [~s|<a class="internal-link" href="#{escape_xml!(href)}"#{target_rel}>|, next.(), "</a>\n"]
   end
 
   defp external_link(%Context{} = _context, next, href) do
-    [~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank">|, next.(), "</a>\n"]
+    [
+      ~s|<a class="external-link" href="#{escape_xml!(href)}" target="_blank" rel="noreferrer">|,
+      next.(),
+      "</a>\n"
+    ]
   end
 
-  def page_link(%Context{} = context, _next, %{
-        "title" => title,
-        "ref" => ref,
+  def page_link(%Context{resource_summary_fn: resource_summary_fn} = context, _next, %{
+        "idref" => idref,
         "purpose" => purpose
       }) do
+    %ResourceSummary{title: title, slug: slug} = resource_summary_fn.(idref)
+    href = "/course/link/#{slug}"
+
     [
       ~s|<div class="content-page-link content-purpose #{purpose}"><div class="content-purpose-label">#{Purposes.label_for(purpose)}</div>|,
       internal_link(
@@ -575,7 +594,7 @@ defmodule Oli.Rendering.Content.Html do
             "</div>\n"
           ]
         end,
-        ref,
+        href,
         target: "_blank"
       ),
       "</div>"

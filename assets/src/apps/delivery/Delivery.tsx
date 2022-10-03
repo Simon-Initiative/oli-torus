@@ -16,6 +16,7 @@ import { loadInitialPageState } from './store/features/page/actions/loadInitialP
 export interface DeliveryProps {
   resourceId: number;
   sectionSlug: string;
+  projectSlug: string;
   userId: number;
   userName: string;
   pageTitle: string;

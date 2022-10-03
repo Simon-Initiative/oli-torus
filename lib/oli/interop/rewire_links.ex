@@ -20,7 +20,7 @@ defmodule Oli.Ingest.RewireLinks do
       end
     end
 
-    case rewire(revision.content, link_builder) do
+    case rewire(revision.content, link_builder, page_map) do
       {true, content} ->
         Oli.Resources.update_revision(revision, %{content: content})
 
@@ -29,8 +29,8 @@ defmodule Oli.Ingest.RewireLinks do
     end
   end
 
-  defp rewire(items, link_builder) when is_list(items) do
-    results = Enum.map(items, fn i -> rewire(i, link_builder) end)
+  defp rewire(items, link_builder, page_map) when is_list(items) do
+    results = Enum.map(items, fn i -> rewire(i, link_builder, page_map) end)
 
     children = Enum.map(results, fn {_, c} -> c end)
 
@@ -40,19 +40,23 @@ defmodule Oli.Ingest.RewireLinks do
     {changed, children}
   end
 
-  defp rewire(%{"type" => "a", "idref" => idref, "children" => children}, link_builder) do
+  defp rewire(%{"type" => "a", "idref" => idref, "children" => children}, link_builder, _page_map) do
     {true, %{"type" => "a", "children" => children, "href" => link_builder.(idref)}}
   end
 
-  defp rewire(%{"model" => model} = item, link_builder) do
-    case rewire(model, link_builder) do
+  defp rewire(%{"type" => "page_link", "idref" => idref} = other, _link_builder, page_map) do
+    {true, Map.put(other, "idref", Map.get(page_map, idref).resource_id)}
+  end
+
+  defp rewire(%{"model" => model} = item, link_builder, page_map) do
+    case rewire(model, link_builder, page_map) do
       {true, model} -> {true, Map.put(item, "model", model)}
       {false, _} -> {false, item}
     end
   end
 
-  defp rewire(%{"children" => children} = item, link_builder) do
-    results = Enum.map(children, fn i -> rewire(i, link_builder) end)
+  defp rewire(%{"children" => children} = item, link_builder, page_map) do
+    results = Enum.map(children, fn i -> rewire(i, link_builder, page_map) end)
 
     children = Enum.map(results, fn {_, c} -> c end)
 
@@ -62,7 +66,7 @@ defmodule Oli.Ingest.RewireLinks do
     {changed, Map.put(item, "children", children)}
   end
 
-  defp rewire(item, _) do
+  defp rewire(item, _, _) do
     {false, item}
   end
 end

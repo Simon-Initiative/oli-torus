@@ -19,6 +19,22 @@ import { insertDialog } from '../../../elements/dialog/dialogActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
 
+export const extendedBlockInsertActions = (onRequestMedia: any) => [
+  insertTable,
+  insertImage(onRequestMedia),
+  insertYoutube,
+  insertCodeblock,
+  insertVideo,
+  insertAudio(onRequestMedia),
+  insertWebpage,
+  insertFormula,
+  insertCallout,
+  insertDefinition,
+  insertFigure,
+  insertDialog,
+  insertConjugation,
+];
+
 export const allBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
   insertImage(onRequestMedia),
@@ -51,7 +67,7 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
   switch (type) {
     case 'inline':
       return [];
-    case 'small':
+    case 'limited':
       return [
         insertImage(onRequestMedia),
         ytCmdDesc,
@@ -60,6 +76,8 @@ export function blockInsertOptions(opts: Opts): CommandDescription[] {
         insertAudio(onRequestMedia),
         insertFormula,
       ];
+    case 'extended':
+      return extendedBlockInsertActions(onRequestMedia);
     case 'all':
     default:
       return allBlockInsertActions(onRequestMedia);
