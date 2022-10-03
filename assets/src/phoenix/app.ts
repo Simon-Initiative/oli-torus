@@ -70,7 +70,7 @@ $(() => {
 
   $('[data-toggle="popover"]').on('show.bs.popover', function () {
     const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute) {
+    if (audioAttribute && audioAttribute.value !== '') {
       const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
       audio.currentTime = 0;
       audio.play();
@@ -79,7 +79,7 @@ $(() => {
 
   $('[data-toggle="popover"]').on('hide.bs.popover', function () {
     const audioAttribute = this.attributes.getNamedItem('data-audio');
-    if (audioAttribute) {
+    if (audioAttribute && audioAttribute.value !== '') {
       ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0].pause();
     }
   });
