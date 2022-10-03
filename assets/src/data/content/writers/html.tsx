@@ -35,7 +35,7 @@ import {
   ModelElement,
   OrderedList,
   Paragraph,
-  Popup,
+  Popup as PopupModel,
   Table,
   TableData,
   TableHeader,
@@ -50,8 +50,6 @@ import {
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
-import { OverlayTrigger, Popover } from 'react-bootstrap';
-import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Text } from 'slate';
 import { assertNever, valueOr } from 'utils/common';
 import {
@@ -69,6 +67,7 @@ import { Figure as FigureElement } from '../../../components/common/Figure';
 import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
+import { Popup } from '../../../components/common/Popup';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -444,26 +443,11 @@ export class HtmlParser implements WriterImpl {
     }
   }
 
-  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: Popup) {
-    const trigger: OverlayTriggerType[] =
-      this.escapeXml(popup.trigger) === 'hover' ? ['hover', 'focus'] : ['focus'];
-
-    const popupContent = (
-      <Popover id={popup.id}>
-        <Popover.Content className="popup__content">{contentNext()}</Popover.Content>
-      </Popover>
-    );
-
+  popup(context: WriterContext, anchorNext: Next, contentNext: Next, popup: PopupModel) {
     return (
-      <OverlayTrigger trigger={trigger} placement="top" overlay={popupContent}>
-        <span
-          tabIndex={0}
-          role="button"
-          className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
-        >
-          {anchorNext()}
-        </span>
-      </OverlayTrigger>
+      <Popup popup={popup} popupContent={contentNext()}>
+        {anchorNext()}
+      </Popup>
     );
   }
 

@@ -970,6 +970,12 @@
         "trigger": {
           "enum": ["hover", "click", "focus"]
         },
+        "audioSrc": {
+          "type": "string"
+        },
+        "audioType": {
+          "type": "string"
+        },
         "content": {
           "$ref": "#/$defs/rich-text"
         },
