@@ -32,6 +32,9 @@ const mapStateToProps = (state: State, _ownProps: OwnProps): StateProps => {
   };
 };
 
+const w = window as any;
+w.init_count = w.init_count || 0;
+
 const mapDispatchToProps = (dispatch: Dispatch, _ownProps: OwnProps): DispatchProps => {
   window.oliDispatch = dispatch;
 

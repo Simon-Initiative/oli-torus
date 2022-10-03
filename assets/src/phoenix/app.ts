@@ -68,10 +68,27 @@ $(() => {
   ($('.ui.dropdown') as any).dropdown();
   ($('.ui.dropdown.item') as any).dropdown();
 
+  $('[data-toggle="popover"]').on('show.bs.popover', function () {
+    const audioAttribute = this.attributes.getNamedItem('data-audio');
+    if (audioAttribute) {
+      const audio = ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0];
+      audio.currentTime = 0;
+      audio.play();
+    }
+  });
+
+  $('[data-toggle="popover"]').on('hide.bs.popover', function () {
+    const audioAttribute = this.attributes.getNamedItem('data-audio');
+    if (audioAttribute) {
+      ($('#' + audioAttribute.value) as JQuery<HTMLAudioElement>)[0].pause();
+    }
+  });
+
   $('[data-toggle="popover"]').on('focus', (e) => {
     ($('[data-toggle="popover"]:not(.popup__click)') as any).popover('hide');
     ($(e.target) as any).popover('show');
   });
+
   $('[data-toggle="popover"]').on('blur', (e) => {
     if (!$(e.target).hasClass('popup__click')) {
       ($(e.target) as any).popover('hide');
