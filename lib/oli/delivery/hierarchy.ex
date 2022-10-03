@@ -181,6 +181,48 @@ defmodule Oli.Delivery.Hierarchy do
     end
   end
 
+  @doc """
+  Finds the parent node of the matching node in the hierarchy with the given uuid
+  or function `fn node -> true`.
+
+  Returns the first parent that contains the matching node.
+  """
+  def find_parent_in_hierarchy(
+        node,
+        uuid_or_find_by_fn,
+        parent \\ nil
+      )
+
+  def find_parent_in_hierarchy(
+        %HierarchyNode{uuid: uuid, children: children} = node,
+        uuid_to_find,
+        parent
+      )
+      when is_binary(uuid_to_find) do
+    if uuid == uuid_to_find do
+      parent
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_parent_in_hierarchy(child, uuid_to_find, node), else: acc
+      end)
+    end
+  end
+
+  def find_parent_in_hierarchy(
+        %HierarchyNode{children: children} = node,
+        find_by,
+        parent
+      )
+      when is_function(find_by) do
+    if find_by.(node) do
+      parent
+    else
+      Enum.reduce(children, nil, fn child, acc ->
+        if acc == nil, do: find_parent_in_hierarchy(child, find_by, node), else: acc
+      end)
+    end
+  end
+
   def reorder_children(
         container_node,
         source_node,

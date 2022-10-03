@@ -76,7 +76,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   Creates and adds a new page or container as a child of a container.
   """
   def add_new(
-        %Revision{} = container,
+        container,
         %{objectives: _, children: _, content: _, title: _} = attrs,
         %Author{} = author,
         %Project{} = project
@@ -102,7 +102,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     {status, _} = result
 
-    if status == :ok do
+    if status == :ok && container != nil do
       broadcast_update(container.resource_id, project.slug)
     end
 
@@ -111,11 +111,14 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   @doc """
   Moves a page or container into another container.
+
+  old_container and/or new_container can either be a %Revision{} or nil for
+  the case when a page is move to/from the curriculum.
   """
   def move_to(
         %Revision{} = revision,
-        %Revision{} = old_container,
-        %Revision{} = new_container,
+        old_container,
+        new_container,
         %Author{} = author,
         %Project{} = project
       ) do
@@ -132,8 +135,11 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     {status, _} = result
 
-    if status == :ok do
+    if status == :ok && old_container != nil do
       broadcast_update(old_container.resource_id, project.slug)
+    end
+
+    if status == :ok && new_container != nil do
       broadcast_update(new_container.resource_id, project.slug)
     end
 
@@ -347,6 +353,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   def deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
 
+  # if no container is specified then this is a no-op
+  defp remove_from_container(nil, _project_slug, _revision, _author), do: {:ok, nil}
+
   defp remove_from_container(container, project_slug, revision, author) do
     # Create a change that removes the child
     removal = %{
@@ -356,6 +365,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     ChangeTracker.track_revision(project_slug, container, removal)
   end
+
+  # if no container is specified then this is a no-op
+  defp append_to_container(nil, _project_slug, _revision_to_attach, _author), do: {:ok, nil}
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do
     append = %{

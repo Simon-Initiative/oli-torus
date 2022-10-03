@@ -313,12 +313,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, hide_modal(socket)}
   end
 
+  def handle_event("MoveModal.remove", %{"uuid" => uuid, "from_uuid" => from_uuid}, socket) do
+    %{
+      author: author,
+      project: project,
+      modal: %{assigns: %{hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    to_container = nil
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket)}
+  end
+
   def handle_event("MoveModal.cancel", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket)}
   end
 
   def handle_event("dismiss", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket)}
   end
 
   # handle change of selection
