@@ -119,7 +119,7 @@ const PreviewTools: React.FC<PreviewToolsProps> = ({ model }) => {
       applyState(targetVisitTimeStampOp, defaultGlobalEnv);
     }
 
-    dispatch(navigateToActivity({ sequenceId: activityId, shouldReturnNextSequenceId: false }));
+    dispatch(navigateToActivity(activityId));
   };
 
   // Toggle the menu open/closed

@@ -21,7 +21,11 @@ import {
   updateExtrinsicState,
   upsertActivityAttemptState,
 } from '../../attempt/slice';
-import { navigateToActivity, navigateToNextActivity } from '../../groups/actions/deck';
+import {
+  findNextSequenceId,
+  navigateToActivity,
+  navigateToNextActivity,
+} from '../../groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
@@ -385,12 +389,14 @@ export const triggerCheck = createAsyncThunk(
         if (navTarget !== expectedResumeActivityId) {
           switch (navTarget) {
             case 'next':
-              const { payload: nextActivityId } = await dispatch(navigateToNextActivity(true));
+              const { payload: nextActivityId } = await dispatch(
+                findNextSequenceId({ sequenceType: 'next', sequenceId: '-1' }),
+              );
               expectedResumeActivityId = nextActivityId;
               break;
             default:
               const { payload: expectedNextActivityId } = await dispatch(
-                navigateToActivity({ sequenceId: navTarget, shouldReturnNextSequenceId: true }),
+                findNextSequenceId({ sequenceType: 'navigateToActivity', sequenceId: navTarget }),
               );
               expectedResumeActivityId = expectedNextActivityId;
           }

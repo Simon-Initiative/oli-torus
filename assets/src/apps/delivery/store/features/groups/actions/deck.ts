@@ -270,33 +270,38 @@ const getSessionVisitHistory = async (
     }));
 };
 
-export const navigateToNextActivity = createAsyncThunk(
-  `${GroupsSlice}/deck/navigateToNextActivity`,
-  async (shouldReturnNextSequenceId: boolean, thunkApi) => {
-    //shouldReturnNextSequenceId should only be true when this is called from trigger Check
+export const findNextSequenceId = createAsyncThunk(
+  `${GroupsSlice}/deck/findNextSequenceId`,
+  async (payload: { sequenceType: string; sequenceId: string }, thunkApi) => {
+    const { sequenceId, sequenceType } = payload;
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
     const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
     const sequence = selectSequence(rootState);
-    const currentActivityId = selectCurrentActivityId(rootState);
-    const currentIndex = sequence.findIndex(
-      (entry) => entry.custom.sequenceId === currentActivityId,
-    );
     let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
     let navError = '';
-    if (currentIndex >= 0) {
-      const nextIndex = currentIndex + 1;
-      nextSequenceEntry = sequence[nextIndex];
+    console.log({ sequenceType, sequenceId });
 
-      const parentBank = getParentBank(sequence, currentIndex);
-      const visitHistory = await getSessionVisitHistory(
-        sectionSlug,
-        resourceAttemptGuid,
-        isPreviewMode,
-      );
-      if (parentBank) {
-        nextSequenceEntry = getNextQBEntry(sequence, parentBank, visitHistory);
+    const visitHistory = await getSessionVisitHistory(
+      sectionSlug,
+      resourceAttemptGuid,
+      isPreviewMode,
+    );
+
+    const currentActivityId = selectCurrentActivityId(rootState);
+    const currentIndex =
+      sequenceType === 'next'
+        ? sequence.findIndex((entry) => entry.custom.sequenceId === currentActivityId)
+        : sequence.findIndex((s) => s.custom?.sequenceId === sequenceId);
+    if (currentIndex >= 0) {
+      const nextIndex = sequenceType === 'next' ? currentIndex + 1 : currentIndex;
+      nextSequenceEntry = sequence[nextIndex];
+      if (sequenceType === 'next') {
+        const parentBank = getParentBank(sequence, currentIndex);
+        if (parentBank) {
+          nextSequenceEntry = getNextQBEntry(sequence, parentBank, visitHistory);
+        }
       }
       while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
         while (nextSequenceEntry && nextSequenceEntry?.custom?.isBank) {
@@ -326,15 +331,26 @@ export const navigateToNextActivity = createAsyncThunk(
         return;
       }
     } else {
-      navError = `Current Activity ${currentActivityId} not found in sequence`;
+      navError =
+        sequenceType === 'next'
+          ? `Current Activity ${currentActivityId} not found in sequence`
+          : `deck::navigateToActivity - Current Activity ${sequenceId} not found in sequence`;
     }
+
     if (navError) {
       throw new Error(navError);
     }
-    if (shouldReturnNextSequenceId) {
-      return nextSequenceEntry?.custom.sequenceId;
-    }
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
+    return nextSequenceEntry?.custom.sequenceId;
+  },
+);
+
+export const navigateToNextActivity = createAsyncThunk(
+  `${GroupsSlice}/deck/navigateToNextActivity`,
+  async (_, thunkApi) => {
+    const { payload: nextActivityId } = await thunkApi.dispatch(
+      findNextSequenceId({ sequenceType: 'next', sequenceId: '-1' }),
+    );
+    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
 );
 
@@ -399,63 +415,14 @@ export const navigateToLastActivity = createAsyncThunk(
 
 export const navigateToActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToActivity`,
-  async (payload: { sequenceId: string; shouldReturnNextSequenceId: boolean }, thunkApi) => {
-    //shouldReturnNextSequenceId should only be true when this is called from trigger Check
-    const { sequenceId, shouldReturnNextSequenceId } = payload;
-    const rootState = thunkApi.getState() as RootState;
-    const isPreviewMode = selectPreviewMode(rootState);
-    const sectionSlug = selectSectionSlug(rootState);
-    const resourceAttemptGuid = selectResourceAttemptGuid(rootState);
-    const sequence = selectSequence(rootState);
-    const desiredIndex = sequence.findIndex((s) => s.custom?.sequenceId === sequenceId);
-    let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
-    let navError = '';
-    const visitHistory = await getSessionVisitHistory(
-      sectionSlug,
-      resourceAttemptGuid,
-      isPreviewMode,
+  async (sequenceId: string, thunkApi) => {
+    console.log({ sequenceId });
+
+    const { payload: nextActivityId } = await thunkApi.dispatch(
+      findNextSequenceId({ sequenceType: 'navigateToActivity', sequenceId: sequenceId }),
     );
-    if (desiredIndex >= 0) {
-      nextSequenceEntry = sequence[desiredIndex];
-      while (nextSequenceEntry?.custom?.isBank || nextSequenceEntry?.custom?.isLayer) {
-        while (nextSequenceEntry && nextSequenceEntry?.custom?.isBank) {
-          // this runs when we're about to enter a QB for the first time
-          nextSequenceEntry = getNextQBEntry(
-            sequence,
-            nextSequenceEntry as SequenceEntry<SequenceBank>,
-            visitHistory,
-          );
-        }
-        while (nextSequenceEntry && nextSequenceEntry?.custom?.isLayer) {
-          // for layers if you try to navigate it should go to first child
-          const firstChild = sequence.find(
-            (entry) =>
-              entry.custom?.layerRef ===
-              (nextSequenceEntry as SequenceEntry<SequenceEntryType>).custom.sequenceId,
-          );
-
-          if (!firstChild) {
-            navError = 'Target Layer has no children!';
-          }
-          nextSequenceEntry = firstChild;
-        }
-      }
-      if (!nextSequenceEntry) {
-        // If is end of sequence, return and set isEnd to truthy
-        thunkApi.dispatch(setLessonEnd({ lessonEnded: true }));
-        return;
-      }
-    } else {
-      navError = `deck::navigateToActivity - Current Activity ${sequenceId} not found in sequence`;
-    }
-    if (navError) {
-      throw new Error(navError);
-    }
-    if (shouldReturnNextSequenceId) {
-      return nextSequenceEntry?.custom.sequenceId;
-    }
-
-    thunkApi.dispatch(setCurrentActivityId({ activityId: nextSequenceEntry?.custom.sequenceId }));
+    console.log({ nextActivityId });
+    thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
 );
 
