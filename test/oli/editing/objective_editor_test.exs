@@ -1,14 +1,27 @@
 defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
   use Oli.DataCase
 
-  alias Oli.Authoring.Editing.ObjectiveEditor
-  alias Oli.Authoring.Editing.PageEditor
-  alias Oli.Authoring.Editing.ActivityEditor
+  alias Oli.Authoring.Editing.{ActivityEditor, ObjectiveEditor, PageEditor}
   alias Oli.Publishing.AuthoringResolver
+  alias Oli.Resources.Revision
 
   describe "objective editing" do
     setup do
-      Seeder.base_project_with_resource2()
+      map =
+        Seeder.base_project_with_resource2()
+        |> Seeder.add_objective("sub objective 1", :subobjective12A)
+        |> Seeder.add_objective("sub objective 2", :subobjective2B)
+        |> Seeder.add_objective("sub objective 3", :subobjective3A)
+        |> Seeder.add_objective_with_children("objective 1",[:subobjective12A], :objective1)
+        |> Seeder.add_objective_with_children("objective 2", [:subobjective12A, :subobjective2B], :objective2)
+        |> Seeder.add_objective_with_children("objective 3", [:subobjective3A], :objective3)
+
+      %{
+        map: map,
+        author: map.author,
+        project: map.project,
+        revision1: map.revision1
+      }
     end
 
     test "delete/3 removes an objective", %{author: author, project: project} do
@@ -294,6 +307,46 @@ defmodule Oli.Authoring.Editing.ObjectiveEditorTest do
 
       updated_activity = AuthoringResolver.from_resource_id(project.slug, activity_id)
       refute updated_activity.objectives == %{"1" => []}
+    end
+
+    test "add_new_parent_for_sub_objective/4", %{
+      project: project,
+      author: author,
+      map: %{
+        objective1: %{revision: %Revision{slug: objective1_slug, children: objective1_children}},
+        subobjective3A: %{revision: %Revision{resource_id: subobjective3A_resource_id, slug: subobjective3A_slug}}
+      }
+    } do
+      assert length(objective1_children) == 1
+      refute Enum.member?(objective1_children, subobjective3A_resource_id)
+
+      {:ok, %Revision{slug: slug, children: children}} =
+        ObjectiveEditor.add_new_parent_for_sub_objective(subobjective3A_slug, objective1_slug, project.slug, author)
+
+      assert slug == objective1_slug
+      assert length(children) == 2
+      assert Enum.member?(children, subobjective3A_resource_id)
+    end
+
+    test "remove_sub_objective_from_parent/4", %{
+      project: project,
+      author: author,
+      map: %{
+        objective1: %{revision: %Revision{slug: objective1_slug, children: objective1_children} = objective1},
+        objective2: %{revision: %Revision{children: objective2_children}},
+        subobjective12A: %{revision: %Revision{resource_id: subobjective12A_resource_id, slug: subobjective12A_slug}}
+      }
+    } do
+      assert length(objective1_children) == 1
+      assert Enum.member?(objective1_children, subobjective12A_resource_id)
+
+      {:ok, %Revision{slug: slug, children: children}} =
+        ObjectiveEditor.remove_sub_objective_from_parent(subobjective12A_slug, author, project, objective1)
+
+      assert slug == objective1_slug
+      assert length(children) == 0
+      refute Enum.member?(children, subobjective12A_resource_id)
+      assert Enum.member?(objective2_children, subobjective12A_resource_id)
     end
   end
 end

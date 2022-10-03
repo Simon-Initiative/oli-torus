@@ -59,10 +59,13 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   def render(assigns) do
     margin_for_depth = (assigns.depth - 1) * 40
     parent_slug_value = if assigns.depth > 1, do: assigns.parent_slug_value, else: ""
+    id = if assigns.depth > 1,
+      do: "#{assigns.parent_slug_value}_#{assigns.objective_mapping.revision.slug}",
+      else: "#{assigns.objective_mapping.revision.slug}"
 
     ~L"""
 
-    <div id="<%= @objective_mapping.revision.slug %>" class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
+    <div id="<%= id %>" class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
       <div class="col-12">
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug and parent_slug_value == @parent_slug -> %>
