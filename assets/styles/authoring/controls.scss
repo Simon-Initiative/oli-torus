@@ -142,3 +142,29 @@
     bottom: 5px;
   }
 }
+
+.picker-panel {
+  padding: 1rem;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background-color: $body-bg;
+  right: 0px;
+  height: 0px;
+  overflow: hidden;
+  transition: height 0.4s ease-out;
+
+  &.open {
+    height: 690px;
+    z-index: 1000;
+  }
+}
+.picker-panel-shade {
+  position: absolute;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  top: 0px;
+  z-index: 900;
+  background-color: rgba(0, 0, 0, 0.25);
+}
