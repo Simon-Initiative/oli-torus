@@ -388,10 +388,7 @@ defmodule OliWeb.Resources.PagesView do
   def handle_event("create_page", _, socket) do
     %{
       project: project,
-      author: author,
-      table_model: table_model,
-      options: options,
-      offset: offset
+      author: author
     } = socket.assigns
 
     attrs = %{
@@ -410,40 +407,22 @@ defmodule OliWeb.Resources.PagesView do
       resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
     }
 
-    socket =
-      case ContainerEditor.add_new(
-             nil,
-             attrs,
-             author,
-             project
-           ) do
-        {:ok, _} ->
-          socket
+    case ContainerEditor.add_new(
+           nil,
+           attrs,
+           author,
+           project
+         ) do
+      {:ok, %Revision{slug: slug}} ->
+        # redirect to new page
+        {:noreply,
+         redirect(socket,
+           to: Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, slug)
+         )}
 
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not create new page")
-      end
-
-    # refresh view
-    pages =
-      PageBrowse.browse_pages(
-        project,
-        %Paging{offset: offset, limit: @limit},
-        %Sorting{direction: table_model.sort_order, field: table_model.sort_by_spec.name},
-        options
-      )
-
-    table_model = Map.put(table_model, :rows, pages)
-    total_count = determine_total(pages)
-
-    {:noreply,
-     assign(socket,
-       offset: offset,
-       table_model: table_model,
-       total_count: total_count,
-       options: options
-     )}
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not create new page")}
+    end
   end
 
   def handle_event("duplicate_page", %{"id" => page_id}, socket) do
