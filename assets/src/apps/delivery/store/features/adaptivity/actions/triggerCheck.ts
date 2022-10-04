@@ -389,14 +389,12 @@ export const triggerCheck = createAsyncThunk(
         if (navTarget !== expectedResumeActivityId) {
           switch (navTarget) {
             case 'next':
-              const { payload: nextActivityId } = await dispatch(
-                findNextSequenceId({ sequenceType: 'next', sequenceId: '-1' }),
-              );
+              const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
               expectedResumeActivityId = nextActivityId;
               break;
             default:
               const { payload: expectedNextActivityId } = await dispatch(
-                findNextSequenceId({ sequenceType: 'navigateToActivity', sequenceId: navTarget }),
+                findNextSequenceId(navTarget),
               );
               expectedResumeActivityId = expectedNextActivityId;
           }

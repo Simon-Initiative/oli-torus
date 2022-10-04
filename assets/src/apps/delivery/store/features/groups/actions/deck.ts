@@ -272,8 +272,7 @@ const getSessionVisitHistory = async (
 
 export const findNextSequenceId = createAsyncThunk(
   `${GroupsSlice}/deck/findNextSequenceId`,
-  async (payload: { sequenceType: string; sequenceId: string }, thunkApi) => {
-    const { sequenceId, sequenceType } = payload;
+  async (sequenceId: string, thunkApi) => {
     const rootState = thunkApi.getState() as RootState;
     const isPreviewMode = selectPreviewMode(rootState);
     const sectionSlug = selectSectionSlug(rootState);
@@ -281,7 +280,6 @@ export const findNextSequenceId = createAsyncThunk(
     const sequence = selectSequence(rootState);
     let nextSequenceEntry: SequenceEntry<SequenceEntryType> | null = null;
     let navError = '';
-    console.log({ sequenceType, sequenceId });
 
     const visitHistory = await getSessionVisitHistory(
       sectionSlug,
@@ -291,13 +289,13 @@ export const findNextSequenceId = createAsyncThunk(
 
     const currentActivityId = selectCurrentActivityId(rootState);
     const currentIndex =
-      sequenceType === 'next'
+      sequenceId === 'next'
         ? sequence.findIndex((entry) => entry.custom.sequenceId === currentActivityId)
         : sequence.findIndex((s) => s.custom?.sequenceId === sequenceId);
     if (currentIndex >= 0) {
-      const nextIndex = sequenceType === 'next' ? currentIndex + 1 : currentIndex;
+      const nextIndex = sequenceId === 'next' ? currentIndex + 1 : currentIndex;
       nextSequenceEntry = sequence[nextIndex];
-      if (sequenceType === 'next') {
+      if (sequenceId === 'next') {
         const parentBank = getParentBank(sequence, currentIndex);
         if (parentBank) {
           nextSequenceEntry = getNextQBEntry(sequence, parentBank, visitHistory);
@@ -332,7 +330,7 @@ export const findNextSequenceId = createAsyncThunk(
       }
     } else {
       navError =
-        sequenceType === 'next'
+        sequenceId === 'next'
           ? `Current Activity ${currentActivityId} not found in sequence`
           : `deck::navigateToActivity - Current Activity ${sequenceId} not found in sequence`;
     }
@@ -347,9 +345,7 @@ export const findNextSequenceId = createAsyncThunk(
 export const navigateToNextActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToNextActivity`,
   async (_, thunkApi) => {
-    const { payload: nextActivityId } = await thunkApi.dispatch(
-      findNextSequenceId({ sequenceType: 'next', sequenceId: '-1' }),
-    );
+    const { payload: nextActivityId } = await thunkApi.dispatch(findNextSequenceId('next'));
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
 );
@@ -405,10 +401,7 @@ export const navigateToFirstActivity = createAsyncThunk(
 export const navigateToLastActivity = createAsyncThunk(
   `${GroupsSlice}/deck/navigateToLastActivity`,
   async (_, thunkApi) => {
-    const rootState = thunkApi.getState() as RootState;
-    const sequence = selectSequence(rootState);
     const nextActivityId = 1;
-
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
 );
@@ -418,10 +411,7 @@ export const navigateToActivity = createAsyncThunk(
   async (sequenceId: string, thunkApi) => {
     console.log({ sequenceId });
 
-    const { payload: nextActivityId } = await thunkApi.dispatch(
-      findNextSequenceId({ sequenceType: 'navigateToActivity', sequenceId: sequenceId }),
-    );
-    console.log({ nextActivityId });
+    const { payload: nextActivityId } = await thunkApi.dispatch(findNextSequenceId(sequenceId));
     thunkApi.dispatch(setCurrentActivityId({ activityId: nextActivityId }));
   },
 );
