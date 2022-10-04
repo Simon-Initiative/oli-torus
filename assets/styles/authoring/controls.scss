@@ -116,7 +116,29 @@
   flex-direction: row;
   gap: 8px;
   align-items: center;
-  button {
+
+  button.tool-button {
     padding: 2px 0px 0px 0px;
+  }
+
+  .audio-clip-browser {
+    flex-grow: 1;
+  }
+}
+
+.audio-clip-browser-modal {
+  position: absolute;
+  min-height: 618px;
+  background-color: $body-bg;
+  left: 0px;
+  top: 0px;
+  right: 0px;
+  .audio-clip-footer {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
   }
 }

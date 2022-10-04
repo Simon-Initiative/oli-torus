@@ -12,6 +12,9 @@ interface Props {
 }
 
 // Sub-component used in other editors to select & preview an audio clip.
+// This will open a modal to choose an audio clip, bootstrap does not support
+// multiple modals open at once, so if you're already in a modal please use
+// InlineAudioClipPicker instead.
 export const AudioClipPicker: React.FC<Props> = ({
   clipSrc,
   onChange,
@@ -39,7 +42,7 @@ export const AudioClipPicker: React.FC<Props> = ({
       <button
         onClick={onChangeAudio}
         type="button"
-        className="btn btn-sm btn-outline-secondary btn-pronunciation-audio"
+        className="btn btn-sm btn-outline-secondary btn-pronunciation-audio tool-button"
         data-toggle="tooltip"
         data-placement="top"
         title="Browse for audio"
@@ -52,7 +55,7 @@ export const AudioClipPicker: React.FC<Props> = ({
           <button
             type="button"
             onClick={playAudio}
-            className="btn btn-sm btn-outline-success btn-pronunciation-audio "
+            className="btn btn-sm btn-outline-success btn-pronunciation-audio tool-button"
             data-toggle="tooltip"
             data-placement="top"
             title="Preview audio file"
@@ -62,7 +65,7 @@ export const AudioClipPicker: React.FC<Props> = ({
           <button
             type="button"
             onClick={onRemoveAudio}
-            className="btn btn-sm btn-outline-danger btn-pronunciation-audio "
+            className="btn btn-sm btn-outline-danger btn-pronunciation-audio tool-button"
             data-toggle="tooltip"
             data-placement="top"
             title="Remove audio file"

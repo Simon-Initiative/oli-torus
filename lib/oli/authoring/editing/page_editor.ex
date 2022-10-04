@@ -25,7 +25,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
   alias Oli.Activities
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Resources.ContentMigrator
-  alias Oli.Utils.SchemaResolver
   alias Oli.Features
 
   @doc """
@@ -63,8 +62,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
            {:ok, resource} <- Resources.get_resource_from_slug(revision_slug) |> trap_nil(),
-           {:ok, converted_update} <- convert_to_activity_ids(update),
-           :ok <- validate_page_content_json(converted_update) do
+           {:ok, converted_update} <- convert_to_activity_ids(update) do
         Repo.transaction(fn ->
           case Locks.update(project.slug, publication.id, resource.id, author.id) do
             # If we acquired or updated the lock, we can proceed
@@ -111,35 +109,6 @@ defmodule Oli.Authoring.Editing.PageEditor do
 
     previous
   end
-
-  defp validate_page_content_json(page) do
-    case page_content(page) do
-      nil ->
-        :ok
-
-      json ->
-        schema = SchemaResolver.resolve("page-content.schema.json")
-
-        case ExJsonSchema.Validator.validate(schema, json) do
-          :ok ->
-            :ok
-
-          {:error, errors} ->
-            error_details = [
-              schema: "page-content.schema.json",
-              page: page,
-              errors: errors
-            ]
-
-            Logger.error("Page content JSON invalid #{Kernel.inspect(error_details)}")
-            {:error, errors}
-        end
-    end
-  end
-
-  defp page_content(%{"content" => content}), do: content
-  defp page_content(%{content: content}), do: content
-  defp page_content(_), do: nil
 
   @doc """
   Attempts to lock a resource for editing.
