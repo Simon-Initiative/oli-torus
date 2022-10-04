@@ -11,6 +11,11 @@
     z-index: authoring.$z-content-3;
     box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
     -webkit-box-shadow: 6px 6px 24px -12px rgba(0, 0, 0, 0.45);
+
+    &.fixedToolbar {
+      border-radius: 0px;
+      margin-bottom: 2rem;
+    }
   }
 
   .toolbarGroup {

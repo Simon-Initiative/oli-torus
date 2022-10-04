@@ -19,6 +19,7 @@ interface Props {
   id?: string;
   allowBlockElements?: boolean;
   editorOverride?: SlateEditor;
+  fixedToolbar?: boolean;
 }
 
 export const InlineEditor: React.FC<Props> = ({
@@ -31,6 +32,7 @@ export const InlineEditor: React.FC<Props> = ({
   allowBlockElements = false,
   onRequestMedia,
   editorOverride = undefined,
+  fixedToolbar = false,
 }) => {
   const editor = useSlate();
   const editMode = getEditMode(editor);
@@ -45,6 +47,7 @@ export const InlineEditor: React.FC<Props> = ({
         value={content}
         onEdit={onEdit}
         editorOverride={editorOverride}
+        fixedToolbar={fixedToolbar}
         toolbarInsertDescs={blockInsertOptions({
           type: allowBlockElements ? 'limited' : 'inline',
           onRequestMedia: onRequestMedia,
