@@ -177,7 +177,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   def tc(%Context{} = _context, next, attrs) do
-    [click_class, audio_element, play_code] =
+    [click_class, audio_element, play_code, _] =
       case attrs["audioSrc"] do
         nil -> ["", "", ""]
         src -> ["clickable" | audio_player(src)]
@@ -308,11 +308,13 @@ defmodule Oli.Rendering.Content.Html do
     ["<span class='translation'>", next.(), " </span>\n"]
   end
 
+  defp audio_player(nil), do: ["", "", ""]
+
   defp audio_player(src) do
     audio_id = UUID.uuid4()
     play_code = "document.getElementById(\"#{audio_id}\").play();"
     audio_element = "<audio id='#{audio_id}' src='#{escape_xml!(src)}' preload='auto'></audio>"
-    [audio_element, play_code]
+    [audio_element, play_code, audio_id]
   end
 
   def pronunciation(%Context{} = _context, next, element) do
@@ -321,7 +323,7 @@ defmodule Oli.Rendering.Content.Html do
         ["<span class='pronunciation'>", next.(), "</span>\n"]
 
       src ->
-        [audio_element, play_code] = audio_player(src)
+        [audio_element, play_code, _] = audio_player(src)
 
         [
           "<span class='pronunciation'>",
@@ -614,13 +616,15 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content}) do
+  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content} = element) do
     trigger =
       if escape_xml!(trigger) == "hover" do
         "hover focus"
       else
         "manual"
       end
+
+    [audio_element, _play_code, audio_id] = audio_player(element["audioSrc"])
 
     [
       ~s"""
@@ -636,6 +640,7 @@ defmodule Oli.Rendering.Content.Html do
         data-toggle="popover"
         data-placement="top"
         data-html="true"
+        data-audio="#{audio_id}"
         data-template='
           <div class="popover popup__content" role="tooltip">
             <div class="arrow"></div>
@@ -644,6 +649,7 @@ defmodule Oli.Rendering.Content.Html do
           </div>'
         data-content="#{escape_xml!(parse_html_content(content, context))}">
         #{next.()}
+        #{audio_element}
       </span>\n
       """
     ]

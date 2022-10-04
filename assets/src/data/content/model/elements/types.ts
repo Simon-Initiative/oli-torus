@@ -349,6 +349,8 @@ export interface InputRef extends SlateElement<Text[]> {
 export interface Popup extends SlateElement<Text[]> {
   type: 'popup';
   trigger: any;
+  audioSrc?: string;
+  audioType?: string;
   content: RichText;
 }
 

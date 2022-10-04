@@ -24,7 +24,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Authoring.Broadcaster
   alias Oli.Resources.ContentMigrator
-  alias Oli.Utils.SchemaResolver
 
   @doc """
   Retrieves a list of activity resources.
@@ -345,7 +344,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
     result =
       with {:ok, {author, project, _publication}} <-
              authorize_edit(project_slug, author_email, update),
-           :ok <- validate_activity_content_json(update),
            {:ok, activity} <- Resources.get_resource(activity_id) |> trap_nil(),
            {:ok, publication} <-
              Publishing.project_working_publication(project_slug) |> trap_nil(),
@@ -395,35 +393,6 @@ defmodule Oli.Authoring.Editing.ActivityEditor do
 
     previous
   end
-
-  defp validate_activity_content_json(activity) do
-    case activity_content(activity) do
-      nil ->
-        :ok
-
-      json ->
-        schema = SchemaResolver.resolve("activity-content.schema.json")
-
-        case ExJsonSchema.Validator.validate(schema, json) do
-          :ok ->
-            :ok
-
-          {:error, errors} ->
-            error_details = [
-              schema: "activity-content.schema.json",
-              activity: activity,
-              errors: errors
-            ]
-
-            Logger.error("Activity content JSON invalid #{Kernel.inspect(error_details)}")
-            {:error, errors}
-        end
-    end
-  end
-
-  defp activity_content(%{"content" => content}), do: content
-  defp activity_content(%{content: content}), do: content
-  defp activity_content(_), do: nil
 
   # if objectives to attach are provided, attach them to all parts
   defp attach_objectives(model, objectives_to_attach, raw_objectives) when raw_objectives == %{},

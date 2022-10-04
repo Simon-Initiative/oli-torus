@@ -17,6 +17,7 @@ export interface ModalProps {
   okClassName?: string;
   cancelLabel?: string;
   disableOk?: boolean;
+  backdrop?: string;
   hideDialogCloseButton?: boolean;
   title: string;
   hideOkButton?: boolean;
@@ -64,7 +65,7 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
   };
 
   return (
-    <div ref={modal} data-backdrop="true" className="modal">
+    <div ref={modal} data-backdrop={props.backdrop} className="modal">
       <div className={`modal-dialog modal-dialog-centered modal-${size}`} role="document">
         <div className="modal-content">
           <div className="modal-header">
@@ -108,4 +109,8 @@ export const Modal = (props: PropsWithChildren<ModalProps>) => {
       </div>
     </div>
   );
+};
+
+Modal.defaultProps = {
+  backdrop: 'true',
 };
