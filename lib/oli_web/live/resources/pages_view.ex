@@ -176,7 +176,18 @@ defmodule OliWeb.Resources.PagesView do
 
       <div class="my-3 d-flex flex-row">
         <div class="flex-grow-1" />
-        <button class="btn btn-primary" :on-click="create_page">Create Page</button>
+          <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Create
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
+              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
+              {#if Oli.Features.enabled?("adaptivity")}
+                <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
+              {/if}
+            </div>
+          </div>
       </div>
 
       <PagedTable
@@ -385,31 +396,15 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
-  def handle_event("create_page", _, socket) do
+  def handle_event("create_page", %{"type" => type}, socket) do
     %{
       project: project,
       author: author
     } = socket.assigns
 
-    attrs = %{
-      tags: [],
-      objectives: %{"attached" => []},
-      children: [],
-      content: %{
-        "version" => "0.1.0",
-        "model" => []
-      },
-      title: "New Page",
-      graded: false,
-      max_attempts: 0,
-      recommended_attempts: 0,
-      scoring_strategy_id: Oli.Resources.ScoringStrategy.get_id_by_type("best"),
-      resource_type_id: Oli.Resources.ResourceType.get_id_by_type("page")
-    }
-
     case ContainerEditor.add_new(
            nil,
-           attrs,
+           type,
            author,
            project
          ) do
