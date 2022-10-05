@@ -58,9 +58,11 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
       nothing: () => <div></div>,
     });
 
-    const { title } = maybe<Persistence.Page>(
+    const { title, slug } = maybe<Persistence.Page>(
       pages.find((p) => p.id === model?.idref) as Persistence.Page,
     ).valueOrThrow();
+
+    const authoringHref = `/authoring/project/${commandContext.projectSlug}/resource/${slug}`;
 
     return (
       <div
@@ -92,6 +94,9 @@ export const PageLinkEditor = ({ model, commandContext, attributes, children }: 
             <button className="btn btn-primary" onClick={showModal}>
               Select Page
             </button>
+            <a href={authoringHref} className="ml-3 my-1">
+              <i className="las la-external-link-square-alt la-2x"></i>
+            </a>
           </div>
         </div>
       </div>
