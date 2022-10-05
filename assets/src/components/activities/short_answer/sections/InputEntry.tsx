@@ -24,11 +24,6 @@ interface SingleState {
   input: string;
 }
 
-interface RangeState {
-  operator: RuleOperator;
-  input: [string, string];
-}
-
 export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }) => {
   const [{ operator, input }, setState] = useState({
     input: parseInputFromRule(response.rule),

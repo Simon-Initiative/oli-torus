@@ -45,8 +45,8 @@ export function isOperator(s: string): s is RuleOperator {
   ].includes(s);
 }
 
-export const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
-export const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
+const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
 
 export const unescapeSingleOrMultipleInputs = (
   s: string | [string, string],
@@ -54,17 +54,17 @@ export const unescapeSingleOrMultipleInputs = (
   typeof s === 'string' ? unescapeInput(s) : [unescapeInput(s[0]), unescapeInput(s[1])];
 
 // text
-export const equalsRule = (input: string) => `input equals {${input}}`;
-export const matchRule = (input: string) => `input like {${input}}`;
-export const containsRule = (input: string) => `input contains {${input}}`;
+export const equalsRule = (input: string) => `input equals {${escapeInput(input)}}`;
+export const matchRule = (input: string) => `input like {${escapeInput(input)}}`;
+export const containsRule = (input: string) => `input contains {${escapeInput(input)}}`;
 export const notContainsRule = (input: string) => invertRule(containsRule(input));
 
 // numeric
-export const eqRule = (input: string) => `input = {${input}}`;
+export const eqRule = (input: string) => `input = {${escapeInput(input)}}`;
 export const neqRule = (input: string) => invertRule(eqRule(input));
-export const ltRule = (input: string) => `input < {${input}}`;
+export const ltRule = (input: string) => `input < {${escapeInput(input)}}`;
 export const lteRule = (input: string) => orRules(ltRule(input), eqRule(input));
-export const gtRule = (input: string) => `input > {${input}}`;
+export const gtRule = (input: string) => `input > {${escapeInput(input)}}`;
 export const gteRule = (input: string) => orRules(gtRule(input), eqRule(input));
 
 const makeBtwRule = (lesser: string, greater: string) =>
@@ -122,7 +122,7 @@ export const makeRule = (operator: RuleOperator, input: string | [string, string
 const matchBetweenRule = (rule: string) => rule.match(/= {(\d+)}.* = {(\d+)}/);
 export const parseInputFromRule = (rule: string) =>
   Maybe.maybe(matchBetweenRule(rule)).caseOf<string | [string, string]>({
-    just: (betweenMatch) => [betweenMatch[1], betweenMatch[2]],
+    just: (betweenMatch) => [unescapeInput(betweenMatch[1]), unescapeInput(betweenMatch[2])],
     nothing: () => parseSingleInput(rule),
   });
 

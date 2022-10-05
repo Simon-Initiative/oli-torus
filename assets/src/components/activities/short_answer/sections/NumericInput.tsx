@@ -1,6 +1,7 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import React from 'react';
-import { escapeInput, isOperator, RuleOperator, unescapeInput } from 'data/activities/model/rules';
+import React, { useState } from 'react';
+import { isOperator, RuleOperator } from 'data/activities/model/rules';
+import guid from 'utils/guid';
 
 interface SimpleNumericInputState {
   operator: RuleOperator;
@@ -14,15 +15,17 @@ interface SimpleNumericInputProps extends InputProps {
 const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
 
+  const [value, _] = parseValueAndPrecision(state.input);
+
   return (
     <input
       disabled={!editMode}
       type="number"
       className="form-control"
       onChange={(e) => {
-        setState({ input: escapeInput(e.target.value), operator: state.operator });
+        setState({ input: e.target.value, operator: state.operator });
       }}
-      value={unescapeInput(state.input)}
+      value={value}
     />
   );
 };
@@ -46,10 +49,10 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }
         type="number"
         className="form-control"
         onChange={(e) => {
-          const newValue = [escapeInput(e.target.value), state.input[1]] as [string, string];
+          const newValue = [e.target.value, state.input[1]] as [string, string];
           setState({ input: newValue, operator: state.operator });
         }}
-        value={unescapeInput(state.input[0])}
+        value={state.input[0]}
       />
       <div className="mx-1">and</div>
       <input
@@ -58,10 +61,10 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }
         type="number"
         className="form-control"
         onChange={(e) => {
-          const newValue = [state.input[0], escapeInput(e.target.value)] as [string, string];
+          const newValue = [state.input[0], e.target.value] as [string, string];
           setState({ input: newValue, operator: state.operator });
         }}
-        value={unescapeInput(state.input[1])}
+        value={state.input[1]}
       />
     </div>
   );
@@ -76,47 +79,184 @@ interface InputProps {
   setState: (s: State) => void;
   state: State;
 }
+
+export enum PrecisionKind {
+  None,
+  Invalid,
+  WithPrecision,
+}
+
+export interface NoPrecision {
+  kind: PrecisionKind.None;
+}
+
+export interface InvalidPrecision {
+  kind: PrecisionKind.Invalid;
+  value: string;
+}
+
+export interface WithPrecision {
+  kind: PrecisionKind.WithPrecision;
+  value: string;
+}
+
+export type Precision = NoPrecision | InvalidPrecision | WithPrecision;
+
 const isRangeOperator = (op: RuleOperator) => op === 'btw' || op === 'nbtw';
+
+export const validatePrecision = (value: string): Precision =>
+  value.length > 0 && Number.isInteger(parseInt(value)) && parseInt(value) > 0
+    ? { kind: PrecisionKind.WithPrecision, value }
+    : { kind: PrecisionKind.Invalid, value };
+
+const parseValueAndPrecision = (
+  input: string | [string, string],
+): [string | [string, string], Precision] => {
+  if (Array.isArray(input)) return [input, { kind: PrecisionKind.None }];
+
+  const [v, p] = input.split('#');
+
+  switch (true) {
+    case p && p.length > 0:
+      return [v, { kind: PrecisionKind.WithPrecision, value: p }];
+    default:
+      return [v, { kind: PrecisionKind.None }];
+  }
+};
+
+const precisionInt = (precision: Precision) => {
+  switch (precision.kind) {
+    case PrecisionKind.WithPrecision:
+    case PrecisionKind.Invalid:
+      return parseInt(precision.value);
+    default:
+      return undefined;
+  }
+};
+
+const composeInput = (
+  value: string | [string, string],
+  precision: Precision,
+): string | [string, string] => {
+  if (Array.isArray(value)) return value;
+
+  switch (precision.kind) {
+    case PrecisionKind.WithPrecision:
+      return `${value}#${precision.value}`;
+    default:
+      return value;
+  }
+};
 
 export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
   const { editMode } = useAuthoringElementContext();
+  const [inputValue, p]: [string | [string, string], Precision] = parseValueAndPrecision(
+    state.input,
+  );
+  const [precision, setPrecision] = useState(p);
+  const precisionEdit = precision.kind !== PrecisionKind.None;
+
+  const onTogglePrecision = () => {
+    if (precisionEdit) {
+      setPrecision({ kind: PrecisionKind.None });
+    } else {
+      const DEFAULT_PRECISION = '3';
+      const p = { kind: PrecisionKind.WithPrecision, value: DEFAULT_PRECISION };
+      setPrecision(p);
+      setState({ ...state, input: composeInput(inputValue, p) });
+    }
+  };
+
+  const onEditPrecision: React.ChangeEventHandler<HTMLInputElement> = ({ target: { value } }) => {
+    const p = validatePrecision(value);
+    setPrecision(p);
+
+    if (p.kind !== PrecisionKind.Invalid) {
+      setState({ ...state, input: composeInput(inputValue, p) });
+    }
+  };
+
+  const precisionCheckboxId = `checkbox-${guid()}`;
 
   return (
-    <div className="d-flex flex-column flex-md-row mb-2">
-      <select
-        disabled={!editMode}
-        className="form-control mr-1"
-        value={state.operator}
-        onChange={(e) => {
-          const nextOp = e.target.value;
-          if (!isOperator(nextOp)) {
-            return;
-          }
+    <div className="mb-2">
+      <div className="d-flex flex-row">
+        <select
+          disabled={!editMode}
+          className="form-control mr-1"
+          value={state.operator}
+          onChange={(e) => {
+            const nextOp = e.target.value;
+            if (!isOperator(nextOp)) {
+              return;
+            }
 
-          let nextValue;
-          if (isRangeOperator(nextOp) && !isRangeOperator(state.operator)) {
-            nextValue = [state.input, state.input] as [string, string];
-          } else if (isRangeOperator(state.operator) && !isRangeOperator(nextOp)) {
-            nextValue = state.input[0];
-          } else {
-            nextValue = state.input;
-          }
+            let nextValue;
+            if (isRangeOperator(nextOp) && !isRangeOperator(state.operator)) {
+              nextValue = [state.input, state.input] as [string, string];
+            } else if (isRangeOperator(state.operator) && !isRangeOperator(nextOp)) {
+              nextValue = state.input[0];
+            } else {
+              nextValue = state.input;
+            }
 
-          setState({ operator: nextOp, input: nextValue });
-        }}
-        name="question-type"
-      >
-        {numericOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.displayValue}
-          </option>
-        ))}
-      </select>
-      {isRangeOperator(state.operator) ? (
-        <RangeNumericInput state={state as RangeNumericInputState} setState={setState} />
-      ) : (
-        <SimpleNumericInput state={state as SimpleNumericInputState} setState={setState} />
-      )}
+            setState({ operator: nextOp, input: composeInput(nextValue, precision) });
+          }}
+          name="question-type"
+        >
+          {numericOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.displayValue}
+            </option>
+          ))}
+        </select>
+        {isRangeOperator(state.operator) ? (
+          <RangeNumericInput state={state as RangeNumericInputState} setState={setState} />
+        ) : (
+          <div>
+            <SimpleNumericInput state={state as SimpleNumericInputState} setState={setState} />
+
+            <div className="d-flex flex-column">
+              <div className="d-flex flex-row my-3">
+                <div className="flex-grow-1"></div>
+                <div className="d-flex flex-row align-items-center">
+                  <div className="custom-control custom-switch mr-2">
+                    <input
+                      type="checkbox"
+                      className="custom-control-input"
+                      id={precisionCheckboxId}
+                      checked={precisionEdit}
+                      onChange={onTogglePrecision}
+                    />
+                    <label className="custom-control-label" htmlFor={precisionCheckboxId}>
+                      Precision
+                    </label>
+                  </div>
+                  <input
+                    type="number"
+                    className="form-control"
+                    style={{ width: 200 }}
+                    disabled={!precisionEdit}
+                    value={precisionInt(precision)}
+                    onChange={onEditPrecision}
+                    aria-label="Precision"
+                  />
+                </div>
+              </div>
+              <div className="d-flex flex-row">
+                <div className="flex-grow-1"></div>
+                {precision.kind === PrecisionKind.Invalid && (
+                  <div>
+                    <small className="text-warning">
+                      Precision must be a number greater than zero
+                    </small>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
