@@ -190,7 +190,11 @@ function renderRawContent(id: string, props: DragCanvasProps) {
   shadowRoot.querySelectorAll('.target').forEach((element: any) => {
     const partId = element.getAttribute('input_ref');
     if (props.initialState[partId] !== undefined) {
-      const droppable = getDroppable(shadowRoot, props.initialState[partId]);
+      const state = props.initialState[partId];
+      const adjustedState = state.startsWith(partId + '_')
+        ? state.substring(partId.length + 1)
+        : state;
+      const droppable = getDroppable(shadowRoot, adjustedState);
 
       element.appendChild(droppable);
       if (firstRestoredPart === null) {
