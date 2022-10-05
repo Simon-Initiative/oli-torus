@@ -1,8 +1,9 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import React, { useState } from 'react';
+import React, { createRef, useRef, useState } from 'react';
 import { isOperator, RuleOperator } from 'data/activities/model/rules';
 import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
+import { disableScrollWheelChange } from '../utils';
 
 interface SimpleNumericInputState {
   operator: RuleOperator;
@@ -42,6 +43,7 @@ interface RangeNumericInputProps extends InputProps {
 
 const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }) => {
   const { editMode } = useAuthoringElementContext();
+  const numericInputRef = createRef<HTMLInputElement>();
 
   return (
     <div className="d-flex flex-column d-md-flex flex-md-row align-items-center">
@@ -57,6 +59,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }
       />
       <div className="mx-1">and</div>
       <input
+        ref={numericInputRef}
         placeholder="Correct answer"
         disabled={!editMode}
         type="number"
@@ -66,6 +69,7 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ state, setState }
           setState({ input: newValue, operator: state.operator });
         }}
         value={state.input[1]}
+        onWheel={disableScrollWheelChange(numericInputRef)}
       />
     </div>
   );
@@ -153,6 +157,7 @@ const composeInput = (
 
 export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
   const { editMode } = useAuthoringElementContext();
+  const numericInputRef = createRef<HTMLInputElement>();
   const [inputValue, p]: [string | [string, string], Precision] = parseValueAndPrecision(
     state.input,
   );
@@ -237,6 +242,7 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
                     </label>
                   </div>
                   <input
+                    ref={numericInputRef}
                     type="number"
                     className={classNames('form-control', precisionInvalid && 'is-invalid')}
                     style={{ width: 200 }}
@@ -244,6 +250,7 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
                     value={precisionInputValue(precision)}
                     onChange={onEditPrecision}
                     aria-label="Precision"
+                    onWheel={disableScrollWheelChange(numericInputRef)}
                   />
                 </div>
               </div>
