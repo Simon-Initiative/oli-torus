@@ -101,4 +101,49 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     {:error, _} = eval("input < {3}", "cat")
     {:error, _} = eval("input = {apple}", "apple")
   end
+
+  test "evaluating float and integer precision" do
+    # precision specified, should evaluate matching precision to true
+    assert eval("attemptNumber = {1} && input = {3.1#2}", "3.1")
+
+    # no precision specified, should evaluate extra precision to true
+    assert eval("attemptNumber = {1} && input = {3.1}", "3.10")
+
+    # precision specified, should evaluate extra precision to false
+    refute eval("attemptNumber = {1} && input = {3.1#2}", "3.10")
+
+    assert eval("attemptNumber = {1} && input = {0.001#4}", "0.001")
+    assert eval("attemptNumber = {1} && input = {3.100#4}", "3.100")
+
+    # eval returns false, although the precision is correct the value is wrong
+    refute eval("attemptNumber = {1} && input = {3.268#2}", "3.2")
+    refute eval("attemptNumber = {1} && input = {3.268#2}", "3.26")
+
+    # eval returns false, although the value is correct, precision is wrong
+    refute eval("attemptNumber = {1} && input = {3.268#2}", "3.268")
+
+    # rule eval doesn't do any rounding, so these will return false
+    refute eval("attemptNumber = {1} && input = {3.5#1}", "4")
+    refute eval("attemptNumber = {1} && input = {3.25#2}", "3.3")
+
+    # even though the value specified is more precise, the value and expected precision match
+    assert eval("attemptNumber = {1} && input = {3.100#2}", "3.1")
+
+    # even though the value specified is less precise, the value and expected precision match
+    assert eval("attemptNumber = {1} && input = {2#2}", "2.0")
+
+    # input is greater than, but precision is wrong
+    refute eval("attemptNumber = {1} && input > {2#3}", "3.2")
+
+    # input is less than, but precision is wrong
+    refute eval("attemptNumber = {1} && input < {4#1}", "3.8")
+
+    # precision is correct, but input is equal to
+    refute eval("attemptNumber = {1} && input < {3#4}", "3.000")
+
+    assert eval("attemptNumber = {1} && input < {4#2}", "3.1")
+    assert eval("attemptNumber = {1} && input < {4#1}", "3")
+    assert eval("attemptNumber = {1} && input > {3#2}", "3.1")
+    assert eval("attemptNumber = {1} && input > {3#1}", "4")
+  end
 end
