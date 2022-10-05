@@ -2,6 +2,7 @@ import { useAuthoringElementContext } from 'components/activities/AuthoringEleme
 import React, { useState } from 'react';
 import { isOperator, RuleOperator } from 'data/activities/model/rules';
 import guid from 'utils/guid';
+import { classNames } from 'utils/classNames';
 
 interface SimpleNumericInputState {
   operator: RuleOperator;
@@ -124,13 +125,15 @@ const parseValueAndPrecision = (
   }
 };
 
-const precisionInt = (precision: Precision) => {
+const numberOrEmptyString = (num: number) => (isNaN(num) ? '' : num);
+
+const precisionInputValue = (precision: Precision) => {
   switch (precision.kind) {
     case PrecisionKind.WithPrecision:
     case PrecisionKind.Invalid:
-      return parseInt(precision.value);
+      return numberOrEmptyString(parseInt(precision.value));
     default:
-      return undefined;
+      return '';
   }
 };
 
@@ -177,6 +180,7 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
   };
 
   const precisionCheckboxId = `checkbox-${guid()}`;
+  const precisionInvalid = precision.kind === PrecisionKind.Invalid;
 
   return (
     <div className="mb-2">
@@ -234,10 +238,10 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
                   </div>
                   <input
                     type="number"
-                    className="form-control"
+                    className={classNames('form-control', precisionInvalid && 'is-invalid')}
                     style={{ width: 200 }}
                     disabled={!precisionEdit}
-                    value={precisionInt(precision)}
+                    value={precisionInputValue(precision)}
                     onChange={onEditPrecision}
                     aria-label="Precision"
                   />
@@ -245,9 +249,9 @@ export const NumericInput: React.FC<InputProps> = ({ setState, state }) => {
               </div>
               <div className="d-flex flex-row">
                 <div className="flex-grow-1"></div>
-                {precision.kind === PrecisionKind.Invalid && (
+                {precisionInvalid && (
                   <div>
-                    <small className="text-warning">
+                    <small className="text-danger">
                       Precision must be a number greater than zero
                     </small>
                   </div>
