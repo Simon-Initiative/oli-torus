@@ -119,15 +119,42 @@ export const makeRule = (operator: RuleOperator, input: string | [string, string
 };
 
 // Look for two equality matches, something like `input = {123} || input = {234}`
-const matchBetweenRule = (rule: string) => rule.match(/= {(\d+)}.* = {(\d+)}/);
-export const parseInputFromRule = (rule: string) =>
-  Maybe.maybe(matchBetweenRule(rule)).caseOf<string | [string, string]>({
-    just: (betweenMatch) => [unescapeInput(betweenMatch[1]), unescapeInput(betweenMatch[2])],
-    nothing: () => parseSingleInput(rule),
-  });
+const matchBetweenRule = (rule: string): Maybe<[string, string]> =>
+  Maybe.maybe(rule.match(/= {(\d+)}.* = {(\d+)}/)).lift((betweenMatch) => [
+    unescapeInput(betweenMatch[1]),
+    unescapeInput(betweenMatch[2]),
+  ]);
+
+// Look for two equality matches, something like `input = {123} || input = {234}`
+const matchLegacyRangeRule = (rule: string): Maybe<[string, string]> =>
+  Maybe.maybe(rule.match(/like {\[\s*([-.\d]+)\s*,\s*(-?[.\d]+)\s*\]}/)).lift((betweenMatch) => [
+    unescapeInput(betweenMatch[1]),
+    unescapeInput(betweenMatch[2]),
+  ]);
 
 export const parseSingleInput = (rule: string) =>
-  unescapeInput(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}')));
+  Maybe.maybe(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}'))).lift(unescapeInput);
+
+type Parsed = string | [string, string];
+type Matcher = (rule: string) => Maybe<Parsed>;
+
+const tryUntilMatched = (matchers: Matcher[]) => (rule: string) =>
+  matchers
+    .reduce(
+      (acc, m) =>
+        acc.caseOf({
+          just: (result) => Maybe.just(result),
+          nothing: () => m(rule),
+        }),
+      Maybe.nothing<Parsed>(),
+    )
+    .valueOrThrow(Error(`failed to parse input from rule: ${rule}`));
+
+export const parseInputFromRule = tryUntilMatched([
+  matchBetweenRule,
+  matchLegacyRangeRule,
+  parseSingleInput,
+]);
 
 export const parseOperatorFromRule = (rule: string): RuleOperator => {
   switch (true) {

@@ -137,4 +137,8 @@ describe('rules', () => {
       ),
     ).toEqual('\\frac{1}{\\lambda}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2');
   });
+
+  it('properly parses legacy range input from rule', () => {
+    expect(parseInputFromRule('input like {[-151.0,151.3]}')).toEqual(['-151.0', '151.3']);
+  });
 });
