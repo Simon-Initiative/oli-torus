@@ -15,6 +15,7 @@ import {
   notContainsRule,
   orRules,
   matchInOrderRule,
+  parseInputFromRule,
 } from 'data/activities/model/rules';
 
 describe('rules', () => {
@@ -22,8 +23,16 @@ describe('rules', () => {
     expect(matchRule('id')).toBe('input like {id}');
   });
 
+  it('properly escapes match rule', () => {
+    expect(matchRule('id}')).toBe('input like {id\\}}');
+  });
+
   it('contains rule', () => {
     expect(containsRule('id')).toBe('input contains {id}');
+  });
+
+  it('properly escapes contains rule', () => {
+    expect(containsRule('{i{d')).toBe('input contains {\\{i\\{d}');
   });
 
   it('not contains rule', () => {
@@ -32,6 +41,10 @@ describe('rules', () => {
 
   it('equals rule', () => {
     expect(eqRule('id')).toBe('input = {id}');
+  });
+
+  it('properly escapes equals rule', () => {
+    expect(eqRule('i{d')).toBe('input = {i\\{d}');
   });
 
   it('not equals rule', () => {
@@ -76,9 +89,21 @@ describe('rules', () => {
     );
   });
 
+  it('and rules', () => {
+    expect(andRules(matchRule('id1'), invertRule(matchRule('i{d2')))).toBe(
+      '(!(input like {i\\{d2})) && (input like {id1})',
+    );
+  });
+
   it('or rules', () => {
     expect(orRules(matchRule('id1'), matchRule('id2'))).toBe(
       'input like {id2} || (input like {id1})',
+    );
+  });
+
+  it('properly escapes or rules', () => {
+    expect(orRules(matchRule('id}1'), matchRule('{id2}'))).toBe(
+      'input like {\\{id2\\}} || (input like {id\\}1})',
     );
   });
 
@@ -95,5 +120,21 @@ describe('rules', () => {
     expect(matchListRule(allChoiceIds, toMatch)).toEqual(
       '(!(input like {id3})) && (input like {id2} && (input like {id1}))',
     );
+  });
+
+  it('properly parses escaped input from rule', () => {
+    expect(parseInputFromRule('input like {\\{id2\\}}')).toEqual('{id2}');
+  });
+
+  it('properly parses range input from rule', () => {
+    expect(parseInputFromRule('input = {123} || input = {234}')).toEqual(['123', '234']);
+  });
+
+  it('properly escapes math equation', () => {
+    expect(
+      parseInputFromRule(
+        'input equals {\\\\frac\\{1\\}\\{\\\\lambda\\}\\\\left(\\\\left\\\\lbrace x\\\\right\\\\rbrace\\\\right)^2}',
+      ),
+    ).toEqual('\\frac{1}{\\lambda}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2');
   });
 });
