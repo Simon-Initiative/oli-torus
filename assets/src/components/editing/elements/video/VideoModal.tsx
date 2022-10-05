@@ -2,8 +2,9 @@ import React, { useCallback, useState } from 'react';
 import * as ContentModel from 'data/content/model/elements/types';
 import { selectVideo } from './videoActions';
 import { Maybe } from 'tsmonad';
-import { selectImage } from '../image/imageActions';
 import { Modal, ModalSize } from 'components/modal/Modal';
+import { MediaInfo, MediaPickerPanel } from '../common/MediaPickerPanel';
+import { MIMETYPE_FILTERS } from '../../../media/manager/MediaManager';
 
 const MAX_DISPLAY_LENGTH = 40;
 
@@ -22,7 +23,7 @@ const VideoSRC: React.FC<{ src: ContentModel.VideoSource; onDelete: () => any }>
     </td>
     <td>{src.contenttype}</td>
     <td>
-      <button onClick={onDelete}>
+      <button className="btn" onClick={onDelete}>
         <i className="fas fa-trash mr-2" />
       </button>
     </td>
@@ -48,6 +49,9 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
   const [width, setWidth] = useState(String(model.width));
   const [height, setHeight] = useState(String(model.height));
 
+  const [posterPickerOpen, setPosterPickerOpen] = useState(false); // Is the media-picker for the poster image currently open?
+  const [videoPickerOpen, setVideoPickerOpen] = useState(false); // Is the media-picker for the add-video track currently open?
+
   // Curried function to remove a video source from the src list.
   const removeSrc = useCallback(
     (srcToRemove: ContentModel.VideoSource) => () =>
@@ -55,23 +59,22 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
     [setSrc],
   );
 
-  const addVideo = useCallback(
-    () =>
-      selectVideo(projectSlug).then((selection) =>
-        Maybe.maybe(selection).map((src) =>
-          setSrc((srcs) => [...srcs, { contenttype: src.contenttype, url: src.url }]),
-        ),
-      ),
-    [projectSlug],
-  );
+  const onVideoAdded = useCallback((video: MediaInfo[]) => {
+    if (!video || video.length == 0) return;
+    setVideoPickerOpen(false);
+    setSrc((srcs) => [
+      ...srcs,
+      { url: video[0].url, contenttype: video[0].mimeType || 'video/mpg' },
+    ]);
+  }, []);
 
-  const pickPoster = useCallback(
-    () =>
-      selectImage(projectSlug).then((selection) =>
-        Maybe.maybe(selection).map((src) => setPoster(src)),
-      ),
-    [projectSlug],
-  );
+  const addVideo = useCallback(() => setVideoPickerOpen(true), []);
+
+  const onPosterSelected = useCallback((poster: MediaInfo[]) => {
+    setPosterPickerOpen(false);
+    setPoster(poster[0]?.url);
+  }, []);
+  const pickPoster = useCallback(() => setPosterPickerOpen(true), []);
   const removePoster = useCallback(() => setPoster(undefined), []);
 
   const onModalDone = useCallback(
@@ -81,14 +84,13 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
 
   return (
     <Modal
-      title=""
-      size={ModalSize.MEDIUM}
+      title="Video Settings"
+      size={ModalSize.X_LARGE}
       okLabel="Save"
       cancelLabel="Cancel"
       onCancel={onCancel}
       onOk={onModalDone}
     >
-      <h3 className="mb-2">Video Settings</h3>
       <h4 className="mb-2">Video Source(s)</h4>
       <p className="mb-2">
         Specify at least one source for the video to play. You may specify additional sources to
@@ -111,7 +113,9 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
             <tr>
               <td colSpan={2}></td>
               <td>
-                <button onClick={addVideo}>Add New</button>
+                <button className="btn btn-success" type="button" onClick={addVideo}>
+                  Add New
+                </button>
               </td>
             </tr>
           </tbody>
@@ -121,8 +125,14 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
       <p className="mb-4">Provide an optional image to display before the video is playing.</p>
       <div className="mb-4">
         {poster && <img src={poster} className="img-fluid" style={{ maxWidth: '100%' }} />}
-        <button onClick={pickPoster}>Choose Poster Image</button>
-        <button onClick={removePoster}>Remove Poster Image</button>
+        <button className="btn btn-success" type="button" onClick={pickPoster}>
+          Choose Poster Image
+        </button>
+        {poster && (
+          <button className="btn btn-danger" type="button" onClick={removePoster}>
+            Remove Poster Image
+          </button>
+        )}
       </div>
 
       <h4 className="mb-2">Size</h4>
@@ -130,29 +140,46 @@ export const VideoModal = ({ projectSlug, onDone, onCancel, model }: ModalProps)
         You can optionally set the video width and height. If you do not, the video will be
         automatically resized for the user&apos;s browser (recommended).
       </p>
-      <div className="mb-4">
-        <span>
-          Width:{' '}
-          <input
-            type="number"
-            value={width}
-            onChange={(e) => {
-              setWidth(e.target.value);
-            }}
-          />
-        </span>
+      <div className="container">
+        <div className="row">
+          <div className="col-sm">
+            Width:{' '}
+            <input
+              type="number"
+              className="form-control"
+              value={width}
+              onChange={(e) => {
+                setWidth(e.target.value);
+              }}
+            />
+          </div>
 
-        <span>
-          Height:{' '}
-          <input
-            type="number"
-            value={height}
-            onChange={(e) => {
-              setHeight(e.target.value);
-            }}
-          />
-        </span>
+          <div className="col-sm">
+            Height:{' '}
+            <input
+              type="number"
+              className="form-control"
+              value={height}
+              onChange={(e) => {
+                setHeight(e.target.value);
+              }}
+            />
+          </div>
+        </div>
       </div>
+
+      <MediaPickerPanel
+        projectSlug={projectSlug}
+        onMediaChange={onVideoAdded}
+        open={videoPickerOpen}
+        mimeFilter={MIMETYPE_FILTERS.VIDEO}
+      />
+
+      <MediaPickerPanel
+        projectSlug={projectSlug}
+        onMediaChange={onPosterSelected}
+        open={posterPickerOpen}
+      />
     </Modal>
   );
 };
