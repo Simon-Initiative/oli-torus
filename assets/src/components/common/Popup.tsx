@@ -3,6 +3,7 @@ import { OverlayTriggerType } from 'react-bootstrap/esm/OverlayTrigger';
 import { Popup as PopupModel } from 'data/content/model/elements/types';
 import { OverlayTrigger, Popover } from 'react-bootstrap';
 import { useAudio } from '../hooks/useAudio';
+import { isEmptyContent } from '../../data/content/utils';
 
 interface Props {
   children: React.ReactNode;
@@ -26,7 +27,9 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
 
   const overlayContent = (
     <Popover id={popup.id}>
-      <Popover.Content className="popup__content">{popupContent}</Popover.Content>
+      <Popover.Content className="popup__content">
+        {isEmptyContent(popup.content) ? <i className="material-icons">volume_up</i> : popupContent}
+      </Popover.Content>
     </Popover>
   );
 

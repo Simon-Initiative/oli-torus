@@ -19,30 +19,47 @@ type Props = {
   style?: React.CSSProperties;
   commandContext?: CommandContext;
   normalizerContext?: NormalizerContext;
+  fixedToolbar?: boolean;
+  allowBlockElements?: boolean;
   onEdit: (value: Descendant[], editor: SlateEditor, operations: Operation[]) => void;
   onRequestMedia?: (request: MediaItemRequest) => Promise<string | boolean>;
 };
-export const RichTextEditor: React.FC<Props> = (props) => {
+export const RichTextEditor: React.FC<Props> = ({
+  projectSlug,
+  editMode,
+  value,
+  className,
+  placeholder,
+  style,
+  commandContext,
+  normalizerContext,
+  fixedToolbar = false,
+  allowBlockElements = true,
+  onEdit,
+  onRequestMedia,
+  children,
+}) => {
   // Support content persisted when RichText had a `model` property.
-  const value = (props.value as any).model ? (props.value as any).model : props.value;
+  value = (value as any).model ? (value as any).model : value;
 
   return (
-    <div className={classNames('rich-text-editor', props.className)}>
+    <div className={classNames('rich-text-editor', className)}>
       <ErrorBoundary>
         <Editor
-          normalizerContext={props.normalizerContext}
-          placeholder={props.placeholder}
-          style={props.style}
-          editMode={props.editMode}
-          commandContext={props.commandContext ?? { projectSlug: props.projectSlug }}
-          onEdit={props.onEdit}
+          normalizerContext={normalizerContext}
+          placeholder={placeholder}
+          style={style}
+          editMode={editMode}
+          fixedToolbar={fixedToolbar}
+          commandContext={commandContext ?? { projectSlug: projectSlug }}
+          onEdit={onEdit}
           value={value}
           toolbarInsertDescs={blockInsertOptions({
-            type: 'extended',
-            onRequestMedia: props.onRequestMedia,
+            type: allowBlockElements ? 'extended' : 'inline',
+            onRequestMedia: onRequestMedia,
           })}
         >
-          {props.children}
+          {children}
         </Editor>
       </ErrorBoundary>
     </div>

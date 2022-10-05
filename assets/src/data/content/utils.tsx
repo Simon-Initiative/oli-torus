@@ -167,3 +167,20 @@ export const elementsOfType = (content: ContentTypes, type: string): AllModelEle
   );
   return elements;
 };
+
+/**
+ * isEmptyContent([nodes]) Returns true if the content is "empty" where "empty" is defined as:
+ *   - Does not contain any text node with non-whitespace characters
+ *   - Does not contain any p/header nodes with children that have non-whitespace characters recursively
+ *   - Does not contain any other type of node
+ */
+const blocksToIgnore = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+const shouldIgnore = (type: string) => blocksToIgnore.includes(type);
+export const isEmptyContent = (content: (AllModelElements | Text)[]): boolean => {
+  return !content.find(
+    (c) =>
+      ('text' in c && c.text.trim() !== '') || // Not empty if we have a text node with content in it
+      ('type' in c && shouldIgnore(c.type) && !isEmptyContent(c.children)) || // a paragraph/heading is not empty if its children are not empty
+      ('type' in c && !shouldIgnore(c.type)), // Any other non-paragraph/header element is considered not empty
+  );
+};

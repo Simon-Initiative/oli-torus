@@ -28,6 +28,7 @@ export type EditorProps = {
   toolbarInsertDescs: CommandDescription[];
   // Whether or not editing is allowed
   editMode: boolean;
+  fixedToolbar?: boolean;
   commandContext: CommandContext;
   normalizerContext?: NormalizerContext;
   className?: string;
@@ -109,7 +110,11 @@ export const Editor: React.FC<EditorProps> = React.memo((props: EditorProps) => 
       >
         {props.children}
 
-        <EditorToolbar context={props.commandContext} insertOptions={props.toolbarInsertDescs} />
+        <EditorToolbar
+          context={props.commandContext}
+          insertOptions={props.toolbarInsertDescs}
+          fixedToolbar={props.fixedToolbar}
+        />
 
         <Editable
           style={props.style}
