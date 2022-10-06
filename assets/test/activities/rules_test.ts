@@ -16,6 +16,7 @@ import {
   orRules,
   matchInOrderRule,
   parseInputFromRule,
+  InputKind,
 } from 'data/activities/model/rules';
 
 describe('rules', () => {
@@ -40,42 +41,38 @@ describe('rules', () => {
   });
 
   it('equals rule', () => {
-    expect(eqRule('id')).toBe('input = {id}');
-  });
-
-  it('properly escapes equals rule', () => {
-    expect(eqRule('i{d')).toBe('input = {i\\{d}');
+    expect(eqRule(42)).toBe('input = {42}');
   });
 
   it('not equals rule', () => {
-    expect(neqRule('id')).toBe('(!(input = {id}))');
+    expect(neqRule(42)).toBe('(!(input = {42}))');
   });
 
   it('less than rule', () => {
-    expect(ltRule('id')).toBe('input < {id}');
+    expect(ltRule(42)).toBe('input < {42}');
   });
 
   it('less than or equal rule', () => {
-    expect(lteRule('id')).toBe('input = {id} || (input < {id})');
+    expect(lteRule(42)).toBe('input = {42} || (input < {42})');
   });
 
   it('greater than rule', () => {
-    expect(gtRule('id')).toBe('input > {id}');
+    expect(gtRule(42)).toBe('input > {42}');
   });
 
   it('greater than or equal rule', () => {
-    expect(gteRule('id')).toBe('input = {id} || (input > {id})');
+    expect(gteRule(42)).toBe('input = {42} || (input > {42})');
   });
 
   it('between two numbers rule', () => {
-    expect(btwRule('1', '2')).toBe(
-      'input = {2} || (input < {2}) && (input = {1} || (input > {1}))',
+    expect(btwRule(42, 43)).toBe(
+      'input = {43} || (input < {43}) && (input = {42} || (input > {42}))',
     );
   });
 
   it('not between two numbers', () => {
-    expect(nbtwRule('1', '2')).toBe(
-      '(!(input = {2} || (input < {2}) && (input = {1} || (input > {1}))))',
+    expect(nbtwRule(42, 43)).toBe(
+      '(!(input = {43} || (input < {43}) && (input = {42} || (input > {42}))))',
     );
   });
 
@@ -123,22 +120,48 @@ describe('rules', () => {
   });
 
   it('properly parses escaped input from rule', () => {
-    expect(parseInputFromRule('input like {\\{id2\\}}')).toEqual('{id2}');
+    expect(parseInputFromRule('input like {\\{id2\\}}').valueOrThrow()).toEqual({
+      kind: InputKind.Text,
+      operator: 'regex',
+      value: '{id2}',
+    });
   });
 
   it('properly parses range input from rule', () => {
-    expect(parseInputFromRule('input = {123} || input = {234}')).toEqual(['123', '234']);
+    expect(parseInputFromRule('input = {123} || input = {234}').valueOrThrow()).toEqual({
+      kind: InputKind.Range,
+      operator: 'btw',
+      lowerBound: 123,
+      upperBound: 234,
+    });
+
+    expect(parseInputFromRule('input = {-123.5} || input = {234.2}').valueOrThrow()).toEqual({
+      kind: InputKind.Range,
+      operator: 'btw',
+      lowerBound: -123.5,
+      upperBound: 234.2,
+    });
   });
 
   it('properly escapes math equation', () => {
     expect(
       parseInputFromRule(
-        'input equals {\\\\frac\\{1\\}\\{\\\\lambda\\}\\\\left(\\\\left\\\\lbrace x\\\\right\\\\rbrace\\\\right)^2}',
-      ),
-    ).toEqual('\\frac{1}{\\lambda}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2');
+        'input equals {\\frac\\{1\\}\\{\\lambda\\}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2}',
+      ).valueOrThrow(),
+    ).toEqual({
+      kind: InputKind.Text,
+      operator: 'equals',
+      value: '\\frac{1}{\\lambda}\\left(\\left\\lbrace x\\right\\rbrace\\right)^2',
+    });
   });
 
   it('properly parses legacy range input from rule', () => {
-    expect(parseInputFromRule('input like {[-151.0,151.3]}')).toEqual(['-151.0', '151.3']);
+    expect(parseInputFromRule('input like {[-151.0,151.3]}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        lowerBound: -151.0,
+        upperBound: 151.3,
+      }),
+    );
   });
 });

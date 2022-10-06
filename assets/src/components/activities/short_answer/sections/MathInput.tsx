@@ -1,31 +1,23 @@
 import React from 'react';
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { RuleOperator } from 'data/activities/model/rules';
+import { InputText } from 'data/activities/model/rules';
 import { MathLive } from 'components/common/MathLive';
 
-interface State {
-  operator: RuleOperator;
-  input: string;
+interface MathInputProps {
+  input: InputText;
+  onEditInput: (input: InputText) => void;
 }
-interface InputProps {
-  setState: (s: State) => void;
-  state: State;
-}
-export const MathInput: React.FC<InputProps> = ({ state, setState }) => {
+export const MathInput: React.FC<MathInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
-
-  if (typeof state.input != 'string') {
-    return null;
-  }
 
   return (
     <div className="mb-2">
       <MathLive
-        value={state.input}
+        value={input.value}
         options={{
           readOnly: !editMode,
         }}
-        onChange={(latex: string) => setState({ input: latex, operator: 'equals' })}
+        onChange={(latex: string) => onEditInput({ ...input, value: latex, operator: 'equals' })}
       />
     </div>
   );

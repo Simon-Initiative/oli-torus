@@ -8,7 +8,7 @@ import { InputEntry } from 'components/activities/short_answer/sections/InputEnt
 import { getTargetedResponses } from 'components/activities/short_answer/utils';
 import { makeResponse, Response, RichText } from 'components/activities/types';
 import { getCorrectResponse } from 'data/activities/model/responses';
-import { containsRule } from 'data/activities/model/rules';
+import { containsRule, InputKind } from 'data/activities/model/rules';
 import { TextInput } from 'components/common/TextInput';
 
 import { makeRule } from 'data/activities/model/rules';
@@ -44,7 +44,7 @@ export const AnswerKey: React.FC<Props> = (props) => {
           dispatch(
             ResponseActions.editRule(
               getCorrectResponse(model, props.partId).id,
-              makeRule('regex', value),
+              makeRule({ kind: InputKind.Text, operator: 'regex', value }),
             ),
           )
         }

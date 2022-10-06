@@ -107,7 +107,7 @@ const ShortAnswer = () => {
                 dispatch(
                   ResponseActions.addResponse(
                     makeResponse(
-                      model.inputType === 'numeric' ? eqRule('1') : containsRule('another answer'),
+                      model.inputType === 'numeric' ? eqRule(1) : containsRule('another answer'),
                       0,
                       '',
                     ),

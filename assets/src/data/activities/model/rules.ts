@@ -12,41 +12,99 @@ export const orRules = (...rules: string[]) => rules.reduce(orTwoRules);
 
 export const isCatchAllResponse = (response: Response) => response.rule === '.*';
 
-export type RuleOperator =
-  // text
-  | 'contains'
-  | 'notcontains'
-  | 'regex'
-  | 'equals'
-  // numeric
-  | 'gt'
-  | 'gte'
-  | 'eq'
-  | 'lt'
-  | 'lte'
-  | 'neq'
-  | 'btw'
-  | 'nbtw';
+export enum InputKind {
+  Text,
+  Numeric,
+  Range,
+}
 
-export function isOperator(s: string): s is RuleOperator {
-  return [
-    'contains',
-    'notcontains',
-    'regex',
-    'equals',
-    'gt',
-    'gte',
-    'eq',
-    'lt',
-    'lte',
-    'neq',
-    'btw',
-    'nbtw',
-  ].includes(s);
+export type InputText = {
+  kind: InputKind.Text;
+  operator: TextOperator;
+  value: string;
+};
+
+export type InputNumeric = {
+  kind: InputKind.Numeric;
+  operator: NumericOperator;
+  value: number;
+  precision?: number;
+};
+
+export type InputRange = {
+  kind: InputKind.Range;
+  operator: RangeOperator;
+  lowerBound: number;
+  upperBound: number;
+  precision?: number;
+};
+
+export type Input = InputText | InputNumeric | InputRange;
+
+export type TextOperator =
+  // text
+  'contains' | 'notcontains' | 'regex' | 'equals';
+
+export type NumericOperator =
+  // numeric
+  'gt' | 'gte' | 'eq' | 'lt' | 'lte' | 'neq';
+
+export type RangeOperator =
+  // range
+  'btw' | 'nbtw';
+
+export type RuleOperator = TextOperator | NumericOperator | RangeOperator;
+
+export function textOperator(s: string): TextOperator {
+  switch (s) {
+    case 'contains':
+      return 'contains';
+    case 'notcontains':
+      return 'notcontains';
+    case 'regex':
+      return 'regex';
+    case 'equals':
+      return 'equals';
+    default:
+      throw Error(`${s} is not a valid text operator`);
+  }
+}
+
+export function numericOperator(s: string): NumericOperator {
+  switch (s) {
+    case 'gt':
+      return 'gt';
+    case 'gte':
+      return 'gte';
+    case 'eq':
+      return 'eq';
+    case 'lt':
+      return 'lt';
+    case 'lte':
+      return 'lte';
+    case 'neq':
+      return 'neq';
+    default:
+      throw Error(`${s} is not a valid numeric operator`);
+  }
+}
+
+export function rangeOperator(s: string): RangeOperator {
+  switch (s) {
+    case 'btw':
+      return 'btw';
+    case 'nbtw':
+      return 'nbtw';
+    default:
+      throw Error(`${s} is not a valid range operator`);
+  }
 }
 
 const escapeInput = (s: string) => s.replace(/[\\{}]/g, (i) => `\\${i}`);
 const unescapeInput = (s: string) => s.replace(/\\[\\{}]/g, (i) => i.substring(1));
+
+const valueWithPrecision = (value: number, precision?: number) =>
+  precision !== undefined ? `${value}#${precision}` : `${value}`;
 
 export const unescapeSingleOrMultipleInputs = (
   s: string | [string, string],
@@ -57,136 +115,268 @@ export const unescapeSingleOrMultipleInputs = (
 export const equalsRule = (input: string) => `input equals {${escapeInput(input)}}`;
 export const matchRule = (input: string) => `input like {${escapeInput(input)}}`;
 export const containsRule = (input: string) => `input contains {${escapeInput(input)}}`;
+
 export const notContainsRule = (input: string) => invertRule(containsRule(input));
 
 // numeric
-export const eqRule = (input: string) => `input = {${escapeInput(input)}}`;
-export const neqRule = (input: string) => invertRule(eqRule(input));
-export const ltRule = (input: string) => `input < {${escapeInput(input)}}`;
-export const lteRule = (input: string) => orRules(ltRule(input), eqRule(input));
-export const gtRule = (input: string) => `input > {${escapeInput(input)}}`;
-export const gteRule = (input: string) => orRules(gtRule(input), eqRule(input));
+export const eqRule = (value: number, precision?: number) =>
+  `input = {${valueWithPrecision(value, precision)}}`;
+export const ltRule = (value: number, precision?: number) =>
+  `input < {${valueWithPrecision(value, precision)}}`;
+export const gtRule = (value: number, precision?: number) =>
+  `input > {${valueWithPrecision(value, precision)}}`;
 
-const makeBtwRule = (lesser: string, greater: string) =>
-  andRules(orRules(gtRule(lesser), eqRule(lesser)), orRules(ltRule(greater), eqRule(greater)));
+export const neqRule = (value: number, precision?: number) => invertRule(eqRule(value, precision));
+export const lteRule = (value: number, precision?: number) =>
+  orRules(ltRule(value, precision), eqRule(value, precision));
+export const gteRule = (value: number, precision?: number) =>
+  orRules(gtRule(value, precision), eqRule(value, precision));
 
-export const btwRule = (left: string, right: string) => {
-  const parsedLeft = parseFloat(left);
-  const parsedRight = parseFloat(right);
-  if (Number.isNaN(parsedLeft) || Number.isNaN(parsedRight)) {
-    return makeBtwRule('0', '0');
+// range
+const makeBtwRule = (lowerBound: number, upperBound: number) =>
+  andRules(
+    orRules(gtRule(lowerBound), eqRule(lowerBound)),
+    orRules(ltRule(upperBound), eqRule(upperBound)),
+  );
+
+export const btwRule = (left: number, right: number) => {
+  if (Number.isNaN(left) || Number.isNaN(right)) {
+    return makeBtwRule(0, 0);
   }
 
-  const lesser = parsedLeft < parsedRight ? left : right;
-  const greater = lesser === left ? right : left;
-  return makeBtwRule(lesser, greater);
+  const lowerBound = left < right ? left : right;
+  const upperBound = lowerBound === left ? right : left;
+  return makeBtwRule(lowerBound, upperBound);
 };
-export const nbtwRule = (left: string, right: string) => invertRule(btwRule(left, right));
+export const nbtwRule = (left: number, right: number) => invertRule(btwRule(left, right));
 
-export const makeRule = (operator: RuleOperator, input: string | [string, string]) => {
-  if (typeof input === 'string') {
-    switch (operator) {
-      case 'gt':
-        return gtRule(input);
-      case 'gte':
-        return gteRule(input);
-      case 'lt':
-        return ltRule(input);
-      case 'lte':
-        return lteRule(input);
-      case 'eq':
-        return eqRule(input);
-      case 'neq':
-        return neqRule(input);
+export const makeRule = (input: Input): string => {
+  if (input.kind === InputKind.Text) {
+    switch (input.operator) {
       case 'contains':
-        return containsRule(input);
+        return containsRule(input.value);
       case 'notcontains':
-        return notContainsRule(input);
+        return notContainsRule(input.value);
       case 'regex':
-        return matchRule(input);
+        return matchRule(input.value);
       case 'equals':
-        return equalsRule(input);
+        return equalsRule(input.value);
     }
   }
 
-  switch (operator) {
-    case 'btw':
-      return btwRule(input[0], input[1]);
-    case 'nbtw':
-      return nbtwRule(input[0], input[1]);
+  if (input.kind === InputKind.Numeric) {
+    switch (input.operator) {
+      case 'gt':
+        return gtRule(input.value);
+      case 'gte':
+        return gteRule(input.value);
+      case 'lt':
+        return ltRule(input.value);
+      case 'lte':
+        return lteRule(input.value);
+      case 'eq':
+        return eqRule(input.value);
+      case 'neq':
+        return neqRule(input.value);
+    }
   }
-  throw new Error('Could not make numeric rule for operator ' + operator + ' and input ' + input);
+
+  if (input.kind === InputKind.Range) {
+    switch (input.operator) {
+      case 'btw':
+        return btwRule(input.lowerBound, input.upperBound);
+      case 'nbtw':
+        return nbtwRule(input.lowerBound, input.upperBound);
+    }
+  }
+
+  throw new Error('Could not make numeric rule for input: ' + input);
 };
 
-// Look for two equality matches, something like `input = {123} || input = {234}`
-const matchBetweenRule = (rule: string): Maybe<[string, string]> =>
-  Maybe.maybe(rule.match(/= {(\d+)}.* = {(\d+)}/)).lift((betweenMatch) => [
-    unescapeInput(betweenMatch[1]),
-    unescapeInput(betweenMatch[2]),
-  ]);
+const parseSingleRule = (rule: string) =>
+  Maybe.maybe(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}')));
 
-// Look for two equality matches, something like `input = {123} || input = {234}`
-const matchLegacyRangeRule = (rule: string): Maybe<[string, string]> =>
-  Maybe.maybe(rule.match(/like {\[\s*([-.\d]+)\s*,\s*(-?[.\d]+)\s*\]}/)).lift((betweenMatch) => [
-    unescapeInput(betweenMatch[1]),
-    unescapeInput(betweenMatch[2]),
-  ]);
+const parseRegex = (rule: string, regex: RegExp) => Maybe.maybe(rule.match(regex));
 
-export const parseSingleInput = (rule: string) =>
-  Maybe.maybe(rule.substring(rule.indexOf('{') + 1, rule.lastIndexOf('}'))).lift(unescapeInput);
+const maybeAsNumber = (s: string): Maybe<number> =>
+  Maybe.maybe(s)
+    .lift(parseFloat)
+    .bind((r) => (!isNaN(r) ? Maybe.just(r) : Maybe.nothing()));
 
-type Parsed = string | [string, string];
-type Matcher = (rule: string) => Maybe<Parsed>;
+const valueOrUndefined = <a>(m: Maybe<a>) =>
+  m.caseOf({
+    just: (v) => v,
+    nothing: () => undefined,
+  });
 
-const tryUntilMatched = (matchers: Matcher[]) => (rule: string) =>
-  matchers
-    .reduce(
+const optional = <T>(o: T) => Maybe.maybe<T>(o);
+
+type Matcher<a, b> = (arg: a) => Maybe<b>;
+
+// a generic function that takes a list of 'matcher' functions and returns
+// the value of the first one that matches. matcher functions return
+// maybe monads, the first maybe that isnt nothing is the result
+const firstMatch =
+  <a, b>(matchers: Matcher<a, b>[]) =>
+  (rule: a) =>
+    matchers.reduce(
       (acc, m) =>
         acc.caseOf({
           just: (result) => Maybe.just(result),
           nothing: () => m(rule),
         }),
-      Maybe.nothing<Parsed>(),
-    )
-    .valueOrThrow(Error(`failed to parse input from rule: ${rule}`));
+      Maybe.nothing<b>(),
+    );
 
-export const parseInputFromRule = tryUntilMatched([
+//// Parsers
+
+type ParsedTextRule = {
+  value: string;
+  operator: TextOperator;
+};
+
+// Look for any rule that contains braces `input equals {some answer}`
+export const matchSingleTextRule = (rule: string): Maybe<InputText> =>
+  parseSingleRule(rule)
+    .lift(unescapeInput)
+    .bind((value) =>
+      // verify the required values for this matcher are present or return nothing
+      Maybe.sequence<string | TextOperator>({
+        value: Maybe.just(value),
+        operator: parseTextOperatorFromRule(rule),
+      }),
+    )
+    .lift(({ value, operator }: ParsedTextRule) => ({
+      kind: InputKind.Text,
+      value,
+      operator,
+    }));
+
+type ParsedNumericRule = {
+  value: number;
+  operator: NumericOperator;
+  precision: Maybe<number>;
+};
+
+export const matchSingleNumberRule = (rule: string): Maybe<InputNumeric> =>
+  parseRegex(rule, /{(\d+)(#\d+)?}/)
+    .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
+    .bind(([value, precision]) =>
+      // verify the required values for this matcher are present or return nothing
+      Maybe.sequence<number | NumericOperator | Maybe<number>>({
+        value,
+        operator: parseNumericOperatorFromRule(rule),
+        precision: optional(precision),
+      }),
+    )
+    .lift(({ value, operator, precision }: ParsedNumericRule) => ({
+      kind: InputKind.Numeric,
+      value,
+      operator,
+      precision: valueOrUndefined(precision),
+    }));
+
+type ParsedRangeRule = {
+  lowerBound: number;
+  upperBound: number;
+  operator: RangeOperator;
+  precision: Maybe<number>;
+};
+
+// Look for two equality matches, something like `input = {-123} || input = {234.5}`
+const matchBetweenRule = (rule: string): Maybe<InputRange> =>
+  parseRegex(rule, /= {(-?[.\d]+)}.* = {(-?[.\d]+)}/)
+    .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
+    .bind(([lowerBound, upperBound]) =>
+      // verify the required values for this matcher are present or return nothing
+      Maybe.sequence<number | RangeOperator | Maybe<number>>({
+        lowerBound,
+        upperBound,
+        operator: parseRangeOperatorFromRule(rule),
+        precision: optional(Maybe.nothing()),
+      }),
+    )
+    .lift(({ lowerBound, upperBound, operator, precision }: ParsedRangeRule) => ({
+      kind: InputKind.Range,
+      lowerBound,
+      upperBound,
+      operator,
+      precision: valueOrUndefined(precision),
+    }));
+
+// Look for legacy range match, e.g. `input = {[123.4,123.5]}` or `input = {(123.4,123.5)#3}`
+const matchLegacyRangeRule = (rule: string): Maybe<InputRange> =>
+  parseRegex(rule, /{[[(]\s*([-.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?}/)
+    .lift((matches) => matches.slice(1, 4).map(maybeAsNumber))
+    .bind(([lowerBound, upperBound, precision]) =>
+      // verify the required values for this matcher are present or return nothing
+      Maybe.sequence<number | RangeOperator | Maybe<number>>({
+        lowerBound,
+        upperBound,
+        operator: parseRangeOperatorFromRule(rule),
+        precision: optional(precision),
+      }),
+    )
+    .lift(({ lowerBound, upperBound, operator, precision }: ParsedRangeRule) => ({
+      kind: InputKind.Range,
+      lowerBound,
+      upperBound,
+      operator,
+      precision: valueOrUndefined(precision),
+    }));
+
+export const parseInputFromRule = firstMatch<string, Input>([
   matchBetweenRule,
   matchLegacyRangeRule,
-  parseSingleInput,
+  matchSingleNumberRule,
+  matchSingleTextRule,
 ]);
 
-export const parseOperatorFromRule = (rule: string): RuleOperator => {
+export const parseTextOperatorFromRule = (rule: string): Maybe<TextOperator> => {
   switch (true) {
     // text
     case rule.includes('!') && rule.includes('contains'):
-      return 'notcontains';
+      return Maybe.just('notcontains');
     case rule.includes('contains'):
-      return 'contains';
+      return Maybe.just('contains');
     case rule.includes('like'):
-      return 'regex';
+      return Maybe.just('regex');
     case rule.includes('equals'):
-      return 'equals';
-
-    // numeric
-    case ['!', '>', '<', '='].every((op) => rule.includes(op)):
-      return 'nbtw';
-    case ['>', '<', '='].every((op) => rule.includes(op)):
-      return 'btw';
-    case rule.includes('>') && rule.includes('='):
-      return 'gte';
-    case rule.includes('>'):
-      return 'gt';
-    case rule.includes('<') && rule.includes('='):
-      return 'lte';
-    case rule.includes('<'):
-      return 'lt';
-    case rule.includes('!') && rule.includes('='):
-      return 'neq';
-    case rule.includes('='):
-      return 'eq';
+      return Maybe.just('equals');
     default:
-      throw new Error('Operator could not be found in rule ' + rule);
+      return Maybe.nothing();
+  }
+};
+
+export const parseNumericOperatorFromRule = (rule: string): Maybe<NumericOperator> => {
+  switch (true) {
+    // numeric
+    case rule.includes('>') && rule.includes('='):
+      return Maybe.just('gte');
+    case rule.includes('>'):
+      return Maybe.just('gt');
+    case rule.includes('<') && rule.includes('='):
+      return Maybe.just('lte');
+    case rule.includes('<'):
+      return Maybe.just('lt');
+    case rule.includes('!') && rule.includes('='):
+      return Maybe.just('neq');
+    case rule.includes('='):
+      return Maybe.just('eq');
+    default:
+      return Maybe.nothing();
+  }
+};
+
+export const parseRangeOperatorFromRule = (rule: string): Maybe<RangeOperator> => {
+  switch (true) {
+    // range
+    case rule.includes('!') && ['>', '<', '=', 'like'].some((op) => rule.includes(op)):
+      return Maybe.just('nbtw');
+    case ['>', '<', '=', 'like'].some((op) => rule.includes(op)):
+      return Maybe.just('btw');
+    default:
+      return Maybe.nothing();
   }
 };
 
