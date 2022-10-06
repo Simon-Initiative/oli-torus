@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import { processResults } from 'apps/delivery/layouts/deck/DeckLayoutFooter';
 import { RootState } from 'apps/delivery/store/rootReducer';
 import { PartResponse } from 'components/activities/types';
 import { evalActivityAttempt, writePageAttemptState } from 'data/persistence/state/intrinsic';
@@ -20,6 +21,11 @@ import {
   updateExtrinsicState,
   upsertActivityAttemptState,
 } from '../../attempt/slice';
+import {
+  findNextSequenceId,
+  navigateToActivity,
+  navigateToNextActivity,
+} from '../../groups/actions/deck';
 import {
   selectCurrentActivityTree,
   selectCurrentActivityTreeAttemptState,
@@ -373,6 +379,50 @@ export const triggerCheck = createAsyncThunk(
     await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
 
     if (!isPreviewMode) {
+      const actionsByType = processResults(checkResult);
+      const hasFeedback = actionsByType.feedback.length > 0;
+      const hasNavigation = actionsByType.navigation.length > 0;
+      let expectedResumeActivityId = currentActivity.id;
+      if (hasFeedback && hasNavigation) {
+        const [firstNavAction] = actionsByType.navigation;
+        const navTarget = firstNavAction.params.target;
+        if (navTarget !== expectedResumeActivityId) {
+          switch (navTarget) {
+            case 'next':
+              const { payload: nextActivityId } = await dispatch(findNextSequenceId('next'));
+              expectedResumeActivityId = nextActivityId;
+              break;
+            default:
+              const { payload: expectedNextActivityId } = await dispatch(
+                findNextSequenceId(navTarget),
+              );
+              expectedResumeActivityId = expectedNextActivityId;
+          }
+          if (expectedResumeActivityId) {
+            const resumeTarget: ApplyStateOperation = {
+              target: `session.resume`,
+              operator: '=',
+              value: expectedResumeActivityId,
+            };
+            await applyState(resumeTarget, defaultGlobalEnv);
+            const latestSnapshot = getEnvState(defaultGlobalEnv);
+
+            const latestExtrinsic = Object.keys(latestSnapshot).reduce(
+              (acc: Record<string, any>, key) => {
+                const isSessionVariable = key.startsWith('session.');
+                const isVarVariable = key.startsWith('variables.');
+                const isEverAppVariable = key.startsWith('app.');
+                if (isSessionVariable || isVarVariable || isEverAppVariable) {
+                  acc[key] = latestSnapshot[key];
+                }
+                return acc;
+              },
+              {},
+            );
+            await dispatch(updateExtrinsicState({ state: latestExtrinsic }));
+          }
+        }
+      }
       // update the server with the latest changes
       const extrnisicState = selectExtrinsicState(getState() as RootState);
       /* console.log('trigger check last min extrinsic state', {
@@ -382,7 +432,6 @@ export const triggerCheck = createAsyncThunk(
       }); */
       await writePageAttemptState(sectionSlug, resourceAttemptGuid, extrnisicState);
     }
-
     await dispatch(
       setLastCheckResults({
         timestamp: currentTriggerStamp,

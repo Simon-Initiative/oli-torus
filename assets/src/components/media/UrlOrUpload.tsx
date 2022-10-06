@@ -12,6 +12,7 @@ interface Props {
   initialSelectionPaths?: string[];
   onMediaSelectionChange: (items: MediaItem[]) => void;
   onUrlChange: (url: string) => void;
+  children?: React.ReactNode;
 }
 
 export const UrlOrUpload = (props: Props) => {
@@ -68,6 +69,7 @@ export const UrlOrUpload = (props: Props) => {
                 onUrlChange(value);
               }}
             />
+            {props.children}
           </div>
         </div>
       </div>

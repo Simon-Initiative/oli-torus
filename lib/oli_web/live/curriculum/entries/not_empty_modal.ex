@@ -24,7 +24,6 @@ defmodule OliWeb.Curriculum.NotEmptyModal do
                 phx-click="dismiss"
                 phx-key="enter"
                 phx-value-slug="<%= revision.slug %>"
-                onclick="$('#not_empty_<%= revision.slug %>').modal('hide')"
                 class="btn btn-primary">
                 Ok
               </button>

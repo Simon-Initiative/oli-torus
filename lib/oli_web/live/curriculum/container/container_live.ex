@@ -7,6 +7,7 @@ defmodule OliWeb.Curriculum.ContainerLive do
   use OliWeb.Common.Modal
 
   import Oli.Utils, only: [value_or: 2]
+  import Oli.Authoring.Editing.Utils
 
   alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Authoring.Course
@@ -23,7 +24,6 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   alias OliWeb.Common.Hierarchy.MoveModal
   alias Oli.Publishing.ChangeTracker
-  alias Oli.Resources.ScoringStrategy
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Accounts
   alias Oli.Repo
@@ -313,12 +313,28 @@ defmodule OliWeb.Curriculum.ContainerLive do
     {:noreply, hide_modal(socket)}
   end
 
+  def handle_event("MoveModal.remove", %{"uuid" => uuid, "from_uuid" => from_uuid}, socket) do
+    %{
+      author: author,
+      project: project,
+      modal: %{assigns: %{hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %{revision: revision} = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    to_container = nil
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket)}
+  end
+
   def handle_event("MoveModal.cancel", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket)}
   end
 
   def handle_event("dismiss", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket)}
   end
 
   # handle change of selection
@@ -414,90 +430,26 @@ defmodule OliWeb.Curriculum.ContainerLive do
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
   def handle_event("add", %{"type" => type}, socket) do
-    attrs = %{
-      tags: [],
-      objectives: %{"attached" => []},
-      children: [],
-      content:
-        case type do
-          "Adaptive" ->
-            %{
-              "model" => [],
-              "advancedAuthoring" => true,
-              "advancedDelivery" => true,
-              "displayApplicationChrome" => false
-            }
+    case ContainerEditor.add_new(
+           socket.assigns.container,
+           type,
+           socket.assigns.author,
+           socket.assigns.project,
+           socket.assigns.numberings
+         ) do
+      {:ok, _} ->
+        {:noreply,
+         assign(socket,
+           numberings:
+             Numbering.number_full_tree(
+               Oli.Publishing.AuthoringResolver,
+               socket.assigns.project.slug
+             )
+         )}
 
-          _ ->
-            %{
-              "version" => "0.1.0",
-              "model" => []
-            }
-        end,
-      title:
-        case type do
-          "Adaptive" -> "New Adaptive Page"
-          "Scored" -> "New Assessment"
-          "Unscored" -> "New Page"
-          "Container" -> new_container_name(socket.assigns.numberings, socket.assigns.container)
-        end,
-      graded:
-        case type do
-          "Adaptive" -> false
-          "Scored" -> true
-          "Unscored" -> false
-          "Container" -> false
-        end,
-      max_attempts:
-        case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
-        end,
-      recommended_attempts:
-        case type do
-          "Adaptive" -> 0
-          "Scored" -> 5
-          "Unscored" -> 0
-          "Container" -> nil
-        end,
-      scoring_strategy_id:
-        case type do
-          "Adaptive" -> ScoringStrategy.get_id_by_type("best")
-          "Scored" -> ScoringStrategy.get_id_by_type("best")
-          "Unscored" -> ScoringStrategy.get_id_by_type("best")
-          "Container" -> nil
-        end,
-      resource_type_id:
-        case type do
-          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
-          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
-        end
-    }
-
-    socket =
-      case ContainerEditor.add_new(
-             socket.assigns.container,
-             attrs,
-             socket.assigns.author,
-             socket.assigns.project
-           ) do
-        {:ok, _} ->
-          socket
-
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not create new item")
-      end
-
-    {:noreply,
-     assign(socket,
-       numberings:
-         Numbering.number_full_tree(Oli.Publishing.AuthoringResolver, socket.assigns.project.slug)
-     )}
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not create new item")}
+    end
   end
 
   def handle_event("change-view", %{"view" => view}, socket) do
@@ -736,15 +688,5 @@ defmodule OliWeb.Curriculum.ContainerLive do
       {published_resource.resource_id, published_resource.author}
     end)
     |> Enum.into(%{})
-  end
-
-  def new_container_name(numberings, parent_container) do
-    numbering = Map.get(numberings, parent_container.id)
-
-    if numbering do
-      Numbering.container_type(numbering.level + 1)
-    else
-      "Unit"
-    end
   end
 end

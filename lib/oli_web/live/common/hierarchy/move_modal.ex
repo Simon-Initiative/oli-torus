@@ -12,7 +12,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
           id: id,
           node: %HierarchyNode{uuid: uuid, revision: revision} = node,
           hierarchy: %HierarchyNode{} = hierarchy,
-          from_container: %HierarchyNode{} = from_container,
+          from_container: from_container,
           active: %HierarchyNode{} = active
         } = assigns
       ) do
@@ -35,17 +35,34 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
                 filter_items_fn: fn items -> Enum.filter(items, &(&1.uuid != uuid)) end %>
 
               <div class="text-center text-secondary mt-2">
+                <%= if already_exists_in_container?(from_container, active) do %>
+                <b><%= revision.title %></b> already exists here
+                <% else %>
                 <b><%= revision.title %></b> will be placed here
+                <% end %>
               </div>
 
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="MoveModal.cancel">Cancel</button>
+              <%= if can_remove_page?(revision, from_container) do %>
+                <button type="button"
+                  id="remove_btn"
+                  class="btn btn-danger"
+                  title="Remove this page from the curriculum. Pages that are removed are still accessible from the All Pages view."
+                  phx-click="MoveModal.remove"
+                  phx-value-uuid="<%= node.uuid %>"
+                  phx-value-from_uuid="<%= from_container_uuid(from_container) %>"
+                  phx-hook="TooltipInit">
+                  Remove
+                </button>
+                <div class="flex-grow-1"></div>
+              <% end %>
+              <button type="button" class="btn btn-secondary" phx-click="MoveModal.cancel">Cancel</button>
               <button type="submit"
                 class="btn btn-primary"
                 phx-click="MoveModal.move_item"
                 phx-value-uuid="<%= node.uuid %>"
-                phx-value-from_uuid="<%= from_container.uuid %>"
+                phx-value-from_uuid="<%= from_container_uuid(from_container) %>"
                 phx-value-to_uuid="<%= active.uuid %>"
                 <%= if can_move?(from_container, active) , do: "", else: "disabled" %>>
                 Move
@@ -57,7 +74,25 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
     """
   end
 
+  defp from_container_uuid(from_container) do
+    case from_container do
+      nil -> nil
+      from_container -> from_container.uuid
+    end
+  end
+
+  defp can_remove_page?(revision, from_container),
+    do:
+      revision.resource_type_id == Oli.Resources.ResourceType.get_id_by_type("page") &&
+        from_container != nil
+
+  defp can_move?(nil, _active), do: true
+
   defp can_move?(from_container, active) do
-    active.uuid != nil && active.uuid != from_container.uuid
+    active.uuid != nil && !already_exists_in_container?(from_container, active)
+  end
+
+  defp already_exists_in_container?(from_container, active) do
+    from_container != nil && active.uuid == from_container.uuid
   end
 end

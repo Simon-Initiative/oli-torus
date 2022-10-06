@@ -616,12 +616,18 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{} = context, next, %{"trigger" => trigger, "content" => content} = element) do
+  def popup(%Context{} , next, %{"trigger" => trigger, "content" => content} = element) do
     trigger =
       if escape_xml!(trigger) == "hover" do
         "hover focus"
       else
         "manual"
+      end
+
+    popup_content =
+      case parse_html_content(content) do
+        "" -> "<i class='material-icons'>volume_up</i>"
+        content -> content
       end
 
     [audio_element, _play_code, audio_id] = audio_player(element["audioSrc"])
@@ -647,7 +653,7 @@ defmodule Oli.Rendering.Content.Html do
             <h3 class="popover-header"></h3>
             <div class="popover-body"></div>
           </div>'
-        data-content="#{escape_xml!(parse_html_content(content, context))}">
+        data-content="#{escape_xml!(popup_content)}">
         #{next.()}
         #{audio_element}
       </span>\n

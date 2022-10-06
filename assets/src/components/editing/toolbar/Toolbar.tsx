@@ -5,6 +5,7 @@ import styles from './Toolbar.modules.scss';
 
 interface Props {
   context: CommandContext;
+  fixed?: boolean;
 }
 export const Toolbar = (props: PropsWithChildren<Props>) => {
   const [submenu, setSubmenu] = React.useState<React.MutableRefObject<HTMLButtonElement> | null>(
@@ -21,9 +22,11 @@ export const Toolbar = (props: PropsWithChildren<Props>) => {
     [props.context, submenu, setSubmenu],
   );
 
+  const cssClasses = props.fixed ? `${styles.toolbar} ${styles.fixedToolbar}` : styles.toolbar;
+
   return (
     <ToolbarContext.Provider value={context}>
-      <div className={styles.toolbar}>{props.children}</div>
+      <div className={cssClasses}>{props.children}</div>
     </ToolbarContext.Provider>
   );
 };

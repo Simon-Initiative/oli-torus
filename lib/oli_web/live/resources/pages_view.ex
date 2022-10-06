@@ -2,9 +2,11 @@ defmodule OliWeb.Resources.PagesView do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
   use OliWeb.Common.Modal
 
+  import Oli.Utils, only: [uuid: 0]
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
   import Oli.Authoring.Editing.Utils
+
   alias Oli.Accounts
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Common.{TextSearch, PagedTable, Breadcrumb, FilterBox}
@@ -14,6 +16,14 @@ defmodule OliWeb.Resources.PagesView do
   alias OliWeb.Common.SessionContext
   alias OliWeb.Resources.PagesTableModel
   alias Oli.Repo.{Paging, Sorting}
+  alias Oli.Authoring.Editing.ContainerEditor
+  alias OliWeb.Common.Hierarchy
+  alias OliWeb.Common.Hierarchy.MoveModal
+  alias Oli.Resources.{Revision}
+  alias Oli.Publishing.AuthoringResolver
+  alias Oli.Delivery.Hierarchy
+  alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Authoring.Course.Project
 
   data title, :string, default: "All Pages"
   data project, :any
@@ -164,7 +174,21 @@ defmodule OliWeb.Resources.PagesView do
         </:extra_opts>
       </FilterBox>
 
-      <div class="mb-3"/>
+      <div class="my-3 d-flex flex-row">
+        <div class="flex-grow-1" />
+          <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Create
+            </button>
+            <div class="dropdown-menu dropdown-menu-right">
+              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Unscored">Practice Page</button>
+              <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Scored">Graded Assessment</button>
+              {#if Oli.Features.enabled?("adaptivity")}
+                <button type="button" class="dropdown-item btn btn-primary" :on-click="create_page" phx-value-type="Adaptive">Adaptive Page</button>
+              {/if}
+            </div>
+          </div>
+      </div>
 
       <PagedTable
         filter={@options.text_search}
@@ -272,6 +296,130 @@ defmodule OliWeb.Resources.PagesView do
      )}
   end
 
+  def handle_event("show_move_modal", %{"slug" => slug}, socket) do
+    %{project: project, table_model: table_model} = socket.assigns
+
+    revision = Enum.find(table_model.rows, fn r -> r.slug == slug end)
+    hierarchy = AuthoringResolver.full_hierarchy(project.slug)
+
+    node =
+      case Hierarchy.find_in_hierarchy(hierarchy, fn n -> n.revision.slug == slug end) do
+        nil -> disconnected_page_node(revision, project)
+        found -> found
+      end
+
+    from_container =
+      Hierarchy.find_parent_in_hierarchy(hierarchy, fn n ->
+        n.revision.slug == slug
+      end)
+
+    active =
+      case from_container do
+        nil -> hierarchy
+        other -> other
+      end
+
+    assigns = %{
+      id: "move_#{slug}",
+      node: node,
+      hierarchy: hierarchy,
+      from_container: from_container,
+      active: active
+    }
+
+    {:noreply,
+     assign(socket,
+       modal: %{component: MoveModal, assigns: assigns}
+     )}
+  end
+
+  def handle_event(
+        "MoveModal.move_item",
+        %{"from_uuid" => from_uuid, "to_uuid" => to_uuid},
+        socket
+      ) do
+    %{
+      author: author,
+      project: project,
+      modal: %{assigns: %{node: node, hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %{revision: revision} = node
+
+    from_container =
+      case Hierarchy.find_parent_in_hierarchy(hierarchy, from_uuid) do
+        %{revision: from_container} -> from_container
+        _ -> nil
+      end
+
+    %{revision: to_container} = Hierarchy.find_in_hierarchy(hierarchy, to_uuid)
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket)}
+  end
+
+  def handle_event("MoveModal.remove", %{"from_uuid" => from_uuid}, socket) do
+    %{
+      author: author,
+      project: project,
+      modal: %{assigns: %{node: node, hierarchy: hierarchy}}
+    } = socket.assigns
+
+    %{revision: revision} = node
+    %{revision: from_container} = Hierarchy.find_in_hierarchy(hierarchy, from_uuid)
+    to_container = nil
+
+    {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
+
+    {:noreply, hide_modal(socket)}
+  end
+
+  def handle_event("MoveModal.cancel", _, socket) do
+    {:noreply, hide_modal(socket)}
+  end
+
+  def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
+    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
+
+    active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
+
+    modal = %{
+      modal
+      | assigns: %{
+          modal.assigns
+          | active: active
+        }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
+  def handle_event("create_page", %{"type" => type}, socket) do
+    %{
+      project: project,
+      author: author
+    } = socket.assigns
+
+    case ContainerEditor.add_new(
+           nil,
+           type,
+           author,
+           project
+         ) do
+      {:ok, %Revision{slug: slug}} ->
+        # redirect to new page
+        {:noreply,
+         redirect(socket,
+           to: Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, slug)
+         )}
+
+      {:error, %Ecto.Changeset{} = _changeset} ->
+        {:noreply, put_flash(socket, :error, "Could not create new page")}
+    end
+  end
+
   def handle_event("duplicate_page", %{"id" => page_id}, socket) do
     %{project: project, author: author} = socket.assigns
     page_id = String.to_integer(page_id)
@@ -317,5 +465,16 @@ defmodule OliWeb.Resources.PagesView do
       &TextSearch.handle_delegated/4,
       &PagedTable.handle_delegated/4
     ])
+  end
+
+  defp disconnected_page_node(%Revision{} = revision, %Project{} = project) do
+    %HierarchyNode{
+      uuid: uuid(),
+      numbering: nil,
+      revision: revision,
+      resource_id: revision.resource_id,
+      project_id: project.id,
+      children: []
+    }
   end
 end

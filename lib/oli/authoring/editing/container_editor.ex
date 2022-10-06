@@ -7,6 +7,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   """
 
   import Oli.Authoring.Editing.Utils
+
   alias Oli.Resources.Revision
   alias Oli.Resources
   alias Oli.Accounts.Author
@@ -18,6 +19,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   alias Oli.Authoring.Broadcaster
   alias Oli.Authoring.Editing.ActivityEditor
   alias Oli.Activities
+  alias Oli.Resources.ScoringStrategy
 
   @spec edit_page(Oli.Authoring.Course.Project.t(), any, map) :: any
   def edit_page(%Project{} = project, revision_slug, change) do
@@ -76,7 +78,7 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
   Creates and adds a new page or container as a child of a container.
   """
   def add_new(
-        %Revision{} = container,
+        container,
         %{objectives: _, children: _, content: _, title: _} = attrs,
         %Author{} = author,
         %Project{} = project
@@ -102,20 +104,97 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     {status, _} = result
 
-    if status == :ok do
+    if status == :ok && container != nil do
       broadcast_update(container.resource_id, project.slug)
     end
 
     result
   end
 
+  def add_new(container, type, %Author{} = author, %Project{} = project, numberings \\ nil)
+      when is_binary(type) do
+    attrs = %{
+      tags: [],
+      objectives: %{"attached" => []},
+      children: [],
+      content:
+        case type do
+          "Adaptive" ->
+            %{
+              "model" => [],
+              "advancedAuthoring" => true,
+              "advancedDelivery" => true,
+              "displayApplicationChrome" => false
+            }
+
+          _ ->
+            %{
+              "version" => "0.1.0",
+              "model" => []
+            }
+        end,
+      title:
+        case type do
+          "Adaptive" -> "New Adaptive Page"
+          "Scored" -> "New Assessment"
+          "Unscored" -> "New Page"
+          "Container" -> new_container_name(numberings, container)
+        end,
+      graded:
+        case type do
+          "Adaptive" -> false
+          "Scored" -> true
+          "Unscored" -> false
+          "Container" -> false
+        end,
+      max_attempts:
+        case type do
+          "Adaptive" -> 0
+          "Scored" -> 5
+          "Unscored" -> 0
+          "Container" -> nil
+        end,
+      recommended_attempts:
+        case type do
+          "Adaptive" -> 0
+          "Scored" -> 5
+          "Unscored" -> 0
+          "Container" -> nil
+        end,
+      scoring_strategy_id:
+        case type do
+          "Adaptive" -> ScoringStrategy.get_id_by_type("best")
+          "Scored" -> ScoringStrategy.get_id_by_type("best")
+          "Unscored" -> ScoringStrategy.get_id_by_type("best")
+          "Container" -> nil
+        end,
+      resource_type_id:
+        case type do
+          "Adaptive" -> Oli.Resources.ResourceType.get_id_by_type("page")
+          "Scored" -> Oli.Resources.ResourceType.get_id_by_type("page")
+          "Unscored" -> Oli.Resources.ResourceType.get_id_by_type("page")
+          "Container" -> Oli.Resources.ResourceType.get_id_by_type("container")
+        end
+    }
+
+    add_new(
+      container,
+      attrs,
+      author,
+      project
+    )
+  end
+
   @doc """
   Moves a page or container into another container.
+
+  old_container and/or new_container can either be a %Revision{} or nil for
+  the case when a page is move to/from the curriculum.
   """
   def move_to(
         %Revision{} = revision,
-        %Revision{} = old_container,
-        %Revision{} = new_container,
+        old_container,
+        new_container,
         %Author{} = author,
         %Project{} = project
       ) do
@@ -132,8 +211,11 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     {status, _} = result
 
-    if status == :ok do
+    if status == :ok && old_container != nil do
       broadcast_update(old_container.resource_id, project.slug)
+    end
+
+    if status == :ok && new_container != nil do
       broadcast_update(new_container.resource_id, project.slug)
     end
 
@@ -347,6 +429,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
   def deep_copy_activity(item, _project_slug, _author), do: {:ok, item}
 
+  # if no container is specified then this is a no-op
+  defp remove_from_container(nil, _project_slug, _revision, _author), do: {:ok, nil}
+
   defp remove_from_container(container, project_slug, revision, author) do
     # Create a change that removes the child
     removal = %{
@@ -356,6 +441,9 @@ defmodule Oli.Authoring.Editing.ContainerEditor do
 
     ChangeTracker.track_revision(project_slug, container, removal)
   end
+
+  # if no container is specified then this is a no-op
+  defp append_to_container(nil, _project_slug, _revision_to_attach, _author), do: {:ok, nil}
 
   defp append_to_container(container, project_slug, revision_to_attach, author) do
     append = %{
