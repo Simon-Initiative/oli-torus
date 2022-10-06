@@ -133,22 +133,32 @@ export const gteRule = (value: number, precision?: number) =>
   orRules(gtRule(value, precision), eqRule(value, precision));
 
 // range
-const makeBtwRule = (lowerBound: number, upperBound: number) =>
-  andRules(
-    orRules(gtRule(lowerBound), eqRule(lowerBound)),
-    orRules(ltRule(upperBound), eqRule(upperBound)),
-  );
+const makeRangeRule = (lowerBound: number, upperBound: number, precision?: number) =>
+  [
+    'input = {',
+    rangeBracket(true, true),
+    lowerBound,
+    ',',
+    upperBound,
+    rangeBracket(true, false),
+    precision ? `#${precision}` : '',
+    '}',
+  ].join('');
 
-export const btwRule = (left: number, right: number) => {
+const rangeBracket = (inclusive: boolean, left: boolean) =>
+  inclusive ? (left ? '[' : ']') : left ? '(' : ')';
+
+export const rangeRule = (left: number, right: number, precision?: number) => {
   if (Number.isNaN(left) || Number.isNaN(right)) {
-    return makeBtwRule(0, 0);
+    return makeRangeRule(0, 0);
   }
 
   const lowerBound = left < right ? left : right;
   const upperBound = lowerBound === left ? right : left;
-  return makeBtwRule(lowerBound, upperBound);
+  return makeRangeRule(lowerBound, upperBound, precision);
 };
-export const nbtwRule = (left: number, right: number) => invertRule(btwRule(left, right));
+export const nRangeRule = (left: number, right: number, precision?: number) =>
+  invertRule(rangeRule(left, right, precision));
 
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
@@ -184,9 +194,9 @@ export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Range) {
     switch (input.operator) {
       case 'btw':
-        return btwRule(input.lowerBound, input.upperBound);
+        return rangeRule(input.lowerBound, input.upperBound, input.precision);
       case 'nbtw':
-        return nbtwRule(input.lowerBound, input.upperBound);
+        return nRangeRule(input.lowerBound, input.upperBound, input.precision);
     }
   }
 
@@ -283,8 +293,9 @@ type ParsedRangeRule = {
   precision: Maybe<number>;
 };
 
+// ** Deprecated ** this format will still be parsed, but will be converted to range rule on save
 // Look for two equality matches, something like `input = {-123} || input = {234.5}`
-const matchBetweenRule = (rule: string): Maybe<InputRange> =>
+const matchDeprecatedBetweenRule = (rule: string): Maybe<InputRange> =>
   parseRegex(rule, /= {(-?[.\d]+)}.* = {(-?[.\d]+)}/)
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([lowerBound, upperBound]) =>
@@ -304,8 +315,9 @@ const matchBetweenRule = (rule: string): Maybe<InputRange> =>
       precision: valueOrUndefined(precision),
     }));
 
-// Look for legacy range match, e.g. `input = {[123.4,123.5]}` or `input = {(123.4,123.5)#3}`
-const matchLegacyRangeRule = (rule: string): Maybe<InputRange> =>
+// Look for a range match, possibly with a precision
+// e.g. `input = {[123.4,123.5]}` or`input = {(123.4,123.5)#3}`
+const matchRangeRule = (rule: string): Maybe<InputRange> =>
   parseRegex(rule, /{[[(]\s*([-.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?}/)
     .lift((matches) => matches.slice(1, 4).map(maybeAsNumber))
     .bind(([lowerBound, upperBound, precision]) =>
@@ -326,8 +338,8 @@ const matchLegacyRangeRule = (rule: string): Maybe<InputRange> =>
     }));
 
 export const parseInputFromRule = firstMatch<string, Input>([
-  matchBetweenRule,
-  matchLegacyRangeRule,
+  matchDeprecatedBetweenRule,
+  matchRangeRule,
   matchSingleNumberRule,
   matchSingleTextRule,
 ]);

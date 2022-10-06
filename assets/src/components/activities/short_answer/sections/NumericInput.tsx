@@ -19,9 +19,11 @@ interface SimpleNumericInputProps extends InputProps {
 
 const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
+  const numericInputRef = createRef<HTMLInputElement>();
 
   return (
     <input
+      ref={numericInputRef}
       disabled={!editMode}
       type="number"
       className="form-control"
@@ -29,6 +31,7 @@ const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditIn
         onEditInput({ ...input, value: parseInt(e.target.value) });
       }}
       value={input.value}
+      onWheel={disableScrollWheelChange(numericInputRef)}
     />
   );
 };
@@ -40,31 +43,34 @@ interface RangeNumericInputProps extends InputProps {
 
 const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
-  const numericInputRef = createRef<HTMLInputElement>();
+  const lowerBoundInputRef = createRef<HTMLInputElement>();
+  const upperBoundInputRef = createRef<HTMLInputElement>();
 
   return (
     <div className="d-flex flex-column d-md-flex flex-md-row align-items-center">
       <input
-        disabled={!editMode}
-        type="number"
-        className="form-control"
-        onChange={({ target: { value } }) => {
-          onEditInput({ ...input, upperBound: parseFloat(value) });
-        }}
-        value={input.lowerBound}
-      />
-      <div className="mx-1">and</div>
-      <input
-        ref={numericInputRef}
-        placeholder="Correct answer"
+        ref={lowerBoundInputRef}
         disabled={!editMode}
         type="number"
         className="form-control"
         onChange={({ target: { value } }) => {
           onEditInput({ ...input, lowerBound: parseFloat(value) });
         }}
+        value={input.lowerBound}
+        onWheel={disableScrollWheelChange(lowerBoundInputRef)}
+      />
+      <div className="mx-1">and</div>
+      <input
+        ref={lowerBoundInputRef}
+        placeholder="Correct answer"
+        disabled={!editMode}
+        type="number"
+        className="form-control"
+        onChange={({ target: { value } }) => {
+          onEditInput({ ...input, upperBound: parseFloat(value) });
+        }}
         value={input.upperBound}
-        onWheel={disableScrollWheelChange(numericInputRef)}
+        onWheel={disableScrollWheelChange(upperBoundInputRef)}
       />
     </div>
   );
@@ -212,13 +218,14 @@ export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {
     if (isRangeOperator(e.target.value)) {
       const nextOp = rangeOperator(e.target.value);
       // if we are switching from numeric operator to range, change the input
-      // type and use the numeric value as the initial lower bound
-      const nextInput = isRangeOperator(input.operator)
+      // type and use the numeric value as the initial lower and upper bounds
+      const nextInput = !isRangeOperator(input.operator)
         ? {
             kind: InputKind.Range,
             lowerBound: (input as InputNumeric).value,
+            upperBound: (input as InputNumeric).value,
           }
-        : input;
+        : (input as InputNumeric);
       onEditInput({ ...nextInput, operator: nextOp } as InputRange);
     } else {
       const nextOp = numericOperator(e.target.value);
@@ -229,7 +236,7 @@ export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {
             kind: InputKind.Numeric,
             value: (input as InputRange).lowerBound,
           }
-        : input;
+        : (input as InputRange);
       onEditInput({ ...nextInput, operator: nextOp } as InputNumeric);
     }
   };
