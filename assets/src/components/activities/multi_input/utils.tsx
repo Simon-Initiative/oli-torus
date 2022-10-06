@@ -45,7 +45,7 @@ export const defaultModel = (): MultiInputSchema => {
     stem: multiInputStem(input),
     choices: [],
     inputs: [{ inputType: 'text', id: input.id, partId: '1' }],
-    partSubmission: false,
+    submitPerPart: false,
     authoring: {
       parts: [makePart(Responses.forTextInput(), [makeHint('')], '1')],
       targeted: [],
