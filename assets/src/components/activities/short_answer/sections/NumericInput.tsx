@@ -232,6 +232,30 @@ const precisionInputValue = (precision: Precision) => {
   }
 };
 
+const DIGITS: Record<string, boolean> = {
+  '0': true,
+  '1': true,
+  '2': true,
+  '3': true,
+  '4': true,
+  '5': true,
+  '6': true,
+  '7': true,
+  '8': true,
+  '9': true,
+};
+const isDigit = (c: string): boolean => DIGITS[c];
+const numberOfDigits = (value: number) => value.toString().split('').filter(isDigit).length;
+
+const inferPrecision = (input: InputNumeric | InputRange) => {
+  switch (input.kind) {
+    case InputKind.Numeric:
+      return numberOfDigits(input.value);
+    case InputKind.Range:
+      return Math.min(numberOfDigits(input.lowerBound), numberOfDigits(input.upperBound));
+  }
+};
+
 interface PrecisionInputProps {
   input: InputNumeric | InputRange;
   onEditInput: (input: InputNumeric | InputRange) => void;
@@ -251,8 +275,7 @@ const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) =
       setPrecision({ kind: PrecisionKind.None });
       onEditInput({ ...input, precision: undefined });
     } else {
-      const DEFAULT_PRECISION = 3;
-      const p = { kind: PrecisionKind.WithPrecision, value: DEFAULT_PRECISION };
+      const p = { kind: PrecisionKind.WithPrecision, value: inferPrecision(input) };
       setPrecision(p);
       onEditInput({ ...input, precision: p.value });
     }
