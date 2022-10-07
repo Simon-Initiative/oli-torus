@@ -65,15 +65,11 @@ describe('rules', () => {
   });
 
   it('between two numbers rule', () => {
-    expect(rangeRule(42, 43, true)).toBe(
-      'input = {43} || (input < {43}) && (input = {42} || (input > {42}))',
-    );
+    expect(rangeRule(42, 43, true)).toBe('input = {[42,43]}');
   });
 
   it('not between two numbers', () => {
-    expect(notRangeRule(42, 43, true)).toBe(
-      '(!(input = {43} || (input < {43}) && (input = {42} || (input > {42}))))',
-    );
+    expect(notRangeRule(42, 43, true)).toBe('(!(input = {[42,43]}))');
   });
 
   it('invert rule', () => {
@@ -120,27 +116,33 @@ describe('rules', () => {
   });
 
   it('properly parses escaped input from rule', () => {
-    expect(parseInputFromRule('input like {\\{id2\\}}').valueOrThrow()).toEqual({
-      kind: InputKind.Text,
-      operator: 'regex',
-      value: '{id2}',
-    });
+    expect(parseInputFromRule('input like {\\{id2\\}}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Text,
+        operator: 'regex',
+        value: '{id2}',
+      }),
+    );
   });
 
   it('properly parses range input from rule', () => {
-    expect(parseInputFromRule('input = {123} || input = {234}').valueOrThrow()).toEqual({
-      kind: InputKind.Range,
-      operator: 'btw',
-      lowerBound: 123,
-      upperBound: 234,
-    });
+    expect(parseInputFromRule('input = {123} || input = {234}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        operator: 'btw',
+        lowerBound: 123,
+        upperBound: 234,
+      }),
+    );
 
-    expect(parseInputFromRule('input = {-123.5} || input = {234.2}').valueOrThrow()).toEqual({
-      kind: InputKind.Range,
-      operator: 'btw',
-      lowerBound: -123.5,
-      upperBound: 234.2,
-    });
+    expect(parseInputFromRule('input = {-123.5} || input = {234.2}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        operator: 'btw',
+        lowerBound: -123.5,
+        upperBound: 234.2,
+      }),
+    );
   });
 
   it('properly escapes math equation', () => {
