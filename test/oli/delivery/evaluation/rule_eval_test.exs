@@ -43,6 +43,53 @@ defmodule Oli.Delivery.Evaluation.RuleEvalTest do
     refute eval("attemptNumber = {1} && input < {3}", "3.0")
   end
 
+  test "evaluating ranges" do
+    # float inside the range, evaluates to true
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "3.1") == true
+    assert eval("attemptNumber = {1} && input = {(3.0,4)}", "3.1") == true
+    assert eval("attemptNumber = {1} && input = {(3,4.0)}", "3.1") == true
+    assert eval("attemptNumber = {1} && input = {(3.0,4.0)}", "3.1") == true
+
+    # outside the range, evaluates to false
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "2.0") == false
+
+    # same value as exclusive lower boundary, evaluates to false
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "3") == false
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "3.0") == false
+
+    # same value as exclusive upper boundary, evaluates to false
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "4") == false
+    assert eval("attemptNumber = {1} && input = {(3,4)}", "4.0") == false
+
+    # same value as inclusive lower boundary, evaluates to true
+    assert eval("attemptNumber = {1} && input = {[3,4]}", "3") == true
+    assert eval("attemptNumber = {1} && input = {[3,4]}", "3.0") == true
+    assert eval("attemptNumber = {1} && input = {[3.0,4.0]}", "3") == true
+
+    # same value as inclusive upper boundary, evaluates to true
+    assert eval("attemptNumber = {1} && input = {[3,4]}", "4") == true
+    assert eval("attemptNumber = {1} && input = {[3,4]}", "4.0") == true
+    assert eval("attemptNumber = {1} && input = {[3.0,4.0]}", "4") == true
+
+    # gracefully handles space in between range
+    assert eval("attemptNumber = {1} && input = {[3, 5]}", "4") == true
+
+    # handles negative numbers in range
+    assert eval("attemptNumber = {1} && input = {[-3, 5]}", "0") == true
+    assert eval("attemptNumber = {1} && input = {[-3, 5]}", "-3.1") == false
+    assert eval("attemptNumber = {1} && input = {(-3, 5)}", "1") == true
+    assert eval("attemptNumber = {1} && input = {[-3.75, 5.1111]}", "1") == true
+    assert eval("attemptNumber = {1} && input = {(-3.75, 5.1111)}", "1.002") == true
+    assert eval("attemptNumber = {1} && input = {[3.75, 5]}", "-1.002") == false
+
+    # handles range with precision
+    assert eval("attemptNumber = {1} && input = {[-5, 5]#4}", "1.002") == true
+    assert eval("attemptNumber = {1} && input = {(100, 101)#5}", "100.20") == true
+    assert eval("attemptNumber = {1} && input = {(100, 101)#3}", "100.1") == false
+    assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0") == true
+    assert eval("attemptNumber = {1} && input = {(-1, 1)#1}", "0.0") == false
+  end
+
   test "evaluating like" do
     assert eval("input like {cat}", "cat")
     refute eval("input like {cat}", "caaat")

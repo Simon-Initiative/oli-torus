@@ -69,8 +69,8 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp eval({:lt, lhs, rhs}, context) do
     left = eval(lhs, context)
     right = eval(rhs, context)
-    {l_value, _} = parse_with_precision(left)
-    {r_value, r_precision} = parse_with_precision(right)
+    l_value = parse_number(left)
+    {r_value, r_precision} = parse_number_with_precision(right)
 
     l_value < r_value &&
       check_precision(left, r_precision)
@@ -79,8 +79,8 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp eval({:gt, lhs, rhs}, context) do
     left = eval(lhs, context)
     right = eval(rhs, context)
-    {l_value, _} = parse_with_precision(left)
-    {r_value, r_precision} = parse_with_precision(right)
+    l_value = parse_number(left)
+    {r_value, r_precision} = parse_number_with_precision(right)
 
     l_value > r_value &&
       check_precision(left, r_precision)
@@ -90,18 +90,36 @@ defmodule Oli.Delivery.Evaluation.Rule do
     left = eval(lhs, context)
     right = eval(rhs, context)
 
-    # this code assumes that the left value is the input and right value
-    # is the rule. we only care that the precision specified in the rule
+    # This code assumes that the left value is the input and right value
+    # is the rule. We only care that the precision specified in the rule
     # matches the precision of the input and not the other way around.
-    {l_value, _} = parse_with_precision(left)
-    {r_value, r_precision} = parse_with_precision(right)
+    cond do
+      is_range?(right) ->
+        l_value = parse_number(left)
 
-    if is_float(left) or is_float(right) do
-      abs(abs(l_value) - abs(r_value)) < 0.00001 &&
-        check_precision(left, r_precision)
-    else
-      l_value == r_value &&
-        check_precision(left, r_precision)
+        case parse_range(right) do
+          {:inclusive, lower, upper, precision} ->
+            lower <= l_value && l_value <= upper &&
+              check_precision(left, precision)
+
+          {:exclusive, lower, upper, precision} ->
+            lower < l_value && l_value < upper &&
+              check_precision(left, precision)
+        end
+
+      is_float?(left) or is_float?(right) ->
+        l_value = parse_number(left)
+        {r_value, r_precision} = parse_number_with_precision(right)
+
+        abs(abs(l_value) - abs(r_value)) < 0.00001 &&
+          check_precision(left, r_precision)
+
+      true ->
+        l_value = parse_number(left)
+        {r_value, r_precision} = parse_number_with_precision(right)
+
+        l_value == r_value &&
+          check_precision(left, r_precision)
     end
   end
 
@@ -111,17 +129,28 @@ defmodule Oli.Delivery.Evaluation.Rule do
   defp check_precision(_value, nil), do: true
 
   # checks the precision
-  defp check_precision(value, precision) do
+  defp check_precision(str, count) when is_binary(str) do
     digit_count =
-      value
+      str
       |> String.split("")
       |> Enum.filter(&is_digit?/1)
       |> Enum.count()
 
-    digit_count == precision
+    digit_count == count
   end
 
+  defp is_range?(str), do: String.starts_with?(str, ["[", "("])
   defp is_float?(str), do: String.contains?(str, ".")
+
+  defp parse_range(range_str) do
+    case Regex.run(~r/([[(])\s*(-?[.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?/, range_str) do
+      [_, "[", lower, upper | maybe_precision] ->
+        {:inclusive, parse_number(lower), parse_number(upper), parse_precision(maybe_precision)}
+
+      [_, "(", lower, upper | maybe_precision] ->
+        {:exclusive, parse_number(lower), parse_number(upper), parse_precision(maybe_precision)}
+    end
+  end
 
   @digits %{
     "0" => true,
@@ -137,14 +166,14 @@ defmodule Oli.Delivery.Evaluation.Rule do
   }
   defp is_digit?(c), do: Map.has_key?(@digits, c)
 
-  defp parse_with_precision(str) when is_binary(str) do
+  defp parse_number_with_precision(str) when is_binary(str) do
     case String.split(str, "#") do
-      [value] -> {parse_value(value), nil}
-      [v, p] -> {parse_value(v), parse_precision(p)}
+      [value] -> {parse_number(value), nil}
+      [v, p] -> {parse_number(v), parse_precision(p)}
     end
   end
 
-  defp parse_value(str) when is_binary(str) do
+  defp parse_number(str) when is_binary(str) do
     if is_float?(str) do
       str
       |> Float.parse()
@@ -155,6 +184,9 @@ defmodule Oli.Delivery.Evaluation.Rule do
       |> drop_remainder()
     end
   end
+
+  defp parse_precision([]), do: nil
+  defp parse_precision([str]) when is_binary(str), do: parse_precision(str)
 
   defp parse_precision(str) when is_binary(str) do
     str
