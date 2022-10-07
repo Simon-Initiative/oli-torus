@@ -1,10 +1,26 @@
-defmodule OliWeb.Objectives.SelectExistingSubModal do
-  use Surface.Component
+defmodule OliWeb.ObjectivesLive.SelectExistingSubModal do
+  use Surface.LiveComponent
 
-  prop id, :string, required: true
+  alias OliWeb.Common.TextSearch
+
+  data filtered_sub_objectives, :list, default: []
+  data query, :string, default: ""
+
+  prop sub_objectives, :list, default: []
   prop parent_slug, :string, required: true
-  prop sub_objectives, :list, required: true
-  prop add, :event, required: true
+  prop add, :atom, required: true
+
+  def update(assigns, socket) do
+    {:ok,
+      assign(socket,
+        id: assigns.id,
+        parent_slug: assigns.parent_slug,
+        add: assigns.add,
+        sub_objectives: assigns.sub_objectives,
+        filtered_sub_objectives: assigns.sub_objectives
+      )
+    }
+  end
 
   def render(assigns) do
     ~F"""
@@ -17,16 +33,16 @@ defmodule OliWeb.Objectives.SelectExistingSubModal do
             </div>
             <div class="modal-body">
               <div class="container form-container">
-                <div class="d-flex flex-column">
-                  {#for sub_objective <- @sub_objectives}
+                <TextSearch id="text-search" text={@query} event_target={@myself} />
+                <div class="d-flex flex-column mt-3">
+                  {#for sub_objective <- @filtered_sub_objectives}
                     <div class="my-2 d-flex">
-                      <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">{sub_objective.mapping.revision.title}</div>
+                      <div class="p-1 mr-3 flex-grow-1 overflow-auto text-truncate">{sub_objective.title}</div>
                       <button
                         class="btn btn-outline-primary py-1"
                         type="submit"
-                        phx-value-parent_slug={@parent_slug}
-                        phx-value-slug={sub_objective.mapping.revision.slug}
-                        :on-click={@add}> Add
+                        :values={slug: sub_objective.slug, parent_slug: @parent_slug}
+                        :on-click="add"> Add
                       </button>
                     </div>
                   {/for}
@@ -37,5 +53,25 @@ defmodule OliWeb.Objectives.SelectExistingSubModal do
         </div>
       </div>
     """
+  end
+
+  def handle_event("text_search_change", %{"value" => query}, socket) do
+    query_str = String.downcase(query)
+
+    filtered_sub_objectives = Enum.filter(socket.assigns.sub_objectives, fn sub ->
+      String.contains?(String.downcase(sub.title), query_str)
+    end)
+
+    {:noreply,
+      assign(socket,
+        filtered_sub_objectives: filtered_sub_objectives,
+        query: query
+      )
+    }
+  end
+
+  def handle_event("add", values, socket) do
+    send self(), {socket.assigns.add, values}
+    {:noreply, socket}
   end
 end
