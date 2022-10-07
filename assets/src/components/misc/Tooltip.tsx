@@ -1,12 +1,14 @@
 import React from 'react';
+import { classNames } from 'utils/classNames';
 
 interface Props {
+  className?: string;
   title: string;
 }
-export const Tooltip = ({ title }: Props) => {
+export const Tooltip = ({ className, title }: Props) => {
   return (
     <i
-      className="ml-2 material-icons-outlined"
+      className={classNames('ml-2 material-icons-outlined', className)}
       data-toggle="tooltip"
       data-placement="top"
       title={title}

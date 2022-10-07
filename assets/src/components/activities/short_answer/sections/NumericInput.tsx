@@ -11,7 +11,13 @@ import {
 import guid from 'utils/guid';
 import { classNames } from 'utils/classNames';
 import { disableScrollWheelChange } from '../utils';
+import { Tooltip } from 'components/misc/Tooltip';
 
+// here we defined a "editable number" variant data type that contains information
+// about the number that is being edited. for example, a number input being edited
+// may temporarily contain invalid states that we still want to show to the user
+// but we do not want to persist. we may also want to show an error message when
+// a number is invalid so that the user understands what needs to be fixed.
 export enum EditableNumberKind {
   Invalid,
   Valid,
@@ -51,27 +57,42 @@ const SimpleNumericInput: React.FC<SimpleNumericInputProps> = ({ input, onEditIn
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
   const [editableNumber, setEditableNumber] = useState(editableNumberFromNum(input.value));
+  const editableNumberInvalid = editableNumber.kind === EditableNumberKind.Invalid;
 
   return (
-    <input
-      ref={numericInputRef}
-      disabled={!editMode}
-      type="number"
-      className="form-control"
-      onChange={({ target: { value } }) => {
-        const newEditableNumber = editableNumberFromString(value);
+    <div>
+      <input
+        ref={numericInputRef}
+        disabled={!editMode}
+        type="number"
+        className={classNames('form-control', editableNumberInvalid && 'is-invalid')}
+        onChange={({ target: { value } }) => {
+          const newEditableNumber = editableNumberFromString(value);
 
-        setEditableNumber(newEditableNumber);
+          setEditableNumber(newEditableNumber);
 
-        if (newEditableNumber.kind === EditableNumberKind.Valid) {
-          onEditInput({ ...input, value: newEditableNumber.value });
-        }
-      }}
-      value={editableNumber.value}
-      onWheel={disableScrollWheelChange(numericInputRef)}
-    />
+          if (newEditableNumber.kind === EditableNumberKind.Valid) {
+            onEditInput({ ...input, value: newEditableNumber.value });
+          }
+        }}
+        value={editableNumber.value}
+        onWheel={disableScrollWheelChange(numericInputRef)}
+      />
+      {editableNumberInvalid && (
+        <div className="d-flex flex-row">
+          <div className="flex-grow-1"></div>
+          <div>
+            <small className="text-danger">Must be a valid number</small>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
+
+const inclusiveOrExclusiveValue = (inclusive: boolean): string =>
+  inclusive ? 'inclusive' : 'exclusive';
+const isInclusive = (value: string): boolean => value === 'inclusive';
 
 interface RangeNumericInputProps extends InputProps {
   input: InputRange;
@@ -96,9 +117,10 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
       <div className="d-md-flex flex-md-row align-items-center">
         <input
           ref={lowerBoundInputRef}
+          placeholder="Lower bound"
           disabled={!editMode}
           type="number"
-          className="form-control"
+          className={classNames('form-control', lowerBoundInvalid && 'is-invalid')}
           onChange={({ target: { value } }) => {
             const newEditableLowerBound = editableNumberFromString(value);
 
@@ -114,10 +136,10 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
         <div className="mx-1">and</div>
         <input
           ref={upperBoundInputRef}
-          placeholder="Correct answer"
+          placeholder="Upper bound"
           disabled={!editMode}
           type="number"
-          className="form-control"
+          className={classNames('form-control mr-3', upperBoundInvalid && 'is-invalid')}
           onChange={({ target: { value } }) => {
             const editableUpperBound = editableNumberFromString(value);
 
@@ -130,6 +152,20 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
           value={editableUpperBound.value}
           onWheel={disableScrollWheelChange(upperBoundInputRef)}
         />
+        <select
+          className="custom-select mr-1"
+          disabled={!editMode}
+          style={{ width: 400 }}
+          value={inclusiveOrExclusiveValue(input.inclusive)}
+          onChange={({ target: { value } }) => {
+            onEditInput({ ...input, inclusive: isInclusive(value) });
+          }}
+          name="range-inclusive-exclusive"
+        >
+          <option value="inclusive">Inclusive</option>
+          <option value="exclusive">Exclusive</option>
+        </select>
+        <Tooltip title="Inclusive will include the boundaries in the range. Exclusive does not include boundaries."></Tooltip>
       </div>
       {lowerBoundInvalid && (
         <div className="d-flex flex-row">
@@ -151,6 +187,9 @@ const RangeNumericInput: React.FC<RangeNumericInputProps> = ({ input, onEditInpu
   );
 };
 
+// like "editable number" above, here we define a variant data type that contains
+// information about the precision that is being edited. precision has an extra state
+// called 'none' that represents when a precision is not sent
 export enum PrecisionKind {
   None,
   Invalid,
@@ -173,10 +212,13 @@ export interface WithPrecision {
 
 export type Precision = NoPrecision | InvalidPrecision | WithPrecision;
 
-export const validatePrecision = (value: string) =>
+export const precisionFromString = (value: string) =>
   value.length > 0 && !isNaN(parseInt(value)) && parseInt(value) > 0
     ? { kind: PrecisionKind.WithPrecision, value: parseInt(value) }
     : { kind: PrecisionKind.Invalid, value: numberOrEmptyString(parseInt(value)) };
+
+const precisionFromNumberOrUndefined = (p: number | undefined): Precision =>
+  p === undefined ? { kind: PrecisionKind.None } : { kind: PrecisionKind.WithPrecision, value: p };
 
 const numberOrEmptyString = (num: number | '') => (num === '' || isNaN(num) ? '' : num);
 
@@ -190,9 +232,6 @@ const precisionInputValue = (precision: Precision) => {
   }
 };
 
-const initialPrecision = (p: number | undefined): Precision =>
-  p === undefined ? { kind: PrecisionKind.None } : { kind: PrecisionKind.WithPrecision, value: p };
-
 interface PrecisionInputProps {
   input: InputNumeric | InputRange;
   onEditInput: (input: InputNumeric | InputRange) => void;
@@ -201,7 +240,7 @@ interface PrecisionInputProps {
 const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   const numericInputRef = createRef<HTMLInputElement>();
-  const [precision, setPrecision] = useState(initialPrecision(input.precision));
+  const [precision, setPrecision] = useState(precisionFromNumberOrUndefined(input.precision));
   const precisionEdit = precision.kind !== PrecisionKind.None;
   const precisionInvalid = precision.kind === PrecisionKind.Invalid;
 
@@ -220,7 +259,8 @@ const PrecisionInput: React.FC<PrecisionInputProps> = ({ input, onEditInput }) =
   };
 
   const onEditPrecision: React.ChangeEventHandler<HTMLInputElement> = ({ target: { value } }) => {
-    const p = validatePrecision(value);
+    const p = precisionFromString(value);
+
     setPrecision(p as Precision);
 
     if (p.kind === PrecisionKind.WithPrecision) {
@@ -298,10 +338,10 @@ export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {
       // type and use the numeric value as the initial lower and upper bounds
       const nextInput = !isRangeOperator(input.operator)
         ? {
+            ...input,
             kind: InputKind.Range,
             lowerBound: (input as InputNumeric).value,
             upperBound: (input as InputNumeric).value,
-            precision: (input as InputNumeric).precision,
           }
         : (input as InputNumeric);
       onEditInput({ ...nextInput, operator: nextOp } as InputRange);
@@ -311,9 +351,9 @@ export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {
       // type and use lower bound as initial value
       const nextInput = isRangeOperator(input.operator)
         ? {
+            ...input,
             kind: InputKind.Numeric,
             value: (input as InputRange).lowerBound,
-            precision: (input as InputRange).precision,
           }
         : (input as InputRange);
       onEditInput({ ...nextInput, operator: nextOp } as InputNumeric);
@@ -325,7 +365,7 @@ export const NumericInput: React.FC<InputProps> = ({ input, onEditInput }) => {
       <div className="d-flex flex-row">
         <select
           disabled={!editMode}
-          className="form-control mr-1"
+          className="form-control mr-3"
           value={input.operator}
           onChange={onSelectOperator}
           name="question-type"

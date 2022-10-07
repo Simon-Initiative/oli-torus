@@ -36,6 +36,7 @@ export type InputRange = {
   operator: RangeOperator;
   lowerBound: number;
   upperBound: number;
+  inclusive: boolean;
   precision?: number;
 };
 
@@ -133,14 +134,19 @@ export const gteRule = (value: number, precision?: number) =>
   orRules(gtRule(value, precision), eqRule(value, precision));
 
 // range
-const makeRangeRule = (lowerBound: number, upperBound: number, precision?: number) =>
+const makeRangeRule = (
+  lowerBound: number,
+  upperBound: number,
+  inclusive: boolean,
+  precision?: number,
+) =>
   [
     'input = {',
-    rangeBracket(true, true),
+    rangeBracket(inclusive, true),
     lowerBound,
     ',',
     upperBound,
-    rangeBracket(true, false),
+    rangeBracket(inclusive, false),
     precision ? `#${precision}` : '',
     '}',
   ].join('');
@@ -148,17 +154,17 @@ const makeRangeRule = (lowerBound: number, upperBound: number, precision?: numbe
 const rangeBracket = (inclusive: boolean, left: boolean) =>
   inclusive ? (left ? '[' : ']') : left ? '(' : ')';
 
-export const rangeRule = (left: number, right: number, precision?: number) => {
+export const rangeRule = (left: number, right: number, inclusive: boolean, precision?: number) => {
   if (Number.isNaN(left) || Number.isNaN(right)) {
-    return makeRangeRule(0, 0);
+    return makeRangeRule(0, 0, inclusive);
   }
 
   const lowerBound = left < right ? left : right;
   const upperBound = lowerBound === left ? right : left;
-  return makeRangeRule(lowerBound, upperBound, precision);
+  return makeRangeRule(lowerBound, upperBound, inclusive, precision);
 };
-export const nRangeRule = (left: number, right: number, precision?: number) =>
-  invertRule(rangeRule(left, right, precision));
+export const notRangeRule = (left: number, right: number, inclusive: boolean, precision?: number) =>
+  invertRule(rangeRule(left, right, inclusive, precision));
 
 export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Text) {
@@ -177,26 +183,26 @@ export const makeRule = (input: Input): string => {
   if (input.kind === InputKind.Numeric) {
     switch (input.operator) {
       case 'gt':
-        return gtRule(input.value);
+        return gtRule(input.value, input.precision);
       case 'gte':
-        return gteRule(input.value);
+        return gteRule(input.value, input.precision);
       case 'lt':
-        return ltRule(input.value);
+        return ltRule(input.value, input.precision);
       case 'lte':
-        return lteRule(input.value);
+        return lteRule(input.value, input.precision);
       case 'eq':
-        return eqRule(input.value);
+        return eqRule(input.value, input.precision);
       case 'neq':
-        return neqRule(input.value);
+        return neqRule(input.value, input.precision);
     }
   }
 
   if (input.kind === InputKind.Range) {
     switch (input.operator) {
       case 'btw':
-        return rangeRule(input.lowerBound, input.upperBound, input.precision);
+        return rangeRule(input.lowerBound, input.upperBound, input.inclusive, input.precision);
       case 'nbtw':
-        return nRangeRule(input.lowerBound, input.upperBound, input.precision);
+        return notRangeRule(input.lowerBound, input.upperBound, input.inclusive, input.precision);
     }
   }
 
@@ -269,7 +275,7 @@ type ParsedNumericRule = {
 };
 
 export const matchSingleNumberRule = (rule: string): Maybe<InputNumeric> =>
-  parseRegex(rule, /{(\d+)(#\d+)?}/)
+  parseRegex(rule, /{(-?[.\d]+)#?(\d+)?}/)
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([value, precision]) =>
       // verify the required values for this matcher are present or return nothing
@@ -290,6 +296,7 @@ type ParsedRangeRule = {
   lowerBound: number;
   upperBound: number;
   operator: RangeOperator;
+  inclusive: boolean;
   precision: Maybe<number>;
 };
 
@@ -300,40 +307,47 @@ const matchDeprecatedBetweenRule = (rule: string): Maybe<InputRange> =>
     .lift((matches) => matches.slice(1, 3).map(maybeAsNumber))
     .bind(([lowerBound, upperBound]) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<number | RangeOperator | Maybe<number>>({
+      Maybe.sequence<number | boolean | RangeOperator | Maybe<number>>({
         lowerBound,
         upperBound,
         operator: parseRangeOperatorFromRule(rule),
+        inclusive: Maybe.just(true),
         precision: optional(Maybe.nothing()),
       }),
     )
-    .lift(({ lowerBound, upperBound, operator, precision }: ParsedRangeRule) => ({
+    .lift(({ lowerBound, upperBound, operator, inclusive, precision }: ParsedRangeRule) => ({
       kind: InputKind.Range,
       lowerBound,
       upperBound,
       operator,
+      inclusive,
       precision: valueOrUndefined(precision),
     }));
 
 // Look for a range match, possibly with a precision
 // e.g. `input = {[123.4,123.5]}` or`input = {(123.4,123.5)#3}`
 const matchRangeRule = (rule: string): Maybe<InputRange> =>
-  parseRegex(rule, /{[[(]\s*([-.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?}/)
-    .lift((matches) => matches.slice(1, 4).map(maybeAsNumber))
-    .bind(([lowerBound, upperBound, precision]) =>
+  parseRegex(rule, /{([[(])\s*(-?[.\d]+)\s*,\s*(-?[.\d]+)\s*[\])]#?(\d+)?}/)
+    .lift((matches) => ({
+      bracketOrBrace: matches[1],
+      matches: matches.slice(2, 5).map(maybeAsNumber),
+    }))
+    .bind(({ bracketOrBrace, matches: [lowerBound, upperBound, precision] }) =>
       // verify the required values for this matcher are present or return nothing
-      Maybe.sequence<number | RangeOperator | Maybe<number>>({
+      Maybe.sequence<number | boolean | RangeOperator | Maybe<number>>({
         lowerBound,
         upperBound,
         operator: parseRangeOperatorFromRule(rule),
+        inclusive: Maybe.just(bracketOrBrace === '['),
         precision: optional(precision),
       }),
     )
-    .lift(({ lowerBound, upperBound, operator, precision }: ParsedRangeRule) => ({
+    .lift(({ lowerBound, upperBound, operator, inclusive, precision }: ParsedRangeRule) => ({
       kind: InputKind.Range,
       lowerBound,
       upperBound,
       operator,
+      inclusive,
       precision: valueOrUndefined(precision),
     }));
 

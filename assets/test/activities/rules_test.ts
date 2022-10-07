@@ -1,6 +1,6 @@
 import {
   andRules,
-  btwRule,
+  rangeRule,
   containsRule,
   matchListRule,
   eqRule,
@@ -10,7 +10,7 @@ import {
   lteRule,
   ltRule,
   matchRule,
-  nbtwRule,
+  notRangeRule,
   neqRule,
   notContainsRule,
   orRules,
@@ -65,13 +65,13 @@ describe('rules', () => {
   });
 
   it('between two numbers rule', () => {
-    expect(btwRule(42, 43)).toBe(
+    expect(rangeRule(42, 43, true)).toBe(
       'input = {43} || (input < {43}) && (input = {42} || (input > {42}))',
     );
   });
 
   it('not between two numbers', () => {
-    expect(nbtwRule(42, 43)).toBe(
+    expect(notRangeRule(42, 43, true)).toBe(
       '(!(input = {43} || (input < {43}) && (input = {42} || (input > {42}))))',
     );
   });
