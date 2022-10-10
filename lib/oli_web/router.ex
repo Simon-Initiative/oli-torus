@@ -33,7 +33,7 @@ defmodule OliWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
@@ -42,21 +42,21 @@ defmodule OliWeb.Router do
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
   end
 
   # pipeline for SSO endpoints
   pipeline :sso do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(Oli.Plugs.ValidateIdToken)
   end
 
   pipeline :skip_csrf_protection do
     plug(:accepts, ["html"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
   end
 

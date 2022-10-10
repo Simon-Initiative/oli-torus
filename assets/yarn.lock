@@ -7535,10 +7535,8 @@ path-type@^4.0.0:
 "phoenix_html@file:../deps/phoenix_html":
   version "3.2.0"
 
-phoenix_live_view@^0.16.3:
-  version "0.16.3"
-  resolved "https://registry.npmjs.org/phoenix_live_view/-/phoenix_live_view-0.16.3.tgz"
-  integrity sha512-9fLLDJ9fvylyPPUUQ917bUErWnvSH56nJUubT+O58bwozr5VMCP55To/465w3a9bJnJ9QFN2U0GkP2/sHTXvFA==
+"phoenix_live_view@file:../deps/phoenix_live_view":
+  version "0.16.2"
 
 picocolors@^1.0.0:
   version "1.0.0"
