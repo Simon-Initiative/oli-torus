@@ -72,6 +72,15 @@ describe('rules', () => {
     expect(notRangeRule(42, 43, true)).toBe('(!(input = {[42,43]}))');
   });
 
+  it('exclusive range', () => {
+    expect(rangeRule(42, 43, false)).toBe('input = {(42,43)}');
+  });
+
+  it('range with precision', () => {
+    expect(rangeRule(-42.5, 43, true, 3)).toBe('input = {[-42.5,43]#3}');
+    expect(rangeRule(-142.001, 43, false, 4)).toBe('input = {(-142.001,43)#4}');
+  });
+
   it('invert rule', () => {
     expect(invertRule(matchRule('id'))).toBe('(!(input like {id}))');
   });
@@ -125,7 +134,7 @@ describe('rules', () => {
     );
   });
 
-  it('properly parses range input from rule', () => {
+  it('properly parses old range input from rule', () => {
     expect(parseInputFromRule('input = {123} || input = {234}').valueOrThrow()).toEqual(
       expect.objectContaining({
         kind: InputKind.Range,
@@ -157,12 +166,45 @@ describe('rules', () => {
     });
   });
 
-  it('properly parses legacy range input from rule', () => {
+  it('properly parses inclusive range input from rule', () => {
+    expect(parseInputFromRule('input like {[0,26]}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        lowerBound: 0,
+        upperBound: 26,
+      }),
+    );
+  });
+
+  it('properly parses inclusive range input from rule', () => {
     expect(parseInputFromRule('input like {[-151.0,151.3]}').valueOrThrow()).toEqual(
       expect.objectContaining({
         kind: InputKind.Range,
         lowerBound: -151.0,
         upperBound: 151.3,
+        inclusive: true,
+      }),
+    );
+  });
+
+  it('properly parses exclusive range input from rule', () => {
+    expect(parseInputFromRule('input like {(-151.0,151.3)}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        lowerBound: -151.0,
+        upperBound: 151.3,
+        inclusive: false,
+      }),
+    );
+  });
+
+  it('properly parses range input from rule with precision', () => {
+    expect(parseInputFromRule('input like {[-151.0,151.3]#3}').valueOrThrow()).toEqual(
+      expect.objectContaining({
+        kind: InputKind.Range,
+        lowerBound: -151.0,
+        upperBound: 151.3,
+        precision: 3,
       }),
     );
   });
