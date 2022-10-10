@@ -1,5 +1,9 @@
-import { isShuffled, toggleAnswerChoiceShuffling } from 'components/activities/common/utils';
-import { HasTransformations } from 'components/activities/types';
+import {
+  isShuffled,
+  toggleAnswerChoiceShuffling,
+  togglePerPartSubmissionOption,
+} from 'components/activities/common/utils';
+import { HasTransformations, HasPerPartSubmissionOption } from 'components/activities/types';
 
 export const shuffleAnswerChoiceSetting = (
   model: HasTransformations,
@@ -8,4 +12,13 @@ export const shuffleAnswerChoiceSetting = (
   isEnabled: isShuffled(model.authoring.transformations),
   label: 'Shuffle answer choice order',
   onToggle: () => dispatch(toggleAnswerChoiceShuffling()),
+});
+
+export const changePerPartSubmission = (
+  model: HasPerPartSubmissionOption,
+  dispatch: (action: any) => void,
+) => ({
+  isEnabled: model.submitPerPart === true,
+  label: 'Submit answers per input',
+  onToggle: () => dispatch(togglePerPartSubmissionOption()),
 });
