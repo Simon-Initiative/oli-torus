@@ -56,7 +56,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
 
 export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
   const { score, outOf, parts } = attemptState;
-  if (!shouldShow || outOf === null || score === null) {
+  if (!shouldShow) {
     return null;
   }
 
