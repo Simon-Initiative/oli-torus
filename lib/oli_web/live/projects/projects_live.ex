@@ -5,8 +5,6 @@ defmodule OliWeb.Projects.ProjectsLive do
 
   use OliWeb, :surface_view
 
-  import Phoenix.HTML.Form
-  import OliWeb.ErrorHelpers
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
@@ -20,6 +18,8 @@ defmodule OliWeb.Projects.ProjectsLive do
   alias Oli.Accounts
   alias OliWeb.Common.SessionContext
   alias OliWeb.Projects.TableModel
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{TextInput, Label, ErrorTag}
 
   @limit 25
 
@@ -153,19 +153,19 @@ defmodule OliWeb.Projects.ProjectsLive do
   end
 
   def render(assigns) do
-    ~H"""
+    ~F"""
     <div class="projects-title-row mb-4">
       <div class="container">
         <div class="row">
           <div class="col-12">
             <div class="d-flex justify-content-between align-items-baseline">
               <div>
-                <%= if @is_admin do %>
+                {#if @is_admin}
                   <div class="form-check" style="display: inline;">
                     <input type="checkbox" class="form-check-input" id="allCheck" checked={@show_all} phx-click="toggle_show_all">
                     <label class="form-check-label" for="allCheck">Show all projects</label>
                   </div>
-                <% end %>
+                {/if}
                 <div class={"form-check #{if @is_admin, do: "ml-4", else: ""}"} style="display: inline;">
                   <input type="checkbox" class="form-check-input" id="deletedCheck" checked={@show_deleted} phx-click="toggle_show_deleted">
                   <label class="form-check-label" for="deletedCheck">Show deleted projects</label>
@@ -190,7 +190,7 @@ defmodule OliWeb.Projects.ProjectsLive do
     <div class="container mb-4">
       <div class="row">
         <div class="col-12">
-          <%= live_component TextSearch, event_target: :live_view, id: "text-search", apply: "text_search_apply", reset: "text_search_reset", change: "text_search_change", text: @text_search %>
+          <TextSearch event_target={:live_view} id="text-search" apply="text_search_apply" reset="text_search_reset" change="text_search_change" text={@text_search} />
         </div>
       </div>
     </div>
@@ -198,10 +198,10 @@ defmodule OliWeb.Projects.ProjectsLive do
     <div class="container">
       <div class="row">
         <div id="projects-table" class="col-12">
-          <%= live_component PagedTable, page_change: "paged_table_page_change", sort: "paged_table_sort",
-            total_count: @total_count, filter: @text_search,
-            selection_change: nil, allow_selection: false,
-            limit: @limit, offset: @offset, table_model: @table_model, show_bottom_paging: true %>
+          <PagedTable page_change="paged_table_page_change" sort="paged_table_sort"
+            total_count={@total_count} filter={@text_search}
+            selection_change={nil} allow_selection={false}
+            limit={@limit} offset={@offset} table_model={@table_model} show_bottom_paging={true} />
         </div>
       </div>
     </div>
@@ -215,28 +215,19 @@ defmodule OliWeb.Projects.ProjectsLive do
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <%= form_for @changeset, Routes.project_path(@socket, :create), [id: "form-create-project"], fn f -> %>
+          <Form for={@changeset} action={Routes.project_path(@socket, :create)}>
             <div class="modal-body">
               <div class="form-label-group">
-                <%= text_input f,
-                      :title,
-                      class: "form-control input-bold " <> error_class(f, :title, "is-invalid"),
-                      placeholder: "Introduction to Psychology",
-                      id: "input-title",
-                      required: true,
-                      autofocus: focusHelper(f, :title, default: true) %>
-                <%= label f, :title, "This can be changed later", class: "control-label text-secondary" %>
-                <%= error_tag f, :title %>
+                <TextInput id="input-title" field={:title} opts={[required: true, placeholder: "e.g. Introduction to Psychology"]}/>
+                <Label field={:title} class="control-label text-secondary">This can be changed later</Label>
+                <ErrorTag field={:title}></ErrorTag>
               </div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-outline-primary" data-dismiss="modal">Cancel</button>
-              <%= submit "Create Project",
-                  id: "button-create-project",
-                  class: "btn btn-primary",
-                  phx_disable_with: "Creating Project..." %>
+              <button type="submit" class="btn btn-primary" phx-disable-with="Creating Project...">Create Project</button>
             </div>
-          <% end %>
+          </Form>
         </div>
       </div>
     </div>

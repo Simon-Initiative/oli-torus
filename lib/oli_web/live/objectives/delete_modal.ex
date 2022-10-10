@@ -5,8 +5,8 @@ defmodule OliWeb.Objectives.DeleteModal do
   alias OliWeb.Objectives.Attachments
 
   def render(assigns) do
-    ~L"""
-    <div class="modal fade show" id="<%= @id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -23,7 +23,7 @@ defmodule OliWeb.Objectives.DeleteModal do
               <button
                 phx-click="delete"
                 phx-key="enter"
-                phx-value-slug="<%= @slug %>"
+                phx-value-slug={@slug}
                 class="btn btn-warning">
                 Delete
               </button>

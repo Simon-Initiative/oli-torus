@@ -55,7 +55,7 @@
             {/for}
           {/if}
 
-          { live_component Details, revision: @selected}
+          <Details revision={@selected} />
         </div>
       </div>
     </div>
