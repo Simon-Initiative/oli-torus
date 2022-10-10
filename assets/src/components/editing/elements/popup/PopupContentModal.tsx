@@ -82,6 +82,8 @@ export const PopupContentModal = (props: Props) => {
               projectSlug={props.commandContext.projectSlug}
               value={content}
               onEdit={(content) => setContent(content as RichText)}
+              fixedToolbar={true}
+              allowBlockElements={false}
             />
 
             <InlineAudioClipPicker

@@ -16,10 +16,23 @@ import { BlockSettings } from 'components/editing/toolbar/editorToolbar/blocks/B
 interface Props {
   context: CommandContext;
   insertOptions: CommandDescription[];
+  fixedToolbar?: boolean;
 }
 
 export const EditorToolbar = (props: Props) => {
   const editor = useSlate();
+  const toolbar = (
+    <Toolbar fixed={props.fixedToolbar} context={props.context}>
+      <Inlines />
+      <BlockToggle blockInsertOptions={props.insertOptions} />
+      <BlockSettings />
+      <BlockInsertMenu blockInsertOptions={props.insertOptions} />
+    </Toolbar>
+  );
+
+  if (props.fixedToolbar) {
+    return toolbar;
+  }
 
   return (
     <HoverContainer
@@ -32,14 +45,7 @@ export const EditorToolbar = (props: Props) => {
           .bind((node) => safeToDOMNode(editor, node))
           .valueOr<any>(undefined)
       }
-      content={
-        <Toolbar context={props.context}>
-          <Inlines />
-          <BlockToggle blockInsertOptions={props.insertOptions} />
-          <BlockSettings />
-          <BlockInsertMenu blockInsertOptions={props.insertOptions} />
-        </Toolbar>
-      }
+      content={toolbar}
     />
   );
 };

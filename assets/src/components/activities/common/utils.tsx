@@ -1,7 +1,6 @@
 import React from 'react';
-import { maybe } from 'tsmonad';
 import {
-  ActivityModelSchema,
+  HasPerPartSubmissionOption,
   makeTransformation,
   PartId,
   Transform,
@@ -20,6 +19,13 @@ export const toggleAnswerChoiceShuffling = () => {
           (xform) => xform.operation !== Transform.shuffle,
         ))
       : model.authoring.transformations.push(makeTransformation('choices', Transform.shuffle));
+  };
+};
+
+export const togglePerPartSubmissionOption = () => {
+  return (model: HasPerPartSubmissionOption): void => {
+    model.submitPerPart =
+      model.submitPerPart === undefined || model.submitPerPart === false ? true : false;
   };
 };
 

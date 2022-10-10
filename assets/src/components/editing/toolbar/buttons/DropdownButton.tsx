@@ -39,6 +39,7 @@ export const DropdownButton = (props: PropsWithChildren<Props>) => {
       positions={['bottom']}
       reposition={true}
       align={'start'}
+      containerStyle={{ zIndex: '100000' }}
       content={<div className={styles.dropdownGroup}>{props.children}</div>}
     >
       <button

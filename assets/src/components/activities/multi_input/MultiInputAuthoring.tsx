@@ -1,5 +1,8 @@
 import { ActivitySettings } from 'components/activities/common/authoring/settings/ActivitySettings';
-import { shuffleAnswerChoiceSetting } from 'components/activities/common/authoring/settings/activitySettingsActions';
+import {
+  shuffleAnswerChoiceSetting,
+  changePerPartSubmission,
+} from 'components/activities/common/authoring/settings/activitySettingsActions';
 import { MultiInputSchema } from 'components/activities/multi_input/schema';
 import { AnswerKeyTab } from 'components/activities/multi_input/sections/AnswerKeyTab';
 import { HintsTab } from 'components/activities/multi_input/sections/HintsTab';
@@ -73,7 +76,12 @@ export const MultiInputComponent = () => {
               onEdit={(t) => dispatch(VariableActions.onUpdateTransformations(t))}
             />
           </TabbedNavigation.Tab>
-          <ActivitySettings settings={[shuffleAnswerChoiceSetting(model, dispatch)]} />
+          <ActivitySettings
+            settings={[
+              shuffleAnswerChoiceSetting(model, dispatch),
+              changePerPartSubmission(model, dispatch),
+            ]}
+          />
         </TabbedNavigation.Tabs>
       ) : (
         'Select an input to edit it'
