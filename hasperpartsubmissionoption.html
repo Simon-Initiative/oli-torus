@@ -7,7 +7,7 @@
     <meta name="generator" content="ExDoc v0.28.3">
     <meta name="project" content="OLI Torus v0.21.5">
 
-    <title>Document locking — OLI Torus v0.21.5</title>
+    <title>HasPerPartSubmissionOption — OLI Torus v0.21.5</title>
     <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
 
     <script src="dist/sidebar_items-e9b1ba3e2d.js"></script>
@@ -95,41 +95,60 @@ OLI Torus
 </button>
 
 
-    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/guides/design/locking.md#L1" title="View Source" class="view-source" rel="help">
+    <a href="https://github.com/Simon-Initiative/oli-torus/blob/main/assets/typedocs/interfaces/HasPerPartSubmissionOption.md#L1" title="View Source" class="view-source" rel="help">
       <i class="ri-code-s-slash-line" aria-hidden="true"></i>
       <span class="sr-only">View Source</span>
     </a>
 
-  <span>Document locking</span>
+  <span>HasPerPartSubmissionOption</span>
 </h1>
 
-<p>Torus authoring is designed to support only one user editing a document at a time. To
-enforce this, the system requires than an exclusive write-lock be obtained prior to
-editing a document.</p><p>The Torus authoring framework implementation handles obtaining and releasing the write-lock
-for a set of documents. This implicit locking approach, as opposed to an explicit approach,
-simplifies an activity implementation since the activity implementation does not need to concern
-itself with obtaining and releasing locks.</p><p>The following sequence diagram overviews the locking implementation.</p><p><img src="assets/locking.png" alt="locking" title="Locking Implementation"/></p><p>The important takeaways from the above diagram are:</p><ul><li>The Torus framework for authoring takes care of obtaining and releasing document locks</li><li>An activity implementation can strictly rely on the <code class="inline">editMode</code> property given to it to determine whether it should enable or disable authoring</li></ul>
+<p><a href="../README.md">oli</a> / <a href="modules.html">Exports</a> / HasPerPartSubmissionOption</p><h1>Interface: HasPerPartSubmissionOption</h1><h2 id="table-of-contents" class="section-heading">
+  <a href="#table-of-contents" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">table-of-contents</p>
+  </a>
+  Table of contents
+</h2>
+<h3 id="properties" class="section-heading">
+  <a href="#properties" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">properties</p>
+  </a>
+  Properties
+</h3>
+<ul><li><a href="hasperpartsubmissionoption.html#submitperpart">submitPerPart</a></li></ul><h2 id="properties-1" class="section-heading">
+  <a href="#properties-1" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">properties-1</p>
+  </a>
+  Properties
+</h2>
+<h3 id="submitperpart" class="section-heading">
+  <a href="#submitperpart" class="hover-link"><i class="ri-link-m" aria-hidden="true"></i>
+  <p class="sr-only">submitperpart</p>
+  </a>
+  submitPerPart
+</h3>
+<p>• <strong>submitPerPart</strong>: <code class="inline">boolean</code></p><h4>Defined in</h4><p><a href="https://github.com/Simon-Initiative/oli-torus/blob/ac4e930/assets/src/components/activities/types.ts#L412">src/components/activities/types.ts:412</a></p>
 <div class="bottom-actions">
   <div class="bottom-actions-item">
 
-      <a href="attempt-handling.html" class="bottom-actions-button" rel="prev">
+      <a href="hasparts.html" class="bottom-actions-button" rel="prev">
         <span class="subheader">
           ← Previous Page
         </span>
         <span class="title">
-Attempt handling
+HasParts
         </span>
       </a>
 
   </div>
   <div class="bottom-actions-item">
 
-      <a href="page-model.html" class="bottom-actions-button" rel="next">
+      <a href="haspreviewtext.html" class="bottom-actions-button" rel="next">
         <span class="subheader">
           Next Page →
         </span>
         <span class="title">
-Page model
+HasPreviewText
         </span>
       </a>
 
