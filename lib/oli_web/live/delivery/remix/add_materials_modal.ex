@@ -4,24 +4,20 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
 
   alias OliWeb.Common.Hierarchy.HierarchyPicker
 
-  def render(
-        %{
-          id: id,
-          hierarchy: hierarchy,
-          active: active,
-          selection: selection,
-          preselected: preselected,
-          publications: publications,
-          selected_publication: selected_publication
-        } = assigns
-      ) do
-    maybe_add_disabled =
-      if can_add?(selection),
-        do: assigns_to_attributes(assigns, []),
-        else: assigns_to_attributes(assigns, disabled: true)
+  def render(%{selection: selection} = assigns) do
+    assigns =
+      assigns
+      |> assign(
+        :maybe_add_disabled,
+        if can_add?(selection) do
+          []
+        else
+          [disabled: true]
+        end
+      )
 
     ~H"""
-    <div class="modal fade show" style="display: block" id={"#{id}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    <div class="modal fade show" style="display: block" id={"#{@id}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -31,28 +27,28 @@ defmodule OliWeb.Delivery.Remix.AddMaterialsModal do
               </button>
             </div>
             <div class="modal-body">
-            <HierarchyPicker.picker
+            <HierarchyPicker.render
               id="hierarchy_picker"
               select_mode={:multiple}
-              hierarchy={hierarchy}
-              active={active}
-              selection={selection}
-              preselected={preselected}
-              publications={publications}
-              selected_publication={selected_publication} />
+              hierarchy={@hierarchy}
+              active={@active}
+              selection={@selection}
+              preselected={@preselected}
+              publications={@publications}
+              selected_publication={@selected_publication} />
             </div>
             <div class="modal-footer">
-              <%= if Enum.count(selection) > 0 do %>
+              <%= if Enum.count(@selection) > 0 do %>
                 <span class="mr-2">
-                  <%= Enum.count(selection) %> items selected
+                  <%= Enum.count(@selection) %> items selected
                 </span>
               <% end %>
               <button type="button" class="btn btn-secondary" data-dismiss="modal" phx-click="AddMaterialsModal.cancel">Cancel</button>
               <button type="submit"
                 class="btn btn-primary"
-                onclick={"$('##{id}').modal('hide')"}
+                onclick={"$('##{@id}').modal('hide')"}
                 phx-click="AddMaterialsModal.add"
-                {maybe_add_disabled} >
+                {@maybe_add_disabled} >
                 Add
               </button>
             </div>

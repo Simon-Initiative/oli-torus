@@ -191,7 +191,6 @@ defmodule OliWeb.Delivery.RemixSection do
        dragging: nil,
        selected: nil,
        has_unsaved_changes: false,
-       modal: nil,
        delivery_breadcrumb: true,
        breadcrumbs: breadcrumbs,
        redirect_after_save: redirect_after_save,
@@ -338,7 +337,7 @@ defmodule OliWeb.Delivery.RemixSection do
 
     node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    assigns = %{
+    modal_assigns = %{
       id: "move_#{uuid}",
       node: node,
       hierarchy: hierarchy,
@@ -346,9 +345,17 @@ defmodule OliWeb.Delivery.RemixSection do
       active: active
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <MoveModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: MoveModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -367,7 +374,7 @@ defmodule OliWeb.Delivery.RemixSection do
         {pub.id, resource_id}
       end)
 
-    assigns = %{
+    modal_assigns = %{
       id: "add_materials_modal",
       hierarchy: nil,
       active: nil,
@@ -377,9 +384,17 @@ defmodule OliWeb.Delivery.RemixSection do
       selected_publication: nil
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <AddMaterialsModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: AddMaterialsModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -393,7 +408,7 @@ defmodule OliWeb.Delivery.RemixSection do
       active: active,
       pinned_project_publications: pinned_project_publications,
       available_publications: available_publications,
-      modal: %{assigns: %{selection: selection}}
+      modal_assigns: %{selection: selection}
     } = socket.assigns
 
     publication_ids =
@@ -434,11 +449,11 @@ defmodule OliWeb.Delivery.RemixSection do
        pinned_project_publications: pinned_project_publications,
        has_unsaved_changes: true
      )
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("HierarchyPicker.select_publication", %{"id" => publication_id}, socket) do
-    %{modal: modal} = socket.assigns
+    %{modal_assigns: modal_assigns} = socket.assigns
 
     publication =
       Publishing.get_publication!(publication_id)
@@ -446,48 +461,39 @@ defmodule OliWeb.Delivery.RemixSection do
 
     hierarchy = publication_hierarchy(publication)
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | hierarchy: hierarchy,
-            active: hierarchy,
-            selected_publication: publication
-        }
+    modal_assigns = %{
+      modal_assigns
+      | hierarchy: hierarchy,
+        active: hierarchy,
+        selected_publication: publication
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   def handle_event("HierarchyPicker.clear_publication", _, socket) do
-    %{modal: modal} = socket.assigns
+    %{modal_assigns: modal_assigns} = socket.assigns
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | hierarchy: nil,
-            active: nil
-        }
+    modal_assigns = %{
+      modal_assigns
+      | hierarchy: nil,
+        active: nil
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
-    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
+    %{modal_assigns: %{hierarchy: hierarchy} = modal_assigns} = socket.assigns
 
     active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | active: active
-        }
+    modal_assigns = %{
+      modal_assigns
+      | active: active
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -496,31 +502,26 @@ defmodule OliWeb.Delivery.RemixSection do
         socket
       ) do
     %{
-      modal:
+      modal_assigns:
         %{
-          assigns: %{
-            selection: selection,
-            hierarchy: hierarchy,
-            selected_publication: publication
-          }
-        } = modal
+          selection: selection,
+          hierarchy: hierarchy,
+          selected_publication: publication
+        } = modal_assigns
     } = socket.assigns
 
     item = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | selection:
-              xor(
-                selection,
-                {publication.id, item.revision.resource_id}
-              )
-        }
+    modal_assigns = %{
+      modal_assigns
+      | selection:
+          xor(
+            selection,
+            {publication.id, item.revision.resource_id}
+          )
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -542,11 +543,11 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply,
      socket
      |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("show_remove_modal", %{"uuid" => uuid}, socket) do
@@ -554,14 +555,22 @@ defmodule OliWeb.Delivery.RemixSection do
 
     node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    assigns = %{
+    modal_assigns = %{
       id: "remove_#{uuid}",
       node: node
     }
 
+    modal = fn assigns ->
+      ~H"""
+        <RemoveModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: RemoveModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -578,11 +587,11 @@ defmodule OliWeb.Delivery.RemixSection do
     {:noreply,
      socket
      |> assign(hierarchy: hierarchy, active: active, has_unsaved_changes: true)
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("RemoveModal.cancel", _, socket) do
-    {:noreply, socket}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   defp xor(list, item) do
@@ -626,19 +635,21 @@ defmodule OliWeb.Delivery.RemixSection do
     """
   end
 
-  defp render_breadcrumb_item(
-         %{breadcrumb: breadcrumb, show_short: show_short, is_last: is_last} = assigns
-       ) do
-    maybe_disabled =
-      if is_last do
-        assigns_to_attributes(assigns, disabled: true)
-      else
-        assigns_to_attributes(assigns, [])
-      end
+  defp render_breadcrumb_item(%{is_last: is_last} = assigns) do
+    assigns =
+      assigns
+      |> assign(
+        :maybe_disabled,
+        if is_last do
+          [disabled: true]
+        else
+          []
+        end
+      )
 
     ~H"""
-    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" {maybe_disabled} phx-click="set_active" phx-value-uuid={breadcrumb.slug}>
-      <%= get_title(breadcrumb, show_short) %>
+    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" {@maybe_disabled} phx-click="set_active" phx-value-uuid={@breadcrumb.slug}>
+      <%= get_title(@breadcrumb, @show_short) %>
     </button>
     """
   end

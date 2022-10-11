@@ -27,7 +27,7 @@ defmodule OliWeb.Common.Hierarchy.MoveModal do
               </button>
             </div>
             <div class="modal-body">
-              <HierarchyPicker.picker
+              <HierarchyPicker.render
                 id={"#{id}_hierarchy_picker"}
                 hierarchy={hierarchy}
                 active={active}

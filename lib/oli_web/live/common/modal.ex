@@ -41,21 +41,46 @@ defmodule OliWeb.Common.Modal do
   defmacro __using__([]) do
     quote do
       def render_modal(assigns) do
-        case assigns[:modal] do
+        case assigns[:__modal__] do
           nil ->
             nil
 
-          %{component: component, assigns: assigns} ->
-            live_component(component, assigns)
+          component when is_function(component) ->
+            component.(assigns)
+
+          # %{component: component, assigns: modal_assigns} when is_function(component) ->
+          #   component.(modal_assigns)
+
+          %{component: component, assigns: modal_assigns} ->
+            live_component(component, modal_assigns)
         end
       end
 
       def handle_event("_bsmodal.unmount", _, socket) do
-        {:noreply, assign(socket, modal: nil)}
+        case socket.assigns do
+          %{__modal_assigns_after_hide__: assigns_after_hide}
+          when not is_nil(assigns_after_hide) ->
+            {:noreply,
+             assign(
+               socket,
+               Keyword.merge(assigns_after_hide, __modal__: nil, __modal_assigns_after_hide__: nil)
+             )}
+
+          _ ->
+            {:noreply, assign(socket, __modal__: nil)}
+        end
       end
 
-      def hide_modal(socket) do
-        push_event(socket, "_bsmodal.hide", %{})
+      def show_modal(socket, modal, assigns \\ []) when is_function(modal) do
+        socket
+        |> assign(:__modal__, modal)
+        |> assign(assigns)
+      end
+
+      def hide_modal(socket, assigns_after_hide \\ []) do
+        socket
+        |> push_event("_bsmodal.hide", %{})
+        |> assign(:__modal_assigns_after_hide__, assigns_after_hide)
       end
     end
   end

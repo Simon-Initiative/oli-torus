@@ -12,8 +12,7 @@ defmodule OliWeb.Objectives.Objectives do
     ObjectiveEntry,
     CreateNew,
     DeleteModal,
-    SelectionsModal,
-    BreakdownModal
+    SelectionsModal
   }
 
   alias Oli.Publishing.ObjectiveMappingTransfer
@@ -49,7 +48,6 @@ defmodule OliWeb.Objectives.Objectives do
        project: project,
        subscriptions: subscriptions,
        attachment_summary: @default_attachment_summary,
-       modal: nil,
        author: author,
        force_render: 0,
        can_delete?: true,
@@ -220,32 +218,46 @@ defmodule OliWeb.Objectives.Objectives do
         [] ->
           attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
 
+          modal_assigns = %{
+            id: "delete_objective_modal",
+            slug: slug,
+            project: project,
+            attachment_summary: attachment_summary,
+            force_render: force_render + 1
+          }
+
+          modal = fn assigns ->
+            ~H"""
+              <DeleteModal.render {@modal_assigns} />
+            """
+          end
+
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: DeleteModal,
-               assigns: %{
-                 id: "delete_objective_modal",
-                 slug: slug,
-                 project: project,
-                 attachment_summary: attachment_summary,
-                 force_render: force_render + 1
-               }
-             }
+           show_modal(
+             socket,
+             modal,
+             modal_assigns: modal_assigns
            )}
 
         selections ->
+          modal_assigns = %{
+            id: "selections_modal",
+            selections: selections,
+            project_slug: project.slug,
+            force_render: force_render + 1
+          }
+
+          modal = fn assigns ->
+            ~H"""
+              <SelectionsModal.render {@modal_assigns} />
+            """
+          end
+
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: SelectionsModal,
-               assigns: %{
-                 id: "selections_modal",
-                 selections: selections,
-                 project_slug: project.slug,
-                 force_render: force_render + 1
-               }
-             }
+           assign(
+             socket,
+             modal,
+             modal_assigns: modal_assigns
            )}
       end
     else
@@ -288,50 +300,7 @@ defmodule OliWeb.Objectives.Objectives do
           socket
       end
 
-    {:noreply, hide_modal(socket)}
-  end
-
-  def handle_event("show_breakdown_modal", %{"slug" => slug}, socket) do
-    %{changeset: changeset} = socket.assigns
-
-    modal = %{
-      component: BreakdownModal,
-      assigns: %{
-        id: "breakdown_objective",
-        slug: slug,
-        changeset: changeset
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  # handle clicking of the add objective
-  def handle_event("breakdown", %{"revision" => objective_params}, socket) do
-    with_atom_keys =
-      Map.keys(objective_params)
-      |> Enum.reduce(%{}, fn k, m ->
-        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
-      end)
-
-    slug = Map.get(objective_params, "slug")
-
-    socket =
-      case ObjectiveEditor.add_new_parent_for_objective(
-             with_atom_keys,
-             socket.assigns.author,
-             socket.assigns.project,
-             slug
-           ) do
-        {:ok, _} ->
-          socket
-
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not break down objective")
-      end
-
-    {:noreply, hide_modal(socket)}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   # handle clicking of the add objective

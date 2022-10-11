@@ -92,15 +92,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("show_confirm_email_modal", _, socket) do
-    modal = %{
-      component: ConfirmEmailModal,
-      assigns: %{
-        id: "confirm_email",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "confirm_email",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <ConfirmEmailModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -115,7 +118,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
         {:noreply,
          socket
          |> assign(user: user)
-         |> hide_modal()}
+         |> hide_modal(modal_assigns: nil)}
 
       {:error, _error} ->
         {:noreply, put_flash(socket, :error, "Error confirming author's email")}
@@ -123,15 +126,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("show_unlock_account_modal", _, socket) do
-    modal = %{
-      component: UnlockAccountModal,
-      assigns: %{
-        id: "unlock_account",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "unlock_account",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <UnlockAccountModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -145,19 +151,22 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply,
      socket
      |> assign(user: Accounts.get_author!(id))
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("show_delete_account_modal", _, socket) do
-    modal = %{
-      component: DeleteAccountModal,
-      assigns: %{
-        id: "delete_account",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "delete_account",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <DeleteAccountModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -171,6 +180,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       {:ok, _} ->
         {:noreply,
          socket
+         |> hide_modal(modal_assigns: nil)
          |> put_flash(:info, "Author successfully deleted.")
          |> push_redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Users.AuthorsView))}
 
@@ -180,15 +190,18 @@ defmodule OliWeb.Users.AuthorsDetailView do
   end
 
   def handle_event("show_lock_account_modal", _, socket) do
-    modal = %{
-      component: LockAccountModal,
-      assigns: %{
-        id: "lock_account",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "lock_account",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <LockAccountModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event(
@@ -202,19 +215,22 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply,
      socket
      |> assign(user: Accounts.get_author!(id))
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("show_grant_admin_modal", _, socket) do
-    modal = %{
-      component: GrantAdminModal,
-      assigns: %{
-        id: "grant_admin",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "grant_admin",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <GrantAdminModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("grant_admin", %{"id" => id}, socket) do
@@ -224,19 +240,22 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply,
      socket
      |> change_system_role(author, admin_role_id)
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   def handle_event("show_revoke_admin_modal", _, socket) do
-    modal = %{
-      component: RevokeAdminModal,
-      assigns: %{
-        id: "revoke_admin",
-        user: socket.assigns.user
-      }
+    modal_assigns = %{
+      id: "revoke_admin",
+      user: socket.assigns.user
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <RevokeAdminModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, assign(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("revoke_admin", %{"id" => id}, socket) do
@@ -246,7 +265,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
     {:noreply,
      socket
      |> change_system_role(author, author_role_id)
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   defp change_system_role(socket, author, role_id) do

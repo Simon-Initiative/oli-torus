@@ -113,27 +113,34 @@ defmodule OliWeb.Delivery.ManageUpdates do
     {_version_change, changes} =
       Publishing.diff_publications(current_publication, newest_publication)
 
+    modal_assigns = %{
+      id: "apply_update_modal",
+      current_publication: current_publication,
+      newest_publication: newest_publication,
+      project_id: String.to_integer(project_id),
+      publication_id: String.to_integer(publication_id),
+      changes: changes,
+      updates: updates
+    }
+
+    modal = fn assigns ->
+      ~H"""
+        <ApplyUpdateModal.render {@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{
-         component: ApplyUpdateModal,
-         assigns: %{
-           id: "apply_update_modal",
-           current_publication: current_publication,
-           newest_publication: newest_publication,
-           project_id: String.to_integer(project_id),
-           publication_id: String.to_integer(publication_id),
-           changes: changes,
-           updates: updates
-         }
-       }
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
   def handle_event("apply_update", _, socket) do
     %{
       section: section,
-      modal: %{assigns: %{publication_id: publication_id}},
+      modal_assigns: %{publication_id: publication_id},
       updates_in_progress: updates_in_progress
     } = socket.assigns
 
@@ -146,7 +153,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
     {:noreply,
      socket
      |> assign(updates_in_progress: updates_in_progress)
-     |> hide_modal()}
+     |> hide_modal(modal_assigns: nil)}
   end
 
   @spec handle_info(

@@ -55,18 +55,20 @@ defmodule OliWeb.Common.Table.SortableTable do
   end
 
   defp row(assigns) do
-    tr_attrs =
-      if assigns.row == assigns.model.selected do
-        assigns_to_attributes(assigns,
-          id: id_field(assigns.row, assigns.model),
-          class: "table-active"
-        )
-      else
-        assigns_to_attributes(assigns, id: id_field(assigns.row, assigns.model))
-      end
+    assigns =
+      assigns
+      |> assign(:id, id_field(assigns.row, assigns.model))
+      |> assign(
+        :class,
+        if assigns.row == assigns.model.selected do
+          "table-active"
+        else
+          ""
+        end
+      )
 
     ~H"""
-    <tr {tr_attrs}>
+    <tr id={@id} class={@class}>
       <%= for column_spec <- @model.column_specs do %>
         <td>
           <%= case column_spec.render_fn do

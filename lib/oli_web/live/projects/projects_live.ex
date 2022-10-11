@@ -218,7 +218,7 @@ defmodule OliWeb.Projects.ProjectsLive do
           <Form for={@changeset} action={Routes.project_path(@socket, :create)}>
             <div class="modal-body">
               <div class="form-label-group">
-                <TextInput id="input-title" field={:title} opts={[required: true, placeholder: "e.g. Introduction to Psychology"]}/>
+                <TextInput id="input-title" field={:title} class="form-control input-bold" opts={[required: true, placeholder: "e.g. Introduction to Psychology"]}/>
                 <Label field={:title} class="control-label text-secondary">This can be changed later</Label>
                 <ErrorTag field={:title}></ErrorTag>
               </div>
