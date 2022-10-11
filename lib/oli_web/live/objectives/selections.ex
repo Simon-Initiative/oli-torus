@@ -5,8 +5,8 @@ defmodule OliWeb.Objectives.SelectionsModal do
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(%{project_slug: project_slug} = assigns) do
-    ~L"""
-    <div class="modal fade show" id="selection_<%= project_slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={"selection_#{project_slug}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
           <div class="modal-header">
@@ -20,7 +20,7 @@ defmodule OliWeb.Objectives.SelectionsModal do
             <ul>
               <%= for %{slug: slug, title: title} <- @selections do %>
                 <li>
-                  <a href="<%= Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, slug) %>" target="_blank"><%= title %></a>
+                  <a href={Routes.resource_path(OliWeb.Endpoint, :edit, project_slug, slug)} target="_blank"><%= title %></a>
                 </li>
               <% end %>
             </ul>

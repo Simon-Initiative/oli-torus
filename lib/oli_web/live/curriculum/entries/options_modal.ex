@@ -37,15 +37,16 @@ defmodule OliWeb.Curriculum.OptionsModal do
       Unlimited: 0
     ]
 
-    ~L"""
-    <div class="modal fade show" style="display: block" id="options_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" style="display: block" id={"options_#{revision.slug}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-          <%= f = form_for @changeset, "#",
-            id: "revision-settings-form",
+          <%= form_for @changeset, "#",
+            [id: "revision-settings-form",
             phx_target: @myself,
             phx_change: "validate",
-            phx_submit: "save" %>
+            phx_submit: "save"],
+            fn f -> %>
 
               <div class="modal-header">
                 <h5 class="modal-title text-truncate"><%= resource_type_label(revision) |> String.capitalize() %> Options</h5>
@@ -126,7 +127,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary", onclick: "$('#options_#{revision.slug}').modal('hide')" %>
               </div>
-          </form>
+            <% end %>
         </div>
       </div>
     </div>

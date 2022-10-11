@@ -7,8 +7,8 @@ defmodule OliWeb.Curriculum.DeleteModal do
   alias Oli.Authoring.Editing.ContainerEditor
 
   def render(%{revision: revision} = assigns) do
-    ~L"""
-    <div class="modal fade show" id="delete_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={"delete_#{revision.slug}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -23,11 +23,11 @@ defmodule OliWeb.Curriculum.DeleteModal do
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
               <button
-                phx-target="<%= @myself %>"
+                phx-target={@myself}
                 phx-click="delete"
                 phx-key="enter"
-                phx-value-slug="<%= revision.slug %>"
-                onclick="$('#delete_<%= revision.slug %>').modal('hide')"
+                phx-value-slug={revision.slug}
+                onclick={"$('#delete_#{revision.slug}').modal('hide')"}
                 class="btn btn-danger">
                 Delete <%= resource_type_label(revision) |> String.capitalize() %>
               </button>

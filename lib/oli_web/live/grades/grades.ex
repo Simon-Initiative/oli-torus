@@ -106,7 +106,7 @@ defmodule OliWeb.Grades.GradesLive do
         v -> assigns.progress_current / v * 100
       end
 
-    ~L"""
+    ~H"""
     <div class="mb-2">
       <%= link to: Routes.live_path(OliWeb.Endpoint, OliWeb.Sections.OverviewView, @section.slug) do %>
         <i class="las la-arrow-left"></i> Back
@@ -129,13 +129,12 @@ defmodule OliWeb.Grades.GradesLive do
       <%= live_component OliWeb.Grades.GradeSync, assigns %>
     </div>
 
-    <div class="mt-4 <%= progress_visible %>">
+    <div class={"mt-4 #{progress_visible}"}>
       <p><%= dgettext("grades", "Do not leave this page until this operation completes.") %></p>
       <div class="progress">
-        <div class="progress-bar" role="progressbar" style="width: <%= percent_progress %>%;" aria-valuenow="<%= percent_progress %>" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" role="progressbar" style={"width: #{percent_progress}%;"} aria-valuenow={"#{percent_progress}"} aria-valuemin="0" aria-valuemax="100"></div>
       </div>
     </div>
-
     """
   end
 

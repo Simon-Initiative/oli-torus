@@ -59,7 +59,7 @@ defmodule OliWeb.Objectives.Objectives do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <%= render_modal(assigns) %>
 
     <div class="objectives container">

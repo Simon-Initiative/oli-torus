@@ -3,12 +3,12 @@ defmodule OliWeb.Qa.WarningSummary do
   import OliWeb.Qa.Utils
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <li
       tabindex="0"
-      class="review-link <%= warning_selected?(@warning, @selected) %>"
+      class={"review-link #{warning_selected?(@warning, @selected)}"}
       phx-click="select"
-      phx-value-warning="<%= @warning.id %>"
+      phx-value-warning={@warning.id}
       phx-keydown="keydown"
     >
       <span class="review-link-header">

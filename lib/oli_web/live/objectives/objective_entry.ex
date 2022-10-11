@@ -11,7 +11,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   alias OliWeb.Objectives.ObjectiveForm
 
   defp render_children(assigns) do
-    ~L"""
+    ~H"""
       <%= for child <- @children do %>
         <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: child.mapping,
               children: [], depth: @depth + 1, project: @project, can_delete?: @can_delete?, edit: @edit %>
@@ -22,7 +22,7 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
           <% # we are in create sub-objective mode, render an ObjectiveForm for the new objective %>
           <div class="row create-sub-objective py-1">
             <div class="col-12 pb-2">
-              <div style="margin-left: <%= @depth * 40 %>px">
+              <div style={"margin-left: #{@depth * 40}px"}>
 
               <%= live_component ObjectiveForm, changeset: @changeset,
                 project: @project, title_value: "", slug_value: "", parent_slug_value: @objective_mapping.revision.slug, depth: @depth,
@@ -36,12 +36,12 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
           <% # this objective has one or more children, it is a container objective and more sub-objectives can be created %>
           <div class="row create-sub-objective py-1">
             <div class="col-12 pb-2">
-              <div style="margin-left: <%= @depth * 40 %>px">
+              <div style={"margin-left: #{@depth * 40}px"}>
 
                 <button
                   class="ml-1 btn btn-xs btn-light"
                   phx-click="add_sub"
-                  phx-value-slug="add_sub_<%= @objective_mapping.revision.slug %>">
+                  phx-value-slug={"add_sub_#{@objective_mapping.revision.slug}"}>
                   <i class="fas fa-plus fa-lg"></i> Create Sub-Objective
                 </button>
 
@@ -57,9 +57,9 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
   def render(assigns) do
     margin_for_depth = (assigns.depth - 1) * 40
 
-    ~L"""
+    ~H"""
 
-    <div id="<%= @objective_mapping.revision.slug %>" class="row objective py-1" tabindex="0" style="margin-left: <%= margin_for_depth %>px">
+    <div id={@objective_mapping.revision.slug} class="row objective py-1" tabindex="0" style={"margin-left: #{margin_for_depth}px"}>
       <div class="col-12">
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug -> %>

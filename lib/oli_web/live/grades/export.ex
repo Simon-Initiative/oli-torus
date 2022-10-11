@@ -4,7 +4,7 @@ defmodule OliWeb.Grades.Export do
   def render(assigns) do
     link_text = dgettext("grades", "Download Gradebook")
 
-    ~L"""
+    ~H"""
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Export Grades</h5>

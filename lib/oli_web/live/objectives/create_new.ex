@@ -8,7 +8,7 @@ defmodule OliWeb.Objectives.CreateNew do
   import OliWeb.ErrorHelpers
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <style>
     .form-grow {
     flex-grow: 1;
@@ -24,17 +24,17 @@ defmodule OliWeb.Objectives.CreateNew do
         <div class="col-12">
 
           <div class="d-flex form-grow">
-          <%= f = form_for @changeset, "#", [phx_submit: "new", id: "form-create-objective", class: "form-inline form-grow"] %>
-            <%= text_input f,
-              :title,
-              class: "form-control form-control-sm mb-2 mr-sm-2 mb-sm-0 title container-fluid form-grow" <> error_class(f, :title, "is-invalid"),
-              id: "form-create-objective",
-              placeholder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids, and nucleic acids",
-              required: true %>
+            <%= form_for @changeset, "#", [phx_submit: "new", id: "form-create-objective", class: "form-inline form-grow"], fn f-> %>
+              <%= text_input f,
+                :title,
+                class: "form-control form-control-sm mb-2 mr-sm-2 mb-sm-0 title container-fluid form-grow" <> error_class(f, :title, "is-invalid"),
+                id: "form-create-objective",
+                placeholder: "e.g. Recognize the structures of amino acids, carbohydrates, lipids, and nucleic acids",
+                required: true %>
 
-            <%= error_tag f, :title %>
-            <%= submit "Create", class: "btn btn-primary ob-form-button btn-sm" %>
-            </form>
+              <%= error_tag f, :title %>
+              <%= submit "Create", class: "btn btn-primary ob-form-button btn-sm" %>
+            <% end %>
           </div>
 
         </div>

@@ -49,7 +49,7 @@ defmodule OliWeb.Objectives.Attachments do
     resources_locked = Enum.filter(all, fn r -> is_locked?.(r.resource_id) end)
     resources_not_locked = Enum.filter(all, fn r -> !is_locked?.(r.resource_id) end)
 
-    ~L"""
+    ~H"""
     <div>
 
       <%= if length(resources_not_locked) == 0 and length(resources_locked) == 0 do %>
@@ -69,7 +69,7 @@ defmodule OliWeb.Objectives.Attachments do
           <tbody>
           <%= for r <- resources_not_locked do %>
             <tr>
-              <td><a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>" target="_blank"><%= r.title %></a></td>
+              <td><a href={"#{link_route(@project.slug, parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a></td>
               <td><%= get_type(r) %></td>
             </tr>
           <% end %>
@@ -93,7 +93,7 @@ defmodule OliWeb.Objectives.Attachments do
           <%= for r <- resources_locked do %>
             <tr>
             <td>
-              <a href="<%= link_route(@project.slug, parent_pages, r.resource_id, r.slug) %>" target="_blank"><%= r.title %></a>
+              <a href={"#{link_route(@project.slug, parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a>
             </td>
             <td><%= get_type(r) %></td>
             <td><%= locked_by_email(parent_pages, locked_by, r.resource_id) %></td></tr>

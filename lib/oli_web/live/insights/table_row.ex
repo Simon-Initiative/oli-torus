@@ -13,8 +13,8 @@ defmodule OliWeb.Insights.TableRow do
       first_try_correct: first_try_correct
     } = assigns.row
 
-    ~L"""
-    <tr class="<%= if Map.has_key?(assigns.row, :child_rows) do "table-light" else "" end %>">
+    ~H"""
+    <tr class={"#{if Map.has_key?(assigns.row, :child_rows) do "table-light" else "" end}"}>
       <th scope="row">
         <%= if Map.get(assigns.row, :is_child, false) do %>
           <span class="ml-3">&nbsp;</span>

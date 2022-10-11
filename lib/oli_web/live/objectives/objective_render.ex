@@ -10,7 +10,7 @@ defmodule OliWeb.Objectives.ObjectiveRender do
   alias OliWeb.Objectives.Actions
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <%= case @mode do %>
     <% :show -> %>
       <div class="d-flex flex-row">

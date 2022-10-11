@@ -12,8 +12,8 @@ defmodule OliWeb.Common.MaterialIcon do
         "-" <> assigns.category
       end
 
-    ~L"""
-    <i style="width: <%= width %>;" class='material-icons<%= category %> icon'><%= icon %></i>
+    ~H"""
+    <i style={"width: #{width}"} class={"material-icons#{category} icon"}><%= icon %></i>
     """
   end
 end

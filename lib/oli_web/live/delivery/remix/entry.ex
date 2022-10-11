@@ -61,7 +61,7 @@ defmodule OliWeb.Delivery.Remix.Entry do
         <i class="lar la-list-alt fa-lg mx-2"></i>
         """
       else
-        ~L"""
+        ~H"""
         <i class="lar la-file-alt fa-lg mx-2"></i>
         """
       end

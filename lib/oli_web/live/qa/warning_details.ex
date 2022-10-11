@@ -4,7 +4,7 @@ defmodule OliWeb.Qa.WarningDetails do
   alias OliWeb.Router.Helpers, as: Routes
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <style>
       .delivery-container img {
         max-width: 300px;
@@ -13,7 +13,7 @@ defmodule OliWeb.Qa.WarningDetails do
         max-width: 300px;
       }
     </style>
-    <div class="review-card active" id="<%= @selected.id %>">
+    <div class="review-card active" id={"#{@selected.id}"}>
       <h4 class="d-flex">
         <div>
           Improvement opportunity on <%= OliWeb.Common.Links.resource_link(@selected.revision, @parent_pages, @project) %>
@@ -41,7 +41,7 @@ defmodule OliWeb.Qa.WarningDetails do
                 Fix this issue by one of two ways:
               </p>
               <ol>
-                <li>Edit the <a href="<%= Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug) %>#<%= @selected.content["id"] %>">
+                <li>Edit the <a href={"#{Routes.resource_url(OliWeb.Endpoint, :edit, @project.slug, @selected.revision.slug)}##{@selected.content["id"]}"}>
                   selection logic in the page</a> to allow it to select more activities</li>
                 <li>Create more banked activities to allow the selection to fill the specified count</li>
               </ol>

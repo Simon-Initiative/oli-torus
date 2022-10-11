@@ -5,8 +5,8 @@ defmodule OliWeb.Curriculum.NotEmptyModal do
   import OliWeb.Curriculum.Utils
 
   def render(%{revision: revision} = assigns) do
-    ~L"""
-    <div class="modal fade show" id="not_empty_<%= revision.slug %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={"not_empty_#{revision.slug}"} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -23,7 +23,7 @@ defmodule OliWeb.Curriculum.NotEmptyModal do
               <button
                 phx-click="dismiss"
                 phx-key="enter"
-                phx-value-slug="<%= revision.slug %>"
+                phx-value-slug={revision.slug}
                 class="btn btn-primary">
                 Ok
               </button>

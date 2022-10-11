@@ -4,11 +4,11 @@ defmodule OliWeb.Common.Table.SortableTable do
   alias OliWeb.Common.Table.ColumnSpec
 
   def th(assigns, column_spec, sort_by_spec, sort_order, event_suffix) do
-    ~L"""
-    <th style="cursor: pointer;" phx-click="sort<%= event_suffix %>" phx-value-sort_by="<%= column_spec.name %>">
+    ~H"""
+    <th style="cursor: pointer;" phx-click={"sort#{event_suffix}"} phx-value-sort_by={column_spec.name}>
       <%= column_spec.label %>
       <%= if sort_by_spec == column_spec do %>
-        <i class="fas fa-sort-<%= if sort_order == :asc do "up" else "down" end %>"></i>
+        <i class={"fas fa-sort-#{if sort_order == :asc do "up" else "down" end}"}></i>
       <% end %>
     </th>
     """
@@ -36,7 +36,7 @@ defmodule OliWeb.Common.Table.SortableTable do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
@@ -47,23 +47,35 @@ defmodule OliWeb.Common.Table.SortableTable do
       </thead>
       <tbody>
         <%= for row <- @model.rows do %>
-          <%= if row == @model.selected do %>
-          <tr id="<%= id_field(row, @model) %>" class="table-active">
-          <% else %>
-          <tr id="<%= id_field(row, @model) %>">
-          <% end %>
-            <%= for column_spec <- @model.column_specs do %>
-              <td>
-                <%= case column_spec.render_fn do
-                  nil -> ColumnSpec.default_render_fn(column_spec, row)
-                  func -> func.(with_data(assigns, @model.data), row, column_spec)
-                  end %>
-              </td>
-            <% end %>
-          </tr>
+          <.row model={@model} row={row} />
         <% end %>
       </tbody>
     </table>
+    """
+  end
+
+  defp row(assigns) do
+    tr_attrs =
+      if assigns.row == assigns.model.selected do
+        assigns_to_attributes(assigns,
+          id: id_field(assigns.row, assigns.model),
+          class: "table-active"
+        )
+      else
+        assigns_to_attributes(assigns, id: id_field(assigns.row, assigns.model))
+      end
+
+    ~H"""
+    <tr {tr_attrs}>
+      <%= for column_spec <- @model.column_specs do %>
+        <td>
+          <%= case column_spec.render_fn do
+            nil -> ColumnSpec.default_render_fn(column_spec, @row)
+            func -> func.(with_data(assigns, @model.data), @row, column_spec)
+            end %>
+        </td>
+      <% end %>
+    </tr>
     """
   end
 

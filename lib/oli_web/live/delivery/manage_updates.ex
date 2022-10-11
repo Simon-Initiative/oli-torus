@@ -80,7 +80,7 @@ defmodule OliWeb.Delivery.ManageUpdates do
       updates: updates
     } = assigns
 
-    ~L"""
+    ~H"""
       <%= render_modal(assigns) %>
 
       <p class="my-4">

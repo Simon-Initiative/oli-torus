@@ -36,7 +36,7 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
         "formative"
       end
 
-    ~L"""
+    ~H"""
     <small>
       <%= if count == 0 do %>
         No <%= type %> activities
@@ -52,7 +52,7 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
   end
 
   defp render_objectives(assigns, objectives) do
-    ~L"""
+    ~H"""
     <%= if Enum.count(objectives) > 0 do %>
       <div class="targeted-objectives">
         <%= for %{title: title} <- objectives do %>
@@ -72,7 +72,7 @@ defmodule OliWeb.Curriculum.LearningSummaryLive do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <%= if !is_container?(@child) do %>
       <div class="col-4 entry-section">
         <%= render_objectives(assigns, determine_objectives(@activity_ids, @activity_map, @objective_map)) %>

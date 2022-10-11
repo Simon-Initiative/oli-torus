@@ -27,7 +27,7 @@ defmodule OliWeb.Projects.VisibilityLive do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div class="row py-5 border-bottom">
       <div class="col-md-4">
         <h4>Allow Duplication</h4>
@@ -86,17 +86,17 @@ defmodule OliWeb.Projects.VisibilityLive do
             <div class="col-sm-12">
               <ul class="nav nav-tabs">
                 <li class="nav-item">
-                  <a phx-click="users_tab" class="nav-link <%= if  @tab == :users, do: "active" %>"
+                  <a phx-click="users_tab" class={"nav-link #{if  @tab == :users, do: "active"}"}
                                         data-toggle="tab" href="#users">Authors</a>
                 </li>
                 <li class="nav-item">
-                  <a phx-click="institutions_tab" class="nav-link <%= if  @tab == :institutions, do: "active" %>"
+                  <a phx-click="institutions_tab" class={"nav-link #{if  @tab == :institutions, do: "active"}"}
                                         data-toggle="tab" href="#institutions">Institutions</a>
                 </li>
               </ul>
               <!-- Tab panes -->
               <div class="tab-content mt-2">
-                <div id="users" class="container tab-pane pl-0 <%= if  @tab == :users, do: "active", else: "fade" %>">
+                <div id="users" class={"container tab-pane pl-0 #{if  @tab == :users, do: "active", else: "fade"}"}>
                   <div>
                     <form phx-change="search" class="form-inline form-grow">
                       <%= text_input :search_field, :query, placeholder: "Enter an author email here",
@@ -124,9 +124,9 @@ defmodule OliWeb.Projects.VisibilityLive do
                                 <div class="flex-fill"><%= v.author.email %>
                                 </div>
                                 <div>
-                                  <button id="delete_<%= v.visibility.id %>"
+                                  <button id={"delete_#{v.visibility.id}"}
                                                     phx-click="delete_visibility"
-                                                    phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                                    phx-value-id={v.visibility.id} data-backdrop="static"
                                                     data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
                                     <i class="fas fa-trash-alt fa-lg"></i>
                                   </button></div>
@@ -139,7 +139,7 @@ defmodule OliWeb.Projects.VisibilityLive do
                   </div>
                 </div>
                 <div id="institutions"
-                                    class="container tab-pane pl-0 <%= if  @tab == :institutions, do: "active", else: "fade" %>">
+                                    class={"container tab-pane pl-0 #{if  @tab == :institutions, do: "active", else: "fade"}"}>
                   <div class="card">
                     <div>
                       <form phx-change="search" class="form-inline form-grow">
@@ -167,9 +167,9 @@ defmodule OliWeb.Projects.VisibilityLive do
                                 <div class="d-flex">
                                   <div class="flex-fill"><%= v.institution.name %></div>
                                   <div>
-                                    <button id="delete_<%= v.visibility.id %>"
+                                    <button id={"delete_#{v.visibility.id}"}
                                                     phx-click="delete_visibility"
-                                                    phx-value-id="<%= v.visibility.id %>" data-backdrop="static"
+                                                    phx-value-id={v.visibility.id} data-backdrop="static"
                                                     data-keyboard="false" class="ml-1 btn btn-sm btn-danger">
                                       <i class="fas fa-trash-alt fa-lg"></i>
                                     </button></div>

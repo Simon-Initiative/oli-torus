@@ -100,9 +100,9 @@ defmodule OliWeb.Delivery.RemixSection do
 
     init_state(socket,
       breadcrumbs: set_breadcrumbs(:user, section),
-          section: section,
-          redirect_after_save: redirect_after_save(:instructor, section),
-          available_publications: available_publications
+      section: section,
+      redirect_after_save: redirect_after_save(:instructor, section),
+      available_publications: available_publications
     )
   end
 
@@ -295,7 +295,8 @@ defmodule OliWeb.Delivery.RemixSection do
         destination_index
       )
 
-    hierarchy = Hierarchy.find_and_update_node(hierarchy, updated)
+    hierarchy =
+      Hierarchy.find_and_update_node(hierarchy, updated)
       |> Hierarchy.finalize()
 
     {:noreply, assign(socket, hierarchy: hierarchy, active: updated, has_unsaved_changes: true)}
@@ -530,8 +531,10 @@ defmodule OliWeb.Delivery.RemixSection do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
     node = Hierarchy.find_in_hierarchy(hierarchy, uuid)
-    hierarchy = Hierarchy.move_node(hierarchy, node, to_uuid)
-        |> Hierarchy.finalize()
+
+    hierarchy =
+      Hierarchy.move_node(hierarchy, node, to_uuid)
+      |> Hierarchy.finalize()
 
     # refresh active node
     active = Hierarchy.find_in_hierarchy(hierarchy, active.uuid)
@@ -565,7 +568,8 @@ defmodule OliWeb.Delivery.RemixSection do
   def handle_event("RemoveModal.remove", %{"uuid" => uuid}, socket) do
     %{hierarchy: hierarchy, active: active} = socket.assigns
 
-    hierarchy = Hierarchy.find_and_remove_node(hierarchy, uuid)
+    hierarchy =
+      Hierarchy.find_and_remove_node(hierarchy, uuid)
       |> Hierarchy.finalize()
 
     # refresh active node
@@ -607,9 +611,9 @@ defmodule OliWeb.Delivery.RemixSection do
     %{hierarchy: hierarchy, active: active} = assigns
     breadcrumbs = Breadcrumb.breadcrumb_trail_to(hierarchy, active)
 
-    ~L"""
+    ~H"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid="<%= previous_uuid(breadcrumbs) %>"><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(breadcrumbs)}><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{
@@ -625,8 +629,15 @@ defmodule OliWeb.Delivery.RemixSection do
   defp render_breadcrumb_item(
          %{breadcrumb: breadcrumb, show_short: show_short, is_last: is_last} = assigns
        ) do
-    ~L"""
-    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" <%= if is_last, do: "disabled" %> phx-click="set_active" phx-value-uuid="<%= breadcrumb.slug %>">
+    maybe_disabled =
+      if is_last do
+        assigns_to_attributes(assigns, disabled: true)
+      else
+        assigns_to_attributes(assigns, [])
+      end
+
+    ~H"""
+    <button class="breadcrumb-item btn btn-xs btn-link pl-0 pr-8" {maybe_disabled} phx-click="set_active" phx-value-uuid={breadcrumb.slug}>
       <%= get_title(breadcrumb, show_short) %>
     </button>
     """

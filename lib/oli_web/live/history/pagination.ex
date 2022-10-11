@@ -4,7 +4,7 @@ defmodule OliWeb.RevisionHistory.Pagination do
   alias OliWeb.RevisionHistory.PaginationLink
 
   defp render_none(assigns) do
-    ~L"""
+    ~H"""
     <div></div>
     """
   end
@@ -24,7 +24,7 @@ defmodule OliWeb.RevisionHistory.Pagination do
 
       current_page = div(assigns.page_offset, page_size) + 1
 
-      ~L"""
+      ~H"""
       <nav aria-label="table results paging">
         <ul class="pagination justify-content-center">
           <%= for page <- 1..total_pages do %>

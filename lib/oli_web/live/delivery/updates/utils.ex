@@ -1,13 +1,12 @@
 defmodule OliWeb.Delivery.Updates.Utils do
-  use Phoenix.HTML
+  use Phoenix.LiveComponent
 
-  import Phoenix.LiveView.Helpers
   import OliWeb.Common.FormatDateTime
 
   alias Oli.Publishing.Publication
 
   def render_updates(%{updates: updates, updates_in_progress: updates_in_progress} = assigns) do
-    ~L"""
+    ~H"""
       <div class="available-updates list-group my-3">
         <%= Enum.map(updates, fn {project_id, publication} -> %>
           <div class="list-group-item flex-column align-items-start">
@@ -19,8 +18,8 @@ defmodule OliWeb.Delivery.Updates.Utils do
               <% else %>
                 <button type="button" class="btn btn-sm btn-primary"
                   phx-click="show_apply_update_modal"
-                  phx-value-project-id="<%= project_id %>"
-                  phx-value-publication-id="<%= publication.id %>">View Update</button>
+                  phx-value-project-id={project_id}
+                  phx-value-publication-id={publication.id}>View Update</button>
               <% end %>
             </div>
           </div>
@@ -40,7 +39,7 @@ defmodule OliWeb.Delivery.Updates.Utils do
           project: project
         } = _publication
       ) do
-    ~L"""
+    ~H"""
     <div class="d-flex w-100 justify-content-between">
       <h5 class="mb-1"><%= project.title %> <small><%= "v#{edition}.#{major}.#{minor}" %></small></h5>
       <small>Published <%= date(published, precision: :relative) %></small>
