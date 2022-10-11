@@ -255,7 +255,7 @@ defmodule OliWeb.Users.AuthorsDetailView do
       """
     end
 
-    {:noreply, assign(socket, modal, modal_assigns: modal_assigns)}
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("revoke_admin", %{"id" => id}, socket) do

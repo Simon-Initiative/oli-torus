@@ -2,6 +2,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
   use Surface.Component
 
   alias Surface.Components.{Form, LiveFileInput}
+
   alias Surface.Components.Form.{
     Label,
     Submit
@@ -60,7 +61,7 @@ defmodule OliWeb.Products.Details.ImageUpload do
                   <article class="upload-entry col-12">
                     {#if !entry_has_errors?(@uploads.cover_image, entry)}
                       <figure>
-                        { live_img_preview entry, class: "img-fluid w-75"}
+                        <.live_img_preview entry={entry} />
                         <figcaption class="text-muted">{ entry.client_name }</figcaption>
                       </figure>
 
@@ -122,6 +123,9 @@ defmodule OliWeb.Products.Details.ImageUpload do
 
   defp upload_error(:too_large), do: "Image too large, try again with a image lower than 5 MB."
   defp upload_error(:too_many_files), do: "Too many files, try again with a single file"
-  defp upload_error(:not_accepted), do: "Unacceptable file type, try again with a .jpg .jpeg or .png file"
+
+  defp upload_error(:not_accepted),
+    do: "Unacceptable file type, try again with a .jpg .jpeg or .png file"
+
   defp upload_error(error), do: Phoenix.Naming.humanize(error)
 end
