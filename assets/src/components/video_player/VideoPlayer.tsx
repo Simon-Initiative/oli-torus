@@ -9,6 +9,7 @@ import {
   TimeDivider,
   DurationDisplay,
   ProgressControl,
+  PlaybackRateMenuButton,
 } from 'video-react';
 
 import { MuteButton } from './VideoMuteButton';
@@ -41,7 +42,8 @@ export const VideoPlayer: React.FC<{ video: Video }> = React.memo(({ video }) =>
           <TimeDivider key="time-divider" order={5.2} />
           <DurationDisplay key="duration-display" order={5.3} />
           <ProgressControl key="progress-control" order={6} />
-          <FullScreenButton key="fullscreen-toggle" order={8} />
+          <PlaybackRateMenuButton key="playback-spoeed" order={8} />
+          <FullScreenButton key="fullscreen-toggle" order={9} />
         </ControlBar>
       </Player>
     </div>
