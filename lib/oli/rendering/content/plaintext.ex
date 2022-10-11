@@ -99,6 +99,10 @@ defmodule Oli.Rendering.Content.Plaintext do
     ["[audio with missing src] "]
   end
 
+  def command_button(%Context{} = _context, next, _attrs) do
+    [next.()]
+  end
+
   def table(%Context{} = _context, next, _) do
     [next.()]
   end

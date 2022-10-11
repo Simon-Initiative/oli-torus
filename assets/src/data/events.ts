@@ -1,3 +1,5 @@
+import { MessageEditorComponent } from '../components/editing/elements/command_button/commandButtonTypes';
+
 export interface SurveyDetails {
   id: string;
 }
@@ -13,11 +15,27 @@ export interface ReviewModeAttemptChange {
   model: Record<string, unknown>;
 }
 
+export interface CommandButtonClick {
+  forId: string;
+  message: string;
+}
+
+export interface CommandInventory {
+  callback: (
+    id: string,
+    componentType: string,
+    label: string,
+    MessageEditor?: MessageEditorComponent,
+  ) => void;
+}
+
 export interface TorusEventMap {
   'oli-survey-submit': CustomEvent<SurveyDetails>;
   'oli-survey-reset': CustomEvent<SurveyDetails>;
   'oli-show-content-page': CustomEvent<ShowContentPage>;
   'oli-review-mode-attempt-change': CustomEvent<ReviewModeAttemptChange>;
+  'oli-command-button-click': CustomEvent<CommandButtonClick>;
+  'oli-command-inventory': CustomEvent<CommandInventory>;
 }
 
 export enum Registry {
@@ -25,6 +43,16 @@ export enum Registry {
   SurveyReset = 'oli-survey-reset',
   ShowContentPage = 'oli-show-content-page',
   ReviewModeAttemptChange = 'oli-review-mode-attempt-change',
+  CommandButtonClick = 'oli-command-button-click',
+  CommandInventory = 'oli-command-inventory',
+}
+
+export function makeCommandInventoryEvent(detail: CommandInventory) {
+  return new CustomEvent(Registry.CommandInventory, { detail });
+}
+
+export function makeCommandButtonEvent(detail: CommandButtonClick) {
+  return new CustomEvent(Registry.CommandButtonClick, { detail });
 }
 
 export function makeSurveySubmitEvent(detail: SurveyDetails) {

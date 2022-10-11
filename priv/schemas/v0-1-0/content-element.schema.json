@@ -898,6 +898,30 @@
       },
       "required": ["type", "children"]
     },
+    "command-button": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "command_button"
+        },
+        "target": {
+          "id": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "style": {
+          "oneOf": [{ "const": "link" }, { "const": "button" }]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
     "hyperlink": {
       "type": "object",
       "properties": {
