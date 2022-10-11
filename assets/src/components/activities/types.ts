@@ -407,6 +407,11 @@ export interface HasTransformations {
     transformations: Transformation[];
   };
 }
+
+export interface HasPerPartSubmissionOption {
+  submitPerPart: boolean;
+}
+
 /**
  * Helper function to create a transformation.
  * @param path  JSON path of the node within the model to transform
