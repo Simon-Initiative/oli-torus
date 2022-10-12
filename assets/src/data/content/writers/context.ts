@@ -7,7 +7,6 @@ export interface WriterContext {
   projectSlug?: string;
   bibParams?: any;
   learningLanguage?: string;
-  //learningLanguage: string;
   inputRefContext?: {
     onBlur: (id: string) => void;
     onChange: (id: string, value: string) => void;

@@ -16,6 +16,7 @@ import { insertImageInline } from 'components/editing/elements/image/imageAction
 import { insertInlineFormula } from '../../elements/formula/formulaActions';
 import { insertInlineCallout } from '../../elements/callout/calloutActions';
 import { insertForeign } from '../../elements/foreign/foreignActions';
+import { insertCommandButton } from '../../elements/command_button/commandButtonActions';
 
 interface Props {}
 export const Inlines = (_props: Props) => {
@@ -29,6 +30,7 @@ export const Inlines = (_props: Props) => {
     insertImageInline,
     insertInlineFormula,
     insertInlineCallout,
+    insertCommandButton,
   ];
   const moreInlineOptions = additionalFormattingOptions.concat(inlineInsertions);
 

@@ -39,6 +39,7 @@ export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
 export type Inline =
   | Hyperlink
+  | CommandButton
   | Popup
   | InputRef
   | ImageInline
@@ -340,6 +341,13 @@ export interface Hyperlink extends SlateElement<Text[]> {
   type: 'a';
   href: string;
   target: string;
+}
+
+export interface CommandButton extends SlateElement<Text[]> {
+  type: 'command_button';
+  message: string;
+  target: string;
+  style: 'link' | 'button';
 }
 
 export interface InputRef extends SlateElement<Text[]> {

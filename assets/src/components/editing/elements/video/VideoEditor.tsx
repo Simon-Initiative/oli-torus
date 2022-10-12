@@ -8,6 +8,8 @@ import { VideoPlaceholder } from './VideoPlaceholder';
 import { HoverContainer } from '../../toolbar/HoverContainer';
 import { useElementSelected } from '../../../../data/content/utils';
 import { VideoSettings } from './VideoSettings';
+import { VideoCommandEditor } from './VideoCommandEditor';
+import { useCommandTargetable } from '../command_button/useCommandTargetable';
 
 interface Props extends EditorProps<Video> {}
 
@@ -15,6 +17,12 @@ export const VideoEditor = (props: Props) => {
   const { model } = props;
   const onEdit = useEditModelCallback(model);
   const selected = useElementSelected();
+  useCommandTargetable(
+    model.id,
+    'Video Player',
+    model?.src[0]?.url || 'No video file selected',
+    VideoCommandEditor,
+  );
 
   if (!model.src || model.src.length === 0) {
     return <VideoPlaceholder {...props} />;
