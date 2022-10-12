@@ -10,7 +10,7 @@ defmodule OliWeb.ObjectivesLive.Listing do
     ~F"""
       <div id="accordion" class="accordion p-3">
         {#for {item, index} <- Enum.with_index(@rows)}
-          <div class="card border border-light mb-2">
+          <div id={item.slug} class="card border border-light mb-2">
             <div class="card-header d-flex justify-content-between p-2" id={"heading#{index}"}>
               <button
                 class="btn w-75 text-left"
@@ -36,8 +36,8 @@ defmodule OliWeb.ObjectivesLive.Listing do
                   <ul class="list-group list-group-flush">
                     {#for sub_objective <- item.children}
                       <li class="list-group-item p-2 text-info d-flex sub-obj">
-                        {sub_objective.title}
-                        <div class="ml-5 sub-actions">
+                        <div class="w-75">{sub_objective.title}</div>
+                        <div class="ml-2 sub-actions">
                           <button
                             :on-click="display_edit_modal"
                             :values={slug: sub_objective.slug}

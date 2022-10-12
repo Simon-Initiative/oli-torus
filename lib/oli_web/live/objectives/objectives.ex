@@ -61,7 +61,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     author = Accounts.get_author(author_id)
 
     {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project, [], true)
+      build_objectives(project, [], fn socket -> socket end, true)
 
     {:ok,
       assign(socket,
@@ -77,7 +77,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     }
   end
 
-  defp build_objectives(project, objectives_attachments, first_load \\ false) do
+  defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
     all_objectives =
       project
       |> ObjectiveEditor.fetch_objective_mappings()
@@ -109,6 +109,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         end
       end)
 
+    {:ok, table_model} = TableModel.new(objectives)
+
     pid = self()
     if first_load do
       Task.async(fn ->
@@ -118,20 +120,18 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           |> Map.put(:id, obj.resource_id)
         end)
 
-        send(pid, {:finish_attachments, objectives_attachments})
+        send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
       end)
     else
-      send(pid, {:finish_attachments, objectives_attachments})
+      send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
     end
-
-    {:ok, table_model} = TableModel.new(objectives)
 
     {all_objectives, all_children, objectives, table_model}
   end
 
-  defp return_updated_data(project, socket) do
+  defp return_updated_data(project, flash_fn, socket) do
     {all_objectives, all_children, objectives, table_model} =
-      build_objectives(project, socket.assigns.objectives_attachments)
+      build_objectives(project, socket.assigns.objectives_attachments, flash_fn)
 
     {:noreply,
       socket
@@ -220,7 +220,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     project = socket.assigns.project
 
-    socket =
+    flash_fn =
       case ObjectiveEditor.add_new(
             %{title: title},
             socket.assigns.author,
@@ -228,13 +228,13 @@ defmodule OliWeb.ObjectivesLive.Objectives do
             parent_slug
           ) do
         {:ok, _} ->
-          put_flash(socket, :info, "Objective successfully created")
+          fn socket -> put_flash(socket, :info, "Objective successfully created") end
 
         {:error, _error} ->
-          put_flash(socket, :error, "Could not create objective")
+          fn socket -> put_flash(socket, :error, "Could not create objective") end
       end
 
-    return_updated_data(project, socket)
+    return_updated_data(project, flash_fn, socket)
   end
 
   def handle_event("display_edit_modal", %{"slug" => slug}, socket) do
@@ -262,7 +262,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     project = socket.assigns.project
 
-    socket =
+    flash_fn =
       case ObjectiveEditor.edit(
             slug,
             %{title: title},
@@ -270,13 +270,13 @@ defmodule OliWeb.ObjectivesLive.Objectives do
             project
           ) do
         {:ok, _} ->
-          put_flash(socket, :info, "Objective successfully updated")
+          fn socket -> put_flash(socket, :info, "Objective successfully updated") end
 
         {:error, %Ecto.Changeset{} = _changeset} ->
-          put_flash(socket, :error, "Could not update objective")
+          fn socket -> put_flash(socket, :error, "Could not update objective") end
       end
 
-    return_updated_data(project, socket)
+    return_updated_data(project, flash_fn, socket)
   end
 
   def handle_event("display_add_existing_sub_modal", %{"slug" => slug}, socket) do
@@ -379,16 +379,16 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         ) end
     end
 
-    socket =
+    flash_fn =
       case delete_fn.() do
         {:ok, _} ->
-          put_flash(socket, :info, "Objective successfully removed")
+          fn socket -> put_flash(socket, :info, "Objective successfully removed") end
 
         {:error, _error} ->
-          put_flash(socket, :error, "Could not remove objective")
+          fn socket -> put_flash(socket, :error, "Could not remove objective") end
       end
 
-    return_updated_data(project, socket)
+    return_updated_data(project, flash_fn, socket)
   end
 
   def handle_info({:add_existing_sub, %{"slug" => slug, "parent_slug" => parent_slug} = _params}, socket) do
@@ -396,23 +396,23 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     %{project: project, author: author} = socket.assigns
 
-    socket = case ObjectiveEditor.add_new_parent_for_sub_objective(
+    flash_fn = case ObjectiveEditor.add_new_parent_for_sub_objective(
         slug,
         parent_slug,
         project.slug,
         author
       ) do
       {:ok, _revision} ->
-        put_flash(socket, :info, "Sub-objective successfully added")
+        fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
 
       {:error, _} ->
-        put_flash(socket, :error, "Could not add sub-objective")
+        fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
     end
 
-    return_updated_data(project, socket)
+    return_updated_data(project, flash_fn, socket)
   end
 
-  def handle_info({:finish_attachments, objectives_attachments}, socket) do
+  def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
     objectives =
       Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
         case Enum.find(objectives_attachments, fn oa -> oa.id == rev.resource_id end) do
@@ -437,7 +437,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         table_model: table_model,
         objectives_attachments: objectives_attachments
       )
-      |> push_patch(to: live_path(socket, socket.assigns.params))
+      |> flash_fn.()
+      |> push_patch(to: live_path(socket, socket.assigns.params), replace: true)
     }
   end
 
