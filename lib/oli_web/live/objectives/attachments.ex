@@ -46,17 +46,21 @@ defmodule OliWeb.Objectives.Attachments do
       end
     end
 
-    resources_locked = Enum.filter(all, fn r -> is_locked?.(r.resource_id) end)
-    resources_not_locked = Enum.filter(all, fn r -> !is_locked?.(r.resource_id) end)
+    assigns =
+      assigns
+      |> assign(:resources_locked, Enum.filter(all, fn r -> is_locked?.(r.resource_id) end))
+      |> assign(:resources_not_locked, Enum.filter(all, fn r -> !is_locked?.(r.resource_id) end))
+      |> assign(:parent_pages, parent_pages)
+      |> assign(:locked_by, locked_by)
 
     ~H"""
     <div>
 
-      <%= if length(resources_not_locked) == 0 and length(resources_locked) == 0 do %>
+      <%= if length(@resources_not_locked) == 0 and length(@resources_locked) == 0 do %>
         <p class="mb-4">Are you sure you want to delete this objective? This action cannot be undone.</p>
       <% end %>
 
-      <%= if length(resources_not_locked) > 0 do %>
+      <%= if length(@resources_not_locked) > 0 do %>
         <p class="mb-4">Proceeding will automatically remove this objective from the following resources:</p>
 
         <table class="table table-sm table-bordered">
@@ -67,9 +71,9 @@ defmodule OliWeb.Objectives.Attachments do
             </tr>
           </thead>
           <tbody>
-          <%= for r <- resources_not_locked do %>
+          <%= for r <- @resources_not_locked do %>
             <tr>
-              <td><a href={"#{link_route(@project.slug, parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a></td>
+              <td><a href={"#{link_route(@project.slug, @parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a></td>
               <td><%= get_type(r) %></td>
             </tr>
           <% end %>
@@ -77,7 +81,7 @@ defmodule OliWeb.Objectives.Attachments do
         </table>
       <% end %>
 
-      <%= if length(resources_locked) > 0 do %>
+      <%= if length(@resources_locked) > 0 do %>
         <p class="mb-4">Deleting this objective is <strong>blocked</strong> because the following resources that have this objective
         attached to it are currently being edited:</p>
 
@@ -90,13 +94,13 @@ defmodule OliWeb.Objectives.Attachments do
             </tr>
           </thead>
           <tbody>
-          <%= for r <- resources_locked do %>
+          <%= for r <- @resources_locked do %>
             <tr>
             <td>
-              <a href={"#{link_route(@project.slug, parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a>
+              <a href={"#{link_route(@project.slug, @parent_pages, r.resource_id, r.slug)}"} target="_blank"><%= r.title %></a>
             </td>
             <td><%= get_type(r) %></td>
-            <td><%= locked_by_email(parent_pages, locked_by, r.resource_id) %></td></tr>
+            <td><%= locked_by_email(@parent_pages, @locked_by, r.resource_id) %></td></tr>
           <% end %>
           </tbody>
         </table>

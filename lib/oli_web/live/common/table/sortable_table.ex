@@ -4,11 +4,18 @@ defmodule OliWeb.Common.Table.SortableTable do
   alias OliWeb.Common.Table.ColumnSpec
 
   def th(assigns, column_spec, sort_by_spec, sort_order, event_suffix) do
+    assigns =
+      assigns
+      |> assign(:column_spec, column_spec)
+      |> assign(:sort_by_spec, sort_by_spec)
+      |> assign(:sort_order, sort_order)
+      |> assign(:event_suffix, event_suffix)
+
     ~H"""
-    <th style="cursor: pointer;" phx-click={"sort#{event_suffix}"} phx-value-sort_by={column_spec.name}>
-      <%= column_spec.label %>
-      <%= if sort_by_spec == column_spec do %>
-        <i class={"fas fa-sort-#{if sort_order == :asc do "up" else "down" end}"}></i>
+    <th style="cursor: pointer;" phx-click={"sort#{@event_suffix}"} phx-value-sort_by={@column_spec.name}>
+      <%= @column_spec.label %>
+      <%= if @sort_by_spec == @column_spec do %>
+        <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>
       <% end %>
     </th>
     """

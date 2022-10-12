@@ -2,12 +2,16 @@ defmodule OliWeb.Grades.GradeSync do
   use OliWeb, :live_component
 
   def render(assigns) do
-    disabled =
-      if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
-        [disabled: true]
-      else
-        []
-      end
+    assigns =
+      assign(
+        assigns,
+        :disabled,
+        if length(assigns.task_queue) > 0 or assigns.selected_page == nil do
+          [disabled: true]
+        else
+          []
+        end
+      )
 
     ~H"""
 
@@ -45,7 +49,7 @@ defmodule OliWeb.Grades.GradeSync do
 
       <div class="card-footer">
 
-        <a class="btn btn-primary" phx-click="send_grades" {[disabled: true]} ><%= dgettext("grades", "Synchronize Grades") %></a>
+        <a class="btn btn-primary" phx-click="send_grades" {@disabled} ><%= dgettext("grades", "Synchronize Grades") %></a>
 
       </div>
     </div>

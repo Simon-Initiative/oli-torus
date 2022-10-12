@@ -616,19 +616,18 @@ defmodule OliWeb.Delivery.RemixSection do
   #   Numbering.container_type(numbering.level + 1)
   # end
 
-  defp render_breadcrumb(assigns) do
-    %{hierarchy: hierarchy, active: active} = assigns
-    breadcrumbs = Breadcrumb.breadcrumb_trail_to(hierarchy, active)
+  defp render_breadcrumb(%{hierarchy: hierarchy, active: active} = assigns) do
+    assigns = assign(assigns, :breadcrumbs, Breadcrumb.breadcrumb_trail_to(hierarchy, active))
 
     ~H"""
       <div class="breadcrumb custom-breadcrumb p-1 px-2">
-        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(breadcrumbs)}><i class="las la-arrow-left"></i></button>
+        <button id="curriculum-back" class="btn btn-sm btn-link" phx-click="set_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
 
-        <%= for {breadcrumb, index} <- Enum.with_index(breadcrumbs) do %>
+        <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
           <%= render_breadcrumb_item Enum.into(%{
             breadcrumb: breadcrumb,
-            show_short: length(breadcrumbs) > 3,
-            is_last: length(breadcrumbs) - 1 == index,
+            show_short: length(@breadcrumbs) > 3,
+            is_last: length(@breadcrumbs) - 1 == index,
            }, assigns) %>
         <% end %>
       </div>

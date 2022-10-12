@@ -14,21 +14,24 @@ defmodule OliWeb.RevisionHistory.Pagination do
     page_size = assigns.page_size
 
     if count > page_size do
-      total_pages =
-        div(count, page_size) +
-          if rem(count, page_size) == 0 do
-            0
-          else
-            1
-          end
-
-      current_page = div(assigns.page_offset, page_size) + 1
+      assigns =
+        assigns
+        |> assign(:current_page, div(assigns.page_offset, page_size) + 1)
+        |> assign(
+          :total_pages,
+          div(count, page_size) +
+            if rem(count, page_size) == 0 do
+              0
+            else
+              1
+            end
+        )
 
       ~H"""
       <nav aria-label="table results paging">
         <ul class="pagination justify-content-center">
-          <%= for page <- 1..total_pages do %>
-            <%= live_component PaginationLink, page_ordinal: page, active: current_page == page, page_offset: @page_offset %>
+          <%= for page <- 1..@total_pages do %>
+            <%= live_component PaginationLink, page_ordinal: page, active: @current_page == page, page_offset: @page_offset %>
           <% end %>
         </ul>
       </nav>

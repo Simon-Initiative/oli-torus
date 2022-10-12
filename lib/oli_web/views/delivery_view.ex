@@ -191,9 +191,11 @@ defmodule OliWeb.DeliveryView do
         user_icon(%{})
 
       picture ->
+        assigns = assign(assigns, :picture, picture)
+
         ~H"""
         <div class="user-icon">
-          <img src={picture} class="rounded-circle" />
+          <img src={@picture} class="rounded-circle" />
         </div>
         """
     end

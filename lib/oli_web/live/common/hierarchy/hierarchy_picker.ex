@@ -273,25 +273,35 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
          revision: revision,
          numbering: numbering
        }) do
+    assigns =
+      assigns
+      |> assign(:uuid, uuid)
+      |> assign(:revision, revision)
+      |> assign(:numbering, numbering)
+
     with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id) do
       case resource_type do
         "container" ->
-          title =
-            if numbering do
-              Numbering.prefix(numbering) <> ": " <> revision.title
-            else
-              revision.title
-            end
+          assigns =
+            assigns
+            |> assign(
+              :title,
+              if numbering do
+                Numbering.prefix(numbering) <> ": " <> revision.title
+              else
+                revision.title
+              end
+            )
 
           ~H"""
-            <button class="btn btn-link entry-title px-0" phx-click="HierarchyPicker.update_active" phx-value-uuid={uuid}>
-              <%= title %>
+            <button class="btn btn-link entry-title px-0" phx-click="HierarchyPicker.update_active" phx-value-uuid={@uuid}>
+              <%= @title %>
             </button>
           """
 
         _ ->
           ~H"""
-            <button class="btn btn-link entry-title px-0" disabled><%= revision.title %></button>
+            <button class="btn btn-link entry-title px-0" disabled><%= @revision.title %></button>
           """
       end
     end

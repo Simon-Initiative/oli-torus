@@ -72,21 +72,27 @@ defmodule OliWeb.Grades.TestConnection do
   end
 
   def render_line(assigns, {text, :normal}) do
+    assigns = assign(assigns, :text, text)
+
     ~H"""
-    <samp><%= text %></samp><br/>
+    <samp><%= @text %></samp><br/>
     """
   end
 
   def render_line(assigns, {text, :success}) do
+    assigns = assign(assigns, :text, text)
+
     ~H"""
-    <samp style="color: darkgreen;"><%= text %></samp><br/>
+    <samp style="color: darkgreen;"><%= @text %></samp><br/>
 
     """
   end
 
   def render_line(assigns, {text, :failure}) do
+    assigns = assign(assigns, :text, text)
+
     ~H"""
-    <samp style="color: darkred;"><%= text %></samp><br/>
+    <samp style="color: darkred;"><%= @text %></samp><br/>
 
     """
   end

@@ -80,11 +80,13 @@ defmodule OliWeb.Delivery.ManageUpdates do
       updates: updates
     } = assigns
 
+    assigns = assign(assigns, :updates, updates)
+
     ~H"""
       <%= render_modal(assigns) %>
 
       <p class="my-4">
-        <%= case Enum.count(updates) do %>
+        <%= case Enum.count(@updates) do %>
             <% 0 -> %>
               There are <b>no updates</b> available for this section.
             <% 1 -> %>

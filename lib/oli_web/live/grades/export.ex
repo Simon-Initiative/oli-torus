@@ -2,7 +2,7 @@ defmodule OliWeb.Grades.Export do
   use OliWeb, :live_component
 
   def render(assigns) do
-    link_text = dgettext("grades", "Download Gradebook")
+    assigns = assign(assigns, :link_text, dgettext("grades", "Download Gradebook"))
 
     ~H"""
     <div class="card">
@@ -14,7 +14,7 @@ defmodule OliWeb.Grades.Export do
       </div>
 
       <div class="card-footer">
-       <%= link link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section_slug), class: "btn btn-primary" %>
+       <%= link @link_text, to: Routes.page_delivery_path(OliWeb.Endpoint, :export_gradebook, @section_slug), class: "btn btn-primary" %>
       </div>
     </div>
     """

@@ -2,21 +2,27 @@ defmodule OliWeb.Insights.TableHeader do
   use Phoenix.LiveComponent
 
   def th(assigns, sort_by, title, tooltip) do
+    assigns =
+      assigns
+      |> assign(:sort_by, sort_by)
+      |> assign(:title, title)
+      |> assign(:tooltip, tooltip)
+
     ~H"""
     <th
       tabindex="0"
       style="cursor: pointer"
       phx-click="sort"
       phx-keyup="sort"
-      phx-value-sort-by={sort_by}
+      phx-value-sort-by={@sort_by}
       scope="col"
       data-trigger="hover focus"
-      data-toggle={if tooltip do "popover" else "" end}
+      data-toggle={if @tooltip do "popover" else "" end}
       data-placement="top"
-      data-content={tooltip}
+      data-content={@tooltip}
     >
-      <%= title %>
-      <%= sort_order_icon(sort_by, @sort_by, @sort_order) %>
+      <%= @title %>
+      <%= sort_order_icon(@sort_by, @sort_by, @sort_order) %>
     </th>
     """
   end

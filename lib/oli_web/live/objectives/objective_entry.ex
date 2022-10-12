@@ -54,12 +54,12 @@ defmodule OliWeb.Objectives.ObjectiveEntry do
     """
   end
 
-  def render(assigns) do
-    margin_for_depth = (assigns.depth - 1) * 40
+  def render(%{depth: depth} = assigns) do
+    assigns = assign(assigns, :margin_for_depth, (depth - 1) * 40)
 
     ~H"""
 
-    <div id={@objective_mapping.revision.slug} class="row objective py-1" tabindex="0" style={"margin-left: #{margin_for_depth}px"}>
+    <div id={@objective_mapping.revision.slug} class="row objective py-1" tabindex="0" style={"margin-left: #{@margin_for_depth}px"}>
       <div class="col-12">
         <%= cond do %>
           <% @edit == @objective_mapping.revision.slug -> %>

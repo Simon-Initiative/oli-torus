@@ -19,18 +19,20 @@ defmodule OliWeb.RevisionHistory.Graph do
   end
 
   def render(assigns) do
-    active_current_class = fn n ->
-      if n.value.project_id == assigns.project.id do
-        " current"
-      else
-        ""
-      end <>
-        if n.value.revision.id == assigns.selected.id do
-          " active"
+    assigns =
+      assigns
+      |> assign(:active_current_class, fn n ->
+        if n.value.project_id == assigns.project.id do
+          " current"
         else
           ""
-        end
-    end
+        end <>
+          if n.value.revision.id == assigns.selected.id do
+            " active"
+          else
+            ""
+          end
+      end)
 
     ~H"""
       <svg id="graph"
@@ -46,8 +48,8 @@ defmodule OliWeb.RevisionHistory.Graph do
           <g id="all_nodes" phx-update="append">
             <%= for node <- @nodes do %>
               <rect id={rect_id(node.label)} x={node.x} y={node.y} rx="8" ry="8" width={node.width} height={node.height}
-                class={"node #{active_current_class.(node)}"} phx-click="select" phx-value-rev={"#{node.value.revision.id}"} phx-page-loading />
-              <text id={node.label} class={"tree-node-text #{active_current_class.(node)}"} text-anchor="middle" x={"#{node.x + div(node.width, 2)}"} y={"#{node.y + div(node.height, 2)}"} dominant-baseline="central">
+                class={"node #{@active_current_class.(node)}"} phx-click="select" phx-value-rev={"#{node.value.revision.id}"} phx-page-loading />
+              <text id={node.label} class={"tree-node-text #{@active_current_class.(node)}"} text-anchor="middle" x={"#{node.x + div(node.width, 2)}"} y={"#{node.y + div(node.height, 2)}"} dominant-baseline="central">
                 <%= node.label %>
               </text>
             <% end %>
