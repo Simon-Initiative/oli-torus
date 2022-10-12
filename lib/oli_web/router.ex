@@ -433,7 +433,7 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights
   end
 
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     scope "/api/v1/docs" do
       pipe_through([:browser])
 
@@ -1094,7 +1094,7 @@ defmodule OliWeb.Router do
   end
 
   # routes only accessible to developers
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 
