@@ -4,6 +4,23 @@ $video-controls-bg: $workspace-sidebar-bg;
 $video-controls-color: $workspace-sidebar-link-color;
 
 .video-player {
+  div.video-react-menu,
+  ul.video-react-menu-content {
+    min-width: 5em;
+    min-height: 10em;
+    bottom: 6px !important;
+    background-color: $video-controls-bg;
+    color: $video-controls-color;
+    li {
+      font-family: $font-family-sans-serif;
+      text-align: right;
+      margin-bottom: 0px;
+      padding-right: 1em;
+      line-height: 1em;
+      background-color: $video-controls-bg;
+      color: $video-controls-color;
+    }
+  }
   .control-bar {
     font-family: $font-family-sans-serif;
     background-color: $video-controls-bg;
