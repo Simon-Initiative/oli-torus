@@ -1,4 +1,5 @@
-import { EvaluationConnected } from 'components/activities/common/delivery/evaluation/EvaluationConnected';
+import { Evaluation } from 'components/activities/common/delivery/evaluation/Evaluation';
+import { Submission } from 'components/activities/common/delivery/evaluation/Submission';
 import { GradedPointsConnected } from 'components/activities/common/delivery/graded_points/GradedPointsConnected';
 import { ResetButtonConnected } from 'components/activities/common/delivery/reset_button/ResetButtonConnected';
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
@@ -17,6 +18,7 @@ import {
   listenForParentSurveySubmit,
   listenForParentSurveyReset,
   listenForReviewAttemptChange,
+  submitPart,
   PartInputs,
   resetAction,
 } from 'data/activities/DeliveryState';
@@ -35,7 +37,9 @@ export const MultiInputComponent: React.FC = () => {
     context,
     onSubmitActivity,
     onSaveActivity,
+    onSubmitPart,
     onResetActivity,
+    mode,
     model,
   } = useDeliveryElementContext<MultiInputSchema>();
 
@@ -115,6 +119,26 @@ export const MultiInputComponent: React.FC = () => {
     ]),
   );
 
+  const handlePerPartSubmission = (partId: string, input: string | null = null) => {
+    const partState = uiState.partState[partId];
+    const part = uiState.attemptState.parts.find((p) => p.partId === partId);
+    const payload = input === null ? { input: partState.studentInput[0] } : { input };
+    dispatch(
+      submitPart(
+        uiState.attemptState.attemptGuid,
+        part?.attemptGuid as string,
+        payload,
+        onSubmitPart,
+      ),
+    );
+  };
+
+  // When an input changes value, we always update the internal state. Then, depending on the
+  // type of the input and the submitPerPart setting, we take different actions:
+  //
+  // 1. For dropdowns, we either submit that part, or save immediately
+  // 2. For other types (text and numeric inputs), we schedule a deferred save
+  //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
 
@@ -135,18 +159,33 @@ export const MultiInputComponent: React.FC = () => {
       ]);
 
     if (input.inputType === 'dropdown') {
-      fn();
+      if ((uiState.model as MultiInputSchema).submitPerPart) {
+        handlePerPartSubmission(input.partId, value);
+      } else {
+        fn();
+      }
     } else {
       deferredSaves.current[id].save(fn);
     }
   };
 
+  // When inputs of type other than dropdown lose their focus:
+  // 1. We flush pending changes, so we save their state if the student's next interaction is to navigate
+  //    away to another page
+  // 2. If submitPerPart is active, we then submit the part
   const onBlur = (id: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
     if (input.inputType !== 'dropdown') {
       deferredSaves.current[id].flushPendingChanges(false);
+      if ((uiState.model as MultiInputSchema).submitPerPart) {
+        handlePerPartSubmission(input.partId);
+      }
     }
   };
+
+  const anyEvaluated = (state: ActivityDeliveryState) =>
+    state.attemptState.dateEvaluated !== null ||
+    state.attemptState.parts.some((p) => p.dateEvaluated !== null);
 
   const writerContext = defaultWriterContext({
     sectionSlug,
@@ -172,7 +211,9 @@ export const MultiInputComponent: React.FC = () => {
         <ResetButtonConnected
           onReset={() => dispatch(resetAction(onResetActivity, emptyPartInputs))}
         />
-        <SubmitButtonConnected disabled={false} />
+        {(uiState.model as MultiInputSchema).submitPerPart ? null : (
+          <SubmitButtonConnected disabled={false} />
+        )}
         {hintsShown.map((partId) => (
           <HintsDeliveryConnected
             key={partId}
@@ -180,7 +221,14 @@ export const MultiInputComponent: React.FC = () => {
             shouldShow={hintsShown.includes(partId)}
           />
         ))}
-        <EvaluationConnected />
+        <Evaluation
+          shouldShow={
+            anyEvaluated(uiState) && surveyId === null && (!context.graded || mode === 'review')
+          }
+          attemptState={uiState.attemptState}
+          context={writerContext}
+        />
+        <Submission attemptState={uiState.attemptState} surveyId={surveyId} />
       </div>
     </div>
   );

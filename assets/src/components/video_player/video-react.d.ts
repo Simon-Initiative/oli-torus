@@ -387,6 +387,7 @@ declare module 'video-react' {
      * `[2, 1.5, 1.25, 1, 0.5, 0.25]`
      */
     rates?: number[];
+    order?: number;
   }
 
   /**
