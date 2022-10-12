@@ -26,7 +26,7 @@ import React from 'react';
 const defaultRuleForInputType = (inputType: string | undefined) => {
   switch (inputType) {
     case 'numeric':
-      return eqRule('');
+      return eqRule(0);
     case 'math':
       return equalsRule('');
     case 'text':

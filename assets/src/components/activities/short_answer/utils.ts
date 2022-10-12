@@ -40,3 +40,7 @@ export const shortAnswerOptions: SelectOption<InputType>[] = [
   { value: 'textarea', displayValue: 'Paragraph' },
   { value: 'math', displayValue: 'Math' },
 ];
+
+// disable changing of the value via scroll wheel in certain browsers
+export const disableScrollWheelChange = (numericInput: React.RefObject<HTMLInputElement>) => () =>
+  numericInput.current?.blur();

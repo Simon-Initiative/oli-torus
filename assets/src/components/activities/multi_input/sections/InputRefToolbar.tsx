@@ -14,9 +14,10 @@ export const InputRefToolbar: React.FC<InputRefToolbar> = (props) => {
   }, [editor]);
 
   return (
-    <div>
+    <div className="d-flex flex-row my-2">
+      <div className="flex-grow-1"></div>
       <AuthoringButtonConnected
-        className="btn-light"
+        className="btn-primary btn-sm"
         style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
         action={(e) => {
           e.preventDefault();
