@@ -47,6 +47,7 @@ export interface WriterImpl {
   codeLine: ElementWriter;
   blockquote: ElementWriter;
   a: ElementWriter;
+  commandButton: ElementWriter;
   cite: ElementWriter;
   inputRef: ElementWriter;
   popup: (
@@ -176,6 +177,8 @@ export class ContentWriter {
         return impl.blockquote(context, next, content);
       case 'a':
         return impl.a(context, next, content);
+      case 'command_button':
+        return impl.commandButton(context, next, content);
       case 'cite':
         return impl.cite(context, next, content);
       case 'input_ref':

@@ -1,9 +1,7 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { EditorProps } from 'components/editing/elements/interfaces';
 import * as ContentModel from '../../../../data/content/model/elements/types';
 import { useEditModelCallback } from '../utils';
-import { ReactEditor, useSlate } from 'slate-react';
-import { Editor, Transforms } from 'slate';
 import { InlineEditor } from '../common/settings/InlineEditor';
 import { CommandContext } from '../commands/interfaces';
 
