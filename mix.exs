@@ -169,7 +169,7 @@ defmodule Oli.MixProject do
       {:nodejs, "~> 2.0"},
       {:oban, "~> 2.6.1"},
       {:open_api_spex, "~> 3.9"},
-      {:phoenix, "~> 1.5"},
+      {:phoenix, "~> 1.6"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_dashboard, "~> 0.7.0"},
