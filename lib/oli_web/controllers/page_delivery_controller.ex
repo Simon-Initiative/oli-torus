@@ -337,8 +337,7 @@ defmodule OliWeb.PageDeliveryController do
       |> Enum.reduce(%{}, fn {survey_id, activity_ids}, acc ->
         survey_state =
           Enum.all?(activity_ids, fn id ->
-            context.activities[id].lifecycle_state === :submitted ||
-              context.activities[id].lifecycle_state === :evaluated
+            context.activities[id].lifecycle_state === :evaluated
           end)
 
         Map.put(acc, survey_id, survey_state)
