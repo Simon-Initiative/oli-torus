@@ -27,8 +27,7 @@ defmodule OliWeb.IngestControllerTest do
         "digest" => %Plug.Upload{
           content_type: "application/zip",
           filename: "attachments.zip",
-          path:
-            "/var/folders/p8/81b0v8g54gdg987gynxdd2n80000gn/T/plug-1665/multipart-1665087026-393706139953173-4"
+          path: "some_path"
         }
       }
 
