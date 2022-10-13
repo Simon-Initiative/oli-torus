@@ -29,6 +29,7 @@ import { DialogEditor } from '../elements/dialog/DialogEditor';
 import { ConjugationEditor } from '../elements/conjugation/ConjugationEditor';
 import { TcEditor } from '../elements/table/TcElement';
 import { ForeignEditor } from '../elements/foreign/ForeignEditor';
+import { CommandButtonEditor } from '../elements/command_button/CommandButtonEditor';
 
 export function editorFor(
   model: ContentModel.ModelElement,
@@ -89,6 +90,8 @@ export function editorFor(
       return <WebpageEditor {...(editorProps as EditorProps<ContentModel.Webpage>)} />;
     case 'a':
       return <LinkEditor {...(editorProps as EditorProps<ContentModel.Hyperlink>)} />;
+    case 'command_button':
+      return <CommandButtonEditor {...(editorProps as EditorProps<ContentModel.CommandButton>)} />;
     case 'page_link':
       return <PageLinkEditor {...(editorProps as EditorProps<ContentModel.PageLink>)} />;
     case 'cite':

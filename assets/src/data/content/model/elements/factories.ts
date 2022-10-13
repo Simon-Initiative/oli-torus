@@ -41,6 +41,7 @@ import {
   TableConjugation,
   TableCell,
   Foreign,
+  CommandButton,
 } from 'data/content/model/elements/types';
 import { Text } from 'slate';
 import guid from 'utils/guid';
@@ -124,6 +125,8 @@ export const Model = {
   webpage: (src?: string) => create<Webpage>({ type: 'iframe', src }),
 
   link: (href = '') => create<Hyperlink>({ type: 'a', href: normalizeHref(href), target: 'self' }),
+
+  commandButton: () => create<CommandButton>({ type: 'command_button', style: 'button' }),
 
   page_link: (idref: number, purpose = 'none') =>
     create<PageLink>({ type: 'page_link', idref, purpose, children: [{ text: '' }] }),

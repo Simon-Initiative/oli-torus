@@ -47,6 +47,7 @@ import {
   Conjugation as ConjugationModel,
   TableConjugation as TableConjugationModel,
   Foreign,
+  CommandButton as CommandButtonModel,
 } from 'data/content/model/elements/types';
 import { Mark } from 'data/content/model/text';
 import React from 'react';
@@ -68,6 +69,7 @@ import { Dialog } from '../../../components/Dialog';
 import { Conjugation } from '../../../components/common/Conjugation';
 import { TableConjugation } from '../../../components/common/TableConjugation';
 import { Popup } from '../../../components/common/Popup';
+import { CommandButton } from '../../../components/common/CommandButton';
 
 // Important: any changes to this file must be replicated
 // in content/html.ex for non-activity rendering.
@@ -396,6 +398,11 @@ export class HtmlParser implements WriterImpl {
       </a>
     );
   }
+
+  commandButton(context: WriterContext, next: Next, attrs: CommandButtonModel) {
+    return <CommandButton commandButton={attrs}>{next()}</CommandButton>;
+  }
+
   inputRef(context: WriterContext, _next: Next, inputRef: InputRef) {
     const { inputRefContext } = context;
     const inputData = inputRefContext?.inputs.get(inputRef.id);

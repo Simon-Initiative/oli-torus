@@ -536,6 +536,18 @@
           "type": "formula_inline",
           "subtype": "latex",
           "src": "x^2 + y^2 = z^2"
+        },
+        {
+          "children": [
+            {
+              "text": "Play Intro"
+            }
+          ],
+          "id": "3037574056",
+          "message": "startcuepoint=5.0;endcuepoint=10.0",
+          "style": "button",
+          "target": "3603298117",
+          "type": "command_button"
         }
       ]
     }

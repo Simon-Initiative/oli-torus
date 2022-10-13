@@ -240,6 +240,12 @@ export const schema: Schema = {
     isTopLevel: true,
     validChildren: toObj(['p']),
   },
+  command_button: {
+    isVoid: false,
+    isBlock: false,
+    isTopLevel: false,
+    validChildren: {},
+  },
   a: {
     isVoid: false,
     isBlock: false,

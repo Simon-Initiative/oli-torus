@@ -1,8 +1,10 @@
 import {
   makeRule,
   parseInputFromRule,
-  parseOperatorFromRule,
-  RuleOperator,
+  Input,
+  InputText,
+  InputNumeric,
+  InputRange,
 } from 'data/activities/model/rules';
 import { InputType } from 'components/activities/short_answer/schema';
 import { Response } from 'components/activities/types';
@@ -11,7 +13,6 @@ import React from 'react';
 import { NumericInput } from 'components/activities/short_answer/sections/NumericInput';
 import { TextInput } from 'components/activities/short_answer/sections/TextInput';
 import { MathInput } from 'components/activities/short_answer/sections/MathInput';
-import { valueOr } from 'utils/common';
 
 interface InputProps {
   inputType: InputType;
@@ -19,34 +20,23 @@ interface InputProps {
   onEditResponseRule: (id: string, rule: string) => void;
 }
 
-interface SingleState {
-  operator: RuleOperator;
-  input: string;
-}
-
-interface RangeState {
-  operator: RuleOperator;
-  input: [string, string];
-}
-
 export const InputEntry: React.FC<InputProps> = ({ inputType, response, onEditResponseRule }) => {
-  const [{ operator, input }, setState] = useState({
-    input: parseInputFromRule(response.rule),
-    operator: parseOperatorFromRule(response.rule),
-  });
+  const [input, setInput] = useState(
+    parseInputFromRule(response.rule).valueOrThrow(
+      Error(`failed to parse input value from rule ${response.rule}`),
+    ),
+  );
 
-  const onEditRule = (inputState: { input: string | [string, string]; operator: RuleOperator }) => {
-    setState(inputState);
-    onEditResponseRule(response.id, makeRule(inputState.operator, inputState.input));
+  const onEditInput = (update: Input) => {
+    setInput(update);
+    onEditResponseRule(response.id, makeRule(update));
   };
 
-  const state = { operator, input: valueOr(input, '') };
-
   if (inputType === 'math') {
-    return <MathInput state={state as SingleState} setState={onEditRule} />;
+    return <MathInput input={input as InputText} onEditInput={onEditInput} />;
   }
   if (inputType === 'numeric' || inputType === 'vlabvalue') {
-    return <NumericInput state={state as SingleState} setState={onEditRule} />;
+    return <NumericInput input={input as InputNumeric | InputRange} onEditInput={onEditInput} />;
   }
-  return <TextInput state={state as SingleState} setState={onEditRule} />;
+  return <TextInput input={input as InputText} onEditInput={onEditInput} />;
 };
