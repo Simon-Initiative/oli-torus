@@ -45,7 +45,7 @@ defmodule OliWeb.IngestLivetest do
     test "show error message when attaching an invalid file", %{conn: conn} do
       {:ok, view, _html} = live(conn, live_view_ingest_route())
 
-      path = "./test/oli_web/live/ingest_assets/attachments_1.zip"
+      path = "./test/support/assets/attachments_1.zip"
       simulate_open_zip(path)
 
       file_zip_1 =
@@ -73,7 +73,7 @@ defmodule OliWeb.IngestLivetest do
     test "show error message when attaching a file with invalid data", %{conn: conn} do
       {:ok, view, _html} = live(conn, live_view_ingest_route())
 
-      path = "./test/oli_web/live/ingest_assets/attachments_2.zip"
+      path = "./test/support/assets/attachments_2.zip"
       simulate_open_zip(path)
 
       file_zip_2 =
@@ -101,7 +101,7 @@ defmodule OliWeb.IngestLivetest do
     test "show error message when attaching a file with invalid title of project", %{conn: conn} do
       {:ok, view, _html} = live(conn, live_view_ingest_route())
 
-      path = "./test/oli_web/live/ingest_assets/attachments_3.zip"
+      path = "./test/support/assets/attachments_3.zip"
       simulate_open_zip(path)
 
       file_zip_3 =
