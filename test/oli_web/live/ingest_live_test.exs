@@ -1,4 +1,4 @@
-defmodule OliWeb.IngestLivetest do
+defmodule OliWeb.IngestLiveTest do
   use ExUnit.Case
   use OliWeb.ConnCase
 
@@ -6,12 +6,14 @@ defmodule OliWeb.IngestLivetest do
 
   alias OliWeb.Router.Helpers, as: Routes
 
-  defp live_view_ingest_route() do
-    Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)
-  end
+  @live_view_ingest_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)
 
   defp simulate_open_zip(path) do
-    {:ok, zip} = :zip.zip_open(to_charlist(path), [:memory])
+    {:ok, zip} =
+      path
+      |> to_charlist()
+      |> :zip.zip_open([:memory])
+
     :zip.zip_close(zip)
   end
 
@@ -21,7 +23,7 @@ defmodule OliWeb.IngestLivetest do
     } do
       redirect_path = "/authoring/session/new?request_path=%2Fadmin%2Fingest"
 
-      {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, live_view_ingest_route())
+      {:error, {:redirect, %{to: ^redirect_path}}} = live(conn, @live_view_ingest_route)
     end
   end
 
@@ -29,7 +31,7 @@ defmodule OliWeb.IngestLivetest do
     setup [:admin_conn]
 
     test "show error message when no file is attached", %{conn: conn} do
-      {:ok, view, _html} = live(conn, live_view_ingest_route())
+      {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
       view
       |> element("form[phx-submit=\"ingest\"")
@@ -43,7 +45,7 @@ defmodule OliWeb.IngestLivetest do
     end
 
     test "show error message when attaching an invalid file", %{conn: conn} do
-      {:ok, view, _html} = live(conn, live_view_ingest_route())
+      {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
       path = "./test/support/assets/attachments_1.zip"
       simulate_open_zip(path)
@@ -71,7 +73,7 @@ defmodule OliWeb.IngestLivetest do
     end
 
     test "show error message when attaching a file with invalid data", %{conn: conn} do
-      {:ok, view, _html} = live(conn, live_view_ingest_route())
+      {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
       path = "./test/support/assets/attachments_2.zip"
       simulate_open_zip(path)
@@ -99,7 +101,7 @@ defmodule OliWeb.IngestLivetest do
     end
 
     test "show error message when attaching a file with invalid title of project", %{conn: conn} do
-      {:ok, view, _html} = live(conn, live_view_ingest_route())
+      {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
       path = "./test/support/assets/attachments_3.zip"
       simulate_open_zip(path)
