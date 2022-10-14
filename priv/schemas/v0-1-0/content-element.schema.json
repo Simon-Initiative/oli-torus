@@ -1219,6 +1219,14 @@
             }
           }
         },
+        "captions": {
+          "type": "array",
+          "items": {
+            "language_code": "string",
+            "label": "string",
+            "src": "string"
+          }
+        },
         "height": {
           "type": "number"
         },
