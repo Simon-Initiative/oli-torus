@@ -54,8 +54,8 @@ interface VideoInterface {
   seek: (time: number) => void;
 }
 
-export const VideoPlayer: React.FC<{ video: ContentModel.Video; children: ReactNode }> = React.memo(
-  ({ video, children }) => {
+export const VideoPlayer: React.FC<{ video: ContentModel.Video; children?: ReactNode }> =
+  React.memo(({ video, children }) => {
     const playerRef = useRef(null);
     const pauseAtPosition = useRef(-1);
     const sizeAttributes = isValidSize(video)
@@ -130,7 +130,6 @@ export const VideoPlayer: React.FC<{ video: ContentModel.Video; children: ReactN
         {children}
       </div>
     );
-  },
-);
+  });
 
 VideoPlayer.displayName = 'VideoPlayer';
