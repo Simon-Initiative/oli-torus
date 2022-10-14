@@ -23,5 +23,6 @@ defmodule Oli.Rendering.Context do
             submitted_surveys: %{},
             historical_attempts: nil,
             resource_summary_fn: nil,
+            alternatives_selector_fn: nil,
             learning_language: nil
 end

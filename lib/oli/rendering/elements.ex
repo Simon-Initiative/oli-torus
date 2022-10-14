@@ -45,6 +45,9 @@ defmodule Oli.Rendering.Elements do
         %{"type" => "survey"} ->
           {output ++ writer.survey(context, element), br_count}
 
+        %{"type" => "alternatives"} ->
+          {output ++ writer.alternatives(context, element), br_count}
+
         %{"type" => "break"} ->
           {output ++ writer.break(context, element), br_count + 1}
 

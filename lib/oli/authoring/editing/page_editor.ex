@@ -264,6 +264,7 @@ defmodule Oli.Authoring.Editing.PageEditor do
            mode: mode,
            activity_map: activities,
            resource_summary_fn: &Resources.resource_summary(&1, project_slug, AuthoringResolver),
+           alternatives_selector_fn: &Resources.Alternatives.select/2,
            project_slug: project_slug,
            bib_app_params: Keyword.get(options, :bib_app_params, []),
            learning_language: attributes.learning_language
