@@ -787,6 +787,9 @@
         "subtype": {
           "enum": ["mathml", "latex"]
         },
+        "legacyBlockRendered": {
+          "type": "boolean"
+        },
         "src": {
           "type": "string"
         },

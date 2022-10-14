@@ -214,9 +214,16 @@ export class HtmlParser implements WriterImpl {
   }
 
   formula(ctx: WriterContext, next: Next, element: FormulaBlock | FormulaInline) {
+    const forceBlockRendering =
+      element.legacyBlockRendered !== undefined && element.legacyBlockRendered;
     switch (element.subtype) {
       case 'latex':
-        return <MathJaxLatexFormula src={element.src} inline={element.type === 'formula_inline'} />;
+        return (
+          <MathJaxLatexFormula
+            src={element.src}
+            inline={element.type === 'formula_inline' && !forceBlockRendering}
+          />
+        );
       case 'mathml':
         return (
           <MathJaxMathMLFormula src={element.src} inline={element.type === 'formula_inline'} />
