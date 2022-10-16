@@ -222,10 +222,17 @@ export interface AudioSource {
   url: string;
   contenttype: string;
 }
+
+export interface VideoCaptionTrack {
+  language_code: string;
+  label: string;
+  src: string;
+}
 export interface Video extends SlateElement<VoidChildren> {
   type: 'video';
   poster?: string;
   src: VideoSource[];
+  captions?: VideoCaptionTrack[];
   height?: number;
   width?: number;
 }
