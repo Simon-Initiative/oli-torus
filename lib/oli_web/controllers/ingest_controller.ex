@@ -5,20 +5,28 @@ defmodule OliWeb.IngestController do
 
   @spec index(Plug.Conn.t(), any) :: Plug.Conn.t()
   def index(conn, _params) do
-    render_ingest_page(conn, "index.html", title: "Ingest")
+    render_ingest_page(conn, :index, title: "Ingest")
   end
 
-  def upload(conn, %{"upload" => upload}) do
+  def upload(conn, params) do
     author = conn.assigns[:current_author]
 
-    if !File.exists?("_digests") do
-      File.mkdir!("_digests")
+    upload = params["upload"]
+
+    if not is_nil(upload) do
+      if !File.exists?("_digests") do
+        File.mkdir!("_digests")
+      end
+
+      File.cp(upload["digest"].path, "_digests/#{author.id}-digest.zip")
+
+      conn
+      |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2))
+    else
+      conn
+      |> put_flash(:error, "A valid file must be attached")
+      |> redirect(to: Routes.ingest_path(conn, :index))
     end
-
-    File.cp(upload["digest"].path, "_digests/#{author.id}-digest.zip")
-
-    conn
-    |> redirect(to: Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.IngestV2))
   end
 
   defp render_ingest_page(conn, page, keywords) do

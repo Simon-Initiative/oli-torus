@@ -15,6 +15,7 @@ interface Props {
   initialSelectionPaths?: string[];
   onMediaChange: (media: MediaInfo[]) => void;
   open: boolean;
+  onCancel: () => void;
 }
 
 /**
@@ -30,6 +31,7 @@ export const MediaPickerPanel: React.FC<Props> = ({
   selectionType = SELECTION_TYPES.SINGLE,
   initialSelectionPaths = [],
   open,
+  onCancel,
 }) => {
   const [url, setUrl] = useState(initialSelectionPaths.length > 0 ? initialSelectionPaths[0] : '');
 
@@ -51,10 +53,13 @@ export const MediaPickerPanel: React.FC<Props> = ({
         selectionType={selectionType}
         initialSelectionPaths={initialSelectionPaths}
       >
-        <button className="btn" onClick={onOk}>
-          OK
+        <button className="btn btn-brimary" onClick={onOk}>
+          Set External URL
         </button>
       </UrlOrUpload>
+      <button className="btn btn-secondary" onClick={onCancel}>
+        Cancel
+      </button>
     </SlideOutPanel>
   );
 };

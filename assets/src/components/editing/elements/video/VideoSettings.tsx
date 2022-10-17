@@ -16,15 +16,17 @@ interface SettingsProps {
 }
 export const VideoSettings = (props: SettingsProps) => {
   return (
-    <Toolbar context={props.commandContext}>
-      <Toolbar.Group>
-        <SettingsButton
-          projectSlug={props.commandContext.projectSlug}
-          model={props.model}
-          onEdit={props.onEdit}
-        />
-      </Toolbar.Group>
-    </Toolbar>
+    <div className="video-settings">
+      <Toolbar context={props.commandContext}>
+        <Toolbar.Group>
+          <SettingsButton
+            projectSlug={props.commandContext.projectSlug}
+            model={props.model}
+            onEdit={props.onEdit}
+          />
+        </Toolbar.Group>
+      </Toolbar>
+    </div>
   );
 };
 
@@ -45,9 +47,9 @@ const SettingsButton = (props: SettingsButtonProps) => (
             <VideoModal
               projectSlug={props.projectSlug}
               model={props.model}
-              onDone={({ poster, src, width, height }: Partial<ContentModel.Video>) => {
+              onDone={(video: Partial<ContentModel.Video>) => {
                 window.oliDispatch(modalActions.dismiss());
-                props.onEdit({ poster, src, width, height });
+                props.onEdit(video);
               }}
               onCancel={() => window.oliDispatch(modalActions.dismiss())}
             />,
