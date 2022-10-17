@@ -175,7 +175,10 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           additional_table_class={@additional_table_class}
           with_body={true}>
 
-          <Listing rows={@table_model.rows} selected={@selected}/>
+          <Listing
+            rows={@table_model.rows}
+            selected={@selected}
+            project_slug={@project.slug} />
         </Table>
       </div>
     """

@@ -224,7 +224,11 @@ defmodule OliWeb.ObjectivesLiveTest do
       assert has_element?(view, ".collapse.show", "Sub-Objectives")
       assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
       assert has_element?(view, ".collapse.show", "Pages")
-      assert has_element?(view, ".collapse.show", "#{page.title}")
+      assert has_element?(
+        view,
+        ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page.slug)}\"]",
+        "#{page.title}"
+      )
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
       assert_receive {:DOWN, _ref, :process, _pid, :normal}

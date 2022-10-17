@@ -2,9 +2,11 @@ defmodule OliWeb.ObjectivesLive.Listing do
   use Surface.Component
 
   alias OliWeb.ObjectivesLive.Actions
+  alias OliWeb.Router.Helpers, as: Routes
 
   prop rows, :list, required: true
   prop selected, :string, required: true
+  prop project_slug, :string, required: true
 
   def render(assigns) do
     ~F"""
@@ -60,7 +62,13 @@ defmodule OliWeb.ObjectivesLive.Listing do
                   <u>Pages</u>
                   <ul class="list-group list-group-flush">
                     {#for page <- item.page_attachments}
-                      <li class="list-group-item p-2 text-info">{page.title}</li>
+                      <li class="list-group-item p-2">
+                        <a href={Routes.resource_path(OliWeb.Endpoint, :edit, @project_slug, page.slug)}
+                          target="_blank"
+                          class="text-info">
+                          {page.title}
+                        </a>
+                      </li>
                       <div class="border border-light w-75"></div>
                     {/for}
                   </ul>
