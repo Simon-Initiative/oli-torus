@@ -9,9 +9,10 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   alias Oli.Accounts
   alias Oli.Authoring.Course
   alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
-  alias Oli.Resources.Revision
+  alias Oli.Resources.{Revision, ResourceType}
   alias OliWeb.Common.{Breadcrumb, Filter, FilterBox}
   alias OliWeb.Common.Listing, as: Table
   alias OliWeb.ObjectivesLive.{
@@ -114,11 +115,8 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     pid = self()
     if first_load do
       Task.async(fn ->
-        objectives_attachments = Enum.map(objectives, fn obj ->
-          obj.resource_id
-          |> ObjectiveEditor.preview_objective_detatchment(project)
-          |> Map.put(:id, obj.resource_id)
-        end)
+        publication = Publishing.project_working_publication(project.slug)
+        objectives_attachments = Publishing.find_attached_objectives(publication.id)
 
         send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
       end)
@@ -416,19 +414,41 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
+    page_id = ResourceType.get_id_by_type("page")
+    activity_id = ResourceType.get_id_by_type("activity")
+
     objectives =
       Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
-        case Enum.find(objectives_attachments, fn oa -> oa.id == rev.resource_id end) do
-          nil -> [rev] ++ acc
-          %{attachments: {page_references, activity_references}} ->
-            [Map.merge(rev,
-              %{
-                page_attachments_count: length(page_references),
-                page_attachments: page_references,
-                activity_attachments_count: length(activity_references)
-              }
-            )] ++ acc
-        end
+        resource_id = rev.resource_id
+        children = Enum.map(rev.children, & &1.resource_id)
+
+        sub_objectives_page_attachments =
+          Enum.filter(objectives_attachments, fn
+            %{resource_type_id: ^page_id, attached_objective: resource_id} ->
+              Enum.member?(children, resource_id)
+            _ -> false
+          end)
+
+        page_attachments =
+          sub_objectives_page_attachments ++
+            for pa = %{
+              attached_objective: ^resource_id,
+              resource_type_id: ^page_id
+            } <- objectives_attachments, do: pa
+
+        activity_attachments =
+          for aa = %{
+            attached_objective: ^resource_id,
+            resource_type_id: ^activity_id
+          } <- objectives_attachments, do: aa
+
+        [Map.merge(rev,
+          %{
+            page_attachments_count: length(page_attachments),
+            page_attachments: page_attachments,
+            activity_attachments_count: length(activity_attachments)
+          }
+        )] ++ acc
       end)
 
     {:ok, table_model} = TableModel.new(objectives)

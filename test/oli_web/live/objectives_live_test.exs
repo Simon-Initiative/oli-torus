@@ -213,21 +213,27 @@ defmodule OliWeb.ObjectivesLiveTest do
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
       {:ok, obj} = create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
-      {:ok, page} = create_page_with_objective(project, publication, [obj.resource_id])
+      {:ok, page_1} = create_page_with_objective(project, publication, [obj.resource_id])
+      {:ok, page_2} = create_page_with_objective(project, publication, [sub_obj.resource_id])
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
       assert has_element?(view, "##{obj.slug}", "Sub-Objectives 1")
-      assert has_element?(view, "##{obj.slug}", "Pages 1")
+      assert has_element?(view, "##{obj.slug}", "Pages 2")
       assert has_element?(view, "##{obj.slug}", "Activities 0")
       assert has_element?(view, ".collapse.show", "Sub-Objectives")
       assert has_element?(view, ".collapse.show", "#{sub_obj.title}")
       assert has_element?(view, ".collapse.show", "Pages")
       assert has_element?(
         view,
-        ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page.slug)}\"]",
-        "#{page.title}"
+        ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_1.slug)}\"]",
+        "#{page_1.title}"
+      )
+      assert has_element?(
+        view,
+        ".collapse.show a[href=\"#{Routes.resource_path(OliWeb.Endpoint, :edit, project.slug, page_2.slug)}\"]",
+        "#{page_2.title}"
       )
 
       assert_receive {:finish_attachments, {_attachments, _flash_fn}}
