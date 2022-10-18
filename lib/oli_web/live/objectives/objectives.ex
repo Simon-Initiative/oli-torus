@@ -422,19 +422,18 @@ defmodule OliWeb.ObjectivesLive.Objectives do
         resource_id = rev.resource_id
         children = Enum.map(rev.children, & &1.resource_id)
 
-        sub_objectives_page_attachments =
+        all_page_attachments =
           Enum.filter(objectives_attachments, fn
             %{resource_type_id: ^page_id, attached_objective: resource_id} ->
               Enum.member?(children, resource_id)
             _ -> false
-          end)
-
-        page_attachments =
-          sub_objectives_page_attachments ++
+          end) ++
             for pa = %{
               attached_objective: ^resource_id,
               resource_type_id: ^page_id
             } <- objectives_attachments, do: pa
+
+        page_attachments = Enum.uniq_by(all_page_attachments, & &1.slug)
 
         activity_attachments =
           for aa = %{
