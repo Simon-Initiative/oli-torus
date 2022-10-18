@@ -83,6 +83,10 @@ export const VideoPlayer: React.FC<{ video: ContentModel.Video; children?: React
       });
     }, []);
 
+    const preventDefault = useCallback((e) => {
+      e.preventDefault(); // fixes https://eliterate.atlassian.net/browse/MER-1503
+    }, []);
+
     const onCommandReceived = useCallback((message: string) => {
       if (!playerRef.current) return;
       const player = playerRef.current as VideoInterface;
@@ -97,7 +101,7 @@ export const VideoPlayer: React.FC<{ video: ContentModel.Video; children?: React
     useCommandTarget(video.id, onCommandReceived);
 
     return (
-      <div className="video-player">
+      <div className="video-player" onClick={preventDefault}>
         <Player poster={video.poster} {...sizeAttributes} ref={onPlayer} crossOrigin="anonymous">
           {/* Hide the video-react big play button so we can render our own that fits with our icon styles */}
           <BigPlayButton className="big-play-button-hide" />
