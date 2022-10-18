@@ -1065,8 +1065,10 @@ defmodule Oli.Publishing do
       title: the title of the revision,
       slug: the slug of the revision,
       resoruce_type_id: the resource type to know if it's a page or activity,
-      attached_objectives: list of resource_ids of the attached objectives
+      attached_objective: resource_id of the attached objective
     }
+
+    The same revision will appear as many times as attached objectives it has.
   """
   def find_attached_objectives(publication_id) do
     page_id = ResourceType.get_id_by_type("page")
