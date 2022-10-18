@@ -69,7 +69,7 @@ defmodule OliWeb.ObjectivesLiveTest do
     {:ok, obj_revision}
   end
 
-  defp create_page_with_objective(project, publication, objectives) do
+  defp create_page_with_objective(project, publication, objectives, slug \\ "slug") do
     # Create page
     page_resource = insert(:resource)
     page_revision =
@@ -81,7 +81,8 @@ defmodule OliWeb.ObjectivesLiveTest do
         content: %{"model" => []},
         deleted: false,
         title: "Page 1",
-        resource: page_resource
+        resource: page_resource,
+        slug: slug
       })
     # Associate page to the project
     insert(:project_resource, %{project_id: project.id, resource_id: page_resource.id})
@@ -212,14 +213,15 @@ defmodule OliWeb.ObjectivesLiveTest do
 
     test "show objective", %{conn: conn, project: project, publication: publication} do
       {:ok, sub_obj} = create_objective(project, publication, "sub_obj", "Sub Objective")
-      {:ok, obj} = create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id])
-      {:ok, page_1} = create_page_with_objective(project, publication, [obj.resource_id])
-      {:ok, page_2} = create_page_with_objective(project, publication, [sub_obj.resource_id])
+      {:ok, sub_obj_2} = create_objective(project, publication, "sub_obj_2", "Sub Objective 2")
+      {:ok, obj} = create_objective(project, publication, "obj", "Objective", [sub_obj.resource_id, sub_obj_2.resource_id])
+      {:ok, page_1} = create_page_with_objective(project, publication, [obj.resource_id], "other_slug")
+      {:ok, page_2} = create_page_with_objective(project, publication, [sub_obj.resource_id, sub_obj_2.resource_id])
 
       {:ok, view, _html} = live(conn, live_view_route(project.slug, %{selected: obj.slug}))
 
       assert has_element?(view, "##{obj.slug}")
-      assert has_element?(view, "##{obj.slug}", "Sub-Objectives 1")
+      assert has_element?(view, "##{obj.slug}", "Sub-Objectives 2")
       assert has_element?(view, "##{obj.slug}", "Pages 2")
       assert has_element?(view, "##{obj.slug}", "Activities 0")
       assert has_element?(view, ".collapse.show", "Sub-Objectives")
