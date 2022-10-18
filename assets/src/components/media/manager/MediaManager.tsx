@@ -23,6 +23,7 @@ export const MIMETYPE_FILTERS = {
   VIDEO: ['video/mp4', 'video/mpeg', 'video/webm', 'video/ogg', 'video/quicktime'],
   HTML: ['text/html'],
   CSV: ['text/csv'],
+  CAPTIONS: ['text/vtt'],
   ALL: undefined,
 };
 

@@ -29,12 +29,6 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
     setIsOpen(false);
     if (isPreviewMode) {
       window.location.reload();
-    } else {
-      if (graded) {
-        window.location.href = finalizeGradedURL;
-      } else {
-        window.location.href = overviewURL;
-      }
     }
   };
 
@@ -64,9 +58,9 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
         }}
       >
         <div className="modal-header" style={{ border: 'none', marginBottom: '50px' }}>
-          <button
+          <a
             onClick={handleCloseModalClick}
-            type="button"
+            href={isPreviewMode ? '#' : graded ? finalizeGradedURL : overviewURL}
             className="close icon-clear"
             title="Close feedback window"
             aria-label="Close feedback window"
