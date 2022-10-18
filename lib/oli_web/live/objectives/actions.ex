@@ -1,29 +1,38 @@
-defmodule OliWeb.Objectives.Actions do
-  use Phoenix.LiveComponent
-  use Phoenix.HTML
+defmodule OliWeb.ObjectivesLive.Actions do
+  use Surface.Component
+
+  prop slug, :string, required: true
 
   def render(assigns) do
-    ~L"""
-      <div class="objective-actions p-2">
-
+    ~F"""
+      <div class="float-right p-2">
         <button
-          class="ml-1 btn btn-sm btn-light"
-          phx-click="modify"
-          phx-value-slug="<%= @slug %>">
-        <i class="las la-i-cursor"></i> Reword
+          :on-click="display_new_sub_modal"
+          :values={slug: @slug}
+          class="ml-1 btn btn-sm btn-light">
+          <i class="fas fa-plus fa-lg"></i> Create new Sub-Objective
         </button>
 
         <button
-          id="delete_<%= @slug %>"
-          <%= if @can_delete? do "" else "disabled" end %>
-          phx-click="show_delete_modal"
-          phx-value-slug="<%= @slug %>"
-          data-backdrop="static"
-          data-keyboard="false"
+          :on-click="display_add_existing_sub_modal"
+          :values={slug: @slug}
+          class="ml-1 btn btn-sm btn-light">
+          <i class="fas fa-plus fa-lg"></i> Add existing Sub-Objective
+        </button>
+
+        <button
+          :on-click="display_edit_modal"
+          :values={slug: @slug}
+          class="ml-1 btn btn-sm btn-light">
+          <i class="las la-i-cursor"></i> Reword
+        </button>
+
+        <button
+          :on-click="display_delete_modal"
+          :values={slug: @slug}
           class="ml-1 btn btn-sm btn-danger">
-        <i class="fas fa-trash-alt fa-lg"></i> Remove
+          <i class="fas fa-trash-alt fa-lg"></i> Remove
         </button>
-
       </div>
     """
   end

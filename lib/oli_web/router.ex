@@ -377,7 +377,7 @@ defmodule OliWeb.Router do
     get("/:project_id/bibliography", BibliographyController, :index)
 
     # Objectives
-    live("/:project_id/objectives", Objectives.Objectives)
+    live("/:project_id/objectives", ObjectivesLive.Objectives)
 
     # Curriculum
     live(

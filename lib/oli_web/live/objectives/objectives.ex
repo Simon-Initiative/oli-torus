@@ -1,431 +1,470 @@
-defmodule OliWeb.Objectives.Objectives do
+defmodule OliWeb.ObjectivesLive.Objectives do
   @moduledoc """
-  LiveView implementation of an objective editor.
+    LiveView implementation of an objective editor.
   """
-
-  use Phoenix.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
+  use OliWeb.Common.SortableTable.TableHandlers
   use OliWeb.Common.Modal
 
-  alias Oli.Authoring.Editing.ObjectiveEditor
-
-  alias OliWeb.Objectives.{
-    ObjectiveEntry,
-    CreateNew,
-    DeleteModal,
-    SelectionsModal,
-    BreakdownModal
-  }
-
-  alias Oli.Publishing.ObjectiveMappingTransfer
+  alias Oli.Accounts
   alias Oli.Authoring.Course
-  alias Oli.Accounts.Author
+  alias Oli.Authoring.Editing.ObjectiveEditor
+  alias Oli.Publishing
   alias Oli.Publishing.AuthoringResolver
   alias Oli.Resources
-  alias Oli.Resources.Revision
-  alias Oli.Resources.ResourceType
-  alias Oli.Repo
-  alias Oli.Authoring.Broadcaster.Subscriber
-  alias OliWeb.Common.Breadcrumb
+  alias Oli.Resources.{Revision, ResourceType}
+  alias OliWeb.Common.{Breadcrumb, Filter, FilterBox}
+  alias OliWeb.Common.Listing, as: Table
+  alias OliWeb.ObjectivesLive.{
+    DeleteModal,
+    FormModal,
+    TableModel,
+    Listing,
+    SelectExistingSubModal
+  }
+  alias OliWeb.Router.Helpers, as: Routes
 
-  @default_attachment_summary %{attachments: {[], []}, locked_by: %{}, parent_pages: %{}}
+  data title, :string, default: "Objectives"
+  data breadcrumbs, :any
 
-  def mount(params, %{"current_author_id" => author_id}, socket) do
-    author = Repo.get(Author, author_id)
-    project = Course.get_project_by_slug(Map.get(params, "project_id"))
+  data modal, :any, default: nil
+  data project, :any, default: %{}
+  data objectives, :list, default: []
+  data objectives_attachments, :list, default: []
 
-    objective_mappings = ObjectiveEditor.fetch_objective_mappings(project)
+  data filter, :any, default: %{}
+  data query, :string, default: ""
+  data total_count, :integer, default: 0
+  data offset, :integer, default: 0
+  data limit, :integer, default: 20
+  data sort, :string, default: "sort"
+  data page_change, :string, default: "page_change"
+  data show_bottom_paging, :boolean, default: false
+  data additional_table_class, :string, default: "table-sm text-center"
+  data selected, :string, default: ""
 
-    subscriptions = subscribe(objective_mappings, project.slug)
+  @table_filter_fn &__MODULE__.filter_rows/3
+  @table_push_patch_path &__MODULE__.live_path/2
 
-    objectives_tree = to_objective_tree(objective_mappings)
+  def filter_rows(socket, query, _filter) do
+    query_str = String.downcase(query)
+
+    Enum.filter(socket.assigns.objectives, fn obj ->
+      String.contains?(String.downcase(obj.title), query_str)
+    end)
+  end
+
+  def live_path(socket, params),
+    do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
+
+  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id} = _session, socket) do
+    project = Course.get_project_by_slug(project_slug)
+    author = Accounts.get_author(author_id)
+
+    {all_objectives, all_children, objectives, table_model} =
+      build_objectives(project, [], fn socket -> socket end, true)
 
     {:ok,
-     assign(socket,
-       active: :objectives,
-       objective_mappings: objective_mappings,
-       objectives_tree: objectives_tree,
-       breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
-       changeset: Resources.change_revision(%Revision{}),
-       project: project,
-       subscriptions: subscriptions,
-       attachment_summary: @default_attachment_summary,
-       modal: nil,
-       author: author,
-       force_render: 0,
-       can_delete?: true,
-       edit: :none,
-       title: "Objectives | " <> project.title
-     )}
+      assign(socket,
+        breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
+        project: project,
+        author: author,
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children
+      )
+    }
+  end
+
+  defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
+    all_objectives =
+      project
+      |> ObjectiveEditor.fetch_objective_mappings()
+      |> Enum.map(& &1.revision)
+
+    all_children =
+      all_objectives
+      |> Enum.reduce([], fn rev, acc -> rev.children ++ acc end)
+      |> Enum.uniq()
+
+    objectives =
+      Enum.reduce(all_objectives, [], fn rev, acc ->
+        case Enum.find(all_children, fn child_id -> child_id == rev.resource_id end) do
+          nil ->
+            mapped_children = Enum.map(rev.children, fn resource_id ->
+              Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end)
+            end)
+
+            [Map.merge(rev,
+              %{
+                children: mapped_children,
+                sub_objectives_count: length(mapped_children),
+                page_attachments_count: 0,
+                page_attachments: [],
+                activity_attachments_count: 0,
+              }
+            )] ++ acc
+          _ -> acc
+        end
+      end)
+
+    {:ok, table_model} = TableModel.new(objectives)
+
+    pid = self()
+    if first_load do
+      Task.async(fn ->
+        publication = Publishing.project_working_publication(project.slug)
+        objectives_attachments = Publishing.find_attached_objectives(publication.id)
+
+        send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
+      end)
+    else
+      send(pid, {:finish_attachments, {objectives_attachments, flash_fn}})
+    end
+
+    {all_objectives, all_children, objectives, table_model}
+  end
+
+  defp return_updated_data(project, flash_fn, socket) do
+    {all_objectives, all_children, objectives, table_model} =
+      build_objectives(project, socket.assigns.objectives_attachments, flash_fn)
+
+    {:noreply,
+      socket
+      |> assign(
+        objectives: objectives,
+        table_model: table_model,
+        total_count: length(objectives),
+        all_objectives: all_objectives,
+        all_children: all_children
+      )
+      |> hide_modal()
+      |> push_patch(to: live_path(socket, socket.assigns.params))}
   end
 
   def render(assigns) do
-    ~L"""
-    <%= render_modal(assigns) %>
+    ~F"""
+      {render_modal(assigns)}
 
-    <div class="objectives container">
-      <div class="mb-2 row">
-        <div class="col-12">
-          <p>
-            Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
-            <br/>Refer to the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
-          </p>
-        </div>
+      <FilterBox table_model={@table_model} show_more_opts={false} card_header_text="Learning Objectives" card_body_text={card_body_text(assigns)}>
+        <Filter
+          change="change_search"
+          reset="reset_search"
+          apply="apply_search"
+          query={@query} />
+      </FilterBox>
+
+      <div class="d-flex flex-row-reverse">
+        <button class="btn btn-primary" :on-click="display_new_modal">Create new Objective</button>
       </div>
 
-      <%= live_component CreateNew, changeset: @changeset, project: @project %>
+      <div id="objectives-table" class="p-4">
+        <Table
+          filter={@query}
+          table_model={@table_model}
+          total_count={@total_count}
+          offset={@offset}
+          limit={@limit}
+          sort={@sort}
+          page_change={@page_change}
+          show_bottom_paging={@show_bottom_paging}
+          additional_table_class={@additional_table_class}
+          with_body={true}>
 
-      <hr class="my-4" />
-
-      <%= if Enum.count(@objective_mappings) == 0 do %>
-        <div class="mt-3 row">
-          <div class="col-12">
-            <p>This project has no objectives</p>
-          </div>
-        </div>
-      <% else %>
-
-        <div class="mt-3">
-          <%= for {objective_tree, index} <- Enum.with_index(@objectives_tree) do %>
-            <%= live_component ObjectiveEntry, changeset: @changeset, objective_mapping: objective_tree.mapping,
-              children: objective_tree.children, depth: 1, index: index, project: @project, edit: @edit, can_delete?: @can_delete? %>
-          <% end %>
-        </div>
-
-      <% end %>
-
-    </div>
+          <Listing
+            rows={@table_model.rows}
+            selected={@selected}
+            project_slug={@project.slug} />
+        </Table>
+      </div>
     """
   end
 
-  defp to_objective_tree(objective_mappings) do
-    if Enum.empty?(objective_mappings) do
-      []
-    else
-      # Extract all children references from objectives
-      children_list =
-        objective_mappings
-        |> Enum.map(fn mapping -> mapping.revision.children end)
-        |> Enum.reduce(fn children, acc -> children ++ acc end)
+  defp card_body_text(assigns) do
+    ~F"""
+      Learning objectives help you to organize course content and determine appropriate assessments and instructional strategies.
+      <br/>
+      Refer to the <a href="https://www.cmu.edu/teaching/designteach/design/learningobjectives.html" target="_blank">CMU Eberly Center guide on learning objectives</a> to learn more about the importance of attaching learning objectives to pages and activities.
+    """
+  end
 
-      # Build flat ObjectiveMappingTransfer map for all objectives
-      mapping_obs =
-        objective_mappings
-        |> Enum.reduce(%{}, fn mapping, acc ->
-          Map.merge(acc, %{
-            mapping.resource.id => %ObjectiveMappingTransfer{mapping: mapping, children: []}
-          })
-        end)
-
-      # Build nested tree structure
-      Enum.reduce(objective_mappings, [], fn m, acc ->
-        a = Map.get(mapping_obs, m.resource.id)
-
-        a = %{
-          a
-          | children:
-              m.revision.children
-              |> Enum.reduce(a.children, fn c, mc ->
-                val = Map.get(mapping_obs, c)
-
-                if is_nil(val) do
-                  mc
-                else
-                  [val] ++ mc
-                end
-              end)
+  defp new_modal(changeset, socket) do
+    {:noreply,
+      assign(socket,
+        modal: %{
+          component: FormModal,
+          assigns: %{
+            id: "new_objective_modal",
+            changeset: changeset,
+            action: :new,
+            on_click: "new"
+          }
         }
-
-        if !Enum.member?(children_list, m.resource.id) do
-          acc ++ [a]
-        else
-          acc
-        end
-      end)
-      |> Enum.sort(fn e1, e2 ->
-        e1.mapping.resource.inserted_at >= e2.mapping.resource.inserted_at
-      end)
-    end
+      )}
   end
 
-  # spin up subscriptions for the container and for all of its objectives
-  defp subscribe(objective_mappings, project_slug) do
-    ids = Enum.map(objective_mappings, fn p -> p.resource.id end)
-    Enum.each(ids, &Subscriber.subscribe_to_new_revisions_in_project(&1, project_slug))
+  def handle_event("display_new_modal", _, socket),
+    do: new_modal(Resources.change_revision(%Revision{}), socket)
 
-    Subscriber.subscribe_to_new_resources_of_type(
-      ResourceType.get_id_by_type("objective"),
-      project_slug
-    )
+  def handle_event("display_new_sub_modal", %{"slug" => slug}, socket),
+    do: new_modal(Resources.change_revision(%Revision{parent_slug: slug}), socket)
 
-    ids
+  def handle_event("set_selected", %{"slug" => slug}, socket) do
+    {:noreply,
+      push_patch(socket, to: live_path(socket, Map.merge(socket.assigns.params, %{"selected" => slug})))}
   end
 
-  # release a collection of subscriptions
-  defp unsubscribe(ids, project_slug) do
-    Subscriber.unsubscribe_to_new_resources_of_type(
-      ResourceType.get_id_by_type("objective"),
-      project_slug
-    )
+  def handle_event("new", %{"revision" => %{"title" => title, "parent_slug" => parent_slug}}, socket) do
+    socket = clear_flash(socket)
 
-    Enum.each(ids, &Subscriber.unsubscribe_to_new_revisions_in_project(&1, project_slug))
-  end
+    project = socket.assigns.project
 
-  # handle change of edit
-  def handle_event("modify", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, :edit, slug)}
-  end
-
-  def handle_event("add_sub", %{"slug" => slug}, socket) do
-    {:noreply, assign(socket, :edit, slug)}
-  end
-
-  def handle_event("cancel", _, socket) do
-    {:noreply, assign(socket, edit: :none)}
-  end
-
-  # process form submission to save page settings
-  def handle_event("edit", %{"revision" => objective_params}, socket) do
-    with_atom_keys =
-      Map.keys(objective_params)
-      |> Enum.reduce(%{}, fn k, m ->
-        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
-      end)
-
-    socket =
-      case ObjectiveEditor.edit(
-             Map.get(with_atom_keys, :slug),
-             with_atom_keys,
-             socket.assigns.author,
-             socket.assigns.project
-           ) do
+    flash_fn =
+      case ObjectiveEditor.add_new(
+            %{title: title},
+            socket.assigns.author,
+            project,
+            parent_slug
+          ) do
         {:ok, _} ->
-          socket
+          fn socket -> put_flash(socket, :info, "Objective successfully created") end
 
-        {:error, _} ->
-          socket
-          |> put_flash(:error, "Could not edit objective")
+        {:error, _error} ->
+          fn socket -> put_flash(socket, :error, "Could not create objective") end
       end
 
-    {:noreply, assign(socket, :edit, :none)}
+    return_updated_data(project, flash_fn, socket)
   end
 
-  def handle_event("show_delete_modal", %{"slug" => slug}, socket) do
-    %{can_delete?: can_delete?, project: project, force_render: force_render} = socket.assigns
+  def handle_event("display_edit_modal", %{"slug" => slug}, socket) do
+    changeset =
+      socket.assigns.project.slug
+      |> AuthoringResolver.from_revision_slug(slug)
+      |> Resources.change_revision()
 
-    if can_delete? do
+    {:noreply,
+      assign(socket,
+        modal: %{
+          component: FormModal,
+          assigns: %{
+            id: "edit_objective_modal",
+            changeset: changeset,
+            action: :edit,
+            on_click: "edit"
+          }
+        }
+      )}
+  end
+
+  def handle_event("edit", %{"revision" => %{"title" => title, "slug" => slug}}, socket) do
+    socket = clear_flash(socket)
+
+    project = socket.assigns.project
+
+    flash_fn =
+      case ObjectiveEditor.edit(
+            slug,
+            %{title: title},
+            socket.assigns.author,
+            project
+          ) do
+        {:ok, _} ->
+          fn socket -> put_flash(socket, :info, "Objective successfully updated") end
+
+        {:error, %Ecto.Changeset{} = _changeset} ->
+          fn socket -> put_flash(socket, :error, "Could not update objective") end
+      end
+
+    return_updated_data(project, flash_fn, socket)
+  end
+
+  def handle_event("display_add_existing_sub_modal", %{"slug" => slug}, socket) do
+    %{project: project, all_children: all_children, all_objectives: all_objectives} = socket.assigns
+    %{children: objective_children} = AuthoringResolver.from_revision_slug(project.slug, slug)
+
+    sub_objectives = Enum.map(all_children -- objective_children, fn resource_id ->
+      Enum.find(all_objectives, fn obj -> obj.resource_id == resource_id end)
+    end)
+
+    {:noreply,
+      assign(socket,
+        modal: %{
+          component: SelectExistingSubModal,
+          assigns: %{
+            id: "select_existing_sub_modal",
+            parent_slug: slug,
+            sub_objectives: sub_objectives,
+            add: :add_existing_sub
+          }
+        }
+      )}
+  end
+
+  def handle_event("display_delete_modal", %{"slug" => slug}, socket) do
+    socket = clear_flash(socket)
+
+    project = socket.assigns.project
+    %{children: children, resource_id: resource_id} =
+      AuthoringResolver.from_revision_slug(project.slug, slug)
+
+    if length(children) > 0 do
+      {:noreply, put_flash(socket, :error, "Could not remove objective if it has sub-objectives associated")}
+    else
       publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
-      %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
       case Oli.Publishing.find_objective_in_selections(resource_id, publication_id) do
         [] ->
-          attachment_summary = ObjectiveEditor.preview_objective_detatchment(resource_id, project)
-
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: DeleteModal,
-               assigns: %{
-                 id: "delete_objective_modal",
-                 slug: slug,
-                 project: project,
-                 attachment_summary: attachment_summary,
-                 force_render: force_render + 1
-               }
-             }
-           )}
+            assign(socket,
+              modal: %{
+                component: DeleteModal,
+                assigns: %{
+                  id: "delete_objective_modal",
+                  slug: slug,
+                  project: project,
+                  attachment_summary: ObjectiveEditor.preview_objective_detatchment(resource_id, project)
+                }
+              }
+            )}
 
         selections ->
           {:noreply,
-           assign(socket,
-             modal: %{
-               component: SelectionsModal,
-               assigns: %{
-                 id: "selections_modal",
-                 selections: selections,
-                 project_slug: project.slug,
-                 force_render: force_render + 1
-               }
-             }
-           )}
+            assign(socket,
+              modal: %{
+                component: SelectionsModal,
+                assigns: %{
+                  id: "selections_modal",
+                  selections: selections,
+                  project_slug: project.slug
+                }
+              }
+            )}
       end
-    else
-      {:noreply, socket}
     end
   end
 
-  # handle processing deletion of item
-  def handle_event("delete", %{"slug" => slug}, socket) do
-    %{project: project, author: author} = socket.assigns
+  def handle_event("delete", %{"slug" => slug} = params, socket) do
+    socket = clear_flash(socket)
 
-    %{resource_id: resource_id} =
-      AuthoringResolver.from_revision_slug(
-        project.slug,
-        slug
-      )
+    parent_slug = Map.get(params, "parent_slug", "")
+    %{project: project, author: author, objectives: objectives} = socket.assigns
+    %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
     ObjectiveEditor.detach_objective(resource_id, project, author)
 
-    parent_objective = determine_parent_objective(socket, slug)
-
-    socket =
-      case ObjectiveEditor.preview_objective_detatchment(resource_id, project) do
-        %{attachments: {[], []}} ->
-          case ObjectiveEditor.delete(
-                 slug,
-                 author,
-                 project,
-                 parent_objective
-               ) do
-            {:ok, _} ->
-              socket
-
-            {:error, _} ->
-              socket
-              |> put_flash(:error, "Could not remove objective")
-          end
-
+    {parents, parent_to_detach_slug} = Enum.reduce(objectives, {[], ""}, fn objective, {parents,  parent_to_detach_slug} ->
+      case Enum.find(objective.children, fn child -> child.slug == slug end) do
+        nil -> {parents,  parent_to_detach_slug}
         _ ->
-          socket
+          if objective.slug == parent_slug,
+            do: {[objective | parents], objective.slug},
+            else: {[objective | parents], parent_to_detach_slug}
       end
+    end)
 
-    {:noreply, hide_modal(socket)}
-  end
-
-  def handle_event("show_breakdown_modal", %{"slug" => slug}, socket) do
-    %{changeset: changeset} = socket.assigns
-
-    modal = %{
-      component: BreakdownModal,
-      assigns: %{
-        id: "breakdown_objective",
-        slug: slug,
-        changeset: changeset
-      }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
-  end
-
-  # handle clicking of the add objective
-  def handle_event("breakdown", %{"revision" => objective_params}, socket) do
-    with_atom_keys =
-      Map.keys(objective_params)
-      |> Enum.reduce(%{}, fn k, m ->
-        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
-      end)
-
-    slug = Map.get(objective_params, "slug")
-
-    socket =
-      case ObjectiveEditor.add_new_parent_for_objective(
-             with_atom_keys,
-             socket.assigns.author,
-             socket.assigns.project,
-             slug
-           ) do
-        {:ok, _} ->
-          socket
-
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not break down objective")
-      end
-
-    {:noreply, hide_modal(socket)}
-  end
-
-  # handle clicking of the add objective
-  def handle_event("new", %{"revision" => objective_params}, socket) do
-    with_atom_keys =
-      Map.keys(objective_params)
-      |> Enum.reduce(%{}, fn k, m ->
-        Map.put(m, String.to_existing_atom(k), Map.get(objective_params, k))
-      end)
-
-    container_slug = Map.get(objective_params, "parent_slug")
-
-    socket =
-      case ObjectiveEditor.add_new(
-             with_atom_keys,
-             socket.assigns.author,
-             socket.assigns.project,
-             container_slug
-           ) do
-        {:ok, _} ->
-          socket
-
-        {:error, %Ecto.Changeset{} = _changeset} ->
-          socket
-          |> put_flash(:error, "Could not create objective")
-      end
-
-    {:noreply, assign(socket, edit: :none, changeset: Resources.change_revision(%Revision{}))}
-  end
-
-  defp determine_parent_objective(socket, slug) do
-    child =
-      Enum.find(socket.assigns.objective_mappings, fn %{revision: revision} ->
-        revision.slug == slug
-      end)
-
-    case Enum.find(socket.assigns.objectives_tree, fn %{mapping: mapping} ->
-           Enum.any?(mapping.revision.children, fn id -> id == child.revision.resource_id end)
-         end) do
-      nil -> nil
-      o -> o.mapping.revision
+    delete_fn = if length(parents) <= 1 do
+      fn -> ObjectiveEditor.delete(
+          slug,
+          author,
+          project,
+          AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
+        ) end
+    else
+      fn -> ObjectiveEditor.remove_sub_objective_from_parent(
+          slug,
+          author,
+          project,
+          AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
+        ) end
     end
-  end
 
-  # Here are listening for subscription notifications for newly created resources
-  def handle_info({:new_resource, revision, _}, socket) do
-    process_info({:added, revision}, socket)
-  end
+    flash_fn =
+      case delete_fn.() do
+        {:ok, _} ->
+          fn socket -> put_flash(socket, :info, "Objective successfully removed") end
 
-  # Listener for edits to existing resources
-  def handle_info({:updated, revision, _}, socket) do
-    process_info({:updated, revision}, socket)
-  end
-
-  defp process_info({any, revision}, socket) do
-    id = revision.resource_id
-
-    # For a completely new resource, we simply pull a new view of the objective mappings
-    objective_mappings =
-      if any == :added do
-        ObjectiveEditor.fetch_objective_mappings(socket.assigns.project)
-      else
-        # on just an objective change, update the revision in place
-        case Enum.find_index(socket.assigns.objective_mappings, fn p -> p.resource.id == id end) do
-          nil ->
-            socket.assigns.objective_mappings
-
-          index ->
-            case revision.deleted do
-              false ->
-                mapping = %{
-                  Enum.at(socket.assigns.objective_mappings, index)
-                  | revision: revision
-                }
-
-                List.replace_at(socket.assigns.objective_mappings, index, mapping)
-
-              true ->
-                List.delete_at(socket.assigns.objective_mappings, index)
-            end
-        end
+        {:error, _error} ->
+          fn socket -> put_flash(socket, :error, "Could not remove objective") end
       end
 
-    # redo all subscriptions
-    unsubscribe(socket.assigns.subscriptions, socket.assigns.project.slug)
-    subscriptions = subscribe(objective_mappings, socket.assigns.project.slug)
+    return_updated_data(project, flash_fn, socket)
+  end
 
-    objectives_tree = to_objective_tree(objective_mappings)
+  def handle_info({:add_existing_sub, %{"slug" => slug, "parent_slug" => parent_slug} = _params}, socket) do
+    socket = clear_flash(socket)
+
+    %{project: project, author: author} = socket.assigns
+
+    flash_fn = case ObjectiveEditor.add_new_parent_for_sub_objective(
+        slug,
+        parent_slug,
+        project.slug,
+        author
+      ) do
+      {:ok, _revision} ->
+        fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
+
+      {:error, _} ->
+        fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
+    end
+
+    return_updated_data(project, flash_fn, socket)
+  end
+
+  def handle_info({:finish_attachments, {objectives_attachments, flash_fn}}, socket) do
+    page_id = ResourceType.get_id_by_type("page")
+    activity_id = ResourceType.get_id_by_type("activity")
+
+    objectives =
+      Enum.reduce(socket.assigns.objectives, [], fn rev, acc ->
+        resource_id = rev.resource_id
+        children = Enum.map(rev.children, & &1.resource_id)
+
+        sub_objectives_page_attachments =
+          Enum.filter(objectives_attachments, fn
+            %{resource_type_id: ^page_id, attached_objective: resource_id} ->
+              Enum.member?(children, resource_id)
+            _ -> false
+          end)
+
+        page_attachments =
+          sub_objectives_page_attachments ++
+            for pa = %{
+              attached_objective: ^resource_id,
+              resource_type_id: ^page_id
+            } <- objectives_attachments, do: pa
+
+        activity_attachments =
+          for aa = %{
+            attached_objective: ^resource_id,
+            resource_type_id: ^activity_id
+          } <- objectives_attachments, do: aa
+
+        [Map.merge(rev,
+          %{
+            page_attachments_count: length(page_attachments),
+            page_attachments: page_attachments,
+            activity_attachments_count: length(activity_attachments)
+          }
+        )] ++ acc
+      end)
+
+    {:ok, table_model} = TableModel.new(objectives)
 
     {:noreply,
-     assign(socket,
-       objective_mappings: objective_mappings,
-       objectives_tree: objectives_tree,
-       subscriptions: subscriptions
-     )}
+      socket
+      |> assign(
+        objectives: objectives,
+        table_model: table_model,
+        objectives_attachments: objectives_attachments
+      )
+      |> flash_fn.()
+      |> push_patch(to: live_path(socket, socket.assigns.params), replace: true)
+    }
   end
+
+  # needed to ignore results of Task invocation
+  def handle_info(_, socket), do: {:noreply, socket}
 end
