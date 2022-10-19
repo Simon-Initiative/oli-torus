@@ -51,16 +51,26 @@
   </div>
   <div class="col-md-8">
 
-    <%= inputs_for f, :attributes, fn fp -> %>
-      <div class="form-label-group mb-3">
-        <%= label fp, :learning_language, "Learning Language (optional)", class: "control-label" %>
-        <%= select fp, :learning_language, @language_codes, class: "form-control", required: false,  prompt: "What language is being taught in this project?" %>
+    <div class="d-block">
+      <%= inputs_for f, :attributes, fn fp -> %>
+        <div class="form-label-group mb-3">
+          <%= label fp, :learning_language, "Learning Language (optional)", class: "control-label" %>
+          <%= select fp, :learning_language, @language_codes, class: "form-control", required: false,  prompt: "What language is being taught in this project?" %>
 
 
+        </div>
+      <% end %>
+
+      <div class="d-flex flex-row">
+        <div class="flex-grow-1"></div>
+        <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
       </div>
-    <% end %>
+    </div>
 
-    <%= submit "Save", class: "float-right btn btn-md btn-primary mt-2" %>
+    <div class="d-flex align-items-center mt-4">
+      <a type="button" class="btn btn-link" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesGroupsEditor, @project.slug) %>">Alternatives Groups</a>
+      <span>Modify project alternatives groups.</span>
+    </div>
   </div>
 </div>
 

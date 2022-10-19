@@ -13,6 +13,10 @@ defmodule Oli.Rendering.Alternatives.Plaintext do
     Elements.render(context, model, Elements.Plaintext)
   end
 
+  def preference_selector(%Context{}, _model) do
+    []
+  end
+
   def error(%Context{} = context, element, error) do
     Error.render(context, element, error, Error.Plaintext)
   end

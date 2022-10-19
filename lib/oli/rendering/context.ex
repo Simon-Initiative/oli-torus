@@ -24,5 +24,6 @@ defmodule Oli.Rendering.Context do
             historical_attempts: nil,
             resource_summary_fn: nil,
             alternatives_selector_fn: nil,
+            extrinsic_read_section_fn: nil,
             learning_language: nil
 end

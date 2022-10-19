@@ -8,6 +8,7 @@ defmodule Oli.Rendering.Alternatives do
   alias Oli.Resources.Alternatives.AlternativesStrategyContext
 
   @callback alternatives(%Context{}, %{}) :: [any()]
+  @callback preference_selector(%Context{}, %{}) :: [any()]
   @callback error(%Context{}, %{}, {Atom.t(), String.t(), String.t()}) :: [any()]
 
   @doc """
@@ -30,15 +31,8 @@ defmodule Oli.Rendering.Alternatives do
       %AlternativesStrategyContext{user: user, section_slug: section_slug},
       element
     )
-    |> Enum.flat_map(fn %{
-                          "type" => "alternative",
-                          "children" => children
-                        } ->
-      writer.alternatives(
-        %Context{context | pagination_mode: "normal"},
-        children
-      )
-    end)
+    |> render_selected_alternatives(context, writer)
+    |> maybe_render_preference_selector(element, writer)
   end
 
   # Renders an error message if none of the signatures above match. Logging and rendering of errors
@@ -52,4 +46,27 @@ defmodule Oli.Rendering.Alternatives do
       []
     end
   end
+
+  defp render_selected_alternatives(selected_alternatives, context, writer) do
+    selected_alternatives
+    |> Enum.flat_map(fn %{
+                          "type" => "alternative",
+                          "children" => children
+                        } ->
+      writer.alternatives(
+        %Context{context | pagination_mode: "normal"},
+        children
+      )
+    end)
+  end
+
+  defp maybe_render_preference_selector(
+         rendered,
+         %{"strategy" => "user_section_preference"},
+         writer
+       ) do
+    [writer.preference_selector() | rendered]
+  end
+
+  defp maybe_render_preference_selector(rendered, _, _writer), do: rendered
 end

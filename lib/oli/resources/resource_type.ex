@@ -11,7 +11,8 @@ defmodule Oli.Resources.ResourceType do
     %{id: 4, type: "objective"},
     %{id: 5, type: "secondary"},
     %{id: 6, type: "tag"},
-    %{id: 7, type: "bibentry"}
+    %{id: 7, type: "bibentry"},
+    %{id: 8, type: "alternatives_group"}
   ]
   @by_id Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, id, t) end)
   @by_type Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, t, id) end)
@@ -27,6 +28,7 @@ defmodule Oli.Resources.ResourceType do
   def get_type_by_id(5), do: Map.get(@by_id, 5)
   def get_type_by_id(6), do: Map.get(@by_id, 6)
   def get_type_by_id(7), do: Map.get(@by_id, 7)
+  def get_type_by_id(8), do: Map.get(@by_id, 8)
 
   def get_id_by_type("page"), do: Map.get(@by_type, "page")
   def get_id_by_type("container"), do: Map.get(@by_type, "container")
@@ -35,6 +37,7 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("secondary"), do: Map.get(@by_type, "secondary")
   def get_id_by_type("tag"), do: Map.get(@by_type, "tag")
   def get_id_by_type("bibentry"), do: Map.get(@by_type, "bibentry")
+  def get_id_by_type("alternatives_group"), do: Map.get(@by_type, "alternatives_group")
 
   defp is_type(revision, type), do: get_type_by_id(revision.resource_type_id) == type
   def is_page(revision), do: is_type(revision, "page")
@@ -44,7 +47,10 @@ defmodule Oli.Resources.ResourceType do
   def is_secondary(revision), do: is_type(revision, "secondary")
   def is_tag(revision), do: is_type(revision, "tag")
   def is_bibentry(revision), do: is_type(revision, "bibentry")
-  def is_non_adaptive_page(revision), do: is_type(revision, "page") and !is_adaptive_page(revision)
+
+  def is_non_adaptive_page(revision),
+    do: is_type(revision, "page") and !is_adaptive_page(revision)
+
   def is_adaptive_page(%{content: %{"advancedAuthoring" => true}}), do: true
   def is_adaptive_page(_), do: false
 
