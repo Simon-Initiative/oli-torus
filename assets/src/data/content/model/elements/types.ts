@@ -208,6 +208,7 @@ export type FormulaSubTypes = 'mathml' | 'latex';
 interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
+  legacyBlockRendered: boolean;
   src: string;
 }
 

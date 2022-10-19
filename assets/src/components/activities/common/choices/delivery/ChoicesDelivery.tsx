@@ -49,7 +49,7 @@ export const ChoicesDelivery: React.FC<Props> = ({
         >
           <div className={styles.choicesChoiceWrapper}>
             <label className={styles.choicesChoiceLabel} htmlFor={`choice-${index}`}>
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center col">
                 {isSelected(choice.id) ? selectedIcon : unselectedIcon}
                 <div className={styles.choicesChoiceContent}>
                   <HtmlContentModelRenderer content={choice.content} context={context} />

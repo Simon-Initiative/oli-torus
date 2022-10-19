@@ -11,7 +11,7 @@
     </button>
     <div class="dropdown-menu">
       <a class="dropdown-item" href="<%= Routes.project_path(@conn, :overview, @project) %>">Overview</a>
-      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Objectives.Objectives, @project.slug) %>">Objectives</a>
+      <a class="dropdown-item" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.ObjectivesLive.Objectives, @project.slug) %>">Objectives</a>
       <a class="dropdown-item" href="<%= Routes.activity_bank_path(@conn, :index, @project.slug) %>">Activity Bank</a>
       <a class="dropdown-item" href="<%= Routes.bibliography_path(@conn, :index, @project.slug) %>">Bibliography</a>
       <a class="dropdown-item" href="<%= Routes.container_path(@conn, :index, @project.slug, root_container_slug(@project.slug)) %>">Curriculum</a>

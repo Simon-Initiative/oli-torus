@@ -37,7 +37,7 @@
     "immutable": "^4.0.0-rc.12",
     "is-hotkey": "^0.1.6",
     "janus-script": "^1.9.2",
-    "jquery": "^3.5.0",
+    "jquery": "^3.5.1",
     "json-rules-engine": "^6.0.1",
     "json-schema": "^0.4.0",
     "jsonpath": "^1.1.1",
