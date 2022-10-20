@@ -23,21 +23,27 @@
       <% end %>
     </h5>
     <div class="row justify-content-start">
+      <div class="col-sm-3">Status:</div>
+      <div><%= if resource_attempt.lifecycle_state == :evaluated do "Scored" else "Awaiting Instructor Scoring" end %></div>
+    </div>
+    <div class="row justify-content-start">
       <div class="col-sm-3">Started:</div>
       <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :inserted_at, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Submitted:</div>
-      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :date_evaluated, @conn) %></div>
+      <div><%= OliWeb.Common.Utils.render_date(resource_attempt, :date_submitted, @conn) %></div>
     </div>
     <div class="row">
       <div class="col-sm-3">Score:</div>
       <div><%= show_score(resource_attempt.score, resource_attempt.out_of) %>%</div>
     </div>
+    <%= if !is_nil(resource_attempt.score) do %>
     <div class="row">
       <div class="col-sm-3">Points:</div>
       <div><%= :erlang.float_to_binary(resource_attempt.score, [:compact, {:decimals, 2}]) %> out of <%= :erlang.float_to_binary(resource_attempt.out_of, [:compact, {:decimals, 2}]) %> </div>
     </div>
+    <% end %>
   </div>
   <% end %>
   </div>
