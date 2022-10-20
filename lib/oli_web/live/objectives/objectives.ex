@@ -328,7 +328,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       id: "select_existing_sub_modal",
       parent_slug: slug,
       sub_objectives: sub_objectives,
-      add: :add_existing_sub
+      add: "add_existing_sub"
     }
 
     modal = fn assigns ->
@@ -408,7 +408,7 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   def handle_event("delete", %{"slug" => slug} = params, socket) do
     socket = clear_flash(socket)
 
-    parent_slug = Map.get(params, "parent-slug", "")
+    parent_slug = Map.get(params, "parent_slug", "")
     %{project: project, author: author, objectives: objectives} = socket.assigns
     %{resource_id: resource_id} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
@@ -460,8 +460,9 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     return_updated_data(project, flash_fn, socket)
   end
 
-  def handle_info(
-        {:add_existing_sub, %{"slug" => slug, "parent_slug" => parent_slug} = _params},
+  def handle_event(
+        "add_existing_sub",
+        %{"slug" => slug, "parent_slug" => parent_slug} = _params,
         socket
       ) do
     socket = clear_flash(socket)

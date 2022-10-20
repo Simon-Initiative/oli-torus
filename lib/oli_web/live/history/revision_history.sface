@@ -84,7 +84,7 @@
             <p>Select a <code>.json</code> file to upload and set as the content of this resource.</p>
 
               <div class="flex my-3" phx-drop-target={@uploads.json.ref}>
-                { live_file_input @uploads.json }
+                <.live_file_input upload={@uploads.json} />
               </div>
 
               {#for entry <- @uploads.json.entries }
