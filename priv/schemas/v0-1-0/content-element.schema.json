@@ -787,6 +787,9 @@
         "subtype": {
           "enum": ["mathml", "latex"]
         },
+        "legacyBlockRendered": {
+          "type": "boolean"
+        },
         "src": {
           "type": "string"
         },
@@ -893,6 +896,30 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/paragraph"
+          }
+        }
+      },
+      "required": ["type", "children"]
+    },
+    "command-button": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "command_button"
+        },
+        "target": {
+          "id": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "style": {
+          "oneOf": [{ "const": "link" }, { "const": "button" }]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
           }
         }
       },
@@ -1193,6 +1220,14 @@
             "contenttype": {
               "type": "string"
             }
+          }
+        },
+        "captions": {
+          "type": "array",
+          "items": {
+            "language_code": "string",
+            "label": "string",
+            "src": "string"
           }
         },
         "height": {

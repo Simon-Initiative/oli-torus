@@ -6,7 +6,6 @@ import { Modal } from 'components/modal/Modal';
 import { MediaManager } from 'components/media/manager/MediaManager.controller';
 import { modalActions } from 'actions/modal';
 import { MediaItem } from 'types/media';
-import { Command } from 'components/editing/elements/commands/interfaces';
 import { Model } from 'data/content/model/elements/factories';
 import { createButtonCommandDesc } from 'components/editing/elements/commands/commandFactories';
 import { configureStore } from 'state/store';
@@ -54,42 +53,16 @@ export function selectAudio(
   });
 }
 
-function createCustomEventCommand(onRequestMedia: (r: any) => Promise<string | boolean>) {
-  const customEventCommand: Command = {
-    execute: (_context, editor: Editor) => {
-      const at = editor.selection;
-      if (!at) return;
-
-      const request = {
-        type: 'MediaItemRequest',
-        mimeTypes: MIMETYPE_FILTERS.AUDIO,
-      };
-
-      onRequestMedia(request).then((r) => {
-        if (typeof r === 'string') {
-          Transforms.insertNodes(editor, Model.audio(r), { at });
-        }
-      });
-    },
-    precondition: (_editor: Editor) => {
-      return true;
-    },
-  };
-  return customEventCommand;
-}
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const insertAudio = (onRequestMedia: any) =>
   createButtonCommandDesc({
     icon: 'audiotrack',
     description: 'Audio Clip',
-    ...(onRequestMedia === null || onRequestMedia === undefined
-      ? {
-          execute: (context, editor: Editor) => {
-            const at = editor.selection as any;
-            selectAudio(context.projectSlug, Model.audio()).then((audio) =>
-              Transforms.insertNodes(editor, audio, { at }),
-            );
-          },
-        }
-      : createCustomEventCommand(onRequestMedia)),
+
+    execute: (context, editor: Editor) => {
+      const at = editor.selection as any;
+      selectAudio(context.projectSlug, Model.audio()).then((audio) =>
+        Transforms.insertNodes(editor, audio, { at }),
+      );
+    },
   });

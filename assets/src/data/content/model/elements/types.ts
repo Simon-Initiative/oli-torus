@@ -39,6 +39,7 @@ export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
 export type Inline =
   | Hyperlink
+  | CommandButton
   | Popup
   | InputRef
   | ImageInline
@@ -207,6 +208,7 @@ export type FormulaSubTypes = 'mathml' | 'latex';
 interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
+  legacyBlockRendered: boolean;
   src: string;
 }
 
@@ -221,10 +223,17 @@ export interface AudioSource {
   url: string;
   contenttype: string;
 }
+
+export interface VideoCaptionTrack {
+  language_code: string;
+  label: string;
+  src: string;
+}
 export interface Video extends SlateElement<VoidChildren> {
   type: 'video';
   poster?: string;
   src: VideoSource[];
+  captions?: VideoCaptionTrack[];
   height?: number;
   width?: number;
 }
@@ -340,6 +349,13 @@ export interface Hyperlink extends SlateElement<Text[]> {
   type: 'a';
   href: string;
   target: string;
+}
+
+export interface CommandButton extends SlateElement<Text[]> {
+  type: 'command_button';
+  message: string;
+  target: string;
+  style: 'link' | 'button';
 }
 
 export interface InputRef extends SlateElement<Text[]> {

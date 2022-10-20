@@ -23,12 +23,11 @@ export class ErrorBoundary extends React.Component<
       if (this.state.hasError) {
         return (
           <div className="alert alert-warning" role="alert">
-            <h4 className="alert-heading">Oh no!</h4>
-            <p className="mb-4">Something went wrong. Refresh the page and try again.</p>
+            <p className="mb-4">Something went wrong. Please refresh the page and try again.</p>
 
             <hr />
 
-            <p>If the problem persists, contact OLI support with the following error message:</p>
+            <p>If the problem persists, contact support with the following details:</p>
 
             <Collapse caption="Show error message">
               <div

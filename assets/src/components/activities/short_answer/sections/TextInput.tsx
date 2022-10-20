@@ -1,16 +1,12 @@
 import { useAuthoringElementContext } from 'components/activities/AuthoringElementProvider';
-import { escapeInput, isOperator, RuleOperator, unescapeInput } from 'data/activities/model/rules';
+import { InputText, textOperator } from 'data/activities/model/rules';
 import React from 'react';
 
-interface State {
-  operator: RuleOperator;
-  input: string;
-}
 interface InputProps {
-  setState: (s: State) => void;
-  state: State;
+  onEditInput: (input: InputText) => void;
+  input: InputText;
 }
-export const TextInput: React.FC<InputProps> = ({ state, setState }) => {
+export const TextInput: React.FC<InputProps> = ({ input, onEditInput }) => {
   const { editMode } = useAuthoringElementContext();
   return (
     <div className="d-flex flex-md-row mb-2">
@@ -18,15 +14,11 @@ export const TextInput: React.FC<InputProps> = ({ state, setState }) => {
         disabled={!editMode}
         className="form-control mr-2"
         style={{ width: 250 }}
-        value={state.operator}
-        onChange={(e) => {
-          if (!isOperator(e.target.value)) {
-            return;
-          }
-
-          setState({
-            operator: e.target.value,
-            input: state.input,
+        value={input.operator}
+        onChange={({ target: { value } }) => {
+          onEditInput({
+            ...input,
+            operator: textOperator(value),
           });
         }}
         name="question-type"
@@ -42,8 +34,8 @@ export const TextInput: React.FC<InputProps> = ({ state, setState }) => {
         disabled={!editMode}
         type="text"
         className="form-control"
-        onChange={(e) => setState({ operator: state.operator, input: escapeInput(e.target.value) })}
-        value={unescapeInput(state.input)}
+        onChange={(e) => onEditInput({ ...input, value: e.target.value })}
+        value={input.value}
       />
     </div>
   );

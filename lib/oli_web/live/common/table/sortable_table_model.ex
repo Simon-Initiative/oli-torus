@@ -176,16 +176,9 @@ defmodule OliWeb.Common.Table.SortableTableModel do
   end
 
   def to_params(%__MODULE__{} = struct) do
-    Map.put(%{}, "sort_by" <> struct.event_suffix, struct.sort_by_spec.name)
+    %{}
+    |> Map.put("sort_by" <> struct.event_suffix, struct.sort_by_spec.name)
     |> Map.put("sort_order" <> struct.event_suffix, struct.sort_order)
-    |> Map.put(
-      "selected" <> struct.event_suffix,
-      if struct.selected != nil do
-        Map.get(struct.selected, struct.id_field)
-      else
-        nil
-      end
-    )
   end
 
   def update_from_params(%__MODULE__{} = struct, params) do

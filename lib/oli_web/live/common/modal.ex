@@ -47,12 +47,6 @@ defmodule OliWeb.Common.Modal do
 
           component when is_function(component) ->
             component.(assigns)
-
-          # %{component: component, assigns: modal_assigns} when is_function(component) ->
-          #   component.(modal_assigns)
-
-          %{component: component, assigns: modal_assigns} ->
-            live_component(component, modal_assigns)
         end
       end
 

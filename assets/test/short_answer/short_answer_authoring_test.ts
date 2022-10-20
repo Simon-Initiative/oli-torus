@@ -48,7 +48,7 @@ describe('short answer question', () => {
 
     updated = dispatch(
       updated,
-      ResponseActions.addResponse(makeResponse(eqRule('1'), 0, ''), DEFAULT_PART_ID),
+      ResponseActions.addResponse(makeResponse(eqRule(1), 0, ''), DEFAULT_PART_ID),
     );
     expect(updated.authoring.parts[0].responses[0].score).toBe(1);
     expect(updated.authoring.parts[0].responses[1].score).toBe(0);

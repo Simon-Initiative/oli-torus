@@ -395,6 +395,15 @@ defmodule Oli.Rendering.Content.Html do
   def formula(
         %Oli.Rendering.Context{} = _context,
         _next,
+        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
+        true
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        _next,
         %{"subtype" => "latex", "src" => src},
         true
       ) do
@@ -511,6 +520,39 @@ defmodule Oli.Rendering.Content.Html do
     [next.(), "\n"]
   end
 
+  def command_button(%Context{} = _context, next, %{
+        "style" => style,
+        "target" => target,
+        "message" => message
+      }) do
+    css_class =
+      case style do
+        "link" -> "btn btn-link command-button"
+        _ -> "btn btn-primary command-button"
+      end
+
+    [
+      "<span class=\"#{css_class}\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      next.(),
+      "</span>"
+    ]
+  end
+
+  def command_button(%Context{} = _context, next, %{
+        "target" => target,
+        "message" => message
+      }) do
+    [
+      "<span class=\"btn btn-primary command-button\" data-action=\"command-button\" data-target=\"#{escape_xml!(target)}\" data-message=\"#{message}\">",
+      next.(),
+      "</span>"
+    ]
+  end
+
+  def command_button(%Context{} = _context, next, _attrs) do
+    [next.()]
+  end
+
   def blockquote(%Context{} = _context, next, _) do
     ["<blockquote>", next.(), "</blockquote>\n"]
   end
@@ -616,7 +658,7 @@ defmodule Oli.Rendering.Content.Html do
     end
   end
 
-  def popup(%Context{} , next, %{"trigger" => trigger, "content" => content} = element) do
+  def popup(%Context{}, next, %{"trigger" => trigger, "content" => content} = element) do
     trigger =
       if escape_xml!(trigger) == "hover" do
         "hover focus"

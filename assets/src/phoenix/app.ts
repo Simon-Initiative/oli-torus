@@ -14,6 +14,7 @@ import { showModal } from './modal';
 import { enableSubmitWhenTitleMatches } from './package_delete';
 import { onReady } from './ready';
 import 'react-phoenix';
+import { commandButtonClicked } from '../components/editing/elements/command_button/commandButtonClicked';
 
 const csrfToken = (document as any)
   .querySelector('meta[name="csrf-token"]')
@@ -67,6 +68,8 @@ $(() => {
   ($('[data-toggle="tooltip"]') as any).tooltip();
   ($('.ui.dropdown') as any).dropdown();
   ($('.ui.dropdown.item') as any).dropdown();
+
+  $('[data-action="command-button"]').on('click', commandButtonClicked);
 
   $('[data-toggle="popover"]').on('show.bs.popover', function () {
     const audioAttribute = this.attributes.getNamedItem('data-audio');
