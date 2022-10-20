@@ -63,7 +63,7 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
   end
 
   @doc """
-  Creates a new resource with given attributes as part of its initial revision.
+  Creates a new resource on behalf of the author with given attributes as part of its initial revision.
   """
   def create(project_slug, author, resource_type_id, attrs) do
     with {:ok, project} <- Course.get_project_by_slug(project_slug) |> trap_nil(),
@@ -71,7 +71,9 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
          {:ok, publication} <-
            Oli.Publishing.project_working_publication(project_slug) |> trap_nil(),
          {:ok, revision} <-
-           Oli.Resources.create_new(attrs, resource_type_id),
+           attrs
+           |> Map.merge(%{author_id: author.id})
+           |> Oli.Resources.create_new(resource_type_id),
          {:ok, _} <-
            Course.create_project_resource(%{
              project_id: project.id,
@@ -88,5 +90,9 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
     else
       error -> error
     end
+  end
+
+  def delete(project_slug, resource_id, author) do
+    edit(project_slug, resource_id, author, %{deleted: true})
   end
 end
