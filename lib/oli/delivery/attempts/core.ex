@@ -225,6 +225,7 @@ defmodule Oli.Delivery.Attempts.Core do
         join: r in Revision,
         on: a.revision_id == r.id,
         where: a.resource_attempt_id == ^resource_attempt_id,
+        order_by: a.attempt_number,
         select: {a.resource_id, a.attempt_guid, r.activity_type_id}
       )
     )
