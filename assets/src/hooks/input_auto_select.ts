@@ -1,5 +1,5 @@
 export const InputAutoSelect = {
   mounted() {
-    this.el.select();
+    setTimeout(() => this.el.select(), 200);
   },
 };

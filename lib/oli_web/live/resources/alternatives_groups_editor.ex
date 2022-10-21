@@ -58,7 +58,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
         <h2>Alternatives</h2>
         <div class="d-flex flex-row">
           <div class="flex-grow-1"></div>
-          <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Group</button>
+          <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Alternative</button>
         </div>
         <div class="d-flex flex-column my-4">
         <%= if Enum.count(@alternatives) > 0 do %>
@@ -135,7 +135,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
           <%= text_input @form,
             :name,
             class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
-            placeholder: "Enter a name for the alternatives group",
+            placeholder: "Enter a name for the alternative",
             phx_hook: "InputAutoSelect",
             required: true %>
         </div>
@@ -146,7 +146,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       component: CreateModal,
       assigns: %{
         id: "create_modal",
-        title: "Create Group",
+        title: "Create Alternative",
         changeset: changeset,
         form_body_fn: form_body_fn,
         on_validate: "validate_group",

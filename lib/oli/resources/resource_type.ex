@@ -47,6 +47,7 @@ defmodule Oli.Resources.ResourceType do
   def is_secondary(revision), do: is_type(revision, "secondary")
   def is_tag(revision), do: is_type(revision, "tag")
   def is_bibentry(revision), do: is_type(revision, "bibentry")
+  def is_alternatives(revision), do: is_type(revision, "alternatives")
 
   def is_non_adaptive_page(revision),
     do: is_type(revision, "page") and !is_adaptive_page(revision)
