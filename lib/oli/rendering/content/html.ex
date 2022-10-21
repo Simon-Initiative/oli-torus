@@ -337,7 +337,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
-    if pronunciation do
+    if Oli.Activities.ParseUtils.has_content?(pronunciation) do
       "Pronunciation: "
     else
       ""
