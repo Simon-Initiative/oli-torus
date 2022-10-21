@@ -503,6 +503,13 @@ defmodule OliWeb.Router do
     post("/", Api.ActivityBankController, :retrieve)
   end
 
+  # Blueprint Service
+  scope "/api/v1/blueprint", OliWeb do
+    pipe_through([:api, :authoring_protected])
+
+    get("/", Api.BlueprintController, :index)
+  end
+
   # Objectives Service
   scope "/api/v1/objectives/project/:project", OliWeb do
     pipe_through([:api, :authoring_protected])
