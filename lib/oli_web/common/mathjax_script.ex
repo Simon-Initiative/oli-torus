@@ -50,6 +50,11 @@ defmodule OliWeb.Common.MathJaxScript do
       },
       loader: {
         load: ['[tex]/noerrors']
+      },
+      renderMathML(math, doc) {
+        math.typesetRoot = document.createElement('mjx-container');
+        math.typesetRoot.innerHTML = MathJax.startup.toMML(math.root);
+        math.display && math.typesetRoot.setAttribute('display', 'block');
       }
     };
     </script>
