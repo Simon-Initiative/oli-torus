@@ -414,12 +414,17 @@ export class HtmlParser implements WriterImpl {
     const { inputRefContext } = context;
     const inputData = inputRefContext?.inputs.get(inputRef.id);
     if (!inputRefContext || !inputData) {
-      return <TextInput onChange={() => {}} value="" disabled />;
+      return <TextInput onKeyUp={() => {}} onChange={() => {}} value="" disabled />;
     }
 
     const shared = {
       onChange: (value: string) => inputRefContext.onChange(inputRef.id, value),
       onBlur: () => inputRefContext.onBlur(inputRef.id),
+      onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        if (e.key === 'Enter') {
+          inputRefContext.onPressEnter(inputRef.id);
+        }
+      },
       value: valueOr(inputData.value, ''),
       disabled: inputRefContext.disabled,
       placeholder: inputData.placeholder || '',

@@ -69,14 +69,6 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     return renderPartFeedback(parts[0], context);
   }
 
-  const totalScoreText: RichText = [
-    {
-      type: 'p',
-      children: [{ text: 'Total Score', strong: true }],
-      id: guid(),
-    },
-  ];
-
   return (
     <>
       <Component
@@ -84,9 +76,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
         score={score}
         outOf={outOf}
         graded={context.graded}
-      >
-        <HtmlContentModelRenderer content={totalScoreText} context={context} />
-      </Component>
+      ></Component>
       {parts.map((partState) => renderPartFeedback(partState, context))}
     </>
   );
