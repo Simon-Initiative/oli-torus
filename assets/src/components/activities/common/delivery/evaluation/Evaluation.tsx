@@ -1,14 +1,7 @@
-import {
-  ActivityState,
-  makeContent,
-  makeFeedback,
-  RichText,
-  PartState,
-} from 'components/activities/types';
+import { ActivityState, makeContent, makeFeedback, PartState } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
-import guid from 'utils/guid';
 
 interface Props {
   shouldShow?: boolean;
