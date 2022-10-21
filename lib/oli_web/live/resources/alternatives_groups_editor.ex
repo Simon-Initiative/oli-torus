@@ -1,28 +1,34 @@
 defmodule OliWeb.Resources.AlternativesGroupsEditor do
   use OliWeb, :live_view
+  use Phoenix.HTML
   use OliWeb.Common.Modal
 
-  alias Oli.Resources
-  alias Oli.Resources.{Revision, ResourceType}
+  import Oli.Utils, only: [uuid: 0]
+  import OliWeb.ErrorHelpers
+  import OliWeb.Resources.AlternativesGroupsEditor.GroupOption
+
+  alias Oli.Resources.ResourceType
   alias Oli.Authoring.Broadcaster.Subscriber
   alias OliWeb.Common.{Breadcrumb, SessionContext}
   alias Oli.Authoring.Editing.ResourceEditor
   alias Oli.Authoring.Course
-  alias OliWeb.Objectives.CreateGroupModal
+  alias OliWeb.Common.Modal.{CreateModal, DeleteModal}
+
+  @alternatives_type_id ResourceType.get_id_by_type("alternatives")
 
   @impl Phoenix.LiveView
   def mount(%{"project_id" => project_slug}, session, socket) do
     context = SessionContext.init(session)
     project = Course.get_project_by_slug(project_slug)
 
-    {:ok, alternatives_groups} =
+    {:ok, alternatives} =
       ResourceEditor.list(
         project.slug,
         context.author,
-        ResourceType.get_id_by_type("alternatives_group")
+        @alternatives_type_id
       )
 
-    subscriptions = subscribe(alternatives_groups, project.slug)
+    subscriptions = subscribe(alternatives, project.slug)
 
     {:ok,
      assign(socket,
@@ -31,7 +37,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
        author: context.author,
        title: "Alternatives Groups | " <> project.title,
        breadcrumbs: [Breadcrumb.new(%{full_title: "Alternatives Groups"})],
-       alternatives_groups: alternatives_groups,
+       alternatives: Enum.reverse(alternatives),
        subscriptions: subscriptions
      )}
   end
@@ -49,20 +55,20 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       <%= render_modal(assigns) %>
 
       <div class="alternatives-groups container">
-        <h2>Alternatives Groups</h2>
+        <h2>Alternatives</h2>
         <div class="d-flex flex-row">
           <div class="flex-grow-1"></div>
           <button class="btn btn-primary" phx-click="show_create_modal"><i class="fa fa-plus"></i> New Group</button>
         </div>
         <div class="d-flex flex-column my-4">
-        <%= if Enum.count(@alternatives_groups) > 0 do %>
-          <ul class="list-group">
-            <%= for group <- @alternatives_groups do %>
+        <%= if Enum.count(@alternatives) > 0 do %>
+          <div>
+            <%= for group <- @alternatives do %>
               <.group group={group} />
             <% end %>
-          </ul>
+          </div>
         <% else %>
-          <div class="text-center">There are no alternatives groups</div>
+          <div class="text-center"><em>There are no alternatives groups</em></div>
         <% end %>
           </div>
       </div>
@@ -71,23 +77,37 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
 
   def group(assigns) do
     ~H"""
-      <div class="group">
-        <li class="list-group-item d-flex flex-row align-items-center">
-          <div><%= @group.title %></div>
+      <div class="border p-3 my-2">
+        <div class="d-flex flex-row align-items-center">
+          <div><b><%= @group.title %></b></div>
           <div class="flex-grow-1"></div>
-          <button class="btn btn-danger btn-sm mr-2" phx-click="delete" phx-value-resource_id={@group.resource_id}>Delete</button>
-        </li>
+          <button class="btn btn-danger btn-sm mr-2" phx-click="show_delete_group_modal" phx-value-resource_id={@group.resource_id}>Delete</button>
+        </div>
+        <div class="mt-3">
+          <%= if Enum.count(@group.content["options"]) > 0 do %>
+            <ul class="list-group">
+              <%= for option <- @group.content["options"] do %>
+                <.group_option group={@group} option={option} show_actions={true} />
+              <% end %>
+            </ul>
+          <% else %>
+            <div class="my-2">
+              <div class="text-center"><em>There are no options in this group</em></div>
+            </div>
+          <% end %>
+          <button class="btn btn-link btn-sm my-2" phx-click="show_create_option_modal" phx-value-resource_id={@group.resource_id}><i class="fa fa-plus"></i> New Option</button>
+        </div>
       </div>
     """
   end
 
   # spin up subscriptions for the alternatives resources
-  defp subscribe(alternatives_groups, project_slug) do
-    ids = Enum.map(alternatives_groups, fn p -> p.resource_id end)
+  defp subscribe(alternatives, project_slug) do
+    ids = Enum.map(alternatives, fn p -> p.resource_id end)
     Enum.each(ids, &Subscriber.subscribe_to_new_revisions_in_project(&1, project_slug))
 
     Subscriber.subscribe_to_new_resources_of_type(
-      ResourceType.get_id_by_type("alternatives_group"),
+      @alternatives_type_id,
       project_slug
     )
 
@@ -97,7 +117,7 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
   # release a collection of subscriptions
   defp unsubscribe(ids, project_slug) do
     Subscriber.unsubscribe_to_new_resources_of_type(
-      ResourceType.get_id_by_type("alternatives_group"),
+      @alternatives_type_id,
       project_slug
     )
 
@@ -109,48 +129,295 @@ defmodule OliWeb.Resources.AlternativesGroupsEditor do
       {%{}, %{name: :string}}
       |> Ecto.Changeset.cast(%{}, [:name])
 
+    form_body_fn = fn assigns ->
+      ~H"""
+        <div class="form-group">
+          <%= text_input @form,
+            :name,
+            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+            placeholder: "Enter a name for the alternatives group",
+            phx_hook: "InputAutoSelect",
+            required: true %>
+        </div>
+      """
+    end
+
     modal = %{
-      component: CreateGroupModal,
+      component: CreateModal,
       assigns: %{
-        id: "create",
-        changeset: changeset
+        id: "create_modal",
+        title: "Create Group",
+        changeset: changeset,
+        form_body_fn: form_body_fn,
+        on_validate: "validate_group",
+        on_create: "create_group"
       }
     }
 
     {:noreply, assign(socket, modal: modal)}
   end
 
-  def handle_event("validate-create", %{"group_params" => %{"name" => _}}, socket) do
+  def handle_event("validate_group", %{"params" => %{"name" => _}}, socket) do
     {:noreply, socket}
   end
 
-  def handle_event("create", %{"group_params" => %{"name" => name}}, socket) do
-    %{project: project, author: author, alternatives_groups: alternatives_groups} = socket.assigns
+  def handle_event("create_group", %{"params" => %{"name" => name}}, socket) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
     {:ok, group} =
       ResourceEditor.create(
         project.slug,
         author,
-        ResourceType.get_id_by_type("alternatives_group"),
-        %{title: name, content: %{options: []}}
+        @alternatives_type_id,
+        %{title: name, content: %{"options" => []}}
       )
 
-    {:noreply, hide_modal(socket) |> assign(alternatives_groups: [group | alternatives_groups])}
+    {:noreply, hide_modal(socket) |> assign(alternatives: [group | alternatives])}
   end
 
-  def handle_event("delete", %{"resource_id" => resource_id}, socket) do
-    %{project: project, author: author, alternatives_groups: alternatives_groups} = socket.assigns
+  def handle_event("show_create_option_modal", %{"resource_id" => resource_id}, socket) do
+    changeset =
+      {%{id: uuid(), resource_id: resource_id}, %{id: :string, resource_id: :int, name: :string}}
+      |> Ecto.Changeset.cast(%{}, [:id, :resource_id, :name])
+
+    form_body_fn = fn assigns ->
+      ~H"""
+        <div class="form-group">
+          <%= hidden_input @form, :id %>
+          <%= hidden_input @form, :resource_id %>
+
+          <%= text_input @form,
+            :name,
+            class: "form-control my-2" <> error_class(@form, :name, "is-invalid"),
+            placeholder: "Enter a name for the option",
+            phx_hook: "InputAutoSelect",
+            required: true %>
+        </div>
+      """
+    end
+
+    modal = %{
+      component: CreateModal,
+      assigns: %{
+        id: "create_modal",
+        title: "Create Option",
+        changeset: changeset,
+        form_body_fn: form_body_fn,
+        on_validate: "validate_option",
+        on_create: "create_option"
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("validate_option", %{"params" => %{"name" => _}}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_event(
+        "create_option",
+        %{"params" => %{"id" => option_id, "name" => name, "resource_id" => resource_id}},
+        socket
+      ) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    %{content: %{"options" => options} = content} =
+      Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
+
+    new_options = [%{"id" => option_id, "name" => name} | options]
+
+    case edit_group_options(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           content,
+           new_options
+         ) do
+      {:ok, alternatives, _group} ->
+        {:noreply, hide_modal(socket) |> assign(alternatives: alternatives)}
+
+      _ ->
+        show_error(socket)
+    end
+  end
+
+  def handle_event(
+        "show_delete_group_modal",
+        %{"resource_id" => resource_id},
+        socket
+      ) do
+    %{alternatives: alternatives} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    preview_fn = fn assigns ->
+      ~H"""
+        <div class="text-center mt-3"><b><%= @group.title %></b></div>
+      """
+    end
+
+    modal = %{
+      component: DeleteModal,
+      assigns: %{
+        id: "delete_modal",
+        title: "Delete Group",
+        message: "Are you sure you want to delete this alternatives group?",
+        preview_fn: preview_fn,
+        group: find_group(alternatives, resource_id),
+        on_delete: "delete_group",
+        phx_values: ["phx-value-resource-id": resource_id]
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event("delete_group", %{"resource-id" => resource_id}, socket) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
 
     {:ok, deleted} = ResourceEditor.delete(project.slug, resource_id, author)
 
     {:noreply,
-     assign(socket,
-       alternatives_groups:
-         Enum.filter(alternatives_groups, fn r -> r.resource_id != deleted.resource_id end)
+     socket
+     |> hide_modal()
+     |> assign(
+       alternatives: Enum.filter(alternatives, fn r -> r.resource_id != deleted.resource_id end)
      )}
+  end
+
+  def handle_event(
+        "show_delete_option_modal",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    %{alternatives: alternatives} = socket.assigns
+
+    resource_id = ensure_integer(resource_id)
+    option = find_group_option(alternatives, resource_id, option_id)
+
+    preview_fn = fn assigns ->
+      ~H"""
+        <ul class="list-group">
+          <.group_option group={@group} option={@option} show_actions={false} />
+        </ul>
+      """
+    end
+
+    modal = %{
+      component: DeleteModal,
+      assigns: %{
+        id: "delete_modal",
+        title: "Delete Option",
+        message: "Are you sure you want to delete this option?",
+        preview_fn: preview_fn,
+        group: find_group(alternatives, resource_id),
+        option: option,
+        on_delete: "delete_option",
+        phx_values: ["phx-value-resource-id": resource_id, "phx-value-option-id": option_id]
+      }
+    }
+
+    {:noreply, assign(socket, modal: modal)}
+  end
+
+  def handle_event(
+        "delete_option",
+        %{"resource-id" => resource_id, "option-id" => option_id},
+        socket
+      ) do
+    %{project: project, author: author, alternatives: alternatives} = socket.assigns
+    resource_id = ensure_integer(resource_id)
+
+    %{content: %{"options" => options} = content} =
+      Enum.find(alternatives, fn g -> g.resource_id == resource_id end)
+
+    new_options = Enum.filter(options, fn o -> o["id"] != option_id end)
+
+    case edit_group_options(
+           project.slug,
+           author,
+           alternatives,
+           resource_id,
+           content,
+           new_options
+         ) do
+      {:ok, alternatives, _group} ->
+        {:noreply, hide_modal(socket) |> assign(alternatives: alternatives)}
+
+      {:error, _} ->
+        show_error(socket)
+    end
   end
 
   def handle_event("cancel_modal", _, socket) do
     {:noreply, hide_modal(socket)}
+  end
+
+  defp edit_group_options(
+         project_slug,
+         author,
+         alternatives,
+         resource_id,
+         content,
+         updated_options
+       ) do
+    case ResourceEditor.edit(project_slug, resource_id, author, %{
+           content: %{content | "options" => updated_options}
+         }) do
+      {:ok, updated_group} ->
+        # update groups list to reflect latest update
+        alternatives =
+          Enum.map(alternatives, fn g ->
+            if g.resource_id == updated_group.resource_id do
+              updated_group
+            else
+              g
+            end
+          end)
+
+        {:ok, alternatives, updated_group}
+
+      error ->
+        error
+    end
+  end
+
+  defp find_group(
+         alternatives,
+         resource_id
+       ) do
+    Enum.find(alternatives, fn g ->
+      g.resource_id == resource_id
+    end)
+  end
+
+  defp find_group_option(
+         alternatives,
+         resource_id,
+         option_id
+       ) do
+    Enum.find_value(alternatives, fn g ->
+      if g.resource_id == resource_id do
+        Enum.find(g.content["options"], fn o -> o["id"] === option_id end)
+      else
+        nil
+      end
+    end)
+  end
+
+  defp ensure_integer(i) when is_integer(i), do: i
+
+  defp ensure_integer(s) when is_binary(s) do
+    case Integer.parse(s) do
+      {i, _rem} -> i
+      _ -> throw("Invalid integer")
+    end
+  end
+
+  defp show_error(socket) do
+    {:noreply,
+     put_flash(socket, :error, "Something went wrong. Please refresh the page and try again.")}
   end
 end

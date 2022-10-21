@@ -1,40 +1,29 @@
-defmodule OliWeb.Objectives.CreateGroupModal do
+defmodule OliWeb.Common.Modal.CreateModal do
+  @moduledoc """
+  LiveView modal for creating an entity from a changeset
+  """
   use Phoenix.LiveComponent
   use Phoenix.HTML
 
-  import OliWeb.ErrorHelpers
-
-  alias OliWeb.Objectives.Attachments
-
   def render(assigns) do
-    ~L"""
-    <div class="modal fade show" id="<%= @id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <%= form_for @changeset, "#",
             [id: "new-group-form",
-            as: :group_params,
-            phx_change: "validate-create",
-            phx_submit: "create"],
+            as: :params,
+            phx_change: @on_validate,
+            phx_submit: @on_create],
             fn f -> %>
               <div class="modal-header">
-                <h5 class="modal-title">Create Group</h5>
+                <h5 class="modal-title"><%= @title %></h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>
               </div>
               <div class="modal-body">
-                <p>Please enter a name for the alternatives group</p>
-
-                <div class="form-group">
-                  <%= text_input f,
-                    :name,
-                    class: "form-control my-2" <> error_class(f, :name, "is-invalid"),
-                    placeholder: "Name",
-                    phx_hook: "InputAutoSelect",
-                    required: true %>
-                </div>
-
+                <.form_body form={f} {assigns} />
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-link" data-dismiss="modal">Cancel</button>
@@ -45,5 +34,9 @@ defmodule OliWeb.Objectives.CreateGroupModal do
       </div>
     </div>
     """
+  end
+
+  def form_body(assigns) do
+    assigns.form_body_fn.(assigns)
   end
 end

@@ -67,9 +67,9 @@
       </div>
     </div>
 
-    <div class="d-flex align-items-center mt-4">
-      <a type="button" class="btn btn-link" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesGroupsEditor, @project.slug) %>">Alternatives Groups</a>
-      <span>Modify project alternatives groups.</span>
+    <div class="mt-4">
+      <div><a type="button" class="btn btn-link pl-0" href="<%= Routes.live_path(OliWeb.Endpoint, OliWeb.Resources.AlternativesGroupsEditor, @project.slug) %>">Manage Alternatives</a></div>
+      <small>Alternatives define the different flavors of content which can be authored. Students can then select which alternative they prefer to use.</small>
     </div>
   </div>
 </div>

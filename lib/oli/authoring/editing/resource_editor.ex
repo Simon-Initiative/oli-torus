@@ -4,12 +4,12 @@ defmodule Oli.Authoring.Editing.ResourceEditor do
 
   """
 
+  import Ecto.Query, warn: false
   import Oli.Authoring.Editing.Utils
+
   alias Oli.Resources.Revision
   alias Oli.Authoring.Course
   alias Oli.Publishing.AuthoringResolver
-
-  import Ecto.Query, warn: false
 
   @doc """
   Retrieves a list of all (non-deleted) resources of the specified type for a given project.

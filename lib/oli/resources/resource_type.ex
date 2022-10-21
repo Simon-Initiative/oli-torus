@@ -12,7 +12,7 @@ defmodule Oli.Resources.ResourceType do
     %{id: 5, type: "secondary"},
     %{id: 6, type: "tag"},
     %{id: 7, type: "bibentry"},
-    %{id: 8, type: "alternatives_group"}
+    %{id: 8, type: "alternatives"}
   ]
   @by_id Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, id, t) end)
   @by_type Enum.reduce(@types, %{}, fn %{id: id, type: t}, m -> Map.put(m, t, id) end)
@@ -37,7 +37,7 @@ defmodule Oli.Resources.ResourceType do
   def get_id_by_type("secondary"), do: Map.get(@by_type, "secondary")
   def get_id_by_type("tag"), do: Map.get(@by_type, "tag")
   def get_id_by_type("bibentry"), do: Map.get(@by_type, "bibentry")
-  def get_id_by_type("alternatives_group"), do: Map.get(@by_type, "alternatives_group")
+  def get_id_by_type("alternatives"), do: Map.get(@by_type, "alternatives")
 
   defp is_type(revision, type), do: get_type_by_id(revision.resource_type_id) == type
   def is_page(revision), do: is_type(revision, "page")
