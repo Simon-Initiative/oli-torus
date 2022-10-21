@@ -213,6 +213,8 @@ defmodule Oli.Plugs.MaybeGatedResourceTest do
 
       insert_resource_attempt(ra, revision.id, %{
         date_evaluated: DateTime.utc_now(),
+        date_submitted: DateTime.utc_now(),
+        lifecycle_state: :evaluated,
         score: 5,
         out_of: 10
       })
