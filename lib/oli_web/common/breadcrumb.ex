@@ -73,7 +73,8 @@ defmodule OliWeb.Common.Breadcrumb do
              project_or_section_slug,
              revision_slug
            ) do
-            IO.inspect("----- #{inspect(numbering)} -------")
+            IO.inspect("----- #{inspect(numberings)} -------")
+            # Enum.reduce(Map.keys(numberings), numberings, fn (k, acc) -> Map.update(acc, k, ) end)
       case numbering do
         {:ok, [_root | path]} ->
           trail =
