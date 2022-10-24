@@ -12,7 +12,7 @@ defmodule OliWeb.Common.Links do
       "objective" ->
         Routes.live_path(
           OliWeb.Endpoint,
-          OliWeb.Objectives.Objectives,
+          OliWeb.ObjectivesLive.Objectives,
           project_slug
         )
 

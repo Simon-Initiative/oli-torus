@@ -10,10 +10,10 @@ defmodule OliWeb.Common.TextSearch do
   def render(%{id: id} = assigns) do
     ~F"""
       <div class="input-group" style="max-width: 350px;">
-        <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-hook-target={@event_target} phx-value-change={@change}>
+        <input id={"#{id}-input"} type="text" class="form-control" placeholder="Search..." value={@text} phx-hook="TextInputListener" phx-hook-target={@event_target} phx-target={@event_target} phx-value-change={@change}>
         {#if @text != ""}
           <div class="input-group-append">
-            <button class="btn btn-outline-secondary" phx-click={@reset} phx-value-id={@id}><i class="las la-times"></i></button>
+            <button class="btn btn-outline-secondary" :on-click={@reset} phx-value-id={@id}><i class="las la-times"></i></button>
           </div>
         {/if}
       </div>

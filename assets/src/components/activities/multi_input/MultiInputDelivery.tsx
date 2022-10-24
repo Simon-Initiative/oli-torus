@@ -188,6 +188,7 @@ export const MultiInputComponent: React.FC = () => {
     state.attemptState.parts.some((p) => p.dateEvaluated !== null);
 
   const writerContext = defaultWriterContext({
+    graded: context.graded,
     sectionSlug,
     bibParams,
     inputRefContext: {

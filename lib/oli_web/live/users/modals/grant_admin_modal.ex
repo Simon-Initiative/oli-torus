@@ -3,8 +3,8 @@ defmodule OliWeb.Accounts.Modals.GrantAdminModal do
   use Phoenix.HTML
 
   def render(assigns) do
-    ~L"""
-    <div class="modal fade show" id="<%= @id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -21,7 +21,7 @@ defmodule OliWeb.Accounts.Modals.GrantAdminModal do
               <button
                 phx-click="grant_admin"
                 phx-key="enter"
-                phx-value-id="<%= @user.id %>"
+                phx-value-id={@user.id}
                 class="btn btn-warning">
                 Grant
               </button>

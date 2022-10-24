@@ -787,6 +787,9 @@
         "subtype": {
           "enum": ["mathml", "latex"]
         },
+        "legacyBlockRendered": {
+          "type": "boolean"
+        },
         "src": {
           "type": "string"
         },
@@ -1217,6 +1220,14 @@
             "contenttype": {
               "type": "string"
             }
+          }
+        },
+        "captions": {
+          "type": "array",
+          "items": {
+            "language_code": "string",
+            "label": "string",
+            "src": "string"
           }
         },
         "height": {

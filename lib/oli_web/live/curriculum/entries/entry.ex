@@ -13,19 +13,19 @@ defmodule OliWeb.Curriculum.EntryLive do
   alias OliWeb.Common.Links
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <div
       tabindex="0"
       phx-keydown="keydown"
-      id="<%= @child.resource_id %>"
+      id={"#{@child.resource_id}"}
       draggable="true"
       phx-click="select"
-      phx-value-slug="<%= @child.slug %>"
-      phx-value-index="<%= assigns.index %>"
-      data-drag-index="<%= assigns.index %>"
-      data-drag-slug="<%= @child.slug %>"
+      phx-value-slug={@child.slug}
+      phx-value-index={assigns.index}
+      data-drag-index={assigns.index}
+      data-drag-slug={@child.slug}
       phx-hook="DragSource"
-      class="p-2 flex-grow-1 d-flex curriculum-entry <%= if @selected do "active" else "" end %>">
+      class={"p-2 flex-grow-1 d-flex curriculum-entry #{if @selected do "active" else "" end}"}>
 
       <div class="flex-grow-1 d-flex flex-column align-self-center">
         <div class="flex-1">
@@ -74,23 +74,17 @@ defmodule OliWeb.Curriculum.EntryLive do
   end
 
   def icon(%{child: child} = assigns) do
-    ~L"""
-    <i class="material-icons-outlined">
-      <%= if is_container?(child) do "folder" else if child.graded do "check_box" else "description" end end %>
-    </i>
-    """
-
     if is_container?(child) do
-      ~L"""
+      ~H"""
       <i class="las la-archive font-bold fa-lg mx-2"></i>
       """
     else
       if child.graded do
-        ~L"""
+        ~H"""
         <i class="lar la-list-alt fa-lg mx-2"></i>
         """
       else
-        ~L"""
+        ~H"""
         <i class="lar la-file-alt fa-lg mx-2"></i>
         """
       end

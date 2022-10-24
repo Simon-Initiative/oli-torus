@@ -29,23 +29,12 @@ export const VideoEditor = (props: Props) => {
   }
 
   return (
-    <span {...props.attributes} contentEditable={false}>
+    <span {...props.attributes} contentEditable={false} style={{ position: 'relative' }}>
       {props.children}
-      <HoverContainer
-        style={{ margin: '0 auto', display: 'block' }}
-        isOpen={selected}
-        align="start"
-        position="top"
-        content={
-          <VideoSettings
-            model={props.model}
-            onEdit={onEdit}
-            commandContext={props.commandContext}
-          />
-        }
-      >
-        <VideoPlayer video={model} />
-      </HoverContainer>
+
+      <VideoPlayer video={model}>
+        <VideoSettings model={props.model} onEdit={onEdit} commandContext={props.commandContext} />
+      </VideoPlayer>
     </span>
   );
 };

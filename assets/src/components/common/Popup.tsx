@@ -25,6 +25,9 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
     [isPlaying, playAudio],
   );
 
+  // This fixes https://eliterate.atlassian.net/browse/MER-1503
+  const preventDefault = useCallback((e: React.MouseEvent) => e.preventDefault(), []);
+
   const overlayContent = (
     <Popover id={popup.id}>
       <Popover.Content className="popup__content">
@@ -37,6 +40,7 @@ export const Popup: React.FC<Props> = ({ children, popupContent, popup }) => {
     <OverlayTrigger trigger={trigger} placement="top" overlay={overlayContent} onToggle={onToggle}>
       <span
         tabIndex={0}
+        onClick={preventDefault}
         role="button"
         className={`popup__anchorText${trigger.includes('hover') ? '' : ' popup__click'}`}
       >

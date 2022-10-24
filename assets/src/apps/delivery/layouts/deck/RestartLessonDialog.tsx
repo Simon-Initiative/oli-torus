@@ -3,7 +3,9 @@ import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
 import {
+  selectFinalizeGradedURL,
   selectIsGraded,
+  selectOverviewURL,
   selectPreviewMode,
   selectResourceAttemptGuid,
 } from '../../store/features/page/slice';
@@ -13,8 +15,9 @@ interface RestartLessonDialogProps {
 }
 const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) => {
   const [isOpen, setIsOpen] = useState(true);
-  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
   const graded = useSelector(selectIsGraded);
+  const overviewURL = useSelector(selectOverviewURL);
+  const finalizeGradedURL = useSelector(selectFinalizeGradedURL);
   const handleCloseModalClick = () => {
     setIsOpen(false);
     dispatch(setRestartLesson({ restartLesson: false }));
@@ -23,18 +26,10 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
   const isPreviewMode = useSelector(selectPreviewMode);
 
   const handleRestart = () => {
+    setIsOpen(false);
+    dispatch(setRestartLesson({ restartLesson: false }));
     if (isPreviewMode) {
       window.location.reload();
-    } else {
-      const currentUrl = window.location.href;
-      if (currentUrl.indexOf('/attempt') > 0) {
-        window.location.reload();
-      }
-      if (graded) {
-        window.location.href = `${currentUrl}/attempt/${resourceAttemptGuid}`;
-      } else {
-        window.location.href = `${currentUrl}/attempt`;
-      }
     }
   };
 
@@ -76,8 +71,17 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
           </div>
         </div>
         <div className="modal-footer">
-          <button className="btn " name="OK" onClick={handleRestart}>
-            OK
+          <button className="btn">
+            <a
+              onClick={handleRestart}
+              href={isPreviewMode ? '#' : graded ? finalizeGradedURL : overviewURL}
+              style={{ color: 'inherit', textDecoration: 'none' }}
+              title="OK, Restart Lesson"
+              aria-label="OK, Restart Lesson"
+              data-dismiss="modal"
+            >
+              OK
+            </a>
           </button>
           <button className="btn " name="CANCEL" onClick={handleCloseModalClick}>
             Cancel

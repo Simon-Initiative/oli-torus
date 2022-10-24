@@ -1,37 +1,17 @@
-/** Learning objective styles **/
-
-.objectives {
-  .objective-selected {
-    background-color: $gray-100;
+.sub-obj {
+  .sub-actions {
+    display: none;
   }
 
-  .objective {
-    border: 1px solid $gray-400;
-    border-radius: 4px;
-    margin: 5px 0;
-    box-shadow: 1px 1px 8px 1px rgba($color: $gray-400, $alpha: 0.33);
-
-    .objective-actions {
-      display: none;
-    }
-
-    &:hover {
-      .objective-actions {
-        display: block;
-      }
-    }
-
-    &:focus-within {
-      .objective-actions {
-        display: block;
-      }
+  &:hover {
+    .sub-actions {
+      display: block;
     }
   }
-}
 
-.objectives-flat-list {
-  li {
-    margin-bottom: 5px;
-    line-height: 1em;
+  &:focus-within {
+    .sub-actions {
+      display: block;
+    }
   }
 }

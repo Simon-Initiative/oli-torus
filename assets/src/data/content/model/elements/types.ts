@@ -13,6 +13,9 @@ export type ModelElement = TopLevel | Block | Inline;
 // A list of all our element types, including those that can't be "bare" inside a children array.
 export type AllModelElements = ModelElement | SubElements;
 
+export type AllModelTypes = AllModelElements['type'];
+export type ModelTypes = ModelElement['type'];
+
 // specifies the type of items that can be inserted using the toolbar
 export type ContentModelMode =
   | 'all' // all SlateElement types
@@ -208,6 +211,7 @@ export type FormulaSubTypes = 'mathml' | 'latex';
 interface Formula<typeIdentifier> extends SlateElement<VoidChildren> {
   type: typeIdentifier;
   subtype: FormulaSubTypes;
+  legacyBlockRendered: boolean;
   src: string;
 }
 
@@ -222,10 +226,17 @@ export interface AudioSource {
   url: string;
   contenttype: string;
 }
+
+export interface VideoCaptionTrack {
+  language_code: string;
+  label: string;
+  src: string;
+}
 export interface Video extends SlateElement<VoidChildren> {
   type: 'video';
   poster?: string;
   src: VideoSource[];
+  captions?: VideoCaptionTrack[];
   height?: number;
   width?: number;
 }

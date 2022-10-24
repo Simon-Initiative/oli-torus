@@ -337,7 +337,7 @@ defmodule Oli.Rendering.Content.Html do
   end
 
   defp maybePronunciationHeader(%{"pronunciation" => pronunciation}) do
-    if pronunciation do
+    if Oli.Activities.ParseUtils.has_content?(pronunciation) do
       "Pronunciation: "
     else
       ""
@@ -391,6 +391,15 @@ defmodule Oli.Rendering.Content.Html do
   def formula_class(true), do: "formula-inline"
 
   def formula(context, next, properties, inline \\ false)
+
+  def formula(
+        %Oli.Rendering.Context{} = _context,
+        _next,
+        %{"subtype" => "latex", "src" => src, "legacyBlockRendered" => true},
+        true
+      ) do
+    ["<span class=\"#{formula_class(false)}\">\\(", escape_xml!(src), "\\)</span>\n"]
+  end
 
   def formula(
         %Oli.Rendering.Context{} = _context,

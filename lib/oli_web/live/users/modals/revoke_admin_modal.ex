@@ -3,8 +3,8 @@ defmodule OliWeb.Accounts.Modals.RevokeAdminModal do
   use Phoenix.HTML
 
   def render(assigns) do
-    ~L"""
-    <div class="modal fade show" id="<%= @id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -21,7 +21,7 @@ defmodule OliWeb.Accounts.Modals.RevokeAdminModal do
               <button
                 phx-click="revoke_admin"
                 phx-key="enter"
-                phx-value-id="<%= @user.id %>"
+                phx-value-id={@user.id}
                 class="btn btn-warning">
                 Revoke
               </button>

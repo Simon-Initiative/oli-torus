@@ -56,29 +56,29 @@ defmodule OliWeb.PageDeliveryView do
     title
   end
 
-  def prev_link(%{to: path, title: title} = assigns) do
+  def prev_link(assigns) do
     ~H"""
-      <%= link to: path, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+      <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="d-flex flex-row">
           <div>
             <i class="fas fa-arrow-left nav-icon"></i>
           </div>
           <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-right">
             <div class="nav-label"><%= value_or(assigns[:label], "Previous") %></div>
-            <div class="nav-title"><%= title %></div>
+            <div class="nav-title"><%= @title %></div>
           </div>
         </div>
       <% end %>
     """
   end
 
-  def next_link(%{to: path, title: title} = assigns) do
+  def next_link(assigns) do
     ~H"""
-      <%= link to: path, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
+      <%= link to: @to, class: "page-nav-link btn", onclick: assigns[:onclick] do %>
         <div class="d-flex flex-row">
           <div class="d-flex flex-column flex-fill flex-ellipsis-fix text-left">
             <div class="nav-label"><%= value_or(assigns[:label], "Next") %></div>
-            <div class="nav-title"><%= title %></div>
+            <div class="nav-title"><%= @title %></div>
           </div>
           <div>
             <i class="fas fa-arrow-right nav-icon"></i>
