@@ -29,6 +29,10 @@ jobs:
       name: ${{ github.event.inputs.deploy_target }}
       url: ${{ github.event.inputs.deploy_target }}
 
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -36,8 +40,8 @@ jobs:
       - name: 🧾 Build info
         id: info
         run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_STATE
-          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_STATE
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "app_version=$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
 
       - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ github.event.inputs.deploy_target }}"
 
@@ -46,7 +50,7 @@ jobs:
         with:
           command: |
             cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ env.app_version }} ${{ env.sha_short }}
+            sh deploy.sh -r ${{ github.ref }} ${{ steps.info.outputs.app_version }} ${{ steps.info.outputs.sha_short }}
           host: ${{ github.event.inputs.deploy_target }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}

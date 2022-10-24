@@ -11,6 +11,11 @@ jobs:
   package:
     runs-on: ubuntu-latest
 
+    outputs:
+      app_version: ${{ steps.info.outputs.app_version }}
+      sha_short: ${{ steps.info.outputs.sha_short }}
+      deploy_host: ${{ steps.info.outputs.deploy_host }}
+
     steps:
       - name: 🛎️ Checkout
         uses: actions/checkout@v2
@@ -18,21 +23,21 @@ jobs:
       - name: 🧾 Build info
         id: info
         run: |
-          echo "name=sha_short::$(git rev-parse --short HEAD)" >> $GITHUB_STATE
-          echo "name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_STATE
-          echo "name=deploy_host::$(echo tokamak.oli.cmu.edu)" >> $GITHUB_STATE
-          echo "name=workspace::$GITHUB_WORKSPACE" >> $GITHUB_STATE
+          echo "name=sha_short::$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "name=app_version::$(cat mix.exs | grep version | sed -e 's/.*version: "\(.*\)",/\1/')" >> $GITHUB_OUTPUT
+          echo "name=deploy_host::$(echo tokamak.oli.cmu.edu)" >> $GITHUB_OUTPUT
+          echo "name=workspace::$GITHUB_WORKSPACE" >> $GITHUB_OUTPUT
 
       - name: 📦 Package
         uses: ./.github/actions/torus-builder
         with:
-          build-sha: ${{ env.sha_short }}
+          build-sha: ${{ steps.info.outputs.sha_short }}
 
       - name: 🗜️ Zip it
         run: |
           mkdir oli-torus-releases
           cd _build/prod/rel/oli
-          zip -r ../../../../oli-torus-releases/oli-${{ env.app_version }}-${{ env.sha_short }}.zip *
+          zip -r ../../../../oli-torus-releases/oli-${{ steps.info.outputs.app_version }}-${{ steps.info.outputs.sha_short }}.zip *
 
       - name: ⬆️💽 Upload release to S3 archive
         uses: jakejarvis/s3-sync-action@master
@@ -98,11 +103,11 @@ jobs:
     if: github.ref == 'refs/heads/master'
 
     environment:
-      name: ${{ env.deploy_host }}
-      url: ${{ env.deploy_host }}
+      name: ${{ needs.package.outputs.deploy_host }}
+      url: ${{ needs.package.outputs.deploy_host }}
 
     steps:
-      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ env.deploy_host }}"
+      - run: echo "deploying ${{ github.sha }} ${{ github.ref }} ${{ github.ref_name }} to ${{ needs.package.outputs.deploy_host }}"
 
       - name: 🚢💰 Deploy to test using SSH
         uses: fifsky/ssh-action@master
@@ -110,8 +115,8 @@ jobs:
         with:
           command: |
             cd /torus
-            sh deploy.sh -r ${{ github.ref }} ${{ env.app_version }} ${{ env.sha_short }}
-          host: ${{ env.deploy_host }}
+            sh deploy.sh -r ${{ github.ref }} ${{ needs.package.outputs.app_version }} ${{ needs.package.outputs.sha_short }}
+          host: ${{ needs.package.outputs.deploy_host }}
           user: simon-bot
           key: ${{ secrets.SIMON_BOT_PRIVATE_KEY}}
           port: 44067
