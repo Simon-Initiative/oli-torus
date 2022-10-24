@@ -20,7 +20,7 @@ defmodule OliWeb.AuthoringView do
   def author_linked_account(%Author{} = author),
     do: Accounts.get_user_by(author_id: author.id)
 
-  def author_icon(%{current_author: current_author} = assigns) do
+  def author_icon(%{assigns: %{current_author: current_author} = assigns}) do
     case current_author.picture do
       nil ->
         author_icon(%{})
