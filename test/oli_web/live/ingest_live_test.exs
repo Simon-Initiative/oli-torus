@@ -9,15 +9,14 @@ defmodule OliWeb.IngestLiveTest do
   @live_view_ingest_route Routes.live_path(OliWeb.Endpoint, OliWeb.Admin.Ingest)
 
   defp simulate_open_zip(path) do
-    tmp_dir = Temp.path!()
-    File.mkdir(tmp_dir)
+    tmp_dir = System.tmp_dir!()
+    zip_tmp_filepath = Path.join([tmp_dir, "digest.zip"])
 
-    zip_filepath = Path.join([tmp_dir, "digest.zip"])
     files = File.ls!(path) |> Enum.map(&String.to_charlist/1)
 
-    {:ok, _filename} = :zip.create(zip_filepath, files, cwd: path)
+    {:ok, _filename} = :zip.create(zip_tmp_filepath, files, cwd: path)
 
-    zip_filepath
+    zip_tmp_filepath
   end
 
   describe "user cannot access when is not logged in" do
