@@ -4,19 +4,8 @@ defmodule OliWeb.Curriculum.OptionsModal do
 
   import OliWeb.Curriculum.Utils
 
-  alias Oli.Authoring.Editing.ContainerEditor
   alias Oli.Resources.ScoringStrategy
-  alias Oli.Resources
   alias Oli.Resources.ExplanationStrategy
-
-  def update(%{revision: revision} = assigns, socket) do
-    changeset = Resources.change_revision(revision)
-
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign(:changeset, changeset)}
-  end
 
   def render(assigns) do
     assigns =
@@ -45,9 +34,8 @@ defmodule OliWeb.Curriculum.OptionsModal do
         <div class="modal-content">
           <%= form_for @changeset, "#",
             [id: "revision-settings-form",
-            phx_target: @myself,
-            phx_change: "validate",
-            phx_submit: "save"],
+            phx_change: "validate-options",
+            phx_submit: "save-options"],
             fn f -> %>
 
               <div class="modal-header">
@@ -127,7 +115,7 @@ defmodule OliWeb.Curriculum.OptionsModal do
               </div>
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary", onclick: "$('#options_#{@revision.slug}').modal('hide')" %>
+                <%= submit "Save", phx_disable_with: "Saving...", class: "btn btn-primary" %>
               </div>
             <% end %>
         </div>
@@ -139,46 +127,6 @@ defmodule OliWeb.Curriculum.OptionsModal do
   def fetch_field(f, field) do
     case Ecto.Changeset.fetch_field(f, field) do
       {_, value} -> value
-    end
-  end
-
-  def handle_event("validate", %{"revision" => revision_params}, socket) do
-    changeset =
-      socket.assigns.revision
-      |> Resources.change_revision(revision_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign(socket, :changeset, changeset)}
-  end
-
-  def handle_event("save", %{"revision" => revision_params}, socket) do
-    revision_params =
-      case revision_params do
-        %{"explanation_strategy" => %{"type" => "none"}} ->
-          Map.put(revision_params, "explanation_strategy", nil)
-
-        _ ->
-          revision_params
-      end
-
-    save_revision(socket, revision_params)
-  end
-
-  defp save_revision(socket, revision_params) do
-    %{redirect_url: redirect_url, project: project, revision: revision} = socket.assigns
-
-    case ContainerEditor.edit_page(project, revision.slug, revision_params) do
-      {:ok, _} ->
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           "#{resource_type_label(revision) |> String.capitalize()} options saved"
-         )
-         |> push_redirect(to: redirect_url)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
     end
   end
 
