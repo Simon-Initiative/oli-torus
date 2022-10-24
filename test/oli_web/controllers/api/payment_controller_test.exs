@@ -178,7 +178,7 @@ defmodule OliWeb.PaymentControllerTest do
           Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug, count: 2)
         )
 
-      assert response(conn_with_codes, 200) =~ "#{code1}\n#{code2}"
+      assert response(conn_with_codes, 200) =~ "#{code3}\n#{code2}"
 
       # Simulate response with 0 payment codes
       conn_without_codes =
@@ -196,7 +196,7 @@ defmodule OliWeb.PaymentControllerTest do
           Routes.payment_path(OliWeb.Endpoint, :download_payment_codes, product.slug)
         )
 
-      assert response(conn_without_count, 200) =~ "#{code1}\n#{code2}\n#{code3}"
+      assert response(conn_without_count, 200) =~ "#{code3}\n#{code2}\n#{code1}"
     end
 
     test "download .txt file of a product that has no payment codes generated", %{conn: conn} do
