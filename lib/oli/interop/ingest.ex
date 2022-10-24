@@ -95,6 +95,8 @@ defmodule Oli.Interop.Ingest do
   def process(entries, as_author) do
     {resource_map, _error_map} = to_map(entries)
 
+    IO.inspect(resource_map)
+
     Repo.transaction(fn _ ->
       with {:ok, _} <- is_valid_digest?(resource_map),
            {:ok} <- validate_idrefs(resource_map),
