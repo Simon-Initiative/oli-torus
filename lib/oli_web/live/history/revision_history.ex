@@ -242,8 +242,9 @@ defmodule OliWeb.RevisionHistory do
 
     with uploaded_content <-
            consume_uploaded_entries(socket, :json, fn %{path: path}, _entry ->
-             File.read!(path)
-             |> Jason.decode!()
+             {:ok,
+              File.read!(path)
+              |> Jason.decode!()}
            end),
          :ok <- ExJsonSchema.Validator.validate(resource_schema, uploaded_content) do
       latest_revision = fetch_revision(hd(socket.assigns.revisions).id)

@@ -193,6 +193,7 @@ defmodule Oli.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:telemetry_metrics, "~> 0.4"},
       {:timex, "~> 3.5"},
+      {:temp, "~> 0.4", only: :test},
       {:tzdata, "~> 1.1"},
       {:uuid, "~> 1.1"},
       {:xml_builder, "~> 2.1.1"}
