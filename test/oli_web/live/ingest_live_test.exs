@@ -54,13 +54,13 @@ defmodule OliWeb.IngestLiveTest do
       file_zip_1 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_1.zip",
+            name: "digest_1.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_1, "attachments_1.zip")
+      render_upload(file_zip_1, "digest_1.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
@@ -81,13 +81,13 @@ defmodule OliWeb.IngestLiveTest do
       file_zip_2 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_2.zip",
+            name: "digest_2.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_2, "attachments_2.zip")
+      render_upload(file_zip_2, "digest_2.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
@@ -108,13 +108,13 @@ defmodule OliWeb.IngestLiveTest do
       file_zip_3 =
         file_input(view, "#json-upload", :digest, [
           %{
-            name: "attachments_3.zip",
+            name: "digest_3.zip",
             content: File.read!(path),
             type: "zip"
           }
         ])
 
-      render_upload(file_zip_3, "attachments_3.zip")
+      render_upload(file_zip_3, "digest_3.zip")
 
       view
       |> element("form[phx-submit=\"ingest\"")
