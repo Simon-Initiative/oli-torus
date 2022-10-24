@@ -243,7 +243,7 @@ defmodule OliWeb.Resources.PagesView do
         [container] -> container
       end
 
-    assigns = %{
+    modal_assigns = %{
       id: "delete_#{revision.slug}",
       redirect_url:
         Routes.live_path(
@@ -263,16 +263,24 @@ defmodule OliWeb.Resources.PagesView do
       author: author
     }
 
+    modal = fn assigns ->
+      ~F"""
+      <OliWeb.Curriculum.DeleteModal.render {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: OliWeb.Curriculum.DeleteModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
   def handle_event("show_options_modal", %{"slug" => slug}, socket) do
     %{project: project} = socket.assigns
 
-    assigns = %{
+    modal_assigns = %{
       id: "options_#{slug}",
       redirect_url:
         Routes.live_path(
@@ -290,9 +298,17 @@ defmodule OliWeb.Resources.PagesView do
       project: project
     }
 
+    modal = fn assigns ->
+      ~F"""
+      <OliWeb.Curriculum.OptionsModal.render {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: OliWeb.Curriculum.OptionsModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -319,7 +335,7 @@ defmodule OliWeb.Resources.PagesView do
         other -> other
       end
 
-    assigns = %{
+    modal_assigns = %{
       id: "move_#{slug}",
       node: node,
       hierarchy: hierarchy,
@@ -327,9 +343,17 @@ defmodule OliWeb.Resources.PagesView do
       active: active
     }
 
+    modal = fn assigns ->
+      ~F"""
+        <MoveModal.render {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-     assign(socket,
-       modal: %{component: MoveModal, assigns: assigns}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
      )}
   end
 
@@ -356,7 +380,7 @@ defmodule OliWeb.Resources.PagesView do
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
-    {:noreply, hide_modal(socket)}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("MoveModal.remove", %{"from_uuid" => from_uuid}, socket) do
@@ -372,11 +396,11 @@ defmodule OliWeb.Resources.PagesView do
 
     {:ok, _} = ContainerEditor.move_to(revision, from_container, to_container, author, project)
 
-    {:noreply, hide_modal(socket)}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("MoveModal.cancel", _, socket) do
-    {:noreply, hide_modal(socket)}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do

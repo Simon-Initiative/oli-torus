@@ -15,13 +15,16 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   alias Oli.Resources.{Revision, ResourceType}
   alias OliWeb.Common.{Breadcrumb, Filter, FilterBox}
   alias OliWeb.Common.Listing, as: Table
+
   alias OliWeb.ObjectivesLive.{
     DeleteModal,
     FormModal,
     TableModel,
     Listing,
-    SelectExistingSubModal
+    SelectExistingSubModal,
+    SelectionsModal
   }
+
   alias OliWeb.Router.Helpers, as: Routes
 
   data title, :string, default: "Objectives"
@@ -57,7 +60,11 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   def live_path(socket, params),
     do: Routes.live_path(socket, __MODULE__, socket.assigns.project.slug, params)
 
-  def mount(%{"project_id" => project_slug}, %{"current_author_id" => author_id} = _session, socket) do
+  def mount(
+        %{"project_id" => project_slug},
+        %{"current_author_id" => author_id} = _session,
+        socket
+      ) do
     project = Course.get_project_by_slug(project_slug)
     author = Accounts.get_author(author_id)
 
@@ -65,17 +72,16 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       build_objectives(project, [], fn socket -> socket end, true)
 
     {:ok,
-      assign(socket,
-        breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
-        project: project,
-        author: author,
-        objectives: objectives,
-        table_model: table_model,
-        total_count: length(objectives),
-        all_objectives: all_objectives,
-        all_children: all_children
-      )
-    }
+     assign(socket,
+       breadcrumbs: [Breadcrumb.new(%{full_title: "Objectives"})],
+       project: project,
+       author: author,
+       objectives: objectives,
+       table_model: table_model,
+       total_count: length(objectives),
+       all_objectives: all_objectives,
+       all_children: all_children
+     )}
   end
 
   defp build_objectives(project, objectives_attachments, flash_fn, first_load \\ false) do
@@ -93,26 +99,33 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       Enum.reduce(all_objectives, [], fn rev, acc ->
         case Enum.find(all_children, fn child_id -> child_id == rev.resource_id end) do
           nil ->
-            mapped_children = Enum.map(rev.children, fn resource_id ->
-              Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end)
-            end)
+            mapped_children =
+              Enum.map(rev.children, fn resource_id ->
+                Enum.find(all_objectives, fn rev -> rev.resource_id == resource_id end)
+              end)
 
-            [Map.merge(rev,
-              %{
-                children: mapped_children,
-                sub_objectives_count: length(mapped_children),
-                page_attachments_count: 0,
-                page_attachments: [],
-                activity_attachments_count: 0,
-              }
-            )] ++ acc
-          _ -> acc
+            [
+              Map.merge(
+                rev,
+                %{
+                  children: mapped_children,
+                  sub_objectives_count: length(mapped_children),
+                  page_attachments_count: 0,
+                  page_attachments: [],
+                  activity_attachments_count: 0
+                }
+              )
+            ] ++ acc
+
+          _ ->
+            acc
         end
       end)
 
     {:ok, table_model} = TableModel.new(objectives)
 
     pid = self()
+
     if first_load do
       Task.async(fn ->
         publication = Publishing.project_working_publication(project.slug)
@@ -132,16 +145,16 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       build_objectives(project, socket.assigns.objectives_attachments, flash_fn)
 
     {:noreply,
-      socket
-      |> assign(
-        objectives: objectives,
-        table_model: table_model,
-        total_count: length(objectives),
-        all_objectives: all_objectives,
-        all_children: all_children
-      )
-      |> hide_modal()
-      |> push_patch(to: live_path(socket, socket.assigns.params))}
+     socket
+     |> assign(
+       objectives: objectives,
+       table_model: table_model,
+       total_count: length(objectives),
+       all_objectives: all_objectives,
+       all_children: all_children
+     )
+     |> hide_modal(modal_assigns: nil)
+     |> push_patch(to: live_path(socket, socket.assigns.params))}
   end
 
   def render(assigns) do
@@ -191,18 +204,25 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   defp new_modal(changeset, socket) do
+    modal_assigns = %{
+      id: "new_objective_modal",
+      changeset: changeset,
+      action: :new,
+      on_click: "new"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <FormModal {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-      assign(socket,
-        modal: %{
-          component: FormModal,
-          assigns: %{
-            id: "new_objective_modal",
-            changeset: changeset,
-            action: :new,
-            on_click: "new"
-          }
-        }
-      )}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   def handle_event("display_new_modal", _, socket),
@@ -213,21 +233,27 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
   def handle_event("set_selected", %{"slug" => slug}, socket) do
     {:noreply,
-      push_patch(socket, to: live_path(socket, Map.merge(socket.assigns.params, %{"selected" => slug})))}
+     push_patch(socket,
+       to: live_path(socket, Map.merge(socket.assigns.params, %{"selected" => slug}))
+     )}
   end
 
-  def handle_event("new", %{"revision" => %{"title" => title, "parent_slug" => parent_slug}}, socket) do
+  def handle_event(
+        "new",
+        %{"revision" => %{"title" => title, "parent_slug" => parent_slug}},
+        socket
+      ) do
     socket = clear_flash(socket)
 
     project = socket.assigns.project
 
     flash_fn =
       case ObjectiveEditor.add_new(
-            %{title: title},
-            socket.assigns.author,
-            project,
-            parent_slug
-          ) do
+             %{title: title},
+             socket.assigns.author,
+             project,
+             parent_slug
+           ) do
         {:ok, _} ->
           fn socket -> put_flash(socket, :info, "Objective successfully created") end
 
@@ -244,18 +270,25 @@ defmodule OliWeb.ObjectivesLive.Objectives do
       |> AuthoringResolver.from_revision_slug(slug)
       |> Resources.change_revision()
 
+    modal_assigns = %{
+      id: "edit_objective_modal",
+      changeset: changeset,
+      action: :edit,
+      on_click: "edit"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <FormModal {...@modal_assigns} />
+      """
+    end
+
     {:noreply,
-      assign(socket,
-        modal: %{
-          component: FormModal,
-          assigns: %{
-            id: "edit_objective_modal",
-            changeset: changeset,
-            action: :edit,
-            on_click: "edit"
-          }
-        }
-      )}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   def handle_event("edit", %{"revision" => %{"title" => title, "slug" => slug}}, socket) do
@@ -265,11 +298,11 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     flash_fn =
       case ObjectiveEditor.edit(
-            slug,
-            %{title: title},
-            socket.assigns.author,
-            project
-          ) do
+             slug,
+             %{title: title},
+             socket.assigns.author,
+             project
+           ) do
         {:ok, _} ->
           fn socket -> put_flash(socket, :info, "Objective successfully updated") end
 
@@ -281,66 +314,93 @@ defmodule OliWeb.ObjectivesLive.Objectives do
   end
 
   def handle_event("display_add_existing_sub_modal", %{"slug" => slug}, socket) do
-    %{project: project, all_children: all_children, all_objectives: all_objectives} = socket.assigns
+    %{project: project, all_children: all_children, all_objectives: all_objectives} =
+      socket.assigns
+
     %{children: objective_children} = AuthoringResolver.from_revision_slug(project.slug, slug)
 
-    sub_objectives = Enum.map(all_children -- objective_children, fn resource_id ->
-      Enum.find(all_objectives, fn obj -> obj.resource_id == resource_id end)
-    end)
+    sub_objectives =
+      Enum.map(all_children -- objective_children, fn resource_id ->
+        Enum.find(all_objectives, fn obj -> obj.resource_id == resource_id end)
+      end)
+
+    modal_assigns = %{
+      id: "select_existing_sub_modal",
+      parent_slug: slug,
+      sub_objectives: sub_objectives,
+      add: "add_existing_sub"
+    }
+
+    modal = fn assigns ->
+      ~F"""
+        <SelectExistingSubModal {...@modal_assigns} />
+      """
+    end
 
     {:noreply,
-      assign(socket,
-        modal: %{
-          component: SelectExistingSubModal,
-          assigns: %{
-            id: "select_existing_sub_modal",
-            parent_slug: slug,
-            sub_objectives: sub_objectives,
-            add: :add_existing_sub
-          }
-        }
-      )}
+     show_modal(
+       socket,
+       modal,
+       modal_assigns: modal_assigns
+     )}
   end
 
   def handle_event("display_delete_modal", %{"slug" => slug}, socket) do
     socket = clear_flash(socket)
 
     project = socket.assigns.project
+
     %{children: children, resource_id: resource_id} =
       AuthoringResolver.from_revision_slug(project.slug, slug)
 
     if length(children) > 0 do
-      {:noreply, put_flash(socket, :error, "Could not remove objective if it has sub-objectives associated")}
+      {:noreply,
+       put_flash(socket, :error, "Could not remove objective if it has sub-objectives associated")}
     else
       publication_id = Oli.Publishing.get_unpublished_publication_id!(project.id)
 
       case Oli.Publishing.find_objective_in_selections(resource_id, publication_id) do
         [] ->
+          modal_assigns = %{
+            id: "delete_objective_modal",
+            slug: slug,
+            project: project,
+            attachment_summary:
+              ObjectiveEditor.preview_objective_detatchment(resource_id, project)
+          }
+
+          modal = fn assigns ->
+            ~F"""
+              <DeleteModal {...@modal_assigns} />
+            """
+          end
+
           {:noreply,
-            assign(socket,
-              modal: %{
-                component: DeleteModal,
-                assigns: %{
-                  id: "delete_objective_modal",
-                  slug: slug,
-                  project: project,
-                  attachment_summary: ObjectiveEditor.preview_objective_detatchment(resource_id, project)
-                }
-              }
-            )}
+           show_modal(
+             socket,
+             modal,
+             modal_assigns: modal_assigns
+           )}
 
         selections ->
+          modal_assigns = %{
+            id: "selections_modal",
+            selections: selections,
+            project_slug: project.slug
+          }
+
+          modal = fn assigns ->
+            ~F"""
+              <SelectionsModal {...@modal_assigns} />
+            """
+          end
+
           {:noreply,
-            assign(socket,
-              modal: %{
-                component: SelectionsModal,
-                assigns: %{
-                  id: "selections_modal",
-                  selections: selections,
-                  project_slug: project.slug
-                }
-              }
-            )}
+           assign(
+             socket,
+             modal,
+             modal_assigns: modal_assigns
+           )}
       end
     end
   end
@@ -354,31 +414,39 @@ defmodule OliWeb.ObjectivesLive.Objectives do
 
     ObjectiveEditor.detach_objective(resource_id, project, author)
 
-    {parents, parent_to_detach_slug} = Enum.reduce(objectives, {[], ""}, fn objective, {parents,  parent_to_detach_slug} ->
-      case Enum.find(objective.children, fn child -> child.slug == slug end) do
-        nil -> {parents,  parent_to_detach_slug}
-        _ ->
-          if objective.slug == parent_slug,
-            do: {[objective | parents], objective.slug},
-            else: {[objective | parents], parent_to_detach_slug}
-      end
-    end)
+    {parents, parent_to_detach_slug} =
+      Enum.reduce(objectives, {[], ""}, fn objective, {parents, parent_to_detach_slug} ->
+        case Enum.find(objective.children, fn child -> child.slug == slug end) do
+          nil ->
+            {parents, parent_to_detach_slug}
 
-    delete_fn = if length(parents) <= 1 do
-      fn -> ObjectiveEditor.delete(
-          slug,
-          author,
-          project,
-          AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
-        ) end
-    else
-      fn -> ObjectiveEditor.remove_sub_objective_from_parent(
-          slug,
-          author,
-          project,
-          AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
-        ) end
-    end
+          _ ->
+            if objective.slug == parent_slug,
+              do: {[objective | parents], objective.slug},
+              else: {[objective | parents], parent_to_detach_slug}
+        end
+      end)
+
+    delete_fn =
+      if length(parents) <= 1 do
+        fn ->
+          ObjectiveEditor.delete(
+            slug,
+            author,
+            project,
+            AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
+          )
+        end
+      else
+        fn ->
+          ObjectiveEditor.remove_sub_objective_from_parent(
+            slug,
+            author,
+            project,
+            AuthoringResolver.from_revision_slug(project.slug, parent_to_detach_slug)
+          )
+        end
+      end
 
     flash_fn =
       case delete_fn.() do
@@ -392,23 +460,28 @@ defmodule OliWeb.ObjectivesLive.Objectives do
     return_updated_data(project, flash_fn, socket)
   end
 
-  def handle_info({:add_existing_sub, %{"slug" => slug, "parent_slug" => parent_slug} = _params}, socket) do
+  def handle_event(
+        "add_existing_sub",
+        %{"slug" => slug, "parent_slug" => parent_slug} = _params,
+        socket
+      ) do
     socket = clear_flash(socket)
 
     %{project: project, author: author} = socket.assigns
 
-    flash_fn = case ObjectiveEditor.add_new_parent_for_sub_objective(
-        slug,
-        parent_slug,
-        project.slug,
-        author
-      ) do
-      {:ok, _revision} ->
-        fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
+    flash_fn =
+      case ObjectiveEditor.add_new_parent_for_sub_objective(
+             slug,
+             parent_slug,
+             project.slug,
+             author
+           ) do
+        {:ok, _revision} ->
+          fn socket -> put_flash(socket, :info, "Sub-objective successfully added") end
 
-      {:error, _} ->
-        fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
-    end
+        {:error, _} ->
+          fn socket -> put_flash(socket, :error, "Could not add sub-objective") end
+      end
 
     return_updated_data(project, flash_fn, socket)
   end
@@ -426,42 +499,48 @@ defmodule OliWeb.ObjectivesLive.Objectives do
           Enum.filter(objectives_attachments, fn
             %{resource_type_id: ^page_id, attached_objective: resource_id} ->
               Enum.member?(children, resource_id)
-            _ -> false
+
+            _ ->
+              false
           end) ++
             for pa = %{
-              attached_objective: ^resource_id,
-              resource_type_id: ^page_id
-            } <- objectives_attachments, do: pa
+                  attached_objective: ^resource_id,
+                  resource_type_id: ^page_id
+                } <- objectives_attachments,
+                do: pa
 
         page_attachments = Enum.uniq_by(all_page_attachments, & &1.slug)
 
         activity_attachments =
           for aa = %{
-            attached_objective: ^resource_id,
-            resource_type_id: ^activity_id
-          } <- objectives_attachments, do: aa
+                attached_objective: ^resource_id,
+                resource_type_id: ^activity_id
+              } <- objectives_attachments,
+              do: aa
 
-        [Map.merge(rev,
-          %{
-            page_attachments_count: length(page_attachments),
-            page_attachments: page_attachments,
-            activity_attachments_count: length(activity_attachments)
-          }
-        )] ++ acc
+        [
+          Map.merge(
+            rev,
+            %{
+              page_attachments_count: length(page_attachments),
+              page_attachments: page_attachments,
+              activity_attachments_count: length(activity_attachments)
+            }
+          )
+        ] ++ acc
       end)
 
     {:ok, table_model} = TableModel.new(objectives)
 
     {:noreply,
-      socket
-      |> assign(
-        objectives: objectives,
-        table_model: table_model,
-        objectives_attachments: objectives_attachments
-      )
-      |> flash_fn.()
-      |> push_patch(to: live_path(socket, socket.assigns.params), replace: true)
-    }
+     socket
+     |> assign(
+       objectives: objectives,
+       table_model: table_model,
+       objectives_attachments: objectives_attachments
+     )
+     |> flash_fn.()
+     |> push_patch(to: live_path(socket, socket.assigns.params), replace: true)}
   end
 
   # needed to ignore results of Task invocation

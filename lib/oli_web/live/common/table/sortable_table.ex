@@ -4,11 +4,18 @@ defmodule OliWeb.Common.Table.SortableTable do
   alias OliWeb.Common.Table.ColumnSpec
 
   def th(assigns, column_spec, sort_by_spec, sort_order, event_suffix) do
-    ~L"""
-    <th style="cursor: pointer;" phx-click="sort<%= event_suffix %>" phx-value-sort_by="<%= column_spec.name %>">
-      <%= column_spec.label %>
-      <%= if sort_by_spec == column_spec do %>
-        <i class="fas fa-sort-<%= if sort_order == :asc do "up" else "down" end %>"></i>
+    assigns =
+      assigns
+      |> assign(:column_spec, column_spec)
+      |> assign(:sort_by_spec, sort_by_spec)
+      |> assign(:sort_order, sort_order)
+      |> assign(:event_suffix, event_suffix)
+
+    ~H"""
+    <th style="cursor: pointer;" phx-click={"sort#{@event_suffix}"} phx-value-sort_by={@column_spec.name}>
+      <%= @column_spec.label %>
+      <%= if @sort_by_spec == @column_spec do %>
+        <i class={"fas fa-sort-#{if @sort_order == :asc do "up" else "down" end}"}></i>
       <% end %>
     </th>
     """
@@ -36,7 +43,7 @@ defmodule OliWeb.Common.Table.SortableTable do
   end
 
   def render(assigns) do
-    ~L"""
+    ~H"""
     <table class="table table-striped table-bordered">
       <thead>
         <tr>
@@ -47,23 +54,37 @@ defmodule OliWeb.Common.Table.SortableTable do
       </thead>
       <tbody>
         <%= for row <- @model.rows do %>
-          <%= if row == @model.selected do %>
-          <tr id="<%= id_field(row, @model) %>" class="table-active">
-          <% else %>
-          <tr id="<%= id_field(row, @model) %>">
-          <% end %>
-            <%= for column_spec <- @model.column_specs do %>
-              <td>
-                <%= case column_spec.render_fn do
-                  nil -> ColumnSpec.default_render_fn(column_spec, row)
-                  func -> func.(with_data(assigns, @model.data), row, column_spec)
-                  end %>
-              </td>
-            <% end %>
-          </tr>
+          <.row model={@model} row={row} />
         <% end %>
       </tbody>
     </table>
+    """
+  end
+
+  defp row(assigns) do
+    assigns =
+      assigns
+      |> assign(:id, id_field(assigns.row, assigns.model))
+      |> assign(
+        :class,
+        if assigns.row == assigns.model.selected do
+          "table-active"
+        else
+          ""
+        end
+      )
+
+    ~H"""
+    <tr id={@id} class={@class}>
+      <%= for column_spec <- @model.column_specs do %>
+        <td>
+          <%= case column_spec.render_fn do
+            nil -> ColumnSpec.default_render_fn(column_spec, @row)
+            func -> func.(with_data(assigns, @model.data), @row, column_spec)
+            end %>
+        </td>
+      <% end %>
+    </tr>
     """
   end
 

@@ -5,8 +5,8 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
   import OliWeb.Delivery.Updates.Utils
 
   def render(assigns) do
-    ~L"""
-    <div class="modal fade show" id="<%= @id %>" tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
+    ~H"""
+    <div class="modal fade show" id={@id} tabindex="-1" role="dialog" aria-hidden="true" phx-hook="ModalLaunch">
       <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -36,7 +36,7 @@ defmodule OliWeb.Delivery.Updates.ApplyUpdateModal do
               <p>
                 <%= for {status, %{revision: revision}}  <- Map.values(@changes) do %>
                   <div>
-                    <span class="badge badge-secondary badge-<%= status %>"><%= status %></span>
+                    <span class={"badge badge-secondary badge-#{status}"}><%= status %></span>
                     <%= revision.title %>
                   </div>
                 <% end %>

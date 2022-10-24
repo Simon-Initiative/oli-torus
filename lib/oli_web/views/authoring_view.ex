@@ -26,9 +26,11 @@ defmodule OliWeb.AuthoringView do
         author_icon(%{})
 
       picture ->
+        assigns = assign(assigns, :picture, picture)
+
         ~H"""
         <div class="user-icon">
-          <img src={picture} class="rounded-circle" />
+          <img src={@picture} class="rounded-circle" />
         </div>
         """
     end

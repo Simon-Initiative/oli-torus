@@ -30,10 +30,6 @@ defmodule OliWeb.CommunityLive.ShowView do
   data community_institutions, :list
   data matches, :map, default: %{"admin" => [], "member" => [], "institution" => []}
 
-  @delete_modal_description """
-    This action will not affect existing course sections that are using this community.
-    Those sections will continue to operate as intended.
-  """
   @matches_limit 30
 
   def breadcrumb(community_id) do
@@ -198,39 +194,57 @@ defmodule OliWeb.CommunityLive.ShowView do
           )
       end
 
-    {:noreply, socket |> hide_modal()}
+    {:noreply, hide_modal(socket, modal_assigns: nil)}
   end
 
   def handle_event("validate_name_for_deletion", %{"community" => %{"name" => name}}, socket) do
     delete_enabled = name == socket.assigns.community.name
-    %{modal: modal} = socket.assigns
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | delete_enabled: delete_enabled
-        }
-    }
-
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply,
+     assign(socket,
+       modal_assigns: %{
+         socket.assigns.modal_assigns
+         | delete_enabled: delete_enabled
+       }
+     )}
   end
 
   def handle_event("show_delete_modal", _, socket) do
-    modal = %{
-      component: DeleteModal,
-      assigns: %{
-        id: "delete_community_modal",
-        description: @delete_modal_description,
-        entity_name: socket.assigns.community.name,
-        entity_type: "community",
-        delete_enabled: false,
-        validate: "validate_name_for_deletion",
-        delete: "delete"
-      }
+    delete_modal_description = """
+      This action will not affect existing course sections that are using this community.
+      Those sections will continue to operate as intended.
+    """
+
+    modal_assigns = %{
+      id: "delete_community_modal",
+      description: delete_modal_description,
+      entity_name: socket.assigns.community.name,
+      entity_type: "community",
+      delete_enabled: false,
+      validate: "validate_name_for_deletion",
+      delete: "delete"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <DeleteModal {...@modal_assigns} />
+      """
+    end
+
+    # modal = fn assigns ->
+    #   ~F"""
+    #     <DeleteModal
+    #       id={@modal_assigns.id}
+    #       description={@modal_assigns.description}
+    #       entity_name={@modal_assigns.entity_name}
+    #       entity_type={@modal_assigns.entity_type}
+    #       delete_enabled={@modal_assigns.delete_enabled}
+    #       validate={@modal_assigns.validate}
+    #       delete={@modal_assigns.delete} />
+    #   """
+    # end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   def handle_event("add_" <> user_type, %{"collaborator" => %{"email" => email}}, socket) do

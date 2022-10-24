@@ -374,7 +374,7 @@ defmodule Oli.Delivery.Paywall do
         where: s.slug == ^product_slug,
         limit: ^count,
         select: p,
-        order_by: [desc: :inserted_at]
+        order_by: [desc: :inserted_at, asc: :id]
       )
 
     Repo.all(query)

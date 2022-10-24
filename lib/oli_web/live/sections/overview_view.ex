@@ -11,6 +11,7 @@ defmodule OliWeb.Sections.OverviewView do
   alias OliWeb.Sections.{Instructors, Mount, UnlinkSection}
 
   prop user, :any
+  data modal, :any, default: nil
   data breadcrumbs, :any
   data title, :string, default: "Section Details"
   data section, :any, default: nil
@@ -196,20 +197,27 @@ defmodule OliWeb.Sections.OverviewView do
          """, "Delete"}
       end
 
-    modal = %{
-      component: DeleteModalNoConfirmation,
-      assigns: %{
-        id: "delete_section_modal",
-        description: message,
-        entity_type: "section",
-        entity_id: socket.assigns.section.id,
-        delete_enabled: true,
-        delete: "delete_section",
-        modal_action: action
-      }
+    modal_assigns = %{
+      id: "delete_section_modal",
+      description: message,
+      entity_type: "section",
+      entity_id: socket.assigns.section.id,
+      delete_enabled: true,
+      delete: "delete_section",
+      modal_action: action
     }
 
-    {:noreply, assign(socket, modal: modal, section_has_student_data: section_has_student_data)}
+    modal = fn assigns ->
+      ~F"""
+        <DeleteModalNoConfirmation {...@modal_assigns} />
+      """
+    end
+
+    {:noreply,
+     show_modal(socket, modal,
+       modal_assigns: modal_assigns,
+       section_has_student_data: section_has_student_data
+     )}
   end
 
   def handle_event("delete_section", _, socket) do
@@ -255,6 +263,6 @@ defmodule OliWeb.Sections.OverviewView do
         )
       end
 
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil, section_has_student_data: nil)}
   end
 end

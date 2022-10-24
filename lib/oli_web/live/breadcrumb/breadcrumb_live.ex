@@ -9,7 +9,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   end
 
   defp render_breadcrumb(%{is_last: true} = assigns) do
-    ~L"""
+    ~H"""
     <li class="breadcrumb-item active" aria-current="page">
       <%= get_title(@breadcrumb, @show_short) %>
     </li>
@@ -17,7 +17,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   end
 
   defp render_breadcrumb(%{breadcrumb: %{link: nil}} = assigns) do
-    ~L"""
+    ~H"""
     <li class="breadcrumb-item">
       <%= get_title(@breadcrumb, @show_short) %>
     </li>
@@ -25,7 +25,7 @@ defmodule OliWeb.Breadcrumb.BreadcrumbLive do
   end
 
   defp render_breadcrumb(%{is_last: false} = assigns) do
-    ~L"""
+    ~H"""
     <li class="breadcrumb-item">
       <%= link get_title(@breadcrumb, @show_short),
           to: @breadcrumb.link %>

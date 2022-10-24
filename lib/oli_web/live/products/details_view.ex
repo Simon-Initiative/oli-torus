@@ -190,7 +190,7 @@ defmodule OliWeb.Products.DetailsView do
         S3Storage.upload_file(bucket_name, upload_path, temp_file_path)
       end)
 
-    with {:ok, uploaded_path} <- Enum.at(uploaded_files, 0),
+    with uploaded_path <- Enum.at(uploaded_files, 0),
          {:ok, section} <-
            Sections.update_section(socket.assigns.product, %{cover_image: uploaded_path}) do
       socket = put_flash(socket, :info, "Product changes saved")

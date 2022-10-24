@@ -37,7 +37,7 @@
       <div class="form-group">
         <label>Step 1. Select a Course Archive</label>
         <div class="flex my-3" phx-drop-target={@uploads.digest.ref}>
-          { live_file_input @uploads.digest }
+          <.live_file_input upload={@uploads.digest} />
         </div>
       </div>
 

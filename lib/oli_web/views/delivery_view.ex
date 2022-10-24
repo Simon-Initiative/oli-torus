@@ -190,10 +190,10 @@ defmodule OliWeb.DeliveryView do
       nil ->
         user_icon(%{})
 
-      picture ->
+      _picture ->
         ~H"""
         <div class="user-icon">
-          <img src={picture} class="rounded-circle" />
+          <img src={@current_user.picture} class="rounded-circle" />
         </div>
         """
     end

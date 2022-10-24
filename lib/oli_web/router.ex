@@ -33,7 +33,7 @@ defmodule OliWeb.Router do
   pipeline :api do
     plug(:accepts, ["json"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
     plug(OpenApiSpex.Plug.PutApiSpec, module: OliWeb.ApiSpec)
     plug(Plug.Telemetry, event_prefix: [:oli, :plug])
@@ -42,21 +42,21 @@ defmodule OliWeb.Router do
   # pipeline for LTI launch endpoints
   pipeline :lti do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_root_layout, {OliWeb.LayoutView, "lti.html"})
   end
 
   # pipeline for SSO endpoints
   pipeline :sso do
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(Oli.Plugs.ValidateIdToken)
   end
 
   pipeline :skip_csrf_protection do
     plug(:accepts, ["html"])
     plug(:fetch_session)
-    plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:put_secure_browser_headers)
   end
 
@@ -433,7 +433,7 @@ defmodule OliWeb.Router do
     # live "/:project_id/insights", Insights
   end
 
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     scope "/api/v1/docs" do
       pipe_through([:browser])
 
@@ -1094,7 +1094,7 @@ defmodule OliWeb.Router do
   end
 
   # routes only accessible to developers
-  if Application.fetch_env!(:oli, :env) == :dev or Application.fetch_env!(:oli, :env) == :test do
+  if Application.compile_env!(:oli, :env) == :dev or Application.compile_env!(:oli, :env) == :test do
     # web interface for viewing sent emails during development
     forward("/dev/sent_emails", Bamboo.SentEmailViewerPlug)
 

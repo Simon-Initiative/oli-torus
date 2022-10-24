@@ -4,6 +4,7 @@ export const ModalLaunch = {
   mounted(): void {
     // initialize the bootstrap modal
     const id = this.el.getAttribute('id');
+    this.id = id;
     ($('#' + id) as any).modal({});
 
     const scrollPosition = lockScroll();
@@ -19,5 +20,8 @@ export const ModalLaunch = {
       (this as any).pushEvent('_bsmodal.unmount');
       unlockScroll(scrollPosition);
     });
+  },
+  destroyed(): void {
+    ($('#' + this.id) as any).modal('hide');
   },
 };

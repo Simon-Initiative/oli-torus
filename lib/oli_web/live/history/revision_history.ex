@@ -105,7 +105,6 @@ defmodule OliWeb.RevisionHistory do
        initial_size: length(revisions),
        uploaded_files: [],
        uploaded_content: nil,
-       modal: nil,
        edit_errors: [],
        upload_errors: [],
        edited_json: nil,
@@ -214,14 +213,17 @@ defmodule OliWeb.RevisionHistory do
   end
 
   def handle_event("show_restore_revision_modal", _, socket) do
-    modal = %{
-      component: RestoreRevisionModal,
-      assigns: %{
-        id: "restore_revision"
-      }
+    modal_assigns = %{
+      id: "restore_revision"
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    modal = fn assigns ->
+      ~F"""
+        <RestoreRevisionModal.render {...@modal_assigns} />
+      """
+    end
+
+    {:noreply, show_modal(socket, modal, modal_assigns: modal_assigns)}
   end
 
   @impl Phoenix.LiveView
@@ -263,7 +265,7 @@ defmodule OliWeb.RevisionHistory do
 
     {:noreply,
      socket
-     |> hide_modal()
+     |> hide_modal(modal_assigns: nil)
      |> mimic_edit(selected, selected.content)}
   end
 

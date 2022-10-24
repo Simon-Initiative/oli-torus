@@ -3,6 +3,7 @@ defmodule OliWeb.Common.Hierarchy.SelectResourceModal do
 
   alias OliWeb.Common.Hierarchy.HierarchyPicker
 
+  prop id, :string, required: true
   prop hierarchy, :struct, required: true
   prop active, :struct, required: true
   prop selection, :any, required: true
