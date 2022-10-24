@@ -4,17 +4,17 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="ExDoc v0.28.3">
+    <meta name="generator" content="ExDoc v0.28.5">
     <meta name="project" content="OLI Torus v0.21.5">
 
     <title>CI/CD and Deployment Process — OLI Torus v0.21.5</title>
-    <link rel="stylesheet" href="dist/elixir-d5ff82e6b0f5651c0ac0.css" />
+    <link rel="stylesheet" href="dist/elixir-64c5e2b63575bddb1c5b.css" />
 
     <script src="dist/sidebar_items-e9b1ba3e2d.js"></script>
 
       <script src="docs_config.js"></script>
 
-    <script async src="dist/app-a088a6cc33ae3464193e.js"></script>
+    <script async src="dist/app-b5f3440501744dc8be3d.js"></script>
 
 
   </head>
@@ -85,6 +85,7 @@ OLI Torus
 </section>
 
 <section class="content">
+  <output role="status" id="toast"></output>
   <div class="content-outer">
     <div id="content" class="content-inner">
 
@@ -147,8 +148,8 @@ OLI Torus
   </a>
   Hotfixes
 </h2>
-<p>A hotfix branch can be created using the release tag you wish to branch from. For example:</p><pre><code class="makeup elixir" translate="no"><span class="n">git</span><span class="w"> </span><span class="n">checkout</span><span class="w"> </span><span class="o">-</span><span class="n">b</span><span class="w"> </span><span class="n">hotfix</span><span class="o">-</span><span class="nc">X.Y</span><span class="o">.</span><span class="p" data-group-id="4160623332-1">[</span><span class="nc">Z</span><span class="o">+</span><span class="mi">1</span><span class="p" data-group-id="4160623332-1">]</span><span class="w"> </span><span class="n">vX</span><span class="o">.</span><span class="nc">Y.Z</span><span class="w">
-</span><span class="n">git</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="n">hotfix</span><span class="o">-</span><span class="nc">X.Y</span><span class="o">.</span><span class="p" data-group-id="4160623332-2">[</span><span class="nc">Z</span><span class="o">+</span><span class="mi">1</span><span class="p" data-group-id="4160623332-2">]</span></code></pre><p>Once the hotfix branch is created, it will essentially act as the master branch to land all bug fixes and enhancements that are intended to be included in the hotfix.</p><p>When a hotfix branch is ready to be deployed, it can be tagged using the <strong>Release Candidate</strong> and <strong>Deployment Process</strong> outlined above. Hotfix branches that follow the convention <code class="inline">hotfix-</code> will automatically be packaged when pushed to remote, just like master. Make sure to wait for the package step to complete before creating a release, or else the deployment will fail.</p><blockquote><p><strong>Note:</strong> Because hotfix branches are automatically packaged based on the branch name convention, there is no need to manually tag with <code class="inline">package</code> before deploying.</p></blockquote><p>Finally, make sure the hotfix branch is eventually merged back to master to be included in downstream development. To do this easily, create a new branch from the hotfix branch called <code class="inline">integrate-X.Y.Z</code> (the name here is not necessarily important, but just serves as an example). Then pull <code class="inline">master</code> into this integration branch. Once any/all merge conflicts are resolved, open a PR against master.</p>
+<p>A hotfix branch can be created using the release tag you wish to branch from. For example:</p><pre><code class="makeup elixir" translate="no"><span class="n">git</span><span class="w"> </span><span class="n">checkout</span><span class="w"> </span><span class="o">-</span><span class="n">b</span><span class="w"> </span><span class="n">hotfix</span><span class="o">-</span><span class="nc">X.Y</span><span class="o">.</span><span class="p" data-group-id="2489101610-1">[</span><span class="nc">Z</span><span class="o">+</span><span class="mi">1</span><span class="p" data-group-id="2489101610-1">]</span><span class="w"> </span><span class="n">vX</span><span class="o">.</span><span class="nc">Y.Z</span><span class="w">
+</span><span class="n">git</span><span class="w"> </span><span class="n">push</span><span class="w"> </span><span class="n">origin</span><span class="w"> </span><span class="n">hotfix</span><span class="o">-</span><span class="nc">X.Y</span><span class="o">.</span><span class="p" data-group-id="2489101610-2">[</span><span class="nc">Z</span><span class="o">+</span><span class="mi">1</span><span class="p" data-group-id="2489101610-2">]</span></code></pre><p>Once the hotfix branch is created, it will essentially act as the master branch to land all bug fixes and enhancements that are intended to be included in the hotfix.</p><p>When a hotfix branch is ready to be deployed, it can be tagged using the <strong>Release Candidate</strong> and <strong>Deployment Process</strong> outlined above. Hotfix branches that follow the convention <code class="inline">hotfix-</code> will automatically be packaged when pushed to remote, just like master. Make sure to wait for the package step to complete before creating a release, or else the deployment will fail.</p><blockquote><p><strong>Note:</strong> Because hotfix branches are automatically packaged based on the branch name convention, there is no need to manually tag with <code class="inline">package</code> before deploying.</p></blockquote><p>Finally, make sure the hotfix branch is eventually merged back to master to be included in downstream development. To do this easily, create a new branch from the hotfix branch called <code class="inline">integrate-X.Y.Z</code> (the name here is not necessarily important, but just serves as an example). Then pull <code class="inline">master</code> into this integration branch. Once any/all merge conflicts are resolved, open a PR against master.</p>
 <div class="bottom-actions">
   <div class="bottom-actions-item">
 
@@ -180,8 +181,10 @@ Production Deployments
 
         <p>
           Built using
-          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.3) for the
-          <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+          <a href="https://github.com/elixir-lang/ex_doc" title="ExDoc" target="_blank" rel="help noopener" translate="no">ExDoc</a> (v0.28.5) for the
+
+            <a href="https://elixir-lang.org" title="Elixir" target="_blank" translate="no">Elixir programming language</a>
+
         </p>
       </footer>
     </div>
