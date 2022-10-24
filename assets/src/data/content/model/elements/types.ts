@@ -13,6 +13,9 @@ export type ModelElement = TopLevel | Block | Inline;
 // A list of all our element types, including those that can't be "bare" inside a children array.
 export type AllModelElements = ModelElement | SubElements;
 
+export type AllModelTypes = AllModelElements['type'];
+export type ModelTypes = ModelElement['type'];
+
 // specifies the type of items that can be inserted using the toolbar
 export type ContentModelMode =
   | 'all' // all SlateElement types

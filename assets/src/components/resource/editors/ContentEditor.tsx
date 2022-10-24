@@ -4,6 +4,7 @@ import { StructuredContentEditor } from 'components/content/StructuredContentEdi
 import { ContentBlock } from './ContentBlock';
 import { blockInsertOptions } from 'components/editing/toolbar/editorToolbar/blocks/blockInsertOptions';
 import { EditorProps } from './createEditor';
+import { useBlueprintCommandDescriptions, useBlueprints } from './useBlueprints';
 
 interface ContentEditorProps extends EditorProps {
   contentItem: StructuredContent;
@@ -22,6 +23,8 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
     onAddItem,
   } = editorProps;
 
+  const blueprints = useBlueprintCommandDescriptions();
+
   return (
     <ContentBlock {...editorProps}>
       <StructuredContentEditor
@@ -31,13 +34,16 @@ export const ContentEditor = (editorProps: ContentEditorProps) => {
         onEdit={onEdit}
         projectSlug={projectSlug}
         resourceSlug={resourceSlug}
-        toolbarInsertDescs={blockInsertOptions({
-          type: 'all',
-          resourceContext,
-          onAddItem,
-          editorMap,
-          index,
-        })}
+        toolbarInsertDescs={[
+          ...blockInsertOptions({
+            type: 'all',
+            resourceContext,
+            onAddItem,
+            editorMap,
+            index,
+          }),
+          ...blueprints,
+        ]}
       />
     </ContentBlock>
   );
