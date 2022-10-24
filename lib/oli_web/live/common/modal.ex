@@ -9,12 +9,8 @@ defmodule OliWeb.Common.Modal do
   use OliWeb.Common.Modal
   ```
 
-  2. Initialize `modal` assign and add `render_modal(assigns)` to the rendered output:
+  2. Add `render_modal(assigns)` to the rendered output:
   ```
-  mount(_, _, socket) do
-    {:ok, assign(socket, modal: nil)}
-  end
-
   def render(assigns) do
     ...
     <%= render_modal(assigns) %>
@@ -22,18 +18,37 @@ defmodule OliWeb.Common.Modal do
   end
   ```
 
-  3. Create your modal by setting the 'modal' assign
+  3. Create your modal by defining a modal functional component and then
+  calling 'show_modal' with the socket, component and any additional assigns.
   ```
+
   def handle_event("show_modal", _, socket) do
-    {:noreply, assign(socket, modal: %{component: MyModal, assigns: %{...}})}
+
+    modal_assigns = %{
+      id: "my_modal",
+      message: "Hello from Modal",
+      on_confirm: "some_confirm_action"
+    }
+
+    modal = fn assigns ->
+      ~H\"\"\"
+        <div>
+          <%= @modal_assigns.message %>
+          <button phx-click={@modal_assigns.on_confirm}>Ok</button>
+        </div>
+      \"\"\"
+    end
+
+    {:noreply, assign(socket, modal, modal_assigns: modal_assigns)}
   end
   ```
 
   4. Dismiss modal using bootstrap javascript (data-dismiss="modal", escape key, etc...)
-  or using the hide_modal(socket) function
+  or using the `hide_modal(socket, assigns)` function. Hide modal can optionally take any
+  cleanup assigns to be set after the modal has disappeared and is no longer being rendered.
   ```
   def handle_event("close_modal", _, socket) do
-    {:noreply, socket |> hide_modal()}
+    {:noreply, socket |> hide_modal(modal_assigns: nil)}
   end
   ```
   """

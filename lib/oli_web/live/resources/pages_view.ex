@@ -77,7 +77,6 @@ defmodule OliWeb.Resources.PagesView do
         {:ok, table_model} = PagesTableModel.new(pages, project, context)
 
         assign(socket,
-          modal: nil,
           context: context,
           breadcrumbs: breadcrumb(project),
           project: project,
@@ -365,7 +364,7 @@ defmodule OliWeb.Resources.PagesView do
     %{
       author: author,
       project: project,
-      modal: %{assigns: %{node: node, hierarchy: hierarchy}}
+      modal_assigns: %{node: node, hierarchy: hierarchy}
     } = socket.assigns
 
     %{revision: revision} = node
@@ -387,7 +386,7 @@ defmodule OliWeb.Resources.PagesView do
     %{
       author: author,
       project: project,
-      modal: %{assigns: %{node: node, hierarchy: hierarchy}}
+      modal_assigns: %{node: node, hierarchy: hierarchy}
     } = socket.assigns
 
     %{revision: revision} = node
@@ -404,19 +403,16 @@ defmodule OliWeb.Resources.PagesView do
   end
 
   def handle_event("HierarchyPicker.update_active", %{"uuid" => uuid}, socket) do
-    %{modal: %{assigns: %{hierarchy: hierarchy}} = modal} = socket.assigns
+    %{modal_assigns: %{hierarchy: hierarchy} = modal_assigns} = socket.assigns
 
     active = Hierarchy.find_in_hierarchy(hierarchy, uuid)
 
-    modal = %{
-      modal
-      | assigns: %{
-          modal.assigns
-          | active: active
-        }
+    modal_assigns = %{
+      modal_assigns
+      | active: active
     }
 
-    {:noreply, assign(socket, modal: modal)}
+    {:noreply, assign(socket, modal_assigns: modal_assigns)}
   end
 
   # handle clicking of the "Add Graded Assessment" or "Add Practice Page" buttons
