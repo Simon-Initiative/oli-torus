@@ -70,7 +70,8 @@ defmodule Oli.Authoring.Editing.Utils do
     numbering = Map.get(numberings, parent_container.id)
 
     if numbering do
-      Numbering.container_type(numbering.level + 1)
+      Numbering.container_type_label(%Numbering{numbering | level: numbering.level + 1})
+      # Numbering.container_type(numbering.level + 1)
     else
       "Unit"
     end

@@ -8,14 +8,14 @@ defmodule Oli.Delivery.Sections.Section do
   alias Oli.Institutions.Institution
   alias Oli.Branding.Brand
   alias Oli.Delivery.DeliveryPolicy
+  alias Oli.Branding.CustomLabels
 
   alias Oli.Delivery.Sections.{
     SectionsProjectsPublications,
     Enrollment,
     SectionResource,
     SectionInvite,
-    Section,
-    SectionCustomizations
+    Section
   }
 
   schema "sections" do
@@ -56,7 +56,7 @@ defmodule Oli.Delivery.Sections.Section do
     field(:previous_next_index, :map, default: nil, null: true)
     field(:display_curriculum_item_numbering, :boolean, default: true)
 
-    embeds_one(:customizations, SectionCustomizations, on_replace: :delete)
+    embeds_one(:customizations, CustomLabels, on_replace: :delete)
 
     belongs_to(:lti_1p3_deployment, Oli.Lti.Tool.Deployment, foreign_key: :lti_1p3_deployment_id)
 

@@ -3,11 +3,12 @@ defmodule OliWeb.Sections.EditView do
 
   alias Oli.Branding
   alias Oli.Delivery.Sections
-  alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime}
+  alias OliWeb.Common.{Breadcrumb, SessionContext, FormatDateTime, CustomLabelsForm}
   alias OliWeb.Common.Properties.{Groups, Group}
   alias OliWeb.Router.Helpers, as: Routes
   alias OliWeb.Sections.{LtiSettings, MainDetails, Mount, OpenFreeSettings, PaywallSettings, ContentSettings}
   alias Surface.Components.Form
+  alias Oli.Branding.CustomLabels
 
   data breadcrumbs, :any
   data title, :string, default: "Edit Section Details"
@@ -15,6 +16,7 @@ defmodule OliWeb.Sections.EditView do
   data changeset, :any
   data is_admin, :boolean
   data brands, :list
+  data labels, :map, default: Map.from_struct(CustomLabels.default())
 
   defp set_breadcrumbs(type, section) do
     OliWeb.Sections.OverviewView.set_breadcrumbs(type, section)
@@ -40,7 +42,10 @@ defmodule OliWeb.Sections.EditView do
         available_brands =
           Branding.list_brands()
           |> Enum.map(fn brand -> {brand.name, brand.id} end)
-
+          labels = case section.customizations do
+            nil -> Map.from_struct(CustomLabels.default())
+            val -> Map.from_struct(val)
+          end
         {:ok,
          assign(socket,
            context: SessionContext.init(session),
@@ -49,7 +54,8 @@ defmodule OliWeb.Sections.EditView do
            changeset: Sections.change_section(section),
            is_admin: type == :admin,
            breadcrumbs: set_breadcrumbs(type, section),
-           section: section
+           section: section,
+           labels: labels
          )}
     end
   end
@@ -60,6 +66,9 @@ defmodule OliWeb.Sections.EditView do
       <Groups>
         <Group label="Settings" description="Manage the course section settings">
           <MainDetails changeset={@changeset} disabled={false}  is_admin={@is_admin} brands={@brands} />
+        </Group>
+        <Group label="Labels" description="Custom labels">
+          <CustomLabelsForm labels={@labels} save="save_labels"/>
         </Group>
         {#if @section.open_and_free}
           <OpenFreeSettings id="open_and_free_settings" is_admin={@is_admin} changeset={@changeset} disabled={false} {=@context}/>
@@ -83,6 +92,23 @@ defmodule OliWeb.Sections.EditView do
     params = convert_dates(params, socket.assigns.context)
 
     case Sections.update_section(socket.assigns.section, params) do
+      {:ok, section} ->
+        socket = put_flash(socket, :info, "Section changes saved")
+        {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, changeset: changeset)}
+    end
+  end
+
+  def handle_event("save_labels", %{"view" => params}, socket) do
+    socket = clear_flash(socket)
+
+    params = Map.merge(%{"unit" => "unit", "module" => "module", "section" => "section"}, params, fn _k, v1, v2 ->
+      if v2 == nil || String.length(String.trim v2) == 0 do v1 else v2 end
+    end)
+
+    case Sections.update_section(socket.assigns.section, %{customizations: params}) do
       {:ok, section} ->
         socket = put_flash(socket, :info, "Section changes saved")
         {:noreply, assign(socket, section: section, changeset: Sections.change_section(section))}

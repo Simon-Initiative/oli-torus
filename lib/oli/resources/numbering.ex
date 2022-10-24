@@ -46,9 +46,11 @@ defmodule Oli.Resources.Numbering do
   alias Oli.Resources.Revision
   alias Oli.Publishing.Resolver
   alias Oli.Delivery.Hierarchy.HierarchyNode
+  alias Oli.Branding.CustomLabels
 
   defstruct level: 0,
-            index: 0
+            index: 0,
+            labels: Map.from_struct(CustomLabels.default())
 
   def container_type(level) do
     case level do
@@ -58,8 +60,16 @@ defmodule Oli.Resources.Numbering do
     end
   end
 
+  def container_type_label(numbering) do
+    case numbering.level do
+      1 -> Map.get(numbering.labels, :unit)
+      2 -> Map.get(numbering.labels, :module)
+      _ -> Map.get(numbering.labels, :section)
+    end
+  end
+
   def prefix(numbering) do
-    container_type(numbering.level) <> " #{numbering.index}"
+    container_type_label(numbering) <> " #{numbering.index}"
   end
 
   @typep project_or_section_slug :: String.t()

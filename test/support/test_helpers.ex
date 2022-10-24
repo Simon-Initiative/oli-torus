@@ -452,6 +452,7 @@ defmodule Oli.TestHelpers do
                 institution.id
               end,
             base_project_id: project.id,
+            customizations: project.customizations,
             requires_payment: true,
             amount: "$100.00",
             grace_period_days: 5,

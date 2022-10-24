@@ -179,6 +179,7 @@ defmodule OliWeb.ProjectController do
     author = conn.assigns[:current_author]
     is_admin? = Accounts.is_admin?(author)
 
+    IO.inspect(project_params)
     case Course.update_project(project, project_params) do
       {:ok, project} ->
         conn

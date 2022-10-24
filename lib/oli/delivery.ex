@@ -86,7 +86,12 @@ defmodule Oli.Delivery do
 
   defp create_from_publication(publication_id, user, institution, lti_params, deployment, registration) do
     Repo.transaction(fn ->
-      publication = Publishing.get_publication!(publication_id)
+      publication = Publishing.get_publication!(publication_id) |> Repo.preload(:project)
+
+      customizations = case publication.project.customizations do
+        nil -> nil
+        labels -> Map.from_struct(labels)
+      end
 
       {:ok, section} =
         Sections.create_section(%{
@@ -99,7 +104,8 @@ defmodule Oli.Delivery do
           grade_passback_enabled: AGS.grade_passback_enabled?(lti_params),
           line_items_service_url: AGS.get_line_items_url(lti_params, registration),
           nrps_enabled: NRPS.nrps_enabled?(lti_params),
-          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params)
+          nrps_context_memberships_url: NRPS.get_context_memberships_url(lti_params),
+          customizations: customizations
         })
       {:ok, %Section{}} = Sections.create_section_resources(section, publication)
       enroll(user.id, section.id, lti_params)

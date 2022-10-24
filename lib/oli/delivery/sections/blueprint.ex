@@ -136,6 +136,11 @@ defmodule Oli.Delivery.Sections.Blueprint do
         project ->
           now = DateTime.utc_now()
 
+          customizations = case project.customizations do
+            nil -> nil
+            labels -> Map.from_struct(labels)
+          end
+
           new_blueprint = %{
             "type" => :blueprint,
             "status" => :active,
@@ -150,7 +155,8 @@ defmodule Oli.Delivery.Sections.Blueprint do
             "registration_open" => false,
             "grace_period_days" => 1,
             "amount" => Money.new(:USD, "25.00"),
-            "publisher_id" => project.publisher_id
+            "publisher_id" => project.publisher_id,
+            "customizations" => customizations
           }
 
           case Sections.create_section(new_blueprint) do

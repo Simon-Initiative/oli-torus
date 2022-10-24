@@ -3,7 +3,7 @@ defmodule Oli.Authoring.Course.Project do
   import Ecto.Changeset
 
   alias Oli.Authoring.Course.ProjectAttributes
-  alias Oli.Authoring.Course.ProjectCustomizations
+  alias Oli.Branding.CustomLabels
   alias Oli.Utils.Slug
 
   @derive {Phoenix.Param, key: :slug}
@@ -17,7 +17,7 @@ defmodule Oli.Authoring.Course.Project do
     field :allow_duplication, :boolean, default: false
     field :legacy_svn_root, :string
 
-    embeds_one :customizations, ProjectCustomizations, on_replace: :delete
+    embeds_one :customizations, CustomLabels, on_replace: :delete
     embeds_one :attributes, ProjectAttributes, on_replace: :delete
 
     belongs_to :parent_project, Oli.Authoring.Course.Project, foreign_key: :project_id

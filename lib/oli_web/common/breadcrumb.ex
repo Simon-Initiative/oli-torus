@@ -73,6 +73,7 @@ defmodule OliWeb.Common.Breadcrumb do
              project_or_section_slug,
              revision_slug
            ) do
+            IO.inspect("----- #{inspect(numbering)} -------")
       case numbering do
         {:ok, [_root | path]} ->
           trail =
@@ -103,6 +104,7 @@ defmodule OliWeb.Common.Breadcrumb do
     with resource_type <- Oli.Resources.ResourceType.get_type_by_id(revision.resource_type_id),
          link <- Links.resource_path(revision, [], project_or_section_slug),
          numbering <- Map.get(numberings, revision.id) do
+          IO.inspect(numbering)
       case resource_type do
         "container" ->
           new(%{
@@ -200,9 +202,9 @@ defmodule OliWeb.Common.Breadcrumb do
       "container" ->
         Breadcrumb.new(%{
           full_title:
-            Numbering.prefix(%{level: numbering.level, index: numbering.index}) <>
+            Numbering.prefix(numbering) <>
               ": " <> rev.title,
-          short_title: Numbering.prefix(%{level: numbering.level, index: numbering.index}),
+          short_title: Numbering.prefix(numbering),
           slug: uuid
         })
 
