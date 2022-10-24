@@ -67,7 +67,6 @@ defmodule OliWeb.Delivery.ManageUpdates do
        title: "Manage Updates",
        section: section,
        updates: updates,
-       modal: nil,
        updates_in_progress: updates_in_progress,
        redirect_after_apply: redirect_after_apply,
        delivery_breadcrumb: true,

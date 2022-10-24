@@ -1,6 +1,5 @@
 defmodule OliWeb.Sections.EnrollmentsView do
   use OliWeb, :surface_view
-  use OliWeb.Common.Modal
 
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
@@ -70,8 +69,7 @@ defmodule OliWeb.Sections.EnrollmentsView do
            section: section,
            total_count: total_count,
            table_model: table_model,
-           options: @default_options,
-           modal: nil
+           options: @default_options
          )}
     end
   end
