@@ -11,7 +11,6 @@ defmodule OliWeb.PageDeliveryController do
   alias Oli.Rendering.Context
   alias Oli.Rendering.Page
   alias Oli.Activities
-  alias Oli.Delivery.Attempts.Core.ResourceAccess
   alias Oli.Delivery.Attempts.PageLifecycle
   alias Oli.Utils.Slug
   alias Oli.Utils.Time
@@ -280,12 +279,9 @@ defmodule OliWeb.PageDeliveryController do
         reviewMode: context.review_mode,
         overviewURL: Routes.page_delivery_path(conn, :index, section.slug),
         finalizeGradedURL:
-          Routes.page_delivery_path(
+          Routes.page_lifecycle_path(
             conn,
-            :finalize_attempt,
-            section.slug,
-            context.page.slug,
-            resource_attempt.attempt_guid
+            :transition
           )
       },
       bib_app_params: %{

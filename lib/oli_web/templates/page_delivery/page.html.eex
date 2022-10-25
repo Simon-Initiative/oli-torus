@@ -57,7 +57,7 @@ window.userToken = "<%= assigns[:user_token] %>";
 
 <%= if @graded && @activity_count > 0 && @review_mode == false do %>
   <div class="d-flex align-items-center justify-content-center">
-    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick="window.OLI.finalize('submit_answers', '<%= @section_slug %>', '<%= @slug %>', '<%= @attempt_guid %>')">
+    <button id="submit_answers" class="btn btn-primary btn-lg text-center" onClick="window.OLI.finalize('<%= @section_slug %>', '<%= @slug %>', '<%= @attempt_guid %>', 'submit_answers')">
       Submit Answers
     </button>
   </div>
