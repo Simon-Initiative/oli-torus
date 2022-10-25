@@ -1,6 +1,5 @@
 defmodule OliWeb.Sections.GatingAndScheduling do
   use Surface.LiveView, layout: {OliWeb.LayoutView, "live.html"}
-  use OliWeb.Common.Modal
   import OliWeb.DelegatedEvents
   import OliWeb.Common.Params
 
@@ -19,16 +18,18 @@ defmodule OliWeb.Sections.GatingAndScheduling do
   @limit 25
 
   def set_breadcrumbs(section, parent_gate, user_type) do
-    first = case section do
-      %Section{type: :blueprint} ->
-        [
-          Breadcrumb.new(%{
-            full_title: "Products"
-          })
-        ]
+    first =
+      case section do
+        %Section{type: :blueprint} ->
+          [
+            Breadcrumb.new(%{
+              full_title: "Products"
+            })
+          ]
 
-      _ -> []
-    end
+        _ ->
+          []
+      end
 
     user_type
     |> intermediate_breadcrumb(first, section)
@@ -40,7 +41,7 @@ defmodule OliWeb.Sections.GatingAndScheduling do
     do: previous ++ OliWeb.Products.DetailsView.set_breadcrumbs(section)
 
   def intermediate_breadcrumb(user_type, previous, section),
-    do: previous ++  OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
+    do: previous ++ OliWeb.Sections.OverviewView.set_breadcrumbs(user_type, section)
 
   def breadcrumb(previous, section) do
     previous ++
@@ -139,7 +140,6 @@ defmodule OliWeb.Sections.GatingAndScheduling do
       text_search: "",
       offset: 0,
       limit: @limit,
-      modal: nil,
       gating_condition: nil
     )
   end

@@ -209,20 +209,19 @@ defmodule OliWeb.Common.Hierarchy.HierarchyPicker do
         <button class="btn btn-sm btn-link" {@maybe_disabled} phx-click="HierarchyPicker.update_active" phx-value-uuid={previous_uuid(@breadcrumbs)}><i class="las la-arrow-left"></i></button>
 
         <%= for {breadcrumb, index} <- Enum.with_index(@breadcrumbs) do %>
-          <%= render_breadcrumb_item Enum.into(%{
-            breadcrumb: breadcrumb,
-            show_short: length(@breadcrumbs) > 3,
-            is_last: length(@breadcrumbs) - 1 == index,
-           }, assigns) %>
+          <.breadcrumb_item
+            breadcrumb={breadcrumb}
+            show_short={length(@breadcrumbs) > 3}
+            is_last={length(@breadcrumbs) - 1 == index} />
         <% end %>
       </ol>
     """
   end
 
-  defp render_breadcrumb_item(assigns) do
+  defp breadcrumb_item(assigns) do
     ~H"""
     <li class="breadcrumb-item align-self-center pl-2">
-      <button class="btn btn-xs btn-link px-0" {if @is_last, do: [disabled: true]} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
+      <button class="btn btn-xs btn-link px-0" disabled={@is_last} phx-click="HierarchyPicker.update_active" phx-value-uuid={@breadcrumb.slug}>
         <%= get_title(@breadcrumb, @show_short) %>
       </button>
     </li>
