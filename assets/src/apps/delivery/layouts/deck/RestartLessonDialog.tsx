@@ -1,11 +1,15 @@
 /* eslint-disable react/prop-types */
+import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
 import React, { Fragment, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setRestartLesson } from '../../store/features/adaptivity/slice';
 import {
   selectIsGraded,
+  selectOverviewURL,
+  selectPageSlug,
   selectPreviewMode,
   selectResourceAttemptGuid,
+  selectSectionSlug,
 } from '../../store/features/page/slice';
 
 interface RestartLessonDialogProps {
@@ -13,7 +17,11 @@ interface RestartLessonDialogProps {
 }
 const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) => {
   const [isOpen, setIsOpen] = useState(true);
+
+  const revisionSlug = useSelector(selectPageSlug);
+  const sectionSlug = useSelector(selectSectionSlug);
   const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
+  const overviewURL = useSelector(selectOverviewURL);
   const graded = useSelector(selectIsGraded);
   const handleCloseModalClick = () => {
     setIsOpen(false);
@@ -22,19 +30,22 @@ const RestartLessonDialog: React.FC<RestartLessonDialogProps> = ({ onRestart }) 
   const dispatch = useDispatch();
   const isPreviewMode = useSelector(selectPreviewMode);
 
-  const handleRestart = () => {
-    if (isPreviewMode) {
+  const handleRestart = async () => {
+    if (onRestart) {
+      onRestart();
+    }
+    if (!isPreviewMode && graded) {
+      const finalizeResult = await finalizePageAttempt(
+        sectionSlug,
+        revisionSlug,
+        resourceAttemptGuid,
+      );
+      /* console.log('finalizeResult', finalizeResult); */
+    }
+    if (graded || isPreviewMode) {
       window.location.reload();
     } else {
-      const currentUrl = window.location.href;
-      if (currentUrl.indexOf('/attempt') > 0) {
-        window.location.reload();
-      }
-      if (graded) {
-        window.location.href = `${currentUrl}/attempt/${resourceAttemptGuid}`;
-      } else {
-        window.location.href = `${currentUrl}/attempt`;
-      }
+      window.location.href = overviewURL;
     }
   };
 

@@ -1,11 +1,14 @@
-import React, { Fragment, useState } from 'react';
+import { finalizePageAttempt } from 'data/persistence/page_lifecycle';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
-  selectPreviewMode,
+  selectIsGraded,
   selectOverviewURL,
-  selectFinalizeGradedURL,
+  selectPageSlug,
+  selectPreviewMode,
+  selectResourceAttemptGuid,
+  selectSectionSlug,
 } from '../../store/features/page/slice';
-import { selectIsGraded } from 'apps/authoring/store/page/slice';
 
 interface LessonFinishedDialogProps {
   imageUrl?: string;
@@ -23,20 +26,51 @@ const LessonFinishedDialog: React.FC<LessonFinishedDialogProps> = ({
   const isPreviewMode = useSelector(selectPreviewMode);
   const graded = useSelector(selectIsGraded);
   const overviewURL = useSelector(selectOverviewURL);
-  const finalizeGradedURL = useSelector(selectFinalizeGradedURL);
+  const revisionSlug = useSelector(selectPageSlug);
+  const sectionSlug = useSelector(selectSectionSlug);
+  const resourceAttemptGuid = useSelector(selectResourceAttemptGuid);
 
-  const handleCloseModalClick = () => {
+  const [finalizationCalled, setFinalizationCalled] = useState(false);
+  const [isFinalized, setIsFinalized] = useState(false);
+
+  const handleCloseModalClick = useCallback(() => {
+    if (!isFinalized) {
+      return;
+    }
     setIsOpen(false);
-    if (isPreviewMode) {
+    if (graded || isPreviewMode) {
       window.location.reload();
     } else {
-      if (graded) {
-        window.location.href = finalizeGradedURL;
-      } else {
-        window.location.href = overviewURL;
+      window.location.href = overviewURL;
+    }
+  }, [isFinalized, graded, isPreviewMode, overviewURL]);
+
+  const handleFinalization = useCallback(async () => {
+    setFinalizationCalled(true);
+    if (!isPreviewMode && graded) {
+      // only graded pages are finalized
+      try {
+        const finalizeResult = await finalizePageAttempt(
+          sectionSlug,
+          revisionSlug,
+          resourceAttemptGuid,
+        );
+        /* console.log('finalizeResult', finalizeResult); */
+      } catch (e) {
+        console.error('finalization error: ', e);
+        /* setFinalizationCalled(false); // so can try again */
+        return;
       }
     }
-  };
+    setIsFinalized(true);
+  }, [sectionSlug, revisionSlug, resourceAttemptGuid, graded, isPreviewMode]);
+
+  useEffect(() => {
+    // TODO: maybe we should call finalization elsewhere than in this modal
+    if (isOpen && !finalizationCalled) {
+      handleFinalization();
+    }
+  }, [isOpen, finalizationCalled, handleFinalization]);
 
   function HTMLMessage() {
     return { __html: message };
