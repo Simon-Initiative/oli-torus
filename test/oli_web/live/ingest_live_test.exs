@@ -47,7 +47,6 @@ defmodule OliWeb.IngestLiveTest do
              )
     end
 
-    @tag :skip
     test "show error message when attaching an invalid file", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
@@ -75,7 +74,6 @@ defmodule OliWeb.IngestLiveTest do
              )
     end
 
-    @tag :skip
     test "show error message when attaching a file with invalid data", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
@@ -103,7 +101,6 @@ defmodule OliWeb.IngestLiveTest do
              )
     end
 
-    @tag :skip
     test "show error message when attaching a file with invalid title of project", %{conn: conn} do
       {:ok, view, _html} = live(conn, @live_view_ingest_route)
 
