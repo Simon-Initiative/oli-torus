@@ -26,6 +26,7 @@ export type ContentModelMode =
 export type TopLevel =
   | TextBlock
   | List
+  | DescriptionList
   | MediaBlock
   | Table
   | Math
@@ -36,7 +37,15 @@ export type TopLevel =
   | Semantic
   | PageLink;
 
-export type Block = TableRow | TableCell | ListItem | MathLine | CodeLine | FormulaBlock;
+export type Block =
+  | TableRow
+  | TableCell
+  | ListItem
+  | MathLine
+  | CodeLine
+  | FormulaBlock
+  | DescriptionListTerm
+  | DescriptionListDefinition;
 
 export type Semantic = Definition | Callout | Figure | Dialog | Conjugation;
 
@@ -59,7 +68,7 @@ export type Heading =
   | HeadingFour
   | HeadingFive
   | HeadingSix;
-export type List = OrderedList | UnorderedList;
+export type List = OrderedList | UnorderedList | DescriptionList;
 export type MediaBlock = ImageBlock | YouTube | Audio | Webpage | Video;
 export type SemanticChildren = TextBlock | Block;
 // These types are only used inside other structured types and not directly as .children5
@@ -135,6 +144,7 @@ export const UnorderdListStyles = ['none', 'disc', 'circle', 'square'];
 export type UnorderedListStyle = typeof UnorderdListStyles[number];
 
 type ListChildren = (ListItem | OrderedList | UnorderedList | Text)[];
+
 export interface OrderedList extends SlateElement<ListChildren> {
   type: 'ol';
   style?: OrderedListStyle;
@@ -143,6 +153,22 @@ export interface OrderedList extends SlateElement<ListChildren> {
 export interface UnorderedList extends SlateElement<ListChildren> {
   type: 'ul';
   style?: UnorderedListStyle;
+}
+
+export interface DescriptionListTerm extends SlateElement<SemanticChildren[]> {
+  type: 'dt';
+}
+
+export interface DescriptionListDefinition extends SlateElement<SemanticChildren[]> {
+  type: 'dd';
+}
+
+type DescriptionListChildren = (DescriptionListTerm | DescriptionListDefinition)[];
+
+export interface DescriptionList extends SlateElement<VoidChildren> {
+  type: 'dl';
+  title: (Inline | TextBlock)[];
+  items: DescriptionListChildren;
 }
 
 interface BaseImage extends SlateElement<VoidChildren> {

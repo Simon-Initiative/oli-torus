@@ -1,0 +1,37 @@
+.description-list-editor {
+  .description-list-editor-controls {
+    display: flex;
+    gap: 1em;
+  }
+
+  h4 {
+    border: 1px dashed $body-bg;
+  }
+  h4:hover {
+    border: 1px dashed #ccc;
+  }
+
+  dd,
+  dt {
+    border: 1px dashed $body-bg;
+    padding: 0.1em;
+    padding-left: 0.1em;
+    margin: 2px;
+    position: relative;
+    .delete-btn {
+      display: none;
+      position: absolute;
+      right: 0px;
+      padding: 0px;
+      height: 25px;
+      top: 0px;
+    }
+  }
+  dd:hover,
+  dt:hover {
+    border: 1px dashed #ccc;
+    .delete-btn {
+      display: block;
+    }
+  }
+}

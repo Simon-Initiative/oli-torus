@@ -24,6 +24,9 @@
           "$ref": "#/$defs/list"
         },
         {
+          "$ref": "#/$defs/description-list"
+        },
+        {
           "$ref": "#/$defs/media"
         },
         {
@@ -284,6 +287,53 @@
         }
       },
       "required": ["type", "children"]
+    },
+    "description-list": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "dl"
+        },
+        "title": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inline"
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/desription-list-item"
+          }
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#"
+          }
+        }
+      }
+    },
+    "desription-list-item": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "oneOf": [
+            {
+              "const": "dd"
+            },
+            {
+              "const": "dt"
+            }
+          ]
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/semantic-element-content"
+          }
+        }
+      }
     },
     "list": {
       "oneOf": [
