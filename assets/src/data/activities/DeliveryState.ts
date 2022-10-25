@@ -171,7 +171,7 @@ export const activityDeliverySlice = createSlice({
     },
     partResetRecieved(state, action: PayloadAction<PartActivityResponse>) {
       const parts = state.attemptState.parts.filter(
-        (p) => p.partId === action.payload.attemptState.partId,
+        (p) => p.partId !== action.payload.attemptState.partId,
       );
 
       state.attemptState = {
@@ -363,6 +363,30 @@ export const submitPart =
   async (dispatch, _getState) => {
     const response = await onSubmitPart(attemptGuid, partAttemptGuid, studentResponse);
     dispatch(slice.actions.partSubmissionReceived(response));
+  };
+
+export const resetAndSavePart =
+  (
+    attemptGuid: string,
+    partAttemptGuid: string,
+    partId: string,
+    response: any,
+    onSave: (attemptGuid: string, partResponses: PartResponse[]) => Promise<Success>,
+    onResetPart: (attemptGuid: string, partAttemptGuid: string) => Promise<PartActivityResponse>,
+  ): AppThunk =>
+  async (dispatch, _getState) => {
+    const partActivityResponse = await onResetPart(attemptGuid, partAttemptGuid);
+    dispatch(slice.actions.partResetRecieved(partActivityResponse));
+    const partResponses: PartResponse[] = [
+      { attemptGuid: partActivityResponse.attemptState.attemptGuid, response },
+    ];
+    dispatch(
+      activityDeliverySlice.actions.setStudentInputForPart({
+        partId: partId,
+        studentInput: [response.input],
+      }),
+    );
+    onSave(attemptGuid, partResponses);
   };
 
 export const resetAndSubmitPart =

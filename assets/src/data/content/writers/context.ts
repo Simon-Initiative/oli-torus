@@ -10,6 +10,7 @@ export interface WriterContext {
   learningLanguage?: string;
   inputRefContext?: {
     onBlur: (id: string) => void;
+    onPressEnter: (id: string) => void;
     onChange: (id: string, value: string) => void;
     toggleHints: (id: string) => void;
     inputs: Map<

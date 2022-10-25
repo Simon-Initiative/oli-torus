@@ -6,8 +6,16 @@ interface Props {
   placeholder?: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
-export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placeholder, onBlur }) => {
+export const TextInput: React.FC<Props> = ({
+  onChange,
+  value,
+  disabled,
+  placeholder,
+  onBlur,
+  onKeyUp,
+}) => {
   return (
     <input
       placeholder={placeholder}
@@ -16,6 +24,7 @@ export const TextInput: React.FC<Props> = ({ onChange, value, disabled, placehol
       className="form-control"
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
+      onKeyUp={onKeyUp}
       value={value}
       disabled={typeof disabled === 'boolean' ? disabled : false}
     />

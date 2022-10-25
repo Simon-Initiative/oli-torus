@@ -5,7 +5,11 @@ import { ResetButtonConnected } from 'components/activities/common/delivery/rese
 import { SubmitButtonConnected } from 'components/activities/common/delivery/submit_button/SubmitButtonConnected';
 import { HintsDeliveryConnected } from 'components/activities/common/hints/delivery/HintsDeliveryConnected';
 import { StemDelivery } from 'components/activities/common/stem/delivery/StemDelivery';
-import { DeliveryElement, DeliveryElementProps } from 'components/activities/DeliveryElement';
+import {
+  DeliveryElement,
+  DeliveryElementProps,
+  PartActivityResponse,
+} from 'components/activities/DeliveryElement';
 import { DeliveryElementProvider, useDeliveryElementContext } from '../DeliveryElementProvider';
 import { MultiInputSchema, MultiInput } from 'components/activities/multi_input/schema';
 import { Manifest, PartId } from 'components/activities/types';
@@ -21,6 +25,8 @@ import {
   submitPart,
   PartInputs,
   resetAction,
+  resetAndSubmitPart,
+  resetAndSavePart,
 } from 'data/activities/DeliveryState';
 import { getByUnsafe } from 'data/activities/model/utils';
 import { safelySelectInputs } from 'data/activities/utils';
@@ -38,6 +44,7 @@ export const MultiInputComponent: React.FC = () => {
     onSubmitActivity,
     onSaveActivity,
     onSubmitPart,
+    onResetPart,
     onResetActivity,
     mode,
     model,
@@ -122,15 +129,31 @@ export const MultiInputComponent: React.FC = () => {
   const handlePerPartSubmission = (partId: string, input: string | null = null) => {
     const partState = uiState.partState[partId];
     const part = uiState.attemptState.parts.find((p) => p.partId === partId);
+
     const payload = input === null ? { input: partState.studentInput[0] } : { input };
-    dispatch(
-      submitPart(
-        uiState.attemptState.attemptGuid,
-        part?.attemptGuid as string,
-        payload,
-        onSubmitPart,
-      ),
-    );
+
+    if (part !== undefined) {
+      if (part.dateEvaluated !== null) {
+        dispatch(
+          resetAndSubmitPart(
+            uiState.attemptState.attemptGuid,
+            part?.attemptGuid as string,
+            payload,
+            onResetPart,
+            onSubmitPart,
+          ),
+        );
+      } else {
+        dispatch(
+          submitPart(
+            uiState.attemptState.attemptGuid,
+            part?.attemptGuid as string,
+            payload,
+            onSubmitPart,
+          ),
+        );
+      }
+    }
   };
 
   // When an input changes value, we always update the internal state. Then, depending on the
@@ -141,31 +164,65 @@ export const MultiInputComponent: React.FC = () => {
   //
   const onChange = (id: string, value: string) => {
     const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    const part = uiState.attemptState.parts.find((p) => p.partId === input.partId);
+    const response = { input: value };
 
-    dispatch(
-      activityDeliverySlice.actions.setStudentInputForPart({
-        partId: input.partId,
-        studentInput: [value],
-      }),
-    );
-
-    const fn = () =>
-      onSaveActivity(uiState.attemptState.attemptGuid, [
-        {
-          attemptGuid: getByUnsafe(uiState.attemptState.parts, (p) => p.partId === input.partId)
-            .attemptGuid,
-          response: { input: value },
-        },
-      ]);
-
-    if (input.inputType === 'dropdown') {
-      if ((uiState.model as MultiInputSchema).submitPerPart) {
-        handlePerPartSubmission(input.partId, value);
+    if (part !== undefined) {
+      // Here we handle the case that the student is typing again into an input whose
+      // part attempt had already been evaluated. So we must first reset to get a new
+      // part attempt, then either submit (if dropdown) or save the input to that part attempt
+      if (part.dateEvaluated !== null && (uiState.model as MultiInputSchema).submitPerPart) {
+        if (input.inputType === 'dropdown') {
+          const payload = { input: value };
+          dispatch(
+            resetAndSubmitPart(
+              uiState.attemptState.attemptGuid,
+              part?.attemptGuid as string,
+              payload,
+              onResetPart,
+              onSubmitPart,
+            ),
+          );
+        } else {
+          dispatch(
+            resetAndSavePart(
+              uiState.attemptState.attemptGuid,
+              part.attemptGuid,
+              part.partId as string,
+              response,
+              onSaveActivity,
+              onResetPart,
+            ),
+          );
+        }
       } else {
-        fn();
+        // Otherwise this is just a change to an existing active part attempt
+
+        dispatch(
+          activityDeliverySlice.actions.setStudentInputForPart({
+            partId: input.partId,
+            studentInput: [value],
+          }),
+        );
+
+        const fn = () =>
+          onSaveActivity(uiState.attemptState.attemptGuid, [
+            {
+              attemptGuid: part.attemptGuid,
+              response: { input: value },
+            },
+          ]);
+
+        if (input.inputType === 'dropdown') {
+          if ((uiState.model as MultiInputSchema).submitPerPart) {
+            handlePerPartSubmission(input.partId, value);
+          } else {
+            fn();
+          }
+        } else {
+          deferredSaves.current[id].save(fn);
+        }
       }
-    } else {
-      deferredSaves.current[id].save(fn);
     }
   };
 
@@ -183,6 +240,14 @@ export const MultiInputComponent: React.FC = () => {
     }
   };
 
+  const onPressEnter = (id: string) => {
+    const input = getByUnsafe((uiState.model as MultiInputSchema).inputs, (x) => x.id === id);
+    deferredSaves.current[id].flushPendingChanges(false);
+    if ((uiState.model as MultiInputSchema).submitPerPart) {
+      handlePerPartSubmission(input.partId);
+    }
+  };
+
   const anyEvaluated = (state: ActivityDeliveryState) =>
     state.attemptState.dateEvaluated !== null ||
     state.attemptState.parts.some((p) => p.dateEvaluated !== null);
@@ -195,6 +260,7 @@ export const MultiInputComponent: React.FC = () => {
       toggleHints,
       onChange,
       onBlur,
+      onPressEnter,
       inputs,
       disabled: isEvaluated(uiState),
     },
