@@ -208,7 +208,7 @@ defmodule Oli.Rendering.Content.Html do
 
   def dl(%Context{}, next, title, %{}) do
     [
-      "<h4>",
+      "<h4 class=\"dl-title\">",
       title.(),
       "</h4>\n",
       "<dl>",
