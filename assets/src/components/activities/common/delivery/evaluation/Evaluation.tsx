@@ -1,14 +1,7 @@
-import {
-  ActivityState,
-  makeContent,
-  makeFeedback,
-  RichText,
-  PartState,
-} from 'components/activities/types';
+import { ActivityState, makeContent, makeFeedback, PartState } from 'components/activities/types';
 import { WriterContext } from 'data/content/writers/context';
 import { HtmlContentModelRenderer } from 'data/content/writers/renderer';
 import React from 'react';
-import guid from 'utils/guid';
 
 interface Props {
   shouldShow?: boolean;
@@ -60,7 +53,7 @@ export function renderPartFeedback(partState: PartState, context: WriterContext)
 }
 
 export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, context }) => {
-  const { score, outOf, parts } = attemptState;
+  const { parts } = attemptState;
   if (!shouldShow) {
     return null;
   }
@@ -69,27 +62,7 @@ export const Evaluation: React.FC<Props> = ({ shouldShow = true, attemptState, c
     return renderPartFeedback(parts[0], context);
   }
 
-  const totalScoreText: RichText = [
-    {
-      type: 'p',
-      children: [{ text: 'Total Score', strong: true }],
-      id: guid(),
-    },
-  ];
-
-  return (
-    <>
-      <Component
-        resultClass={resultClass(score, outOf, undefined)}
-        score={score}
-        outOf={outOf}
-        graded={context.graded}
-      >
-        <HtmlContentModelRenderer content={totalScoreText} context={context} />
-      </Component>
-      {parts.map((partState) => renderPartFeedback(partState, context))}
-    </>
-  );
+  return <>{parts.map((partState) => renderPartFeedback(partState, context))}</>;
 };
 
 interface ComponentProps {

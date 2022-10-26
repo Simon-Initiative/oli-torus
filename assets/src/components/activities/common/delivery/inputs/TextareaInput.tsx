@@ -7,6 +7,7 @@ interface Props {
   disabled?: boolean;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  onKeyUp: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
 }
 export const TextareaInput: React.FC<Props> = (props) => {
   return (
@@ -17,6 +18,7 @@ export const TextareaInput: React.FC<Props> = (props) => {
       className="form-control"
       onChange={(e) => props.onChange(e.target.value)}
       onBlur={props.onBlur}
+      onKeyUp={props.onKeyUp}
       value={props.value}
       disabled={typeof props.disabled === 'boolean' ? props.disabled : false}
     ></textarea>

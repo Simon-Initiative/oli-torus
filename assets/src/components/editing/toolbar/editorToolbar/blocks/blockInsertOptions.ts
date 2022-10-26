@@ -18,6 +18,7 @@ import { insertFigure } from '../../../elements/figure/figureActions';
 import { insertDialog } from '../../../elements/dialog/dialogActions';
 import { insertPageLink } from '../../../elements/page_link/pageLinkActions';
 import { insertConjugation } from '../../../elements/conjugation/conjugationActions';
+import { insertDescriptionListCommand } from '../../../elements/description/description-list-actions';
 
 export const extendedBlockInsertActions = (onRequestMedia: any) => [
   insertTable,
@@ -33,6 +34,7 @@ export const extendedBlockInsertActions = (onRequestMedia: any) => [
   insertFigure,
   insertDialog,
   insertConjugation,
+  insertDescriptionListCommand,
 ];
 
 export const allBlockInsertActions = (onRequestMedia: any) => [
@@ -50,6 +52,7 @@ export const allBlockInsertActions = (onRequestMedia: any) => [
   insertDialog,
   insertPageLink,
   insertConjugation,
+  insertDescriptionListCommand,
 ];
 
 interface Opts {
